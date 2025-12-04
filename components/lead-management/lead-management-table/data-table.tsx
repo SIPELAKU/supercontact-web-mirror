@@ -1,118 +1,173 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  ColumnDef,
-} from "@tanstack/react-table";
-import { Lead, leadResponse } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+
+// MUI
+import Card from "@mui/material/Card";
+import CardHeader from "@mui/material/CardHeader";
+import TextField from "@mui/material/TextField";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
-import { useLeads } from "@/lib/hooks/useLeads";
+
+// TanStack Table
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  ColumnDef,
+  getSortedRowModel,
+} from "@tanstack/react-table";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
-  data: TData[];
 }
 
-// API fetch
-// const fetchLeads = async (page: number, perPage: number) => {
-//   const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
-//     params: { page, per_page: perPage },
-//   });
-//   console.log("fetched data:", data);
-//   return {
-//     items: data.leads.map((lead: any) => ({
-//       id: lead.id,
-//       name: lead.lead_name,
-//       status: lead.status,
-//       source: lead.source,
-//       assignedTo: lead.user.fullname,
-//       lastContacted: lead.last_contacted,
-//     })) as Lead[],
-//     total: data.total,
-//   };
-// };
+export function DataTable<TData>({ columns }: DataTableProps<TData>) {
+  const [data, setData] = useState<TData[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
 
-export function DataTable({
-  columns
-}: { columns: ColumnDef<Lead>[]; data?: leadResponse }) {
-  const [page, setPage] = useState(0); // MUI TablePagination is 0-indexed
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const { data, isLoading, error } = useLeads();
-  console.log('data in table', data);
-  // const { data, isLoading, error } = useQuery(
-  //   ["leads", page, rowsPerPage],
-  //   () => fetchLeads(page + 1, rowsPerPage),
-  //   // { keepPreviousData: true }
-  // );
-// const { data, isLoading, error } = useQuery({
-//   queryKey: ['leads', page, rowsPerPage], // can include variables
-//   queryFn: () => fetchLeads(page + 1, rowsPerPage),
-//   // keepPreviousData: true,
-// });
+  const [{ pageIndex, pageSize }, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  async function loginAndGetToken(): Promise<string> {
+  const loginRes = await fetch("http://localhost:8000/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: "admin",
+      password: "admin",
+    }),
+    cache: "no-store",
+  });
+
+  const json = await loginRes.json();
+  if (!loginRes.ok || !json.success) {
+    throw new Error("Login failed");
+  }
+
+  return json.data.access_token;
+}
+  // Load server data
+  useEffect(() => {
+    const load = async () => {
+        const token = await loginAndGetToken();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/leads?page=${
+          pageIndex + 1
+        }&limit=${pageSize}`,
+        {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    }
+      );
+      
+      const json = await res.json();
+
+      setData(json.data.leads);
+      setTotalPages(json.data.total_pages);
+    };
+
+    load();
+  }, [pageIndex, pageSize]);
+
   const table = useReactTable({
-    data: data?.data.leads ?? [],
+    data,
     columns,
+    state: { pagination: { pageIndex, pageSize } },
+    onPaginationChange: setPagination,
+    manualPagination: true,
+    pageCount: totalPages,
+
+    enableSorting: true,
+    getSortedRowModel: getSortedRowModel(),
+
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p className="text-red-500">Error loading leads</p>;
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   return (
-    <div className="rounded-xl border bg-white p-4 space-y-4">
-      <table className="w-full">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="text-left py-3 px-2 text-gray-500 font-medium"
-                >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
+    <Card
+      className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+      sx={{
+        borderRadius: "16px",
+        overflow: "hidden",
+      }}
+    >
+      <div className="overflow-hidden rounded-none!">
+        <Table>
+          <TableHead>
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id}>
+                {hg.headers.map((header) => (
+                  <TableCell
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                    sx={{
+                      cursor: header.column.getCanSort()
+                        ? "pointer"
+                        : "default",
+                    }}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
 
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-t">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="py-4 px-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    {/* Sorting icons */}
+                    {{
+                      asc: " 🔼",
+                      desc: " 🔽",
+                    }[header.column.getIsSorted() as string] ?? ""}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableHead>
 
-      {/* MUI Pagination */}
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+
+            {data.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center">
+                  No data available
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
       <TablePagination
         component="div"
-        count={data?.data.total ?? 0}
-        page={page}
-        onPageChange={handleChangePage}
-        rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        rowsPerPageOptions={[5, 10, 20]}
+        count={totalPages * pageSize}
+        rowsPerPage={pageSize}
+        page={pageIndex}
+        onPageChange={(_, page) =>
+          setPagination((prev) => ({ ...prev, pageIndex: page }))
+        }
+        onRowsPerPageChange={(e) =>
+          setPagination({
+            pageIndex: 0,
+            pageSize: Number(e.target.value),
+          })
+        }
+        rowsPerPageOptions={[5, 10, 20, 50]}
       />
-    </div>
+    </Card>
   );
 }

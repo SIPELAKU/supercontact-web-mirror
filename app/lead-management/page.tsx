@@ -1,23 +1,11 @@
 // app/lead-management/page.tsx
+"use client"; // needed because LeadManagement uses hooks
+
 import LeadManagement from "@/components/lead-management/lead-management";
 import { Lead } from "@/components/lead-management/lead-management-table/columns";
 
-// import { Payment } from "@/components/lead-management-table/columns";
-
-// async function getData(): Promise<Payment[]> {
-//   return [
-//     {
-//       id: "728ed52f",
-//       amount: 100,
-//       status: "pending",
-//       email: "m@example.com",
-//     }
-//   ];
-// }
-
-export default async function LeadManagementPage() {
-//   const data = await getData(); // allowed here (server component)
-const data: Lead[] = [
+export default function LeadManagementPage() {
+  const data: Lead[] = [
   {
     id: "1",
     name: "Calvin",

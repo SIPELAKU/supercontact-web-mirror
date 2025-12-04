@@ -21,7 +21,7 @@ export default function DateRangePicker() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className={`flex items-center gap-2 px-3 py-2 h-8 rounded-lg border text-sm transition-all
+          className={`flex items-center gap-2 px-3 py-2 h-full rounded-lg border text-sm transition-all
             ${isSelected ? "bg-[#5479EE] text-white" : "bg-white text-black"}
           `}
         >

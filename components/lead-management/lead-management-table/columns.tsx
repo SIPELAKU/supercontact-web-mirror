@@ -32,12 +32,12 @@ export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
 // Status badge colors
 const statusColors: Record<LeadStatus, string> = {
-  "New": "bg-gray-500",
-  "Contacted": "bg-blue-500",
-  "Qualified": "bg-purple-700",
-  "Proposal": "bg-[#E28F1E]",
-  "Closed-Won": "bg-[#5BC557]",
-  "Closed-Lost": "bg-red-500",
+  "New": "bg-[#EBEBEB] text-[#617589]",
+  "Contacted": "bg-[#E8F4FD] text-[#2980B9]",
+  "Qualified": "bg-[#F7EEFF] text-[#6B21A8]",
+  "Proposal": "bg-[#FEF5E7] text-[#F39C12]",
+  "Closed-Won": "bg-[#EDFDEC] text-[#5BC557]",
+  "Closed-Lost": "bg-[#FCE8E8] text-[#C0392B]",
 };
 
 // Source icon mapping

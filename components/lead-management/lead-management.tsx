@@ -1,11 +1,13 @@
 "use client";
 
-import { Button } from "../ui/button";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
-import { GrAdd } from "react-icons/gr";
+import AddLeadForm from "./add-lead-form";
 import { columns, Lead } from "./lead-management-table/columns";
 import { DataTable } from "./lead-management-table/data-table";
 import KanbanView from "../kanban-view";
+import DateRangePicker from "../ui/daterangepicker";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -14,12 +16,12 @@ import {
   SelectItem,
   SelectTrigger,
 } from "../ui/select";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import DateRangePicker from "../ui/daterangepicker";
-import AddLeadForm from "./add-lead-form";
 
-export default function LeadManagement({ data }: { data: Lead[] }) {
+type Props = {
+  data: Lead[];
+};
+
+export default function LeadManagement({ data }: Props) {
   const [status, setStatus] = useState<string>("");
   const [source, setSource] = useState<string>("");
   const [assignedto, setAssignedto] = useState<string>("");
@@ -28,35 +30,33 @@ export default function LeadManagement({ data }: { data: Lead[] }) {
   );
 
   return (
-    <div className="bg-[#ECECEC] min-h-screen p-9">
-      <div className="max-w-[1440px] mx-auto">
-        {/* header card */}
-        <Card className="bg-[#DDE4FC] h-36 w-full">
-          <div className="flex justify-between items-center px-8 h-full">
+    <div className="bg-[#ECECEC] min-h-screen max-w-screen p-4">
+      {/* Main container: width adapts to screen, max capped */}
+      <div className="w-full max-w-[1118px] mx-auto px-4 space-y-6">
+        {/* Header Card */}
+        <Card className="bg-[#DDE4FC] h-36 w-full max-w-[1118px] mx-auto">
+          <div className="flex justify-between items-center px-6 h-full">
             <div>
               <p className="text-lg font-semibold mb-1">
                 Lead Management Component
               </p>
               <p>Sales &bull; Lead Management</p>
             </div>
-
-            <div>
-              <AddLeadForm />
-            </div>
+            <AddLeadForm />
           </div>
         </Card>
 
-        {/* filters + view toggle */}
-        <div className="flex items-start justify-between mt-6 gap-4">
-
-          <div className="flex flex-wrap items-center gap-3">
+        {/* Filters + View Toggle */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 max-w-[1000px]">
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger
                 className={cn(
-                  "h-8!",
+                  "h-8 w-36",
                   status
-                    ? "bg-[#5479EE] text-white! [&>svg]:text-white [&>svg]:stroke-white"
-                    : "bg-white text-black! [&>svg]:text-black [&>svg]:stroke-black"
+                    ? "bg-[#5479EE] text-white [&>svg]:text-white [&>svg]:stroke-white"
+                    : "bg-white !text-black [&>svg]:!text-black [&>svg]:!stroke-black"
                 )}
               >
                 {status ? <span>Status: {status}</span> : <span>Status</span>}
@@ -77,10 +77,10 @@ export default function LeadManagement({ data }: { data: Lead[] }) {
             <Select value={source} onValueChange={setSource}>
               <SelectTrigger
                 className={cn(
-                  "h-8!",
+                  "h-8 w-36",
                   source
-                    ? "bg-[#5479EE] text-white! [&>svg]:text-white [&>svg]:stroke-white"
-                    : "bg-white text-black! [&>svg]:text-black [&>svg]:stroke-black"
+                    ? "bg-[#5479EE] text-white [&>svg]:text-white [&>svg]:stroke-white"
+                    : "bg-white !text-black [&>svg]:!text-black [&>svg]:!stroke-black"
                 )}
               >
                 {source ? <span>Source: {source}</span> : <span>Source</span>}
@@ -98,10 +98,10 @@ export default function LeadManagement({ data }: { data: Lead[] }) {
             <Select value={assignedto} onValueChange={setAssignedto}>
               <SelectTrigger
                 className={cn(
-                  "h-8!",
+                  "h-8 w-36",
                   assignedto
-                    ? "bg-[#5479EE] text-white! [&>svg]:text-white [&>svg]:stroke-white"
-                    : "bg-white text-black! [&>svg]:text-black [&>svg]:stroke-black"
+                    ? "bg-[#5479EE] text-white [&>svg]:text-white [&>svg]:stroke-white"
+                    : "bg-white !text-black [&>svg]:!text-black [&>svg]:!stroke-black"
                 )}
               >
                 {assignedto ? (
@@ -120,11 +120,11 @@ export default function LeadManagement({ data }: { data: Lead[] }) {
                 </SelectGroup>
               </SelectContent>
             </Select>
-
-            <DateRangePicker />
+                <DateRangePicker />
+            
           </div>
 
-          {/* tabs untuk table atau kanban*/}
+          {/* Tabs */}
           <div>
             <Tabs
               value={viewMode}
@@ -141,14 +141,14 @@ export default function LeadManagement({ data }: { data: Lead[] }) {
           </div>
         </div>
 
-        {/* content (table / kanban) */}
+        {/* Content */}
         <div className="mt-6">
           {viewMode === "table-view" && (
             <DataTable columns={columns} data={data} />
           )}
 
           {viewMode === "kanban-view" && (
-            <div className="w-full overflow-hidden">
+            <div className="overflow-x-auto">
               <KanbanView data={data} />
             </div>
           )}

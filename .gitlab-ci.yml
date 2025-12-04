@@ -1,0 +1,33 @@
+# include:
+#  - project: "solvera-official/supercontact-sub/ci-cd-templates"
+#    file: "/nextjs-template.yml"
+
+image: node:18
+
+stages:
+  - install
+  - lint
+  - test
+  - deploy
+  
+install:
+  stage: install
+  script:
+    - npm install
+
+lint:
+  stage: lint
+  script:
+    - npm run lint
+
+test:
+  stage: test
+  script:
+    - npm run test --if-present
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy step simulated — SUCCESS"
+  when: on_success
+

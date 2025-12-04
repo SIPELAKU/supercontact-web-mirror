@@ -7,28 +7,29 @@ import { Globe, MessageCircle, Edit3 } from "lucide-react";
 import WAIcon from "@/public/wa.svg";
 import ManualEntry from "@/public/manual-entry.svg";
 import { cn } from "@/lib/utils";
+import {Lead, LeadStatus, LeadSource} from "@/lib/types";
 
 // Lead type (matches your screenshot table)
-export interface Lead {
-  id: string;
-  name: string;
-  status: LeadStatus;
-  source: LeadSource;
-  assignedTo: string;
-  lastContacted: string;
-}
+// export interface Lead {
+//   id: string;
+//   name: string;
+//   status: LeadStatus;
+//   source: LeadSource;
+//   assignedTo: string;
+//   lastContacted: string;
+// }
 
 // Strongly typed status options
-export type LeadStatus =
-  | "New"
-  | "Contacted"
-  | "Qualified"
-  | "Proposal"
-  | "Closed-Won"
-  | "Closed-Lost";
+// export type LeadStatus =
+//   | "New"
+//   | "Contacted"
+//   | "Qualified"
+//   | "Proposal"
+//   | "Closed-Won"
+//   | "Closed-Lost";
 
 // Strongly typed source options
-export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
+
 
 // Status badge colors
 const statusColors: Record<LeadStatus, string> = {

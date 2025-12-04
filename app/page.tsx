@@ -5,7 +5,7 @@ import LeadManagement from "@/app/lead-management/page";
 
 export default function Home() {
   return (
-    <div>
+    <div className="bg-[#ECECEC]">
       <LeadManagement />
     </div>
   );

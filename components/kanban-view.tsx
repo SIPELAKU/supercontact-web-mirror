@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { sourceIcon } from "./lead-management/lead-management-table/columns";
-import { Lead, LeadSource,} from "@/lib/types";
+import { Lead, leadResponse, LeadSource,} from "@/lib/types";
 // Dynamically derive columns based on unique status values from data
 const getStatuses = (data: Lead[]) => {
   const unique = Array.from(new Set(data.map((d) => d.status)));
@@ -19,14 +19,14 @@ const getStatuses = (data: Lead[]) => {
 // };
 
 type KanbanBoardProps = {
-  data: Lead[];
+  data: leadResponse;
 };
 
 export default function KanbanView({ data }: KanbanBoardProps) {
-  const statuses = getStatuses(data);
+  const statuses = getStatuses(data?.data?.leads ?? []);
   const grouped = statuses.map((col) => ({
     ...col,
-    items: data.filter((item) => item.status === col.key),
+    items: data?.data?.leads.filter((item) => item.status === col.key),
   }));
 
   return (
@@ -53,7 +53,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
                   key={item.id}
                   className="bg-white rounded-xl shadow p-4 text-black"
                 >
-                  <p className="font-semibold mb-1">{item.name}</p>
+                  <p className="font-semibold mb-1">{item.lead_name}</p>
                   <p className="text-sm opacity-80 mb-1">Status: {item.status}</p>
 
                   <div className="text-sm flex items-center gap-2 opacity-80 mb-1">

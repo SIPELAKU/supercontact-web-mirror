@@ -50,10 +50,10 @@ export const sourceIcon: Record<LeadSource, React.ReactNode> = {
 
 export const columns: ColumnDef<Lead>[] = [
   {
-    accessorKey: "name",
+    accessorKey: "lead_name",
     header: () => <span className="text-[#6B7280]">Lead Name</span>,
     cell: ({ row }) => (
-      <span className="text-black">{row.getValue<string>("name")}</span>
+      <span className="text-black">{row.getValue<string>("lead_name")}</span>
     ),
   },
   {
@@ -90,20 +90,20 @@ export const columns: ColumnDef<Lead>[] = [
     },
   },
   {
-    accessorKey: "assignedTo",
+    accessorKey: "assigned_to",
     header: () => <span className="text-[#6B7280]">Assigned To</span>,
     cell: ({ row }) => (
       <span className="text-[#6B7280]">
-        {row.getValue<string>("assignedTo")}
+        {row.getValue<string>("assigned_to")}
       </span>
     ),
   },
   {
-    accessorKey: "lastContacted",
+    accessorKey: "last_contacted",
     header: () => <span className="text-[#6B7280]">Last Contacted</span>,
     cell: ({ row }) => (
       <span className="text-[#6B7280]">
-        {row.getValue<string>("lastContacted")}
+        {row.getValue<string>("last_contacted")}
       </span>
     ),
   },

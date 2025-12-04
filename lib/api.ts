@@ -21,22 +21,23 @@ export async function loginAndGetToken(): Promise<string> {
   return json.data.access_token;
 }
 
-import { Lead, LeadStatus } from "@/lib/types";
+import { Lead, leadResponse, LeadStatus } from "@/lib/types";
 
-export async function fetchLeads(token: string): Promise<Lead[]> {
+export async function fetchLeads(token: string): Promise<leadResponse> {
   const res = await fetch("http://localhost:8000/api/v1/leads", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   const json = await res.json();
+  console.log("API response:", json);
   if (!res.ok || !json.success) throw new Error("Failed to load leads");
-
-  return json.data.leads.map((u: any) => ({
-    id: u.id,
-    name: u.lead_name,
-    status: u.status as LeadStatus, // <-- cast here
-    source: u.source,
-    assignedTo: u.user?.fullname ?? "Unknown",
-    lastContacted: u.last_contacted,
-  }));
+  return json;
+  // return json.data.leads.map((u: any) => ({
+  //   id: u.id,
+  //   name: u.lead_name,
+  //   status: u.status as LeadStatus, // <-- cast here
+  //   source: u.source,
+  //   assignedTo: u.user?.fullname ?? "Unknown",
+  //   lastContacted: u.last_contacted,
+  // }));
 }

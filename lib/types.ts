@@ -2,11 +2,20 @@ export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Close
 
 export interface Lead {
   id: string;
-  name: string;
+  lead_name: string;
   status: LeadStatus;
   source: string;
-  assignedTo: string;
-  lastContacted: string;
+  assigned_to: string;
+  last_contacted: string;
 }
 
+export type leadResponse = {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    leads: Lead[];
+  };
+  error: string | null;
+};
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";

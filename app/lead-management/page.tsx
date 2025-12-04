@@ -24,7 +24,7 @@ export default function LeadManagementPage() {
     const [assignedto, setAssignedto] = useState<string>("");
     const {viewMode,setViewMode} = useViewMode();
 
-
+  console.log('data', data)
   return (
     
     <div className="w-full max-w-[1118px] mx-auto px-4 space-y-6">

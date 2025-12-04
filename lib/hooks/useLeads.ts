@@ -3,9 +3,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchLeads, loginAndGetToken } from "../api";
-import { Lead } from "../types";
+import { Lead, leadResponse } from "../types";
 export function useLeads() {
-  return useQuery<Lead[], Error>({
+  return useQuery<leadResponse, Error>({
     queryKey: ["leads"],
     queryFn: async () => {
       const token = await loginAndGetToken();

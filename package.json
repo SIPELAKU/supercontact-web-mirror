@@ -1,0 +1,9 @@
+{
+    "name": "supercontact-sub",
+    "version": "0.0.1",
+    "scripts": {
+      "lint": "echo \"no lint configured\"",
+      "test": "echo \"no tests\"",
+      "typecheck": "echo \"no typecheck\""
+    }
+  }

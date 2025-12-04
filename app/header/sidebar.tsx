@@ -23,7 +23,7 @@ type MenuSubItem = {
 
 type MenuChild = {
   name: string;
-  icon?: any;
+  icon?: React.ForwardRefExoticComponent<React.SVGProps<SVGSVGElement> & React.RefAttributes<SVGSVGElement>>;
   path?: string;
   children?: MenuSubItem[];
 };
@@ -131,7 +131,7 @@ export default function Sidebar() {
                       pathname === child.path && "bg-primary text-white"
                     )}
                   >
-                    {child.icon && <child.icon size={24} className="stroke-[1.5]" />}
+                    {child.icon && <child.icon  className="stroke-[1.5]" />}
                     <span>{child.name}</span>
                   </Link>
                 );
@@ -143,7 +143,7 @@ export default function Sidebar() {
                     onClick={() => toggleMenu(child.name)}
                     className="flex items-center text-black mx-5 gap-3 p-3 text-[16px] font-semibold rounded-lg transition"
                   >
-                    {child.icon && <child.icon size={24} className="stroke-[1.5]" />}
+                    {child.icon && <child.icon  className="stroke-[1.5]" />}
                     <span>{child.name}</span>
 
                     {child.children && (

@@ -25,7 +25,7 @@ export default function LeadManagement({ data }: Props) {
     <div className=" min-h-screen max-w-screen p-4">
         <div className="">
           {viewMode === "table-view" && (
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={columns} />
           )}
 
           {viewMode === "kanban-view" && (

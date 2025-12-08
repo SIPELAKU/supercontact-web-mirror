@@ -1,4 +1,4 @@
-export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Closed-Won" | "Closed-Lost";
+export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Closed - Won" | "Closed - Lost";
 
 export interface Lead {
   id: string;

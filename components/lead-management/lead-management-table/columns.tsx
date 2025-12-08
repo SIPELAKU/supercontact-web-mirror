@@ -7,7 +7,7 @@ import { Globe, MessageCircle, Edit3 } from "lucide-react";
 import WAIcon from "@/public/wa.svg";
 import ManualEntry from "@/public/manual-entry.svg";
 import { cn } from "@/lib/utils";
-import {Lead, LeadStatus, LeadSource} from "@/lib/types";
+import {Lead, LeadStatus, LeadSource} from "@/lib/models/types";
 
 // Lead type (matches your screenshot table)
 // export interface Lead {

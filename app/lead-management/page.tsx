@@ -27,8 +27,8 @@ export default function LeadManagementPage() {
   console.log('data', data)
   return (
     
-    <div className="w-full max-w-[1118px] mx-auto px-4 space-y-6">
-  <Card className="bg-[#DDE4FC] h-36 w-full max-w-[1118px] mx-auto mt-[33px]">
+    <div className="w-full max-w-full mx-auto px-4 space-y-6">
+  <Card className="bg-[#DDE4FC] h-36 w-full max-w-full mx-auto mt-[33px]">
           <div className="flex justify-between items-center px-6 h-full">
             <div>
               <p className="text-lg font-semibold mb-1">

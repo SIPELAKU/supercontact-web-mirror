@@ -7,7 +7,7 @@ import { columns } from "./lead-management-table/columns";
 import { DataTable } from "./lead-management-table/data-table";
 import KanbanView from "../kanban-view";
 import {useViewMode} from "@/lib/hooks/useLeadStore";
-import { Lead,leadResponse } from "@/lib/types";
+import { Lead,leadResponse } from "@/lib/models/types";
 
 type Props = {
   data: leadResponse;

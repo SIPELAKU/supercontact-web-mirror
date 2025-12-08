@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { sourceIcon } from "./lead-management/lead-management-table/columns";
-import { Lead, leadResponse, LeadSource,} from "@/lib/types";
+import { Lead, leadResponse, LeadSource,} from "@/lib/models/types";
 // Dynamically derive columns based on unique status values from data
 const getStatuses = (data: Lead[]) => {
   const unique = Array.from(new Set(data.map((d) => d.status)));

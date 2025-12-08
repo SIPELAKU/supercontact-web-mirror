@@ -3,7 +3,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchLeads, loginAndGetToken } from "../api";
-import { Lead, leadResponse } from "../types";
+import { Lead, leadResponse } from "../models/types";
 export function useLeads() {
   return useQuery<leadResponse, Error>({
     queryKey: ["leads"],

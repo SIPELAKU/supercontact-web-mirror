@@ -4,18 +4,17 @@ import React from "react";
 import { Card } from "../../ui/card";
 import { cn } from "@/lib/utils";
 import { sourceIcon } from "./columns";
-import { Lead, leadResponse, LeadSource } from "@/lib/models/types";
+import { Lead, leadResponse, LeadSource, LeadStatus } from "@/lib/models/types";
 
 import {
   DndContext,
-  closestCenter,
   useSensor,
   useSensors,
   PointerSensor,
   DragEndEvent,
   useDroppable,
-  pointerWithin, 
-  rectIntersection
+  pointerWithin,
+  rectIntersection,
 } from "@dnd-kit/core";
 
 import {
@@ -26,6 +25,9 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
+/* -------------------------
+   STATUS COLORS
+------------------------- */
 const statusColors: Record<string, string> = {
   New: "bg-[#6D788D]/20",
   Contacted: "bg-[#26C6F9]/20",
@@ -36,7 +38,7 @@ const statusColors: Record<string, string> = {
 };
 
 /* -------------------------
-   SORTABLE CARD
+   SORTABLE CARD (NOT DROPPABLE)
 ------------------------- */
 function SortableCard({ lead }: { lead: Lead }) {
   const { setNodeRef, attributes, listeners, transform, transition } =
@@ -53,12 +55,12 @@ function SortableCard({ lead }: { lead: Lead }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition"
+      className="bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing"
     >
       <p className="font-semibold mb-1">{lead.lead_name}</p>
       <p className="text-sm opacity-80 mb-1">Status: {lead.status}</p>
 
-      <div className="text-sm flex items-center gap-2 opacity-80 mb-1">
+      <div className="text-sm flex items-center gap-2 opacity-80">
         {sourceIcon[lead.source as LeadSource]}
         <span>{lead.source}</span>
       </div>
@@ -73,7 +75,7 @@ function DroppableColumn({
   status,
   children,
 }: {
-  status: string;
+  status: LeadStatus;
   children: React.ReactNode;
 }) {
   const { setNodeRef } = useDroppable({ id: status });
@@ -86,10 +88,7 @@ function DroppableColumn({
         "min-w-[320px] w-[320px] rounded-xl shadow text-white"
       )}
     >
-      <div className="p-4 font-semibold">
-        <span>{status}</span>
-      </div>
-
+      <div className="p-4 font-semibold">{status}</div>
       {children}
     </div>
   );
@@ -103,36 +102,62 @@ type KanbanBoardProps = { data: leadResponse };
 export default function KanbanView({ data }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
 
-  const statuses = Array.from(new Set(leads.map((l) => l.status)));
+  const statuses = React.useMemo(
+    () => Array.from(new Set(leads.map((l) => l.status))) as LeadStatus[],
+    [leads]
+  );
 
-  const getLeadsByStatus = (status: string) =>
+  const getLeadsByStatus = (status: LeadStatus) =>
     leads.filter((lead) => lead.status === status);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  /* -------------------------
+     FIXED COLLISION DETECTION
+     Only columns are treated as valid drop targets
+  ------------------------- */
+  const collisionDetection = React.useCallback(
+    (args: any) => {
+      // pointer-based hits
+      const pointerHits = pointerWithin(args).filter((hit) =>
+        statuses.includes(hit.id as LeadStatus)
+      );
+
+      if (pointerHits.length > 0) return pointerHits;
+
+      // fallback to rectangle hits
+      const rectHits = rectIntersection(args).filter((hit) =>
+        statuses.includes(hit.id as LeadStatus)
+      );
+
+      return rectHits;
+    },
+    [statuses]
+  );
+
+  /* -------------------------
+     DRAG END
+  ------------------------- */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const leadId = active.id.toString();
-    const newStatus = over.id.toString();
+    const newStatus = over.id as LeadStatus; // now ALWAYS a valid column
     const oldStatus = leads.find((l) => l.id.toString() === leadId)?.status;
 
-    // If dropping inside the same column, do nothing
-    if (!oldStatus || oldStatus === newStatus) return;
+    if (!oldStatus || newStatus === oldStatus) return;
 
-    // Update UI state
+    // update UI
     setLeads((prev) =>
       prev.map((lead) =>
-        lead.id.toString() === leadId
-          ? { ...lead, status: newStatus as Lead["status"] }
-          : lead
+        lead.id.toString() === leadId ? { ...lead, status: newStatus } : lead
       )
     );
 
-    // Persist to backend
+    // persist to backend
     try {
       await fetch(`/api/v1/leads/${leadId}/status`, {
         method: "PATCH",
@@ -147,7 +172,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
       onDragEnd={handleDragEnd}
     >
       <div className="overflow-x-auto">

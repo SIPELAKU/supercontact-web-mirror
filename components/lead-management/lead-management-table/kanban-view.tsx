@@ -26,6 +26,18 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 /* -------------------------
+   FIXED STATUS ORDER
+------------------------- */
+const FIXED_STATUSES: LeadStatus[] = [
+  "New",
+  "Contacted",
+  "Qualified",
+  "Proposal",
+  "Closed - Won",
+  "Closed - Lost",
+];
+
+/* -------------------------
    STATUS COLORS
 ------------------------- */
 const statusColors: Record<string, string> = {
@@ -38,21 +50,19 @@ const statusColors: Record<string, string> = {
 };
 
 /* -------------------------
-   SORTABLE CARD (NOT DROPPABLE)
+   SORTABLE CARD
 ------------------------- */
 function SortableCard({ lead }: { lead: Lead }) {
   const { setNodeRef, attributes, listeners, transform, transition } =
     useSortable({ id: lead.id.toString() });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   return (
     <Card
       ref={setNodeRef}
-      style={style}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
       {...attributes}
       {...listeners}
       className="bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing"
@@ -84,7 +94,7 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        statusColors[status] || "bg-[#4E67E8]/20",
+        statusColors[status],
         "min-w-[320px] w-[320px] rounded-xl shadow text-white"
       )}
     >
@@ -95,17 +105,17 @@ function DroppableColumn({
 }
 
 /* -------------------------
-   MAIN BOARD
+   MAIN KANBAN COMPONENT
 ------------------------- */
 type KanbanBoardProps = { data: leadResponse };
 
 export default function KanbanView({ data }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
 
-  const statuses = React.useMemo(
-    () => Array.from(new Set(leads.map((l) => l.status))) as LeadStatus[],
-    [leads]
-  );
+  /* -------------------------
+     FIX: Always use fixed statuses
+  ------------------------- */
+  const statuses = FIXED_STATUSES;
 
   const getLeadsByStatus = (status: LeadStatus) =>
     leads.filter((lead) => lead.status === status);
@@ -116,22 +126,18 @@ export default function KanbanView({ data }: KanbanBoardProps) {
 
   /* -------------------------
      FIXED COLLISION DETECTION
-     Only columns are treated as valid drop targets
+     Only column IDs count as drop targets
   ------------------------- */
   const collisionDetection = React.useCallback(
     (args: any) => {
-      // pointer-based hits
       const pointerHits = pointerWithin(args).filter((hit) =>
         statuses.includes(hit.id as LeadStatus)
       );
+      if (pointerHits.length) return pointerHits;
 
-      if (pointerHits.length > 0) return pointerHits;
-
-      // fallback to rectangle hits
       const rectHits = rectIntersection(args).filter((hit) =>
         statuses.includes(hit.id as LeadStatus)
       );
-
       return rectHits;
     },
     [statuses]
@@ -145,15 +151,15 @@ export default function KanbanView({ data }: KanbanBoardProps) {
     if (!over) return;
 
     const leadId = active.id.toString();
-    const newStatus = over.id as LeadStatus; // now ALWAYS a valid column
+    const newStatus = over.id as LeadStatus;
     const oldStatus = leads.find((l) => l.id.toString() === leadId)?.status;
 
     if (!oldStatus || newStatus === oldStatus) return;
 
     // update UI
     setLeads((prev) =>
-      prev.map((lead) =>
-        lead.id.toString() === leadId ? { ...lead, status: newStatus } : lead
+      prev.map((l) =>
+        l.id.toString() === leadId ? { ...l, status: newStatus } : l
       )
     );
 
@@ -169,6 +175,9 @@ export default function KanbanView({ data }: KanbanBoardProps) {
     }
   };
 
+  /* -------------------------
+     RENDER
+  ------------------------- */
   return (
     <DndContext
       sensors={sensors}

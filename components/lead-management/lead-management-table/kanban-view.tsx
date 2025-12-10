@@ -15,7 +15,9 @@ import {
   useDroppable,
   pointerWithin,
   rectIntersection,
+  CollisionDetection,
   DragOverlay,
+  DragStartEvent
 } from "@dnd-kit/core";
 
 import {
@@ -136,8 +138,8 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   /* -------------------------
      FIXED COLLISION DETECTION
 ------------------------- */
-  const collisionDetection = React.useCallback(
-    (args: any) => {
+  const collisionDetection = React.useCallback<CollisionDetection>(
+    (args) => {
       const pointerHits = pointerWithin(args).filter((hit) =>
         statuses.includes(hit.id as LeadStatus)
       );
@@ -154,7 +156,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   /* -------------------------
      DRAG START
 ------------------------- */
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const leadId = event.active.id;
     const lead = leads.find((l) => l.id.toString() === leadId);
     if (lead) setActiveLead(lead);

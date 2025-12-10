@@ -45,7 +45,7 @@ const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder 
 interface ModalContentProps {
   onClose: () => void;
   onSubmit: (data: { name: string; phone: string; email: string; company: string }) => void;
-  initialData: Contact;
+  initialData: Contact | null;
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit, initialData }) => {
@@ -127,7 +127,7 @@ interface EditContactModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData: any;
+  initialData: Contact | null;
   index: number;
 }
 

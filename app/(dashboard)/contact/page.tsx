@@ -30,7 +30,7 @@ export default function ContactsPage() {
   const [selectedIndex, setSelectedIndex] = useState<number>(1);
 
 
-  const [dataContact, setDataContact] = useState<any[]>([]);
+  const [dataContact, setDataContact] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
 
   const loadDataAgain = () => {

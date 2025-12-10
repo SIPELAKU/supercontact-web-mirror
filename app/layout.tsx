@@ -15,9 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <div className="flex h-full">
-          <Sidebar />
+          {/* <Sidebar /> */}
           <div className="flex-1 flex flex-col">
-            <Navbar />
+            {/* <Navbar /> */}
             <ReactQueryProvider>
             {children}
             </ReactQueryProvider>

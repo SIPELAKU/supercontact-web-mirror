@@ -9,27 +9,6 @@ import ManualEntry from "@/public/manual-entry.svg";
 import { cn } from "@/lib/utils";
 import {Lead, LeadStatus, LeadSource} from "@/lib/models/types";
 
-// Lead type (matches your screenshot table)
-// export interface Lead {
-//   id: string;
-//   name: string;
-//   status: LeadStatus;
-//   source: LeadSource;
-//   assignedTo: string;
-//   lastContacted: string;
-// }
-
-// Strongly typed status options
-// export type LeadStatus =
-//   | "New"
-//   | "Contacted"
-//   | "Qualified"
-//   | "Proposal"
-//   | "Closed-Won"
-//   | "Closed-Lost";
-
-// Strongly typed source options
-
 
 // Status badge colors
 const statusColors: Record<LeadStatus, string> = {
@@ -37,8 +16,8 @@ const statusColors: Record<LeadStatus, string> = {
   "Contacted": "bg-[#E8F4FD] text-[#2980B9]",
   "Qualified": "bg-[#F7EEFF] text-[#6B21A8]",
   "Proposal": "bg-[#FEF5E7] text-[#F39C12]",
-  "Closed-Won": "bg-[#EDFDEC] text-[#5BC557]",
-  "Closed-Lost": "bg-[#FCE8E8] text-[#C0392B]",
+  "Closed - Won": "bg-[#EDFDEC] text-[#5BC557]",
+  "Closed - Lost": "bg-[#FCE8E8] text-[#C0392B]",
 };
 
 // Source icon mapping
@@ -61,7 +40,7 @@ export const columns: ColumnDef<Lead>[] = [
     header: () => <span className="text-[#6B7280]">Status</span>,
     cell: ({ row }) => {
       const status = row.getValue<LeadStatus>("status");
-
+      console.log('status', status);  
       return (
         <span
           className={cn(

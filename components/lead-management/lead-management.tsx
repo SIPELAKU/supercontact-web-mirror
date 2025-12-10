@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { columns } from "./lead-management-table/columns";
 import { DataTable } from "./lead-management-table/data-table";
-import KanbanView from "../kanban-view";
+import KanbanView from "./lead-management-table/kanban-view";
 import {useViewMode} from "@/lib/hooks/useLeadStore";
 import { Lead,leadResponse } from "@/lib/models/types";
 

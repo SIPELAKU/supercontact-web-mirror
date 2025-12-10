@@ -14,10 +14,19 @@ import Image from "next/image";
 import AddContactModal from "@/components/modal/AddContact";
 import EditContactModal from "@/components/modal/EditContact";
 
+interface Contact {
+    id: number,
+    name: string,
+    email: string,
+    phone: string,
+    posisi: string,
+    company: string,
+}
+
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(1);
 
 
@@ -30,7 +39,7 @@ export default function ContactsPage() {
       .then((data) => setDataContact(data.data));
   };
 
-  function handleEdit(item : any, index: number) {
+  function handleEdit(item : Contact, index: number) {
     setSelectedItem(item);
     setSelectedIndex(index);
     setOpenEdit(true);

@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
-import { cn } from "@/utils/cn";
+// import { cn } from "@/utils/cn";
+import { cn } from "@/lib/utils";
 
 type MenuSubItem = {
   name: string;
@@ -23,7 +24,7 @@ type MenuSubItem = {
 
 type MenuChild = {
   name: string;
-  icon?: any;
+  icon?: React.ElementType;
   path?: string;
   children?: MenuSubItem[];
 };

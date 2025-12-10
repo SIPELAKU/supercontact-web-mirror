@@ -14,6 +14,15 @@ interface InputProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
+interface Contact {
+    id: number,
+    name: string,
+    email: string,
+    phone: string,
+    posisi: string,
+    company: string,
+}
+
 const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder }) => {
   return (
     <div className="flex flex-col w-full gap-2">
@@ -36,7 +45,7 @@ const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder 
 interface ModalContentProps {
   onClose: () => void;
   onSubmit: (data: { name: string; phone: string; email: string; company: string }) => void;
-  initialData: any;
+  initialData: Contact;
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit, initialData }) => {

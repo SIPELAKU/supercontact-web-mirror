@@ -15,6 +15,7 @@ import {
   useDroppable,
   pointerWithin,
   rectIntersection,
+  DragOverlay,
 } from "@dnd-kit/core";
 
 import {
@@ -24,6 +25,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
+import { loginAndGetToken } from "@/lib/api";
 
 /* -------------------------
    FIXED STATUS ORDER
@@ -53,8 +55,14 @@ const statusColors: Record<string, string> = {
    SORTABLE CARD
 ------------------------- */
 function SortableCard({ lead }: { lead: Lead }) {
-  const { setNodeRef, attributes, listeners, transform, transition } =
-    useSortable({ id: lead.id.toString() });
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lead.id.toString() });
 
   return (
     <Card
@@ -65,7 +73,10 @@ function SortableCard({ lead }: { lead: Lead }) {
       }}
       {...attributes}
       {...listeners}
-      className="bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing"
+      className={cn(
+        "bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-0" // HIDE original card when dragging
+      )}
     >
       <p className="font-semibold mb-1">{lead.lead_name}</p>
       <p className="text-sm opacity-80 mb-1">Status: {lead.status}</p>
@@ -111,10 +122,8 @@ type KanbanBoardProps = { data: leadResponse };
 
 export default function KanbanView({ data }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
+  const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
 
-  /* -------------------------
-     FIX: Always use fixed statuses
-  ------------------------- */
   const statuses = FIXED_STATUSES;
 
   const getLeadsByStatus = (status: LeadStatus) =>
@@ -126,8 +135,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
 
   /* -------------------------
      FIXED COLLISION DETECTION
-     Only column IDs count as drop targets
-  ------------------------- */
+------------------------- */
   const collisionDetection = React.useCallback(
     (args: any) => {
       const pointerHits = pointerWithin(args).filter((hit) =>
@@ -144,10 +152,21 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   );
 
   /* -------------------------
+     DRAG START
+------------------------- */
+  const handleDragStart = (event: any) => {
+    const leadId = event.active.id;
+    const lead = leads.find((l) => l.id.toString() === leadId);
+    if (lead) setActiveLead(lead);
+  };
+
+  /* -------------------------
      DRAG END
-  ------------------------- */
+------------------------- */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveLead(null);
+
     if (!over) return;
 
     const leadId = active.id.toString();
@@ -156,32 +175,32 @@ export default function KanbanView({ data }: KanbanBoardProps) {
 
     if (!oldStatus || newStatus === oldStatus) return;
 
-    // update UI
     setLeads((prev) =>
       prev.map((l) =>
         l.id.toString() === leadId ? { ...l, status: newStatus } : l
       )
     );
 
-    // persist to backend
+    const token = await loginAndGetToken();
     try {
-      await fetch(`/api/v1/leads/${leadId}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/leads/${leadId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lead_status: newStatus }),
       });
     } catch (err) {
-      console.error("Failed to update lead status:", err);
+      console.error("Failed to update status:", err);
     }
   };
 
   /* -------------------------
      RENDER
-  ------------------------- */
+------------------------- */
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}      
       onDragEnd={handleDragEnd}
     >
       <div className="overflow-x-auto">
@@ -203,6 +222,25 @@ export default function KanbanView({ data }: KanbanBoardProps) {
           ))}
         </div>
       </div>
+
+      {/* ---------------------
+         DRAG OVERLAY
+      ---------------------- */}
+      <DragOverlay>
+        {activeLead ? (
+          <Card className="bg-white rounded-xl shadow-2xl p-4 text-black scale-105">
+            <p className="font-semibold mb-1">{activeLead.lead_name}</p>
+            <p className="text-sm opacity-80 mb-1">
+              Status: {activeLead.status}
+            </p>
+
+            <div className="text-sm flex items-center gap-2 opacity-80">
+              {sourceIcon[activeLead.source as LeadSource]}
+              <span>{activeLead.source}</span>
+            </div>
+          </Card>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

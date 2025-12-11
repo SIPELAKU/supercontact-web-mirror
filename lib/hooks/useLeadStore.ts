@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import {Lead} from "@/lib/models/types";
+import { Lead } from "@/lib/models/types";
 type ViewModeState = {
   viewMode: "table-view" | "kanban-view";
   setViewMode: (mode: "table-view" | "kanban-view") => void;

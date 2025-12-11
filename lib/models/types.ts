@@ -5,6 +5,7 @@ export interface Lead {
   lead_name: string;
   status: LeadStatus;
   source: string;
+  created_at: string;
   assigned_to: string;
   last_contacted: string;
   user: User

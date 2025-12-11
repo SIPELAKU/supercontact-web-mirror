@@ -40,9 +40,8 @@ export default function LeadManagementPage() {
           </div>
         </Card>
 
-        {/* Filters + View Toggle */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          {/* Filters */}
+        {/* Filters */}
+        {/* <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3 max-w-[1000px]">
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger
@@ -117,7 +116,7 @@ export default function LeadManagementPage() {
                 <DateRangePicker />
             
           </div>
-                </div>
+                </div> */}
           {/* Tabs */}
           <div className="flex justify-between">
             <Tabs

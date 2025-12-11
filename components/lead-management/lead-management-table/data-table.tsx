@@ -13,6 +13,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
 import Divider from '@mui/material/Divider'
+import { Lead } from "@/lib/models/types";
+
 // TanStack Table
 import {
   useReactTable,
@@ -21,14 +23,14 @@ import {
   ColumnDef,
   getSortedRowModel,
 } from "@tanstack/react-table";
-import TableFilters from "./TableFilters";
+import LeadFilters from "./LeadFilters";
 
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData>[];
+interface DataTableProps {
+  columns: ColumnDef<Lead>[];
 }
 
-export function DataTable<TData>({ columns }: DataTableProps<TData>) {
-  const [data, setData] = useState<TData[]>([]);
+export function DataTable({ columns }: DataTableProps) {
+  const [data, setData] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const {filteredData,setFilteredData} = useViewMode();
   const [{ pageIndex, pageSize }, setPagination] = useState({
@@ -72,14 +74,17 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
       const json = await res.json();
 
       setData(json.data.leads);
+      setFilteredData(json.data.leads);
       setTotalPages(json.data.total_pages);
     };
 
     load();
   }, [pageIndex, pageSize]);
 
+
+
   const table = useReactTable({
-    data,
+    data: filteredData ? filteredData : data,
     columns,
     state: { pagination: { pageIndex, pageSize } },
     onPaginationChange: setPagination,
@@ -103,7 +108,8 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
       }}
     >
       <CardHeader title="Filters" />
-      {/* <TableFilters setData={setFilteredData} productData={data} /> */}
+      {/* <LeadFilters setData={setFilteredData} productData={data} /> */}
+      <LeadFilters leads={data} setFilteredLeads={setFilteredData} />
       <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>
@@ -147,7 +153,7 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
               </TableRow>
             ))}
 
-            {data.length === 0 && (
+            {filteredData.length === 0 && (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
                   No data available

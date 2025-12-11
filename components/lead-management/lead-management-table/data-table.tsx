@@ -24,6 +24,7 @@ import {
   getSortedRowModel,
 } from "@tanstack/react-table";
 import LeadFilters from "./LeadFilters";
+import TableFilters from "./TableFilters";
 
 interface DataTableProps {
   columns: ColumnDef<Lead>[];
@@ -108,8 +109,7 @@ export function DataTable({ columns }: DataTableProps) {
       }}
     >
       <CardHeader title="Filters" />
-      {/* <LeadFilters setData={setFilteredData} productData={data} /> */}
-      <LeadFilters leads={data} setFilteredLeads={setFilteredData} />
+      {/* <TableFilters setData={setFilteredData} productData={data} /> */}
       <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>

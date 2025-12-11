@@ -39,8 +39,7 @@ export const columns: ColumnDef<Lead>[] = [
     accessorKey: "status",
     header: () => <span className="text-[#6B7280]">Status</span>,
     cell: ({ row }) => {
-      const status = row.getValue<LeadStatus>("status");
-      console.log('status', status);  
+      const status = row.getValue<LeadStatus>("status"); 
       return (
         <span
           className={cn(
@@ -69,11 +68,11 @@ export const columns: ColumnDef<Lead>[] = [
     },
   },
   {
-    accessorKey: "assigned_to",
+    accessorKey: "user",
     header: () => <span className="text-[#6B7280]">Assigned To</span>,
     cell: ({ row }) => (
       <span className="text-[#6B7280]">
-        {row.getValue<string>("assigned_to")}
+        {row.original.user.fullname}
       </span>
     ),
   },

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
+import { useEffect, useState } from "react";
+import { useViewMode } from "@/lib/hooks/useLeadStore";
 // MUI
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -12,7 +12,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
-
+import Divider from '@mui/material/Divider'
 // TanStack Table
 import {
   useReactTable,
@@ -21,6 +21,7 @@ import {
   ColumnDef,
   getSortedRowModel,
 } from "@tanstack/react-table";
+import TableFilters from "./TableFilters";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
@@ -29,7 +30,7 @@ interface DataTableProps<TData> {
 export function DataTable<TData>({ columns }: DataTableProps<TData>) {
   const [data, setData] = useState<TData[]>([]);
   const [totalPages, setTotalPages] = useState(1);
-
+  const {filteredData,setFilteredData} = useViewMode();
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -90,7 +91,9 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
 
     getCoreRowModel: getCoreRowModel(),
   });
+  
 
+  // const [filteredData, setFilteredData] = useState<TData[]>(data);
   return (
     <Card
       className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
@@ -99,6 +102,9 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
         overflow: "hidden",
       }}
     >
+      <CardHeader title="Filters" />
+      {/* <TableFilters setData={setFilteredData} productData={data} /> */}
+      <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>
           <TableHead>

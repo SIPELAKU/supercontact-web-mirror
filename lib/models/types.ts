@@ -7,8 +7,14 @@ export interface Lead {
   source: string;
   assigned_to: string;
   last_contacted: string;
+  user: User
 }
 
+interface User {
+  id: string;
+  fullname: string; 
+  email: string;
+}
 export type leadResponse = {
   success: boolean;
   data: {

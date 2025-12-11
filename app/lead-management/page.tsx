@@ -36,7 +36,7 @@ export default function LeadManagementPage() {
               </p>
               <p>Sales &bull; Lead Management</p>
             </div>
-            <AddLeadForm />
+            
           </div>
         </Card>
 
@@ -117,9 +117,9 @@ export default function LeadManagementPage() {
                 <DateRangePicker />
             
           </div>
-
+                </div>
           {/* Tabs */}
-          <div>
+          <div className="flex justify-between">
             <Tabs
               value={viewMode}
               onValueChange={(val) =>
@@ -132,10 +132,14 @@ export default function LeadManagementPage() {
                 <TabsTrigger value="kanban-view">Kanban View</TabsTrigger>
               </TabsList>
             </Tabs>
+            <AddLeadForm />
           </div>
-        </div>
+
+        
         {isLoading ? <p>Loading...</p> : error ? <p className="text-red-500">Error: {error.message}</p> : !data ? <p>No leads found.</p> :
         <LeadManagement data={data} />}
+
+
         </div>
         
   )

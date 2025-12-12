@@ -1,14 +1,37 @@
 import { Deal } from "@/lib/type/Pipeline";
 import { formatMDY } from "@/lib/helper/date";
-import { formatRupiah } from "@/lib/helper/currency";
 
 export type StageUI = {
   name: string;
-  value: string;
+  value: number;
   deals: Deal[];
 };
 
-export function transformPipelineResponse(api: any): StageUI[] {
+export interface PipelineContact {
+  id: string;
+  name: string;
+  company?: string;
+}
+
+export interface PipelineAPIItem {
+  id: string;
+  deal_name: string;
+  contact: PipelineContact;
+  amount: number;
+  notes?: string;
+  client_account?: string;
+  expected_close_date?: string;
+  probability_of_close?: number;
+  is_deleted?: boolean;
+  deal_stage: string;
+}
+
+export interface PipelineAPIResponse {
+  pipelines: PipelineAPIItem[];
+}
+
+
+export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
   if (!api || !api.pipelines) return [];
 
   const STAGE_ORDER = [
@@ -25,12 +48,12 @@ export function transformPipelineResponse(api: any): StageUI[] {
   STAGE_ORDER.forEach((stage) => {
     stageMap[stage] = {
       name: stage,
-      value: "0",
+      value: 0,
       deals: [],
     };
   });
 
-  api.pipelines.forEach((item: any, index: number) => {
+  api.pipelines.forEach((item, index) => {
     const stageName = item.deal_stage.trim();
 
     const mappedDeal: Deal = {
@@ -60,7 +83,7 @@ export function transformPipelineResponse(api: any): StageUI[] {
 
   Object.values(stageMap).forEach((stage) => {
     const total = stage.deals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    stage.value = `${total}`;
+    stage.value = total;
   });
 
   return STAGE_ORDER.map((name) => stageMap[name]);

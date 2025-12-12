@@ -7,6 +7,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragStartEvent,
+  type DragOverEvent,
+  type DragEndEvent,
 } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -22,10 +25,11 @@ import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui-mui/button"
 import { Deal } from "@/lib/type/Pipeline"
 import { FilterBar } from "@/components/ui-mui/filter"
-import { AddDealModal } from "@/components/pipeline/AddDealModal"
+import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { StageUI } from "@/lib/helper/transformPipeline"
 import { formatRupiah } from "@/lib/helper/currency"
+import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 
 
 const stageColors: Record<string, string> = {
@@ -56,12 +60,12 @@ export default function PipelineBoard() {
 
   const computeStageTotals = (stages: StageUI[]) => {
     return stages.map(stage => ({
-     ...stage,
-     value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
-   }))
+      ...stage,
+      value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
+    }))
   }
 
-  
+
   const filteredStages = useMemo(() => {
     return stages.map((stage) => {
       const filteredDeals = stage.deals.filter((deal: Deal) => {
@@ -88,38 +92,50 @@ export default function PipelineBoard() {
   )
 
 
-  const findDeal = (id: string) => {
+  const findDeal = (
+    id: string,
+    stages: StageUI[]
+  ): { stageIndex: number; dealIndex: number } | null => {
     for (let stageIndex = 0; stageIndex < stages.length; stageIndex++) {
       const dealIndex = stages[stageIndex].deals.findIndex(
-        (d: Deal) => String(d.id) === String(id)
-      )
-      if (dealIndex !== -1) return { stageIndex, dealIndex }
+        (d) => String(d.id) === id
+      );
+
+      if (dealIndex !== -1) return { stageIndex, dealIndex };
     }
-    return null
-  }
+    return null;
+  };
 
-  const handleDragStart = (event: any) => {
-    const loc = findDeal(event.active.id)
-    if (!loc) return
-    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex])
-  }
+  const handleDragStart = (
+    event: DragStartEvent,
+    stages: StageUI[],
+    setActiveDeal: (deal: Deal | null) => void
+  ) => {
+    const loc = findDeal(String(event.active.id), stages);
+    if (!loc) return;
 
-  const handleDragOver = (event: any) => {
+    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
+  };
+
+  const handleDragOver = (
+    event: DragOverEvent,
+    stages: StageUI[],
+    setStages: (s: StageUI[]) => void) => {
     const { active, over } = event
     if (!over) return
 
-    const activeId = active.id
-    const overId = over.id
+    const activeId = String(active.id);
+    const overId = String(over.id);
     if (activeId === overId) return
 
-    const from = findDeal(activeId)
+    const from = findDeal(activeId, stages);
     if (!from) return
 
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
       const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: any) => s.name === toStageName)
+      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
       if (from.stageIndex === toStageIndex) return
 
@@ -129,7 +145,7 @@ export default function PipelineBoard() {
       return
     }
 
-    const to = findDeal(overId)
+    const to = findDeal(overId, updated);
     if (!to) return
 
     const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
@@ -138,21 +154,25 @@ export default function PipelineBoard() {
     setStages(computeStageTotals(updated))
   }
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent,
+    stages: StageUI[],
+    setStages: (s: StageUI[]) => void,
+    setActiveDeal: (deal: Deal | null) => void) => {
     const { active, over } = event
     setActiveDeal(null)
     if (!over) return
 
-    const activeId = active.id
-    const overId = over.id
-    const from = findDeal(activeId)
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    const from = findDeal(activeId, stages);
     if (!from) return
 
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
       const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: any) => s.name === toStageName)
+      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
       if (from.stageIndex === toStageIndex) return
 
@@ -162,7 +182,7 @@ export default function PipelineBoard() {
       return
     }
 
-    const to = findDeal(overId)
+    const to = findDeal(overId, updated);
     if (!to) return
 
     if (from.stageIndex === to.stageIndex) {
@@ -181,7 +201,7 @@ export default function PipelineBoard() {
   }
 
   console.log(stages);
-  
+
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
@@ -192,26 +212,35 @@ export default function PipelineBoard() {
           width="420px"
           filters={[
             {
-              label: "Select All",
-              value: statusFilter,
-              options: [
-                { label: "All", value: "all" },
-                { label: "Active", value: "active" },
-                { label: "Closed", value: "closed" }
-              ],
-              onChange: setStatusFilter,
+              type: "custom",
+              component: (
+                <CustomSelectStage
+                  placeholder="Select All"
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  dealStages={dealStages}
+                  className="bg-white rounded-lg font-normal"
+                />
+              )
             },
             {
-              label: "Select Assigned To",
-              value: salespersonFilter,
-              options: [
-                { label: "All", value: "all" },
-                { label: "John Doe", value: "john" },
-                { label: "Jane Smith", value: "jane" },
-              ],
-              onChange: setSalespersonFilter,
+              type: "custom",
+              component: (
+                <CustomSelectStage
+                  placeholder="Select Assigned To"
+                  value={salespersonFilter}
+                  onChange={setSalespersonFilter}
+                  dealStages={[
+                    { label: "All", value: "all" },
+                    { label: "John Doe", value: "john" },
+                    { label: "Jane Smith", value: "jane" },
+                  ]}
+                  className="bg-white rounded-lg font-normal"
+                />
+              )
             },
             {
+              type: "dropdown",
               label: "Select By Date Range",
               value: dateRangeFilter,
               options: [
@@ -241,7 +270,7 @@ export default function PipelineBoard() {
           />
         </div>
 
-        <Button onClick={()=>setIsModalOpen(!isModalOpen)} className="bg-[#4F6DF5] hover:bg-[#3f58ce] text-white gap-2 h-10 px-4 rounded-lg">
+        <Button onClick={() => setIsModalOpen(!isModalOpen)} className="bg-[#4F6DF5] hover:bg-[#3f58ce] text-white gap-2 h-10 px-4 rounded-lg">
           <Plus className="h-4 w-4" />
           <span className="hidden font-semibold sm:inline">Add New Pipeline</span>
           <span className="sm:hidden font-semibold">Add</span>
@@ -255,9 +284,9 @@ export default function PipelineBoard() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
+          onDragStart={(event) => handleDragStart(event, stages, setActiveDeal)}
+          onDragOver={(event) => handleDragOver(event, stages, setStages)}
+          onDragEnd={(event) => handleDragEnd(event, stages, setStages, setActiveDeal)}
         >
           <div className="inline-flex gap-6 min-w-full mt-4">
 

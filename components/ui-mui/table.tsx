@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui-mui/dropdown-menu";
-import { TablePagination } from "@mui/material";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui-mui/dropdown-menu";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -13,7 +16,7 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
 }
 
-interface CustomTableProps<T> {
+interface CustomTableProps<T extends { id: string }> {
   data: T[];
   columns: Column<T>[];
   selectable?: boolean;
@@ -22,34 +25,55 @@ interface CustomTableProps<T> {
   actionMode?: "inline" | "menu";
 }
 
-function DropdownMenuContentWrapper({ children, align }: { children: React.ReactNode; align?: "start" | "end" }) {
+function DropdownMenuContentWrapper({
+  children,
+  align,
+}: {
+  children: React.ReactNode;
+  align?: "start" | "end";
+}) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
   return (
     <>
-      <DropdownMenuTrigger onClick={(e: any) => setAnchorEl(e.currentTarget)}>
+      <DropdownMenuTrigger
+        onClick={(e: React.MouseEvent<HTMLDivElement>) =>
+          setAnchorEl(e.currentTarget)
+        }
+      >
         <div className="p-2 hover:bg-gray-200 rounded-md cursor-pointer">
           <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </div>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} align={align}>
+      <DropdownMenuContent
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        align={align}
+      >
         {children}
       </DropdownMenuContent>
     </>
   );
 }
 
-export function CustomTable<T>({ data, columns, selectable = false, actions, onSelectionChange, actionMode = "inline" }: CustomTableProps<T>) {
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+export function CustomTable<T extends { id: string }>({
+  data,
+  columns,
+  selectable = false,
+  actions,
+  onSelectionChange,
+  actionMode = "inline",
+}: CustomTableProps<T>) {
+  const [page, setPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
   const total = data.length;
   const totalPages = Math.ceil(total / rowsPerPage);
 
   const start = (page - 1) * rowsPerPage;
-
   const end = Math.min(start + rowsPerPage, total);
 
   const paginatedData = data.slice(start, end);
@@ -61,22 +85,32 @@ export function CustomTable<T>({ data, columns, selectable = false, actions, onS
       setSelectedIds([]);
       onSelectionChange?.([]);
     } else {
-      const ids = paginatedData.map((row: any) => row.id);
+      const ids = paginatedData.map((row) => row.id);
       setSelectedIds(ids);
       onSelectionChange?.(paginatedData);
     }
   };
 
   const toggleRow = (row: T) => {
-    const id = (row as any).id;
-    const updated = selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id];
+    const id = row.id;
+
+    const updated = selectedIds.includes(id)
+      ? selectedIds.filter((x) => x !== id)
+      : [...selectedIds, id];
 
     setSelectedIds(updated);
 
-    onSelectionChange?.(paginatedData.filter((item) => updated.includes((item as any).id)));
+    const selectedRows = paginatedData.filter((item) =>
+      updated.includes(item.id)
+    );
+
+    onSelectionChange?.(selectedRows);
   };
 
-  const applyWidth = (width?: number) => (width ? { minWidth: `${width}rem`, width: `${width}rem`, maxWidth: `${width}rem` } : {});
+  const applyWidth = (width?: number) =>
+    width
+      ? { minWidth: `${width}rem`, width: `${width}rem`, maxWidth: `${width}rem` }
+      : {};
 
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200">
@@ -86,42 +120,71 @@ export function CustomTable<T>({ data, columns, selectable = false, actions, onS
             <tr className="bg-[#edf1fc] h-16">
               {selectable && (
                 <th className="px-6 py-3 w-12 h-16">
-                  <input type="checkbox" checked={selectedIds.length === paginatedData.length} onChange={toggleAll} className="h-4 w-4 cursor-pointer" />
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === paginatedData.length}
+                    onChange={toggleAll}
+                    className="h-4 w-4 cursor-pointer"
+                  />
                 </th>
               )}
 
               {columns.map((col) => (
-                <th key={String(col.key)} style={applyWidth(col.width)} className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 h-16">
+                <th
+                  key={String(col.key)}
+                  style={applyWidth(col.width)}
+                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 h-16"
+                >
                   {col.label}
                 </th>
               ))}
 
-              {actions && <th className="px-6 py-3 text-xs font-medium uppercase text-gray-500 w-32 h-16">Actions</th>}
+              {actions && (
+                <th className="px-6 py-3 text-xs font-medium uppercase text-gray-500 w-32 h-16">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
 
           <tbody>
-            {paginatedData.map((row: any) => (
+            {paginatedData.map((row) => (
               <tr key={row.id} className="hover:bg-gray-50 transition h-16">
                 {selectable && (
                   <td className="px-6 py-4 h-16">
-                    <input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleRow(row)} className="h-4 w-4 cursor-pointer" />
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(row.id)}
+                      onChange={() => toggleRow(row)}
+                      className="h-4 w-4 cursor-pointer"
+                    />
                   </td>
                 )}
 
-                {columns.map((col) => (
-                  <td key={String(col.key)} style={applyWidth(col.width)} className="px-6 py-4 whitespace-nowrap h-16">
-                    {col.render ? col.render(row) : row[col.key]}
-                  </td>
-                ))}
+                {columns.map((col) => {
+                  const key = col.key as keyof T;
+                  return (
+                    <td
+                      key={String(col.key)}
+                      style={applyWidth(col.width)}
+                      className="px-6 py-4 whitespace-nowrap h-16"
+                    >
+                      {col.render ? col.render(row) : (row[key] as React.ReactNode)}
+                    </td>
+                  );
+                })}
 
                 {actions && (
                   <td className="px-6 py-4 text-center w-32 h-16">
                     {actionMode === "inline" ? (
-                      <div className="flex justify-center gap-4">{actions(row)}</div>
+                      <div className="flex justify-center gap-4">
+                        {actions(row)}
+                      </div>
                     ) : (
                       <DropdownMenu>
-                        <DropdownMenuContentWrapper align="end">{actions(row)}</DropdownMenuContentWrapper>
+                        <DropdownMenuContentWrapper align="end">
+                          {actions(row)}
+                        </DropdownMenuContentWrapper>
                       </DropdownMenu>
                     )}
                   </td>
@@ -132,6 +195,7 @@ export function CustomTable<T>({ data, columns, selectable = false, actions, onS
         </table>
       </div>
 
+      {/* Pagination */}
       <div className="flex justify-end items-center px-6 py-4 bg-white border-t border-gray-200">
         <div className="flex items-center gap-2 text-sm text-gray-600 mr-10">
           <span>Rows per page:</span>
@@ -157,11 +221,27 @@ export function CustomTable<T>({ data, columns, selectable = false, actions, onS
         </div>
 
         <div className="flex items-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className={cn("p-2 cursor-pointer", page === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100")}>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className={cn(
+              "p-2 cursor-pointer",
+              page === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
+            )}
+          >
             {`<`}
           </button>
 
-          <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={cn("p-2 cursor-pointer", page === totalPages ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100")}>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className={cn(
+              "p-2 cursor-pointer",
+              page === totalPages
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-gray-100"
+            )}
+          >
             {`>`}
           </button>
         </div>

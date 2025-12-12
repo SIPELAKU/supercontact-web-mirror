@@ -1,19 +1,29 @@
-'use client'
+"use client";
 
-import React, { useState, cloneElement } from "react"
-import Popover from "@mui/material/Popover"
-import { cn } from "@/lib/utils"
+import React, {
+  useState,
+  cloneElement,
+  ReactElement,
+  ReactNode,
+  isValidElement,
+} from "react";
+import Popover from "@mui/material/Popover";
+import { cn } from "@/lib/utils";
 
-export function PopoverTrigger({ children }: { children: React.ReactElement }) {
-  return children
+export function PopoverTrigger({
+  children,
+}: {
+  children: ReactElement<React.HTMLAttributes<HTMLElement>>;
+}) {
+  return children;
 }
 
 export function PopoverContent({
   className,
   children,
 }: {
-  className?: string
-  children: React.ReactNode
+  className?: string;
+  children: ReactNode;
 }) {
   return (
     <div
@@ -24,33 +34,44 @@ export function PopoverContent({
     >
       {children}
     </div>
-  )
+  );
 }
+
 
 export function PopoverRoot({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode;
 }) {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const trigger = React.Children.toArray(children).find(
-    (child: any) => child.type === PopoverTrigger
-  ) as any
+  const childArray = React.Children.toArray(children);
 
-  const content = React.Children.toArray(children).find(
-    (child: any) => child.type === PopoverContent
-  ) as any
+  const triggerElement = childArray.find(
+    (child): child is ReactElement<{ children: ReactElement<React.HTMLAttributes<HTMLElement>> }> =>
+      isValidElement(child) && child.type === PopoverTrigger
+  );
 
-  if (!trigger || !content) {
-    return <>{children}</>
+  const contentElement = childArray.find(
+    (child) =>
+      isValidElement(child) && child.type === PopoverContent
+  ) as ReactElement | undefined;
+
+  if (!triggerElement || !contentElement) {
+    return <>{children}</>;
   }
 
-  const triggerWithHandler = cloneElement(trigger.props.children, {
-    onClick: (e: any) => setAnchorEl(e.currentTarget),
-  })
+  const triggerChild = triggerElement.props.children;
 
-  const open = Boolean(anchorEl)
+  const triggerWithHandler = cloneElement(triggerChild, {
+    onClick: (e: React.MouseEvent<HTMLElement>) => {
+      triggerChild.props.onClick?.(e);
+      setAnchorEl(e.currentTarget);
+    },
+  });
+
+
+  const open = Boolean(anchorEl);
 
   return (
     <>
@@ -64,14 +85,14 @@ export function PopoverRoot({
         transformOrigin={{ vertical: "top", horizontal: "center" }}
         disableRestoreFocus
       >
-        {content}
+        {contentElement}
       </Popover>
     </>
-  )
+  );
 }
 
 export const PopoverComponent = {
   Root: PopoverRoot,
   Trigger: PopoverTrigger,
   Content: PopoverContent,
-}
+};

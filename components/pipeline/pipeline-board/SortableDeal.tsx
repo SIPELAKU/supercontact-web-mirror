@@ -3,7 +3,13 @@
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
-export default function SortableDeal({ id, children }: any) {
+interface SortableDealProps {
+  id: string | number;
+  children: React.ReactNode;
+}
+
+
+export default function SortableDeal({ id, children }: SortableDealProps) {
   const {
     attributes,
     listeners,

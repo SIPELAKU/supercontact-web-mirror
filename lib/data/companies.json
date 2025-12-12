@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "name": "Acme Inc.",
+    "email": "AcmeInc@example.com",
+    "industry": "SaaS",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Connected"
+  },
+  {
+    "id": 2,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Manufacturing",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Enriching"
+  },
+  {
+    "id": 3,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Logistics",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 35,
+    "status": "Disconnected"
+  },
+  {
+    "id": 4,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Finance",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Connected"
+  },
+  {
+    "id": 5,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Healthcare",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Enriching"
+  }
+]

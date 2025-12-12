@@ -10,6 +10,7 @@ import { Lead } from "@/lib/models/types";
 import DateRangePicker from "@/components/ui/daterangepicker";
 import type { DateRange } from "react-day-picker";
 
+
 export default function LeadFilters({
   leads,
   setFilteredLeads,
@@ -34,8 +35,8 @@ export default function LeadFilters({
   useEffect(() => {
     let filtered = [...leads];
 
-    if (status && status !== "All") filtered = filtered.filter((l) => l.status === status);
-    if (source && source !== "All") filtered = filtered.filter((l) => l.source === source);
+    if (status && status !== "All") filtered = filtered.filter((l) => l.lead_status === status);
+    if (source && source !== "All") filtered = filtered.filter((l) => l.lead_source === source);
     if (assignedto && assignedto !== "All")
       filtered = filtered.filter((l) => l.user.fullname === assignedto);
 
@@ -73,8 +74,8 @@ export default function LeadFilters({
               <MenuItem value="Contacted">Contacted</MenuItem>
               <MenuItem value="Qualified">Qualified</MenuItem>
               <MenuItem value="Proposal">Proposal</MenuItem>
-              <MenuItem value="Closed-Won">Closed-Won</MenuItem>
-              <MenuItem value="Closed-Lost">Closed-Lost</MenuItem>
+              <MenuItem value="Closed - Won">Closed - Won</MenuItem>
+              <MenuItem value="Closed - Lost">Closed - Lost</MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -126,7 +127,7 @@ export default function LeadFilters({
             onChange={(range) =>
               setDateRange(range ?? { from: undefined, to: undefined })
             }
-            className="w-[310px]"
+            className="w-fit"
           />
         </Grid>
       </Grid>

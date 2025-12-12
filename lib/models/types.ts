@@ -3,14 +3,21 @@ export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Close
 export interface Lead {
   id: string;
   lead_name: string;
-  status: LeadStatus;
-  source: string;
+  lead_status: LeadStatus;
+  lead_source: string;
   created_at: string;
   assigned_to: string;
   last_contacted: string;
+  contact: Contact;
   user: User
 }
-
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+} 
 interface User {
   id: string;
   fullname: string; 

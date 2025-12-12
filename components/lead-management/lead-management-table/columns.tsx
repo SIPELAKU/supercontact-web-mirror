@@ -32,14 +32,14 @@ export const columns: ColumnDef<Lead>[] = [
     accessorKey: "lead_name",
     header: () => <span className="text-[#6B7280]">Lead Name</span>,
     cell: ({ row }) => (
-      <span className="text-black">{row.getValue<string>("lead_name")}</span>
+      <span className="text-black">{row.original.contact.name}</span>
     ),
   },
   {
-    accessorKey: "status",
+    accessorKey: "lead_status",
     header: () => <span className="text-[#6B7280]">Status</span>,
     cell: ({ row }) => {
-      const status = row.getValue<LeadStatus>("status"); 
+      const status = row.getValue<LeadStatus>("lead_status"); 
       return (
         <span
           className={cn(
@@ -53,10 +53,10 @@ export const columns: ColumnDef<Lead>[] = [
     },
   },
   {
-    accessorKey: "source",
+    accessorKey: "lead_source",
     header: () => <span className="text-[#6B7280]">Source</span>,
     cell: ({ row }) => {
-      const source = row.getValue<LeadSource>("source");
+      const source = row.getValue<LeadSource>("lead_source");
       // console.log('row', row);
       // console.log('source', source);
       return (

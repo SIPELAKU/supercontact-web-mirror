@@ -6,7 +6,6 @@ import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui-mui/dropdown-menu";
 
@@ -17,7 +16,7 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
 }
 
-interface CustomTableProps<T> {
+interface CustomTableProps<T extends { id: string }> {
   data: T[];
   columns: Column<T>[];
   selectable?: boolean;
@@ -38,7 +37,11 @@ function DropdownMenuContentWrapper({
 
   return (
     <>
-      <DropdownMenuTrigger onClick={(e: any) => setAnchorEl(e.currentTarget)}>
+      <DropdownMenuTrigger
+        onClick={(e: React.MouseEvent<HTMLDivElement>) =>
+          setAnchorEl(e.currentTarget)
+        }
+      >
         <div className="p-2 hover:bg-gray-200 rounded-md cursor-pointer">
           <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </div>
@@ -56,7 +59,7 @@ function DropdownMenuContentWrapper({
   );
 }
 
-export function CustomTable<T>({
+export function CustomTable<T extends { id: string }>({
   data,
   columns,
   selectable = false,
@@ -64,15 +67,13 @@ export function CustomTable<T>({
   onSelectionChange,
   actionMode = "inline",
 }: CustomTableProps<T>) {
-
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [page, setPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 
   const total = data.length;
   const totalPages = Math.ceil(total / rowsPerPage);
 
   const start = (page - 1) * rowsPerPage;
-  
   const end = Math.min(start + rowsPerPage, total);
 
   const paginatedData = data.slice(start, end);
@@ -84,23 +85,26 @@ export function CustomTable<T>({
       setSelectedIds([]);
       onSelectionChange?.([]);
     } else {
-      const ids = paginatedData.map((row: any) => row.id);
+      const ids = paginatedData.map((row) => row.id);
       setSelectedIds(ids);
       onSelectionChange?.(paginatedData);
     }
   };
 
   const toggleRow = (row: T) => {
-    const id = (row as any).id;
+    const id = row.id;
+
     const updated = selectedIds.includes(id)
       ? selectedIds.filter((x) => x !== id)
       : [...selectedIds, id];
 
     setSelectedIds(updated);
 
-    onSelectionChange?.(
-      paginatedData.filter((item) => updated.includes((item as any).id))
+    const selectedRows = paginatedData.filter((item) =>
+      updated.includes(item.id)
     );
+
+    onSelectionChange?.(selectedRows);
   };
 
   const applyWidth = (width?: number) =>
@@ -114,7 +118,6 @@ export function CustomTable<T>({
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#edf1fc] h-16">
-
               {selectable && (
                 <th className="px-6 py-3 w-12 h-16">
                   <input
@@ -145,9 +148,8 @@ export function CustomTable<T>({
           </thead>
 
           <tbody>
-            {paginatedData.map((row: any) => (
+            {paginatedData.map((row) => (
               <tr key={row.id} className="hover:bg-gray-50 transition h-16">
-
                 {selectable && (
                   <td className="px-6 py-4 h-16">
                     <input
@@ -159,15 +161,18 @@ export function CustomTable<T>({
                   </td>
                 )}
 
-                {columns.map((col) => (
-                  <td
-                    key={String(col.key)}
-                    style={applyWidth(col.width)}
-                    className="px-6 py-4 whitespace-nowrap h-16"
-                  >
-                    {col.render ? col.render(row) : row[col.key]}
-                  </td>
-                ))}
+                {columns.map((col) => {
+                  const key = col.key as keyof T;
+                  return (
+                    <td
+                      key={String(col.key)}
+                      style={applyWidth(col.width)}
+                      className="px-6 py-4 whitespace-nowrap h-16"
+                    >
+                      {col.render ? col.render(row) : (row[key] as React.ReactNode)}
+                    </td>
+                  );
+                })}
 
                 {actions && (
                   <td className="px-6 py-4 text-center w-32 h-16">
@@ -187,12 +192,11 @@ export function CustomTable<T>({
               </tr>
             ))}
           </tbody>
-
         </table>
       </div>
 
+      {/* Pagination */}
       <div className="flex justify-end items-center px-6 py-4 bg-white border-t border-gray-200">
-
         <div className="flex items-center gap-2 text-sm text-gray-600 mr-10">
           <span>Rows per page:</span>
 
@@ -217,7 +221,6 @@ export function CustomTable<T>({
         </div>
 
         <div className="flex items-center gap-2">
-
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -241,7 +244,6 @@ export function CustomTable<T>({
           >
             {`>`}
           </button>
-
         </div>
       </div>
     </div>

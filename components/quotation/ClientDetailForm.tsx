@@ -4,23 +4,38 @@ import { Input } from "@/components/ui-mui/input"
 import { Label } from "@/components/ui-mui/label"
 import { Select, SelectItem } from "@/components/ui-mui/select"
 import { CustomDatePicker } from "@/components/ui-mui/date-picker"
-import { useState } from "react"
+
+interface ClientDetailsData {
+  clientName?: string;
+  companyName?: string;
+  phoneNumber?: string;
+  emailAddress?: string;
+  quotationTitle?: string;
+  quotationId?: string;
+  issueDate?: Date;
+  expiryDate?: Date;
+}
+
 
 interface ClientDetailsProps {
-  clientData?: Record<string, any>
-  setClientData?: (data: Record<string, any>) => void
-}
+  clientData?: ClientDetailsData;
+  setClientData?: (data: ClientDetailsData) => void;
+} 
 
 export default function ClientDetailsSection({
   clientData = {},
   setClientData = () => {},
 }: ClientDetailsProps) {
-  const handleChange = (field: string, value: any) => {
-    setClientData({
-      ...clientData,
-      [field]: value,
-    })
-  }
+const handleChange = <K extends keyof ClientDetailsData>(
+  field: K,
+  value: ClientDetailsData[K]
+) => {
+  setClientData({
+    ...clientData,
+    [field]: value,
+  });
+};
+
 
   return (
     <div className="bg-white px-6 pt-6">

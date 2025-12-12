@@ -2,11 +2,20 @@
 
 import { create } from "zustand";
 import axiosInternal from "@/lib/utils/axiosInternal";
-import { transformPipelineResponse } from "@/lib/helper/transformPipeline";
+import { StageUI, transformPipelineResponse } from "@/lib/helper/transformPipeline";
+import { formatRupiah } from "@/lib/helper/currency";
+
+export interface Metric {
+  label: string;
+  value: string;
+  change: string;
+  isPositive: boolean;
+}
+
 
 interface GetState {
-  listPipeline: any[];
-  stats: any[];
+  listPipeline: StageUI[];
+  stats: Metric[];
   loading: boolean;
   error: string | null;
 
@@ -30,19 +39,19 @@ export const useGetPipelineStore = create<GetState>((set) => ({
       const metrics = [
           {
             label: "Total Pipeline Value",
-            value: res.data.data.stats.total_pipeline,
+            value: formatRupiah(res.data.data.stats.total_pipeline),
             change: "+5%",
             isPositive: true,
           },
           {
             label: "Average Deal Size",
-            value: res.data.data.stats.avg_pipeline,
+            value: formatRupiah(res.data.data.stats.avg_pipeline),
             change: "+2%",
             isPositive: true,
           },
           {
             label: "Win Rate",
-            value: res.data.data.stats.winrate_pipeline,
+            value: `${res.data.data.stats.winrate_pipeline}%`,
             change: "-1%",
             isPositive: false,
           },
@@ -54,6 +63,7 @@ export const useGetPipelineStore = create<GetState>((set) => ({
         stats: metrics
       });
     } catch (err) {
+      console.info(err)
       set({ error: "Failed to fetch data" });
     } finally {
       set({ loading: false });

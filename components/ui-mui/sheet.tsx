@@ -1,63 +1,66 @@
-"use client"
+"use client";
 
-import { ReactNode, useState } from "react"
-import Drawer from "@mui/material/Drawer"
-import IconButton from "@mui/material/IconButton"
-import CloseIcon from "@mui/icons-material/Close"
-import Box from "@mui/material/Box"
+import { ReactNode, useState } from "react";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import Box from "@mui/material/Box";
 
-export type MuiSheetSide = "left" | "right" | "top" | "bottom"
+export type MuiSheetSide = "left" | "right" | "top" | "bottom";
 
 interface MuiSheetProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface MuiSheetTriggerProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface MuiSheetContentProps {
-  children: ReactNode
-  side?: MuiSheetSide
-  width?: number | string
-  onClose?: () => void
+  children: ReactNode;
+  side?: MuiSheetSide;
+  width?: number | string;
+  onClose?: () => void;
 }
+
+type SheetStaticState = {
+  isOpen: boolean;
+  setOpen: (value: boolean) => void;
+};
+
+const sheetState: SheetStaticState = {
+  isOpen: false,
+  setOpen: () => {},
+};
 
 export function MuiSheet({ children }: MuiSheetProps) {
-  return <>{children}</>
+  return <>{children}</>;
 }
 
-export function MuiSheetTrigger({
-  children,
-}: MuiSheetTriggerProps) {
-  const [open, setOpen] = useState(false)
+export function MuiSheetTrigger({ children }: MuiSheetTriggerProps) {
+  const [open, setOpen] = useState(false);
 
-  return (
-    <>
-      <div onClick={() => setOpen(true)}>{children}</div>
+  sheetState.isOpen = open;
+  sheetState.setOpen = setOpen;
 
-      {/* This hidden provider pattern is replaced by a render prop */}
-      {/* Consumer is rendered in MuiSheetContent */}
-      {(MuiSheetTrigger as any)._setOpen = setOpen}
-      {(MuiSheetTrigger as any)._isOpen = open}
-    </>
-  )
+  return <div onClick={() => setOpen(true)}>{children}</div>;
 }
 
 export function MuiSheetContent({
   children,
   side = "right",
   width = "350px",
+  onClose,
 }: MuiSheetContentProps) {
-  const open = (MuiSheetTrigger as any)._isOpen
-  const setOpen = (MuiSheetTrigger as any)._setOpen
+  const { isOpen, setOpen } = sheetState;
+
+  const handleClose = () => {
+    setOpen(false);
+    onClose?.();
+  };
 
   return (
-    <Drawer
-      anchor={side}
-      open={open}
-      onClose={() => setOpen(false)}
-    >
+    <Drawer anchor={side} open={isOpen} onClose={handleClose}>
       <Box
         sx={{
           width:
@@ -68,7 +71,7 @@ export function MuiSheetContent({
       >
         <IconButton
           sx={{ position: "absolute", right: 12, top: 12 }}
-          onClick={() => setOpen(false)}
+          onClick={handleClose}
         >
           <CloseIcon />
         </IconButton>
@@ -76,5 +79,5 @@ export function MuiSheetContent({
         {children}
       </Box>
     </Drawer>
-  )
+  );
 }

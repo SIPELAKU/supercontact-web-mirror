@@ -21,7 +21,6 @@ interface SelectProps {
 }
 
 export function Select({
-  label,
   value,
   onChange,
   className,

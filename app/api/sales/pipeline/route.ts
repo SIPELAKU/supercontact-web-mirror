@@ -8,9 +8,14 @@ export async function GET() {
 
     return NextResponse.json(res.data);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
 
-    console.error("API Error:", error.message);
+    let message = "Unknown error";
+
+    if (typeof error === "object" && error !== null && "message" in error) {
+      message = String((error as { message: string }).message);
+    }
+    console.error("API Error:", message);
 
     return NextResponse.json(
       { error: "Failed to fetch pipeline" },

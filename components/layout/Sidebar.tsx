@@ -27,8 +27,8 @@ export default function Sidebar() {
           <div className={`flex items-center px-6 py-6 ${ isCollapsed ? 40 : 160 }`}>
             <Image
               src={"/icons/sc.png"}
-              width={100}
-              height={100}
+              width="250"
+              height="250"
               alt="SuperContact Logo"
               priority
             />

@@ -8,7 +8,7 @@ import ProductsServicesCard from "@/components/quotation/ProductsServicesTable";
 import NotesCard from "@/components/quotation/NotesSection";
 import SummaryCard from "@/components/quotation/QuotationSummary";
 import type { ItemRow } from "@/lib/type/Quotation";
-import PageHeader from "@/components/ui/page-header";
+import PageHeader from "@/components/ui-mui/page-header";
 import { TextField } from "@mui/material";
 
 export default function QuotationForm() {

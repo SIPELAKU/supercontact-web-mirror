@@ -1,212 +1,114 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  ChevronRight,
-  BookOpen,
-  NotebookTabs,
-  Building2,
-  Menu,
-  Power,
-  Home,
-  Mail
-} from "lucide-react";
-import { useState } from "react";
-import Image from "next/image";
-// import { cn } from "@/utils/cn";
-import { cn } from "@/lib/utils";
-
-type MenuSubItem = {
-  name: string;
-  path: string;
-};
-
-type MenuChild = {
-  name: string;
-  icon?: React.ElementType;
-  path?: string;
-  children?: MenuSubItem[];
-};
-
-type MenuSection = {
-  item: string;
-  children: MenuChild[];
-};
-
-const menu: MenuSection[] = [
-  {
-    item: "Home",
-    children: [
-      {
-        name: "Modern",
-        icon: Home,
-        path: "/dashboard",
-      },
-    ],
-  },
-  {
-    item: "Sales",
-    children: [
-      {
-        name: "CRM",
-        icon: BookOpen,
-        children: [
-          { name: "CRM", path: "/crm" },
-        ],
-      },
-    ],
-  },
-  {
-    item: "App",
-    children: [
-      {
-        name: "Contact",
-        icon: NotebookTabs,
-        path: "/contact",
-      },
-      {
-        name: "Email Marketing",
-        icon: Mail,
-        children: [
-          { name: "Email", path: "/email" },
-        ],
-      },
-    ],
-  },
-  {
-    item: "Admin",
-    children: [
-      {
-        name: "Company Profile",
-        icon: Building2,
-        path: "/company-profile"
-      },
-      {
-        name: "Mail servers",
-        icon: Mail,
-        path: "/mail-servers"
-      },
-    ],
-  },
-];
+import { usePathname } from "next/navigation"
+import { useSidebar } from "@/lib/context/SidebarContext"
+import Link from "next/link"
+import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { navigation } from "../../lib/data/sidebar-navigation"
+import { Avatar, AvatarFallback } from "@/components/ui-mui/avatar"
+// import Logout from "@/public/icons/logout.svg"
+// import IconSc from '@/public/icons/sc.png'
 
 export default function Sidebar() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-
-  const toggleMenu = (name: string) => {
-    setOpen((prev) => ({ ...prev, [name]: !prev[name] }));
-  };
+  const { isCollapsed, isMobileOpen, closeMobile } = useSidebar()
+  const pathname = usePathname()
 
   return (
-    <aside className="w-[320px] h-screen fixed flex flex-col bg-white border-r border-gray01 py-8 gap-8 text-black overflow-y-auto hide-scrollbar z-10">
-      {/* Logo */}
-      <div className="flex flex-row justify-between items-center px-5">
-        <Image
-          src="/assets/logo-supercontact.png"
-          alt="Supercontact Logo"
-          width={200}
-          height={200}
-        />
-        <Menu className="w-6 stroke-black stroke-[1.5]" />
-      </div>
+    <>
+      <aside
+        className={cn(
+          "fixed lg:sticky top-0 left-0 z-40 h-screen bg-white border-r border-border transition-all duration-300 overflow-hidden",
+          isMobileOpen ? "translate-x-0 w-54" : "-translate-x-full w-54 lg:translate-x-0",
+          isCollapsed ? "lg:w-[62px]" : "lg:w-54"
+        )}
+      >
+        <div className="flex flex-col h-full">
+          <div className={`flex items-center px-6 py-6 ${ isCollapsed ? 40 : 160 }`}>
+            <Image
+              src={"/icons/sc.png"}
+              width={100}
+              height={100}
+              alt="SuperContact Logo"
+              priority
+            />
+          </div>
 
-      <nav className="flex flex-1 flex-col gap-5">
-        {menu.map((section) => (
-          <div key={section.item} className="flex flex-col gap-2">
-            <p className="px-5 text-sm font-bold text-gray-500 uppercase">
-              {section.item}
-            </p>
-
-            {section.children.map((child) => {
-              const childKey = `${section.item}-${child.name}`;
-
-              if (child.path && !child.children) {
-                return (
-                  <Link
-                    key={childKey}
-                    href={child.path}
-                    className={cn(
-                      "flex items-center text-black mx-5 gap-3 p-3 text-[16px] rounded-lg font-semibold transition hover:text-white hover:bg-primary",
-                      pathname === child.path && "bg-primary text-white"
-                    )}
-                  >
-                    {child.icon && <child.icon size={24} className="stroke-[1.5]" />}
-                    <span>{child.name}</span>
-                  </Link>
-                );
-              }
+          <nav className="flex-1 px-4 space-y-1">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
 
               return (
-                <div key={childKey} className="flex flex-col">
-                  <button
-                    onClick={() => toggleMenu(child.name)}
-                    className="flex items-center text-black mx-5 gap-3 p-3 text-[16px] font-semibold rounded-lg transition"
-                  >
-                    {child.icon && <child.icon size={24} className="stroke-[1.5]" />}
-                    <span>{child.name}</span>
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center rounded-lg text-sm font-medium transition-colors h-[42px]",
 
-                    {child.children && (
-                      <ChevronRight
-                        size={24}
-                        className={cn(
-                          "ml-auto stroke-[1.5] transition-transform",
-                          open[child.name] && "rotate-90"
-                        )}
-                      />
-                    )}
-                  </button>
+                    isCollapsed
+                      ? "justify-center px-0"
+                      : "px-3 gap-3",
 
-                  {child.children && open[child.name] && (
-                    <div className="flex flex-col mx-5 gap-2">
-                      {child.children.map((sub) => {
-                        const subKey = `${child.name}-${sub.path}`;
-                        return (
-                          <Link
-                            key={subKey}
-                            href={sub.path}
-                            className={cn(
-                              "flex p-3 pl-12 text-[16px] rounded-lg text-black transition hover:text-primary",
-                              pathname === sub.path &&
-                                "bg-blue01 text-primary font-semibold"
-                            )}
-                          >
-                            {sub.name}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                    isActive
+                      ? "bg-[#5479EE] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
-                </div>
-              );
+                >
+                  <Image
+                    src={isActive ? item.activeIcon : item.icon}
+                    alt={item.name}
+                    width={22}
+                    height={22}
+                  />
+                  {!isCollapsed && (
+                    <span className="whitespace-nowrap">{item.name}</span>
+                  )}
+                </Link>
+              )
             })}
-          </div>
-        ))}
-      </nav>
+          </nav>
 
-      <button className="flex justify-around items-center p-2 bg-secondary mx-2 rounded-md">
-        <Image
-          src={"/assets/boy.png"}
-          alt="User Avatar"
-          width={40}
-          height={40}
-          className="rounded-full object-cover bg-white"
-        />
-        <div className="flex flex-col items-start w-full max-w-[150px]">
-          <span className="font-semibold text-black truncate max-w-26">
-            Ruben Amorim
-          </span>
+          <div className="p-4 border-border">
+            <div
+              className={cn(
+                "flex items-center rounded-lg bg-blue-50 p-2",
+                isCollapsed && "justify-center"
+              )}
+            >
+              <Avatar className="h-8 w-8 bg-blue-600">
+                <AvatarFallback className="text-white bg-[#5479EE]">M</AvatarFallback>
+              </Avatar>
 
-          <div className="flex gap-2 text-sm items-center">
-            <span className="truncate max-w-20">
-              Administrator
-            </span>
-            <span className="bg-gray-300 px-1 rounded-md">+ 2</span>
+              {!isCollapsed && (
+                <div className="flex-1 ml-3 min-w-0">
+                  <p className="text-sm font-medium truncate">Muhamm...</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Adminis... +2
+                  </p>
+                </div>
+              )}
+
+              {!isCollapsed && (
+                <Image
+                  src={"/icons/logout.svg"}
+                  alt="Logout"
+                  width={22}
+                  height={22}
+                  className="shrink-0 cursor-pointer"
+                />
+              )}
+            </div>
           </div>
         </div>
-        <Power className="text-primary"/>
-      </button>
-    </aside>
-  );
+      </aside>
+
+      {/* MOBILE OVERLAY */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          onClick={closeMobile}
+        />
+      )}
+    </>
+  )
 }

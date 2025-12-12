@@ -35,7 +35,7 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
     pageSize: 10,
   });
   async function loginAndGetToken(): Promise<string> {
-  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`, {
+  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -57,7 +57,7 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
     const load = async () => {
         const token = await loginAndGetToken();
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/leads?page=${
+        `${process.env.NEXT_PUBLIC_API_URL}/leads?page=${
           pageIndex + 1
         }&limit=${pageSize}`,
         {

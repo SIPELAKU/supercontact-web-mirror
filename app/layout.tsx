@@ -1,30 +1,38 @@
-// import type { Metadata } from "next";
-// import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Query, QueryClientProvider } from "@tanstack/react-query";
+import type React from "react"
+import "./globals.css"
+import Sidebar from "@/components/layout/Sidebar"
+import Topbar from "@/components/layout/Topbar"
+import { SidebarProvider } from "@/lib/context/SidebarContext"
+import { Poppins } from "next/font/google"
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
-// import Sidebar from "./header/sidebar";
-// import Navbar from "./header/navbar";
 
-import Navbar from "@/components/header/navbar";
-import Sidebar from "@/components/header/sidebar";
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+})
 
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body>
-        <div className="flex h-full">
-          {/* <Sidebar /> */}
-          <div className="flex-1 flex flex-col">
-            {/* <Navbar /> */}
+    <html lang="en" className={poppins.variable}>
+      <body className="font-sans antialiased min-h-screen bg-[#ffffff] flex">
+
+        <SidebarProvider>
+          <Sidebar />
+
+          <div className="flex-1 flex flex-col overflow-x-hidden">
+            <Topbar />
             <ReactQueryProvider>
-            {children}
+            <main className="flex-1">{children}</main>
             </ReactQueryProvider>
           </div>
-        </div>
+        </SidebarProvider>
+
       </body>
     </html>
   )
 }
-

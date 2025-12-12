@@ -10,15 +10,18 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DateRangePickerProps {
   value?: DateRange; // must always contain { from, to }
   onChange?: (range: DateRange | undefined) => void;
+  className?: string;
 }
 
 export default function DateRangePicker({
   value,
   onChange,
+  className
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
 
@@ -49,9 +52,9 @@ export default function DateRangePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className={`flex items-center gap-2 px-3 py-2 h-full rounded-lg border text-sm transition-all
+          className={cn(`flex items-center gap-2 px-3 py-2 h-full rounded-lg border text-sm transition-all
             ${isSelected ? "bg-[#5479EE] text-white" : "bg-white text-black"}
-          `}
+          `, className)}
         >
           {isSelected ? (
             <span>

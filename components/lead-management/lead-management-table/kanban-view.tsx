@@ -185,7 +185,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
 
     const token = await loginAndGetToken();
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/leads/${leadId}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ lead_status: newStatus }),

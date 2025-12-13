@@ -1,0 +1,84 @@
+[
+  {
+    "id": 1,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  },
+  {
+    "id": 2,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  },
+  {
+    "id": 3,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Support"]
+  },
+  {
+    "id": 4,
+    "permissionName": "Only View",
+    "assignedTo": ["Administrator", "Restricted User"]
+  },
+  {
+    "id": 5,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator"]
+  },
+
+  {
+    "id": 6,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Support"]
+  },
+  {
+    "id": 7,
+    "permissionName": "Only View",
+    "assignedTo": ["Administrator", "Restricted User"]
+  },
+  {
+    "id": 8,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator"]
+  },
+  {
+    "id": 9,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  },
+  {
+    "id": 10,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  },
+  {
+    "id": 11,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator"]
+  },
+
+  {
+    "id": 12,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Support"]
+  },
+  {
+    "id": 13,
+    "permissionName": "Only View",
+    "assignedTo": ["Administrator", "Restricted User"]
+  },
+  {
+    "id": 14,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator"]
+  },
+  {
+    "id": 15,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  },
+  {
+    "id": 16,
+    "permissionName": "Management",
+    "assignedTo": ["Administrator", "Manager"]
+  }
+]

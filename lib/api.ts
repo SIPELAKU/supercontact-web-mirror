@@ -9,7 +9,7 @@
 // }
 
 export async function loginAndGetToken(): Promise<string> {
-  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`, {
+  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "admin@example.com", password: "admin" }),
@@ -24,7 +24,7 @@ export async function loginAndGetToken(): Promise<string> {
 import { Lead, leadResponse, LeadStatus } from "@/lib/models/types";
 
 export async function fetchLeads(token: string): Promise<leadResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/leads`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

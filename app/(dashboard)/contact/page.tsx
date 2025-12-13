@@ -13,15 +13,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import AddContactModal from "@/components/modal/AddContact";
 import EditContactModal from "@/components/modal/EditContact";
-
-interface Contact {
-    id: number,
-    name: string,
-    email: string,
-    phone: string,
-    posisi: string,
-    company: string,
-}
+import BannerDashboard from "@/components/ui/banner-dashboard";
+import { usePathname } from "next/navigation";
+import { Contact } from "@/lib/models/types";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -29,7 +23,7 @@ export default function ContactsPage() {
   const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(1);
 
-
+  const pathname = usePathname()
   const [dataContact, setDataContact] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
 
@@ -67,27 +61,7 @@ export default function ContactsPage() {
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-      <section className="w-full bg-secondary rounded-2xl p-6 md:py-6 md:px-12 flex justify-between items-center relative overflow-hidden">
-
-        <div className="flex flex-col gap-2">
-          <span className="text-xl font-semibold">Contacts</span>
-          <span className="flex gap-4 text-sm text-gray-600">
-            <span>Dashboard</span>
-            <span>•</span>
-            <span>Contacts</span>
-          </span>
-        </div>
-
-        <div className="w-28 h-28 md:w-40 md:h-40">
-          <Image
-            src="/assets/logo-company.png"
-            alt="Logo Company"
-            width={250}
-            height={250}
-            className="object-cover absolute bottom-0 right-20"
-          />
-        </div>
-      </section>
+      <BannerDashboard pathname={pathname}/>
 
       <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         

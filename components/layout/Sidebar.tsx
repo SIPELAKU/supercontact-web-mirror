@@ -7,7 +7,6 @@ import {
   BookOpen,
   NotebookTabs,
   Building2,
-  Menu,
   Power,
   Home,
   Mail
@@ -109,7 +108,6 @@ export default function Sidebar() {
           width={200}
           height={200}
         />
-        <Menu className="w-6 stroke-black stroke-[1.5]" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-5">
@@ -128,7 +126,7 @@ export default function Sidebar() {
                     key={childKey}
                     href={child.path}
                     className={cn(
-                      "flex items-center text-black mx-5 gap-3 p-3 text-[16px] rounded-lg font-semibold transition hover:text-white hover:bg-primary",
+                      "flex items-center text-black mx-5 gap-3 p-3 text-[16px] rounded-lg font-semibold transition hover:text-white hover:bg-[#6739EC]",
                       pathname === child.path && "bg-primary text-white"
                     )}
                   >
@@ -167,9 +165,9 @@ export default function Sidebar() {
                             key={subKey}
                             href={sub.path}
                             className={cn(
-                              "flex p-3 pl-12 text-[16px] rounded-lg text-black transition hover:text-primary",
+                              "flex p-3 pl-12 text-[16px] rounded-lg text-black transition hover:text-[#6739EC]",
                               pathname === sub.path &&
-                                "bg-blue01 text-primary font-semibold"
+                                "bg-blue-300 text-[#6739EC] font-semibold"
                             )}
                           >
                             {sub.name}
@@ -185,7 +183,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <button className="flex justify-around items-center p-2 bg-secondary mx-2 rounded-md">
+      <button className="flex justify-around items-center p-2 bg-[#DDE4FC] mx-2 rounded-md">
         <Image
           src={"/assets/boy.png"}
           alt="User Avatar"
@@ -205,7 +203,7 @@ export default function Sidebar() {
             <span className="bg-gray-300 px-1 rounded-md">+ 2</span>
           </div>
         </div>
-        <Power className="text-primary"/>
+        <Power className="text-[#6739EC]"/>
       </button>
     </aside>
   );

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-// import { DataContact } from "@/data/dummy";
 import { DataContact } from "@/lib/data/dummy";
 
 export function GET() {

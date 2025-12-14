@@ -1,19 +1,15 @@
-"use client"
-
+import type React from "react"
 import { useDroppable } from "@dnd-kit/core"
 
-export function DroppableColumn({
-  id,
-  children,
-}: {
+interface DroppableColumnProps {
   id: string
   children: React.ReactNode
-}) {
-  const { setNodeRef } = useDroppable({ id })
+}
 
-  return (
-    <div ref={setNodeRef} className="min-h-32">
-      {children}
-    </div>
-  )
+export default function DroppableColumn({ id, children }: DroppableColumnProps) {
+  const { setNodeRef } = useDroppable({
+    id,
+  })
+
+  return <div ref={setNodeRef}>{children}</div>
 }

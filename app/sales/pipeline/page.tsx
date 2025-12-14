@@ -6,11 +6,13 @@ import PipelineBoardWrapper from "@/components/pipeline/pipeline-board/PipelineB
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 
 export default function PipelinePage() {
-  const { fetchPipeline } = useGetPipelineStore();
+  const { fetchPipeline, dateRangeFilter } = useGetPipelineStore();
 
   useEffect(()=>{
-    fetchPipeline();
-  },[])
+    fetchPipeline({
+      dateRange: dateRangeFilter
+    });
+  },[dateRangeFilter])
 
   return (
     <div className="p-6">

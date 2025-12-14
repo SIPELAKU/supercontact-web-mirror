@@ -19,7 +19,7 @@ import {
 import { useEffect, useMemo, useState } from "react"
 
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
-import DroppableColumn from "@/components/pipeline/pipeline-board/DroppableColumn"
+import {ColumnDropZone} from "@/components/pipeline/pipeline-board/DroppableColumn"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui-mui/button"
@@ -144,7 +144,7 @@ export default function PipelineBoard() {
     setStages: (s: StageUI[]) => void) => {
     const { active, over } = event;
     if (!over) return;
-    console.log("ACTIVE:", active.id, "OVER:", over?.id, "TYPE:", over?.data?.current);
+    // console.log("ACTIVE:", active.id, "OVER:", over?.id, "TYPE:", over?.data?.current);
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -160,6 +160,8 @@ export default function PipelineBoard() {
 
       
     if (isOverColumn) {
+      console.log("come to this?");
+      
       const stageName = overId.replace("column-", "");
       const toStageIndex = stages.findIndex(s => s.name === stageName);
 
@@ -179,6 +181,7 @@ export default function PipelineBoard() {
     const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
     updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
 
+    console.log(to);
     
     setStages(computeStageTotals(updated));
   };
@@ -399,11 +402,11 @@ export default function PipelineBoard() {
           <div className="inline-flex gap-6 min-w-full mt-4">
 
             {filteredStages.map((stage) => (
-              <DroppableColumn key={stage.name} id={`column-${stage.name}`}>
+              <ColumnDropZone key={stage.name} id={`column-${stage.name}`}>
                 <div className="w-[280px] shrink-0">
 
                   <div
-                    className={`rounded-xl p-4 min-h-[200px] shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
+                    className={`rounded-xl p-4 min-h-[150px] shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
                   >
 
                     <div className="flex items-center justify-between mb-4 px-1">
@@ -414,20 +417,20 @@ export default function PipelineBoard() {
                     </div>
 
                     <SortableContext
-                      items={stage.deals.map((d: Deal) => String(d.id))}
+                      items={stage.deals.map((d: Deal) => d.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="flex flex-col gap-4 min-h-[100px] pointer-events-none">
+                      <div className="flex flex-col gap-4 min-h-[100px]">
 
                         {stage.deals.length === 0 && (
-                          <div className="h-24 flex items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner pointer-events-none">
+                          <div className="h-24 flex items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
                             Drag deals here
                           </div>
                         )}
 
                         {stage.deals.map((deal: Deal) => (
                           <div key={deal.id} className="pointer-events-auto">
-                            <SortableDeal id={String(deal.id)}>
+                            <SortableDeal id={deal.id}>
                               <DealCard {...deal} />
                             </SortableDeal>
                           </div>
@@ -439,7 +442,7 @@ export default function PipelineBoard() {
 
                   </div>
                 </div>
-              </DroppableColumn>
+              </ColumnDropZone>
             ))}
 
 

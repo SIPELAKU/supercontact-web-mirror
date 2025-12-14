@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
 interface SortableDealProps {
-  id: string;
+  id: string | number;
   children: React.ReactNode;
 }
 
@@ -22,7 +22,7 @@ export default function SortableDeal({ id, children }: SortableDealProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
   }
 
   return (

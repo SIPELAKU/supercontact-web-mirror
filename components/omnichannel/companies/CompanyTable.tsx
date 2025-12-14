@@ -1,4 +1,4 @@
-import { OmnichannelCompany } from "@/lib/type/Companies";
+import { CompaniesType } from "@/lib/type/Companies";
 import { Chip, LinearProgress, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -13,7 +13,7 @@ const BASE_CHIP_STYLE: SxProps<Theme> = {
   fontWeight: 500,
 };
 
-const INDUSTRY_CHIP_STYLE: Record<OmnichannelCompany["industry"], { backgroundColor: string; color: string }> = {
+const INDUSTRY_CHIP_STYLE: Record<CompaniesType["industry"], { backgroundColor: string; color: string }> = {
   SaaS: { backgroundColor: "#E8E4FF", color: "#6A5BF7" },
   Manufacturing: { backgroundColor: "#FFE0E0", color: "#D94B4B" },
   Logistics: { backgroundColor: "#FFF3D1", color: "#D0941F" },
@@ -21,7 +21,7 @@ const INDUSTRY_CHIP_STYLE: Record<OmnichannelCompany["industry"], { backgroundCo
   Healthcare: { backgroundColor: "#DDF7FF", color: "#1C93B8" },
 };
 
-const STATUS_CHIP_STYLE: Record<OmnichannelCompany["status"], { backgroundColor: string; color: string }> = {
+const STATUS_CHIP_STYLE: Record<CompaniesType["status"], { backgroundColor: string; color: string }> = {
   Connected: {
     backgroundColor: "#E4FFD9",
     color: "#3B9B2B",

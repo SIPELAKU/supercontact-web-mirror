@@ -14,7 +14,9 @@ export default function PipelinePage() {
     fetchPipeline({
       dateRange: dateRangeFilter
     });
-    fetchContact();
+    fetchContact({
+      limit: 0
+    });
   },[dateRangeFilter])
 
   return (

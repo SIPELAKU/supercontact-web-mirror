@@ -36,14 +36,10 @@ export default function MetricsCards() {
                 {metric.value}
               </h3>
 
-            <h3 className="text-4xl font-semibold text-gray-900 mb-2">
-              {formatRupiah(metric.value)}
-            </h3>
-
             <span
               className={`text-sm font-medium ${!!metric.isPositive ? 'text-green-500' : 'text-red-500' }`}
             >
-              {metric.change}
+              {!!metric.isPositive ? `+${metric.change}` : `-${metric.change}`}
             </span>
           </CardContent>
         </Card>

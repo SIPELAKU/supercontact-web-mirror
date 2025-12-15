@@ -133,7 +133,6 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
         stats: metrics
       });
     } catch (err) {
-      console.info(err)
       set({ error: "Failed to fetch data" });
     } finally {
       set({ loading: false });

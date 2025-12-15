@@ -3,8 +3,10 @@ import "./globals.css"
 import Sidebar from "@/components/layout/Sidebar"
 import Topbar from "@/components/layout/Topbar"
 import { SidebarProvider } from "@/lib/context/SidebarContext"
+import { AuthProvider } from "@/lib/context/AuthContext"
 import { Poppins } from "next/font/google"
-import ReactQueryProvider from "@/lib/ReactQueryProvider";
+import ReactQueryProvider from "@/lib/ReactQueryProvider"
+import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -19,19 +21,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={poppins.variable}>
-      <body className="font-sans antialiased min-h-screen bg-[#ffffff] flex">
-
-        <SidebarProvider>
-          <Sidebar />
-
-          <div className="flex-1 flex flex-col overflow-x-hidden">
-            <Topbar />
-            <ReactQueryProvider>
-            <main className="flex-1">{children}</main>
-            </ReactQueryProvider>
-          </div>
-        </SidebarProvider>
-
+      <body className="font-sans antialiased min-h-screen bg-[#ffffff]">
+        <AuthProvider>
+          <ReactQueryProvider>
+            <AuthenticatedLayout>
+              {children}
+            </AuthenticatedLayout>
+          </ReactQueryProvider>
+        </AuthProvider>
       </body>
     </html>
   )

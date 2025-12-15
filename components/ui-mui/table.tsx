@@ -6,6 +6,7 @@ import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui-mui/dropdown-menu";
 import ChevronLeftIcon from "@/public/icons/arrowLeft.png";
@@ -20,7 +21,7 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
 }
 
-interface CustomTableProps<T extends { id: string }> {
+interface CustomTableProps<T> {
   data: T[];
   columns: Column<T>[];
   loading: boolean;
@@ -48,11 +49,7 @@ function DropdownMenuContentWrapper({
 
   return (
     <>
-      <DropdownMenuTrigger
-        onClick={(e: React.MouseEvent<HTMLDivElement>) =>
-          setAnchorEl(e.currentTarget)
-        }
-      >
+      <DropdownMenuTrigger onClick={(e: any) => setAnchorEl(e.currentTarget)}>
         <div className="p-2 hover:bg-gray-200 rounded-md cursor-pointer">
           <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </div>
@@ -70,7 +67,7 @@ function DropdownMenuContentWrapper({
   );
 }
 
-export function CustomTable<T extends { id: string }>({
+export function CustomTable<T>({
   data,
   columns,
   selectable = false,
@@ -93,26 +90,23 @@ export function CustomTable<T extends { id: string }>({
       setSelectedIds([]);
       onSelectionChange?.([]);
     } else {
-      const ids = paginatedData.map((row) => row.id);
+      const ids = paginatedData.map((row: any) => row.id);
       setSelectedIds(ids);
       onSelectionChange?.(paginatedData);
     }
   };
 
   const toggleRow = (row: T) => {
-    const id = row.id;
-
+    const id = (row as any).id;
     const updated = selectedIds.includes(id)
       ? selectedIds.filter((x) => x !== id)
       : [...selectedIds, id];
 
     setSelectedIds(updated);
 
-    const selectedRows = paginatedData.filter((item) =>
-      updated.includes(item.id)
+    onSelectionChange?.(
+      paginatedData.filter((item) => updated.includes((item as any).id))
     );
-
-    onSelectionChange?.(selectedRows);
   };
 
   if (loading) {
@@ -139,6 +133,7 @@ export function CustomTable<T extends { id: string }>({
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#edf1fc] h-16">
+
               {selectable && (
                 <th className="px-6 py-3 w-12 h-16">
                   <input
@@ -179,8 +174,9 @@ export function CustomTable<T extends { id: string }>({
           </thead>
 
           <tbody>
-            {paginatedData.map((row) => (
+            {paginatedData.map((row: any) => (
               <tr key={row.id} className="hover:bg-gray-50 transition h-16">
+
                 {selectable && (
                   <td className="px-6 py-4 h-16">
                     <input
@@ -192,18 +188,15 @@ export function CustomTable<T extends { id: string }>({
                   </td>
                 )}
 
-                {columns.map((col) => {
-                  const key = col.key as keyof T;
-                  return (
-                    <td
-                      key={String(col.key)}
-                      style={applyWidth(col.width)}
-                      className="px-6 py-4 whitespace-nowrap h-16"
-                    >
-                      {col.render ? col.render(row) : (row[key] as React.ReactNode)}
-                    </td>
-                  );
-                })}
+                {columns.map((col) => (
+                  <td
+                    key={String(col.key)}
+                    style={applyWidth(col.width)}
+                    className="px-6 py-4 whitespace-nowrap h-16"
+                  >
+                    {col.render ? col.render(row) : row[col.key]}
+                  </td>
+                ))}
 
                 {actions && (
                   <td className="px-6 py-4 whitespace-nowrap w-32 h-16">
@@ -223,6 +216,7 @@ export function CustomTable<T extends { id: string }>({
               </tr>
             ))}
           </tbody>
+
         </table>
       </div>
 
@@ -301,6 +295,7 @@ export function CustomTable<T extends { id: string }>({
               )}
             />
           </button>
+
         </div>
 
       </div>

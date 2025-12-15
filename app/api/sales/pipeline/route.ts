@@ -21,14 +21,9 @@ export async function GET(req: Request) {
 
     return NextResponse.json(res.data);
 
-  } catch (error: unknown) {
+  } catch (error: any) {
 
-    let message = "Unknown error";
-
-    if (typeof error === "object" && error !== null && "message" in error) {
-      message = String((error as { message: string }).message);
-    }
-    console.error("API Error:", message);
+    console.error("API Error:", error.message);
 
     return NextResponse.json(
       { error: "Failed to fetch pipeline" },

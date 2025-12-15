@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui-mui/card"
+import { formatRupiah } from "@/lib/helper/currency";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 
 export default function MetricsCards() {
@@ -35,15 +36,18 @@ export default function MetricsCards() {
                 {metric.value}
               </h3>
 
-              <span
-                className={`text-sm font-medium ${!!metric.isPositive ? "text-green-500" : "text-red-500"
-                  }`}
-              >
-                {!!metric.isPositive ? `+${metric.change}` : `-${metric.change}`}
-              </span>
-            </CardContent>
-          </Card>
-        ))}
+            <h3 className="text-4xl font-semibold text-gray-900 mb-2">
+              {formatRupiah(metric.value)}
+            </h3>
+
+            <span
+              className={`text-sm font-medium ${!!metric.isPositive ? 'text-green-500' : 'text-red-500' }`}
+            >
+              {metric.change}
+            </span>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 

@@ -25,11 +25,10 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
             description: "",
         });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: any) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((p) => ({ ...p, [name]: value }));
     };
-
 
     const handleTaxChange = (v: string) => {
         setFormData((p) => ({ ...p, taxRate: v }));

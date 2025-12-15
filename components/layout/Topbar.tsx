@@ -1,14 +1,16 @@
 "use client"
 
-import { Bell, Moon, Sun, Menu } from "lucide-react"
+import { Bell, Moon, Sun, Menu, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui-mui/avatar"
 import { useState } from "react"
 import { useSidebar } from "@/lib/context/SidebarContext"
+import { useAuth } from "@/lib/context/AuthContext"
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false)
   const { toggleDesktop, toggleMobile } = useSidebar()
+  const { logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-6 py-4">
@@ -45,6 +47,16 @@ export default function Header() {
           onClick={() => setIsDark(!isDark)}
         >
           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={logout}
+          title="Logout"
+        >
+          <LogOut className="h-5 w-5" />
         </Button>
 
         <Avatar className="h-9 w-9 bg-blue-600">

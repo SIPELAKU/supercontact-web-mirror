@@ -7,9 +7,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  type DragStartEvent,
-  type DragOverEvent,
-  type DragEndEvent,
 } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -25,7 +22,7 @@ import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui-mui/button"
 import { Deal } from "@/lib/type/Pipeline"
 import { FilterBar } from "@/components/ui-mui/filter"
-import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
+import { AddDealModal } from "@/components/pipeline/AddDealModal"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { StageUI } from "@/lib/helper/transformPipeline"
 import { formatRupiah } from "@/lib/helper/currency"
@@ -59,9 +56,9 @@ export default function PipelineBoard() {
 
   const computeStageTotals = (stages: StageUI[]) => {
     return stages.map(stage => ({
-      ...stage,
-      value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
-    }))
+     ...stage,
+     value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
+   }))
   }
 
   const searchQueryLower = searchQuery.toLowerCase();
@@ -113,28 +110,22 @@ export default function PipelineBoard() {
   )
 
 
-  const findDeal = (
-    id: string,
-    stages: StageUI[]
-  ): { stageIndex: number; dealIndex: number } | null => {
+  const findDeal = (id: string) => {
     for (let stageIndex = 0; stageIndex < stages.length; stageIndex++) {
       const dealIndex = stages[stageIndex].deals.findIndex(
-        (d) => String(d.id) === id
-      );
-
-      if (dealIndex !== -1) return { stageIndex, dealIndex };
+        (d: Deal) => String(d.id) === String(id)
+      )
+      if (dealIndex !== -1) return { stageIndex, dealIndex }
     }
     return null;
   };
   
 
-  const handleDragStart = (
-    event: DragStartEvent,
-    stages: StageUI[],
-    setActiveDeal: (deal: Deal | null) => void
-  ) => {
-    const loc = findDeal(String(event.active.id), stages);
-    if (!loc) return;
+  const handleDragStart = (event: any) => {
+    const loc = findDeal(event.active.id)
+    if (!loc) return
+    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex])
+  }
 
     setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
   };
@@ -187,25 +178,21 @@ export default function PipelineBoard() {
   };
 
 
-  const handleDragEnd = (event: DragEndEvent,
-    stages: StageUI[],
-    setStages: (s: StageUI[]) => void,
-    setActiveDeal: (deal: Deal | null) => void) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event
     setActiveDeal(null)
     if (!over) return
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    const from = findDeal(activeId, stages);
+    const activeId = active.id
+    const overId = over.id
+    const from = findDeal(activeId)
     if (!from) return
 
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
       const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
+      const toStageIndex = updated.findIndex((s: any) => s.name === toStageName)
 
       if (from.stageIndex === toStageIndex) return
 
@@ -215,7 +202,7 @@ export default function PipelineBoard() {
       return
     }
 
-    const to = findDeal(overId, updated);
+    const to = findDeal(overId)
     if (!to) return
 
     if (from.stageIndex === to.stageIndex) {
@@ -300,32 +287,24 @@ export default function PipelineBoard() {
           width="100%"
           filters={[
             {
-              type: "custom",
-              component: (
-                <CustomSelectStage
-                  placeholder="Select All"
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  dealStages={dealStages}
-                  className="bg-white rounded-lg font-normal"
-                />
-              )
+              label: "Select All",
+              value: statusFilter,
+              options: [
+                { label: "All", value: "all" },
+                { label: "Active", value: "active" },
+                { label: "Closed", value: "closed" }
+              ],
+              onChange: setStatusFilter,
             },
             {
-              type: "custom",
-              component: (
-                <CustomSelectStage
-                  placeholder="Select Assigned To"
-                  value={salespersonFilter}
-                  onChange={setSalespersonFilter}
-                  dealStages={[
-                    { label: "All", value: "all" },
-                    { label: "John Doe", value: "john" },
-                    { label: "Jane Smith", value: "jane" },
-                  ]}
-                  className="bg-white rounded-lg font-normal"
-                />
-              )
+              label: "Select Assigned To",
+              value: salespersonFilter,
+              options: [
+                { label: "All", value: "all" },
+                { label: "John Doe", value: "john" },
+                { label: "Jane Smith", value: "jane" },
+              ],
+              onChange: setSalespersonFilter,
             },
             {
               type: "custom",
@@ -395,9 +374,9 @@ export default function PipelineBoard() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragStart={(event) => handleDragStart(event, stages, setActiveDeal)}
-          onDragOver={(event) => handleDragOver(event, stages, setStages)}
-          onDragEnd={(event) => handleDragEnd(event, stages, setStages, setActiveDeal)}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
         >
           <div className="inline-flex gap-6 min-w-full mt-4">
 

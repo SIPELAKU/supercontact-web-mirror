@@ -14,11 +14,9 @@ import { Textarea } from "@/components/ui-mui/textarea";
 import { Select, SelectItem } from "@/components/ui-mui/select";
 import { CustomDatePicker } from "@/components/ui-mui/date-picker";
 import { AddDealModalProps } from "@/lib/type/Pipeline";
-import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { reqBody, useGetPipelineStore } from "@/lib/store/pipeline";
+import { DealStageSelect } from "@/components/pipeline/SelectDealStage";
 
-export const dealStages = [
-  { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
+const dealStages = [
   { value: "prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
   { value: "qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
   { value: "negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
@@ -50,7 +48,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       notes: ""
     });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     console.log("Submit:", formData);
 
@@ -112,11 +110,11 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Deal Stage</label>
 
-            <CustomSelectStage
-                value={formData.deal_stage}
-                onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
+              <DealStageSelect
+                value={formData.dealStage}
+                onChange={(value: string) => setFormData({ ...formData, dealStage: value })}
                 dealStages={dealStages}
-                className="bg-white rounded-md"
+                className="bg-white"
               />
             </div>
 

@@ -67,7 +67,6 @@ export default function QuatationTable() {
                     width="680px"
                     filters={[
                         {
-                            type: "dropdown",
                             label: "Select Status",
                             value: statusFilter,
                             options: [
@@ -78,7 +77,6 @@ export default function QuatationTable() {
                             onChange: setStatusFilter,
                         },
                         {
-                            type: "dropdown",
                             label: "Select By Date Range",
                             value: dateRangeFilter,
                             options: [

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
+import { useEffect, useState } from "react";
+import { useViewMode } from "@/lib/hooks/useLeadStore";
 // MUI
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -12,6 +12,8 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
+import Divider from '@mui/material/Divider'
+import { Lead } from "@/lib/models/types";
 
 // TanStack Table
 import {
@@ -21,15 +23,16 @@ import {
   ColumnDef,
   getSortedRowModel,
 } from "@tanstack/react-table";
+import LeadFilters from "./LeadFilters";
 
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData>[];
+interface DataTableProps {
+  columns: ColumnDef<Lead>[];
 }
 
-export function DataTable<TData>({ columns }: DataTableProps<TData>) {
-  const [data, setData] = useState<TData[]>([]);
+export function DataTable({ columns }: DataTableProps) {
+  const [data, setData] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
-
+  const {filteredData,setFilteredData} = useViewMode();
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -71,14 +74,17 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
       const json = await res.json();
 
       setData(json.data.leads);
+      setFilteredData(json.data.leads);
       setTotalPages(json.data.total_pages);
     };
 
     load();
   }, [pageIndex, pageSize]);
 
+
+
   const table = useReactTable({
-    data,
+    data: filteredData ? filteredData : data,
     columns,
     state: { pagination: { pageIndex, pageSize } },
     onPaginationChange: setPagination,
@@ -90,7 +96,9 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
 
     getCoreRowModel: getCoreRowModel(),
   });
-
+  
+  console.log('dataa',data)
+  // const [filteredData, setFilteredData] = useState<TData[]>(data);
   return (
     <Card
       className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
@@ -99,6 +107,9 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
         overflow: "hidden",
       }}
     >
+      <CardHeader title="Filters" />
+      <LeadFilters setFilteredLeads={setFilteredData} leads={data} />
+      <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>
           <TableHead>
@@ -141,7 +152,7 @@ export function DataTable<TData>({ columns }: DataTableProps<TData>) {
               </TableRow>
             ))}
 
-            {data.length === 0 && (
+            {filteredData.length === 0 && (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
                   No data available

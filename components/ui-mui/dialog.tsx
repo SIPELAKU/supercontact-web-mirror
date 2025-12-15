@@ -96,3 +96,23 @@ export function DialogFooter({
 }) {
   return <DialogActions className={cn("flex justify-end gap-3 pt-4", className)}>{children}</DialogActions>
 }
+
+export function DialogTrigger(props: any) {
+  return null
+}
+
+export function DialogPortal(props: any) {
+  return null
+}
+
+export function DialogClose(props: any) {
+  return null
+}
+
+export function DialogOverlay(props: any) {
+  return null
+}
+
+export function DialogDescription(props: any) {
+  return null
+}

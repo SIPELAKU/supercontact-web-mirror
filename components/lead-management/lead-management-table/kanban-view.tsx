@@ -80,12 +80,12 @@ function SortableCard({ lead }: { lead: Lead }) {
         isDragging && "opacity-0" // HIDE original card when dragging
       )}
     >
-      <p className="font-semibold mb-1">{lead.lead_name}</p>
-      <p className="text-sm opacity-80 mb-1">Status: {lead.status}</p>
+      <p className="font-semibold mb-1">{lead.contact.name}</p>
+      <p className="text-sm opacity-80 mb-1">Status: {lead.lead_status}</p>
 
       <div className="text-sm flex items-center gap-2 opacity-80">
-        {sourceIcon[lead.source as LeadSource]}
-        <span>{lead.source}</span>
+        {sourceIcon[lead.lead_source as LeadSource]}
+        <span>{lead.lead_source}</span>
       </div>
     </Card>
   );
@@ -129,7 +129,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   const statuses = FIXED_STATUSES;
 
   const getLeadsByStatus = (status: LeadStatus) =>
-    leads.filter((lead) => lead.status === status);
+    leads.filter((lead) => lead.lead_status === status);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -173,13 +173,13 @@ export default function KanbanView({ data }: KanbanBoardProps) {
 
     const leadId = active.id.toString();
     const newStatus = over.id as LeadStatus;
-    const oldStatus = leads.find((l) => l.id.toString() === leadId)?.status;
+    const oldStatus = leads.find((l) => l.id.toString() === leadId)?.lead_status;
 
     if (!oldStatus || newStatus === oldStatus) return;
 
     setLeads((prev) =>
       prev.map((l) =>
-        l.id.toString() === leadId ? { ...l, status: newStatus } : l
+        l.id.toString() === leadId ? { ...l, lead_status: newStatus } : l
       )
     );
 
@@ -231,14 +231,14 @@ export default function KanbanView({ data }: KanbanBoardProps) {
       <DragOverlay>
         {activeLead ? (
           <Card className="bg-white rounded-xl shadow-2xl p-4 text-black scale-105">
-            <p className="font-semibold mb-1">{activeLead.lead_name}</p>
+            <p className="font-semibold mb-1">{activeLead.contact.name}</p>
             <p className="text-sm opacity-80 mb-1">
-              Status: {activeLead.status}
+              Status: {activeLead.lead_status}
             </p>
 
             <div className="text-sm flex items-center gap-2 opacity-80">
-              {sourceIcon[activeLead.source as LeadSource]}
-              <span>{activeLead.source}</span>
+              {sourceIcon[activeLead.lead_source as LeadSource]}
+              <span>{activeLead.lead_source}</span>
             </div>
           </Card>
         ) : null}

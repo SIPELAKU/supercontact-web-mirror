@@ -30,8 +30,8 @@ export interface reqBody {
 }
 
 interface GetState {
-  listPipeline: StageUI[];
-  stats: Metric[];
+  listPipeline: any[];
+  stats: any[];
   loading: boolean;
   error: string | null;
 
@@ -105,7 +105,6 @@ export const useGetPipelineStore = create<GetState>((set) => ({
         stats: metrics
       });
     } catch (err) {
-      console.info(err)
       set({ error: "Failed to fetch data" });
     } finally {
       set({ loading: false });

@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     console.error("API Error:", message);
 
     return NextResponse.json(
-      { error: "Failed to fetch pipeline" },
+      { error: "Failed to fetch contact" },
       { status: 500 }
     );
     

@@ -4,14 +4,17 @@ import PipelineHeader from "@/components/pipeline/PipelineHeader";
 import PipelineStats from "@/components/pipeline/PipelineStats";
 import PipelineBoardWrapper from "@/components/pipeline/pipeline-board/PipelineBoardWrapper";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
+import { useGetContactStore } from "@/lib/store/contact/contact";
 
 export default function PipelinePage() {
   const { fetchPipeline, dateRangeFilter } = useGetPipelineStore();
+  const { fetchContact } = useGetContactStore();
 
   useEffect(()=>{
     fetchPipeline({
       dateRange: dateRangeFilter
     });
+    fetchContact();
   },[dateRangeFilter])
 
   return (

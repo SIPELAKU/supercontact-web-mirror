@@ -1,19 +1,29 @@
-'use client'
+"use client";
 
-import React, { useState, cloneElement } from "react"
-import Popover from "@mui/material/Popover"
-import { cn } from "@/lib/utils"
+import React, {
+  useState,
+  cloneElement,
+  ReactElement,
+  ReactNode,
+  isValidElement,
+} from "react";
+import Popover from "@mui/material/Popover";
+import { cn } from "@/lib/utils";
 
-export function PopoverTrigger({ children }: { children: React.ReactElement }) {
-  return children
+export function PopoverTrigger({
+  children,
+}: {
+  children: ReactElement<React.HTMLAttributes<HTMLElement>>;
+}) {
+  return children;
 }
 
 export function PopoverContent({
   className,
   children,
 }: {
-  className?: string
-  children: React.ReactNode
+  className?: string;
+  children: ReactNode;
 }) {
   return (
     <div
@@ -24,8 +34,9 @@ export function PopoverContent({
     >
       {children}
     </div>
-  )
+  );
 }
+
 
 export function PopoverRoot({
   children,
@@ -36,7 +47,7 @@ export function PopoverRoot({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : Boolean(anchorEl);
@@ -56,8 +67,13 @@ export function PopoverRoot({
       isValidElement(child) && child.type === PopoverTrigger
   );
 
-  if (!trigger || !content) {
-    return <>{children}</>
+  const contentElement = childArray.find(
+    (child) =>
+      isValidElement(child) && child.type === PopoverContent
+  ) as ReactElement | undefined;
+
+  if (!triggerElement || !contentElement) {
+    return <>{children}</>;
   }
 
   const triggerChild = triggerElement.props.children as React.ReactElement<{
@@ -90,10 +106,10 @@ export function PopoverRoot({
         transformOrigin={{ vertical: "top", horizontal: "center" }}
         disableRestoreFocus
       >
-        {content}
+        {contentElement}
       </Popover>
     </>
-  )
+  );
 }
 
 
@@ -101,4 +117,4 @@ export const PopoverComponent = {
   Root: PopoverRoot,
   Trigger: PopoverTrigger,
   Content: PopoverContent,
-}
+};

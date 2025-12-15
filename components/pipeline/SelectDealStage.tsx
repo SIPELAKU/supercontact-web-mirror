@@ -47,9 +47,9 @@ export default function CustomDealStageSelect({
   className,
   isSearch = false,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const [highlighted, setHighlighted] = useState(-1);
-  const [searchText, setSearchText] = useState("");
+  const [open, setOpen] = useState<boolean>(false);
+  const [highlighted, setHighlighted] = useState<number>(-1);
+  const [searchText, setSearchText] = useState<string>("");
 
   const rootRef = useRef<HTMLDivElement | null>(null);
 

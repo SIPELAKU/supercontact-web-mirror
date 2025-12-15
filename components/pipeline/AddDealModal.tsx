@@ -30,11 +30,11 @@ export const dealStages = [
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   const { listContact } = useGetContactStore();
   const { postFormPipeline } = useGetPipelineStore();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<reqBody>({
     deal_name: "",
     client_account: "",
     deal_stage: "",
-    expected_close_date: new Date(),
+    expected_close_date: new Date().toISOString(),
     amount: 0,
     probability_of_close: 0,
     notes: ""
@@ -45,7 +45,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       deal_name: "",
       client_account: "",
       deal_stage: "",
-      expected_close_date: new Date(),
+      expected_close_date: new Date().toISOString(),
       amount: 0,
       probability_of_close: 0,
       notes: ""
@@ -127,9 +127,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 Expected Close Date
               </Label>
               <CustomDatePicker
-                value={formData.expected_close_date}
+                value={new Date(formData.expected_close_date)}
                 onChange={(value: Date) =>
-                  setFormData({ ...formData, expected_close_date: value })
+                  setFormData({ ...formData, expected_close_date: value.toISOString() })
                 }
                 placeholder="Select close date"
               />

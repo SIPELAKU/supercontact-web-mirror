@@ -4,7 +4,7 @@ import { formatRupiah } from "@/lib/helper/currency";
 
 export type StageUI = {
   name: string;
-  value: string;
+  value: number;
   deals: Deal[];
 };
 
@@ -25,7 +25,7 @@ export function transformPipelineResponse(api: any): StageUI[] {
   STAGE_ORDER.forEach((stage) => {
     stageMap[stage] = {
       name: stage,
-      value: "0",
+      value: 0,
       deals: [],
     };
   });
@@ -60,7 +60,7 @@ export function transformPipelineResponse(api: any): StageUI[] {
 
   Object.values(stageMap).forEach((stage) => {
     const total = stage.deals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    stage.value = `${total}`;
+    stage.value = total;
   });
 
   return STAGE_ORDER.map((name) => stageMap[name]);

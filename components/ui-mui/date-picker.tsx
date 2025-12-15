@@ -19,6 +19,7 @@ const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 export function CustomDatePicker({ value, onChange, placeholder }: Props) {
   const [viewDate, setViewDate] = useState(value || new Date());
 
+  const [open, setOpen] = useState(false);
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
@@ -28,7 +29,7 @@ export function CustomDatePicker({ value, onChange, placeholder }: Props) {
   const selectDate = (day: number) => {
     const date = new Date(year, month, day);
     onChange(date);
-    document.body.click();
+    setOpen(false)
   };
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
@@ -40,8 +41,8 @@ export function CustomDatePicker({ value, onChange, placeholder }: Props) {
   };
 
   return (
-    <Popover.Root>
-      {/* Trigger */}
+    <Popover.Root open={open} onOpenChange={setOpen}>
+
       <Popover.Trigger>
         <div className="relative w-full">
           <Input
@@ -54,9 +55,7 @@ export function CustomDatePicker({ value, onChange, placeholder }: Props) {
         </div>
       </Popover.Trigger>
 
-      {/* Content */}
       <Popover.Content className="p-4 w-72">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" size="icon" onClick={prevMonth}>
             <ChevronLeft className="h-4 w-4" />
@@ -74,21 +73,17 @@ export function CustomDatePicker({ value, onChange, placeholder }: Props) {
           </Button>
         </div>
 
-        {/* Days of week */}
         <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-2">
           {daysOfWeek.map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
 
-        {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1 text-sm">
-          {/* Empty slots */}
           {Array.from({ length: firstDay }).map((_, i) => (
             <div key={"empty-" + i}></div>
           ))}
 
-          {/* Days */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const isSelected =

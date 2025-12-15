@@ -8,6 +8,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui-mui/dropdown-menu";
+import ChevronLeftIcon from "@/public/icons/arrowLeft.png";
+import ChevronRightIcon from "@/public/icons/arrowRight.png";
+import Image from "next/image";
+import { TableSkeleton } from "./table-skeleton";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -19,10 +23,17 @@ export interface Column<T> {
 interface CustomTableProps<T extends { id: string }> {
   data: T[];
   columns: Column<T>[];
+  loading: boolean;
   selectable?: boolean;
   actions?: (row: T) => React.ReactNode;
-  onSelectionChange?: (rows: T[]) => void;
   actionMode?: "inline" | "menu";
+  onSelectionChange?: (rows: T[]) => void;
+
+  page: number;
+  rowsPerPage: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (size: number) => void;
 }
 
 function DropdownMenuContentWrapper({
@@ -66,17 +77,14 @@ export function CustomTable<T extends { id: string }>({
   actions,
   onSelectionChange,
   actionMode = "inline",
+  loading,
+  page,
+  rowsPerPage,
+  total,
+  onPageChange,
+  onRowsPerPageChange,
 }: CustomTableProps<T>) {
-  const [page, setPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-
-  const total = data.length;
-  const totalPages = Math.ceil(total / rowsPerPage);
-
-  const start = (page - 1) * rowsPerPage;
-  const end = Math.min(start + rowsPerPage, total);
-
-  const paginatedData = data.slice(start, end);
+  const paginatedData = data;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -107,6 +115,18 @@ export function CustomTable<T extends { id: string }>({
     onSelectionChange?.(selectedRows);
   };
 
+  if (loading) {
+    return (
+      <TableSkeleton
+        columns={columns}
+        selectable={selectable}
+        actionColumn={!!actions}
+        rows={8}
+      />
+    );
+  }
+
+
   const applyWidth = (width?: number) =>
     width
       ? { minWidth: `${width}rem`, width: `${width}rem`, maxWidth: `${width}rem` }
@@ -114,6 +134,7 @@ export function CustomTable<T extends { id: string }>({
 
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200">
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -129,18 +150,28 @@ export function CustomTable<T extends { id: string }>({
                 </th>
               )}
 
-              {columns.map((col) => (
+              {columns.map((col, index) => (
                 <th
                   key={String(col.key)}
                   style={applyWidth(col.width)}
-                  className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 h-16"
+                  className="
+                          px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 relative
+                          after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2
+                          after:h-8 after:w-px after:bg-gray-300
+                        "
                 >
                   {col.label}
                 </th>
               ))}
 
               {actions && (
-                <th className="px-6 py-3 text-xs font-medium uppercase text-gray-500 w-32 h-16">
+                 <th
+                    className="
+                      px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 w-32 h-16 relative
+                      after:content-[''] after:absolute after:right-2 after:top-1/2 after:-translate-y-1/2
+                      after:h-8 after:w-px after:bg-gray-300
+                    "
+                  >
                   Actions
                 </th>
               )}
@@ -175,9 +206,9 @@ export function CustomTable<T extends { id: string }>({
                 })}
 
                 {actions && (
-                  <td className="px-6 py-4 text-center w-32 h-16">
+                  <td className="px-6 py-4 whitespace-nowrap w-32 h-16">
                     {actionMode === "inline" ? (
-                      <div className="flex justify-center gap-4">
+                      <div className="flex ml-8 gap-4">
                         {actions(row)}
                       </div>
                     ) : (
@@ -195,18 +226,24 @@ export function CustomTable<T extends { id: string }>({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-end items-center px-6 py-4 bg-white border-t border-gray-200">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mr-10">
+      <div className="flex justify-end items-center px-6 py-2 bg-white border-t border-gray-200">
+        <div className="flex items-center gap-2 text-sm text-black mr-5">
           <span>Rows per page:</span>
 
           <select
             value={rowsPerPage}
             onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setPage(1);
+              onRowsPerPageChange(Number(e.target.value));
+              onPageChange(1);
             }}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white"
+            className="
+            border-none
+            ring-0
+            focus:ring-0
+            focus:outline-none
+            bg-transparent
+            text-sm
+            cursor-pointer"
           >
             {[5, 10, 15, 20].map((n) => (
               <option key={n} value={n}>
@@ -216,35 +253,56 @@ export function CustomTable<T extends { id: string }>({
           </select>
         </div>
 
-        <div className="text-sm text-gray-600 mr-10">
-          {start + 1}-{end} of {total}
+        <div className="text-sm text-black mr-2">
+          {(page - 1) * rowsPerPage + 1}–
+          {Math.min(page * rowsPerPage, total)} of {total}
         </div>
 
         <div className="flex items-center gap-2">
+
           <button
             disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => onPageChange(page - 1)}
             className={cn(
-              "p-2 cursor-pointer",
-              page === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
+              "p-2 cursor-pointer rounded-md",
+              page === 1 ? "opacity-40 cursor-not-allowed" : "hover:bg-white"
             )}
           >
-            {`<`}
+            <Image
+              src={ChevronLeftIcon}
+              alt="Previous Page"
+              width={38}
+              height={38}
+              className={cn(
+                page === 1 ? "opacity-40" : "opacity-80 group-hover:opacity-100"
+              )}
+            />
           </button>
 
           <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page * rowsPerPage >= total}
+            onClick={() => onPageChange(page + 1)}
             className={cn(
-              "p-2 cursor-pointer",
-              page === totalPages
+              "p-2 cursor-pointer rounded-md",
+              page * rowsPerPage >= total
                 ? "opacity-40 cursor-not-allowed"
-                : "hover:bg-gray-100"
+                : "hover:bg-white"
             )}
           >
-            {`>`}
+            <Image
+              src={ChevronRightIcon}
+              alt="Next Page"
+              width={38}
+              height={38}
+              className={cn(
+                page * rowsPerPage >= total
+                  ? "opacity-40"
+                  : "opacity-80 group-hover:opacity-100"
+              )}
+            />
           </button>
         </div>
+
       </div>
     </div>
   );

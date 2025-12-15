@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search as SearchIcon } from "lucide-react";
 
 export interface DealStage {
   value: string;
@@ -17,6 +17,7 @@ interface Props {
   onChange: (val: string) => void;
   dealStages: DealStage[];
   className?: string;
+  isSearch?: boolean;
 }
 
 const radiusFromClass = (className?: string) => {
@@ -44,12 +45,13 @@ export default function CustomDealStageSelect({
   onChange,
   dealStages,
   className,
+  isSearch = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
+  const [searchText, setSearchText] = useState("");
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
 
   const radius = radiusFromClass(className);
   const fontSizeCls = fontSizeFromClass(className);
@@ -58,7 +60,8 @@ export default function CustomDealStageSelect({
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      if (!rootRef.current) return;
+      if (!rootRef.current.contains(e.target as Node)) {
         setOpen(false);
         setHighlighted(-1);
       }
@@ -67,36 +70,41 @@ export default function CustomDealStageSelect({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    if (!open) setSearchText("");
+  }, [open]);
+
   const toggle = () => {
     setOpen((v) => !v);
     if (!open) {
       setHighlighted(selectedIndex >= 0 ? selectedIndex : -1);
-      setTimeout(() => listRef.current?.focus(), 10);
     } else {
       setHighlighted(-1);
     }
   };
 
-  return (
-    <div
-      ref={rootRef}
-      className={cn("relative inline-block w-full", className)}
-      style={{ minWidth: 220 }}
-    >
+  const filteredStages = useMemo(() => {
+    if (!isSearch || !searchText.trim()) return dealStages;
 
+    return dealStages.filter((s) =>
+      s.label.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [searchText, dealStages, isSearch]);
+
+  return (
+    <div ref={rootRef} className={cn("relative w-full", className)}>
       <button
         type="button"
         onClick={toggle}
         className="w-full h-11 px-3 flex items-center justify-between bg-white text-left border border-gray-300 shadow-sm transition"
         style={{ borderRadius: radius }}
       >
-
-        <div className={cn("flex items-center min-h-10")}>
+        <div className="flex items-center min-h-10">
           {value && value !== "all" ? (
             (() => {
               const stage = dealStages.find((s) => s.value === value);
 
-              if (!stage?.bgColor && !stage?.textColor) {
+              if (!stage?.bgColor) {
                 return (
                   <span className={cn("font-medium text-gray-800", fontSizeCls)}>
                     {stage?.label}
@@ -118,12 +126,7 @@ export default function CustomDealStageSelect({
               );
             })()
           ) : (
-            <span
-              className={cn(
-                "text-gray-500 opacity-80 font-normal",
-                fontSizeCls
-              )}
-            >
+            <span className={cn("text-gray-500 opacity-80", fontSizeCls)}>
               {placeholder}
             </span>
           )}
@@ -139,14 +142,24 @@ export default function CustomDealStageSelect({
 
       {open && (
         <div
-          ref={listRef}
           className={cn(
-            "absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg p-2 max-h-64 overflow-auto",
-            "animate-fade-in"
+            "absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg p-2 w-full max-h-72 overflow-auto"
           )}
-          style={{ animation: "fade-in 0.12s ease-out" }}
         >
-          {dealStages.map((stage, idx) => {
+          {isSearch && (
+            <div className="flex items-center gap-2 mb-2 px-2">
+              <SearchIcon className="w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="w-full text-sm bg-transparent outline-none"
+              />
+            </div>
+          )}
+
+          {filteredStages.map((stage, idx) => {
             const isSelected = stage.value === value;
             const isHighlighted = idx === highlighted;
 
@@ -182,19 +195,6 @@ export default function CustomDealStageSelect({
           })}
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-2px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export default function ContactsPage() {
   const [selected, setSelected] = useState<number[]>([]);
 
   const loadDataAgain = () => {
-    fetch("/api/contact")
+    fetch("/api/contacts")
       .then((res) => res.json())
       .then((data) => setDataContact(data.data));
   };
@@ -61,8 +61,10 @@ export default function ContactsPage() {
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-      <BannerDashboard pathname={pathname}/>
-
+      <BannerDashboard
+        title="Contacts"
+        breadcrumbs={["Dashboard", "Contacts"]}
+      />
       <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         
         <div className="flex flex-wrap gap-2">
@@ -104,7 +106,7 @@ export default function ContactsPage() {
                 <input 
                   type="checkbox"
                   onChange={handleSelectAll}
-                  checked={selected.length === dataContact.length && dataContact.length > 0}
+                  checked={selected.length === dataContact?.length && dataContact.length > 0}
                   className="w-6 h-6 border-2 border-gray-500 rounded appearance-none checked:bg-gray-300 checked:appearance-auto cursor-pointer" 
                 />
               </th>
@@ -117,7 +119,7 @@ export default function ContactsPage() {
           </thead>
 
           <tbody>
-            {dataContact.map((item, i) => (
+            {dataContact?.map((item, i) => (
               <tr key={i} className="hover:bg-gray-50 text-sm">
                 <td className="text-right">
                   <input 
@@ -137,7 +139,7 @@ export default function ContactsPage() {
                 </td>
 
                 <td className="px-4 py-2">{item.phone}</td>
-                <td className="px-4 py-2">{item.posisi}</td>
+                <td className="px-4 py-2">{item.position}</td>
                 <td className="px-4 py-2">{item.company}</td>
 
                 <td className="px-4 py-2 flex gap-3 text-gray-600">

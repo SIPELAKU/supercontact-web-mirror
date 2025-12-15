@@ -33,3 +33,26 @@ export type leadResponse = {
   error: string | null;
 };
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
+
+export type BannerDashboardProps = {
+  pathname: string
+}
+
+export interface Contact {
+    id: number,
+    name: string,
+    email: string,
+    phone: string,
+    posisi: string,
+    company: string,
+}
+
+export interface Note {
+    id: number,
+    title:string,
+    content: string,
+    date: string,
+    time: string,
+}
+
+export type SortOrder = "asc" | "desc" | "";

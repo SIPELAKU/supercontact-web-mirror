@@ -159,6 +159,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSucc
         }
       },
 
+      didClose: ()=>{
+        onClose
+      },
+      
       willClose: () => {
         if (reactRootRef.current) {
           reactRootRef.current.unmount();

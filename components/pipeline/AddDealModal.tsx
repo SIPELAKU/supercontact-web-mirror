@@ -26,32 +26,40 @@ const dealStages = [
 ]
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
+  const { postFormPipeline } = useGetPipelineStore();
   const [formData, setFormData] = useState({
-    dealName: "",
-    clientAccount: "",
-    dealStage: "",
-    expectedCloseDate: new Date(),
-    amount: "",
-    probability: "",
-    notes: "",
+    deal_name: "",
+    client_account: "",
+    deal_stage: "",
+    expected_close_date: new Date(),
+    amount: 0,
+    probability_of_close: 0,
+    notes: ""
   });
 
   const reset = () =>
     setFormData({
-      dealName: "",
-      clientAccount: "",
-      dealStage: "",
-      expectedCloseDate: new Date(),
-      amount: "",
-      probability: "",
-      notes: "",
+      deal_name: "",
+      client_account: "",
+      deal_stage: "",
+      expected_close_date: new Date(),
+      amount: 0,
+      probability_of_close: 0,
+      notes: ""
     });
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
     console.log("Submit:", formData);
-    reset();
-    onOpenChange(false);
+
+    const body: reqBody = {
+      ...formData,
+      expected_close_date: formData.expected_close_date.toISOString(),
+    };
+    
+    postFormPipeline(body)
+    // reset();
+    // onOpenChange(false);
   };
 
   return (
@@ -79,9 +87,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               <Label className="text-sm font-medium text-gray-700">Deal Name</Label>
               <Input
                 placeholder="Enter deal name"
-                value={formData.dealName}
+                value={formData.deal_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, dealName: e.target.value })
+                  setFormData({ ...formData, deal_name: e.target.value })
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />
@@ -91,9 +99,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               <Label className="text-sm font-medium text-gray-700">Client/Account</Label>
               <Input
                 placeholder="Enter client name"
-                value={formData.clientAccount}
+                value={formData.client_account}
                 onChange={(e) =>
-                  setFormData({ ...formData, clientAccount: e.target.value })
+                  setFormData({ ...formData, client_account: e.target.value })
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />
@@ -110,15 +118,14 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               />
             </div>
 
-            {/* Expected Close Date */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
                 Expected Close Date
               </Label>
               <CustomDatePicker
-                value={formData.expectedCloseDate}
-                onChange={(value) =>
-                  setFormData({ ...formData, expectedCloseDate: value })
+                value={formData.expected_close_date}
+                onChange={(value: Date) =>
+                  setFormData({ ...formData, expected_close_date: value })
                 }
                 placeholder="Select close date"
               />
@@ -131,7 +138,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 placeholder="0.00"
                 value={formData.amount}
                 onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value })
+                  setFormData({ ...formData, amount: Number(e.target.value) })
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />
@@ -146,9 +153,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 min={0}
                 max={100}
                 placeholder="0"
-                value={formData.probability}
+                value={formData.probability_of_close}
                 onChange={(e) =>
-                  setFormData({ ...formData, probability: e.target.value })
+                  setFormData({ ...formData, probability_of_close: Number(e.target.value) })
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />

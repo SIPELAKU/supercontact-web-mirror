@@ -29,28 +29,51 @@ export function PopoverContent({
 
 export function PopoverRoot({
   children,
+  open: controlledOpen,
+  onOpenChange,
 }: {
-  children: React.ReactNode
+  children: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
 
-  const trigger = React.Children.toArray(children).find(
-    (child: any) => child.type === PopoverTrigger
-  ) as any
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : Boolean(anchorEl);
 
-  const content = React.Children.toArray(children).find(
-    (child: any) => child.type === PopoverContent
-  ) as any
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(value);
+    } else {
+      setAnchorEl(value ? anchorEl : null);
+    }
+  };
+
+  const childArray = React.Children.toArray(children);
+
+  const triggerElement = childArray.find(
+    (child): child is ReactElement<{ children: ReactElement }> =>
+      isValidElement(child) && child.type === PopoverTrigger
+  );
 
   if (!trigger || !content) {
     return <>{children}</>
   }
 
-  const triggerWithHandler = cloneElement(trigger.props.children, {
-    onClick: (e: any) => setAnchorEl(e.currentTarget),
-  })
+  const triggerChild = triggerElement.props.children as React.ReactElement<{
+    onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+  }>;
 
-  const open = Boolean(anchorEl)
+  const triggerWithHandler = cloneElement(triggerChild, {
+    onClick: (e: React.MouseEvent<HTMLElement>) => {
+      triggerChild.props.onClick?.(e);
+
+      if (!isControlled) {
+        setAnchorEl(e.currentTarget);
+      }
+      setOpen(!open);
+    },
+  });
 
   return (
     <>
@@ -59,7 +82,10 @@ export function PopoverRoot({
       <Popover
         open={open}
         anchorEl={anchorEl}
-        onClose={() => setAnchorEl(null)}
+        onClose={() => {
+          setOpen(false);
+          if (!isControlled) setAnchorEl(null);
+        }}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         transformOrigin={{ vertical: "top", horizontal: "center" }}
         disableRestoreFocus
@@ -69,6 +95,7 @@ export function PopoverRoot({
     </>
   )
 }
+
 
 export const PopoverComponent = {
   Root: PopoverRoot,

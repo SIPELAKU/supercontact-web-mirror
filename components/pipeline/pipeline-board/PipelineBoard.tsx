@@ -16,7 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react"
 
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
-import { DroppableColumn } from "@/components/pipeline/pipeline-board/DroppableColumn"
+import {ColumnDropZone} from "@/components/pipeline/pipeline-board/DroppableColumn"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui-mui/button"
@@ -26,6 +26,8 @@ import { AddDealModal } from "@/components/pipeline/AddDealModal"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { StageUI } from "@/lib/helper/transformPipeline"
 import { formatRupiah } from "@/lib/helper/currency"
+import CustomSelectStage from "@/components/pipeline/SelectDealStage"
+import { getDateRange } from "@/lib/helper/getDateRange"
 
 
 const stageColors: Record<string, string> = {
@@ -38,13 +40,11 @@ const stageColors: Record<string, string> = {
 }
 
 export default function PipelineBoard() {
-  const { listPipeline } = useGetPipelineStore();
+  const { listPipeline, salespersonFilter, dateRangeFilter, setDateRangeFilter, setSalespersonFilter, loading } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [stages, setStages] = useState(listPipeline)
   const [statusFilter, setStatusFilter] = useState("all")
-  const [salespersonFilter, setSalespersonFilter] = useState("all")
-  const [dateRangeFilter, setDateRangeFilter] = useState("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
 
   useEffect(() => {
@@ -61,26 +61,48 @@ export default function PipelineBoard() {
    }))
   }
 
-  
-  const filteredStages = useMemo(() => {
+  const searchQueryLower = searchQuery.toLowerCase();
+
+  const searchPipeline = useMemo(() => {
+
+    if (!searchQueryLower) return stages;
+
     return stages.map((stage) => {
-      const filteredDeals = stage.deals.filter((deal: Deal) => {
-        const matchStatus =
-          statusFilter === "all" ||
-          (statusFilter === "active" && !deal.wonDate) ||
-          (statusFilter === "closed" && deal.wonDate)
+      const filteredDeals = stage.deals.filter((deal) => {
+        const dealName = deal.deal_name.toLowerCase();
+        const companyName = deal.company.name.toLowerCase();
 
-        const matchDate =
-          dateRangeFilter === "all" ||
-          dateRangeFilter === "month" ||
-          dateRangeFilter === "quarter"
+        return (
+          dealName.includes(searchQueryLower) ||
+          companyName.includes(searchQueryLower)
+        );
+      });
 
-        return matchStatus && matchDate
-      })
+      return { ...stage, deals: filteredDeals };
+    });
 
-      return { ...stage, deals: filteredDeals }
-    })
-  }, [stages, statusFilter, salespersonFilter, dateRangeFilter])
+  }, [searchQueryLower, stages]);
+
+
+
+  const filteredStages = useMemo(() => {
+
+    const stageFiltered =
+      statusFilter === "all"
+        ? searchPipeline
+        : searchPipeline.map((stage) => {
+          const normalized = stage.name.replace(/\s*-\s*/g, "-").toLowerCase();
+          const target = statusFilter.toLowerCase();
+
+          if (normalized === target) return stage;
+
+          return { ...stage, deals: [] };
+        });
+
+    return stageFiltered
+
+  }, [searchPipeline, statusFilter, dateRangeFilter]);
+
 
 
   const sensors = useSensors(
@@ -95,8 +117,9 @@ export default function PipelineBoard() {
       )
       if (dealIndex !== -1) return { stageIndex, dealIndex }
     }
-    return null
-  }
+    return null;
+  };
+  
 
   const handleDragStart = (event: any) => {
     const loc = findDeal(event.active.id)
@@ -104,39 +127,56 @@ export default function PipelineBoard() {
     setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex])
   }
 
-  const handleDragOver = (event: any) => {
-    const { active, over } = event
-    if (!over) return
+    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
+  };
 
-    const activeId = active.id
-    const overId = over.id
-    if (activeId === overId) return
+  const handleDragOver = (event: DragOverEvent,
+    stages: StageUI[],
+    setStages: (s: StageUI[]) => void) => {
+    const { active, over } = event;
+    if (!over) return;
+    // console.log("ACTIVE:", active.id, "OVER:", over?.id, "TYPE:", over?.data?.current);
 
-    const from = findDeal(activeId)
-    if (!from) return
+    const activeId = String(active.id);
+    const overId = String(over.id);
 
-    const updated = JSON.parse(JSON.stringify(stages))
+    const from = findDeal(activeId, stages);
+    if (!from) return;
 
-    if (overId.startsWith("column-")) {
-      const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: any) => s.name === toStageName)
+    const updated = JSON.parse(JSON.stringify(stages));
 
-      if (from.stageIndex === toStageIndex) return
+    // 🔥 FIXED: Detect when hovering over an empty column container
+    const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
 
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-      updated[toStageIndex].deals.push(moved)
-      setStages(updated)
-      return
+
+      
+    if (isOverColumn) {
+      console.log("come to this?");
+      
+      const stageName = overId.replace("column-", "");
+      const toStageIndex = stages.findIndex(s => s.name === stageName);
+
+      if (toStageIndex !== -1 && from.stageIndex !== toStageIndex) {
+        const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
+        updated[toStageIndex].deals.push(moved);
+        setStages(updated);
+      }
+
+      return;
     }
 
-    const to = findDeal(overId)
-    if (!to) return
+    // Normal deal-to-deal hover
+    const to = findDeal(overId, updated);
+    if (!to) return;
 
-    const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-    updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
+    const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
+    updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
 
-    setStages(computeStageTotals(updated))
-  }
+    console.log(to);
+    
+    setStages(computeStageTotals(updated));
+  };
+
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event
@@ -180,8 +220,63 @@ export default function PipelineBoard() {
     setStages(updatedWithTotals)
   }
 
-  console.log(stages);
-  
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8 animate-pulse">
+
+        <div className="px-6 pt-5">
+          <div className="h-5 w-24 bg-gray-200 rounded mb-4"></div>
+
+          <div className="flex gap-4">
+            <div className="h-10 w-48 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-48 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-48 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+
+        <div className="border-b w-full border-gray-300" />
+
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 w-full">
+          <div className="h-10 lg:w-[50%] w-full bg-gray-200 rounded-lg"></div>
+          <div className="h-10 w-40 bg-gray-300 rounded-lg"></div>
+        </div>
+
+        <div className="w-full overflow-x-auto scrollbar-hide pb-6 pt-1 px-6">
+          <div className="inline-flex gap-6 min-w-full mt-4">
+
+            {[1, 2, 3, 4, 5].map((col) => (
+              <div key={col} className="w-[280px] shrink-0">
+                <div className="rounded-xl p-4 min-h-[300px] shadow-sm border border-gray-200 bg-gray-50">
+
+                  <div className="flex items-center justify-between mb-4 px-1">
+                    <div className="h-5 w-24 bg-gray-300 rounded"></div>
+                    <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    {[1, 2, 3].map((card) => (
+                      <div
+                        key={card}
+                        className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"
+                      >
+                        <div className="h-4 w-28 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-3 w-20 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-3 w-12 bg-gray-200 rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              </div>
+            ))}
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
@@ -189,7 +284,7 @@ export default function PipelineBoard() {
       <div className="px-6 pt-5">
         <h2 className="font-medium pb-2">Filters</h2>
         <FilterBar
-          width="420px"
+          width="100%"
           filters={[
             {
               label: "Select All",
@@ -212,14 +307,23 @@ export default function PipelineBoard() {
               onChange: setSalespersonFilter,
             },
             {
-              label: "Select By Date Range",
-              value: dateRangeFilter,
-              options: [
-                { label: "All Time", value: "all" },
-                { label: "This Month", value: "month" },
-                { label: "This Quarter", value: "quarter" },
-              ],
-              onChange: setDateRangeFilter,
+              type: "custom",
+              component: (
+                <CustomSelectStage
+                  placeholder="Select By Date Range"
+                  value={dateRangeFilter}
+                  onChange={setDateRangeFilter}
+                  dealStages={[
+                    { label: "All", value: "all" },
+                    { label: "Today", value: "today" },
+                    { label: "This Week", value: "this_week" },
+                    { label: "Last Week", value: "last_week" },
+                    { label: "This Month", value: "this_month" },
+                    { label: "Last Month", value: "last_month" }
+                  ]}
+                  className="bg-white rounded-lg font-normal"
+                />
+              )
             },
           ]}
         />
@@ -227,9 +331,17 @@ export default function PipelineBoard() {
 
       <div className="border-b w-full p-0 border-gray-300" />
 
-      <div className="flex justify-between items-center gap-4 px-6 w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 w-full">
+
         <div
-          className="flex items-center min-w-[550px] h-10 rounded-lg bg-white border border-[#E5E7EB] px-3 hover:border-[#D1D5DB] focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA] transition-all"
+          className="
+            flex items-center
+            lg:w-[50%] w-full
+            h-10 rounded-lg bg-white border border-[#E5E7EB] px-3
+            hover:border-[#D1D5DB]
+            focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA]
+            transition-all
+          "
         >
           <Search className="h-5 w-5 text-gray-400 mr-2" />
           <input
@@ -241,14 +353,21 @@ export default function PipelineBoard() {
           />
         </div>
 
-        <Button onClick={()=>setIsModalOpen(!isModalOpen)} className="bg-[#4F6DF5] hover:bg-[#3f58ce] text-white gap-2 h-10 px-4 rounded-lg">
+        <Button
+          onClick={() => setIsModalOpen(!isModalOpen)}
+          className="
+            w-full sm:w-auto
+            bg-[#4F6DF5] hover:bg-[#3f58ce]
+            text-white gap-2 h-10 px-4 rounded-lg
+            flex justify-center
+          "
+        >
           <Plus className="h-4 w-4" />
           <span className="hidden font-semibold sm:inline">Add New Pipeline</span>
           <span className="sm:hidden font-semibold">Add</span>
         </Button>
+
       </div>
-
-
 
       <div className="w-full overflow-x-auto scrollbar-hide pb-6 pt-1 px-6">
 
@@ -262,47 +381,49 @@ export default function PipelineBoard() {
           <div className="inline-flex gap-6 min-w-full mt-4">
 
             {filteredStages.map((stage) => (
-              <DroppableColumn key={stage.name} id={`column-${stage.name}`}>
-
+              <ColumnDropZone key={stage.name} id={`column-${stage.name}`}>
                 <div className="w-[280px] shrink-0">
 
                   <div
-                    className={`rounded-xl p-4 min-h-fit shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
+                    className={`rounded-xl p-4 min-h-[150px] shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
                   >
 
                     <div className="flex items-center justify-between mb-4 px-1">
                       <h3 className="font-semibold text-gray-900">{stage.name}</h3>
-                      <span className="text-sm font-medium text-gray-600">{formatRupiah(stage.value)}</span>
+                      <span className="text-sm font-medium text-gray-600">
+                        {formatRupiah(stage.value)}
+                      </span>
                     </div>
 
                     <SortableContext
-                      items={stage.deals.map((d: Deal) => String(d.id))}
+                      items={stage.deals.map((d: Deal) => d.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-4 min-h-[100px]">
 
-                        {/* Empty State */}
                         {stage.deals.length === 0 && (
                           <div className="h-24 flex items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
                             Drag deals here
                           </div>
                         )}
 
-                        {/* Deal Cards */}
                         {stage.deals.map((deal: Deal) => (
-                          <SortableDeal key={String(deal.id)} id={String(deal.id)}>
-                            <DealCard {...deal} />
-                          </SortableDeal>
+                          <div key={deal.id} className="pointer-events-auto">
+                            <SortableDeal id={deal.id}>
+                              <DealCard {...deal} />
+                            </SortableDeal>
+                          </div>
                         ))}
 
                       </div>
                     </SortableContext>
+
+
                   </div>
-
                 </div>
-
-              </DroppableColumn>
+              </ColumnDropZone>
             ))}
+
 
           </div>
 

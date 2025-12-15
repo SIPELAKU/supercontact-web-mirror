@@ -2,8 +2,9 @@
 
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState} from "react";
 import { createRoot, Root } from "react-dom/client";
+import { Contact } from "@/lib/models/types";
 
 const MySwal = withReactContent(Swal);
 
@@ -12,15 +13,6 @@ interface InputProps {
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
-interface Contact {
-    id: number,
-    name: string,
-    email: string,
-    phone: string,
-    posisi: string,
-    company: string,
 }
 
 const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder }) => {
@@ -49,7 +41,7 @@ interface ModalContentProps {
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit, initialData }) => {
-  const [local, setLocal] = React.useState({
+  const [local, setLocal] = useState({
     name: "",
     phone: "",
     email: "",
@@ -158,7 +150,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       MySwal.fire({
         icon: "success",
         title: "Contact updated!",
-        timer: 1200, // <-- WAJIB ADA
+        timer: 1200, 
         showConfirmButton: false,
       });
     } else {
@@ -197,16 +189,20 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
           );
         }
       },
-
+      
       willClose: () => {
         if (reactRootRef.current) {
           reactRootRef.current.unmount();
           reactRootRef.current = null;
         }
       },
+      
+      didClose: ()=>{
+        onClose()
+      },
     });
   }, [open, initialData]);
-
+  
   return null;
 };
 

@@ -1,12 +1,41 @@
 import { NextResponse } from "next/server";
-// import { DataContact } from "@/data/dummy";
 import { DataContact } from "@/lib/data/dummy";
+import axiosExternal from "@/lib/utils/axiosExternal";
 
-export function GET() {
-  return NextResponse.json({
-    status: "success",
-    data: DataContact,
-  });
+export async function GET(req: Request) {
+  try {
+
+   const url = new URL(req.url);
+
+    const page = url.searchParams.get("page") || "1";
+    const limit = url.searchParams.get("limit") || "10";
+
+    const params = {
+      page,
+      limit,
+    };
+
+    const res = await axiosExternal.get("/contacts", { params });
+    console.log(res);
+    
+
+    return NextResponse.json(res.data);
+
+  } catch (error: unknown) {
+
+    let message = "Unknown error";
+
+    if (typeof error === "object" && error !== null && "message" in error) {
+      message = String((error as { message: string }).message);
+    }
+    console.error("API Error:", message);
+
+    return NextResponse.json(
+      { error: "Failed to fetch contact" },
+      { status: 500 }
+    );
+    
+  }
 }
 
 // ADD NEW CONTACT

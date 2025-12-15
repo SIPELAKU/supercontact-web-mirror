@@ -21,6 +21,7 @@ interface DealStageSelectProps {
   onChange: (val: string) => void;
   dealStages: DealStage[];
   className?: string;
+  isSearch?: boolean;
 }
 
 export function DealStageSelect({

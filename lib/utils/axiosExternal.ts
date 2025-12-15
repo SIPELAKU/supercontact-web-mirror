@@ -8,7 +8,7 @@ const axiosExternal = axios.create({
 });
 
 axiosExternal.interceptors.request.use(async(config) => {
-  const token = getAccessToken()
+  const token = await getAccessToken()
 
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;

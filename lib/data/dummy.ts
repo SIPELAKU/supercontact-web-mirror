@@ -4,7 +4,7 @@ export const DataContact = [
     name: "Fadlan Satria",
     email: "satria.fadlan123@gmail.com",
     phone: "08123456789",
-    posisi: "Marketing",
+    position: "Marketing",
     company: "PT. Maju",
   },
   ...Array(7)
@@ -14,7 +14,7 @@ export const DataContact = [
       name: "Nama",
       email: "muhammad123@gmail.com",
       phone: "Telepon",
-      posisi: "Posisi",
+      position: "Posisi",
       company: "Owner",
     })),
 ];

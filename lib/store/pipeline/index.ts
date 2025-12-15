@@ -5,6 +5,20 @@ import axiosInternal from "@/lib/utils/axiosInternal";
 import { StageUI, transformPipelineResponse } from "@/lib/helper/transformPipeline";
 import { formatRupiah } from "@/lib/helper/currency";
 import { getDateRange } from "@/lib/helper/getDateRange";
+import type { AxiosError } from "axios";
+
+
+export interface ValidationItem {
+  type: string;
+  loc: string[];
+  msg: string;
+  input?: unknown;
+}
+
+export interface PipelineValidationResponse {
+  error: string;
+  details: ValidationItem[];
+}
 
 export interface Metric {
   label: string;
@@ -31,6 +45,7 @@ export interface reqBody {
 
 interface GetState {
   listPipeline: StageUI[];
+  listActiveUser: [];
   stats: Metric[];
   loading: boolean;
   error: string | null;
@@ -41,16 +56,25 @@ interface GetState {
   setSalespersonFilter: (val: string) => void;
   setDateRangeFilter: (val: string) => void;
 
+  fetchActiveUser: ()=> void;
+
   fetchPipeline: (param?: PipelineQuery) => Promise<void>;
 
-  postFormPipeline: (param?: reqBody) => Promise<void>;
+  postFormPipeline: (
+    param?: reqBody
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    validation?: ValidationItem[];
+  }>;
 
   updateStagePipeline: (id?: string) => Promise<void>;
 }
 
-export const useGetPipelineStore = create<GetState>((set) => ({
+export const useGetPipelineStore = create<GetState>((set, get) => ({
   listPipeline: [],
   stats: [],
+  listActiveUser: [],
   loading: false,
   error: null,
   salespersonFilter: "all",
@@ -59,6 +83,10 @@ export const useGetPipelineStore = create<GetState>((set) => ({
   setSalespersonFilter: (v) => set({ salespersonFilter: v }),
   
   setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
+
+  fetchActiveUser: () => {
+
+  },
 
   fetchPipeline: async (param?: PipelineQuery) => {
     try {
@@ -112,16 +140,34 @@ export const useGetPipelineStore = create<GetState>((set) => ({
     }
   },
 
-  postFormPipeline: async (body?: reqBody) => {
+  postFormPipeline: async (body?: reqBody): Promise<{success: boolean;error?: string;validation?: ValidationItem[];}> => {
     try {
       set({ loading: true, error: null });
+      
+      const res = await axiosInternal.post("/sales/pipeline", body );
 
-      const res = await axiosInternal.post("/sales/pipeline", { body });
-      console.log('internal', JSON.stringify(res, null, 2));
+      if (res.status === 200) {
+        await get().fetchPipeline();
+        return { success: true };
+      }
 
+      return { success: false, error: "Unexpected response" };
     } catch (error) {
-      console.info(error)
-      set({ error: "Failed to post data" });
+      const axiosErr = error as AxiosError<PipelineValidationResponse>;
+      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+        return {
+          success: false,
+          error: axiosErr.response.data.error,
+          validation: axiosErr.response.data.details,
+        };
+      }
+      return {
+        success: false,
+        error:
+          axiosErr.response?.data?.error ??
+          axiosErr.message ??
+          "Failed to post pipeline",
+      };
     } finally {
       set({ loading: false });
     }

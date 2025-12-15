@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import axiosInternal from "@/lib/utils/axiosInternal";
+import { DealStage } from "@/components/pipeline/SelectDealStage";
 
 interface Pagination {
   page: number;
@@ -21,7 +22,7 @@ export interface Contact {
 }
 
 interface GetState {
-  listContact: Contact[];
+  listContact: DealStage[];
   loading: boolean;
   error: string | null;
 
@@ -59,10 +60,19 @@ export const useGetContactStore = create<GetState>((set, get) => ({
         params: query,
       });
 
-      const data = res.data;
+      const data = res.data.data;
 
+      const temp: DealStage[]  = []
+        data.contacts.map((arr: Contact) => {
+            let contact = {
+                value: arr.id,
+                label: arr.name
+            }
+            temp.push(contact)
+        })
+      
       set({
-        listContact: data,
+        listContact: data.data ?? temp,
         pagination: {
           page: data.page,
           limit: pagination.limit,

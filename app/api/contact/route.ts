@@ -16,9 +16,7 @@ export async function GET(req: Request) {
       limit,
     };
 
-    const res = await axiosExternal.get("/contacts", { params });
-    console.log(res);
-    
+    const res = await axiosExternal.get("/contacts", { params });    
 
     return NextResponse.json(res.data);
 

@@ -11,23 +11,24 @@ import { Button } from "@/components/ui-mui/button";
 import { Input } from "@/components/ui-mui/input";
 import { Label } from "@/components/ui-mui/label";
 import { Textarea } from "@/components/ui-mui/textarea";
-import { Select, SelectItem } from "@/components/ui-mui/select";
 import { CustomDatePicker } from "@/components/ui-mui/date-picker";
 import { AddDealModalProps } from "@/lib/type/Pipeline";
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import { reqBody, useGetPipelineStore } from "@/lib/store/pipeline";
+import { useGetContactStore } from "@/lib/store/contact/contact";
 
 export const dealStages = [
   { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
-  { value: "prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
-  { value: "qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
-  { value: "proposal", label: "Proposal", bgColor: "bg-[#FFF6E8]", textColor: "text-orange-700" },
-  { value: "closed-won", label: "Closed/Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
-  { value: "closed-lost", label: "Closed/Lost", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
+  { value: "Prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
+  { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
+  { value: "Negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
+  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFF6E8]", textColor: "text-orange-700" },
+  { value: "Closed - Won", label: "Closed/Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Closed - Lost", label: "Closed/Lost", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
 ]
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
+  const { listContact } = useGetContactStore();
   const { postFormPipeline } = useGetPipelineStore();
   const [formData, setFormData] = useState({
     deal_name: "",
@@ -50,18 +51,20 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       notes: ""
     });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Submit:", formData);
 
     const body: reqBody = {
       ...formData,
-      expected_close_date: formData.expected_close_date.toISOString(),
+      expected_close_date: new Date(formData.expected_close_date).toISOString(),
     };
-    
-    postFormPipeline(body)
-    // reset();
-    // onOpenChange(false);
+
+    const response = await postFormPipeline(body)
+
+    if (response.success) {
+      reset();
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -98,21 +101,20 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Client/Account</Label>
-              <Input
-                placeholder="Enter client name"
+              <label className="text-sm font-medium text-gray-700">Client/Account</label>
+
+              <CustomSelectStage
                 value={formData.client_account}
-                onChange={(e) =>
-                  setFormData({ ...formData, client_account: e.target.value })
-                }
-                className="h-12 rounded-xl bg-white border-gray-300"
+                onChange={(value: string) => setFormData({ ...formData, client_account: value })}
+                dealStages={listContact}
+                className="bg-white rounded-md"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Deal Stage</label>
 
-            <CustomSelectStage
+              <CustomSelectStage
                 value={formData.deal_stage}
                 onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
                 dealStages={dealStages}

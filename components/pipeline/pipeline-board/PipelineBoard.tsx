@@ -44,10 +44,10 @@ const stageColors: Record<string, string> = {
 
 export default function PipelineBoard() {
   const { listPipeline, salespersonFilter, dateRangeFilter, setDateRangeFilter, setSalespersonFilter, loading } = useGetPipelineStore();
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [stages, setStages] = useState(listPipeline)
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
 
   useEffect(() => {
@@ -144,7 +144,6 @@ export default function PipelineBoard() {
     setStages: (s: StageUI[]) => void) => {
     const { active, over } = event;
     if (!over) return;
-    // console.log("ACTIVE:", active.id, "OVER:", over?.id, "TYPE:", over?.data?.current);
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -154,13 +153,9 @@ export default function PipelineBoard() {
 
     const updated = JSON.parse(JSON.stringify(stages));
 
-    // 🔥 FIXED: Detect when hovering over an empty column container
     const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
-
-
       
     if (isOverColumn) {
-      console.log("come to this?");
       
       const stageName = overId.replace("column-", "");
       const toStageIndex = stages.findIndex(s => s.name === stageName);
@@ -174,14 +169,11 @@ export default function PipelineBoard() {
       return;
     }
 
-    // Normal deal-to-deal hover
     const to = findDeal(overId, updated);
     if (!to) return;
 
     const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
     updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
-
-    console.log(to);
     
     setStages(computeStageTotals(updated));
   };

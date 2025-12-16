@@ -1,3 +1,4 @@
+import axios from "axios";       
 import { NextResponse } from "next/server";
 import axiosExternal from "@/lib/utils/axiosExternal";
 
@@ -37,23 +38,47 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const res = await axiosExternal.post("/pipelines", body);
+    const res = await axiosExternal.post("/pipelines", body, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
     
     return NextResponse.json(res.data);
 
-  } catch (error: unknown) {    
-    let message = "Unknown error";
+} catch (err: unknown) {
 
-    if (typeof error === "object" && error !== null && "message" in error) {
-      message = String((error as { message: string }).message);
+  if (axios.isAxiosError(err)) {
+    const backendErrors = err.response?.data?.error?.details.errors;
+
+    if (Array.isArray(backendErrors)) {
+      // console.error(
+      //   "Pipeline Validation Errors:",
+      //   JSON.stringify(backendErrors, null, 2)
+      // );
+
+      return NextResponse.json(
+        { 
+          error: "Validation failed",
+          details: backendErrors 
+        },
+        { status: 422 }
+      );
     }
-    console.error("API Error:", message);
 
     return NextResponse.json(
-      { error: "Failed to post pipeline" },
-      { status: 500 }
+      { 
+        error: err.message || "Failed to post pipeline" 
+      },
+      { status: err.response?.status ?? 500 }
     );
-    
   }
+
+  return NextResponse.json(
+    { error: "Unknown server error" },
+    { status: 500 }
+  );
+}
+
 }
 

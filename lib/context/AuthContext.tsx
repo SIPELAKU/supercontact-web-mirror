@@ -20,11 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in (from cookies)
     const checkAuthStatus = async () => {
       const storedToken = cookieUtils.getAuthToken();
       if (cookieUtils.hasAuthToken() && storedToken) {
-        // Validate token by making a test API call
         try {
           const testRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${storedToken}` },
@@ -34,13 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setToken(storedToken);
             setIsAuthenticated(true);
           } else {
-            // Token is invalid, remove it
             cookieUtils.removeAuthToken();
             setToken(null);
             setIsAuthenticated(false);
           }
         } catch (error) {
-          // Network error or token invalid, remove it
           cookieUtils.removeAuthToken();
           setToken(null);
           setIsAuthenticated(false);
@@ -82,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('login result', json)
       const accessToken = json.data.access_token;
       
-      // Store token in cookie (secure, httpOnly in production)
       cookieUtils.setAuthToken(accessToken);
       
       setToken(accessToken);
@@ -96,7 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getToken = async (): Promise<string> => {
-    // If we have a valid token, validate it first
     if (token) {
       try {
         const testRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
@@ -106,18 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (testRes.ok) {
           return token;
         } else {
-          // Token is invalid, logout user
           logout();
           throw new Error("Token expired or invalid");
         }
       } catch (error) {
-        // Network error or token invalid, logout user
         logout();
         throw new Error("Token validation failed");
       }
     }
 
-    // If no token, try to get from cookies
     const storedToken = cookieUtils.getAuthToken();
     if (cookieUtils.hasAuthToken() && storedToken) {
       try {
@@ -129,7 +120,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(storedToken);
           return storedToken;
         } else {
-          // Token is invalid, remove it
           cookieUtils.removeAuthToken();
           throw new Error("Stored token is invalid");
         }
@@ -139,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // No valid token found
     throw new Error("No valid token found");
   };
 

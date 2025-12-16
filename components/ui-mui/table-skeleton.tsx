@@ -56,7 +56,7 @@ export function TableSkeleton({
                     after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2
                     after:h-8 after:w-px after:bg-gray-200"
                   >
-                    <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                    <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
                   </td>
                 )}
 
@@ -68,7 +68,7 @@ export function TableSkeleton({
                       after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2
                       after:h-8 after:w-px after:bg-gray-200"
                   >
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
                   </td>
                 ))}
 
@@ -79,8 +79,8 @@ export function TableSkeleton({
                       after:h-8 after:w-px after:bg-gray-200"
                   >
                     <div className="flex gap-2">
-                      <div className="h-4 w-4 bg-gray-200 rounded"></div>
-                      <div className="h-4 w-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
                     </div>
                   </td>
                 )}

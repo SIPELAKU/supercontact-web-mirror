@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useViewMode } from "@/lib/hooks/useLeadStore";
+import { useAuth } from "@/lib/context/AuthContext";
 // MUI
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
-import TextField from "@mui/material/TextField";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -33,32 +33,16 @@ export function DataTable({ columns }: DataTableProps) {
   const [data, setData] = useState<Lead[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const {filteredData,setFilteredData} = useViewMode();
+  const { getToken } = useAuth();
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
-  async function loginAndGetToken(): Promise<string> {
-  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: "admin@example.com",
-      password: "admin",
-    }),
-    cache: "no-store",
-  });
 
-  const json = await loginRes.json();
-  if (!loginRes.ok || !json.success) {
-    throw new Error("Login failed");
-  }
-
-  return json.data.access_token;
-}
   // Load server data
   useEffect(() => {
     const load = async () => {
-        const token = await loginAndGetToken();
+      const token = await getToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/leads?page=${
           pageIndex + 1
@@ -79,7 +63,7 @@ export function DataTable({ columns }: DataTableProps) {
     };
 
     load();
-  }, [pageIndex, pageSize]);
+  }, [pageIndex, pageSize, getToken]);
 
 
 
@@ -178,6 +162,11 @@ export function DataTable({ columns }: DataTableProps) {
           })
         }
         rowsPerPageOptions={[5, 10, 20, 50]}
+        slotProps={{
+          select: {
+            inputProps: { 'aria-label': 'rows per page' }
+          }
+        }}
       />
     </Card>
   );

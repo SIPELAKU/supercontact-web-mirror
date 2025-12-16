@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export default function LoginPage() {
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +23,10 @@ export default function LoginPage() {
 
     try {
       const success = await login(email, password);
-      if (!success) {
+      if (success) {
+        // Redirect to home page after successful login
+        router.push("/");
+      } else {
         setError("Invalid email or password. Please try again.");
       }
     } catch (err) {

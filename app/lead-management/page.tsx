@@ -2,44 +2,20 @@
 
 import LeadManagement from "@/components/lead-management/lead-management";
 import { useLeads } from "@/lib/hooks/useLeads";
-import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
-import DateRangePicker from "@/components/ui/daterangepicker";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui-mui/tabs";
 import AddLeadForm from "@/components/lead-management/add-lead-form";
-import { useState } from "react";
-import PageHeader from "@/components/ui-mui/page-header"
-import {useViewMode} from "@/lib/hooks/useLeadStore";
+import PageHeader from "@/components/ui-mui/page-header";
+import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
+import { useViewMode } from "@/lib/hooks/useLeadStore";
 
 export default function LeadManagementPage() {
   const { data, isLoading, error } = useLeads();
-  const [status, setStatus] = useState<string>("");
-    const [source, setSource] = useState<string>("");
-    const [assignedto, setAssignedto] = useState<string>("");
-    const {viewMode,setViewMode} = useViewMode();
+  const { viewMode, setViewMode } = useViewMode();
 
   console.log('data', data)
   return (
     
     <div className="w-full max-w-full mx-auto px-4 space-y-6 ">
-  {/* <Card className="bg-[#DDE4FC] h-36 w-full max-w-full mx-auto ">
-          <div className="flex justify-between items-center px-6 h-full">
-            <div>
-              <p className="text-lg font-semibold mb-1">
-                Lead Management Component
-              </p>
-              <p>Sales &bull; Lead Management</p>
-            </div>
-            
-          </div>
-        </Card> */}
         <PageHeader
                 title="Lead Management"
                 breadcrumbs={[
@@ -58,15 +34,58 @@ export default function LeadManagementPage() {
             >
               <TabsList>
                 <TabsTrigger value="table-view">Table View</TabsTrigger>
-                <TabsTrigger value="kanban-view">Kanban View</TabsTrigger>
+                <TabsTrigger value="kanban-view" className="whitespace-nowrap">Kanban View</TabsTrigger>
               </TabsList>
             </Tabs>
             <AddLeadForm />
           </div>
 
         
-        {isLoading ? <p>Loading...</p> : error ? <p className="text-red-500">Error: {error.message}</p> : !data ? <p>No leads found.</p> :
-        <LeadManagement data={data} />}
+        {isLoading ? (
+          <div className="space-y-4">
+            {viewMode === "table-view" ? (
+              <TableSkeleton
+                columns={[
+                  { width: 12 }, // Lead Name
+                  { width: 8 },  // Status
+                  { width: 10 }, // Source
+                  { width: 10 }, // Assigned To
+                  { width: 12 }, // Last Contacted
+                ]}
+                rows={8}
+                selectable={true}
+                actionColumn={true}
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <div key={j} className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-500 text-lg">Error: {error.message}</p>
+            <p className="text-gray-500 mt-2">Please try refreshing the page</p>
+          </div>
+        ) : !data ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No leads found.</p>
+            <p className="text-gray-400 mt-2">Start by adding your first lead</p>
+          </div>
+        ) : (
+          <LeadManagement data={data} />
+        )}
 
 
         </div>

@@ -2,12 +2,17 @@
 
 import React from 'react';
 import { useAuth } from '@/lib/context/AuthContext';
+import { usePathname } from 'next/navigation';
 import { SidebarProvider } from '@/lib/context/SidebarContext';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
+  const pathname = usePathname();
+
+  // Check if current route is an auth route
+  const isAuthRoute = pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/forgot-password');
 
   if (loading) {
     return (
@@ -17,7 +22,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     );
   }
 
-  if (!isAuthenticated) {
+  // If user is not authenticated OR on auth routes, don't show sidebar/topbar
+  if (!isAuthenticated || isAuthRoute) {
     return <main className="min-h-screen">{children}</main>;
   }
 

@@ -1,13 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Grid from "@mui/material/Grid";
-import CardContent from "@mui/material/CardContent";
-import FormControl from "@mui/material/FormControl";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import { Lead } from "@/lib/models/types";
 import DateRangePicker from "@/components/ui/daterangepicker";
+import { Lead } from "@/lib/models/types";
 import type { DateRange } from "react-day-picker";
 
 
@@ -18,10 +13,10 @@ export default function LeadFilters({
   leads: Lead[];
   setFilteredLeads: (value: Lead[]) => void;
 }) {
-  // Placeholder default state = ""
-  const [status, setStatus] = useState(""); 
-  const [source, setSource] = useState(""); 
-  const [assignedto, setAssignedto] = useState(""); 
+  // Placeholder default state
+  const [status, setStatus] = useState("placeholder-status"); 
+  const [source, setSource] = useState("placeholder-source"); 
+  const [assignedto, setAssignedto] = useState("placeholder-assigned"); 
 
   const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
@@ -35,9 +30,9 @@ export default function LeadFilters({
   useEffect(() => {
     let filtered = [...leads];
 
-    if (status && status !== "All") filtered = filtered.filter((l) => l.lead_status === status);
-    if (source && source !== "All") filtered = filtered.filter((l) => l.lead_source === source);
-    if (assignedto && assignedto !== "All")
+    if (status && status !== "All" && status !== "placeholder-status") filtered = filtered.filter((l) => l.lead_status === status);
+    if (source && source !== "All" && source !== "placeholder-source") filtered = filtered.filter((l) => l.lead_source === source);
+    if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned")
       filtered = filtered.filter((l) => l.user.fullname === assignedto);
 
     if (dateRange.from && dateRange.to) {
@@ -53,84 +48,70 @@ export default function LeadFilters({
     }
 
     setFilteredLeads(filtered);
-  }, [status, source, assignedto, dateRange, leads]);
+  }, [status, source, assignedto, dateRange, leads, setFilteredLeads]);
 
   return (
-    <CardContent>
-      <Grid container spacing={2}>
-        {/* STATUS */}
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth>
-            <Select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              displayEmpty
-            >
-              <MenuItem value="" disabled>
-                Select Status
-              </MenuItem>
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="New">New</MenuItem>
-              <MenuItem value="Contacted">Contacted</MenuItem>
-              <MenuItem value="Qualified">Qualified</MenuItem>
-              <MenuItem value="Proposal">Proposal</MenuItem>
-              <MenuItem value="Closed - Won">Closed - Won</MenuItem>
-              <MenuItem value="Closed - Lost">Closed - Lost</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">
+      {/* Select Status */}
+      <div className="flex-1 min-w-0">
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
+        >
+          <option value="placeholder-status" disabled>Select Status</option>
+          <option value="All">All</option>
+          <option value="New">New</option>
+          <option value="Contacted">Contacted</option>
+          <option value="Qualified">Qualified</option>
+          <option value="Proposal">Proposal</option>
+          <option value="Closed - Won">Closed - Won</option>
+          <option value="Closed - Lost">Closed - Lost</option>
+        </select>
+      </div>
 
-        {/* SOURCE */}
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth>
-            <Select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              displayEmpty
-            >
-              <MenuItem value="" disabled>
-                Select Source
-              </MenuItem>
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Web Form">Web Form</MenuItem>
-              <MenuItem value="WhatsApp">WhatsApp</MenuItem>
-              <MenuItem value="Manual Entry">Manual Entry</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+      {/* Select Source */}
+      <div className="flex-1 min-w-0">
+        <select
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
+        >
+          <option value="placeholder-source" disabled>Select Source</option>
+          <option value="All">All</option>
+          <option value="Web Form">Web Form</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Manual Entry">Manual Entry</option>
+        </select>
+      </div>
 
-        {/* ASSIGNED TO */}
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth>
-            <Select
-              value={assignedto}
-              onChange={(e) => setAssignedto(e.target.value)}
-              displayEmpty
-            >
-              <MenuItem value="" disabled>
-                Select Assigned To
-              </MenuItem>
-              <MenuItem value="All">All</MenuItem>
-              {assignedToOptions.map((user) => (
-                <MenuItem key={user} value={user}>
-                  {user}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
+      {/* Select Assigned To */}
+      <div className="flex-1 min-w-0">
+        <select
+          value={assignedto}
+          onChange={(e) => setAssignedto(e.target.value)}
+          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
+        >
+          <option value="placeholder-assigned" disabled>Select Assigned To</option>
+          <option value="All">All</option>
+          {assignedToOptions.map((user) => (
+            <option key={user} value={user}>
+              {user}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* DATE RANGE */}
-        <Grid item xs={12} sm={3}>
-          <DateRangePicker
-            value={dateRange}
-            onChange={(range) =>
-              setDateRange(range ?? { from: undefined, to: undefined })
-            }
-            className="w-fit"
-          />
-        </Grid>
-      </Grid>
-    </CardContent>
+      {/* Date Range */}
+      <div className="flex-1 min-w-0">
+        <DateRangePicker
+          value={dateRange}
+          onChange={(range) =>
+            setDateRange(range ?? { from: undefined, to: undefined })
+          }
+          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none justify-between"
+        />
+      </div>
+    </div>
   );
 }

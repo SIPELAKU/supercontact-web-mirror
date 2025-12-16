@@ -14,12 +14,6 @@ type Props = {
 };
 
 export default function LeadManagement({ data }: Props) {
-  // const [status, setStatus] = useState<string>("");
-  // const [source, setSource] = useState<string>("");
-  // const [assignedto, setAssignedto] = useState<string>("");
-  // const [viewMode, setViewMode] = useState<"table-view" | "kanban-view">(
-  //   "table-view"
-  // );
   const {viewMode} = useViewMode();
   return (
     <div className=" min-h-screen max-w-screen p-4">

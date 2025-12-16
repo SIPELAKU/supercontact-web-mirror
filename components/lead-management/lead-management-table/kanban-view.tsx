@@ -27,7 +27,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-import { loginAndGetToken } from "@/lib/api";
+import { useAuth } from "@/lib/context/AuthContext";
 
 /* -------------------------
    FIXED STATUS ORDER
@@ -125,6 +125,7 @@ type KanbanBoardProps = { data: leadResponse };
 export default function KanbanView({ data }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
+  const { getToken } = useAuth();
 
   const statuses = FIXED_STATUSES;
 
@@ -183,7 +184,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
       )
     );
 
-    const token = await loginAndGetToken();
+    const token = await getToken();
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}/status`, {
         method: "PATCH",

@@ -9,6 +9,12 @@ export async function fetchLeads(token: string): Promise<leadResponse> {
 
   const json = await res.json();
   console.log("API response:", json);
+  
+  if (res.status === 401) {
+    // Token is invalid/expired, throw specific error
+    throw new Error("UNAUTHORIZED");
+  }
+  
   if (!res.ok || !json.success) throw new Error("Failed to load leads");
   return json;
   // return json.data.leads.map((u: any) => ({

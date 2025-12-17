@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // For development only - ignore SSL certificate errors
+  ...(process.env.NODE_ENV === 'development' && {
+    experimental: {
+      serverComponentsExternalPackages: [],
+    },
+  }),
 };
 
 export default nextConfig;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useViewMode } from "@/lib/hooks/useLeadStore";
-import { useAuth } from "@/lib/context/AuthContext";
+
+import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -14,6 +14,7 @@ import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
 import Divider from '@mui/material/Divider'
 import { Lead } from "@/lib/models/types";
+import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
 
 // TanStack Table
 import {
@@ -30,45 +31,28 @@ interface DataTableProps {
 }
 
 export function DataTable({ columns }: DataTableProps) {
-  const [data, setData] = useState<Lead[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const {filteredData,setFilteredData} = useViewMode();
-  const { getToken } = useAuth();
+  const { data: leadsResponse, isLoading, error } = useLeads();
+  const [filteredData, setFilteredData] = useState<Lead[]>([]);
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
 
-  // Load server data
+  const data = leadsResponse?.data?.leads || [];
+  const totalCount = leadsResponse?.data?.total || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
+
+  // Update filtered data when leads data changes
   useEffect(() => {
-    const load = async () => {
-      const token = await getToken();
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/leads?page=${
-          pageIndex + 1
-        }&limit=${pageSize}`,
-        {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
+    if (data.length > 0) {
+      setFilteredData(data);
     }
-      );
-      
-      const json = await res.json();
-
-      setData(json.data.leads);
-      setFilteredData(json.data.leads);
-      setTotalPages(json.data.total_pages);
-    };
-
-    load();
-  }, [pageIndex, pageSize, getToken]);
+  }, [data]);
 
 
 
   const table = useReactTable({
-    data: filteredData ? filteredData : data,
+    data: filteredData.length > 0 ? filteredData : data,
     columns,
     state: { pagination: { pageIndex, pageSize } },
     onPaginationChange: setPagination,
@@ -80,9 +64,46 @@ export function DataTable({ columns }: DataTableProps) {
 
     getCoreRowModel: getCoreRowModel(),
   });
-  
-  console.log('dataa',data)
-  // const [filteredData, setFilteredData] = useState<TData[]>(data);
+
+  // Show loading skeleton while data is being fetched
+  if (isLoading) {
+    return (
+      <Card
+        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+        sx={{
+          borderRadius: "16px",
+          overflow: "hidden",
+        }}
+      >
+        <CardHeader title="Filters" />
+        <LeadFilters setFilteredLeads={setFilteredData} leads={[]} />
+        <Divider />
+        <TableSkeleton 
+          columns={columns.map(() => ({ width: undefined }))} 
+          rows={pageSize}
+        />
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card
+        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+        sx={{
+          borderRadius: "16px",
+          overflow: "hidden",
+        }}
+      >
+        <CardHeader title="Error" />
+        <div className="p-6 text-center text-red-600">
+          Failed to load leads: {error.message}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card
       className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
@@ -136,7 +157,7 @@ export function DataTable({ columns }: DataTableProps) {
               </TableRow>
             ))}
 
-            {filteredData.length === 0 && (
+            {(filteredData.length > 0 ? filteredData : data).length === 0 && !isLoading && (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
                   No data available
@@ -149,7 +170,7 @@ export function DataTable({ columns }: DataTableProps) {
 
       <TablePagination
         component="div"
-        count={totalPages * pageSize}
+        count={totalCount}
         rowsPerPage={pageSize}
         page={pageIndex}
         onPageChange={(_, page) =>

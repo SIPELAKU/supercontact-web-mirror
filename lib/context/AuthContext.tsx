@@ -23,24 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuthStatus = async () => {
       const storedToken = cookieUtils.getAuthToken();
       if (cookieUtils.hasAuthToken() && storedToken) {
-        try {
-          const testRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-            headers: { Authorization: `Bearer ${storedToken}` },
-          });
-          
-          if (testRes.ok) {
-            setToken(storedToken);
-            setIsAuthenticated(true);
-          } else {
-            cookieUtils.removeAuthToken();
-            setToken(null);
-            setIsAuthenticated(false);
-          }
-        } catch (error) {
-          cookieUtils.removeAuthToken();
-          setToken(null);
-          setIsAuthenticated(false);
-        }
+        // Simply trust the stored token since we don't have /auth/me endpoint
+        setToken(storedToken);
+        setIsAuthenticated(true);
       }
       setLoading(false);
     };
@@ -92,41 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getToken = async (): Promise<string> => {
     if (token) {
-      try {
-        const testRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (testRes.ok) {
-          return token;
-        } else {
-          logout();
-          throw new Error("Token expired or invalid");
-        }
-      } catch (error) {
-        logout();
-        throw new Error("Token validation failed");
-      }
+      return token;
     }
 
     const storedToken = cookieUtils.getAuthToken();
     if (cookieUtils.hasAuthToken() && storedToken) {
-      try {
-        const testRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${storedToken}` },
-        });
-        
-        if (testRes.ok) {
-          setToken(storedToken);
-          return storedToken;
-        } else {
-          cookieUtils.removeAuthToken();
-          throw new Error("Stored token is invalid");
-        }
-      } catch (error) {
-        cookieUtils.removeAuthToken();
-        throw new Error("Token validation failed");
-      }
+      setToken(storedToken);
+      return storedToken;
     }
 
     throw new Error("No valid token found");

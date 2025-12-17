@@ -1,7 +1,6 @@
 'use client'
 
 import BannerDashboard from "@/components/ui/banner-dashboard"
-import { usePathname } from "next/navigation"
 import { SortOrder } from "@/lib/models/types"
 import { useState, useEffect } from "react"
 import { IoIosSearch } from "react-icons/io";
@@ -12,7 +11,6 @@ import { GetRelativeTime } from "@/lib/utils"
 import EditNoteModal from "@/components/modal/EditNote"
 
 export default function NotesPage(){
-    const pathname = usePathname()
     const [order, setOrder] = useState<SortOrder>("");
     const [openAdd, setOpenAdd] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);

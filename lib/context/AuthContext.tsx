@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { cookieUtils } from '@/lib/utils/cookies';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -19,14 +20,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken && storedToken !== 'dummy_token') {
-      setToken(storedToken);
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
+    const checkAuthStatus = async () => {
+      const storedToken = cookieUtils.getAuthToken();
+      if (cookieUtils.hasAuthToken() && storedToken) {
+        // Simply trust the stored token since we don't have /auth/me endpoint
+        setToken(storedToken);
+        setIsAuthenticated(true);
+      }
+      setLoading(false);
+    };
+
+    checkAuthStatus();
+
+    // Listen for cookie changes (using a polling approach since there's no direct cookie change event)
+    const checkCookieChanges = () => {
+      if (!cookieUtils.hasAuthToken() && isAuthenticated) {
+        // Cookie was removed, logout user
+        setToken(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    const interval = setInterval(checkCookieChanges, 1000); // Check every second
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -46,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('login result', json)
       const accessToken = json.data.access_token;
       
-      // Store token
-      localStorage.setItem('auth_token', accessToken);
+      cookieUtils.setAuthToken(accessToken);
+      
       setToken(accessToken);
       setIsAuthenticated(true);
       
@@ -59,41 +76,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getToken = async (): Promise<string> => {
-    // If we have a valid token, return it
     if (token) {
       return token;
     }
 
-    // If no token, try to get from localStorage
-    const storedToken = localStorage.getItem('auth_token');
-    if (storedToken && storedToken !== 'dummy_token') {
+    const storedToken = cookieUtils.getAuthToken();
+    if (cookieUtils.hasAuthToken() && storedToken) {
       setToken(storedToken);
       return storedToken;
     }
 
-    // If still no token, perform auto-login (for backward compatibility)
-    console.warn('No token found, performing auto-login...');
-    const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "admin", password: "admin" }),
-    });
-
-    const json = await loginRes.json();
-    if (!loginRes.ok || !json.success) {
-      throw new Error("Auto-login failed");
-    }
-
-    const accessToken = json.data.access_token;
-    localStorage.setItem('auth_token', accessToken);
-    setToken(accessToken);
-    setIsAuthenticated(true);
-    
-    return accessToken;
+    throw new Error("No valid token found");
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    cookieUtils.removeAuthToken();
     setToken(null);
     setIsAuthenticated(false);
   };

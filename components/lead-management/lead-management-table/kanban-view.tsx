@@ -120,12 +120,23 @@ function DroppableColumn({
 /* -------------------------
    MAIN KANBAN COMPONENT
 ------------------------- */
-type KanbanBoardProps = { data: leadResponse };
+type KanbanBoardProps = { 
+  data: leadResponse | undefined;
+  isLoading: boolean;
+  error: Error | null;
+};
 
-export default function KanbanView({ data }: KanbanBoardProps) {
+export default function KanbanView({ data, isLoading, error }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
   const { getToken } = useAuth();
+
+  // Update leads when data changes
+  React.useEffect(() => {
+    if (data?.data?.leads) {
+      setLeads(data.data.leads);
+    }
+  }, [data]);
 
   const statuses = FIXED_STATUSES;
 
@@ -199,6 +210,57 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   /* -------------------------
      RENDER
 ------------------------- */
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="overflow-x-auto">
+        <div className="flex gap-6 pb-10 pt-6 min-w-max">
+          {FIXED_STATUSES.map((status) => (
+            <div
+              key={status}
+              className={cn(
+                statusColors[status],
+                "min-w-[320px] w-[320px] rounded-xl shadow text-white"
+              )}
+            >
+              <div className="p-4 font-semibold">{status}</div>
+              <div className="p-3 flex flex-col gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white/20 rounded-xl p-4 animate-pulse">
+                    <div className="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-white/30 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-white/30 rounded w-2/3"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500 text-lg">Error: {error.message}</p>
+        <p className="text-gray-500 mt-2">Please try refreshing the page</p>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!data || !data.data?.leads || data.data.leads.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-lg">No leads found.</p>
+        <p className="text-gray-400 mt-2">Start by adding your first lead</p>
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}

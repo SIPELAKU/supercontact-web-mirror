@@ -1,55 +1,102 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { cookieUtils } from '@/lib/utils/cookies';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
+  getToken: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
-  }, []);
+    const checkAuthStatus = async () => {
+      const storedToken = cookieUtils.getAuthToken();
+      if (cookieUtils.hasAuthToken() && storedToken) {
+        // Simply trust the stored token since we don't have /auth/me endpoint
+        setToken(storedToken);
+        setIsAuthenticated(true);
+      }
+      setLoading(false);
+    };
+
+    checkAuthStatus();
+
+    // Listen for cookie changes (using a polling approach since there's no direct cookie change event)
+    const checkCookieChanges = () => {
+      if (!cookieUtils.hasAuthToken() && isAuthenticated) {
+        // Cookie was removed, logout user
+        setToken(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    const interval = setInterval(checkCookieChanges, 1000); // Check every second
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Simple validation - replace with your actual authentication logic
-      if (email && password) {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Store token (replace with actual token from your API)
-        localStorage.setItem('auth_token', 'dummy_token');
-        setIsAuthenticated(true);
-        return true;
+      // Call actual login API
+      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const json = await loginRes.json();
+      
+      if (!loginRes.ok || !json.success) {
+        console.error('Login failed:', json);
+        return false;
       }
-      return false;
+      console.log('login result', json)
+      const accessToken = json.data.access_token;
+      
+      cookieUtils.setAuthToken(accessToken);
+      
+      setToken(accessToken);
+      setIsAuthenticated(true);
+      
+      return true;
     } catch (error) {
       console.error('Login failed:', error);
       return false;
     }
   };
 
+  const getToken = async (): Promise<string> => {
+    if (token) {
+      return token;
+    }
+
+    const storedToken = cookieUtils.getAuthToken();
+    if (cookieUtils.hasAuthToken() && storedToken) {
+      setToken(storedToken);
+      return storedToken;
+    }
+
+    throw new Error("No valid token found");
+  };
+
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    cookieUtils.removeAuthToken();
+    setToken(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading, getToken }}>
       {children}
     </AuthContext.Provider>
   );

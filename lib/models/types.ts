@@ -11,11 +11,12 @@ export interface Lead {
   contact: Contact;
   user: User
 }
-interface Contact {
+export interface Contact {
   id: string;
   name: string;
   email: string;
   phone: string;
+  position: string;
   company: string;
 } 
 interface User {
@@ -34,19 +35,6 @@ export type leadResponse = {
 };
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
-export type BannerDashboardProps = {
-  pathname: string
-}
-
-export interface Contact {
-    id: number,
-    name: string,
-    email: string,
-    phone: string,
-    posisi: string,
-    company: string,
-}
-
 export interface Note {
     id: number,
     title:string,
@@ -56,3 +44,9 @@ export interface Note {
 }
 
 export type SortOrder = "asc" | "desc" | "";
+
+export interface BannerDashboardProps {
+  title: string;
+  breadcrumbs?: string[];
+  pathname?: string;
+}

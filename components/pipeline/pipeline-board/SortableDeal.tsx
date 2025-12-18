@@ -2,8 +2,14 @@
 
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import type { UniqueIdentifier } from "@dnd-kit/core";
 
-export default function SortableDeal({ id, children }: any) {
+type SortableDealProps = {
+  id: UniqueIdentifier;
+  children: React.ReactNode;
+};
+
+export default function SortableDeal({ id, children }: SortableDealProps) {
   const {
     attributes,
     listeners,

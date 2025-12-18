@@ -10,10 +10,10 @@ import QuotationList from '@/lib/data/quotationList.json'
 import Link from "next/link"
 
 export default function QuatationTable() {
-    const [searchQuery, setSearchQuery] = useState("")
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [statusFilter, setStatusFilter] = useState("all")
-    const [dateRangeFilter, setDateRangeFilter] = useState("all")
+    const [searchQuery, setSearchQuery] = useState<string>("")
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+    const [statusFilter, setStatusFilter] = useState<string>("all")
+    const [dateRangeFilter, setDateRangeFilter] = useState<string>("all")
 
     const columns: Column<(typeof QuotationList)[0]>[] = [
         { key: "client", label: "Client", width: 18 },
@@ -67,6 +67,7 @@ export default function QuatationTable() {
                     width="680px"
                     filters={[
                         {
+                            type: "dropdown",
                             label: "Select Status",
                             value: statusFilter,
                             options: [
@@ -77,6 +78,7 @@ export default function QuatationTable() {
                             onChange: setStatusFilter,
                         },
                         {
+                            type: "dropdown",
                             label: "Select By Date Range",
                             value: dateRangeFilter,
                             options: [
@@ -117,8 +119,17 @@ export default function QuatationTable() {
 
             <Table
                 data={filteredData}
-                columns={columns}
-            />
+                columns={columns} 
+                loading={false} 
+                page={0} 
+                rowsPerPage={0} 
+                total={0} 
+                onPageChange={function (page: number): void {
+                    throw new Error("Function not implemented.")
+                } } 
+                onRowsPerPageChange={function (size: number): void {
+                    throw new Error("Function not implemented.")
+                } }            />
 
         </div>
     )

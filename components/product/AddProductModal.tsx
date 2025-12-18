@@ -25,7 +25,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
             description: "",
         });
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((p) => ({ ...p, [name]: value }));
     };

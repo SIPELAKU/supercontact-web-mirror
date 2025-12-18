@@ -19,16 +19,28 @@ export function AlertDialog({
   return <>{children}</>;
 }
 
+type TriggerElement = React.ReactElement<
+  React.HTMLAttributes<HTMLElement> & {
+    [key: `data-${string}`]: boolean;
+  }
+>;
+
+
 export function AlertDialogTrigger({
   children,
   onClick,
   ...props
-}: React.ComponentProps<"button">) {
+}: {
+  children: TriggerElement;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+}) {
+
   const [open, setOpen] = useState(false);
 
-  return React.cloneElement(children as any, {
+  return React.cloneElement(children, {
     ...props,
-    onClick: (e: any) => {
+    onClick: (e: React.MouseEvent<HTMLElement>) => {
+      children.props.onClick?.(e);
       setOpen(true);
       onClick?.(e);
     },

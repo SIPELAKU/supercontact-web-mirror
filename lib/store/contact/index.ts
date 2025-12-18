@@ -28,7 +28,8 @@ interface GetState {
 
   pagination: Pagination;
 
-  fetchContact: (params?: { page?: number; limit?: number }) => Promise<void>;
+  fetchContact: (params?: { query?: string; page?: number; limit?: number }) => Promise<void>;
+  clearContact: () => void;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
 }
@@ -52,8 +53,7 @@ export const useGetContactStore = create<GetState>((set, get) => ({
       const { pagination } = get();
 
       const query = {
-        page: params?.page ?? pagination.page,
-        limit: params?.limit ?? pagination.limit,
+        search: params?.query,
       };
 
       const res = await axiosInternal.get("/contact", {
@@ -88,7 +88,7 @@ export const useGetContactStore = create<GetState>((set, get) => ({
       set({ loading: false });
     }
   },
-
+  clearContact: () => set({ listContact: [] }),
   setPage: (page) => {
     const { fetchContact, pagination } = get();
     set({ pagination: { ...pagination, page } });

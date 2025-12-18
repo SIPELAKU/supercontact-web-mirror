@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import { CustomDatePicker } from "@/components/ui-mui/date-picker";
 import { AddDealModalProps } from "@/lib/type/Pipeline";
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import { reqBody, useGetPipelineStore } from "@/lib/store/pipeline";
-import { useGetContactStore } from "@/lib/store/contact/contact";
+import { useGetContactStore } from "@/lib/store/contact";
 
 export const dealStages = [
   { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
@@ -28,15 +28,16 @@ export const dealStages = [
 ]
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
-  const { listContact } = useGetContactStore();
-  const { postFormPipeline } = useGetPipelineStore();
+  type FormErrors = Partial<Record<keyof reqBody, string>>;
+  const { listContact, fetchContact, loading, clearContact } = useGetContactStore();
+  const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline } = useGetPipelineStore();
   const [formData, setFormData] = useState<reqBody>({
     deal_name: "",
     client_account: "",
     deal_stage: "",
     expected_close_date: new Date().toISOString(),
     amount: 0,
-    probability_of_close: 0,
+    probability_of_close: "0",
     notes: ""
   });
 
@@ -47,23 +48,122 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       deal_stage: "",
       expected_close_date: new Date().toISOString(),
       amount: 0,
-      probability_of_close: 0,
+      probability_of_close: "0",
       notes: ""
     });
+
+
+  const deal = useMemo(() => {
+    if (!id) return null;
+
+    return listPipeline
+      .flatMap(stage => stage.deals)
+      .find(d => d.id === id) ?? null;
+  }, [id, listPipeline]);
+
+
+  useEffect(() => {
+    if (!deal) return;
+
+    setFormData({
+      deal_name: deal.deal_name ?? "",
+      client_account: deal.company?.id ?? "",
+      deal_stage: stage ?? "",
+      expected_close_date: deal.expected_close_date ?? new Date().toISOString(),
+      amount: deal.amount ?? 0,
+      probability_of_close: String(deal.probability_of_close ?? 0),
+      notes: deal.notes ?? "",
+    });
+  }, [deal, stage]);
+
+  const selectedContactOption = useMemo(() => {
+    if (!deal?.company) return null;
+
+    return {
+      value: deal.company.id,
+      label: deal.company.name,
+    };
+  }, [deal]);
+
+  const contactOptions = useMemo(() => {
+    if (!selectedContactOption) return listContact;
+
+    const exists = listContact.some(
+      (c) => c.value === selectedContactOption.value
+    );
+
+    return exists
+      ? listContact
+      : [selectedContactOption, ...listContact];
+  }, [listContact, selectedContactOption]);
+
+
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validateForm = (data: reqBody): FormErrors => {
+    const errs: FormErrors = {};
+
+    if (!data.deal_name.trim()) {
+      errs.deal_name = "Deal name is required";
+    }
+
+    if (!data.client_account) {
+      errs.client_account = "Client is required";
+    }
+
+    if (!data.deal_stage) {
+      errs.deal_stage = "Deal stage is required";
+    }
+
+    if (!data.expected_close_date) {
+      errs.expected_close_date = "Expected close date is required";
+    }
+
+    if (data.amount <= 0) {
+      errs.amount = "Amount must be greater than 0";
+    }
+
+    if (
+      Number(data.probability_of_close) < 0 ||
+      Number(data.probability_of_close) > 100
+    ) {
+      errs.probability_of_close = "Probability must be between 0–100";
+    }
+
+    return errs;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const validationErrors = validateForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+
     const body: reqBody = {
       ...formData,
       expected_close_date: new Date(formData.expected_close_date).toISOString(),
+      probability_of_close: Number(formData.probability_of_close)
     };
 
-    const response = await postFormPipeline(body)
+    if (!id) {
+      const response = await postFormPipeline(body)
 
-    if (response.success) {
-      reset();
-      onOpenChange(false);
+      if (response.success) {
+        reset();
+        onOpenChange(false);
+      }
+    } else {
+      const response = await updateFormPipeline(body, id)
+
+      if (response.success) {
+        reset();
+        onOpenChange(false);
+      }
     }
   };
 
@@ -81,7 +181,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       >
         <div className="mt-2">
           <h2 className="text-2xl font-semibold text-[#5479EE]">
-            Add New Pipeline
+            {id === "" ? "Add New Pipeline" : "Update Pipeline"}
           </h2>
         </div>
 
@@ -91,6 +191,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Deal Name</Label>
               <Input
+                disabled={id ? true : false}
                 placeholder="Enter deal name"
                 value={formData.deal_name}
                 onChange={(e) =>
@@ -98,28 +199,48 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />
+              {errors.deal_name && (
+                <p className="text-sm text-red-500 mt-1">{errors.deal_name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Client/Account</label>
-
               <CustomSelectStage
+                isSearch={true}
+                disabled={id ? true : false}
+                loading={loading}
                 value={formData.client_account}
+                placeholder="Select Client"
+                onSearch={(q) => {
+                  const keyword = q.trim();
+                  if (keyword.length < 1) {
+                    clearContact();
+                    return;
+                  }
+                  fetchContact({ query: q })
+                }}
                 onChange={(value: string) => setFormData({ ...formData, client_account: value })}
-                dealStages={listContact}
+                data={contactOptions}
                 className="bg-white rounded-md"
               />
+              {errors.client_account && (
+                <p className="text-sm text-red-500 mt-1">{errors.client_account}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Deal Stage</label>
-
               <CustomSelectStage
                 value={formData.deal_stage}
+                disabled={id ? true : false}
                 onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
-                dealStages={dealStages}
+                data={dealStages}
                 className="bg-white rounded-md"
               />
+              {errors.deal_stage && (
+                <p className="text-sm text-red-500 mt-1">{errors.deal_stage}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -133,12 +254,18 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }
                 placeholder="Select close date"
               />
+              {errors.expected_close_date && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.expected_close_date}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Amount</Label>
               <Input
                 type="number"
+                disabled={id ? true : false}
                 placeholder="0.00"
                 value={formData.amount}
                 onChange={(e) =>
@@ -146,29 +273,40 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }
                 className="h-12 rounded-xl bg-white border-gray-300"
               />
+              {errors.amount && (
+                <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
-                Probability of Close (%)
-              </Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                placeholder="0"
-                value={formData.probability_of_close}
+              <label className="text-sm font-medium text-gray-700">   Probability of Close (%)</label>
+              <CustomSelectStage
+                value={String(formData.probability_of_close)}
                 onChange={(e) =>
-                  setFormData({ ...formData, probability_of_close: Number(e.target.value) })
+                  setFormData({ ...formData, probability_of_close: e })
                 }
-                className="h-12 rounded-xl bg-white border-gray-300"
+                placeholder="0"
+                data={[
+                  { label: "20%", value: "20" },
+                  { label: "40%", value: "40" },
+                  { label: "60%", value: "60" },
+                  { label: "80%", value: "80" },
+                  { label: "100%", value: "100" },
+                ]}
+                className="bg-white rounded-md"
               />
+              {errors.probability_of_close && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.probability_of_close}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Notes</Label>
             <Textarea
+              disabled={id ? true : false}
               placeholder="Add any relevant notes here..."
               value={formData.notes}
               onChange={(e) =>
@@ -184,6 +322,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               variant="outline"
               onClick={() => {
                 reset();
+                setErrors({})
+                setEditId("")
                 onOpenChange(false);
               }}
               className="
@@ -202,7 +342,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 text-white
               "
             >
-              Save Deal
+              {id ? "Update Deal" : "Save Deal"}
             </Button>
           </div>
         </form>

@@ -8,7 +8,33 @@ export type StageUI = {
   deals: Deal[];
 };
 
-export function transformPipelineResponse(api: any): StageUI[] {
+export interface PipelineContact {
+  id: string;
+  name: string;
+  company: string;
+}
+
+export interface PipelineAPIItem {
+  id: string;
+  deal_name: string;
+  contact: PipelineContact;
+  amount: number;
+  notes?: string;
+  avatar: string;
+  client_account?: string;
+  expected_close_date?: string;
+  probability_of_close?: number;
+  is_deleted?: boolean;
+  deal_stage: string;
+}
+
+export interface PipelineAPIResponse {
+  pipelines: PipelineAPIItem[];
+  stats?: unknown;
+}
+
+
+export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
   if (!api || !api.pipelines) return [];
 
   const STAGE_ORDER = [
@@ -30,7 +56,7 @@ export function transformPipelineResponse(api: any): StageUI[] {
     };
   });
 
-  api.pipelines.forEach((item: any, index: number) => {
+  api.pipelines.forEach((item, index) => {
     const stageName = item.deal_stage.trim();
 
     const mappedDeal: Deal = {
@@ -43,11 +69,11 @@ export function transformPipelineResponse(api: any): StageUI[] {
       },
       amount: item.amount,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
-      notes: item.notes,
-      client_account: item.client_account,
+      notes: item.notes ?? "",
+      client_account: item.client_account ?? "",
       expected_close_date: formatMDY(item.expected_close_date),
-      probability_of_close: item.probability_of_close,
-      is_delete: item.is_deleted,
+      probability_of_close: item.probability_of_close ?? 0,
+      is_delete: item.is_deleted ?? false,
 
       wonDate: stageName === "Closed - Won" ? formatMDY(item.expected_close_date) : undefined,
       lostDate: stageName === "Closed - Lost" ? formatMDY(item.expected_close_date) : undefined,

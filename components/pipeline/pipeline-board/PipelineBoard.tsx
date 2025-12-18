@@ -30,7 +30,7 @@ import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { StageUI } from "@/lib/helper/transformPipeline"
 import { formatRupiah } from "@/lib/helper/currency"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { getDateRange } from "@/lib/helper/getDateRange"
+
 
 
 const stageColors: Record<string, string> = {
@@ -43,13 +43,23 @@ const stageColors: Record<string, string> = {
 }
 
 export default function PipelineBoard() {
-  const { listPipeline, salespersonFilter, dateRangeFilter, setDateRangeFilter, setSalespersonFilter, loading } = useGetPipelineStore();
+  const { 
+    listPipeline, 
+    salespersonFilter, 
+    dateRangeFilter, 
+    setDateRangeFilter, 
+    setSalespersonFilter, 
+    loading,
+    listActiveUser,
+    isModalOpen,
+    setIsModalOpen,
+    updateStagePipeline
+  } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState<string>("")
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [stages, setStages] = useState(listPipeline)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
-
+  
   useEffect(() => {
     if (listPipeline.length > 0) {
       setStages(listPipeline)
@@ -94,9 +104,9 @@ export default function PipelineBoard() {
       statusFilter === "all"
         ? searchPipeline
         : searchPipeline.map((stage) => {
-          const normalized = stage.name.replace(/\s*-\s*/g, "-").toLowerCase();
+          const normalized = stage.name.replace(/\s*-\s*/g, " - ").toLowerCase();
           const target = statusFilter.toLowerCase();
-
+          
           if (normalized === target) return stage;
 
           return { ...stage, deals: [] };
@@ -179,23 +189,26 @@ export default function PipelineBoard() {
   };
 
 
-  const handleDragEnd = (event: DragEndEvent,
+const handleDragEnd = async(
+    event: DragEndEvent,
     stages: StageUI[],
     setStages: (s: StageUI[]) => void,
-    setActiveDeal: (deal: Deal | null) => void) => {
+    setActiveDeal: (deal: Deal | null) => void,
+  ) => {
     const { active, over } = event
     setActiveDeal(null)
     if (!over) return
+console.log("over");
+    const activeId = String(active.id)
+    const overId = String(over.id)
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    const from = findDeal(activeId, stages);
+    const from = findDeal(activeId, stages)
     if (!from) return
-
+console.log("from");
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
+      console.log("overid");
       const toStageName = overId.replace("column-", "")
       const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
@@ -207,22 +220,26 @@ export default function PipelineBoard() {
       return
     }
 
-    const to = findDeal(overId, updated);
+    const to = findDeal(overId, updated)
     if (!to) return
+console.log("to");
 
     if (from.stageIndex === to.stageIndex) {
-      updated[from.stageIndex].deals = arrayMove(
-        updated[from.stageIndex].deals,
-        from.dealIndex,
-        to.dealIndex
-      )
+      updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
     } else {
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
     }
 
     const updatedWithTotals = computeStageTotals(updated)
+    console.log(updatedWithTotals);
+    
     setStages(updatedWithTotals)
+    const toStage = updated[to.stageIndex].name;
+    
+    if(from !== to){
+      await updateStagePipeline(activeId, toStage);
+    }
   }
 
 
@@ -298,7 +315,7 @@ export default function PipelineBoard() {
                   placeholder="Select All"
                   value={statusFilter}
                   onChange={setStatusFilter}
-                  dealStages={dealStages}
+                  data={dealStages}
                   className="bg-white rounded-lg font-normal"
                 />
               )
@@ -310,11 +327,7 @@ export default function PipelineBoard() {
                   placeholder="Select Assigned To"
                   value={salespersonFilter}
                   onChange={setSalespersonFilter}
-                  dealStages={[
-                    { label: "All", value: "all" },
-                    { label: "John Doe", value: "john" },
-                    { label: "Jane Smith", value: "jane" },
-                  ]}
+                  data={listActiveUser}
                   className="bg-white rounded-lg font-normal"
                 />
               )
@@ -326,7 +339,7 @@ export default function PipelineBoard() {
                   placeholder="Select By Date Range"
                   value={dateRangeFilter}
                   onChange={setDateRangeFilter}
-                  dealStages={[
+                  data={[
                     { label: "All", value: "all" },
                     { label: "Today", value: "today" },
                     { label: "This Week", value: "this_week" },
@@ -423,7 +436,7 @@ export default function PipelineBoard() {
                         {stage.deals.map((deal: Deal) => (
                           <div key={deal.id} className="pointer-events-auto">
                             <SortableDeal id={deal.id}>
-                              <DealCard {...deal} />
+                              <DealCard {...deal} stageName={stage.name}/>
                             </SortableDeal>
                           </div>
                         ))}
@@ -443,7 +456,7 @@ export default function PipelineBoard() {
           <DragOverlay dropAnimation={null}>
             {activeDeal ? (
               <div className="rotate-3 scale-105">
-                <DealCard {...activeDeal} />
+                <DealCard {...activeDeal} stageName={""} />
               </div>
             ) : null}
           </DragOverlay>

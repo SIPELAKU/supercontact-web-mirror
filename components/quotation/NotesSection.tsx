@@ -2,7 +2,13 @@
 
 import { Textarea } from "@/components/ui-mui/textarea";
 
-export default function NotesCard({ notes, onChange }: any) {
+interface NotesCardProps {
+  notes: string;
+  onChange: (value: string) => void;
+}
+
+
+export default function NotesCard({ notes, onChange }: NotesCardProps) {
   return (
     <div className="bg-white p-6">
       <h2 className="mb-3 text-base font-semibold">Note:</h2>

@@ -47,9 +47,14 @@ function DropdownMenuContentWrapper({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
+   const handleTriggerClick = (e: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(e.currentTarget);
+  };
+
+
   return (
     <>
-      <DropdownMenuTrigger onClick={(e: any) => setAnchorEl(e.currentTarget)}>
+      <DropdownMenuTrigger onClick={handleTriggerClick}>
         <div className="p-2 hover:bg-gray-200 rounded-md cursor-pointer">
           <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </div>
@@ -67,7 +72,7 @@ function DropdownMenuContentWrapper({
   );
 }
 
-export function CustomTable<T>({
+export function CustomTable<T extends { id: string }>({
   data,
   columns,
   selectable = false,
@@ -90,22 +95,21 @@ export function CustomTable<T>({
       setSelectedIds([]);
       onSelectionChange?.([]);
     } else {
-      const ids = paginatedData.map((row: any) => row.id);
+      const ids = paginatedData.map((row) => row.id);
       setSelectedIds(ids);
       onSelectionChange?.(paginatedData);
     }
   };
 
   const toggleRow = (row: T) => {
-    const id = (row as any).id;
-    const updated = selectedIds.includes(id)
-      ? selectedIds.filter((x) => x !== id)
-      : [...selectedIds, id];
+    const updated = selectedIds.includes(row.id)
+      ? selectedIds.filter((x) => x !== row.id)
+      : [...selectedIds, row.id];
 
     setSelectedIds(updated);
 
     onSelectionChange?.(
-      paginatedData.filter((item) => updated.includes((item as any).id))
+      paginatedData.filter((item) => updated.includes(item.id))
     );
   };
 
@@ -174,7 +178,7 @@ export function CustomTable<T>({
           </thead>
 
           <tbody>
-            {paginatedData.map((row: any) => (
+            {paginatedData.map((row) => (
               <tr key={row.id} className="hover:bg-gray-50 transition h-16">
 
                 {selectable && (
@@ -194,7 +198,7 @@ export function CustomTable<T>({
                     style={applyWidth(col.width)}
                     className="px-6 py-4 whitespace-nowrap h-16"
                   >
-                    {col.render ? col.render(row) : row[col.key]}
+                    {col.render ? col.render(row) : (row as Record<string, React.ReactNode>)[col.key as string]}
                   </td>
                 ))}
 

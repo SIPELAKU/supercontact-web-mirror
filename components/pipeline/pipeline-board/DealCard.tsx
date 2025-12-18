@@ -3,16 +3,48 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui-mui/avatar"
 import { Calendar } from "lucide-react"
 import { DealCardProps } from "@/lib/type/Pipeline"
 import { formatRupiah } from "@/lib/helper/currency"
+import { useGetPipelineStore } from "@/lib/store/pipeline"
 
-export function DealCard({ deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate }: DealCardProps) {
+export const dealStages = [
+  { label: "Prospect", bgColor: "bg-[#26C6F9]/16", textColor: "text-[#26C6F9]" },
+  { label: "Qualified", bgColor: "bg-[#FDB528]/16", textColor: "text-[#FDB528]" },
+  { label: "Negotiation", bgColor: "bg-[#72E128]/16", textColor: "text-[#72E128]" },
+  { label: "Proposal", bgColor: "bg-[#6D788D]/16", textColor: "text-[#6D788D]" },
+  { label: "Closed - Won", bgColor: "bg-[#666CFF]/16", textColor: "text-[#666CFF]" },
+  { label: "Closed - Lost", bgColor: "bg-[#FF4D49]/16", textColor: "text-[#FF4D49]" },
+] as const
+
+export function DealCard({id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
+  const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
+  const getStageColor = (stageName?: string) => {
+    if (!stageName) {
+      return {
+        bg: "bg-gray-100",
+        text: "text-gray-700",
+      }
+    }
+
+    const stage = dealStages.find(s => s.label.toLowerCase() === stageName.toLowerCase())
+
+    return stage
+      ? { bg: stage.bgColor, text: stage.textColor }
+      : { bg: "bg-gray-100", text: "text-gray-700" }
+  }
+  const stageColor = getStageColor(stageName)
   return (
-    <Card className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer">
+    <Card 
+      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"  
+      onClick={()=>{
+        setEditId(id)
+        setStage(stageName)
+        setIsModalOpen(true)
+      }}>
       <CardContent className="p-4 space-y-4">
 
         <div className="space-y-1.5">
-          <h4 className="font-semibold text-gray-900 text-[15px] leading-tight">
+          <div className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-semibold ${stageColor.bg} ${stageColor.text}`}>
             {deal_name}
-          </h4>
+          </div>
           <p className="text-sm text-gray-500">{company.name}</p>
         </div>
 
@@ -23,11 +55,11 @@ export function DealCard({ deal_name, company, amount, expected_close_date, wonD
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Calendar className="h-3.5 w-3.5 text-gray-400" />
               <span>
-                {wonDate 
-                  ? `Won: ${wonDate}` 
-                  : lostDate 
-                  ? `Lost: ${lostDate}` 
-                  : `Close: ${expected_close_date}`}
+                {wonDate
+                  ? `Won: ${wonDate}`
+                  : lostDate
+                    ? `Lost: ${lostDate}`
+                    : `Close: ${expected_close_date}`}
               </span>
             </div>
           )}

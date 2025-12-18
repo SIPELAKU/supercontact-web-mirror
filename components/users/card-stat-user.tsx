@@ -4,7 +4,7 @@ import { Users, UserCheck, UserSearch } from 'lucide-react';
 import Grid from '@mui/material/Grid';
 
 import CardStatistik, { UserStatType } from '../../components/ui/card-stat'
-import useUsers from '../../lib/hooks/useUsers';
+import { useUsers } from '../../lib/hooks/useUsers';
 
 const CardStatUser = () => {
   const { users } = useUsers()

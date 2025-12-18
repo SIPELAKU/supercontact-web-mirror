@@ -1,31 +1,20 @@
+// lib/hooks/useUsers.ts
 "use client";
 
-import type { UsersType } from '../type/Users';
-import { useEffect, useState } from "react";
-import { USERS } from "../data/users";
+import { useQuery } from "@tanstack/react-query";
+import { fetchUsers, UserResponse } from "../api";
+import { useAuth } from "@/lib/context/AuthContext";
 
-const useUsers = () => {
-  const [users, setUsers] = useState<UsersType[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    setIsLoading(true);
-
-    try {
-      setUsers(USERS);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error loading dummy data");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { users, isLoading, error };
-};
-
-export default useUsers;
+export function useUsers() {
+  const { getToken } = useAuth();
+  
+  return useQuery<UserResponse, Error>({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const token = await getToken();
+      return fetchUsers(token);
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+  });
+}

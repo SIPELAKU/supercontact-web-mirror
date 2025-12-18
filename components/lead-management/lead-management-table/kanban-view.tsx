@@ -27,7 +27,11 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-import { loginAndGetToken } from "@/lib/api";
+import { useAuth } from "@/lib/context/AuthContext";
+import LeadDetailModal from "../lead-detail-modal";
+import { MoreVertical } from "lucide-react";
+import { deleteLead } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 /* -------------------------
    FIXED STATUS ORDER
@@ -56,7 +60,26 @@ const statusColors: Record<string, string> = {
 /* -------------------------
    SORTABLE CARD
 ------------------------- */
-function SortableCard({ lead }: { lead: Lead }) {
+function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: Lead) => void }) {
+  const [showMenu, setShowMenu] = React.useState(false);
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
+  
   const {
     setNodeRef,
     attributes,
@@ -65,6 +88,27 @@ function SortableCard({ lead }: { lead: Lead }) {
     transition,
     isDragging,
   } = useSortable({ id: lead.id.toString() });
+
+  const handleDeleteLead = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (confirm(`Are you sure you want to delete lead "${lead.contact.name}"?`)) {
+      try {
+        const token = await getToken();
+        await deleteLead(token, lead.id);
+        
+        // Refresh the leads data
+        queryClient.invalidateQueries({ queryKey: ["leads"] });
+        
+        console.log("Lead deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting lead:", error);
+        alert("Failed to delete lead. Please try again.");
+      }
+    }
+    
+    setShowMenu(false);
+  };
 
   return (
     <Card
@@ -75,12 +119,44 @@ function SortableCard({ lead }: { lead: Lead }) {
       }}
       {...attributes}
       {...listeners}
+      onClick={(e) => {
+        // Only trigger card click if not dragging and not clicking menu
+        if (!isDragging && !showMenu) {
+          e.stopPropagation();
+          onCardClick(lead);
+        }
+      }}
       className={cn(
-        "bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing",
+        "bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing relative",
         isDragging && "opacity-0" // HIDE original card when dragging
       )}
     >
-      <p className="font-semibold mb-1">{lead.contact.name}</p>
+      {/* Three dots menu */}
+      <div className="absolute top-2 right-2" ref={menuRef}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
+          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <MoreVertical className="h-4 w-4 text-gray-500" />
+        </button>
+        
+        {/* Dropdown menu */}
+        {showMenu && (
+          <div className="absolute top-8 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[140px] z-50">
+            <button
+              onClick={handleDeleteLead}
+              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Remove card
+            </button>
+          </div>
+        )}
+      </div>
+
+      <p className="font-semibold mb-1 pr-8">{lead.contact.name}</p>
       <p className="text-sm opacity-80 mb-1">Status: {lead.lead_status}</p>
 
       <div className="text-sm flex items-center gap-2 opacity-80">
@@ -120,16 +196,35 @@ function DroppableColumn({
 /* -------------------------
    MAIN KANBAN COMPONENT
 ------------------------- */
-type KanbanBoardProps = { data: leadResponse };
+type KanbanBoardProps = { 
+  data: leadResponse | undefined;
+  isLoading: boolean;
+  error: Error | null;
+};
 
-export default function KanbanView({ data }: KanbanBoardProps) {
+export default function KanbanView({ data, isLoading, error }: KanbanBoardProps) {
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
+  const [selectedLead, setSelectedLead] = React.useState<Lead | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false);
+  const { getToken } = useAuth();
+
+  // Update leads when data changes
+  React.useEffect(() => {
+    if (data?.data?.leads) {
+      setLeads(data.data.leads);
+    }
+  }, [data]);
 
   const statuses = FIXED_STATUSES;
 
   const getLeadsByStatus = (status: LeadStatus) =>
     leads.filter((lead) => lead.lead_status === status);
+
+  const handleCardClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsDetailModalOpen(true);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -183,7 +278,7 @@ export default function KanbanView({ data }: KanbanBoardProps) {
       )
     );
 
-    const token = await loginAndGetToken();
+    const token = await getToken();
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}/status`, {
         method: "PATCH",
@@ -198,6 +293,57 @@ export default function KanbanView({ data }: KanbanBoardProps) {
   /* -------------------------
      RENDER
 ------------------------- */
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="overflow-x-auto">
+        <div className="flex gap-6 pb-10 pt-6 min-w-max">
+          {FIXED_STATUSES.map((status) => (
+            <div
+              key={status}
+              className={cn(
+                statusColors[status],
+                "min-w-[320px] w-[320px] rounded-xl shadow text-white"
+              )}
+            >
+              <div className="p-4 font-semibold">{status}</div>
+              <div className="p-3 flex flex-col gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white/20 rounded-xl p-4 animate-pulse">
+                    <div className="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-white/30 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-white/30 rounded w-2/3"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500 text-lg">Error: {error.message}</p>
+        <p className="text-gray-500 mt-2">Please try refreshing the page</p>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!data || !data.data?.leads || data.data.leads.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500 text-lg">No leads found.</p>
+        <p className="text-gray-400 mt-2">Start by adding your first lead</p>
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -216,7 +362,11 @@ export default function KanbanView({ data }: KanbanBoardProps) {
               >
                 <div className="p-3 flex flex-col gap-3">
                   {getLeadsByStatus(status).map((lead) => (
-                    <SortableCard key={lead.id.toString()} lead={lead} />
+                    <SortableCard 
+                      key={lead.id.toString()} 
+                      lead={lead} 
+                      onCardClick={handleCardClick}
+                    />
                   ))}
                 </div>
               </SortableContext>
@@ -243,6 +393,13 @@ export default function KanbanView({ data }: KanbanBoardProps) {
           </Card>
         ) : null}
       </DragOverlay>
+
+      {/* Lead Detail Modal */}
+      <LeadDetailModal
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        lead={selectedLead}
+      />
     </DndContext>
   );
 }

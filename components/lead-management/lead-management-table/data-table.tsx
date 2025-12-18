@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useViewMode } from "@/lib/hooks/useLeadStore";
+
+import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
-import TextField from "@mui/material/TextField";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -14,6 +14,7 @@ import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
 import Divider from '@mui/material/Divider'
 import { Lead } from "@/lib/models/types";
+import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
 
 // TanStack Table
 import {
@@ -24,67 +25,37 @@ import {
   getSortedRowModel,
 } from "@tanstack/react-table";
 import LeadFilters from "./LeadFilters";
+import LeadDetailModal from "../lead-detail-modal";
 
 interface DataTableProps {
   columns: ColumnDef<Lead>[];
 }
 
 export function DataTable({ columns }: DataTableProps) {
-  const [data, setData] = useState<Lead[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const {filteredData,setFilteredData} = useViewMode();
+  const { data: leadsResponse, isLoading, error } = useLeads();
+  const [filteredData, setFilteredData] = useState<Lead[]>([]);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
-  async function loginAndGetToken(): Promise<string> {
-  const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: "admin@example.com",
-      password: "admin",
-    }),
-    cache: "no-store",
-  });
 
-  const json = await loginRes.json();
-  if (!loginRes.ok || !json.success) {
-    throw new Error("Login failed");
-  }
+  const data = leadsResponse?.data?.leads || [];
+  const totalCount = leadsResponse?.data?.total || 0;
+  const totalPages = Math.ceil(totalCount / pageSize);
 
-  return json.data.access_token;
-}
-  // Load server data
+  // Update filtered data when leads data changes
   useEffect(() => {
-    const load = async () => {
-        const token = await loginAndGetToken();
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/leads?page=${
-          pageIndex + 1
-        }&limit=${pageSize}`,
-        {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
+    if (data.length > 0) {
+      setFilteredData(data);
     }
-      );
-      
-      const json = await res.json();
-
-      setData(json.data.leads);
-      setFilteredData(json.data.leads);
-      setTotalPages(json.data.total_pages);
-    };
-
-    load();
-  }, [pageIndex, pageSize]);
+  }, [data]);
 
 
 
   const table = useReactTable({
-    data: filteredData ? filteredData : data,
+    data: filteredData.length > 0 ? filteredData : data,
     columns,
     state: { pagination: { pageIndex, pageSize } },
     onPaginationChange: setPagination,
@@ -96,9 +67,46 @@ export function DataTable({ columns }: DataTableProps) {
 
     getCoreRowModel: getCoreRowModel(),
   });
-  
-  console.log('dataa',data)
-  // const [filteredData, setFilteredData] = useState<TData[]>(data);
+
+  // Show loading skeleton while data is being fetched
+  if (isLoading) {
+    return (
+      <Card
+        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+        sx={{
+          borderRadius: "16px",
+          overflow: "hidden",
+        }}
+      >
+        <CardHeader title="Filters" />
+        <LeadFilters setFilteredLeads={setFilteredData} leads={[]} />
+        <Divider />
+        <TableSkeleton 
+          columns={columns.map(() => ({ width: undefined }))} 
+          rows={pageSize}
+        />
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Card
+        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+        sx={{
+          borderRadius: "16px",
+          overflow: "hidden",
+        }}
+      >
+        <CardHeader title="Error" />
+        <div className="p-6 text-center text-red-600">
+          Failed to load leads: {error.message}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card
       className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
@@ -143,7 +151,14 @@ export function DataTable({ columns }: DataTableProps) {
 
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow 
+                key={row.id}
+                onClick={() => {
+                  setSelectedLead(row.original);
+                  setIsDetailModalOpen(true);
+                }}
+                className="cursor-pointer hover:bg-gray-50"
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -152,7 +167,7 @@ export function DataTable({ columns }: DataTableProps) {
               </TableRow>
             ))}
 
-            {filteredData.length === 0 && (
+            {(filteredData.length > 0 ? filteredData : data).length === 0 && !isLoading && (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
                   No data available
@@ -165,7 +180,7 @@ export function DataTable({ columns }: DataTableProps) {
 
       <TablePagination
         component="div"
-        count={totalPages * pageSize}
+        count={totalCount}
         rowsPerPage={pageSize}
         page={pageIndex}
         onPageChange={(_, page) =>
@@ -178,6 +193,18 @@ export function DataTable({ columns }: DataTableProps) {
           })
         }
         rowsPerPageOptions={[5, 10, 20, 50]}
+        slotProps={{
+          select: {
+            inputProps: { 'aria-label': 'rows per page' }
+          }
+        }}
+      />
+
+      {/* Lead Detail Modal */}
+      <LeadDetailModal
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        lead={selectedLead}
       />
     </Card>
   );

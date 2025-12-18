@@ -28,7 +28,7 @@ export default function DetailDepartments() {
 
   const { departments } = useDepartments();
 
-  const { users, isLoading, error } = useUsers();
+  const {  isLoading, error } = useUsers();
 
   const [openDelete, setOpenDelete] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);

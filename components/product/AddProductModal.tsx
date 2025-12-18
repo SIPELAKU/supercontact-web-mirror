@@ -42,15 +42,22 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange} maxWidth="md">
-            <DialogContent className="max-w-[850px] w-full px-10 py-8 rounded-2xl bg-white">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-semibold text-[#5479EE]">
+            <DialogContent
+                className="
+                max-w-[820px] 
+                w-full 
+                px-10 py-8 
+                rounded-3xl 
+                bg-white
+                border border-gray-200
+                ">
+                <div className="mt-2">
+                    <h2 className="text-2xl font-semibold text-[#5479EE]">
                         Add New Product
-                    </DialogTitle>
-                </DialogHeader>
+                    </h2>
+                </div>
 
                 <div className=" mt-6">
-
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-gray-900">Product Name</label>
                         <Input

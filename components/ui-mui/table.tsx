@@ -47,7 +47,7 @@ function DropdownMenuContentWrapper({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
-   const handleTriggerClick = (e: React.MouseEvent<HTMLElement>) => {
+  const handleTriggerClick = (e: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(e.currentTarget);
   };
 
@@ -130,6 +130,11 @@ export function CustomTable<T extends { id: string }>({
       ? { minWidth: `${width}rem`, width: `${width}rem`, maxWidth: `${width}rem` }
       : {};
 
+  const columnCount =
+    columns.length +
+    (selectable ? 1 : 0) +
+    (actions ? 1 : 0);
+
   return (
     <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200">
 
@@ -164,13 +169,13 @@ export function CustomTable<T extends { id: string }>({
               ))}
 
               {actions && (
-                 <th
-                    className="
+                <th
+                  className="
                       px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 w-32 h-16 relative
                       after:content-[''] after:absolute after:right-2 after:top-1/2 after:-translate-y-1/2
                       after:h-8 after:w-px after:bg-gray-300
                     "
-                  >
+                >
                   Actions
                 </th>
               )}
@@ -178,47 +183,65 @@ export function CustomTable<T extends { id: string }>({
           </thead>
 
           <tbody>
-            {paginatedData.map((row) => (
-              <tr key={row.id} className="hover:bg-gray-50 transition h-16">
-
-                {selectable && (
-                  <td className="px-6 py-4 h-16">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(row.id)}
-                      onChange={() => toggleRow(row)}
-                      className="h-4 w-4 cursor-pointer"
-                    />
-                  </td>
-                )}
-
-                {columns.map((col) => (
-                  <td
-                    key={String(col.key)}
-                    style={applyWidth(col.width)}
-                    className="px-6 py-4 whitespace-nowrap h-16"
-                  >
-                    {col.render ? col.render(row) : (row as Record<string, React.ReactNode>)[col.key as string]}
-                  </td>
-                ))}
-
-                {actions && (
-                  <td className="px-6 py-4 whitespace-nowrap w-32 h-16">
-                    {actionMode === "inline" ? (
-                      <div className="flex ml-8 gap-4">
-                        {actions(row)}
-                      </div>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuContentWrapper align="end">
-                          {actions(row)}
-                        </DropdownMenuContentWrapper>
-                      </DropdownMenu>
-                    )}
-                  </td>
-                )}
+            {paginatedData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columnCount}
+                  className="h-40 text-center text-sm text-gray-500"
+                >
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <span className="text-base font-medium text-gray-700">
+                      No data available
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      There is no data to display at the moment
+                    </span>
+                  </div>
+                </td>
               </tr>
-            ))}
+            ) : (
+              paginatedData.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50 transition h-16">
+
+                  {selectable && (
+                    <td className="px-6 py-4 h-16">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.id)}
+                        onChange={() => toggleRow(row)}
+                        className="h-4 w-4 cursor-pointer"
+                      />
+                    </td>
+                  )}
+
+                  {columns.map((col) => (
+                    <td
+                      key={String(col.key)}
+                      style={applyWidth(col.width)}
+                      className="px-6 py-4 whitespace-nowrap h-16"
+                    >
+                      {col.render ? col.render(row) : (row as Record<string, React.ReactNode>)[col.key as string]}
+                    </td>
+                  ))}
+
+                  {actions && (
+                    <td className="px-6 py-4 whitespace-nowrap w-32 h-16">
+                      {actionMode === "inline" ? (
+                        <div className="flex ml-8 gap-4">
+                          {actions(row)}
+                        </div>
+                      ) : (
+                        <DropdownMenu>
+                          <DropdownMenuContentWrapper align="end">
+                            {actions(row)}
+                          </DropdownMenuContentWrapper>
+                        </DropdownMenu>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))
+            )}
           </tbody>
 
         </table>

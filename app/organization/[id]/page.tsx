@@ -2,7 +2,7 @@
 import { ChangeEvent, useMemo, useState, MouseEvent, Suspense } from "react";
 import useDepartments from "../../../lib/hooks/useDepartments";
 import { UsersType } from "../../../lib/type/Users";
-import useUsers from "../../../lib//hooks/useUsers";
+import { useUsers } from "../../../lib/hooks/useUsers";
 import { Card, CardHeader, Divider, Typography } from "@mui/material";
 import {
   useParams,

@@ -28,7 +28,7 @@ export default function DetailDepartments() {
 
   const { departments } = useDepartments();
 
-  const {  isLoading, error } = useUsers();
+  const { data: usersResponse, isLoading, error } = useUsers();
 
   const [openDelete, setOpenDelete] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
@@ -59,6 +59,19 @@ export default function DetailDepartments() {
   const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
 
   const filteredUsers = useMemo(() => {
+    const apiUsers = usersResponse?.data?.users || [];
+    
+    // Convert API User[] to UsersType[]
+    const users: UsersType[] = apiUsers.map((user) => ({
+      id: parseInt(user.id),
+      fullName: user.fullname,
+      email: user.email,
+      role: user.role,
+      status: 'active' as const, // Default status since API doesn't provide it
+      avatar_initial: user.fullname.charAt(0).toUpperCase(),
+      id_employee: user.id,
+    }));
+    
     return users.filter((user) => {
       // search name
       const matchSearch = searchQuery
@@ -77,7 +90,7 @@ export default function DetailDepartments() {
 
       return matchSearch && matchRole && matchStatus;
     });
-  }, [users, searchQuery, tableFilter]);
+  }, [usersResponse?.data?.users, searchQuery, tableFilter]);
 
   // ===== PAGINATION ===== //
   const [page, setPage] = useState<number>(0);
@@ -177,7 +190,7 @@ export default function DetailDepartments() {
             data={paginatedUsers}
             selected={selected}
             isLoading={isLoading}
-            error={error}
+            error={error?.message || null}
             actions={{
               onSelectOne: handleSelectOne,
               onSelectAll: handleSelectAll,

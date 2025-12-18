@@ -35,7 +35,7 @@ export function Select({
       className="min-w-[220px]"
     >
       <MUISelect
-        value={value}
+        value={value || ""}
         onChange={(e: SelectChangeEvent) => onChange(e.target.value)}
         displayEmpty
         input={

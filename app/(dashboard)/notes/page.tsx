@@ -39,7 +39,10 @@ export default function NotesPage(){
 
     return(
     <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-      <BannerDashboard pathname={pathname}/>
+      <BannerDashboard
+        title="Notes"
+        breadcrumbs={["Dashboard", "Notes"]}
+      />
       <div className="w-full flex gap-4 border-b pb-4">
         <div className="relative w-2/3">
           <IoIosSearch className="absolute text-xl left-4 top-1/2 -translate-y-1/2 text-gray-400" />

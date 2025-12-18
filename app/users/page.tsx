@@ -3,7 +3,7 @@
 import { ChangeEvent, Suspense, useMemo, useState, MouseEvent } from "react";
 
 import { UsersType } from "../../lib/type/Users";
-import useUsers from "../../lib/hooks/useUsers";
+import { useUsers } from "../../lib/hooks/useUsers";
 
 import { Card, CardHeader, Divider } from "@mui/material";
 import Pagination from "@/components/ui/pagination";

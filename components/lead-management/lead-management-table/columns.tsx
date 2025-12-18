@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { ColumnDef } from "@tanstack/react-table";
-import { Globe, MessageCircle, Edit3 } from "lucide-react";
+import { Globe } from "lucide-react";
 import WAIcon from "@/public/wa.svg";
 import ManualEntry from "@/public/manual-entry.svg";
 import { cn } from "@/lib/utils";

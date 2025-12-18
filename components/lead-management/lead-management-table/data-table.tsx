@@ -25,6 +25,7 @@ import {
   getSortedRowModel,
 } from "@tanstack/react-table";
 import LeadFilters from "./LeadFilters";
+import LeadDetailModal from "../lead-detail-modal";
 
 interface DataTableProps {
   columns: ColumnDef<Lead>[];
@@ -33,6 +34,8 @@ interface DataTableProps {
 export function DataTable({ columns }: DataTableProps) {
   const { data: leadsResponse, isLoading, error } = useLeads();
   const [filteredData, setFilteredData] = useState<Lead[]>([]);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [{ pageIndex, pageSize }, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -148,7 +151,14 @@ export function DataTable({ columns }: DataTableProps) {
 
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow 
+                key={row.id}
+                onClick={() => {
+                  setSelectedLead(row.original);
+                  setIsDetailModalOpen(true);
+                }}
+                className="cursor-pointer hover:bg-gray-50"
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -188,6 +198,13 @@ export function DataTable({ columns }: DataTableProps) {
             inputProps: { 'aria-label': 'rows per page' }
           }
         }}
+      />
+
+      {/* Lead Detail Modal */}
+      <LeadDetailModal
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        lead={selectedLead}
       />
     </Card>
   );

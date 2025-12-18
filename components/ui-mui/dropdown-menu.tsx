@@ -14,8 +14,9 @@ import {
   ChevronRightIcon,
   CircleIcon,
   ChevronDown,
-  Search
+  Search,
 } from "lucide-react";
+
 
 export default function DropdownSelect({
   value,
@@ -30,26 +31,30 @@ export default function DropdownSelect({
   placeholder?: string;
   className?: string;
 }) {
-
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        onClick={(e: any) => setAnchorEl(e.currentTarget)}
+        onClick={(e: React.MouseEvent<HTMLElement>) =>
+          setAnchorEl(e.currentTarget)
+        }
       >
         <button
-          className={`
-            w-full h-10 px-3 border border-gray-300 rounded-md
-            bg-white text-sm flex items-center justify-between
-            text-gray-700 hover:border-gray-400 transition
-            ${className}
-          `}
+          className={cn(
+            "w-full h-10 px-3 border border-gray-300 rounded-md",
+            "bg-white text-sm flex items-center justify-between",
+            "text-gray-700 hover:border-gray-400 transition",
+            className
+          )}
         >
           <span>{value || placeholder}</span>
           <ChevronDown
-            className={`w-4 h-4 text-gray-500 transition ${open ? "rotate-180" : ""}`}
+            className={cn(
+              "w-4 h-4 text-gray-500 transition",
+              open && "rotate-180"
+            )}
           />
         </button>
       </DropdownMenuTrigger>
@@ -73,7 +78,6 @@ export default function DropdownSelect({
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
-
     </DropdownMenu>
   );
 }
@@ -93,7 +97,6 @@ export function DropdownSelectSearch({
 }) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
-
   const [query, setQuery] = React.useState("");
 
   const filteredOptions = React.useMemo(() => {
@@ -104,21 +107,25 @@ export function DropdownSelectSearch({
 
   return (
     <DropdownMenu>
-
       <DropdownMenuTrigger
-        onClick={(e: any) => setAnchorEl(e.currentTarget)}
+        onClick={(e: React.MouseEvent<HTMLElement>) =>
+          setAnchorEl(e.currentTarget)
+        }
       >
         <button
-          className={`
-            w-full h-10 px-3 border border-gray-300 rounded-md
-            bg-white text-sm flex items-center justify-between
-            text-gray-700 hover:border-gray-400 transition
-            ${className}
-          `}
+          className={cn(
+            "w-full h-10 px-3 border border-gray-300 rounded-md",
+            "bg-white text-sm flex items-center justify-between",
+            "text-gray-700 hover:border-gray-400 transition",
+            className
+          )}
         >
           <span>{value || placeholder}</span>
           <ChevronDown
-            className={`w-4 h-4 text-gray-500 transition ${open ? "rotate-180" : ""}`}
+            className={cn(
+              "w-4 h-4 text-gray-500 transition",
+              open && "rotate-180"
+            )}
           />
         </button>
       </DropdownMenuTrigger>
@@ -139,7 +146,9 @@ export function DropdownSelectSearch({
             <input
               autoFocus
               value={query}
-              onKeyDown={(e) => e.stopPropagation()}
+              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
+                e.stopPropagation()
+              }
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search..."
               className="w-full bg-transparent text-sm outline-none"
@@ -148,9 +157,11 @@ export function DropdownSelectSearch({
         </div>
 
         {filteredOptions.length === 0 ? (
-          <div className="px-3 py-2 text-sm text-gray-400">No results found</div>
+          <div className="px-3 py-2 text-sm text-gray-400">
+            No results found
+          </div>
         ) : (
-          filteredOptions.map((opt: string) => (
+          filteredOptions.map((opt) => (
             <DropdownMenuItem
               key={opt}
               onClick={() => {
@@ -165,29 +176,32 @@ export function DropdownSelectSearch({
           ))
         )}
       </DropdownMenuContent>
-
     </DropdownMenu>
   );
 }
+
 
 function DropdownMenu({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+type ClickableProps = {
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+};
+
+
 function DropdownMenuTrigger({
   children,
   onClick,
 }: {
-  children: React.ReactElement;
-  onClick?: (e: any) => void;
+  children: React.ReactElement<ClickableProps>;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
-  return React.cloneElement(children as React.ReactElement<any>, {
-    onClick: (e: any) => {
-      if (children && typeof (children as any).props?.onClick === "function") {
-        (children as any).props.onClick(e);
-      }
+  return React.cloneElement(children, {
+    onClick: (e: React.MouseEvent<HTMLElement>) => {
+      children.props.onClick?.(e);
       onClick?.(e);
-    }
+    },
   });
 }
 
@@ -198,14 +212,13 @@ function DropdownMenuContent({
   className,
   align = "start",
   children,
-  ...props
 }: {
-  anchorEl: HTMLElement | null
-  open: boolean
-  onClose: () => void
-  className?: string
-  align?: "start" | "end"
-  children: React.ReactNode
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+  className?: string;
+  align?: "start" | "end";
+  children: React.ReactNode;
 }) {
   return (
     <Menu
@@ -213,14 +226,11 @@ function DropdownMenuContent({
       open={open}
       onClose={onClose}
       slotProps={{
-        paper: {},
         list: {
           autoFocusItem: false,
           disableListWrap: true,
-          onKeyDown: (e: any) => {
-            e.stopPropagation();
-          },
-        }
+          onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
+        },
       }}
       anchorOrigin={{
         vertical: "bottom",
@@ -236,13 +246,11 @@ function DropdownMenuContent({
           className
         ),
       }}
-      {...props}
     >
       {children}
     </Menu>
   );
 }
-
 
 function DropdownMenuItem({
   inset,
@@ -326,7 +334,11 @@ function DropdownMenuLabel({
 }) {
   return (
     <Typography
-      className={cn("px-2 py-1.5 text-xs font-semibold", inset && "pl-8", className)}
+      className={cn(
+        "px-2 py-1.5 text-xs font-semibold",
+        inset && "pl-8",
+        className
+      )}
     >
       {children}
     </Typography>
@@ -358,7 +370,7 @@ function DropdownMenuSubTrigger({
   children: React.ReactNode;
   inset?: boolean;
   className?: string;
-  onClick?: (e: any) => void;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
   return (
     <MenuItem

@@ -6,6 +6,7 @@ import { StageUI, transformPipelineResponse } from "@/lib/helper/transformPipeli
 import { formatRupiah } from "@/lib/helper/currency";
 import { getDateRange } from "@/lib/helper/getDateRange";
 import type { AxiosError } from "axios";
+import { DealStage } from "@/components/pipeline/SelectDealStage";
 
 
 export interface ValidationItem {
@@ -13,6 +14,12 @@ export interface ValidationItem {
   loc: string[];
   msg: string;
   input?: unknown;
+}
+
+interface Users {
+  id: string;
+  active_pipeline_count: number;
+  fullname: string;
 }
 
 export interface PipelineValidationResponse {
@@ -31,6 +38,8 @@ export interface PipelineQuery {
   status?: string;
   salesperson?: string;
   dateRange?: string;
+  search?: string;
+  assigned_to?: string;
 }
 
 export interface reqBody {
@@ -39,36 +48,43 @@ export interface reqBody {
   deal_stage: string;
   expected_close_date: string;
   amount: number;
-  probability_of_close: number;
+  probability_of_close: number | string;
   notes: string;
 }
 
 interface GetState {
   listPipeline: StageUI[];
-  listActiveUser: [];
+  listActiveUser: DealStage[];
+  stage: string;
+  id: string;
   stats: Metric[];
   loading: boolean;
   error: string | null;
-
+  isModalOpen: boolean;
   salespersonFilter: string;
   dateRangeFilter: string;
-
   setSalespersonFilter: (val: string) => void;
   setDateRangeFilter: (val: string) => void;
-
+  setEditId: (val: string) => void;
+  setStage: (val: string) => void;
+  setIsModalOpen: (val: boolean) => void;
   fetchActiveUser: ()=> void;
 
   fetchPipeline: (param?: PipelineQuery) => Promise<void>;
 
-  postFormPipeline: (
-    param?: reqBody
-  ) => Promise<{
+  postFormPipeline: (param?: reqBody) => Promise<{
     success: boolean;
     error?: string;
     validation?: ValidationItem[];
   }>;
 
-  updateStagePipeline: (id?: string) => Promise<void>;
+  updateStagePipeline: (id: string, deal_stage: string) => Promise<void>;
+
+  updateFormPipeline: (param?: reqBody, id?: string) => Promise<{
+    success: boolean;
+    error?: string;
+    validation?: ValidationItem[];
+  }>;
 }
 
 export const useGetPipelineStore = create<GetState>((set, get) => ({
@@ -76,6 +92,9 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   stats: [],
   listActiveUser: [],
   loading: false,
+  stage: "",
+  isModalOpen: false,
+  id: "",
   error: null,
   salespersonFilter: "all",
   dateRangeFilter: "all",
@@ -84,8 +103,32 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   
   setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
 
-  fetchActiveUser: () => {
+  setEditId: (v) => set({id: v}),
 
+  setStage: (val: string) => set({stage: val}),
+
+  setIsModalOpen: (v) => set({isModalOpen: v}),
+
+  fetchActiveUser: async() => {
+    try {
+      set({ loading: true, error: null });
+       const res = await axiosInternal.get("/sales/pipeline/active-user");
+       const data = res.data.data
+       const temp: DealStage[] = [{label: "All", value: 'all'}]
+       data.users.map((arr: Users)=>{
+        const body = {
+          label: arr.fullname.charAt(0).toUpperCase() + arr.fullname.slice(1),
+          value: arr.id
+        }
+        temp.push(body)
+       })
+       
+       set({listActiveUser: temp})
+    } catch (err) {
+      set({ error: "Failed to fetch data" });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   fetchPipeline: async (param?: PipelineQuery) => {
@@ -94,12 +137,16 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
       const params: Record<string, string> = {};
 
-       if (param?.dateRange && param.dateRange !== "all") {
+      if (param?.dateRange && param.dateRange !== "all") {
         const range = getDateRange(param.dateRange);
         if (range) {
           params.date_from = String(range.start);
           params.date_to = String(range.end);
         }
+      }
+
+      if (param?.assigned_to && param.assigned_to !== "all") {
+        params.assigned_to = param.assigned_to;
       }
 
       const res = await axiosInternal.get("/sales/pipeline", { params });
@@ -172,12 +219,50 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     }
   },
 
-  updateStagePipeline: async (id?: string) => {
+  updateStagePipeline: async (id: string, stage: string) => {
     try {
       set({ loading: true, error: null });
+      const res = await axiosInternal.patch(`/sales/pipeline/${id}/stage`, { 
+        deal_stage: stage,
+      });
     } catch (error) {
       console.info(error)
-      set({ error: "Failed to update data" });
+      set({ error: "Failed to patch data" });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  updateFormPipeline: async (body?: reqBody, id?: string): Promise<{ success: boolean; error?: string; validation?: ValidationItem[]; }> => {
+    try {
+      set({ loading: true, error: null });
+
+      const res = await axiosInternal.put(`/sales/pipeline/${id}`, body);
+
+      if (res.status === 200) {
+        await get().fetchPipeline();
+        return { success: true };
+      }
+
+      return { success: false, error: "Unexpected response" };
+
+    } catch (error) {
+
+      const axiosErr = error as AxiosError<PipelineValidationResponse>;
+      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+        return {
+          success: false,
+          error: axiosErr.response.data.error,
+          validation: axiosErr.response.data.details,
+        };
+      }
+      return {
+        success: false,
+        error:
+          axiosErr.response?.data?.error ??
+          axiosErr.message ??
+          "Failed to post pipeline",
+      };
     } finally {
       set({ loading: false });
     }

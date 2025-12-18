@@ -11,16 +11,32 @@ interface ClientDetailsProps {
   setClientData?: (data: Record<string, any>) => void
 }
 
+interface ClientDetailsData {
+  clientName?: string;
+  companyName?: string;
+  phoneNumber?: string;
+  emailAddress?: string;
+  quotationTitle?: string;
+  quotationId?: string;
+  issueDate?: Date;
+  expiryDate?: Date;
+}
+
+
 export default function ClientDetailsSection({
   clientData = {},
   setClientData = () => {},
 }: ClientDetailsProps) {
-  const handleChange = (field: string, value: any) => {
+  const handleChange = <K extends keyof ClientDetailsData>(
+    field: K,
+    value: ClientDetailsData[K]
+  ) => {
     setClientData({
       ...clientData,
       [field]: value,
-    })
-  }
+    });
+  };
+
 
   return (
     <div className="bg-white px-6 pt-6">

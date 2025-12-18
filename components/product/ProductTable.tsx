@@ -35,8 +35,8 @@ const columns: Column<Product>[] = [
 
 export default function ProductTable() {
     const { listProduct, pagination, setLimit, setPage, loading } = useGetProductStore();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState<string>("");
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
     const searchData = useMemo(() => {
         const query = searchQuery.toLowerCase();

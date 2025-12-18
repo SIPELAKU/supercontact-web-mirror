@@ -1,6 +1,16 @@
 "use client";
 
-import { Switch } from "@/components/ui-mui/switch";
+interface SummaryCardProps {
+  subtotal: number;
+  discount: number;
+  discountAmount: number;
+  taxEnabled: boolean;
+  taxAmount: number;
+  grandTotal: number;
+  setDiscount: (value: number) => void;
+  setTaxEnabled: (value: boolean) => void;
+}
+
 
 export default function SummaryCard({
   subtotal,
@@ -11,7 +21,7 @@ export default function SummaryCard({
   grandTotal,
   setDiscount,
   setTaxEnabled,
-}: any) {
+}: SummaryCardProps) {
   return (
     <section className="flex justify-end">
       <aside className="w-full md:w-96 space-y-3 p-6">

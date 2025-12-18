@@ -19,7 +19,7 @@ import {
 import { useEffect, useMemo, useState } from "react"
 
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
-import {ColumnDropZone} from "@/components/pipeline/pipeline-board/DroppableColumn"
+import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui-mui/button"
@@ -43,12 +43,12 @@ const stageColors: Record<string, string> = {
 }
 
 export default function PipelineBoard() {
-  const { 
-    listPipeline, 
-    salespersonFilter, 
-    dateRangeFilter, 
-    setDateRangeFilter, 
-    setSalespersonFilter, 
+  const {
+    listPipeline,
+    salespersonFilter,
+    dateRangeFilter,
+    setDateRangeFilter,
+    setSalespersonFilter,
     loading,
     listActiveUser,
     isModalOpen,
@@ -59,7 +59,7 @@ export default function PipelineBoard() {
   const [stages, setStages] = useState(listPipeline)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
-  
+
   useEffect(() => {
     if (listPipeline.length > 0) {
       setStages(listPipeline)
@@ -106,7 +106,7 @@ export default function PipelineBoard() {
         : searchPipeline.map((stage) => {
           const normalized = stage.name.replace(/\s*-\s*/g, " - ").toLowerCase();
           const target = statusFilter.toLowerCase();
-          
+
           if (normalized === target) return stage;
 
           return { ...stage, deals: [] };
@@ -136,7 +136,7 @@ export default function PipelineBoard() {
     }
     return null;
   };
-  
+
 
   const handleDragStart = (
     event: DragStartEvent,
@@ -164,9 +164,9 @@ export default function PipelineBoard() {
     const updated = JSON.parse(JSON.stringify(stages));
 
     const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
-      
+
     if (isOverColumn) {
-      
+
       const stageName = overId.replace("column-", "");
       const toStageIndex = stages.findIndex(s => s.name === stageName);
 
@@ -184,12 +184,12 @@ export default function PipelineBoard() {
 
     const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
     updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
-    
+
     setStages(computeStageTotals(updated));
   };
 
 
-const handleDragEnd = async(
+  const handleDragEnd = async (
     event: DragEndEvent,
     stages: StageUI[],
     setStages: (s: StageUI[]) => void,
@@ -198,20 +198,21 @@ const handleDragEnd = async(
     const { active, over } = event
     setActiveDeal(null)
     if (!over) return
-console.log("over");
+
     const activeId = String(active.id)
     const overId = String(over.id)
 
     const from = findDeal(activeId, stages)
     if (!from) return
-console.log("from");
+
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
-      console.log("overid");
+
       const toStageName = overId.replace("column-", "")
       const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
+      await updateStagePipeline(activeId, toStageName);
       if (from.stageIndex === toStageIndex) return
 
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
@@ -222,7 +223,6 @@ console.log("from");
 
     const to = findDeal(overId, updated)
     if (!to) return
-console.log("to");
 
     if (from.stageIndex === to.stageIndex) {
       updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
@@ -232,12 +232,11 @@ console.log("to");
     }
 
     const updatedWithTotals = computeStageTotals(updated)
-    console.log(updatedWithTotals);
-    
+
     setStages(updatedWithTotals)
     const toStage = updated[to.stageIndex].name;
-    
-    if(from !== to){
+
+    if (from !== to) {
       await updateStagePipeline(activeId, toStage);
     }
   }
@@ -407,7 +406,7 @@ console.log("to");
           <div className="inline-flex gap-6 min-w-full mt-4">
 
             {filteredStages.map((stage) => (
-              <ColumnDropZone key={stage.name} id={`column-${stage.name}`}>
+              <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>
                 <div className="w-[280px] shrink-0">
 
                   <div
@@ -436,7 +435,7 @@ console.log("to");
                         {stage.deals.map((deal: Deal) => (
                           <div key={deal.id} className="pointer-events-auto">
                             <SortableDeal id={deal.id}>
-                              <DealCard {...deal} stageName={stage.name}/>
+                              <DealCard {...deal} stageName={stage.name} />
                             </SortableDeal>
                           </div>
                         ))}

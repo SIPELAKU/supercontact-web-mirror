@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import BannerDashboard from "@/components/ui/banner-dashboard"
-import { usePathname } from "next/navigation"
 
 interface Notification {
   id: number;
@@ -72,7 +71,6 @@ const badgeStyle: Record<string, string> = {
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [onlyUnread, setOnlyUnread] = useState(false);
-  const pathname = usePathname()
 
   const filtered = onlyUnread
     ? notifications.filter((n) => !n.read)

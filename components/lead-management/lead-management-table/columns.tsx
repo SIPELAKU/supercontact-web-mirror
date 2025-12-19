@@ -81,7 +81,8 @@ export const columns: ColumnDef<Lead>[] = [
     header: () => <span className="text-[#6B7280]">Last Contacted</span>,
     cell: ({ row }) => (
       <span className="text-[#6B7280]">
-        {row.getValue<string>("last_contacted")}
+        {row.original.contact.last_contacted?.created_at}
+        {/* {row.getValue<string>("last_contacted")} */}
       </span>
     ),
   },

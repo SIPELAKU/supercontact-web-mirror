@@ -3,6 +3,7 @@ import { formatMDY } from "@/lib/helper/date";
 import { formatRupiah } from "@/lib/helper/currency";
 
 export type StageUI = {
+  id: string;
   name: string;
   value: number;
   deals: Deal[];
@@ -33,6 +34,9 @@ export interface PipelineAPIResponse {
   stats?: unknown;
 }
 
+export function generateUUID() {
+  return crypto.randomUUID();
+}
 
 export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
   if (!api || !api.pipelines) return [];
@@ -50,6 +54,7 @@ export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
 
   STAGE_ORDER.forEach((stage) => {
     stageMap[stage] = {
+      id: generateUUID(),
       name: stage,
       value: 0,
       deals: [],

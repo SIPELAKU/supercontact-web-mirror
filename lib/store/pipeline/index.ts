@@ -52,6 +52,10 @@ export interface reqBody {
   notes: string;
 }
 
+export type DealForm = Omit<reqBody, "expected_close_date"> & {
+  expected_close_date?: Date;
+};
+
 interface GetState {
   listPipeline: StageUI[];
   listActiveUser: DealStage[];

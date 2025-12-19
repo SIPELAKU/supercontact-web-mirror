@@ -11,10 +11,11 @@ import { Button } from "@/components/ui-mui/button";
 import { Input } from "@/components/ui-mui/input";
 import { Label } from "@/components/ui-mui/label";
 import { Textarea } from "@/components/ui-mui/textarea";
-import { CustomDatePicker } from "@/components/ui-mui/date-picker";
+import { DatePicker } from "@/components/ui-mui/date-picker";
 import { AddDealModalProps } from "@/lib/type/Pipeline";
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { reqBody, useGetPipelineStore } from "@/lib/store/pipeline";
+import { useGetPipelineStore } from "@/lib/store/pipeline";
+import type { DealForm, reqBody } from "@/lib/store/pipeline";
 import { useGetContactStore } from "@/lib/store/contact";
 
 export const dealStages = [
@@ -27,15 +28,17 @@ export const dealStages = [
   { value: "Closed - Lost", label: "Closed/Lost", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
 ]
 
+
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
   const { listContact, fetchContact, loading, clearContact } = useGetContactStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline } = useGetPipelineStore();
-  const [formData, setFormData] = useState<reqBody>({
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [formData, setFormData] = useState<DealForm>({
     deal_name: "",
     client_account: "",
     deal_stage: "",
-    expected_close_date: new Date().toISOString(),
+    expected_close_date: undefined,
     amount: 0,
     probability_of_close: "0",
     notes: ""
@@ -46,7 +49,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       deal_name: "",
       client_account: "",
       deal_stage: "",
-      expected_close_date: new Date().toISOString(),
+      expected_close_date: undefined,
       amount: 0,
       probability_of_close: "0",
       notes: ""
@@ -69,7 +72,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       deal_name: deal.deal_name ?? "",
       client_account: deal.company?.id ?? "",
       deal_stage: stage ?? "",
-      expected_close_date: deal.expected_close_date ?? new Date().toISOString(),
+      expected_close_date: deal.expected_close_date
+        ? new Date(deal.expected_close_date)
+        : undefined,
       amount: deal.amount ?? 0,
       probability_of_close: String(deal.probability_of_close ?? 0),
       notes: deal.notes ?? "",
@@ -98,10 +103,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   }, [listContact, selectedContactOption]);
 
 
-
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  const validateForm = (data: reqBody): FormErrors => {
+  const validateForm = (data: DealForm): FormErrors => {
     const errs: FormErrors = {};
 
     if (!data.deal_name.trim()) {
@@ -134,6 +136,17 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     return errs;
   };
 
+  function toApiDate(date?: Date): string {
+    if (!date) return "";
+
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+
+    return `${y}-${m}-${d}`;
+  }
+
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -146,7 +159,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
     const body: reqBody = {
       ...formData,
-      expected_close_date: new Date(formData.expected_close_date).toISOString(),
+      expected_close_date: toApiDate(formData.expected_close_date),
       probability_of_close: Number(formData.probability_of_close)
     };
 
@@ -247,11 +260,15 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               <Label className="text-sm font-medium text-gray-700">
                 Expected Close Date
               </Label>
-              <CustomDatePicker
-                value={new Date(formData.expected_close_date)}
-                onChange={(value: Date) =>
-                  setFormData({ ...formData, expected_close_date: value.toISOString() })
-                }
+              <DatePicker
+                mode="single"
+                value={formData.expected_close_date}
+                onChange={(date) => {
+                  setFormData({
+                    ...formData,
+                    expected_close_date: date,
+                  });
+                }}
                 placeholder="Select close date"
               />
               {errors.expected_close_date && (

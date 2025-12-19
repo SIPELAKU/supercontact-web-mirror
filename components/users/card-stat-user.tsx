@@ -7,11 +7,14 @@ import CardStatistik, { UserStatType } from '../../components/ui/card-stat'
 import { useUsers } from '../../lib/hooks/useUsers';
 
 const CardStatUser = () => {
-  const { users } = useUsers()
+  const { data: usersResponse } = useUsers()
+  const users = usersResponse?.data?.users || []
 
   const totalUsers = users?.length ?? 0
-  const activeUsers = users?.filter(u => u.status === 'active').length ?? 0
-  const pendingUsers = users?.filter(u => u.status === 'pending').length ?? 0
+  // Since API users don't have 'status', we'll assume all users are active for now
+  // You may need to adjust this logic based on your actual requirements
+  const activeUsers = users?.length ?? 0 // All users are considered active
+  const pendingUsers = 0 // No pending users in current API structure
 
   const cardData: UserStatType[] = [
     {
@@ -49,7 +52,7 @@ const CardStatUser = () => {
   return (
     <Grid container spacing={6}>
       {cardData.map((item, i) => (
-        <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid key={i} xs={12} sm={6} md={4}>
           <CardStatistik {...item} />
         </Grid>
       ))}

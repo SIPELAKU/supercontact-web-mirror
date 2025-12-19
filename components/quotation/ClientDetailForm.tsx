@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui-mui/input"
 import { Label } from "@/components/ui-mui/label"
 import { Select, SelectItem } from "@/components/ui-mui/select"
-import { CustomDatePicker } from "@/components/ui-mui/date-picker"
+import { DatePicker } from "@/components/ui-mui/date-picker"
 import { useState } from "react"
 
 interface ClientDetailsProps {
@@ -113,7 +113,7 @@ export default function ClientDetailsSection({
 
         <div className="space-y-2">
           <Label>Issue Date</Label>
-          <CustomDatePicker
+          <DatePicker
             value={clientData.issueDate || new Date()}
             onChange={(v) => handleChange("issueDate", v)}
           />
@@ -121,7 +121,7 @@ export default function ClientDetailsSection({
 
         <div className="space-y-2">
           <Label>Expiry Date</Label>
-          <CustomDatePicker
+          <DatePicker
             value={clientData.expiryDate || new Date()}
             onChange={(v) => handleChange("expiryDate", v)}
           />

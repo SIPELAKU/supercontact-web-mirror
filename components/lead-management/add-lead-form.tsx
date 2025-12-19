@@ -355,7 +355,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 <CustomDealStageSelect
                   value={form.leadStatus}
                   onChange={(val) => updateField("leadStatus", val)}
-                  dealStages={leadStatusOptions}
+                  data={leadStatusOptions}
                   placeholder="Select lead status"
                   className="bg-white rounded-lg"
                 />
@@ -416,7 +416,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
               <CustomDealStageSelect
                 value={form.tag}
                 onChange={(val) => updateField("tag", val)}
-                dealStages={tagOptions}
+                data={tagOptions}
                 placeholder="Select tag"
                 className="bg-white rounded-lg"
               />

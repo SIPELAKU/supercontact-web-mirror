@@ -9,7 +9,7 @@ import { useLeads } from "@/lib/hooks/useLeads";
 export default function LeadManagement() {
   const { viewMode } = useViewMode();
   const { data: leadsResponse, isLoading, error } = useLeads();
-
+  console.log('tes')
   return (
     <div className=" min-h-screen max-w-screen p-4">
       <div className="">

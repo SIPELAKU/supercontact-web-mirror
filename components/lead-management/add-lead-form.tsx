@@ -23,18 +23,17 @@ export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Converted", label: "Converted", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
+  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
 ];
 
 // Tag options with colors
 export const tagOptions = [
-  { value: "Hot Lead", label: "Hot Lead", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
   { value: "Urgent", label: "Urgent", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
-  { value: "High Priority", label: "High Priority", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
-  { value: "Medium Priority", label: "Medium Priority", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
-  { value: "Low Priority", label: "Low Priority", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
-  { value: "Cold Lead", label: "Cold Lead", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
+  { value: "Renewal", label: "Renewal", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
+  { value: "High Value", label: "High Value", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
+  { value: "Trial User", label: "Trial User", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
 ];
 
 interface LeadData {

@@ -42,7 +42,7 @@ export default function LeadFilters({
       to.setHours(23, 59, 59, 999);
 
       filtered = filtered.filter((l) => {
-        const last = new Date(l.last_contacted);
+        const last = new Date(l.contact.last_contacted.created_at);
         return last >= from && last <= to;
       });
     }

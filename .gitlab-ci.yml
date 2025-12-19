@@ -1,0 +1,10 @@
+deploy_to_vercel:
+  stage: deploy
+  image: curlimages/curl:latest # A lightweight image with curl
+  script:
+    - echo "Triggering Vercel deployment..."
+    - curl -X POST "YOUR_VERCEL_DEPLOY_HOOK_URL"
+    - echo "Vercel deployment triggered successfully!"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev" # Or your target branch
+      when: always # Always run this job if the branch matches

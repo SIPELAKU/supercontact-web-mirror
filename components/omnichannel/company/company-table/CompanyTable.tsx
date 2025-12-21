@@ -8,8 +8,8 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import CompanyTableSkeleton from "./CompanyTableSkeleton";
-import { CompanyTableError } from "./CompanyTableError";
-import { CompanyTableDataNotFound } from "./CompanyTableDataNotFound";
+import CompanyTableError from "./CompanyTableError";
+import CompanyTableDataNotFound from "./CompanyTableDataNotFound";
 import { useRouter } from "next/navigation";
 
 interface CompanyTableProps {

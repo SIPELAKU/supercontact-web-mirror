@@ -1,118 +1,257 @@
 "use client";
 
-import { useState } from "react";
-import {
-  PopoverComponent as Popover,
-} from "@/components/ui-mui/popover";
-import { Input } from "@/components/ui-mui/input";
-import { Button } from "@/components/ui-mui/button";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type Props = {
-  value?: Date | null;
-  onChange: (date: Date) => void;
-  placeholder?: string;
+type RangeValue = {
+  start?: Date;
+  end?: Date;
 };
 
-const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+type BaseProps = {
+  minDate?: Date;
+  maxDate?: Date;
+  disableWeekend?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+};
 
-export function CustomDatePicker({ value, onChange, placeholder }: Props) {
-  const [viewDate, setViewDate] = useState(value || new Date());
 
+type SingleDateProps = BaseProps & {
+  mode?: "single";
+  value?: Date;
+  onChange?: (value: Date | undefined) => void;
+};
+
+type RangeDateProps = BaseProps & {
+  mode: "range";
+  value?: RangeValue;
+  onChange?: (value: RangeValue | undefined) => void;
+};
+
+
+
+type DatePickerProps = SingleDateProps | RangeDateProps;
+
+
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const isSameDay = (a?: Date, b?: Date) =>
+  a &&
+  b &&
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+
+export function DatePicker({
+  mode = "single",
+  value,
+  onChange,
+  minDate,
+  maxDate,
+  disableWeekend = false,
+  placeholder = "Select date",
+  disabled = false,
+  className,
+}: DatePickerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const year = viewDate.getFullYear();
-  const month = viewDate.getMonth();
 
-  const firstDay = new Date(year, month, 1).getDay();
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(
+    value instanceof Date
+      ? value
+      : value && "start" in value && value.start
+        ? value.start
+        : today
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  const formatSingle = (d?: Date) =>
+    d
+      ? `${String(d.getDate()).padStart(2, "0")} - ${String(
+        d.getMonth() + 1
+      ).padStart(2, "0")} - ${d.getFullYear()}`
+      : "";
+
+  const formatRange = (v?: RangeValue) => {
+    if (!v?.start) return "";
+    if (!v.end) return formatSingle(v.start);
+    return `${formatSingle(v.start)} – ${formatSingle(v.end)}`;
+  };
+
+  const isDisabled = (date: Date) => {
+    if (disableWeekend) {
+      const d = date.getDay();
+      if (d === 0 || d === 6) return true;
+    }
+    if (minDate && date < minDate) return true;
+    if (maxDate && date > maxDate) return true;
+    return false;
+  };
+
+  const handleSelect = (date: Date) => {
+    if (mode === "single") {
+      (onChange as SingleDateProps["onChange"])?.(date);
+      setOpen(false);
+      return;
+    }
+
+    const range = value as RangeValue | undefined;
+
+    if (!range?.start || range.end) {
+      (onChange as RangeDateProps["onChange"])?.({
+        start: date,
+        end: undefined,
+      });
+    } else {
+      (onChange as RangeDateProps["onChange"])?.({
+        start: date < range.start ? date : range.start,
+        end: date < range.start ? range.start : date,
+      });
+      setOpen(false);
+    }
+  };
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-  const selectDate = (day: number) => {
-    const date = new Date(year, month, day);
-    onChange(date);
-    setOpen(false)
-  };
+  const range = mode === "range" ? (value as RangeValue) : undefined;
 
-  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
-
-  const format = (d?: Date | null) => {
-    if (!d) return "";
-    return d.toLocaleDateString("en-US");
-  };
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <div ref={containerRef} className="relative w-full">
 
-      <Popover.Trigger>
-        <div className="relative w-full">
-          <Input
-            readOnly
-            className="h-10 pr-10 cursor-pointer bg-white"
-            value={format(value)}
-            placeholder={placeholder || "Select Date"}
-          />
-          <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        </div>
-      </Popover.Trigger>
+      <div
+        onClick={() => !disabled && setOpen((o) => !o)}
+        className={cn(
+          "flex h-10 w-full items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm",
+          "hover:border-gray-400",
+          disabled && "opacity-50 cursor-not-allowed",
+          !value && "text-gray-400",
+          className
+        )}
+      >
+        <CalendarIcon className="h-4 w-4 text-gray-500" />
+        {mode === "single"
+          ? value instanceof Date
+            ? formatSingle(value)
+            : placeholder
+          : value
+            ? formatRange(value as RangeValue)
+            : placeholder}
+      </div>
 
-      <Popover.Content className="p-4 w-72">
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="icon" onClick={prevMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+      {open && (
+        <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
 
-          <p className="font-medium">
-            {viewDate.toLocaleString("default", {
-              month: "long",
-              year: "numeric",
+          <div className="mb-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMonth(new Date(year, month - 1))
+              }}
+              className="rounded-md p-1 hover:bg-gray-100"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <div className="flex gap-2">
+              {currentMonth.toLocaleString("default", {
+                month: "long",
+                year: "numeric",
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMonth(new Date(year, month + 1))
+              }}
+              className="rounded-md p-1 hover:bg-gray-100"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-gray-400">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+              <div key={d}>{d}</div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-sm">
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div key={`e-${i}`} />
+            ))}
+
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const date = new Date(year, month, day);
+
+              const disabledDay = isDisabled(date);
+
+              const selected =
+                mode === "single"
+                  ? value instanceof Date && isSameDay(value, date)
+                  : isSameDay(range?.start, date) ||
+                  isSameDay(range?.end, date);
+
+              const inRange =
+                mode === "range" &&
+                range?.start &&
+                range?.end &&
+                date > range.start &&
+                date < range.end;
+
+              return (
+                <button
+                  key={day}
+                  disabled={disabledDay}
+                  onClick={() => handleSelect(date)}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-md transition",
+                    disabledDay &&
+                    "cursor-not-allowed text-gray-300",
+                    selected &&
+                    "bg-blue-600 text-white",
+                    inRange &&
+                    "bg-blue-100 text-blue-700",
+                    !selected &&
+                    !disabledDay &&
+                    "hover:bg-gray-100 text-gray-700"
+                  )}
+                >
+                  {day}
+                </button>
+              );
             })}
-          </p>
-
-          <Button variant="ghost" size="icon" onClick={nextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          </div>
         </div>
-
-        <div className="grid grid-cols-7 text-center text-xs font-medium text-gray-500 mb-2">
-          {daysOfWeek.map((d) => (
-            <div key={d}>{d}</div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 text-sm">
-          {Array.from({ length: firstDay }).map((_, i) => (
-            <div key={"empty-" + i}></div>
-          ))}
-
-          {Array.from({ length: daysInMonth }).map((_, i) => {
-            const day = i + 1;
-            const isSelected =
-              value &&
-              value.getFullYear() === year &&
-              value.getMonth() === month &&
-              value.getDate() === day;
-
-            return (
-              <button
-                key={day}
-                onClick={() => selectDate(day)}
-                className={`
-                  h-9 w-9 flex items-center justify-center rounded-md
-                  hover:bg-gray-100
-                  transition
-                  ${
-                    isSelected
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "text-gray-900"
-                  }
-                `}
-              >
-                {day}
-              </button>
-            );
-          })}
-        </div>
-      </Popover.Content>
-    </Popover.Root>
+      )}
+    </div>
   );
 }

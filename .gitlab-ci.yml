@@ -1,0 +1,10 @@
+deploy_to_vercel:
+  stage: deploy
+  image: curlimages/curl:latest 
+  script:
+    - echo "Triggering Vercel deployment..."
+    - curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_BJ4uWHStUT92Cn0412MLDTQ3kN77/qj7KENpP61"
+    - echo "Vercel deployment triggered successfully!"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+      when: always

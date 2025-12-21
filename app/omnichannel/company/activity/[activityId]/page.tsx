@@ -5,15 +5,14 @@ import CompanyActivityStatCard from "@/components/omnichannel/company/activity/C
 import RecentActivityCompany from "@/components/omnichannel/company/activity/RecentActivityCompany";
 import PageHeader from "@/components/ui-mui/page-header";
 import { Button } from "@mui/material";
-import { ArrowLeft } from "lucide-react";
-import { TrendingUp, TrendingDown, Linkedin, Users, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Linkedin, TrendingDown, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function CompanyActivityPage() {
   const router = useRouter();
   return (
     <div className="p-6">
-      <Button variant="outlined" className="capitalize! rounded-lg!" onClick={() => router.push("/omnichannel/companies/1")}>
+      <Button variant="outlined" className="capitalize! rounded-lg!" onClick={() => router.push("/omnichannel/company/1")}>
         <ArrowLeft className="w-3 h-3 mr-1" />
         Back
       </Button>

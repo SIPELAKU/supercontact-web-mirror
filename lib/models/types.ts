@@ -16,8 +16,9 @@ export interface Contact {
   name: string;
   email: string;
   phone: string;
-  position: string;
   company: string;
+  job_title: string;
+  address: string;
 } 
 interface User {
   id: string;
@@ -50,3 +51,12 @@ export interface BannerDashboardProps {
   breadcrumbs?: string[];
   pathname?: string;
 }
+
+export interface ContactReq {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  job_title: string;
+  address: string;
+} 

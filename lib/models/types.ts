@@ -43,11 +43,11 @@ export type leadResponse = {
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
 export interface Note {
-    id: number,
+    id: string,
     title:string,
     content: string,
-    date: string,
-    time: string,
+    reminder_date: string,
+    reminder_time: string,
 }
 
 export type SortOrder = "asc" | "desc" | "";

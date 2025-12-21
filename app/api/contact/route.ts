@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { DataContact } from "@/lib/data/dummy";
 import axiosExternal from "@/lib/utils/axiosExternal";
 import { cookies } from "next/headers";
 import axios from "axios";

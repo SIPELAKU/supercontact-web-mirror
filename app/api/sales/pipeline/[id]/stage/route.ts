@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import axiosExternal from "@/lib/utils/axiosExternal";
+import axiosExternal from "@/lib/utils/axiosClient";
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
   try {

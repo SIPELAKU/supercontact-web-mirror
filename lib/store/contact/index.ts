@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import axiosInternal from "@/lib/utils/axiosInternal";
+import api from "@/lib/utils/axiosClient";
 import { DealStage } from "@/components/pipeline/SelectDealStage";
 
 interface Pagination {
@@ -56,7 +56,7 @@ export const useGetContactStore = create<GetState>((set, get) => ({
         search: params?.query,
       };
 
-      const res = await axiosInternal.get("/contact", {
+      const res = await api.get("/contacts", {
         params: query,
       });
 

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/context/AuthContext"
 import { Poppins } from "next/font/google"
 import ReactQueryProvider from "@/lib/ReactQueryProvider"
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
+import { ConfirmationProvider } from "@/components/ui-mui/confirm-modal"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -22,13 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.variable}>
       <body className="font-sans antialiased min-h-screen bg-[#ffffff]">
-        <AuthProvider>
-          <ReactQueryProvider>
-            <AuthenticatedLayout>
-              {children}
-            </AuthenticatedLayout>
-          </ReactQueryProvider>
-        </AuthProvider>
+        <ConfirmationProvider>
+          <AuthProvider>
+            <ReactQueryProvider>
+              <AuthenticatedLayout>
+                {children}
+              </AuthenticatedLayout>
+            </ReactQueryProvider>
+          </AuthProvider>
+        </ConfirmationProvider>
       </body>
     </html>
   )

@@ -267,8 +267,8 @@ export default function PipelineBoard() {
           <div className="inline-flex gap-6 min-w-full mt-4">
 
             {[1, 2, 3, 4, 5].map((col) => (
-              <div key={col} className="w-[280px] shrink-0">
-                <div className="rounded-xl p-4 min-h-[300px] shadow-sm border border-gray-200 bg-gray-50">
+              <div key={col} className="w-70 shrink-0">
+                <div className="rounded-xl p-4 min-h-75 shadow-sm border border-gray-200 bg-gray-50">
 
                   <div className="flex items-center justify-between mb-4 px-1">
                     <div className="h-5 w-24 bg-gray-300 rounded"></div>
@@ -407,10 +407,10 @@ export default function PipelineBoard() {
 
             {filteredStages.map((stage) => (
               <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>
-                <div className="w-[280px] shrink-0">
+                <div className="w-70 shrink-0">
 
                   <div
-                    className={`rounded-xl p-4 min-h-[150px] shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
+                    className={`rounded-xl p-4 min-h-37.5 shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
                   >
 
                     <div className="flex items-center justify-between mb-4 px-1">
@@ -424,7 +424,7 @@ export default function PipelineBoard() {
                       items={stage.deals.map((d: Deal) => d.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="flex flex-col gap-4 min-h-[100px]">
+                      <div className="flex flex-col gap-4 min-h-25">
 
                         {stage.deals.length === 0 && (
                           <div className="h-24 flex items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">

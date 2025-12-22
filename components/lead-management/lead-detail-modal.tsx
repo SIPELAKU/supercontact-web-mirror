@@ -11,6 +11,7 @@ import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { useAuth } from "@/lib/context/AuthContext";
 import { updateLead, UpdateLeadData, User } from "@/lib/api";
 import { Lead } from "@/lib/models/types";
+import { logger } from "../../lib/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/lib/hooks/useUsers";
 
@@ -80,14 +81,14 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   useEffect(() => {
     if (lead) {
       setForm({
-        industry: lead.contact?.company || "",
-        companySize: "1 - 50 Karyawan", // Default since not in lead data
-        officeLocation: "", // Contact doesn't have address property
+        industry: lead.office_location  || "",
+        companySize: lead.company_size, // Default since not in lead data
+        officeLocation: lead.contact?.company, // Contact doesn't have address property
         leadStatus: lead.lead_status,
         leadSource: lead.lead_source,
         assignedTo: lead.user?.id || "",
-        tag: "Urgent", // Default since not in lead data
-        notes: "",
+        tag: lead.tag, // Default since not in lead data
+        notes: lead.notes,
       });
       
       // Set assigned user
@@ -141,6 +142,13 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         notes: form.notes,
       };
 
+      // Validate required fields
+      if (!updateData.industry || !updateData.company_size || !updateData.lead_status || !updateData.lead_source) {
+        throw new Error("Please fill in all required fields");
+      }
+
+      logger.info("Updating lead", { leadId: lead.id, updateData });
+
       await updateLead(token, lead.id, updateData);
 
       // Refresh the leads data
@@ -149,10 +157,30 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       // Close modal
       onOpenChange(false);
       
-      console.log("Lead updated successfully!");
-    } catch (error) {
-      console.error("Error updating lead:", error);
-      alert("Failed to update lead. Please try again.");
+      logger.info("Lead updated successfully!", { leadId: lead.id });
+    } catch (error: any) {
+      logger.error("Error updating lead", { 
+        leadId: lead.id, 
+        error: error.message,
+        updateData: {
+          contact_id: lead.contact.id,
+          industry: form.industry,
+          company_size: form.companySize,
+          office_location: form.officeLocation,
+          lead_status: form.leadStatus,
+          lead_source: form.leadSource,
+          assigned_to: selectedUserId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          tag: form.tag,
+          notes: form.notes,
+        }
+      });
+      
+      // Show more specific error message
+      const errorMessage = error.message === "UNAUTHORIZED" 
+        ? "Session expired. Please login again."
+        : `Failed to update lead: ${error.message}`;
+        
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -233,11 +261,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(e) => updateField("industry", e.target.value)}
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
-                <option value="Finance">Finance</option>
-                <option value="Teknologi">Teknologi</option>
-                <option value="Manufaktur">Manufaktur</option>
-                <option value="Retail">Retail</option>
-                <option value="Other">Other</option>
+                <option value="Healthcare">Healthcare</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Logistics">Logistics</option>
+                  <option value="Manufacturing">Manufacturing</option>
+                  <option value="SaaS">SaaS</option>
               </select>
             </div>
 
@@ -251,7 +279,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               >
                 <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
                 <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-                <option value="201+ Karyawan">201+ Karyawan</option>
+               <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
                 {/* <option value="501 - 1000 Karyawan">501-1000 Karyawan</option>
                 <option value="1000+ Karyawan">1000+ Karyawan</option> */}
               </select>

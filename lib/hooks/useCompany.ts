@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { CompaniesType } from "../type/Companies";
+import { CompanyType } from "../type/Company";
 
-const useCompanies = () => {
-  const [companies, setCompanies] = useState<CompaniesType[]>([]);
+const useCompany = () => {
+  const [company, setCompany] = useState<CompanyType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
@@ -10,7 +10,7 @@ const useCompanies = () => {
     try {
       setIsLoading(true);
 
-      const response = await fetch("/api/companies");
+      const response = await fetch("/api/company");
       const data = await response.json();
 
       if (!response.ok) {
@@ -18,7 +18,7 @@ const useCompanies = () => {
         throw new Error("Error");
       }
 
-      setCompanies(data?.data);
+      setCompany(data?.data);
     } catch (error: unknown) {
       console.error(error);
       if (error) {
@@ -33,7 +33,7 @@ const useCompanies = () => {
     fetchData();
   }, []);
 
-  return { companies, isLoading, error };
+  return { company, isLoading, error };
 };
 
-export default useCompanies;
+export default useCompany;

@@ -68,8 +68,8 @@ const TextAreaField: React.FC<TextAreaProps> = ({
 interface NoteData {
   title: string;
   content: string;
-  date: string;
-  time: string;
+  reminder_date: string;
+  reminder_time: string;
 }
 
 interface ModalContentProps {
@@ -84,8 +84,8 @@ const ModalContent: React.FC<ModalContentProps> = ({
   const [local, setLocal] = useState<NoteData>({
     title: "",
     content: "",
-    date: "",
-    time: "",
+    reminder_date: "",
+    reminder_time: "",
   });
 
   return (
@@ -124,18 +124,18 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="date"
-              value={local.date}
+              value={local.reminder_date}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, date: e.target.value }))
+                setLocal((s) => ({ ...s, reminder_date: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg"
             />
 
             <input
               type="time"
-              value={local.time}
+              value={local.reminder_time}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, time: e.target.value }))
+                setLocal((s) => ({ ...s, reminder_time: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg"
             />
@@ -178,6 +178,9 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   const handleSubmit = async (data: NoteData) => {
     const res = await fetch("/api/note", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     });
 

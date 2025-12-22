@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useRef } from "react";
 import { createRoot, Root } from "react-dom/client";
+import { ContactReq } from "@/lib/models/types";
 
 const MySwal = withReactContent(Swal);
 
@@ -35,7 +36,7 @@ const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder 
 
 interface ModalContentProps {
   onClose: () => void;
-  onSubmit: (data: { name: string; phone: string; email: string; company: string }) => void;
+  onSubmit: (data: ContactReq) => void;
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
@@ -44,11 +45,13 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
     phone: "",
     email: "",
     company: "",
+    job_title: "",
+    address: "",
   });
 
   return (
     <div className="flex flex-col w-full p-6 text-start">
-      <h2 className="text-2xl font-semibold text-primary">Add New Contact</h2>
+      <h2 className="text-2xl font-semibold text-[#6739EC]">Add New Contact</h2>
       <p className="text-gray-600 text-md mt-1">
         Fill in the details below to add a new contact to your CRM.
       </p>
@@ -81,6 +84,18 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
           onChange={(e) => setLocal((s) => ({ ...s, company: e.target.value }))}
           placeholder="Enter company"
         />
+        <InputField
+          label="Job Tittle"
+          value={local.job_title}
+          onChange={(e) => setLocal((s) => ({ ...s, job_title: e.target.value }))}
+          placeholder="Enter job tittle"
+        />
+        <InputField
+          label="Address"
+          value={local.address}
+          onChange={(e) => setLocal((s) => ({ ...s, address: e.target.value }))}
+          placeholder="Enter address"
+        />
       </div>
 
       <div className="flex justify-end gap-3 mt-8 font-medium">
@@ -90,7 +105,7 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
 
         <button
           onClick={() => onSubmit(local)}
-          className="px-6 py-4 rounded-lg bg-primary text-white"
+          className="px-6 py-4 rounded-lg bg-[#6739EC] text-white"
         >
           Save Contact
         </button>
@@ -107,39 +122,68 @@ interface AddContactModalProps {
 
 const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSuccess }) => {
   const reactRootRef = useRef<Root | null>(null);
-
-  const handleSubmit = async (data: { name: string; phone: string; email: string; company: string }) => {
+  const handleSubmit = async (data: ContactReq) => {
+  try {
     const res = await fetch("/api/contact", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         name: data.name,
-        phone: data.phone,
         email: data.email,
+        phone: data.phone,
+        job_title: data.job_title,
         company: data.company,
-        posisi: "Unknown",
+        address: data.address,
       }),
     });
 
-    if (res.ok) {
-      onSuccess();
-      onClose();
-      MySwal.close();
+    const text = await res.text();
+
+    let result: any = {};
+    try {
+      result = JSON.parse(text);
+    } catch {
+      result = {};
+    }
+
+    if (!res.ok) {
+      const message =
+        result?.error?.message ?? "Failed to add contact";
+
+      const details =
+        result?.error?.details?.errors
+          ?.map((e: any) => `• ${e.loc.join(".")}: ${e.msg}`)
+          .join("<br/>");
 
       MySwal.fire({
-        icon: "success",
-        title: "Contact added!",
-        timer: 1200,
-        showConfirmButton: false,
-      });
-    } else {
-      MySwal.fire({
         icon: "error",
-        title: "Failed to add contact",
-        timer: 1400,
-        showConfirmButton: false,
+        title: message,
+        html: details || message,
       });
+      return;
     }
-  };
+
+    onSuccess();
+    onClose();
+    MySwal.close();
+
+    MySwal.fire({
+      icon: "success",
+      title: "Contact added!",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+  } catch (err) {
+    MySwal.fire({
+      icon: "error",
+      title: "Network error",
+      text: "Please try again later",
+    });
+  }
+};
+
 
   useEffect(() => {
     if (!open) return;
@@ -160,7 +204,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSucc
       },
 
       didClose: ()=>{
-        onClose
+        onClose()
       },
       
       willClose: () => {

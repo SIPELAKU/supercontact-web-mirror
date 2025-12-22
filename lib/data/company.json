@@ -48,5 +48,25 @@
     "employees": "200-500",
     "insightScore": 85,
     "status": "Enriching"
+  },
+  {
+    "id": 6,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Healthcare",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Enriching"
+  },
+  {
+    "id": 7,
+    "name": "Solvera",
+    "email": "solvera@example.com",
+    "industry": "Healthcare",
+    "location": "Tangerang, Banten",
+    "employees": "200-500",
+    "insightScore": 85,
+    "status": "Enriching"
   }
 ]

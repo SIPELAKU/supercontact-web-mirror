@@ -1,10 +1,22 @@
-import { CompaniesType } from "@/lib/type/Companies";
+"use client";
+
+import { CompanyType } from "@/lib/type/Company";
 import { Chip, LinearProgress, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import CompanyTableSkeleton from "./CompanyTableSkeleton";
+import CompanyTableError from "./CompanyTableError";
+import CompanyTableDataNotFound from "./CompanyTableDataNotFound";
+import { useRouter } from "next/navigation";
+
+interface CompanyTableProps {
+  company: CompanyType[];
+  isLoading: boolean;
+  error: string | null | undefined;
+}
 
 const BASE_CHIP_STYLE: SxProps<Theme> = {
   fontSize: "12px",
@@ -13,40 +25,43 @@ const BASE_CHIP_STYLE: SxProps<Theme> = {
   fontWeight: 500,
 };
 
-const INDUSTRY_CHIP_STYLE: Record<CompaniesType["industry"], { backgroundColor: string; color: string }> = {
+type ChipColors = { backgroundColor: string; color: string };
+
+type Industry = CompanyType["industry"];
+type Status = CompanyType["status"];
+
+const INDUSTRY_CHIP_STYLE: Record<Industry | "Default", ChipColors> = {
   SaaS: { backgroundColor: "#E8E4FF", color: "#6A5BF7" },
   Manufacturing: { backgroundColor: "#FFE0E0", color: "#D94B4B" },
   Logistics: { backgroundColor: "#FFF3D1", color: "#D0941F" },
   Finance: { backgroundColor: "#E2F8E8", color: "#1D8F4E" },
   Healthcare: { backgroundColor: "#DDF7FF", color: "#1C93B8" },
+  Default: { backgroundColor: "#F1F5F9", color: "#334155" },
 };
 
-const STATUS_CHIP_STYLE: Record<CompaniesType["status"], { backgroundColor: string; color: string }> = {
-  Connected: {
-    backgroundColor: "#E4FFD9",
-    color: "#3B9B2B",
-  },
-  Enriching: {
-    backgroundColor: "#FFF5D9",
-    color: "#D2941F",
-  },
-  Disconnected: {
-    backgroundColor: "#FFE0E0",
-    color: "#D94B4B",
-  },
+const STATUS_CHIP_STYLE: Record<Status | "Default", ChipColors> = {
+  Connected: { backgroundColor: "#E4FFD9", color: "#3B9B2B" },
+  Enriching: { backgroundColor: "#FFF5D9", color: "#D2941F" },
+  Disconnected: { backgroundColor: "#FFE0E0", color: "#D94B4B" },
+  Default: { backgroundColor: "#F1F5F9", color: "#334155" },
 };
 
-const getIndustryChipStyle = (industry: string) => ({
+export const getIndustryChipStyle = (industry: Industry): SxProps<Theme> => ({
   ...BASE_CHIP_STYLE,
-  ...(INDUSTRY_CHIP_STYLE[industry] || INDUSTRY_CHIP_STYLE.Default),
+  ...(INDUSTRY_CHIP_STYLE[industry] ?? INDUSTRY_CHIP_STYLE.Default),
 });
 
-const getStatusChipStyle = (status: string) => ({
+export const getStatusChipStyle = (status: Status): SxProps<Theme> => ({
   ...BASE_CHIP_STYLE,
-  ...(STATUS_CHIP_STYLE[status] || STATUS_CHIP_STYLE.Default),
+  ...(STATUS_CHIP_STYLE[status] ?? STATUS_CHIP_STYLE.Default),
 });
 
-export default function CompanyTable({ companies }) {
+export default function CompanyTable({ company, isLoading, error }: CompanyTableProps) {
+  const router = useRouter();
+
+  if (isLoading) return <CompanyTableSkeleton />;
+  if (error) return <CompanyTableError message="" />;
+  if (company.length === 0) return <CompanyTableDataNotFound />;
   return (
     <Table>
       <TableHead>
@@ -64,13 +79,13 @@ export default function CompanyTable({ companies }) {
       </TableHead>
 
       <TableBody>
-        {companies.map((company) => (
+        {company?.map((company) => (
           <TableRow key={company.id} className="h-[55px]">
             <TableCell>
               <input type="checkbox" />
             </TableCell>
 
-            <TableCell>
+            <TableCell onClick={() => router.push("/omnichannel/company/1")} className="cursor-pointer">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF2FD] text-sm font-semibold text-[#6A5BF7]">{company.name.charAt(0)}</div>
                 <div className="flex flex-col">
@@ -99,7 +114,7 @@ export default function CompanyTable({ companies }) {
                     sx={{
                       height: 8,
                       borderRadius: 9999,
-                      backgroundColor: "#E5E7EB", // track (abu-abu)
+                      backgroundColor: "#E5E7EB",
 
                       "& .MuiLinearProgress-bar": {
                         backgroundColor:

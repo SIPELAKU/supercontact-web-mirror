@@ -1,10 +1,112 @@
-deploy_to_vercel:
-  stage: deploy
-  image: curlimages/curl:latest 
+# Menggunakan image Git yang ringan
+image: bitnami/git:latest
+
+# ==============================================================================
+# KONFIGURASI VARIABEL
+# ==============================================================================
+variables:
+  GIT_DEPTH: 0
+
+# ==============================================================================
+# DEFINISI STAGES
+# ==============================================================================
+stages:
+  - mirror-dev
+  - promote-staging
+  - promote-main
+
+# ==============================================================================
+# SCRIPT PERSIAPAN
+# ==============================================================================
+before_script:
+  - echo "⚙️ Memulai konfigurasi Environment..."
+  
+  # Konfigurasi Identitas
+  - git config --global user.email "ci-bot@solvera.com"
+  - git config --global user.name "CI/CD Bot"
+  
+  # Setup Remote GitHub
+  - git remote add github https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/supercontact-web-mirror.git || true
+  
+  # Setup Remote GitLab
+  - git remote set-url origin https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com/$CI_PROJECT_PATH.git
+
+  # Fetch Semua Branch
+  - git fetch --all
+  - echo "✅ Konfigurasi selesai."
+
+# ==============================================================================
+# JOB 1: DEVELOPMENT (AUTO SYNC)
+# ==============================================================================
+sync_dev_to_github:
+  stage: mirror-dev
   script:
-    - echo "Triggering Vercel deployment..."
-    - curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_BJ4uWHStUT92Cn0412MLDTQ3kN77/qj7KENpP61"
-    - echo "Vercel deployment triggered successfully!"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
-      when: always
+    - echo "=================================================="
+    - echo "🔄 [DEV] Memulai Sinkronisasi ke GitHub..."
+    - echo "=================================================="
+    
+    # PERBAIKAN: Memaksa checkout dari 'origin/dev' agar tidak bingung
+    - git checkout -B dev origin/dev
+    
+    # Kirim ke GitHub
+    - git push github dev --force
+    
+    - echo "✅ [SUCCESS] Dev berhasil disinkronkan!"
+  only:
+    - dev
+
+# ==============================================================================
+# JOB 2: PROMOTION (DEV -> STAGING)
+# ==============================================================================
+approve_to_staging:
+  stage: promote-staging
+  script:
+    - echo "=================================================="
+    - echo "🚀 [STAGING] Memproses Merge Request (Dev -> Staging)..."
+    - echo "=================================================="
+    
+    # PERBAIKAN: Memaksa checkout 'staging' dari origin
+    - git checkout -B staging origin/staging
+    
+    # Lakukan Merge
+    - echo "🔀 Merging 'origin/dev' into 'staging'..."
+    - git merge origin/dev --no-edit
+    
+    # Push ke GitLab & GitHub
+    - echo "⬆️ Pushing update..."
+    - git push origin staging
+    - git push github staging --force
+    
+    - echo "✅ [SUCCESS] Staging berhasil diupdate!"
+  only:
+    - dev
+  when: manual
+  allow_failure: false
+
+# ==============================================================================
+# JOB 3: PROMOTION (STAGING -> MAIN)
+# ==============================================================================
+approve_to_production:
+  stage: promote-main
+  script:
+    - echo "=================================================="
+    - echo "🚀 [PRODUCTION] Memproses Release (Staging -> Main)..."
+    - echo "=================================================="
+    
+    # PERBAIKAN: Memaksa checkout 'main' dari origin
+    - git checkout -B main origin/main
+    
+    # Lakukan Merge
+    - echo "🔀 Merging 'origin/staging' into 'main'..."
+    - git merge origin/staging --no-edit
+    
+    # Push ke GitLab & GitHub
+    - echo "⬆️ Pushing update..."
+    - git push origin main
+    - git push github main --force
+    
+    - echo "✅ [SUCCESS] Production berhasil diupdate!"
+  only:
+    - staging
+  when: manual
+  allow_failure: false

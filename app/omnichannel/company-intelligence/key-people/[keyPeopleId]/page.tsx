@@ -1,6 +1,6 @@
 "use client";
 
-import KeyPeopleCard from "@/components/omnichannel/company/detail-company/KeyPeopleCard";
+import KeyPeopleCard from "@/components/omnichannel/key-people/KeyPeopleCard";
 import PageHeader from "@/components/ui-mui/page-header";
 import InputSearch from "@/components/ui/input-search";
 import { KeyPersonType } from "@/lib/type/Company";

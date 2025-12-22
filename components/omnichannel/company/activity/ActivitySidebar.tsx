@@ -28,8 +28,8 @@ export default function ActivitySidebar() {
 
           <Divider className="my-3!" />
 
-          <Typography className="text-[10px]! font-semibold! tracking-widest! text-slate-400!">
-            CHANNEL
+          <Typography className="text-[10px]! font-semibold! tracking-widest! text-slate-400! uppercase!">
+            channel
           </Typography>
 
           <div className="mt-2 flex flex-col">

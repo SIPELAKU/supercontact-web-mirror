@@ -1,8 +1,6 @@
 "use client";
 
-import ActivitySidebar from "@/components/omnichannel/company/activity/ActivitySidebar";
-import CompanyActivityStatCard from "@/components/omnichannel/company/activity/CompanyActivityStatCard";
-import RecentActivityCompany from "@/components/omnichannel/company/activity/RecentActivityCompany";
+import { ActivitySidebar, CompanyActivityStatCard, RecentActivityCompany } from "@/components/omnichannel";
 import PageHeader from "@/components/ui-mui/page-header";
 import { Button } from "@mui/material";
 import { ArrowLeft, FileText, Linkedin, TrendingDown, Users } from "lucide-react";
@@ -10,6 +8,7 @@ import { useRouter } from "next/navigation";
 
 export default function CompanyActivityPage() {
   const router = useRouter();
+
   return (
     <div className="p-6">
       <Button variant="outlined" className="capitalize! rounded-lg!" onClick={() => router.push("/omnichannel/company/1")}>
@@ -30,7 +29,7 @@ export default function CompanyActivityPage() {
       </div>
 
       <div className="mt-5 grid grid-cols-12 gap-6">
-        {/* Sidebar — MOBILE DI ATAS */}
+        {/* Sidebar — MOBILE ON TOP */}
         <div className="order-1 col-span-12 lg:order-2 lg:col-span-3 flex flex-col gap-6">
           <ActivitySidebar />
         </div>

@@ -53,7 +53,7 @@ export default function LoginPage() {
       {/* Right Section */}
       <section className="flex flex-col md:col-span-1 justify-center px-8 md:px-20 py-10 bg-white">
         <h1 className="text-3xl font-bold text-gray-900 leading-tight text-center">
-          Selamat Datang <br /> Kembali di main!
+          Selamat Datang <br /> Kembali!
         </h1>
 
         <h2 className="text-3xl font-bold mt-2 text-center">

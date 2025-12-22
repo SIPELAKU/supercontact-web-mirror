@@ -1,15 +1,15 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Pencil, Plus } from "lucide-react"
+import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import { Button } from "@/components/ui-mui/button"
 import { FilterBar } from "@/components/ui-mui/filter"
 import { CustomTable as Table } from "@/components/ui-mui/table"
-import { Column } from "@/lib/type/Quotation"
-import Link from "next/link"
-import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { useGetQuotationstore } from "@/lib/store/quotation"
 import { formatRupiah } from "@/lib/helper/currency"
+import { formatMDY } from "@/lib/helper/date"
+import { useGetQuotationstore } from "@/lib/store/quotation"
+import { Column } from "@/lib/type/Quotation"
+import { Plus, Search } from "lucide-react"
+import Link from "next/link"
 
 export const quotationStatus = [
     { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
@@ -34,9 +34,23 @@ export default function QuatationTable() {
     } = useGetQuotationstore();
 
     const columns: Column<(typeof listQuotations)[0]>[] = [
-        { key: "client", label: "Client", width: 18 },
-        { key: "id", label: "Quotation ID", width: 14 },
-        { key: "date", label: "Date", width: 12 },
+        {
+            key: "client",
+            label: "Client",
+            render: (row) => (
+                <span className="font-medium text-gray-900">{row.lead.contact.name}</span>
+            ),
+            width: 18
+        },
+        { key: "quotation_number", label: "Quotation ID", width: 14 },
+        { 
+            key: "date", 
+            label: "Date", 
+            render: (row) => (
+                <span className="font-medium text-gray-900">{formatMDY(row.expire_date)}</span>
+            ),
+            width: 12 
+        },
         {
             key: "status",
             label: "Status",

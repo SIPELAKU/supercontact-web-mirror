@@ -1,14 +1,14 @@
 "use client"
 
-import { useEffect } from "react"
 import QuotationHeader from "@/components/quotation/QuotationHeader"
 import QuotationTable from "@/components/quotation/QuotationTable"
-import { useGetQuotationstore } from "@/lib/store/quotation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
+import { useGetQuotationstore } from "@/lib/store/quotation"
+import { useEffect } from "react"
 
 
 export default function QuotationPage() {
-  const { fetchQuotations, pagination, dateRangeFilter, searchQuery } = useGetQuotationstore();
+  const { fetchQuotations, pagination, dateRangeFilter, searchQuery, statusFilter } = useGetQuotationstore();
   const searchDebounce = useDebounce(searchQuery, 500)
 
   useEffect(() => {
@@ -16,9 +16,10 @@ export default function QuotationPage() {
       limit: pagination.limit,
       page: pagination.page,
       dateRange: dateRangeFilter,
+      status: statusFilter,
       search: searchDebounce
     })
-  }, [dateRangeFilter, searchDebounce])
+  }, [dateRangeFilter, searchDebounce, statusFilter])
 
   return (
     <div className="p-6">

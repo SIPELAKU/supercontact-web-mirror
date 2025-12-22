@@ -1,17 +1,17 @@
 "use client"
 
-import { Search, Plus } from "lucide-react"
-import { CustomTable as Table } from "@/components/ui-mui/table"
-import { Column } from "@/lib/type/Quotation"
-import { Product, useGetProductStore } from "@/lib/store/product"
-import { Button } from "@/components/ui-mui/button"
-import { useMemo, useState } from "react"
-import Image from "next/image"
 import { AddProductModal } from "@/components/product/AddProductModal"
+import { Button } from "@/components/ui-mui/button"
+import { useConfirmation } from "@/components/ui-mui/confirm-modal"
+import { CustomTable as Table } from "@/components/ui-mui/table"
+import { formatRupiah } from "@/lib/helper/currency"
+import { Product, useGetProductStore } from "@/lib/store/product"
+import { Column } from "@/lib/type/Quotation"
 import Pencil from "@/public/icons/pencil.png"
 import Trash from "@/public/icons/trash.png"
-import { formatRupiah } from "@/lib/helper/currency"
-import { useConfirmation } from "@/components/ui-mui/confirm-modal"
+import { Plus, Search } from "lucide-react"
+import Image from "next/image"
+import { useState } from "react"
 
 const columns: Column<Product>[] = [
     { key: "product_name", label: "Product Name", width: 8 },
@@ -116,7 +116,7 @@ export default function ProductTable() {
                             const data = listProduct.filter((item) => item.id === row.id)
                             showConfirmation({
                                 type: "delete",
-                                title: "Delete Deal",
+                                title: "Delete Product",
                                 message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
                                 confirmText: "Delete",
                                 cancelText: "Cancel",

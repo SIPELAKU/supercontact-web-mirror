@@ -6,16 +6,34 @@ import { Button } from "@/components/ui-mui/button"
 import { FilterBar } from "@/components/ui-mui/filter"
 import { CustomTable as Table } from "@/components/ui-mui/table"
 import { Column } from "@/lib/type/Quotation"
-import QuotationList from '@/lib/data/quotationList.json'
 import Link from "next/link"
+import CustomSelectStage from "@/components/pipeline/SelectDealStage"
+import { useGetQuotationstore } from "@/lib/store/quotation"
+import { formatRupiah } from "@/lib/helper/currency"
+
+export const quotationStatus = [
+    { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
+    { value: "Accepted", label: "Accepted", bgColor: "bg-green-100", textColor: "text-green-800" },
+    { value: "Pending", label: "Pending", bgColor: "bg-yellow-100", textColor: "text-yellow-800" },
+    { value: "Rejected", label: "Rejected", bgColor: "bg-red-100", textColor: "text-red-800" },
+]
 
 export default function QuatationTable() {
-    const [searchQuery, setSearchQuery] = useState<string>("")
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-    const [statusFilter, setStatusFilter] = useState<string>("all")
-    const [dateRangeFilter, setDateRangeFilter] = useState<string>("all")
+    const {
+        listQuotations,
+        pagination,
+        setLimit,
+        setPage,
+        loading,
+        searchQuery,
+        setSearchQuery,
+        dateRangeFilter,
+        setDateRangeFilter,
+        statusFilter,
+        setStatusFilter
+    } = useGetQuotationstore();
 
-    const columns: Column<(typeof QuotationList)[0]>[] = [
+    const columns: Column<(typeof listQuotations)[0]>[] = [
         { key: "client", label: "Client", width: 18 },
         { key: "id", label: "Quotation ID", width: 14 },
         { key: "date", label: "Date", width: 12 },
@@ -24,14 +42,14 @@ export default function QuatationTable() {
             label: "Status",
             render: (row) => (
                 <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${row.status === "Accepted"
-                            ? "bg-green-100 text-green-800"
-                            : row.status === "Pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${row.quotation_status === "Accepted"
+                        ? "bg-green-100 text-green-800"
+                        : row.quotation_status === "Pending"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
                         }`}
                 >
-                    {row.status}
+                    {row.quotation_status}
                 </span>
             ),
             width: 12,
@@ -40,24 +58,11 @@ export default function QuatationTable() {
             key: "amount",
             label: "Amount",
             render: (row) => (
-                <span className="font-medium text-gray-900">{row.amount}</span>
+                <span className="font-medium text-gray-900">{formatRupiah(row.grand_total)}</span>
             ),
             width: 12,
         },
     ];
-
-
-    const filteredData = QuotationList.filter((q) => {
-        const matchSearch =
-            q.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            q.id.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchStatus =
-            statusFilter === "all" ||
-            q.status.toLowerCase() === statusFilter.toLowerCase()
-
-        return matchSearch && matchStatus
-    })
 
     return (
         <div className="rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
@@ -67,26 +72,35 @@ export default function QuatationTable() {
                     width="680px"
                     filters={[
                         {
-                            type: "dropdown",
-                            label: "Select Status",
-                            value: statusFilter,
-                            options: [
-                                { label: "All", value: "all" },
-                                { label: "Active", value: "active" },
-                                { label: "Closed", value: "closed" }
-                            ],
-                            onChange: setStatusFilter,
+                            type: "custom",
+                            component: (
+                                <CustomSelectStage
+                                    placeholder="Select All"
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    data={quotationStatus}
+                                    className="bg-white rounded-lg font-normal"
+                                />
+                            )
                         },
                         {
-                            type: "dropdown",
-                            label: "Select By Date Range",
-                            value: dateRangeFilter,
-                            options: [
-                                { label: "All Time", value: "all" },
-                                { label: "This Month", value: "month" },
-                                { label: "This Quarter", value: "quarter" },
-                            ],
-                            onChange: setDateRangeFilter,
+                            type: "custom",
+                            component: (
+                                <CustomSelectStage
+                                    placeholder="Select By Date Range"
+                                    value={dateRangeFilter}
+                                    onChange={setDateRangeFilter}
+                                    data={[
+                                        { label: "All", value: "all" },
+                                        { label: "Today", value: "today" },
+                                        { label: "This Week", value: "this_week" },
+                                        { label: "Last Week", value: "last_week" },
+                                        { label: "This Month", value: "this_month" },
+                                        { label: "Last Month", value: "last_month" }
+                                    ]}
+                                    className="bg-white rounded-lg font-normal"
+                                />
+                            )
                         },
                     ]}
                 />
@@ -96,7 +110,7 @@ export default function QuatationTable() {
 
             <div className="flex justify-between items-center gap-4 px-6 w-full">
                 <div
-                    className="flex items-center min-w-[550px] h-10 rounded-lg bg-white border border-[#E5E7EB] px-3 hover:border-[#D1D5DB] focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA] transition-all"
+                    className="flex items-center min-w-137.5 h-10 rounded-lg bg-white border border-[#E5E7EB] px-3 hover:border-[#D1D5DB] focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA] transition-all"
                 >
                     <Search className="h-5 w-5 text-gray-400 mr-2" />
                     <input
@@ -118,18 +132,16 @@ export default function QuatationTable() {
             </div>
 
             <Table
-                data={filteredData}
-                columns={columns} 
-                loading={false} 
-                page={0} 
-                rowsPerPage={0} 
-                total={0} 
-                onPageChange={function (page: number): void {
-                    throw new Error("Function not implemented.")
-                } } 
-                onRowsPerPageChange={function (size: number): void {
-                    throw new Error("Function not implemented.")
-                } }            />
+                data={listQuotations}
+                rowKey={(row) => row.id}
+                columns={columns}
+                loading={loading}
+                total={pagination.total}
+                page={pagination.page}
+                rowsPerPage={pagination.limit}
+                onPageChange={setPage}
+                onRowsPerPageChange={setLimit}
+            />
 
         </div>
     )

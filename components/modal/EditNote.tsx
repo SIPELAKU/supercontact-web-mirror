@@ -63,8 +63,9 @@ const TextAreaField: React.FC<TextAreaProps> = ({
 
 interface ModalContentProps {
   onClose: () => void;
-  onSubmit: (data: {title: string, content: string, date: string, time: string}) => void;
+  onSubmit: (data: {title: string, content: string, reminder_date: string, reminder_time: string}) => void;
   initialData: Note | null;
+  id: string | null
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({
@@ -73,11 +74,11 @@ const ModalContent: React.FC<ModalContentProps> = ({
   initialData,
 }) => {
   const [local, setLocal] = useState<Note>({
-    id: 0,
+    id: "",
     title: "",
     content: "",
-    date: "",
-    time: "",
+    reminder_date: "",
+    reminder_time: "",
   });
 
   useEffect(() => {
@@ -86,8 +87,10 @@ const ModalContent: React.FC<ModalContentProps> = ({
         id: initialData.id,
         title: initialData.title || "",
         content: initialData.content || "",
-        date: initialData.date || "",
-        time: initialData.time || "",
+        reminder_date: initialData.reminder_date || "",
+        reminder_time: initialData.reminder_time
+        ? initialData.reminder_time.slice(0, 5)
+        : "",
       });
     }
   }, [initialData]);
@@ -128,18 +131,18 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="date"
-              value={local.date}
+              value={local.reminder_date}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, date: e.target.value }))
+                setLocal((s) => ({ ...s, reminder_date: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg w-full"
             />
 
             <input
               type="time"
-              value={local.time}
+              value={local.reminder_time}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, time: e.target.value }))
+                setLocal((s) => ({ ...s, reminder_time: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg w-full md:w-1/2"
             />
@@ -171,7 +174,7 @@ interface EditNoteModalProps {
   onClose: () => void;
   onSuccess: () => void;
   initialData: Note | null;
-  id: number;
+  id: string;
 }
 
 const EditNoteModal: React.FC<EditNoteModalProps> = ({
@@ -182,50 +185,56 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
   id,
 }) => {
   const reactRootRef = useRef<Root | null>(null);
+  const handleSubmit = async (data: {
+  title: string;
+  content: string;
+  reminder_date: string;
+  reminder_time: string;
+}) => {
+  try {
+    // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
+    const reminderTimeFixed = `${data.reminder_time}:00.000Z`;
 
-  const handleSubmit = async (data: {title: string, content: string, date: string, time: string}) => {
-    try {
-      const res = await fetch("/api/note", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            id,
-            updatedData: data,
-        }),
+    const res = await fetch("/api/note", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        title: data.title,
+        content: data.content,
+        reminder_date: data.reminder_date,
+        reminder_time: reminderTimeFixed,
+      }),
+    });
+
+    MySwal.close();
+    onClose();
+
+    if (res.ok) {
+      onSuccess();
+      MySwal.fire({
+        icon: "success",
+        title: "Notes updated!",
+        timer: 1200,
+        showConfirmButton: false,
       });
-
-      MySwal.close();
-      onClose();
-
-      if (res.ok) {
-        onSuccess();
-
-        MySwal.fire({
-          icon: "success",
-          title: "Notes updated!",
-          timer: 1200,
-          showConfirmButton: false,
-        });
-      } else {
-        MySwal.fire({
-          icon: "error",
-          title: "Failed to update notes",
-          timer: 1400,
-          showConfirmButton: false,
-        });
-      }
-    } catch {
-      MySwal.close();
-      onClose();
-
+    } else {
       MySwal.fire({
         icon: "error",
-        title: "Server error",
+        title: "Failed to update notes",
         timer: 1400,
         showConfirmButton: false,
       });
     }
-  };
+  } catch {
+    MySwal.fire({
+      icon: "error",
+      title: "Server error",
+      timer: 1400,
+      showConfirmButton: false,
+    });
+  }
+};
 
   useEffect(() => {
     if (!open) return;
@@ -247,6 +256,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
           reactRootRef.current = createRoot(container);
           reactRootRef.current.render(
             <ModalContent
+            id={id}
               onClose={() => {
                 MySwal.close();
                 onClose();

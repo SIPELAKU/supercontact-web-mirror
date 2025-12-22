@@ -23,6 +23,8 @@ export interface Contact {
   position: string;
   last_contacted: LastContactedLeads;
   company: string;
+  job_title: string;
+  address: string;
 } 
 interface LastContactedLeads {
   id: string;
@@ -46,11 +48,11 @@ export type leadResponse = {
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
 export interface Note {
-    id: number,
+    id: string,
     title:string,
     content: string,
-    date: string,
-    time: string,
+    reminder_date: string,
+    reminder_time: string,
 }
 
 export type SortOrder = "asc" | "desc" | "";
@@ -60,3 +62,12 @@ export interface BannerDashboardProps {
   breadcrumbs?: string[];
   pathname?: string;
 }
+
+export interface ContactReq {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  job_title: string;
+  address: string;
+} 

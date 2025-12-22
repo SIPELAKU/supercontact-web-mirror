@@ -7,9 +7,13 @@ export interface Lead {
   lead_source: string;
   created_at: string;
   assigned_to: string;
-  last_contacted: string;
   contact: Contact;
   user: User
+  industry: string;
+  company_size: string;
+  office_location: string;
+  tag: string;
+  notes: string;
 }
 export interface Contact {
   id: string;
@@ -17,8 +21,14 @@ export interface Contact {
   email: string;
   phone: string;
   position: string;
+  last_contacted: LastContactedLeads;
   company: string;
 } 
+interface LastContactedLeads {
+  id: string;
+  created_at: string;
+  note: string;
+}
 interface User {
   id: string;
   fullname: string; 

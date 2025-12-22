@@ -23,18 +23,17 @@ export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Converted", label: "Converted", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
+  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
 ];
 
 // Tag options with colors
 export const tagOptions = [
-  { value: "Hot Lead", label: "Hot Lead", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
   { value: "Urgent", label: "Urgent", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
-  { value: "High Priority", label: "High Priority", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
-  { value: "Medium Priority", label: "Medium Priority", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
-  { value: "Low Priority", label: "Low Priority", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
-  { value: "Cold Lead", label: "Cold Lead", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
+  { value: "Renewal", label: "Renewal", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
+  { value: "High Value", label: "High Value", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
+  { value: "Trial User", label: "Trial User", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
 ];
 
 interface LeadData {
@@ -311,13 +310,11 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onChange={(e) => updateField("industry", e.target.value)}
                   className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
                 >
-                  <option value="Finance">Finance</option>
-                  <option value="Technology">Technology</option>
                   <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Logistics">Logistics</option>
                   <option value="Manufacturing">Manufacturing</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Other">Other</option>
+                  <option value="SaaS">SaaS</option>
                 </select>
               </div>
 
@@ -331,7 +328,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 >
                   <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
                   <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-                  <option value="201+ Karyawan">201+ Karyawan</option>
+                  <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
                   {/* <option value="501-1000 Karyawan">501-1000 Karyawan</option>
                   <option value="1000+ Karyawan">1000+ Karyawan</option> */}
                 </select>
@@ -355,7 +352,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 <CustomDealStageSelect
                   value={form.leadStatus}
                   onChange={(val) => updateField("leadStatus", val)}
-                  dealStages={leadStatusOptions}
+                  data={leadStatusOptions}
                   placeholder="Select lead status"
                   className="bg-white rounded-lg"
                 />
@@ -416,7 +413,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
               <CustomDealStageSelect
                 value={form.tag}
                 onChange={(val) => updateField("tag", val)}
-                dealStages={tagOptions}
+                data={tagOptions}
                 placeholder="Select tag"
                 className="bg-white rounded-lg"
               />

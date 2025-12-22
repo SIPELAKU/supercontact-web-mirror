@@ -11,26 +11,33 @@ import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { useAuth } from "@/lib/context/AuthContext";
 import { updateLead, UpdateLeadData, User } from "@/lib/api";
 import { Lead } from "@/lib/models/types";
+import { logger } from "../../lib/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUsers } from "@/lib/hooks/useUsers";
 
-// Lead status options with colors
+//export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Closed - Won" | "Closed - Lost";
 export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Converted", label: "Converted", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
+  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#EDFDEC]", textColor: "text-[#5BC557]" },
+  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#FCE8E8]", textColor: "text-[#C0392B]" },
 ];
-
+// const statusColors: Record<LeadStatus, string> = {
+//   "New": "bg-[#EBEBEB] text-[#617589]",
+//   "Contacted": "bg-[#E8F4FD] text-[#2980B9]",
+//   "Qualified": "bg-[#F7EEFF] text-[#6B21A8]",
+//   "Proposal": "bg-[#FEF5E7] text-[#F39C12]",
+//   "Closed - Won": "bg-[#EDFDEC] text-[#5BC557]",
+//   "Closed - Lost": "bg-[#FCE8E8] text-[#C0392B]",
+// };
 // Tag options with colors
 export const tagOptions = [
-  { value: "Hot Lead", label: "Hot Lead", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
   { value: "Urgent", label: "Urgent", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
-  { value: "High Priority", label: "High Priority", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
-  { value: "Medium Priority", label: "Medium Priority", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
-  { value: "Low Priority", label: "Low Priority", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
-  { value: "Cold Lead", label: "Cold Lead", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
+  { value: "Renewal", label: "Renewal", bgColor: "bg-[#FFE8F0]", textColor: "text-pink-700" },
+  { value: "High Value", label: "High Value", bgColor: "bg-[#F0E8FF]", textColor: "text-purple-700" },
+  { value: "Trial User", label: "Trial User", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
 ];
 
 interface LeadDetailModalProps {
@@ -74,14 +81,14 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   useEffect(() => {
     if (lead) {
       setForm({
-        industry: lead.contact?.company || "",
-        companySize: "1 - 50 Karyawan", // Default since not in lead data
-        officeLocation: "", // Contact doesn't have address property
+        industry: lead.office_location  || "",
+        companySize: lead.company_size, // Default since not in lead data
+        officeLocation: lead.contact?.company, // Contact doesn't have address property
         leadStatus: lead.lead_status,
         leadSource: lead.lead_source,
         assignedTo: lead.user?.id || "",
-        tag: "Urgent", // Default since not in lead data
-        notes: "",
+        tag: lead.tag, // Default since not in lead data
+        notes: lead.notes,
       });
       
       // Set assigned user
@@ -135,6 +142,13 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         notes: form.notes,
       };
 
+      // Validate required fields
+      if (!updateData.industry || !updateData.company_size || !updateData.lead_status || !updateData.lead_source) {
+        throw new Error("Please fill in all required fields");
+      }
+
+      logger.info("Updating lead", { leadId: lead.id, updateData });
+
       await updateLead(token, lead.id, updateData);
 
       // Refresh the leads data
@@ -143,10 +157,30 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       // Close modal
       onOpenChange(false);
       
-      console.log("Lead updated successfully!");
-    } catch (error) {
-      console.error("Error updating lead:", error);
-      alert("Failed to update lead. Please try again.");
+      logger.info("Lead updated successfully!", { leadId: lead.id });
+    } catch (error: any) {
+      logger.error("Error updating lead", { 
+        leadId: lead.id, 
+        error: error.message,
+        updateData: {
+          contact_id: lead.contact.id,
+          industry: form.industry,
+          company_size: form.companySize,
+          office_location: form.officeLocation,
+          lead_status: form.leadStatus,
+          lead_source: form.leadSource,
+          assigned_to: selectedUserId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          tag: form.tag,
+          notes: form.notes,
+        }
+      });
+      
+      // Show more specific error message
+      const errorMessage = error.message === "UNAUTHORIZED" 
+        ? "Session expired. Please login again."
+        : `Failed to update lead: ${error.message}`;
+        
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -227,13 +261,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(e) => updateField("industry", e.target.value)}
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
-                <option value="Finance">Finance</option>
-                <option value="Technology">Technology</option>
                 <option value="Healthcare">Healthcare</option>
-                <option value="Education">Education</option>
-                <option value="Manufacturing">Manufacturing</option>
-                <option value="Retail">Retail</option>
-                <option value="Other">Other</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Logistics">Logistics</option>
+                  <option value="Manufacturing">Manufacturing</option>
+                  <option value="SaaS">SaaS</option>
               </select>
             </div>
 
@@ -247,7 +279,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               >
                 <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
                 <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-                <option value="201+ Karyawan">201+ Karyawan</option>
+               <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
                 {/* <option value="501 - 1000 Karyawan">501-1000 Karyawan</option>
                 <option value="1000+ Karyawan">1000+ Karyawan</option> */}
               </select>
@@ -271,7 +303,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <CustomDealStageSelect
                 value={form.leadStatus}
                 onChange={(val) => updateField("leadStatus", val)}
-                dealStages={leadStatusOptions}
+                data={leadStatusOptions}
                 placeholder="Select lead status"
                 className="bg-white rounded-lg"
               />
@@ -286,11 +318,8 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
                 <option value="Web Form">Web Form</option>
-                <option value="Social Media">Social Media</option>
-                <option value="Email Campaign">Email Campaign</option>
-                <option value="Referral">Referral</option>
-                <option value="Cold Call">Cold Call</option>
-                <option value="Trade Show">Trade Show</option>
+                <option value="WhatsApp">Social Media</option>
+                <option value="Manual Entry">Email Campaign</option>
               </select>
             </div>
 
@@ -332,7 +361,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
             <CustomDealStageSelect
               value={form.tag}
               onChange={(val) => updateField("tag", val)}
-              dealStages={tagOptions}
+              data={tagOptions}
               placeholder="Select tag"
               className="bg-white rounded-lg"
             />

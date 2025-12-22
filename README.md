@@ -9,7 +9,7 @@ npm run dev
 # or
 yarn dev
 # or
-pnpm dev
+pnm dev
 # or
 bun dev
 ```
@@ -18,7 +18,77 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Poppins font.
+
+## Path Resolution Setup
+
+This project uses TypeScript path mapping with the `@` symbol for cleaner imports. The configuration is set up in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["./components/*"],
+      "@/lib/*": ["./lib/*"],
+      "@/app/*": ["./app/*"],
+      "@/public/*": ["./public/*"]
+    }
+  }
+}
+```
+
+### Usage Examples
+
+Instead of relative imports:
+```typescript
+import { useAuth } from "../../../lib/context/AuthContext";
+import Button from "../../components/ui/button";
+```
+
+Use absolute imports with `@`:
+```typescript
+import { useAuth } from "@/lib/context/AuthContext";
+import Button from "@/components/ui/button";
+```
+
+### VSCode Setup
+
+The project includes VSCode settings in `.vscode/settings.json` for optimal TypeScript support:
+
+```json
+{
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.importModuleSpecifier": "shortest"
+}
+```
+
+### Troubleshooting Path Resolution
+
+If VSCode doesn't recognize `@` imports:
+
+1. **Restart TypeScript Server**: Press `Ctrl+Shift+P` → "TypeScript: Restart TS Server"
+2. **Check tsconfig.json**: Ensure `baseUrl` is set to `"."` and paths are correctly configured
+3. **Reload VSCode**: Sometimes a full reload helps with path resolution
+4. **Verify file structure**: Make sure files exist in the paths you're importing from
+
+### Project Structure
+
+```
+├── app/                    # Next.js App Router pages
+├── components/             # Reusable UI components
+├── lib/                   # Utilities, hooks, types, context
+│   ├── api.ts            # API functions
+│   ├── context/          # React contexts
+│   ├── hooks/            # Custom React hooks
+│   ├── type/             # TypeScript type definitions
+│   └── utils/            # Utility functions
+├── public/               # Static assets
+└── scripts/              # Build and deployment scripts
+```
 
 ## Learn More
 

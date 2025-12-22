@@ -3,6 +3,199 @@
 import { leadResponse } from "@/lib/models/types";
 import { logger } from "./utils/logger";
 
+// Register types and function
+export interface RegisterData {
+  fullname: string;
+  email: string;
+  phone: string;
+  company: string;
+  position: string;
+  password: string;
+  confirm_password: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
+export async function registerUser(userData: RegisterData): Promise<RegisterResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/register`;
+  
+  logger.info("Making POST request to register user", { 
+    url, 
+    userData: { ...userData, password: '[HIDDEN]', confirm_password: '[HIDDEN]' }
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse registration response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/auth/register (POST)", { status: res.status, response: json });
+    
+    // Don't throw error for successful HTTP responses, even if success: false
+    // Let the calling code handle the success/failure based on the response.success field
+    if (!res.ok) {
+      logger.error(`Registration failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Registration failed (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Registration request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+// OTP Verification types and functions
+export interface VerifyOTPData {
+  email: string;
+  otp_type: string;
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
+export async function verifyOTP(otpData: VerifyOTPData): Promise<VerifyOTPResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/otp/verify`;
+  
+  logger.info("Making POST request to verify OTP", { 
+    url, 
+    otpData: { ...otpData, code: '[HIDDEN]' }
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(otpData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse OTP verification response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/auth/otp/verify (POST)", { status: res.status, response: json });
+    
+    // Don't throw error for successful HTTP responses, even if success: false
+    // Let the calling code handle the success/failure based on the response.success field
+    if (!res.ok) {
+      logger.error(`OTP verification failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `OTP verification failed (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("OTP verification request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export interface ResendOTPData {
+  email: string;
+  otp_type: string;
+}
+
+export interface ResendOTPResponse {
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
+export async function resendOTP(resendData: ResendOTPData): Promise<ResendOTPResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/otp/resend`;
+  
+  logger.info("Making POST request to resend OTP", { 
+    url, 
+    resendData
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(resendData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse resend OTP response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/auth/otp/resend (POST)", { status: res.status, response: json });
+    
+    // Don't throw error for successful HTTP responses, even if success: false
+    // Let the calling code handle the success/failure based on the response.success field
+    if (!res.ok) {
+      logger.error(`Resend OTP failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Failed to resend OTP (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Resend OTP request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
 export async function fetchLeads(token: string): Promise<leadResponse> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -223,4 +416,137 @@ export async function fetchUsers(token: string): Promise<UserResponse> {
   
   if (!res.ok || !json.success) throw new Error("Failed to load users");
   return json;
+}
+
+// Profile types and functions
+export interface ProfileData {
+  id: string;
+  fullname: string;
+  email: string;
+  avatar_initial: string;
+  role: string | null;
+  joined_date: string;
+  company: string;
+  country: string;
+  language: string;
+  phone: string;
+  skype: string;
+  bio: string;
+}
+
+export interface ProfileResponse {
+  success: boolean;
+  data: ProfileData;
+  error: string | null;
+}
+
+export async function fetchProfile(token: string): Promise<ProfileResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
+  
+  logger.info("Making GET request to fetch profile", { url });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse profile response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/user-profile/profile (GET)", { status: res.status, response: json });
+    
+    if (!res.ok) {
+      logger.error(`Fetch profile failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Failed to fetch profile (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch profile request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export interface UpdateProfileData {
+  fullname: string;
+  email: string;
+  company: string;
+  country: string;
+  language: string;
+  phone: string;
+  skype: string;
+  bio: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
+export async function updateProfile(token: string, profileData: UpdateProfileData): Promise<UpdateProfileResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
+  
+  logger.info("Making PATCH request to update profile", { 
+    url, 
+    profileData
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse profile update response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/user-profile/profile (PATCH)", { status: res.status, response: json });
+    
+    if (!res.ok) {
+      logger.error(`Profile update failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Profile update failed (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Profile update request failed", { error: error.message, url });
+    throw error;
+  }
 }

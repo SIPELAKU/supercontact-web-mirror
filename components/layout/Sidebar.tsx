@@ -11,34 +11,51 @@ import {
   Home,
   Mail,
   Power,
-  Server
+  Server,
+  Users
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-// Custom Sales Icon Component
-const SalesIcon = ({ className }: { className?: string }) => (
-  <Image
-    src="/assets/sales-icon-sb.svg"
-    alt="Sales Icon"
-    width={20}
-    height={20}
-    className={className}
-  />
-);
+// Custom Sales Icon Component with robust fallback
+const SalesIcon = ({ className }: { className?: string }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  if (hasError) {
+    return <BarChart3 className={cn("w-5 h-5", className)} />;
+  }
+  
+  return (
+    <img
+      src="/assets/sales-icon-sb.svg"
+      alt="Sales"
+      className={cn("w-5 h-5", className)}
+      onError={() => setHasError(true)}
+      style={{ display: hasError ? 'none' : 'block' }}
+    />
+  );
+};
 
-// Custom Omnichannel Icon Component
-const OmnichannelIcon = ({ className }: { className?: string }) => (
-  <Image
-    src="/assets/omnichannel.svg"
-    alt="Omnichannel Icon"
-    width={20}
-    height={20}
-    className={className}
-  />
-);
+// Custom Omnichannel Icon Component with robust fallback
+const OmnichannelIcon = ({ className }: { className?: string }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  if (hasError) {
+    return <Users className={cn("w-5 h-5", className)} />;
+  }
+  
+  return (
+    <img
+      src="/assets/omnichannel.svg"
+      alt="Omnichannel"
+      className={cn("w-5 h-5", className)}
+      onError={() => setHasError(true)}
+      style={{ display: hasError ? 'none' : 'block' }}
+    />
+  );
+};
 
 type MenuSubItem = {
   name: string;
@@ -75,7 +92,7 @@ const menuData: MenuSection[] = [
         name: "Sales",
         icon: SalesIcon,
         children: [
-          { name: "Dashboard", path: "/sales/dashboard" },
+          { name: "Product", path: "/sales/product" },
           { name: "Lead", path: "/lead-management" },
           { name: "Pipeline", path: "/sales/pipeline" },
           { name: "Quotation", path: "/sales/quotation" },
@@ -85,8 +102,8 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
-          { name: "Mailing List", path: "/email-marketing/mailing-list" },
-          { name: "Subscribers", path: "/email-marketing/subscribers" },
+          { name: "Mailing List", path: "/mailing-list" },
+          { name: "Subscribers", path: "/subscribers" },
         ],
       },
       {

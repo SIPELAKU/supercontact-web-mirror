@@ -1,6 +1,5 @@
 import axios from "axios";
 import { NextResponse } from "next/server";
-import axiosExternal from "@/lib/utils/axiosClient";
 
 export async function GET(req: Request) {
   try {
@@ -25,7 +24,7 @@ export async function GET(req: Request) {
       params.assigned_to = assignedTo;
     }
 
-    const res = await axiosExternal.get("/pipelines", { params });
+    const res = await axiosClient.get("/pipelines", { params });
 
     return NextResponse.json(res.data);
 
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const res = await axiosExternal.post("/pipelines", body, {
+    const res = await axiosClient.post("/pipelines", body, {
       headers: {
         "Content-Type": "application/json"
       }

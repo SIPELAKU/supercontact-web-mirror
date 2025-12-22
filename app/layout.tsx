@@ -1,13 +1,10 @@
+import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout"
+import { ConfirmationProvider } from "@/components/ui-mui/confirm-modal"
+import { AuthProvider } from "@/lib/context/AuthContext"
+import ReactQueryProvider from "@/lib/ReactQueryProvider"
+import { Poppins } from "next/font/google"
 import type React from "react"
 import "./globals.css"
-import Sidebar from "@/components/layout/Sidebar"
-import Topbar from "@/components/layout/Topbar"
-import { SidebarProvider } from "@/lib/context/SidebarContext"
-import { AuthProvider } from "@/lib/context/AuthContext"
-import { Poppins } from "next/font/google"
-import ReactQueryProvider from "@/lib/ReactQueryProvider"
-import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
-import { ConfirmationProvider } from "@/components/ui-mui/confirm-modal"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -22,6 +19,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={poppins.variable}>
+      <head>
+        {/* Preload critical SVG icons */}
+        <link rel="preload" href="/assets/sales-icon-sb.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/assets/omnichannel.svg" as="image" type="image/svg+xml" />
+        <link rel="preload" href="/assets/sc-logo.png" as="image" />
+      </head>
       <body className="font-sans antialiased min-h-screen bg-[#ffffff]">
         <ConfirmationProvider>
           <AuthProvider>

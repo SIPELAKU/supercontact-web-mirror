@@ -1,7 +1,7 @@
 'use client';
 import BannerDashboard from "@/components/ui/banner-dashboard";
-import { Box, Card, Stack, Typography, Button, IconButton, TextField } from "@mui/material";
-import { Plus, ChevronRight, Tally1, EllipsisVertical } from "lucide-react";
+import { Box, Button, Card, IconButton, Stack, Typography } from "@mui/material";
+import { ChevronRight, EllipsisVertical, Plus, Tally1 } from "lucide-react";
 
 export default function MailingList() {
   const rows = Array(2).fill({
@@ -110,7 +110,7 @@ export default function MailingList() {
                 <Typography>Contact 1</Typography>
                 <IconButton size="small"><ChevronRight size={18} /></IconButton>
                 <IconButton size="small"><Tally1 size={20} /></IconButton>
-                <IconButton size="small" color="error"><EllipsisVerticalsize={18} /></IconButton>
+                <IconButton size="small" color="error"><EllipsisVertical size={18} /></IconButton>
               </Stack>
             </Box>
           ))}

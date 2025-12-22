@@ -2,16 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import {
-    BarChart3,
-    Building2,
-    ChevronDown,
-    FileText,
-    HelpCircle,
-    Home,
-    Mail,
-    Power,
-    Server,
-    Users
+  BarChart3,
+  Building2,
+  ChevronDown,
+  FileText,
+  HelpCircle,
+  Home,
+  Mail,
+  Power,
+  Server,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -62,8 +62,8 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
-          { name: "Mailing List", path: "/email-marketing/mailing-list" },
-          { name: "Subscribers", path: "/email-marketing/subscribers" },
+          { name: "Mailing List", path: "/mailing-list" },
+          { name: "Subscribers", path: "/subscribers" },
         ],
       },
       {

@@ -1,20 +1,38 @@
 // app/(auth)/login/page.tsx
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { FcGoogle } from "react-icons/fc";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check if user came from email verification
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccessMessage('Email verified successfully! You can now log in.');
+      
+      // Auto-dismiss success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+      
+      // Cleanup timer on component unmount
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +47,10 @@ export default function LoginPage() {
       } else {
         setError("Invalid email or password. Please try again.");
       }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
+    } catch (err: any) {
+      console.error('Login error:', err);
+      const errorMessage = err?.message || err?.error || (typeof err === 'string' ? err : "An error occurred. Please try again.");
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +87,21 @@ export default function LoginPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
               {error}
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm flex items-center justify-between">
+              <span>{successMessage}</span>
+              <button
+                onClick={() => setSuccessMessage('')}
+                className="ml-2 text-green-400 hover:text-green-600 focus:outline-none"
+                aria-label="Dismiss message"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
           

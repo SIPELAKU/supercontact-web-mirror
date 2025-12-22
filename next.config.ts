@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // 3. Image optimization settings
+  images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+  
   // Config lainnya...
   ...(process.env.NODE_ENV === 'development' && {
     experimental: {

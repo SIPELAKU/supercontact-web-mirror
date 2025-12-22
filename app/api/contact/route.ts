@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
-import axiosExternal from "@/lib/utils/axiosExternal";
-import { cookies } from "next/headers";
 import axios from "axios";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
@@ -16,7 +15,7 @@ export async function GET(req: Request) {
       limit,
     };
 
-    const res = await axiosExternal.get("/contacts", { params });    
+    const res = await axiosClient.get("/contacts", { params });    
 
     return NextResponse.json(res.data);
 

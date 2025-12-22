@@ -1,21 +1,23 @@
-import React, { useState } from "react";
-import Link from "next/link";
+'use client'
+import { useAuth } from "@/lib/context/AuthContext";
 import {
-  Avatar,
-  Box,
-  Menu,
-  Button,
-  IconButton,
-  Typography,
-  Divider,
-  Stack,
-  Paper,
+    Avatar,
+    Box,
+    Button,
+    Divider,
+    IconButton,
+    Menu,
+    Paper,
+    Stack,
+    Typography,
 } from "@mui/material";
+import { FileCheck, LogOut, Mail, SquareUserRound } from "lucide-react";
+import Link from "next/link";
+import React, { useState } from "react";
 
-import { FileCheck, Mail, SquareUserRound, LogOut } from "lucide-react";
-
-const Profile = () => {
+const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { logout } = useAuth();
 
   const open = Boolean(anchorEl);
 
@@ -25,6 +27,11 @@ const Profile = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleClose();
+    logout();
   };
 
   return (
@@ -41,8 +48,10 @@ const Profile = () => {
         <Avatar
           src="/assets/profile-icon.png"
           alt="profile"
-          sx={{ width: 35, height: 35 }}
-        />
+          sx={{ width: 35, height: 35, bgcolor: "#5479EE", color: "#fff" }}
+        >
+          M
+        </Avatar>
       </IconButton>
 
       {/* ================================
@@ -66,20 +75,20 @@ const Profile = () => {
         {/* USER HEADER */}
         <Box display="flex" alignItems="center" gap={2} mb={2}>
           <Avatar
-            sx={{ width: 48, height: 48, bgcolor: "primary.main", color: "#fff" }}
+            sx={{ width: 48, height: 48, bgcolor: "#5479EE", color: "#fff" }}
           >
             M
           </Avatar>
 
           <Box>
-            <Typography fontWeight={700}>Dimas Agus Setiawan</Typography>
+            <Typography fontWeight={700}>Muhammad...</Typography>
             <Typography variant="body2" color="text.secondary">
-              Admin
+              Administrator
             </Typography>
 
             <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
               <Mail size={16} />
-              <Typography variant="body2">dimasagus@gmail.com</Typography>
+              <Typography variant="body2">admin@example.com</Typography>
             </Stack>
           </Box>
         </Box>
@@ -91,7 +100,7 @@ const Profile = () => {
           {/* Item 1 */}
           <Box
             component={Link}
-            href="pages/profile"
+            href="/profile"
             onClick={handleClose}
             sx={{
               display: "flex",
@@ -130,7 +139,7 @@ const Profile = () => {
           {/* Item 2 */}
           <Box
             component={Link}
-            href="pages/inbox"
+            href="/inbox"
             onClick={handleClose}
             sx={{
               display: "flex",
@@ -155,7 +164,7 @@ const Profile = () => {
                 borderRadius: 2,
               }}
             >
-              <IconMail size={22} color="#4c5cff" />
+              <Mail size={22} color="#4c5cff" />
             </Paper>
 
             <Box>
@@ -169,7 +178,7 @@ const Profile = () => {
           {/* Item 3 */}
           <Box
             component={Link}
-            href="pages/tasks"
+            href="/tasks"
             onClick={handleClose}
             sx={{
               display: "flex",
@@ -208,7 +217,7 @@ const Profile = () => {
 
         {/* LOGOUT BUTTON */}
         <Button
-          href="/authentication/login"
+          onClick={handleLogout}
           variant="outlined"
           fullWidth
           sx={{
@@ -227,4 +236,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default ProfileDropdown;

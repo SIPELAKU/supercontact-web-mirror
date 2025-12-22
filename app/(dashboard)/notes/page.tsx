@@ -1,14 +1,13 @@
 'use client'
 
-import BannerDashboard from "@/components/ui/banner-dashboard"
-import { SortOrder } from "@/lib/models/types"
-import { useState, useEffect } from "react"
-import { IoIosSearch } from "react-icons/io";
+import AddNoteModal from "@/components/modal/AddNote";
+import EditNoteModal from "@/components/modal/EditNote";
+import BannerDashboard from "@/components/ui/banner-dashboard";
+import { Note, SortOrder } from "@/lib/models/types";
+import { GetRelativeTime } from "@/lib/utils";
+import { useEffect, useState } from "react";
 import { BiSolidBellRing } from "react-icons/bi";
-import AddNoteModal from "@/components/modal/AddNote"
-import { Note } from "@/lib/models/types"
-import { GetRelativeTime } from "@/lib/utils"
-import EditNoteModal from "@/components/modal/EditNote"
+import { IoIosSearch } from "react-icons/io";
 
 export default function NotesPage(){
     const [order, setOrder] = useState<SortOrder>("");
@@ -41,7 +40,7 @@ export default function NotesPage(){
       }, []);
 
     return(
-    <div className="w-full flex flex-col gap-4 p-4 md:p-8">
+    <div className="w-full flex flex-col gap-4 p-6">
       <BannerDashboard
         title="Notes"
         breadcrumbs={["Dashboard", "Notes"]}

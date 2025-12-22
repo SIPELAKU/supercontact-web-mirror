@@ -5,47 +5,38 @@ image: bitnami/git:latest
 # KONFIGURASI VARIABEL
 # ==============================================================================
 variables:
-  # GIT_DEPTH: 0 sangat penting untuk CI/CD pipeline yang melakukan merging.
-  # Ini memastikan Runner mengambil seluruh history commit, bukan hanya yang terbaru.
-  # Jika tidak diset 0, proses merge sering gagal karena history tidak lengkap ("unrelated histories").
   GIT_DEPTH: 0
 
 # ==============================================================================
-# DEFINISI STAGES (TAHAPAN PIPELINE)
+# DEFINISI STAGES
 # ==============================================================================
 stages:
-  - mirror-dev       # Otomatis: Sinkronisasi codingan Dev ke GitHub
-  - promote-staging  # Manual: Merge Dev ke Staging (Butuh Klik 'Play')
-  - promote-main     # Manual: Merge Staging ke Main/Production (Butuh Klik 'Play')
+  - mirror-dev
+  - promote-staging
+  - promote-main
 
 # ==============================================================================
-# SCRIPT PERSIAPAN (Dijalankan sebelum setiap Job)
+# SCRIPT PERSIAPAN
 # ==============================================================================
 before_script:
   - echo "⚙️ Memulai konfigurasi Environment..."
   
-  # [1] Konfigurasi Identitas Git
-  # Diperlukan karena script ini akan membuat 'Merge Commit' otomatis.
+  # Konfigurasi Identitas
   - git config --global user.email "ci-bot@solvera.com"
   - git config --global user.name "CI/CD Bot"
   
-  # [2] Setup Remote GitHub (Tujuan Mirroring)
-  # Menambahkan remote bernama 'github'. '|| true' mencegah error jika remote sudah ada.
+  # Setup Remote GitHub
   - git remote add github https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/supercontact-web-mirror.git || true
   
-  # [3] Setup Remote GitLab (Origin) dengan Hak Akses Tulis
-  # Default runner hanya bisa 'read'. Kita ubah URL origin agar menggunakan Token
-  # supaya Runner bisa melakukan 'git push' kembali ke GitLab.
+  # Setup Remote GitLab
   - git remote set-url origin https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com/$CI_PROJECT_PATH.git
 
-  # [4] Ambil Semua Data Branch
-  # Memastikan Runner mengetahui keberadaan branch dev, staging, dan main.
+  # Fetch Semua Branch
   - git fetch --all
   - echo "✅ Konfigurasi selesai."
 
 # ==============================================================================
 # JOB 1: DEVELOPMENT (AUTO SYNC)
-# Trigger: Setiap kali ada Push ke branch 'dev'
 # ==============================================================================
 sync_dev_to_github:
   stage: mirror-dev
@@ -54,21 +45,18 @@ sync_dev_to_github:
     - echo "🔄 [DEV] Memulai Sinkronisasi ke GitHub..."
     - echo "=================================================="
     
-    # 1. Pastikan berada di branch dev
-    - git checkout dev
-    - git pull origin dev
+    # PERBAIKAN: Memaksa checkout dari 'origin/dev' agar tidak bingung
+    - git checkout -B dev origin/dev
     
-    # 2. Kirim ke GitHub
-    - git push github dev
+    # Kirim ke GitHub
+    - git push github dev --force
     
     - echo "✅ [SUCCESS] Dev berhasil disinkronkan!"
-    - echo "🌍 Vercel akan otomatis deploy ke URL Development."
   only:
     - dev
 
 # ==============================================================================
 # JOB 2: PROMOTION (DEV -> STAGING)
-# Trigger: Manual (Tombol Play) pada pipeline branch 'dev'
 # ==============================================================================
 approve_to_staging:
   stage: promote-staging
@@ -77,33 +65,26 @@ approve_to_staging:
     - echo "🚀 [STAGING] Memproses Merge Request (Dev -> Staging)..."
     - echo "=================================================="
     
-    # 1. Pindah ke Branch Staging
-    # Logika: Jika branch lokal belum ada, buat baru tracking ke origin
-    - git checkout staging || git checkout -b staging origin/staging
-    - git pull origin staging
+    # PERBAIKAN: Memaksa checkout 'staging' dari origin
+    - git checkout -B staging origin/staging
     
-    # 2. Lakukan Merge (Dev masuk ke Staging)
-    # --no-edit: Menerima pesan commit default tanpa membuka text editor
+    # Lakukan Merge
     - echo "🔀 Merging 'origin/dev' into 'staging'..."
     - git merge origin/dev --no-edit
     
-    # 3. Push Perubahan ke Kedua Repo (GitLab & GitHub)
-    - echo "⬆️ Pushing update ke GitLab (Origin)..."
+    # Push ke GitLab & GitHub
+    - echo "⬆️ Pushing update..."
     - git push origin staging
-    
-    - echo "⬆️ Pushing update ke GitHub (Mirror)..."
-    - git push github staging
+    - git push github staging --force
     
     - echo "✅ [SUCCESS] Staging berhasil diupdate!"
-    - echo "🌍 Vercel akan otomatis deploy ke URL Staging."
   only:
     - dev
   when: manual
   allow_failure: false
 
 # ==============================================================================
-# JOB 3: PROMOTION (STAGING -> MAIN/PRODUCTION)
-# Trigger: Manual (Tombol Play) pada pipeline branch 'staging'
+# JOB 3: PROMOTION (STAGING -> MAIN)
 # ==============================================================================
 approve_to_production:
   stage: promote-main
@@ -112,23 +93,19 @@ approve_to_production:
     - echo "🚀 [PRODUCTION] Memproses Release (Staging -> Main)..."
     - echo "=================================================="
     
-    # 1. Pindah ke Branch Main
-    - git checkout main || git checkout -b main origin/main
-    - git pull origin main
+    # PERBAIKAN: Memaksa checkout 'main' dari origin
+    - git checkout -B main origin/main
     
-    # 2. Lakukan Merge (Staging masuk ke Main)
+    # Lakukan Merge
     - echo "🔀 Merging 'origin/staging' into 'main'..."
     - git merge origin/staging --no-edit
     
-    # 3. Push Perubahan ke Kedua Repo (GitLab & GitHub)
-    - echo "⬆️ Pushing update ke GitLab (Origin)..."
+    # Push ke GitLab & GitHub
+    - echo "⬆️ Pushing update..."
     - git push origin main
-    
-    - echo "⬆️ Pushing update ke GitHub (Mirror)..."
-    - git push github main
+    - git push github main --force
     
     - echo "✅ [SUCCESS] Production berhasil diupdate!"
-    - echo "🌍 Vercel akan otomatis deploy ke URL Production (Main)."
   only:
     - staging
   when: manual

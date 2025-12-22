@@ -24,6 +24,7 @@ export interface Column<T> {
 interface CustomTableProps<T> {
   data: T[];
   columns: Column<T>[];
+  rowKey?: (row: T) => string;
   loading: boolean;
   selectable?: boolean;
   actions?: (row: T) => React.ReactNode;
@@ -83,6 +84,7 @@ export function CustomTable<T extends { id: string }>({
   page,
   rowsPerPage,
   total,
+  rowKey,
   onPageChange,
   onRowsPerPageChange,
 }: CustomTableProps<T>) {
@@ -201,7 +203,7 @@ export function CustomTable<T extends { id: string }>({
               </tr>
             ) : (
               paginatedData.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition h-16">
+                <tr key={rowKey ? rowKey(row) : (row as any).id} className="hover:bg-gray-50 transition h-16">
 
                   {selectable && (
                     <td className="px-6 py-4 h-16">

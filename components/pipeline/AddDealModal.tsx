@@ -167,15 +167,23 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       const response = await postFormPipeline(body)
 
       if (response.success) {
+        setTimeout(() => (
+          onOpenChange(false)
+        ), 500)
         reset();
-        onOpenChange(false);
+        setErrors({})
+        setEditId("")
       }
     } else {
       const response = await updateFormPipeline(body, id)
 
       if (response.success) {
+        setTimeout(() => (
+          onOpenChange(false)
+        ), 500)
         reset();
-        onOpenChange(false);
+        setErrors({})
+        setEditId("")
       }
     }
   };
@@ -184,7 +192,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="
-          max-w-[820px] 
+          max-w-205 
           w-full 
           px-10 py-8 
           rounded-3xl 

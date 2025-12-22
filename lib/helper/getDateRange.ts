@@ -1,23 +1,29 @@
 export function getDateRange(label: string) {
   const now = new Date();
+  const range = label.trim().toLowerCase().replace(/\s+/g, "_");
 
-  const format = (date: Date): string => {
+  function formatWIB(date: Date, endOfDay = false): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
+
+    const hh = endOfDay ? "23" : "00";
+    const mm = endOfDay ? "59" : "00";
+    const ss = endOfDay ? "59" : "00";
+
+    return `${y}-${m}-${d}T${hh}:${mm}:${ss}+07:00`;
+  }
+
 
   let start: Date;
   let end: Date;
 
-  const range = label.trim().toLowerCase().replace(/\s+/g, "_");
-
   switch (range) {
-    case "today":
+    case "today": {
       start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      end = new Date(start);
       break;
+    }
 
     case "this_week": {
       const day = now.getDay();
@@ -39,22 +45,24 @@ export function getDateRange(label: string) {
       break;
     }
 
-    case "this_month":
+    case "this_month": {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       break;
+    }
 
-    case "last_month":
+    case "last_month": {
       start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       end = new Date(now.getFullYear(), now.getMonth(), 0);
       break;
+    }
 
     default:
       return null;
   }
 
   return {
-    start: format(start),
-    end: format(end),
+    start: formatWIB(start, false),
+    end: formatWIB(end, true),
   };
 }

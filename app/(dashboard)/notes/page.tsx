@@ -15,17 +15,22 @@ export default function NotesPage(){
     const [openAdd, setOpenAdd] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-    const [selectedId, setSelectedId]= useState(0)
+    const [selectedId, setSelectedId]= useState<string>("")
     const [dataNote, setDataNote] = useState<Note[]>([])
-
 
       const loadDataAgain = () => {
         fetch("/api/note")
           .then((res) => res.json())
-          .then((data) => setDataNote(data.data));
+          .then((res) =>{ 
+            const notes = Array.isArray(res.data)?
+            res.data : Array.isArray(res.data?.notes)?
+            res.data.notes : []
+            setDataNote(notes)
+          })
+          .catch(()=> setDataNote([]));
       };
     
-      function handleEdit(item : Note, id: number) {
+      function handleEdit(item : Note, id: string) {
         setSelectedNote(item);
         setSelectedId(id)
         setOpenEdit(true);
@@ -69,14 +74,14 @@ export default function NotesPage(){
             <div className="flex flex-col items-start gap-2">
               <div className="flex gap-2 items-center text-sm bg-amber-200 text-amber-500 px-4 py-2 rounded-full">
                 <BiSolidBellRing />
-                {GetRelativeTime(item.date, item.time)}
+                {GetRelativeTime(item.reminder_date, item.reminder_time)}
               </div>
               <h1 className="font-semibold">{item?.title}</h1>
               <div className="text-gray-500">
                 {item?.content}
               </div>
             </div>
-            <div>{GetRelativeTime(item.date, item.time)}</div>
+            <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
           </div>
         </button>
       ))}

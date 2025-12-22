@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import axiosInternal from "@/lib/utils/axiosInternal";
+import api from "@/lib/utils/axiosClient";
 import { StageUI, transformPipelineResponse } from "@/lib/helper/transformPipeline";
 import { formatRupiah } from "@/lib/helper/currency";
 import { getDateRange } from "@/lib/helper/getDateRange";
@@ -116,7 +116,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   fetchActiveUser: async() => {
     try {
       set({ loading: true, error: null });
-       const res = await axiosInternal.get("/sales/pipeline/active-user");
+       const res = await api.get("/pipelines/active-users");
        const data = res.data.data
        const temp: DealStage[] = [{label: "All", value: 'all'}]
        data.users.map((arr: Users)=>{
@@ -153,7 +153,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
         params.assigned_to = param.assigned_to;
       }
 
-      const res = await axiosInternal.get("/sales/pipeline", { params });
+      const res = await api.get("/pipelines", { params });
       
       const data = res.data.data
 
@@ -194,7 +194,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       
-      const res = await axiosInternal.post("/sales/pipeline", body );
+      const res = await api.post("/pipelines", body );
 
       if (res.status === 200) {
         await get().fetchPipeline();
@@ -226,7 +226,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   updateStagePipeline: async (id: string, stage: string) => {
     try {
       set({ loading: true, error: null });
-      const res = await axiosInternal.patch(`/sales/pipeline/${id}/stage`, { 
+      const res = await api.patch(`/pipelines/${id}/stage`, { 
         deal_stage: stage,
       });
     } catch (error) {
@@ -241,7 +241,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const res = await axiosInternal.put(`/sales/pipeline/${id}`, body);
+      const res = await api.put(`/pipelines/${id}`, body);
 
       if (res.status === 200) {
         await get().fetchPipeline();

@@ -6,11 +6,13 @@ import { Avatar, AvatarFallback } from "@/components/ui-mui/avatar"
 import { useState } from "react"
 import { useSidebar } from "@/lib/context/SidebarContext"
 import { useAuth } from "@/lib/context/AuthContext"
+import Notification from "../modal/Notification"
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false)
   const { toggleDesktop, toggleMobile } = useSidebar()
   const { logout } = useAuth()
+  const [openNotif, setOpenNotif] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-6 py-4">
@@ -35,7 +37,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+        <Button onClick={() => setOpenNotif(!openNotif)} variant="ghost" size="icon" className="relative h-9 w-9">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 h-2 w-2 bg-yellow-400 rounded-full" />
         </Button>
@@ -63,6 +65,10 @@ export default function Header() {
           <AvatarFallback className="bg-[#5479EE] text-white">M</AvatarFallback>
         </Avatar>
       </div>
+      <Notification
+        open={openNotif}
+        onClose={() => setOpenNotif(false)}
+      />
     </header>
   )
 }

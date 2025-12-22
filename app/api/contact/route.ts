@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { DataContact } from "@/lib/data/dummy";
 import axiosExternal from "@/lib/utils/axiosExternal";
+import { cookies } from "next/headers";
+import axios from "axios";
 
 export async function GET(req: Request) {
   try {
@@ -36,26 +37,163 @@ export async function GET(req: Request) {
   }
 }
 
-// ADD NEW CONTACT
-export async function POST(request: Request) {
-  const body = await request.json();
-  DataContact.unshift(body);
-  return NextResponse.json({ message: "Contact added", data: body });
-}
+export async function POST(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
 
-// EDIT CONTACT BY INDEX
-export async function PUT(request: Request) {
-  const body = await request.json();
-  const { index, updatedData } = body;
+    if (!token) {
+      return NextResponse.json(
+        { error: { message: "Unauthorized" } },
+        { status: 401 }
+      );
+    }
 
-  if (index < 0 || index >= DataContact.length) {
-    return NextResponse.json({ error: "Index not found" }, { status: 400 });
+    const body = await req.json();
+
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/contacts`,
+      body,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return NextResponse.json(res.data, { status: res.status });
+
+  } catch (error) {
+    console.error("POST contact error:", error);
+
+    // ✅ HANDLE AXIOS ERROR
+    if (axios.isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data || {
+          error: { message: "Upstream API error" },
+        },
+        {
+          status: error.response?.status || 500,
+        }
+      );
+    }
+
+    // fallback error
+    return NextResponse.json(
+      { error: { message: "Internal server error" } },
+      { status: 500 }
+    );
   }
-
-  DataContact[index] = { ...DataContact[index], ...updatedData };
-
-  return NextResponse.json({
-    message: "Contact updated",
-    data: DataContact[index],
-  });
 }
+
+export async function PUT(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: { message: "Unauthorized" } },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { id, ...payload } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: { message: "Contact ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    const res = await axios.put(
+      `${process.env.NEXT_PUBLIC_API_URL}/contacts/${id}`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return NextResponse.json(res.data, { status: res.status });
+
+  } catch (error) {
+    console.error("PUT contact error:", error);
+
+    // ✅ Forward axios error
+    if (axios.isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data || {
+          error: { message: "Upstream API error" },
+        },
+        {
+          status: error.response?.status || 500,
+        }
+      );
+    }
+
+    return NextResponse.json(
+      { error: { message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { error: { message: "Unauthorized" } },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: { message: "Contact ID is required" } },
+        { status: 400 }
+      );
+    }
+
+    const res = await axios.delete(
+      `${process.env.NEXT_PUBLIC_API_URL}/contacts/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    console.error("DELETE contact error:", error);
+
+    if (axios.isAxiosError(error)) {
+      return NextResponse.json(
+        error.response?.data || {
+          error: { message: "Upstream API error" },
+        },
+        {
+          status: error.response?.status || 500,
+        }
+      );
+    }
+
+    return NextResponse.json(
+      { error: { message: "Internal server error" } },
+      { status: 500 }
+    );
+  }
+}
+

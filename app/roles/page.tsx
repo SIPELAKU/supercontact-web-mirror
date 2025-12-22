@@ -61,7 +61,7 @@ export default function RolesPage() {
   }, [filteredRoles, page, rowsPerPage]);
 
   return (
-    <>
+    <div className="p-6">
       {/* Header */}
       <PageHeader title="Roles & Permissions" breadcrumbs={[{ label: "User Management" }, { label: "Roles & Permissions" }]} />
 
@@ -85,6 +85,6 @@ export default function RolesPage() {
           <Pagination page={page} rowsPerPage={rowsPerPage} count={filteredRoles.length} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage} />
         </div>
       </div>
-    </>
+    </div>
   );
 }

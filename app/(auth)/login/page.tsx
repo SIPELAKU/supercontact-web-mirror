@@ -42,20 +42,20 @@ export default function LoginPage() {
       <section className="hidden md:flex md:col-span-2 items-center justify-center bg-gray-100">
         <div className="p-10">
           <Image
-              src="/assets/logo3d.png"
-              alt="Supercontact Logo"
-              width={400}
-              height={400}
-            />
+            src="/assets/logo3d.png"
+            alt="Supercontact Logo"
+            width={400}
+            height={400}
+          />
         </div>
       </section>
 
       {/* Right Section */}
       <section className="flex flex-col md:col-span-1 justify-center px-8 md:px-20 py-10 bg-white">
         <h1 className="text-3xl font-bold text-gray-900 leading-tight text-center">
-          Selamat Datang <br /> Kembali!
+          Selamat Datang <br /> Kembali di main!
         </h1>
-        
+
         <h2 className="text-3xl font-bold mt-2 text-center">
           <span className="text-blue-600">Super</span>
           <span className="text-green-600">Contact</span>
@@ -69,7 +69,7 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -116,7 +116,7 @@ export default function LoginPage() {
         </div>
 
         <button className="w-full border text-primary cursor-pointer rounded-md py-2 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
-          <FcGoogle/>
+          <FcGoogle />
           Continue with Google
         </button>
 

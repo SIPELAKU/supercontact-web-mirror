@@ -11,6 +11,7 @@ import { AddProductModal } from "@/components/product/AddProductModal"
 import Pencil from "@/public/icons/pencil.png"
 import Trash from "@/public/icons/trash.png"
 import { formatRupiah } from "@/lib/helper/currency"
+import { useConfirmation } from "@/components/ui-mui/confirm-modal"
 
 const columns: Column<Product>[] = [
     { key: "product_name", label: "Product Name", width: 8 },
@@ -34,20 +35,9 @@ const columns: Column<Product>[] = [
 ];
 
 export default function ProductTable() {
-    const { listProduct, pagination, setLimit, setPage, loading } = useGetProductStore();
-    const [searchQuery, setSearchQuery] = useState<string>("");
+    const { listProduct, pagination, setLimit, setPage, loading, setEditId, id, deleteProduct, searchQuery, setSearchQuery } = useGetProductStore();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-
-    const searchData = useMemo(() => {
-        const query = searchQuery.toLowerCase();
-
-        if(!query) return listProduct
-
-        return listProduct.filter((q)=>(
-            q.product_name.toLowerCase().includes(query) || q.sku.toLowerCase().includes(query)
-        ))
-
-    }, [searchQuery, listProduct])
+    const { showConfirmation } = useConfirmation()
 
 
     return (
@@ -90,7 +80,7 @@ export default function ProductTable() {
 
             </div>
             <Table
-                data={searchData}
+                data={listProduct}
                 columns={columns}
                 loading={loading}
                 actionMode="inline"
@@ -99,10 +89,16 @@ export default function ProductTable() {
                 rowsPerPage={pagination.limit}
                 onPageChange={setPage}
                 onRowsPerPageChange={setLimit}
+                rowKey={(row) => row.id}
                 actions={(row) => [
                     <button
                         key="edit"
-                        onClick={() => console.log("edit", row.id)}
+                        onClick={() => {
+                            console.log(row.id);
+                            
+                            setIsModalOpen(!isModalOpen)
+                            setEditId(row.id)
+                        }}
                         className="hover:underline text-sm"
                     >
                         <div className="flex gap-1 cursor-pointer">
@@ -116,7 +112,20 @@ export default function ProductTable() {
                     </button>,
                     <button
                         key="delete"
-                        onClick={() => console.log("delete", row.id)}
+                        onClick={() => {
+                            const data = listProduct.filter((item) => item.id === row.id)
+                            showConfirmation({
+                                type: "delete",
+                                title: "Delete Deal",
+                                message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
+                                confirmText: "Delete",
+                                cancelText: "Cancel",
+                                onConfirm: async () => {
+                                    await new Promise((resolve) => setTimeout(resolve, 1000))
+                                    await deleteProduct(row.id)
+                                },
+                            })
+                        }}
                         className="hover:underline text-sm"
                     >
                         <div className="flex gap-1 cursor-pointer">

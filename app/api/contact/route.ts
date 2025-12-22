@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DataContact } from "@/lib/data/dummy";
-import axiosExternal from "@/lib/utils/axiosExternal";
+import axiosExternal from "@/lib/utils/axiosClient";
 
 export async function GET(req: Request) {
   try {

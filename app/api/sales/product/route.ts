@@ -1,5 +1,7 @@
+import axios from "axios";
 import { NextResponse } from "next/server";
-import axiosExternal from "@/lib/utils/axiosExternal";
+import axiosExternal from "@/lib/utils/axiosClient";
+
 
 export async function GET(req: Request) {
   try {
@@ -25,7 +27,6 @@ export async function GET(req: Request) {
     if (typeof error === "object" && error !== null && "message" in error) {
       message = String((error as { message: string }).message);
     }
-    console.error("API Error:", message);
 
     return NextResponse.json(
       { error: "Failed to fetch contact" },
@@ -33,4 +34,49 @@ export async function GET(req: Request) {
     );
     
   }
+}
+
+export async function POST(req: Request) {
+  try {
+
+    const body = await req.json();
+
+    const res = await axiosExternal.post("/products", body, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    return NextResponse.json(res.data);
+
+  } catch (err: unknown) {
+
+    if (axios.isAxiosError(err)) {
+      const backendErrors = err.response?.data?.error?.details.errors;
+
+      if (Array.isArray(backendErrors)) {
+
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: backendErrors
+          },
+          { status: 422 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: err.message || "Failed to post pipeline"
+        },
+        { status: err.response?.status ?? 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Unknown server error" },
+      { status: 500 }
+    );
+  }
+
 }

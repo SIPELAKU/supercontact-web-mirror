@@ -1,7 +1,7 @@
 "use client";
-import type { AxiosError } from "axios";
-import { create } from "zustand";
+import { getDateRange } from "@/lib/helper/getDateRange";
 import api from "@/lib/utils/axiosClient";
+import { create } from "zustand";
 
 export interface ValidationItem {
     type: string;
@@ -43,6 +43,16 @@ type FetchQuotationParams = {
     limit: number;
     search?: string;
     dateRange?: string;
+    status?: string;
+};
+
+type requestBody = {
+    page: number;
+    limit: number;
+    search?: string;
+    date_from?: string;
+    date_to?: string;
+    status?: string;
 };
 
 export interface QuotationItem {
@@ -144,10 +154,22 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
 
             const { pagination } = get();
 
-            const query: FetchQuotationParams = {
+            const query: requestBody = {
                 page: params?.page ?? pagination.page,
                 limit: params?.limit ?? pagination.limit,
             };
+
+            if (params?.dateRange && params.dateRange !== "all") {
+                const range = getDateRange(params.dateRange);
+                if (range) {
+                    query.date_from = String(range.start);
+                    query.date_to = String(range.end);
+                }
+            }
+
+            if (params?.status && params.status.trim() !== "") {
+                query.status = params.status;
+            }
 
             if (params?.search && params.search.trim() !== "") {
                 query.search = params.search;

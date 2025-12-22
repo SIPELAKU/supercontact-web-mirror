@@ -4,7 +4,7 @@ import { RecentActivityItem } from "@/lib/type/Company";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import RecentActivityDetailCompanySkeleton from "./RecentActivityDetailCompanySkeleton";
 
 interface RecentActivityDetailCompanyProps {
@@ -35,6 +35,8 @@ const BADGE_TONE_MAP = {
 export default function RecentActivityDetailCompany({ isLoading, RECENT_ACTIVITY_DETAIL_COMPANY }: RecentActivityDetailCompanyProps) {
   const router = useRouter();
 
+  const currentPath = usePathname();
+
   if (isLoading) return <RecentActivityDetailCompanySkeleton />;
   return (
     <Card className="rounded-2xl! shadow-lg!">
@@ -43,7 +45,7 @@ export default function RecentActivityDetailCompany({ isLoading, RECENT_ACTIVITY
         <div className="flex items-center justify-between">
           <Typography className="text-base! font-semibold!">Recent Activity Stream</Typography>
 
-          <button className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer" onClick={() => router.push("/omnichannel/company/activity/1")}>
+          <button className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer" onClick={() => router.push("/omnichannel/company-intelligence/activity/1")}>
             View All
           </button>
         </div>

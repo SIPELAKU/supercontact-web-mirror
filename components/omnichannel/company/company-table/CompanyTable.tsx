@@ -7,10 +7,10 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import CompanyTableSkeleton from "./CompanyTableSkeleton";
-import CompanyTableError from "./CompanyTableError";
+import { usePathname, useRouter } from "next/navigation";
 import CompanyTableDataNotFound from "./CompanyTableDataNotFound";
-import { useRouter } from "next/navigation";
+import CompanyTableError from "./CompanyTableError";
+import CompanyTableSkeleton from "./CompanyTableSkeleton";
 
 interface CompanyTableProps {
   company: CompanyType[];
@@ -59,6 +59,8 @@ export const getStatusChipStyle = (status: Status): SxProps<Theme> => ({
 export default function CompanyTable({ company, isLoading, error }: CompanyTableProps) {
   const router = useRouter();
 
+  const currentPath = usePathname();
+
   if (isLoading) return <CompanyTableSkeleton />;
   if (error) return <CompanyTableError message="" />;
   if (company.length === 0) return <CompanyTableDataNotFound />;
@@ -85,7 +87,7 @@ export default function CompanyTable({ company, isLoading, error }: CompanyTable
               <input type="checkbox" />
             </TableCell>
 
-            <TableCell onClick={() => router.push("/omnichannel/company/1")} className="cursor-pointer">
+            <TableCell onClick={() => router.push(`${currentPath}/1`)} className="cursor-pointer">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF2FD] text-sm font-semibold text-[#6A5BF7]">{company.name.charAt(0)}</div>
                 <div className="flex flex-col">

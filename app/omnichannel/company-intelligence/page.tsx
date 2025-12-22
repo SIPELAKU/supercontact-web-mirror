@@ -92,7 +92,7 @@ export default function CompaniesPage() {
   }, [filteredAllCompanies, page, rowsPerPage]);
 
   return (
-    <>
+    <div className="p-6">
       {/* Header */}
       <PageHeader title="All Companies" breadcrumbs={[{ label: "Omnichannel" }, { label: "All Companies" }]} />
 
@@ -135,6 +135,6 @@ export default function CompaniesPage() {
           <Pagination page={page} rowsPerPage={rowsPerPage} count={company.length} onPageChange={handleChangePage} onRowsPerPageChange={handleChangeRowsPerPage} />
         </div>
       </div>
-    </>
+    </div>
   );
 }

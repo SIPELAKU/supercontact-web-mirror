@@ -1,12 +1,12 @@
 "use client";
 
+import { KEY_PEOPLE_LIST } from "@/lib/data/company-key-people";
+import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
-import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
 import { useRouter } from "next/navigation";
-import { KEY_PEOPLE_LIST } from "@/lib/data/company-key-people";
 import { CompanyKeyPeopleCardSkeleton } from "..";
 
 interface KeyPeopleCardProps {
@@ -51,7 +51,7 @@ export default function KeyPeopleCard({ isLoading }: KeyPeopleCardProps) {
 
         {/* Footer */}
         <div className="p-5 text-center">
-          <button onClick={() => router.push("/omnichannel/key-people/1")} className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline">
+          <button onClick={() => router.push("/omnichannel/company-intelligence/key-people/1")} className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline">
             View All Employees
           </button>
         </div>

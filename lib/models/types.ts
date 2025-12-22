@@ -9,6 +9,11 @@ export interface Lead {
   assigned_to: string;
   contact: Contact;
   user: User
+  industry: string;
+  company_size: string;
+  office_location: string;
+  tag: string;
+  notes: string;
 }
 export interface Contact {
   id: string;

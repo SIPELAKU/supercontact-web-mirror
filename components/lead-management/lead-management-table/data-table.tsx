@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
@@ -45,6 +45,21 @@ export function DataTable({ columns }: DataTableProps) {
   const totalCount = leadsResponse?.data?.total || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  console.log('DataTable render - data length:', data.length, 'isLoading:', isLoading, 'filteredData length:', filteredData.length);
+
+  // Memoize the setFilteredData function to prevent unnecessary re-renders
+  const handleSetFilteredData = useCallback((leads: Lead[]) => {
+    console.log('handleSetFilteredData called with leads:', leads.length, 'items');
+    setFilteredData(leads);
+  }, []);
+
+  // Initial effect to set filtered data when data is first loaded
+  useEffect(() => {
+    if (data.length > 0 && filteredData.length === 0) {
+      setFilteredData(data);
+    }
+  }, [data, filteredData.length]);
+
   // Update filtered data when leads data changes
   useEffect(() => {
     if (data.length > 0) {
@@ -79,7 +94,10 @@ export function DataTable({ columns }: DataTableProps) {
         }}
       >
         <CardHeader title="Filters" />
-        <LeadFilters setFilteredLeads={setFilteredData} leads={[]} />
+        {/* Don't render LeadFilters during loading to prevent empty array filtering */}
+        <div className="p-4 bg-gray-50 text-gray-500 text-center">
+          Loading filters...
+        </div>
         <Divider />
         <TableSkeleton 
           columns={columns.map(() => ({ width: undefined }))} 
@@ -116,7 +134,7 @@ export function DataTable({ columns }: DataTableProps) {
       }}
     >
       <CardHeader title="Filters" />
-      <LeadFilters setFilteredLeads={setFilteredData} leads={data} />
+      <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
       <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>

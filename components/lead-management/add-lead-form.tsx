@@ -310,13 +310,11 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onChange={(e) => updateField("industry", e.target.value)}
                   className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
                 >
-                  <option value="Finance">Finance</option>
-                  <option value="Technology">Technology</option>
                   <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Logistics">Logistics</option>
                   <option value="Manufacturing">Manufacturing</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Other">Other</option>
+                  <option value="SaaS">SaaS</option>
                 </select>
               </div>
 
@@ -330,7 +328,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 >
                   <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
                   <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-                  <option value="201+ Karyawan">201+ Karyawan</option>
+                  <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
                   {/* <option value="501-1000 Karyawan">501-1000 Karyawan</option>
                   <option value="1000+ Karyawan">1000+ Karyawan</option> */}
                 </select>

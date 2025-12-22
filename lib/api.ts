@@ -1,6 +1,7 @@
 // lib/api.ts
 
 import { leadResponse } from "@/lib/models/types";
+import { logger } from "./utils/logger";
 
 export async function fetchLeads(token: string): Promise<leadResponse> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
@@ -77,7 +78,16 @@ export interface UpdateLeadData {
 }
 
 export async function updateLead(token: string, leadId: string, leadData: UpdateLeadData): Promise<any> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`, {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`;
+  
+  logger.info("Making PUT request to update lead", { 
+    url, 
+    leadId, 
+    leadData,
+    hasToken: !!token 
+  });
+
+  const res = await fetch(url, {
     method: 'PUT',
     headers: { 
       'Content-Type': 'application/json',
@@ -86,15 +96,33 @@ export async function updateLead(token: string, leadId: string, leadData: Update
     body: JSON.stringify(leadData),
   });
 
-  const json = await res.json();
-  console.log("Update lead response:", json);
+  let json;
+  try {
+    json = await res.json();
+  } catch (parseError: any) {
+    logger.error("Failed to parse response JSON", { 
+      status: res.status,
+      statusText: res.statusText,
+      parseError: parseError.message 
+    });
+    throw new Error(`Server returned invalid response (${res.status})`);
+  }
+
+  logger.apiResponse(`/leads/${leadId} (PUT)`, { status: res.status, response: json });
   
   if (res.status === 401) {
     throw new Error("UNAUTHORIZED");
   }
   
   if (!res.ok) {
-    throw new Error(json.message || "Failed to update lead");
+    logger.error(`Update lead failed: ${res.status}`, {
+      status: res.status,
+      statusText: res.statusText,
+      response: json,
+      leadData,
+      url
+    });
+    throw new Error(json.message || json.error || `Failed to update lead (${res.status}: ${res.statusText})`);
   }
   
   return json;

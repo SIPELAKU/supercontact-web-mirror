@@ -28,6 +28,11 @@ export default function LeadFilters({
   );
 
   useEffect(() => {
+    // Don't filter if there are no leads to filter
+    if (leads.length === 0) {
+      return;
+    }
+
     let filtered = [...leads];
 
     if (status && status !== "All" && status !== "placeholder-status") filtered = filtered.filter((l) => l.lead_status === status);
@@ -48,7 +53,7 @@ export default function LeadFilters({
     }
 
     setFilteredLeads(filtered);
-  }, [status, source, assignedto, dateRange, leads, setFilteredLeads]);
+  }, [status, source, assignedto, dateRange, leads]); // Removed setFilteredLeads from dependencies
 
   return (
     <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">

@@ -52,7 +52,7 @@ type requestBody = {
     search?: string;
     date_from?: string;
     date_to?: string;
-    status?: string;
+    quotation_status?: string;
 };
 
 export interface QuotationItem {
@@ -167,8 +167,8 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 }
             }
 
-            if (params?.status && params.status.trim() !== "") {
-                query.status = params.status;
+            if (params?.status && params.status.trim() !== "all") {
+                query.quotation_status = params.status;
             }
 
             if (params?.search && params.search.trim() !== "") {

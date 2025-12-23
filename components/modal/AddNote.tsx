@@ -1,9 +1,9 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
@@ -176,12 +176,17 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   const reactRootRef = useRef<Root | null>(null);
 
   const handleSubmit = async (data: NoteData) => {
-    const res = await fetch("/api/note", {
+    const res = await fetch("/api/notes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        title: data.title,
+        content: data.content,
+        reminder_date: data.reminder_date,
+        reminder_time: data.reminder_time,
+      }),
     });
 
     MySwal.close();

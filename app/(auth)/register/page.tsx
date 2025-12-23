@@ -71,7 +71,7 @@ export default function RegisterPage() {
                 router.push(`/email-verification?email=${encodeURIComponent(email)}`);
             } else {
                 // Handle API error response structure: { success: false, error: { message: "..." } }
-                const errorMessage = response.error?.message || response.message || "Registration failed. Please try again.";
+                const errorMessage = response.error?.message || "Registration failed. Please try again.";
                 setError(errorMessage);
             }
             

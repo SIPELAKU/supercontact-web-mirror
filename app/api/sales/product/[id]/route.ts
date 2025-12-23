@@ -1,3 +1,4 @@
+import axiosClient from "@/lib/utils/axiosClient";
 import { NextResponse } from "next/server";
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {

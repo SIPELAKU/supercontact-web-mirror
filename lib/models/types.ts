@@ -49,10 +49,10 @@ export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
 export interface Note {
     id: string,
-    title:string,
+    title: string,
     content: string,
-    reminder_date: string,
-    reminder_time: string,
+    date: string,
+    time: string,
 }
 
 export type SortOrder = "asc" | "desc" | "";

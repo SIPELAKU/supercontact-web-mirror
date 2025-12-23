@@ -1,28 +1,28 @@
 "use client";
 
-import { ChangeEvent, Suspense, useMemo, useState, MouseEvent } from "react";
+import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 
-import { UsersType } from "../../lib/type/Users";
 import { useUsers } from "../../lib/hooks/useUsers";
+import { UsersType } from "../../lib/type/Users";
 
-import { Card, CardHeader, Divider } from "@mui/material";
-import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui-mui/page-header";
-import {
-  AddUserButton,
-  ExportButton,
-  EditUsersModal,
-  DeleteUserModal,
-  DetailUsersModal,
-  TableListUsers,
-  CardStatUsers,
-  TableFilterUsers,
-} from "@/components/users";
 import InputSearch from "@/components/ui/input-search";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import Pagination from "@/components/ui/pagination";
+import {
+    AddUserButton,
+    CardStatUsers,
+    DeleteUserModal,
+    DetailUsersModal,
+    EditUsersModal,
+    ExportButton,
+    TableFilterUsers,
+    TableListUsers,
+} from "@/components/users";
+import { Card, CardHeader, Divider } from "@mui/material";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function UsersManagePage() {
-  const { users, isLoading, error } = useUsers();
+  const { data: usersResponse, isLoading, error } = useUsers();
 
   const [selectedUser, setSelectedUser] = useState<UsersType | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
@@ -56,6 +56,19 @@ export default function UsersManagePage() {
   const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
 
   const filteredUsers = useMemo(() => {
+    const apiUsers = usersResponse?.data?.users || [];
+    
+    // Convert API User[] to UsersType[]
+    const users: UsersType[] = apiUsers.map((user) => ({
+      id: parseInt(user.id),
+      fullName: user.fullname,
+      email: user.email,
+      role: user.role,
+      status: 'active' as const, // Default status since API doesn't provide it
+      avatar_initial: user.fullname.charAt(0).toUpperCase(),
+      id_employee: user.id,
+    }));
+    
     return users.filter((user) => {
       // search name
       const matchSearch = searchQuery
@@ -74,7 +87,7 @@ export default function UsersManagePage() {
 
       return matchSearch && matchRole && matchStatus;
     });
-  }, [users, searchQuery, tableFilter]);
+  }, [usersResponse?.data?.users, searchQuery, tableFilter]);
 
   // ===== PAGINATION ===== //
   const [page, setPage] = useState<number>(0);

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { NextResponse } from "next/server";
-import axiosExternal from "@/lib/utils/axiosClient";
 
 
 export async function GET(req: Request) {
@@ -16,7 +15,7 @@ export async function GET(req: Request) {
       limit,
     };
 
-    const res = await axiosExternal.get("/products", { params });
+    const res = await axiosClient.get("/products", { params });
 
     return NextResponse.json(res.data);
 
@@ -41,7 +40,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const res = await axiosExternal.post("/products", body, {
+    const res = await axiosClient.post("/products", body, {
       headers: {
         "Content-Type": "application/json"
       }

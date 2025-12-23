@@ -11,7 +11,7 @@ export default function CompanyActivityPage() {
 
   return (
     <div className="p-6">
-      <Button variant="outlined" className="capitalize! rounded-lg!" onClick={() => router.push("/omnichannel/company/1")}>
+      <Button variant="outlined" className="capitalize! rounded-lg!" onClick={() => router.push("/omnichannel/company-intelligence/1")}>
         <ArrowLeft className="w-3 h-3 mr-1" />
         Back
       </Button>

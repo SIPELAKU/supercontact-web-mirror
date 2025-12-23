@@ -1,49 +1,87 @@
 // app/(auth)/register/page.tsx
 "use client";
 
-import Link from "next/link";
+import { RegisterData, registerUser } from "@/lib/api";
+import { handleError } from "@/lib/utils/errorHandler";
 import Image from "next/image";
-import { FcGoogle } from "react-icons/fc";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useAuth } from "@/lib/context/AuthContext";
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
+    const [companyName, setCompanyName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [position, setPosition] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-    const { login } = useAuth();
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError("");
-        event.preventDefault();
         setIsSubmitting(true);
+        setError("");
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Check if terms are accepted
+        if (!acceptedTerms) {
+            setError("You must accept the Terms & Conditions to continue");
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Validate password requirements
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            setError("Password must be at least 8 characters with 1 uppercase letter, 1 lowercase letter, and 1 number");
+            setIsLoading(false);
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
-            const success = await login(email, password);
-            if (!success) {
-                setError("Invalid email or password. Please try again.");
+            const registerData: RegisterData = {
+                fullname: name,
+                email: email,
+                phone: phoneNumber,
+                company: companyName,
+                position: position,
+                password: password,
+                confirm_password: confirmPassword
+            };
+
+            const response = await registerUser(registerData);
+            
+            if (response.success) {
+                // Registration successful - redirect to email verification page with email
+                router.push(`/email-verification?email=${encodeURIComponent(email)}`);
+            } else {
+                // Handle API error response structure: { success: false, error: { message: "..." } }
+                const errorMessage = response.error?.message || response.message || "Registration failed. Please try again.";
+                setError(errorMessage);
             }
-        } catch (err) {
-            setError("An error occurred. Please try again.");
+            
+        } catch (err: any) {
+            const errorMessage = handleError(err, 'Registration error', "Registration failed. Please try again.");
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
+            setIsSubmitting(false);
         }
-
-        if (acceptedTerms) {
-            console.log('Syarat dan ketentuan diterima. Mengirim data...');
-            alert('Pendaftaran berhasil! Syarat & Ketentuan telah disetujui.');
-        } else {
-            alert('Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.');
-        }
-        setIsSubmitting(false);
     };
 
     const toggleTerms = () => {
@@ -51,12 +89,12 @@ export default function RegisterPage() {
     };
 
     const positions = [ 
-        { value: '', label: 'Select an position' },
-        { value: 'staff', label: 'Staff' },
-        { value: 'bo', label: 'Business Owner' },
-        { value: 'cl', label: 'C-Level (CEO/CFO/COO,etc)' },
-        { value: 'sm', label: 'Senior Manager (Head/VP,etc)' },
-        { value: 'etc', label: 'Lainnya' },
+        { value: '', label: 'Select a position' },
+        { value: 'Staff', label: 'Staff' },
+        { value: 'Business Owner', label: 'Business Owner' },
+        { value: 'C-Level', label: 'C-Level (CEO/CFO/COO, etc)' },
+        { value: 'Senior Manager', label: 'Senior Manager (Head/VP, etc)' },
+        { value: 'Other', label: 'Other' },
     ];
 
     return (
@@ -96,7 +134,7 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Full Name</label>
                         <input
-                            type="name"
+                            type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="mt-1 w-full border bg-yellow-50 border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -120,7 +158,7 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Phone Number</label>
                         <input
-                            type="phone number"
+                            type="tel"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             className="mt-1 w-full border bg-yellow-50 border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -132,11 +170,11 @@ export default function RegisterPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Company Name</label>
                         <input
-                            type="company name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            type="text"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
                             className="mt-1 w-full border bg-yellow-50 border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            placeholder="Enter your company"
+                            placeholder="Enter your company name"
                             required
                         />
                     </div>
@@ -181,8 +219,8 @@ export default function RegisterPage() {
                         <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
                         <input
                             type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             className="mt-1 w-full border bg-yellow-50 border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             placeholder="Enter your confirm password"
                             required
@@ -209,12 +247,10 @@ export default function RegisterPage() {
 
                     <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isLoading || isSubmitting}
                         className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Link href="/email-verification" className="">
-                        </Link>
-                        {isLoading ? "Create Account..." : "Create Account"}
+                        {isLoading ? "Creating Account..." : "Create Account"}
                     </button>
                 </form>
 

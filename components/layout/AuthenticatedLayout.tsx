@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect } from 'react';
 import { useAuth } from '@/lib/context/AuthContext';
-import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider } from '@/lib/context/SidebarContext';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 
@@ -16,7 +16,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const isAuthRoute = pathname?.startsWith('/login') || 
                      pathname?.startsWith('/register') || 
                      pathname?.startsWith('/forgot-password') ||
-                     pathname?.startsWith('/new-password');
+                     pathname?.startsWith('/new-password') ||
+                     pathname?.startsWith('/email-verification');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {

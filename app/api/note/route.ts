@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 // import { DataNote } from "@/lib/data/dummy";
-import axiosExternal from "@/lib/utils/axiosExternal";
-import { cookies } from "next/headers";
 import axios from "axios";
+import { cookies } from "next/headers";
 
 // export function GET() {
 //   return NextResponse.json({
@@ -70,7 +69,7 @@ export async function GET(req: Request) {
       limit,
     };
 
-    const res = await axiosExternal.get("/notes", { params });    
+    const res = await axiosClient.get("/notes", { params });    
 
     return NextResponse.json(res.data);
 

@@ -1,17 +1,15 @@
 "use client"
 
-import { Bell, Moon, Sun, Menu, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui-mui/avatar"
-import { useState } from "react"
 import { useSidebar } from "@/lib/context/SidebarContext"
-import { useAuth } from "@/lib/context/AuthContext"
+import { Bell, Menu, Moon, Sun } from "lucide-react"
+import { useState } from "react"
 import Notification from "../modal/Notification"
+import ProfileDropdown from "./ProfileDropdown"
 
 export default function Header() {
   const [isDark, setIsDark] = useState(false)
   const { toggleDesktop, toggleMobile } = useSidebar()
-  const { logout } = useAuth()
   const [openNotif, setOpenNotif] = useState(false);
 
   return (
@@ -51,19 +49,7 @@ export default function Header() {
           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9"
-          onClick={logout}
-          title="Logout"
-        >
-          <LogOut className="h-5 w-5" />
-        </Button>
-
-        <Avatar className="h-9 w-9 bg-blue-600">
-          <AvatarFallback className="bg-[#5479EE] text-white">M</AvatarFallback>
-        </Avatar>
+        <ProfileDropdown />
       </div>
       <Notification
         open={openNotif}

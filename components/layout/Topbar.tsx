@@ -13,7 +13,7 @@ export default function Header() {
   const [openNotif, setOpenNotif] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-6 py-4">
+    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-6 h-[52px]">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"

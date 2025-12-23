@@ -197,7 +197,7 @@ export default function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className={cn(
-            "flex items-center px-6 py-6 border-b border-gray-200",
+            "flex items-center px-6 py-6",
             isCollapsed && "px-4 justify-center"
           )}>
             {!isCollapsed ? (

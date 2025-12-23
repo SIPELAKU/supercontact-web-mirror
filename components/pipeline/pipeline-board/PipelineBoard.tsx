@@ -1,35 +1,35 @@
 "use client"
 
 import {
+  closestCenter,
   DndContext,
   DragOverlay,
-  closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
-  type DragStartEvent,
-  type DragOverEvent,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core"
 import {
+  arrayMove,
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useState } from "react"
 
-import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
-import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
-import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
-import { Plus, Search } from "lucide-react"
-import { Button } from "@/components/ui-mui/button"
-import { Deal } from "@/lib/type/Pipeline"
-import { FilterBar } from "@/components/ui-mui/filter"
 import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
-import { useGetPipelineStore } from "@/lib/store/pipeline"
-import { StageUI } from "@/lib/helper/transformPipeline"
-import { formatRupiah } from "@/lib/helper/currency"
+import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
+import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
+import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
+import { Button } from "@/components/ui-mui/button"
+import { FilterBar } from "@/components/ui-mui/filter"
+import { formatRupiah } from "@/lib/helper/currency"
+import { StageUI } from "@/lib/helper/transformPipeline"
+import { useGetPipelineStore } from "@/lib/store/pipeline"
+import { Deal } from "@/lib/type/Pipeline"
+import { Plus, Search } from "lucide-react"
 
 
 
@@ -166,7 +166,6 @@ export default function PipelineBoard() {
     const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
 
     if (isOverColumn) {
-
       const stageName = overId.replace("column-", "");
       const toStageIndex = stages.findIndex(s => s.name === stageName);
 
@@ -185,7 +184,8 @@ export default function PipelineBoard() {
     const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
     updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
 
-    setStages(computeStageTotals(updated));
+    
+    setStages(updated);
   };
 
 
@@ -208,16 +208,27 @@ export default function PipelineBoard() {
     const updated = JSON.parse(JSON.stringify(stages))
 
     if (overId.startsWith("column-")) {
-
       const toStageName = overId.replace("column-", "")
       const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
-      await updateStagePipeline(activeId, toStageName);
       if (from.stageIndex === toStageIndex) return
 
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[toStageIndex].deals.push(moved)
-      setStages(updated)
+      
+      
+      const updatedWithTotals = computeStageTotals(updated)
+      setStages(updatedWithTotals)
+
+      
+      try {
+        await updateStagePipeline(activeId, toStageName);
+      } catch (error) {
+        console.error("Failed to update stage:", error);
+       
+        // setStages(computeStageTotals(stages));
+      }
+      
       return
     }
 
@@ -231,13 +242,21 @@ export default function PipelineBoard() {
       updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
     }
 
+    
     const updatedWithTotals = computeStageTotals(updated)
-
     setStages(updatedWithTotals)
+    
     const toStage = updated[to.stageIndex].name;
 
-    if (from !== to) {
-      await updateStagePipeline(activeId, toStage);
+    
+    if (from.stageIndex !== to.stageIndex) {
+      try {
+        await updateStagePipeline(activeId, toStage);
+      } catch (error) {
+        console.error("Failed to update stage:", error);
+        
+        // setStages(computeStageTotals(stages));
+      }
     }
   }
 

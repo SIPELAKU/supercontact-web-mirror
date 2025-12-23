@@ -419,8 +419,19 @@ export async function fetchUsers(token: string): Promise<UserResponse> {
     throw new Error("UNAUTHORIZED");
   }
   
-  if (!res.ok || !json.success) throw new Error("Failed to load users");
-  return json;
+  if (!res.ok) throw new Error("Failed to load users");
+  
+  // Transform the direct API response to match our expected interface
+  return {
+    success: true,
+    data: {
+      total: json.total,
+      page: json.page,
+      limit: json.limit,
+      users: json.users
+    },
+    error: null
+  };
 }
 
 // Profile types and functions

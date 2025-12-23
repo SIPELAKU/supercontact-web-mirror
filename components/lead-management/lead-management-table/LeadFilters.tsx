@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import DateRangePicker from "@/components/ui/daterangepicker";
 import { Lead } from "@/lib/models/types";
+import { useEffect, useState } from "react";
 import type { DateRange } from "react-day-picker";
 
 
@@ -28,17 +28,27 @@ export default function LeadFilters({
   );
 
   useEffect(() => {
-    // Don't filter if there are no leads to filter
-    if (leads.length === 0) {
-      return;
-    }
+    console.log('LeadFilters useEffect triggered:', {
+      leadsLength: leads.length,
+      status,
+      source,
+      assignedto,
+      dateRange
+    });
 
     let filtered = [...leads];
 
-    if (status && status !== "All" && status !== "placeholder-status") filtered = filtered.filter((l) => l.lead_status === status);
-    if (source && source !== "All" && source !== "placeholder-source") filtered = filtered.filter((l) => l.lead_source === source);
-    if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned")
+    if (status && status !== "All" && status !== "placeholder-status") {
+      filtered = filtered.filter((l) => l.lead_status === status);
+    }
+    
+    if (source && source !== "All" && source !== "placeholder-source") {
+      filtered = filtered.filter((l) => l.lead_source === source);
+    }
+    
+    if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned") {
       filtered = filtered.filter((l) => l.user.fullname === assignedto);
+    }
 
     if (dateRange.from && dateRange.to) {
       const from = new Date(dateRange.from);
@@ -46,14 +56,31 @@ export default function LeadFilters({
       const to = new Date(dateRange.to);
       to.setHours(23, 59, 59, 999);
 
+      console.log('Filtering by date range:', { from, to });
+
       filtered = filtered.filter((l) => {
+        // Check if last_contacted exists and has created_at
+        if (!l.contact.last_contacted?.created_at) {
+          return false; // Exclude leads without last contacted date
+        }
+        
         const last = new Date(l.contact.last_contacted.created_at);
-        return last >= from && last <= to;
+        const isInRange = last >= from && last <= to;
+        
+        console.log('Date check:', {
+          leadName: l.contact.name,
+          lastContacted: l.contact.last_contacted.created_at,
+          parsedDate: last,
+          isInRange
+        });
+        
+        return isInRange;
       });
     }
 
+    console.log('Final filtered results:', filtered.length);
     setFilteredLeads(filtered);
-  }, [status, source, assignedto, dateRange, leads]); // Removed setFilteredLeads from dependencies
+  }, [status, source, assignedto, dateRange, leads, setFilteredLeads]);
 
   return (
     <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">

@@ -1,13 +1,14 @@
 "use client";
 
-import * as React from "react";
-import Image from "next/image";
-import { ColumnDef } from "@tanstack/react-table";
-import { Globe } from "lucide-react";
-import WAIcon from "@/public/wa.svg";
-import ManualEntry from "@/public/manual-entry.svg";
+import { Lead, LeadSource, LeadStatus } from "@/lib/models/types";
 import { cn } from "@/lib/utils";
-import {Lead, LeadStatus, LeadSource} from "@/lib/models/types";
+import ManualEntry from "@/public/manual-entry.svg";
+import WAIcon from "@/public/wa.svg";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { Globe } from "lucide-react";
+import Image from "next/image";
+import * as React from "react";
 
 
 // Status badge colors
@@ -79,11 +80,20 @@ export const columns: ColumnDef<Lead>[] = [
   {
     accessorKey: "last_contacted",
     header: () => <span className="text-[#6B7280]">Last Contacted</span>,
-    cell: ({ row }) => (
-      <span className="text-[#6B7280]">
-        {row.original.contact.last_contacted?.created_at}
-        {/* {row.getValue<string>("last_contacted")} */}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const dateString = row.original.contact.last_contacted?.created_at;
+      if (!dateString) return <span className="text-[#6B7280]">-</span>;
+      
+      try {
+        const date = new Date(dateString);
+        return (
+          <span className="text-[#6B7280]">
+            {format(date, "dd MMM yyyy 'at' HH:mm")}
+          </span>
+        );
+      } catch (error) {
+        return <span className="text-[#6B7280]">-</span>;
+      }
+    },
   },
 ];

@@ -129,7 +129,7 @@ export default function QuatationTable() {
                     <Search className="h-5 w-5 text-gray-400 mr-2" />
                     <input
                         type="text"
-                        placeholder="Search by name or email"
+                        placeholder="Search by name or quotation ID"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder:text-gray-400"

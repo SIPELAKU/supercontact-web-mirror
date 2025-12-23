@@ -12,8 +12,8 @@ export default function Home() {
   useEffect(() => {
     if (!loading) {
       if (isAuthenticated) {
-        // Redirect to lead management page
-        router.push("/lead-management");
+        // Redirect to analytics dashboard page
+        router.push("/analytics/dashboard");
       } else {
         // Redirect to login page
         router.push("/login");

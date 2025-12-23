@@ -1,10 +1,10 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
+import { Note } from "@/lib/models/types";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
-import { Note } from "@/lib/models/types";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
@@ -15,7 +15,7 @@ interface InputProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder,}) => (
+const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder }) => (
   <div className="flex flex-col w-full gap-2">
     <label className="font-medium text-gray-700">{label}</label>
     <input
@@ -63,9 +63,9 @@ const TextAreaField: React.FC<TextAreaProps> = ({
 
 interface ModalContentProps {
   onClose: () => void;
-  onSubmit: (data: {title: string, content: string, reminder_date: string, reminder_time: string}) => void;
+  onSubmit: (data: { title: string, content: string, date: string, time: string }) => void;
   initialData: Note | null;
-  id: string | null
+  id: string | null;
 }
 
 const ModalContent: React.FC<ModalContentProps> = ({
@@ -77,8 +77,8 @@ const ModalContent: React.FC<ModalContentProps> = ({
     id: "",
     title: "",
     content: "",
-    reminder_date: "",
-    reminder_time: "",
+    date: "",
+    time: "",
   });
 
   useEffect(() => {
@@ -87,10 +87,8 @@ const ModalContent: React.FC<ModalContentProps> = ({
         id: initialData.id,
         title: initialData.title || "",
         content: initialData.content || "",
-        reminder_date: initialData.reminder_date || "",
-        reminder_time: initialData.reminder_time
-        ? initialData.reminder_time.slice(0, 5)
-        : "",
+        date: initialData.date || "",
+        time: initialData.time ? initialData.time.slice(0, 5) : "",
       });
     }
   }, [initialData]);
@@ -131,18 +129,18 @@ const ModalContent: React.FC<ModalContentProps> = ({
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="date"
-              value={local.reminder_date}
+              value={local.date}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, reminder_date: e.target.value }))
+                setLocal((s) => ({ ...s, date: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg w-full"
             />
 
             <input
               type="time"
-              value={local.reminder_time}
+              value={local.time}
               onChange={(e) =>
-                setLocal((s) => ({ ...s, reminder_time: e.target.value }))
+                setLocal((s) => ({ ...s, time: e.target.value }))
               }
               className="border border-gray-300 px-4 py-3 rounded-lg w-full md:w-1/2"
             />
@@ -185,56 +183,62 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
   id,
 }) => {
   const reactRootRef = useRef<Root | null>(null);
+  
   const handleSubmit = async (data: {
-  title: string;
-  content: string;
-  reminder_date: string;
-  reminder_time: string;
-}) => {
-  try {
-    // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
-    const reminderTimeFixed = `${data.reminder_time}:00.000Z`;
+    title: string;
+    content: string;
+    date: string;
+    time: string;
+  }) => {
+    try {
+      // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
+      const reminderTimeFixed = `${data.time}:00.000Z`;
 
-    const res = await fetch("/api/note", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id,
-        title: data.title,
-        content: data.content,
-        reminder_date: data.reminder_date,
-        reminder_time: reminderTimeFixed,
-      }),
-    });
-
-    MySwal.close();
-    onClose();
-
-    if (res.ok) {
-      onSuccess();
-      MySwal.fire({
-        icon: "success",
-        title: "Notes updated!",
-        timer: 1200,
-        showConfirmButton: false,
+      const res = await fetch("/api/notes", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          id,
+          title: data.title,
+          content: data.content,
+          reminder_date: data.date,
+          reminder_time: reminderTimeFixed,
+        }),
       });
-    } else {
+
+      MySwal.close();
+      onClose();
+
+      if (res.ok) {
+        onSuccess();
+        MySwal.fire({
+          icon: "success",
+          title: "Notes updated!",
+          timer: 1200,
+          showConfirmButton: false,
+        });
+      } else {
+        MySwal.fire({
+          icon: "error",
+          title: "Failed to update notes",
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      MySwal.close();
+      onClose();
+      
       MySwal.fire({
         icon: "error",
-        title: "Failed to update notes",
+        title: "Server error",
         timer: 1400,
         showConfirmButton: false,
       });
     }
-  } catch {
-    MySwal.fire({
-      icon: "error",
-      title: "Server error",
-      timer: 1400,
-      showConfirmButton: false,
-    });
-  }
-};
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -256,7 +260,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
           reactRootRef.current = createRoot(container);
           reactRootRef.current.render(
             <ModalContent
-            id={id}
+              id={id}
               onClose={() => {
                 MySwal.close();
                 onClose();

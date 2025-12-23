@@ -1,3 +1,4 @@
+import axiosClient from "@/lib/utils/axiosClient";
 import axios from "axios";
 import { NextResponse } from "next/server";
 

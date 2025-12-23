@@ -18,7 +18,7 @@ export default function NotesPage(){
     const [dataNote, setDataNote] = useState<Note[]>([])
 
       const loadDataAgain = () => {
-        fetch("/api/note")
+        fetch("/api/notes")
           .then((res) => res.json())
           .then((res) =>{ 
             const notes = Array.isArray(res.data)?
@@ -73,14 +73,14 @@ export default function NotesPage(){
             <div className="flex flex-col items-start gap-2">
               <div className="flex gap-2 items-center text-sm bg-amber-200 text-amber-500 px-4 py-2 rounded-full">
                 <BiSolidBellRing />
-                {GetRelativeTime(item.reminder_date, item.reminder_time)}
+                {GetRelativeTime(item.date, item.time)}
               </div>
               <h1 className="font-semibold">{item?.title}</h1>
               <div className="text-gray-500">
                 {item?.content}
               </div>
             </div>
-            <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
+            <div>{GetRelativeTime(item.date, item.time)}</div>
           </div>
         </button>
       ))}

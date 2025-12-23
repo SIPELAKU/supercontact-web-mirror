@@ -1,22 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui-mui/dialog";
 import { Button } from "@/components/ui-mui/button";
-import { Input } from "@/components/ui-mui/input";
+import {
+    Dialog,
+    DialogContent,
+} from "@/components/ui-mui/dialog";
 import { Label } from "@/components/ui-mui/label";
-import { Textarea } from "@/components/ui-mui/textarea";
+import { useState } from "react";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
-import { GrAdd } from "react-icons/gr";
+import { Contact, createLead, CreateLeadData, User } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
-import { createLead, CreateLeadData, Contact, User } from "@/lib/api";
-import { useQueryClient } from "@tanstack/react-query";
 import { useContacts } from "@/lib/hooks/useContacts";
 import { useUsers } from "@/lib/hooks/useUsers";
+import { useQueryClient } from "@tanstack/react-query";
+import { GrAdd } from "react-icons/gr";
 
 // Lead status options with colors
 export const leadStatusOptions = [
@@ -124,7 +122,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   };
 
   const filteredUsers = usersResponse?.data?.users?.filter(user =>
-    user.fullname.toLowerCase().includes(assignedToName.toLowerCase())
+    assignedToName.length === 0 || user.fullname.toLowerCase().includes(assignedToName.toLowerCase())
   ) || [];
 
   const reset = () => {
@@ -383,25 +381,36 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   placeholder="Search and select user"
                   value={assignedToName}
                   onChange={(e) => handleAssignedToChange(e.target.value)}
-                  onFocus={() => setShowUserDropdown(assignedToName.length > 0)}
+                  onFocus={() => {
+                    console.log('Focus on assigned to field');
+                    console.log('Users response:', usersResponse);
+                    console.log('Filtered users:', filteredUsers);
+                    setShowUserDropdown(true);
+                  }}
                   onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                   className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                 />
                 
                 {/* User Dropdown */}
-                {showUserDropdown && filteredUsers.length > 0 && (
+                {showUserDropdown && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredUsers.slice(0, 5).map((user) => (
-                      <div
-                        key={user.id}
-                        onClick={() => handleUserSelect(user)}
-                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                      >
-                        <div className="font-medium text-gray-900">{user.fullname}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        <div className="text-sm text-gray-500 capitalize">{user.role}</div>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.slice(0, 5).map((user) => (
+                        <div
+                          key={user.id}
+                          onClick={() => handleUserSelect(user)}
+                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{user.fullname}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-sm text-gray-500 capitalize">{user.role}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-gray-500 text-center">
+                        {usersResponse?.data?.users ? 'No users found' : 'Loading users...'}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>

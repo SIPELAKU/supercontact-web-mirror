@@ -1,16 +1,16 @@
 "use client";
 
-import LeadManagement from "@/components/lead-management/lead-management";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui-mui/tabs";
 import AddLeadForm from "@/components/lead-management/add-lead-form";
+import LeadManagement from "@/components/lead-management/lead-management";
 import PageHeader from "@/components/ui-mui/page-header";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui-mui/tabs";
 import { useViewMode } from "@/lib/hooks/useLeadStore";
 
 export default function LeadManagementPage() {
   const { viewMode, setViewMode } = useViewMode();
 
   return (
-    <div className="w-full max-w-full mx-auto px-4 space-y-6 ">
+    <div className="w-full max-w-full mx-auto px-4 pt-6 space-y-6 ">
       <PageHeader
         title="Lead Management"
         breadcrumbs={[

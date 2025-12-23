@@ -1,25 +1,74 @@
 'use client'
+import { fetchProfile } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import {
-    Avatar,
-    Box,
-    Button,
-    Divider,
-    IconButton,
-    Menu,
-    Paper,
-    Stack,
-    Typography,
+  Avatar,
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  Menu,
+  Paper,
+  Stack,
+  Typography,
 } from "@mui/material";
 import { FileCheck, LogOut, Mail, SquareUserRound } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { logout } = useAuth();
+  const [profileData, setProfileData] = useState<{
+    fullname: string;
+    email: string;
+    role?: string;
+  } | null>(null);
+  const { logout, getToken } = useAuth();
 
   const open = Boolean(anchorEl);
+
+  // Load profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetchProfile(token);
+        
+        if (response.success && response.data) {
+          setProfileData({
+            fullname: response.data.fullname || "User",
+            email: response.data.email || "user@example.com",
+            role: "Administrator" // You can add role to the API response later
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+        // Fallback to default values
+        setProfileData({
+          fullname: "User",
+          email: "user@example.com",
+          role: "Administrator"
+        });
+      }
+    };
+
+    loadProfile();
+  }, [getToken]);
+
+  // Get initials from full name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Truncate long names
+  const truncateName = (name: string, maxLength: number = 15) => {
+    return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
+  };
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -50,7 +99,7 @@ const ProfileDropdown = () => {
           alt="profile"
           sx={{ width: 35, height: 35, bgcolor: "#5479EE", color: "#fff" }}
         >
-          M
+          {profileData ? getInitials(profileData.fullname) : "U"}
         </Avatar>
       </IconButton>
 
@@ -63,12 +112,14 @@ const ProfileDropdown = () => {
         onClose={handleClose}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
         transformOrigin={{ horizontal: "right", vertical: "top" }}
-        PaperProps={{
-          sx: {
-            width: 280,
-            borderRadius: 3,
-            p: 2,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+        slotProps={{
+          paper: {
+            sx: {
+              width: 280,
+              borderRadius: 3,
+              p: 2,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            },
           },
         }}
       >
@@ -77,18 +128,22 @@ const ProfileDropdown = () => {
           <Avatar
             sx={{ width: 48, height: 48, bgcolor: "#5479EE", color: "#fff" }}
           >
-            M
+            {profileData ? getInitials(profileData.fullname) : "U"}
           </Avatar>
 
           <Box>
-            <Typography fontWeight={700}>Muhammad...</Typography>
+            <Typography fontWeight={700}>
+              {profileData ? truncateName(profileData.fullname) : "Loading..."}
+            </Typography>
             <Typography variant="body2" color="text.secondary">
-              Administrator
+              {profileData?.role || "User"}
             </Typography>
 
             <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
               <Mail size={16} />
-              <Typography variant="body2">admin@example.com</Typography>
+              <Typography variant="body2">
+                {profileData?.email || "loading..."}
+              </Typography>
             </Stack>
           </Box>
         </Box>

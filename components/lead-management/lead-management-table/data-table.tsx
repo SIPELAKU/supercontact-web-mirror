@@ -1,31 +1,31 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
+import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
+import { Lead } from "@/lib/models/types";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
+import Divider from '@mui/material/Divider';
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TablePagination from "@mui/material/TablePagination";
-import Divider from '@mui/material/Divider'
-import { Lead } from "@/lib/models/types";
-import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
+import TableRow from "@mui/material/TableRow";
 
 // TanStack Table
 import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  ColumnDef,
-  getSortedRowModel,
+    ColumnDef,
+    flexRender,
+    getCoreRowModel,
+    getSortedRowModel,
+    useReactTable,
 } from "@tanstack/react-table";
-import LeadFilters from "./LeadFilters";
 import LeadDetailModal from "../lead-detail-modal";
+import LeadFilters from "./LeadFilters";
 
 interface DataTableProps {
   columns: ColumnDef<Lead>[];
@@ -70,7 +70,7 @@ export function DataTable({ columns }: DataTableProps) {
 
 
   const table = useReactTable({
-    data: filteredData.length > 0 ? filteredData : data,
+    data: filteredData,
     columns,
     state: { pagination: { pageIndex, pageSize } },
     onPaginationChange: setPagination,
@@ -185,7 +185,7 @@ export function DataTable({ columns }: DataTableProps) {
               </TableRow>
             ))}
 
-            {(filteredData.length > 0 ? filteredData : data).length === 0 && !isLoading && (
+            {filteredData.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell colSpan={columns.length} align="center">
                   No data available

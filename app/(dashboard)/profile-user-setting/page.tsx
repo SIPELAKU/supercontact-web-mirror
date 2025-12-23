@@ -1,31 +1,153 @@
 "use client";
 
-import { useState } from "react";
+import { Alert } from "@/components/ui-mui/alert";
+import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
+import { useAuth } from "@/lib/context/AuthContext";
+import { handleError } from "@/lib/utils/errorHandler";
 import {
-  Box,
-  Card,
-  Typography,
-  TextField,
-  Stack,
-  Button,
-  Tabs,
-  Tab,
-  MenuItem,
   Avatar,
-  FormControlLabel,
+  Box,
+  Button,
+  Card,
   Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography
 } from "@mui/material";
+import { useEffect, useState } from "react";
 
 export default function UserProfileSetting() {
   const [tab, setTab] = useState(0);
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
+  // Profile form data
+  const [profileData, setProfileData] = useState<UpdateProfileData>({
+    fullname: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip_code: "",
+    country: "",
+  });
+
+  // Password form data
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // API Key form data
   const [apiType, setApiType] = useState("");
   const [apiName, setApiName] = useState("");
+
+  // Load profile data on component mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const token = await getToken();
+        const response = await fetchProfile(token);
+        
+        if (response.success && response.data) {
+          const profile = response.data;
+          setProfileData({
+            fullname: profile.fullname || "",
+            email: profile.email || "",
+            phone: profile.phone || "",
+            address: profile.address || "",
+            city: profile.city || "",
+            state: profile.state || "",
+            zip_code: profile.zip_code || "",
+            country: profile.country || "",
+          });
+        } else {
+          setError("Failed to load profile data");
+        }
+      } catch (err) {
+        const errorMessage = handleError(err);
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [getToken]);
+
+  const handleInputChange = (field: keyof UpdateProfileData) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+      
+      const token = await getToken();
+      const response = await updateProfile(token, profileData);
+      
+      if (response.success) {
+        setSuccess("Profile updated successfully!");
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError("Failed to update profile");
+      }
+    } catch (err) {
+      const errorMessage = handleError(err);
+      setError(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetProfile = async () => {
+    try {
+      setLoading(true);
+      const token = await getToken();
+      const response = await fetchProfile(token);
+      
+      if (response.success && response.data) {
+        const profile = response.data;
+        setProfileData({
+          fullname: profile.fullname || "",
+          email: profile.email || "",
+          phone: profile.phone || "",
+          address: profile.address || "",
+          city: profile.city || "",
+          state: profile.state || "",
+          zip_code: profile.zip_code || "",
+          country: profile.country || "",
+        });
+        setSuccess("Profile data reset to original values");
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err) {
+      const errorMessage = handleError(err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,6 +166,14 @@ export default function UserProfileSetting() {
       createdAt: string;
     }[]
   >([]);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Stack spacing={3}>
@@ -82,6 +212,19 @@ export default function UserProfileSetting() {
           }}
         />
       </Card>
+
+      {/* Error/Success Messages */}
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      
+      {success && (
+        <Alert severity="success" onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
 
       {/* TABS */}
       <Tabs value={tab} onChange={(_, v) => setTab(v)}>
@@ -124,53 +267,100 @@ export default function UserProfileSetting() {
             {/* Form */}
             <Stack spacing={3}>
               <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <TextField label="First Name" fullWidth defaultValue="Muhammad" />
-                <TextField label="Last Name" fullWidth defaultValue="Saeful" />
+                <TextField 
+                  label="Full Name" 
+                  fullWidth 
+                  value={profileData.fullname}
+                  onChange={handleInputChange("fullname")}
+                />
+                <TextField 
+                  label="Email" 
+                  fullWidth 
+                  value={profileData.email}
+                  onChange={handleInputChange("email")}
+                  type="email"
+                />
               </Stack>
 
               <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <TextField label="Email" fullWidth defaultValue="john.doe@gmail.com" />
-                <TextField label="Organisation" fullWidth defaultValue="Pixinvent" />
+                <TextField 
+                  label="Phone Number" 
+                  fullWidth 
+                  value={profileData.phone}
+                  onChange={handleInputChange("phone")}
+                />
+                <TextField 
+                  label="Address" 
+                  fullWidth 
+                  value={profileData.address}
+                  onChange={handleInputChange("address")}
+                />
               </Stack>
 
               <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <TextField label="Phone Number" fullWidth defaultValue="+1 (917) 543-9876" />
-                <TextField label="Address" fullWidth defaultValue="123 Main St, New York, NY 10001" />
+                <TextField 
+                  label="City" 
+                  fullWidth 
+                  value={profileData.city}
+                  onChange={handleInputChange("city")}
+                />
+                <TextField 
+                  label="State" 
+                  fullWidth 
+                  value={profileData.state}
+                  onChange={handleInputChange("state")}
+                />
               </Stack>
 
               <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <TextField label="State" fullWidth defaultValue="New York" />
-                <TextField label="Zip Code" fullWidth defaultValue="648391" />
-              </Stack>
-
-              <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                <TextField select label="Country" fullWidth defaultValue="USA">
+                <TextField 
+                  label="Zip Code" 
+                  fullWidth 
+                  value={profileData.zip_code}
+                  onChange={handleInputChange("zip_code")}
+                />
+                <TextField 
+                  select 
+                  label="Country" 
+                  fullWidth 
+                  value={profileData.country}
+                  onChange={handleInputChange("country")}
+                >
+                  <MenuItem value="">Select Country</MenuItem>
                   <MenuItem value="USA">USA</MenuItem>
                   <MenuItem value="Indonesia">Indonesia</MenuItem>
+                  <MenuItem value="Singapore">Singapore</MenuItem>
+                  <MenuItem value="Malaysia">Malaysia</MenuItem>
                 </TextField>
+              </Stack>
 
+              <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                 <TextField select label="Language" fullWidth defaultValue="English">
                   <MenuItem value="English">English</MenuItem>
                   <MenuItem value="Indonesia">Indonesia</MenuItem>
                 </TextField>
-              </Stack>
 
-              <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                 <TextField select label="Time Zone" fullWidth defaultValue="Time Zone">
                   <MenuItem value="Time Zone">(GMT-11:00) International Date Line West</MenuItem>
                   <MenuItem value="Indonesia">(WIB-12:00) Indonesia Date Line West</MenuItem>
-                </TextField>
-
-                <TextField select label="Currency" fullWidth defaultValue="Currency">
-                  <MenuItem value="Currency">USD</MenuItem>
-                  <MenuItem value="IDR">IDR</MenuItem>
                 </TextField>
               </Stack>
             </Stack>
 
             <Stack direction="row" spacing={2} mt={4}>
-              <Button variant="contained">Save Changes</Button>
-              <Button variant="outlined" color="inherit">
+              <Button 
+                variant="contained" 
+                onClick={handleSaveProfile}
+                disabled={saving}
+              >
+                {saving ? <CircularProgress size={20} /> : "Save Changes"}
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="inherit"
+                onClick={handleResetProfile}
+                disabled={saving}
+              >
                 Reset
               </Button>
             </Stack>

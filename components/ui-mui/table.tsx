@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui-mui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import ChevronLeftIcon from "@/public/icons/arrowLeft.png";
 import ChevronRightIcon from "@/public/icons/arrowRight.png";
+import { MoreHorizontal } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 import { TableSkeleton } from "./table-skeleton";
 
 export interface Column<T> {
@@ -161,7 +160,7 @@ export function CustomTable<T extends { id: string }>({
                   key={String(col.key)}
                   style={applyWidth(col.width)}
                   className="
-                          px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 relative
+                          px-6 py-3 text-left text-xs font-medium capitalize tracking-wide text-gray-500 relative
                           after:content-[''] after:absolute after:right-0 after:top-1/2 after:-translate-y-1/2
                           after:h-8 after:w-px after:bg-gray-300
                         "
@@ -173,7 +172,7 @@ export function CustomTable<T extends { id: string }>({
               {actions && (
                 <th
                   className="
-                      px-6 py-3 text-left text-xs font-medium uppercase text-gray-500 w-32 h-16 relative
+                      px-6 py-3 text-left text-xs font-medium capitalize text-gray-500 w-32 h-16 relative
                       after:content-[''] after:absolute after:right-2 after:top-1/2 after:-translate-y-1/2
                       after:h-8 after:w-px after:bg-gray-300
                     "

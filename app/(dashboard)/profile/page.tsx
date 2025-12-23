@@ -4,18 +4,18 @@ import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { handleError } from "@/lib/utils/errorHandler";
 import {
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Checkbox,
-    FormControlLabel,
-    MenuItem,
-    Stack,
-    Tab,
-    Tabs,
-    TextField,
-    Typography
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -95,7 +95,7 @@ export default function ProfilePage() {
         // Auto-dismiss success message after 3 seconds
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        const errorMessage = response.error?.message || response.message || "Failed to update profile. Please try again.";
+        const errorMessage = response.error || response.message || "Failed to update profile. Please try again.";
         setError(errorMessage);
       }
       

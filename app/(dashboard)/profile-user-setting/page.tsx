@@ -176,7 +176,8 @@ export default function UserProfileSetting() {
   }
 
   return (
-    <Stack spacing={3}>
+    <Box sx={{ p: 3 }}>
+      <Stack spacing={3}>
       {/* HEADER */}
       <Card
         sx={{
@@ -572,5 +573,6 @@ export default function UserProfileSetting() {
         </Stack>
       )}
     </Stack>
+    </Box>
   );
 }

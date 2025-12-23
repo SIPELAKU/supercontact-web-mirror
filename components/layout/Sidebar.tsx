@@ -62,10 +62,6 @@ const menuData: MenuSection[] = [
     title: "APPS",
     items: [
       {
-        name: "Contact",
-        icon: Contact,
-      },
-      {
         name: "Sales",
         icon: SalesIcon,
         children: [
@@ -74,6 +70,11 @@ const menuData: MenuSection[] = [
           { name: "Pipeline", path: "/sales/pipeline" },
           { name: "Quotation", path: "/sales/quotation" },
         ],
+      },
+      {
+        name: "Contact",
+        icon: Contact,
+        path: "/contact"
       },
       {
         name: "Email Marketing",
@@ -120,7 +121,7 @@ const menuData: MenuSection[] = [
         icon: Building2,
         path: "/admin/company-profile",
       },
-         {
+      {
         name: "User Control",
         icon: User,
         children: [

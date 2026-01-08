@@ -23,12 +23,12 @@ export default function LoginPage() {
     const verified = searchParams.get('verified');
     if (verified === 'true') {
       setSuccessMessage('Email verified successfully! You can now log in.');
-      
+
       // Auto-dismiss success message after 5 seconds
       const timer = setTimeout(() => {
         setSuccessMessage('');
       }, 5000);
-      
+
       // Cleanup timer on component unmount
       return () => clearTimeout(timer);
     }
@@ -62,11 +62,11 @@ export default function LoginPage() {
       <section className="hidden md:flex md:col-span-2 items-center justify-center bg-gray-100">
         <div className="p-10">
           <Image
-              src="/assets/logo3d.png"
-              alt="Supercontact Logo"
-              width={400}
-              height={400}
-            />
+            src="/assets/logo3d.png"
+            alt="Supercontact Logo"
+            width={400}
+            height={400}
+          />
         </div>
       </section>
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-gray-900 leading-tight text-center">
           Selamat Datang <br /> Kembali!
         </h1>
-        
+
         <h2 className="text-3xl font-bold mt-2 text-center">
           <span className="text-blue-600">Super</span>
           <span className="text-green-600">Contact</span>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          
+
           {successMessage && (
             <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm flex items-center justify-between">
               <span>{successMessage}</span>
@@ -104,7 +104,7 @@ export default function LoginPage() {
               </button>
             </div>
           )}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -151,7 +151,7 @@ export default function LoginPage() {
         </div>
 
         <button className="w-full border text-primary cursor-pointer rounded-md py-2 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
-          <FcGoogle/>
+          <FcGoogle />
           Continue with Google
         </button>
 

@@ -46,10 +46,18 @@ Built with **Next.js** and deployed via **Vercel** with a multi-environment pipe
 ### Available Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+npm run lint             # Run ESLint
+npm run lint:fix         # Auto-fix ESLint issues
+npm run format           # Format code with Prettier
+
+# Release Management
+npm run release:patch    # Create patch release (0.0.X)
+npm run release:minor    # Create minor release (0.X.0)
+npm run release:major    # Create major release (X.0.0)
+npm run tag:list         # List all version tags
 ```
 
 ## 🔄 Deployment Workflow & Environments
@@ -106,6 +114,7 @@ feature/settings ──────┘      │              │                
 3. **Pull Request to `dev`**
    - Create PR from `feature/your-feature-name` → `dev`
    - Request code review from team
+   - **IMPORTANT:** Update `CHANGELOG.md` sebelum merge (lihat bagian [Changelog Workflow](#changelog-workflow))
    - Merge after approval
    - Auto-deploy to **Development** environment
 
@@ -119,9 +128,20 @@ feature/settings ──────┘      │              │                
    - QA/BA/PO perform UAT
 
 5. **Promote to Production** (Release)
-   - Create Pull Request from `staging` → `main`
-   - Get approval from Tech Lead/PM
-   - Merge to `main`
+   ```bash
+   # Option A: Manual merge dengan Git tag
+   git checkout main
+   git merge staging
+   npm run release:patch  # atau minor/major
+   
+   # Option B: Via Pull Request
+   # - Create PR from staging → main
+   # - Get approval from Tech Lead/PM
+   # - Merge to main
+   # - Create release tag manually
+   git tag -a v1.2.3 -m "Release v1.2.3: Contact import feature"
+   git push origin v1.2.3
+   ```
    - Auto-deploy to **Production** environment
 
 #### Branch Protection Rules
@@ -134,17 +154,7 @@ feature/settings ──────┘      │              │                
 
 *Only for hotfixes or urgent fixes with team notification.
 
-## 🛠 Tech Stack
-
-- **Framework:** Next.js (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Library:** Material-UI (MUI)
-- **Package Manager:** npm
-- **Backend:** FastAPI
-- **Deployment:** Vercel
-
-## 📌 Semantic Versioning
+## 📌 Semantic Versioning & Release Management
 
 This project follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
 
@@ -154,40 +164,218 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.
 - **MINOR** (0.X.0): New features, backward-compatible
 - **PATCH** (0.0.X): Bug fixes, minor improvements
 
-### Examples
+### Creating a Release
 
+#### Step 1: Update CHANGELOG.md
+
+Sebelum create release, pastikan `CHANGELOG.md` sudah diupdate dengan format yang benar (lihat [CHANGELOG.md](./CHANGELOG.md)).
+
+#### Step 2: Create Release Tag
+
+```bash
+# Untuk bug fixes (0.0.X)
+npm run release:patch
+
+# Untuk fitur baru (0.X.0)
+npm run release:minor
+
+# Untuk breaking changes (X.0.0)
+npm run release:major
 ```
-1.0.0   → Initial production release
-1.1.0   → Added contact import feature
-1.1.1   → Fixed contact validation bug
-1.2.0   → Added bulk actions feature
-2.0.0   → Migration to Next.js 15 (breaking change)
+
+Script ini akan otomatis:
+1. ✅ Update version di `package.json`
+2. ✅ Create Git commit dengan message `chore(release): vX.Y.Z`
+3. ✅ Create Git tag `vX.Y.Z`
+4. ✅ Push commit dan tag ke repository
+
+#### Step 3: Verify Release
+
+```bash
+# List all version tags
+npm run tag:list
+
+# Check current version
+npm version
 ```
 
-All notable changes are documented in [CHANGELOG.md](./CHANGELOG.md).
+### Git Tags Reference
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+```bash
+# List all tags dengan message
+git tag -l -n9
 
-## 🤝 Contribution
+# List tags dengan pattern
+git tag -l "v1.*"
 
-1. Always use **`npm install --legacy-peer-deps`** for installation to avoid dependency conflicts.
-2. Ensure `package-lock.json` is always synced with `package.json`.
-3. Follow the **Semantic Versioning** in your commit messages and changelogs.
-4. Always create **Pull Requests** - never push directly to `staging` or `main`.
-5. Update **CHANGELOG.md** for every significant change.
+# Show tag details
+git show v1.2.3
+
+# Delete local tag (jika salah)
+git tag -d v1.2.3
+
+# Delete remote tag (jika sudah push)
+git push origin :refs/tags/v1.2.3
+```
+
+### Rollback ke Versi Sebelumnya
+
+#### Scenario 1: Rollback Production (Emergency)
+
+```bash
+# 1. Cek tag yang tersedia
+git tag -l
+
+# 2. Checkout ke tag versi sebelumnya
+git checkout v1.2.3
+
+# 3. Create hotfix branch dari tag
+git checkout -b hotfix/rollback-to-v1.2.3
+
+# 4. Force push ke main (EMERGENCY ONLY)
+git push origin hotfix/rollback-to-v1.2.3:main --force
+
+# 5. Vercel akan auto-deploy versi lama
+```
+
+⚠️ **IMPORTANT:** Force push ke `main` hanya untuk emergency. Segera inform team di Slack/Discord.
+
+#### Scenario 2: Rollback via Vercel Dashboard (Recommended)
+
+1. Buka [Vercel Dashboard](https://vercel.com/solvera/supercontact)
+2. Go to **Deployments** tab
+3. Cari deployment dengan tag yang benar
+4. Klik **"Promote to Production"**
+5. ✅ Zero downtime rollback tanpa Git manipulation
+
+#### Scenario 3: Rollback Development/Staging
+
+```bash
+# Dev environment
+git checkout dev
+git reset --hard v1.2.3
+git push origin dev --force
+
+# Staging environment
+git checkout staging
+git reset --hard v1.2.3
+git push origin staging --force
+```
+
+### Version History
+
+Lihat [CHANGELOG.md](./CHANGELOG.md) untuk history lengkap semua versi.
+
+## 📝 Changelog Workflow
+
+### Kapan Update CHANGELOG.md?
+
+**WAJIB update CHANGELOG sebelum merge ke `main`** untuk production release. Best practice:
+
+1. ✅ **Setiap PR ke `dev`** - Update section `[Unreleased]`
+2. ✅ **Sebelum merge `dev` → `staging`** - Move dari `[Unreleased]` ke version baru
+3. ✅ **Sebelum merge `staging` → `main`** - Final review dan create Git tag
+
+### Quick Changelog Update Guide
+
+```markdown
+## [Unreleased]
+
+### Added
+- Fitur bulk import kontak dari CSV/Excel
+
+### Fixed
+- Bug validation email di contact form
+
+### Changed
+- Improve performance contact table dengan virtual scrolling
+```
+
+Sebelum release ke production, move ke version baru:
+
+```markdown
+## [Unreleased]
+
+### Added
+- Initial project setup placeholder
+
+---
+
+## [1.2.0] - 2025-01-15
+
+### Detail Versi 1.2.0
+
+#### ✨ Fitur Bulk Import Kontak
+...
+```
+
+Lihat [CHANGELOG.md](./CHANGELOG.md) untuk format lengkap dan contoh-contoh.
+
+## 🛠 Tech Stack
+
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **UI Library:** Material-UI (MUI)
+- **Package Manager:** npm
+- **Backend:** FastAPI
+- **Deployment:** Vercel
+
+## 🤝 Contribution Guidelines
+
+### Development Workflow
+
+1. Always use **`npm install --legacy-peer-deps`** for installation
+2. Create feature branch from `dev`
+3. Follow commit message convention (see below)
+4. **Update CHANGELOG.md** setiap PR
+5. Create PR with proper description
+6. Request code review
+7. Merge after approval
 
 ### Commit Message Convention
 
 ```
 <type>(<scope>): <subject>
 
+Types:
+- feat     : New feature
+- fix      : Bug fix
+- docs     : Documentation changes
+- style    : Code style changes (formatting, no logic change)
+- refactor : Code refactoring
+- perf     : Performance improvements
+- test     : Adding tests
+- chore    : Build process or auxiliary tool changes
+
 Examples:
 feat(contacts): add bulk import feature
-fix(form): resolve validation error
-docs: update README deployment guide
+fix(form): resolve email validation error
+docs(readme): update deployment guide
+chore(deps): upgrade MUI to v5.15.0
 ```
 
-**Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
+### Pull Request Template
+
+```markdown
+## 📝 Description
+Brief description of changes
+
+## 🎯 Type of Change
+- [ ] Bug fix (patch)
+- [ ] New feature (minor)
+- [ ] Breaking change (major)
+- [ ] Documentation update
+
+## ✅ Checklist
+- [ ] Updated CHANGELOG.md
+- [ ] Tested locally
+- [ ] No console errors
+- [ ] Code reviewed
+
+## 🔗 Related Issues
+Closes #123
+```
 
 ## 🔧 Troubleshooting
 
@@ -204,8 +392,6 @@ npm ERR! peer react@"^18.0.0" from @mui/material@5.x.x
 npm install --legacy-peer-deps
 ```
 
-This flag tells npm to ignore peer dependency conflicts and use the legacy resolution algorithm.
-
 ### Issue: Build Fails on Vercel
 
 **Problem:** TypeScript or ESLint errors during build
@@ -216,7 +402,23 @@ This flag tells npm to ignore peer dependency conflicts and use the legacy resol
 npm run build
 
 # Fix linting issues
-npm run lint
+npm run lint:fix
+```
+
+### Issue: Wrong Version Tag
+
+**Problem:** Created wrong tag or typo
+
+**Solution:**
+```bash
+# Delete local tag
+git tag -d v1.2.3
+
+# Delete remote tag
+git push origin :refs/tags/v1.2.3
+
+# Create correct tag
+npm run release:patch
 ```
 
 ## 📚 Learn More
@@ -225,7 +427,16 @@ npm run lint
 - [Material-UI Documentation](https://mui.com/)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Vercel Deployment](https://vercel.com/docs)
+- [Semantic Versioning](https://semver.org/)
+- [Keep a Changelog](https://keepachangelog.com/)
+
+## 📞 Support
+
+Untuk pertanyaan atau issue:
+1. Check [CHANGELOG.md](./CHANGELOG.md) untuk version history
+2. Create GitHub issue dengan proper label
+3. Contact team lead di Slack channel `#supercontact-dev`
 
 ---
 
-Built with ❤️ by Solvera Team
+Built with ❤️ by Solvera Team | Current Version: See [package.json](./package.json)

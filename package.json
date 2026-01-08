@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "check-setup": "node scripts/check-setup.js"
+    "check-setup": "node scripts/check-setup.js",
+    "release:patch": "npm version patch -m 'chore(release): v%s' && git push --follow-tags",
+    "release:minor": "npm version minor -m 'chore(release): v%s' && git push --follow-tags",
+    "release:major": "npm version major -m 'chore(release): v%s' && git push --follow-tags",
+    "tag:list": "git tag -l -n9",
+    "tag:delete": "git tag -d"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

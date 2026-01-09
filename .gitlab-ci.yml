@@ -1,44 +1,111 @@
-# Menggunakan image Git yang ringan
-image: bitnami/git:latest
+# ==============================================================================
+# SUPERCONTACT WEB - CI/CD PIPELINE
+# ==============================================================================
+# This pipeline handles testing, building, and mirroring to GitHub
 
 # ==============================================================================
 # KONFIGURASI VARIABEL
 # ==============================================================================
 variables:
   GIT_DEPTH: 0
+  NODE_VERSION: "18"
 
 # ==============================================================================
 # DEFINISI STAGES
 # ==============================================================================
 stages:
+  - test
+  - build
   - mirror-dev
   - promote-staging
   - promote-main
 
 # ==============================================================================
-# SCRIPT PERSIAPAN
+# CACHE CONFIGURATION
 # ==============================================================================
-before_script:
-  - echo "⚙️ Memulai konfigurasi Environment..."
-  
-  # Konfigurasi Identitas
-  - git config --global user.email "ci-bot@solvera.com"
-  - git config --global user.name "CI/CD Bot"
-  
-  # Setup Remote GitHub
-  - git remote add github https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/supercontact-web-mirror.git || true
-  
-  # Setup Remote GitLab
-  - git remote set-url origin https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com/$CI_PROJECT_PATH.git
-
-  # Fetch Semua Branch
-  - git fetch --all
-  - echo "✅ Konfigurasi selesai."
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+    - .next/cache/
 
 # ==============================================================================
-# JOB 1: DEVELOPMENT (AUTO SYNC)
+# JOB: TESTING & LINTING
+# ==============================================================================
+test_and_lint:
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - echo "📦 Installing dependencies..."
+    - npm ci --prefer-offline --no-audit
+  script:
+    - echo "🔍 Running ESLint..."
+    - npm run lint
+    - echo "🔍 Running TypeScript type checking..."
+    - npx tsc --noEmit
+    - echo "✅ All tests and linting passed!"
+  artifacts:
+    reports:
+      junit: junit.xml
+    expire_in: 1 week
+  only:
+    - dev
+    - staging
+    - main
+    - merge_requests
+
+# ==============================================================================
+# JOB: BUILD APPLICATION
+# ==============================================================================
+build_application:
+  stage: build
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - echo "📦 Installing dependencies..."
+    - npm ci --prefer-offline --no-audit
+  script:
+    - echo "🏗️ Building Next.js application..."
+    - npm run build
+    - echo "✅ Build completed successfully!"
+  artifacts:
+    paths:
+      - .next/
+      - out/
+    expire_in: 1 week
+  only:
+    - dev
+    - staging
+    - main
+  needs:
+    - test_and_lint
+
+# ==============================================================================
+# SCRIPT PERSIAPAN UNTUK MIRROR
+# ==============================================================================
+.mirror_setup: &mirror_setup
+  image: bitnami/git:latest
+  before_script:
+    - echo "⚙️ Memulai konfigurasi Environment..."
+    
+    # Konfigurasi Identitas
+    - git config --global user.email "ci-bot@solvera.com"
+    - git config --global user.name "CI/CD Bot"
+    
+    # Setup Remote GitHub
+    - git remote add github https://$GITHUB_USER:$GITHUB_TOKEN@github.com/$GITHUB_USER/supercontact-web-mirror.git || true
+    
+    # Setup Remote GitLab
+    - git remote set-url origin https://oauth2:$GITLAB_ACCESS_TOKEN@gitlab.com/$CI_PROJECT_PATH.git
+
+    # Fetch Semua Branch
+    - git fetch --all
+    - echo "✅ Konfigurasi selesai."
+
+# ==============================================================================
+# JOB: DEVELOPMENT (AUTO SYNC)
 # ==============================================================================
 sync_dev_to_github:
+  <<: *mirror_setup
   stage: mirror-dev
   script:
     - echo "=================================================="
@@ -54,11 +121,14 @@ sync_dev_to_github:
     - echo "✅ [SUCCESS] Dev berhasil disinkronkan!"
   only:
     - dev
+  needs:
+    - build_application
 
 # ==============================================================================
-# JOB 2: PROMOTION (DEV -> STAGING)
+# JOB: PROMOTION (DEV -> STAGING)
 # ==============================================================================
 approve_to_staging:
+  <<: *mirror_setup
   stage: promote-staging
   script:
     - echo "=================================================="
@@ -84,9 +154,10 @@ approve_to_staging:
   allow_failure: false
 
 # ==============================================================================
-# JOB 3: PROMOTION (STAGING -> MAIN)
+# JOB: PROMOTION (STAGING -> MAIN)
 # ==============================================================================
 approve_to_production:
+  <<: *mirror_setup
   stage: promote-main
   script:
     - echo "=================================================="
@@ -110,3 +181,10 @@ approve_to_production:
     - staging
   when: manual
   allow_failure: false
+
+# ==============================================================================
+# REQUIRED VARIABLES IN GITLAB CI/CD SETTINGS:
+# - GITHUB_USER: GitHub username
+# - GITHUB_TOKEN: GitHub personal access token
+# - GITLAB_ACCESS_TOKEN: GitLab access token
+# ==============================================================================

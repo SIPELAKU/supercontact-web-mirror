@@ -1,9 +1,9 @@
 // lib/hooks/useUsers.ts
 "use client";
 
+import { useAuth } from "@/lib/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers, UserResponse } from "../api";
-import { useAuth } from "@/lib/context/AuthContext";
 
 export function useUsers() {
   const { getToken } = useAuth();
@@ -18,3 +18,6 @@ export function useUsers() {
     refetchOnWindowFocus: false,
   });
 }
+
+// Also export as default for backward compatibility
+export default useUsers;

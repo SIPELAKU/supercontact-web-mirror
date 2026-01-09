@@ -201,6 +201,78 @@ export async function resendOTP(resendData: ResendOTPData): Promise<ResendOTPRes
   }
 }
 
+// Reset Password types and functions
+export interface ResetPasswordData {
+  password: string;
+  confirm_password: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  error?: {
+    message: string;
+  };
+}
+
+export async function resetPassword(resetData: ResetPasswordData, resetToken?: string): Promise<ResetPasswordResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`;
+  
+  logger.info("Making POST request to reset password", { 
+    url, 
+    resetData: { password: '[HIDDEN]', confirm_password: '[HIDDEN]' },
+    hasToken: !!resetToken
+  });
+
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add Authorization header if reset token is provided
+    if (resetToken) {
+      headers['Authorization'] = `Bearer ${resetToken}`;
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(resetData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse reset password response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/api/v1/auth/reset-password (POST)", { status: res.status, response: json });
+    
+    // Don't throw error for successful HTTP responses, even if success: false
+    // Let the calling code handle the success/failure based on the response.success field
+    if (!res.ok) {
+      logger.error(`Reset password failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Password reset failed (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Reset password request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
 export async function fetchLeads(token: string): Promise<leadResponse> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
     headers: { Authorization: `Bearer ${token}` },

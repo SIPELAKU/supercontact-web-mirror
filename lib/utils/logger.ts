@@ -51,17 +51,14 @@ class Logger {
   }
 
   private sendToExternalLogger(logEntry: LogEntry) {
-    // Optional: Send logs to external service like LogRocket, Sentry, etc.
-    // Example with a simple endpoint:
-    /*
-    if (logEntry.level === 'error') {
+    // Send logs to our API endpoint for server-side logging
+    if (logEntry.level === 'error' || logEntry.level === 'warn') {
       fetch('/api/logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logEntry),
-      }).catch(() => {}); // Fail silently
+      }).catch(() => {}); // Fail silently to avoid infinite loops
     }
-    */
   }
 
   debug(message: string, data?: any) {

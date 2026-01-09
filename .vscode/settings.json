@@ -1,32 +1,29 @@
 {
   "typescript.preferences.includePackageJsonAutoImports": "on",
   "typescript.suggest.autoImports": true,
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "typescript.preferences.importModuleSpecifier": "shortest",
   "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.paths": true,
   "typescript.workspaceSymbols.scope": "allOpenProjects",
+  "typescript.preferences.includeCompletionsForModuleExports": true,
+  "typescript.preferences.includeCompletionsWithSnippetText": true,
+  "typescript.preferences.includeCompletionsForImportStatements": true,
   "typescript.suggest.completeFunctionCalls": true,
+  "typescript.suggest.includeCompletionsWithClassMemberSnippets": true,
+  "typescript.suggest.includeCompletionsWithObjectLiteralMethodSnippets": true,
+  "typescript.suggest.includeCompletionsWithInsertText": true,
+  "typescript.inlayHints.parameterNames.enabled": "literals",
+  "typescript.inlayHints.parameterTypes.enabled": true,
+  "typescript.inlayHints.variableTypes.enabled": true,
+  "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+  "typescript.inlayHints.enumMemberValues.enabled": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit",
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
   },
   "files.associations": {
-    "*.css": "tailwindcss"
-  },
-  "emmet.includeLanguages": {
-    "javascript": "javascriptreact",
-    "typescript": "typescriptreact"
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/.next": true,
-    "**/dist": true,
-    "**/.git": true
-  },
-  "files.exclude": {
-    "**/.git": true,
-    "**/.DS_Store": true,
-    "**/node_modules": true,
-    "**/.next": true
+    "*.tsx": "typescriptreact",
+    "*.ts": "typescript"
   }
 }

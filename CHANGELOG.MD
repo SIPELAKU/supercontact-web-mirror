@@ -1,4 +1,4 @@
-## [0.1.1] - 2025-01-15
+## [0.1.1] - 2025-01-09
 
 ### Detail Versi 0.1.1
 
@@ -21,7 +21,7 @@
     - Integrasi dengan endpoint `POST /api/v1/auth/otp/reset-password`
     - Handling loading, success, dan error state dari API
   - **Security & UX Considerations:**
-    - Generic success message untuk mencegah email enumeration
+    - Generic success message untuk mencegah email enumation
   - **Impact:**
     - User dapat melakukan recovery akun secara mandiri
     - UX auth flow menjadi lebih lengkap

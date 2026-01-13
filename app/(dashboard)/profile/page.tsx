@@ -1,373 +1,323 @@
 "use client";
 
-import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
+import { fetchProfile } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
-import { handleError } from "@/lib/utils/errorHandler";
+import {
+  CalendarToday,
+  CheckCircle,
+  Email,
+  LocationOn,
+  Lock,
+  Person,
+  Phone,
+  Star
+} from "@mui/icons-material";
 import {
   Avatar,
   Box,
   Button,
   Card,
-  Checkbox,
-  FormControlLabel,
-  MenuItem,
+  Divider,
+  Grid,
+  Paper,
   Stack,
-  Tab,
-  Tabs,
-  TextField,
   Typography
 } from "@mui/material";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
-  const [tab, setTab] = useState(0);
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const router = useRouter();
   const { getToken } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Form state - will be populated from API
-  const [formData, setFormData] = useState({
-    fullname: "",
-    email: "",
-    company: "",
-    country: "",
-    language: "",
-    phone: "",
-    skype: "",
-    bio: ""
-  });
-
-  // Load profile data on component mount
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       try {
         const token = await getToken();
-        const response = await fetchProfile(token);
-        
-        if (response.success && response.data) {
-          setFormData({
-            fullname: response.data.fullname || "",
-            email: response.data.email || "",
-            company: response.data.company || "",
-            country: response.data.country || "",
-            language: response.data.language || "",
-            phone: response.data.phone || "",
-            skype: response.data.skype || "",
-            bio: response.data.bio || ""
-          });
-        } else {
-          setError("Failed to load profile data");
+        const res = await fetchProfile(token);
+        if (res.success) {
+          setProfile(res.data);
         }
-      } catch (err: any) {
-        const errorMessage = handleError(err, 'Load profile error', "Failed to load profile data");
-        setError(errorMessage);
+      } catch (err) {
+        console.error(err);
       } finally {
-        setIsLoadingProfile(false);
+        setLoading(false);
       }
     };
-
-    loadProfile();
+    loadData();
   }, [getToken]);
 
-  const handleInputChange = (field: keyof UpdateProfileData) => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
-  };
+  if (loading) return <Box p={4}>Loading...</Box>;
 
-  const handleSaveChanges = async () => {
-    setIsLoading(true);
-    setError("");
-    setSuccessMessage("");
-
-    try {
-      const token = await getToken();
-      const response = await updateProfile(token, formData);
-      
-      if (response.success) {
-        setSuccessMessage("Profile updated successfully!");
-        // Auto-dismiss success message after 3 seconds
-        setTimeout(() => setSuccessMessage(""), 3000);
-      } else {
-        const errorMessage = response.error || response.message || "Failed to update profile. Please try again.";
-        setError(errorMessage);
-      }
-      
-    } catch (err: any) {
-      const errorMessage = handleError(err, 'Profile update error', "Failed to update profile. Please try again.");
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    // Reset to original loaded data
-    const loadProfile = async () => {
-      try {
-        const token = await getToken();
-        const response = await fetchProfile(token);
-        
-        if (response.success && response.data) {
-          setFormData({
-            fullname: response.data.fullname || "",
-            email: response.data.email || "",
-            company: response.data.company || "",
-            country: response.data.country || "",
-            language: response.data.language || "",
-            phone: response.data.phone || "",
-            skype: response.data.skype || "",
-            bio: response.data.bio || ""
-          });
-        }
-      } catch (err: any) {
-        console.error('Error resetting profile:', err);
-      }
-    };
-    
-    loadProfile();
-    setError("");
-    setSuccessMessage("");
-  };
-
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => setAvatar(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
+  const defaultAvatar = "/assets/Avatar-profile.png";
+  
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-      <Stack spacing={3}>
+      <Stack spacing={4}>
+        
         {/* ================= HEADER ================= */}
+        {/* Matching the design with a light blue background and a geometric shape */}
         <Card
           sx={{
-            p: 3,
-            backgroundColor: "#e8ecff",
+            p: 4,
+            background: "linear-gradient(to right, #E0E7FF, #EEF2FF)",
             position: "relative",
             overflow: "hidden",
-            minHeight: 150,
+            borderRadius: 3,
+            boxShadow: 'none',
+            border: '1px solid #E0E7FF'
           }}
         >
-          <Typography variant="h5" fontWeight={600}>
-            Profile
-          </Typography>
+          <Box zIndex={1} position="relative">
+            <Typography variant="h5" fontWeight={700} color="#1E293B">
+              Profile
+            </Typography>
+            <Typography variant="body2" color="#64748B" mt={0.5}>
+              Users Profile
+            </Typography>
+          </Box>
 
-          <Typography variant="body2" color="text.secondary">
-            User Profile
-          </Typography>
-
-          {/* LOGO */}
+          {/* Geometric Decoration (CSS approximation of the blue triangle) */}
           <Box
-            component="img"
-            src="/assets/logo3d.png"
-            alt="logo"
             sx={{
               position: "absolute",
-              right: 100,
-              top: "60%",
-              transform: "translateY(-50%)",
-              width: 250,
-              opacity: 1,
-              pointerEvents: "none",
-              userSelect: "none",
+              right: 50,
+              bottom: -30,
+              width: 140,
+              height: 140,
+              zIndex: 0
             }}
-          />
-        </Card>
-
-        {/* ================= TABS ================= */}
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Account" />
-          <Tab label="Security" />
-        </Tabs>
-
-        {/* ================= ACCOUNT ================= */}
-        {tab === 0 && (
-          <Card sx={{ p: 4 }}>
-            {/* Loading State */}
-            {isLoadingProfile ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <Typography>Loading profile...</Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Error and Success Messages */}
-                {error && (
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-                    <Typography color="error" variant="body2">
-                      {error}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {successMessage && (
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
-                    <Typography color="success.dark" variant="body2">
-                      {successMessage}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Avatar */}
-                <Stack direction="row" spacing={3} alignItems="center" mb={4}>
-                  <Avatar
-                    src={avatar ?? "/assets/avatar-example.png"}
-                    sx={{ width: 80, height: 80 }}
-                  >
-                    {formData.fullname ? formData.fullname.charAt(0).toUpperCase() : 'U'}
-                  </Avatar>
-
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={2}>
-                      <Button variant="contained" component="label">
-                        Upload New Photo
-                        <input hidden type="file" accept="image/*" onChange={handleUpload} />
-                      </Button>
-
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => setAvatar(null)}
-                      >
-                        Reset
-                      </Button>
-                    </Stack>
-
-                    <Typography variant="caption" color="text.secondary">
-                      Allowed JPG, GIF or PNG. Max size of 800K
-                    </Typography>
-                  </Stack>
-                </Stack>
-
-                {/* Form */}
-                <Stack spacing={3}>
-                  <TextField 
-                    label="Full Name" 
-                    fullWidth 
-                    value={formData.fullname}
-                    onChange={handleInputChange('fullname')}
-                  />
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      label="Email" 
-                      fullWidth 
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange('email')}
-                    />
-                    <TextField 
-                      label="Company" 
-                      fullWidth 
-                      value={formData.company}
-                      onChange={handleInputChange('company')}
-                    />
-                  </Stack>
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      label="Phone Number" 
-                      fullWidth 
-                      value={formData.phone}
-                      onChange={handleInputChange('phone')}
-                    />
-                    <TextField 
-                      label="Skype" 
-                      fullWidth 
-                      value={formData.skype}
-                      onChange={handleInputChange('skype')}
-                    />
-                  </Stack>
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      select 
-                      label="Country" 
-                      fullWidth 
-                      value={formData.country}
-                      onChange={handleInputChange('country')}
-                    >
-                      <MenuItem value="USA">USA</MenuItem>
-                      <MenuItem value="Indonesia">Indonesia</MenuItem>
-                      <MenuItem value="UK">United Kingdom</MenuItem>
-                      <MenuItem value="Canada">Canada</MenuItem>
-                      <MenuItem value="Australia">Australia</MenuItem>
-                    </TextField>
-
-                    <TextField 
-                      select 
-                      label="Language" 
-                      fullWidth 
-                      value={formData.language}
-                      onChange={handleInputChange('language')}
-                    >
-                      <MenuItem value="English">English</MenuItem>
-                      <MenuItem value="Indonesian">Indonesian</MenuItem>
-                      <MenuItem value="Spanish">Spanish</MenuItem>
-                      <MenuItem value="French">French</MenuItem>
-                    </TextField>
-                  </Stack>
-
-                  <TextField
-                    label="Bio"
-                    fullWidth
-                    multiline
-                    rows={4}
-                    value={formData.bio}
-                    onChange={handleInputChange('bio')}
-                    placeholder="Tell us about yourself..."
-                  />
-                </Stack>
-
-                {/* Actions */}
-                <Stack direction="row" spacing={2} mt={4}>
-                  <Button 
-                    variant="contained" 
-                    onClick={handleSaveChanges}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Saving..." : "Save Changes"}
-                  </Button>
-                  <Button 
-                    variant="outlined" 
-                    color="inherit"
-                    onClick={handleReset}
-                    disabled={isLoading}
-                  >
-                    Reset
-                  </Button>
-                </Stack>
-              </>
-            )}
-          </Card>
-        )}
-
-        {/* ================= DELETE ACCOUNT ================= */}
-        <Card sx={{ p: 4 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>
-            Delete Account
-          </Typography>
-
-          <FormControlLabel
-            control={<Checkbox />}
-            label="I confirm my account deactivation"
-          />
-
-          <Box mt={2}>
-            <Button variant="contained" color="error">
-              Deactivate Account
-            </Button>
+          >
+            <Image src="/assets/logo-company.png" alt="" width={140} height={140}/>
           </Box>
         </Card>
+
+        {/* ================= PROFILE COVER & USER CARD ================= */}
+        <Paper 
+          sx={{ 
+            borderRadius: 3, 
+            overflow: "hidden", 
+            boxShadow: "0px 4px 20px rgba(0,0,0,0.05)" 
+          }}
+        >
+          {/* Cover Image Area */}
+          <Box
+             sx={{
+              height: { xs: 150, md: 200 },
+              backgroundImage: "url('/assets/bg-cover-profile.png')", 
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+          
+          <Box sx={{ px: 4, pb: 4, mt: -6 }}>
+             <Stack 
+                direction={{ xs: 'column', md: 'row' }} 
+                alignItems={{ xs: 'center', md: 'flex-end' }} 
+                spacing={3}
+             >
+                {/* Avatar */}
+                <Box 
+                  sx={{ 
+                    p: 0.5, 
+                    bgcolor: 'white', 
+                    borderRadius: 3,
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  <Avatar 
+                    src={profile?.avatar || defaultAvatar} 
+                    variant="rounded"
+                    sx={{ width: 120, height: 120, borderRadius: 2 }}
+                  />
+                </Box>
+
+                {/* User Info */}
+                <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    {profile?.fullname || "User Name"}
+                  </Typography>
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    spacing={{ xs: 1, sm: 3 }} 
+                    mt={1}
+                    justifyContent={{ xs: 'center', md: 'flex-start' }}
+                    color="text.secondary"
+                  >
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Person fontSize="small" />
+                      <Typography variant="body2">Administrator</Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <LocationOn fontSize="small" />
+                      <Typography variant="body2">{profile?.country || "Location"}</Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CalendarToday fontSize="small" />
+                      <Typography variant="body2">Joined April 2021</Typography>
+                    </Stack>
+                  </Stack>
+                </Box>
+
+                {/* Settings Button */}
+                <Button  
+                   startIcon={<Lock />}
+                   onClick={() => router.push('/profile/settings')}
+                   sx={{ 
+                     textTransform: 'none', 
+                     fontWeight: 600,
+                     px: 3,
+                     borderRadius: 2,
+                     bgcolor: "#4F6DF5",
+                     color: "white",
+                     hover: {
+                        bgcolor: "#3f58ce",
+                        color: "white",
+                     }
+                   }}
+                >
+                  Settings
+                </Button>
+             </Stack>
+          </Box>
+        </Paper>
+
+        {/* ================= PERSONAL INFORMATION ================= */}
+        <Paper sx={{ p: 4, borderRadius: 3, boxShadow: "0px 4px 20px rgba(0,0,0,0.05)" }}>
+           <Typography variant="h6" fontWeight={700} mb={3}>
+             Personal Information
+           </Typography>
+
+           <Grid container spacing={4}>
+             {/* ABOUT */}
+             <Grid item xs={12} md={6} lg={4}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                  ABOUT
+                </Typography>
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Person sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Full Name:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.fullname || "-"}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <CheckCircle sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Status:</Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={600} color="success.main">Active</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Star sx={{ color: 'text.secondary', fontSize: 20 }} />
+                     <Box>
+                      <Typography variant="body2" fontWeight={600}>Role:</Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={600}>Administrator</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Box component="span" sx={{ fontSize: 20 }}>🏳️</Box>
+                     <Box>
+                      <Typography variant="body2" fontWeight={600}>Country:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.country || "-"}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                     <Box component="span" sx={{ fontSize: 20 }}>🌐</Box>
+                     <Box>
+                      <Typography variant="body2" fontWeight={600}>Language:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.language || "English"}</Typography>
+                  </Stack>
+                </Stack>
+             </Grid>
+
+             {/* CONTACTS */}
+             <Grid item xs={12} md={6} lg={4}>
+               <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                  CONTACTS
+                </Typography>
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Phone sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Contact:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.phone || "-"}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Email sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Email:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.email || "-"}</Typography>
+                  </Stack>
+                   <Stack direction="row" spacing={2} alignItems="center">
+                    <Box component="span" sx={{ fontSize: 20 }}>💬</Box>
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Skype:</Typography>
+                    </Box>
+                    <Typography variant="body2">{profile?.skype || "-"}</Typography>
+                  </Stack>
+                </Stack>
+             </Grid>
+
+             {/* TEAMS (Mock Data) */}
+             <Grid item xs={12} md={6} lg={4}>
+               <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                  TEAMS
+                </Typography>
+                <Stack spacing={2}>
+                   <Stack direction="row" spacing={1}>
+                      <Typography variant="body2" color="text.primary">Backend Developer</Typography>
+                      <Typography variant="body2" color="text.secondary">(126 Members)</Typography>
+                   </Stack>
+                    <Stack direction="row" spacing={1}>
+                      <Typography variant="body2" color="text.primary">React Developer</Typography>
+                      <Typography variant="body2" color="text.secondary">(98 Members)</Typography>
+                   </Stack>
+                </Stack>
+             </Grid>
+           </Grid>
+
+           <Divider sx={{ my: 4 }} />
+
+           <Grid container spacing={4}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                    OVERVIEW
+                </Typography>
+                <Stack spacing={2}>
+                   <Stack direction="row" spacing={2} alignItems="center">
+                    <CheckCircle sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Task Compiled:</Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>John Doe</Typography>
+                  </Stack>
+                   <Stack direction="row" spacing={2} alignItems="center">
+                    <Person sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Connections:</Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>897</Typography>
+                  </Stack>
+                   <Stack direction="row" spacing={2} alignItems="center">
+                    <Star sx={{ color: 'text.secondary', fontSize: 20 }} />
+                    <Box>
+                      <Typography variant="body2" fontWeight={600}>Projects Compiled:</Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={700}>146</Typography>
+                  </Stack>
+                </Stack>
+              </Grid>
+           </Grid>
+
+        </Paper>
       </Stack>
     </Box>
   );

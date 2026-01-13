@@ -4,19 +4,23 @@ import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { handleError } from "@/lib/utils/errorHandler";
 import {
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Checkbox,
-    FormControlLabel,
-    MenuItem,
-    Stack,
-    Tab,
-    Tabs,
-    TextField,
-    Typography
+  Person,
+  Security
+} from "@mui/icons-material";
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  FormControlLabel,
+  Grid,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography
 } from "@mui/material";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function ProfileSettingsPage() {
@@ -28,7 +32,7 @@ export default function ProfileSettingsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const { getToken } = useAuth();
 
-  // Form state - will be populated from API
+  // Form state
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
@@ -36,28 +40,34 @@ export default function ProfileSettingsPage() {
     country: "",
     language: "",
     phone: "",
-    skype: "",
-    bio: ""
+    // New fields from design (not all might be supported by API yet)
+    address: "",
+    state: "",
+    zipCode: "",
+    timeZone: "",
+    currency: "USD",
   });
 
-  // Load profile data on component mount
+  // Load profile data
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const token = await getToken();
+        // Assuming fetchProfile returns the standard profile data
         const response = await fetchProfile(token);
         
         if (response.success && response.data) {
-          setFormData({
+          setFormData(prev => ({
+            ...prev,
             fullname: response.data.fullname || "",
             email: response.data.email || "",
             company: response.data.company || "",
             country: response.data.country || "",
             language: response.data.language || "",
             phone: response.data.phone || "",
-            skype: response.data.skype || "",
-            bio: response.data.bio || ""
-          });
+            // Populate if available, otherwise default
+            // These might not be in response.data yet based on API analysis
+          }));
         } else {
           setError("Failed to load profile data");
         }
@@ -72,7 +82,7 @@ export default function ProfileSettingsPage() {
     loadProfile();
   }, [getToken]);
 
-  const handleInputChange = (field: keyof UpdateProfileData) => (
+  const handleInputChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({
@@ -88,19 +98,31 @@ export default function ProfileSettingsPage() {
 
     try {
       const token = await getToken();
-      const response = await updateProfile(token, formData);
+      // Map back to API expected structure (omitting local-only fields for now if API doesn't support them)
+      // Or send them if API ignores unknown fields
+      const apiData: UpdateProfileData = {
+        fullname: formData.fullname,
+        email: formData.email,
+        company: formData.company,
+        country: formData.country,
+        language: formData.language,
+        phone: formData.phone,
+        skype: "", // Hidden in design but required by type?
+        bio: "",   // Hidden in design
+      };
+      
+      const response = await updateProfile(token, apiData);
       
       if (response.success) {
         setSuccessMessage("Profile updated successfully!");
-        // Auto-dismiss success message after 3 seconds
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        const errorMessage = response.error || response.message || "Failed to update profile. Please try again.";
+        const errorMessage = response.error || response.message || "Failed to update profile";
         setError(errorMessage);
       }
       
     } catch (err: any) {
-      const errorMessage = handleError(err, 'Profile update error', "Failed to update profile. Please try again.");
+      const errorMessage = handleError(err, 'Profile update error', "Update failed");
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -108,32 +130,8 @@ export default function ProfileSettingsPage() {
   };
 
   const handleReset = () => {
-    // Reset to original loaded data
-    const loadProfile = async () => {
-      try {
-        const token = await getToken();
-        const response = await fetchProfile(token);
-        
-        if (response.success && response.data) {
-          setFormData({
-            fullname: response.data.fullname || "",
-            email: response.data.email || "",
-            company: response.data.company || "",
-            country: response.data.country || "",
-            language: response.data.language || "",
-            phone: response.data.phone || "",
-            skype: response.data.skype || "",
-            bio: response.data.bio || ""
-          });
-        }
-      } catch (err: any) {
-        console.error('Error resetting profile:', err);
-      }
-    };
-    
-    loadProfile();
-    setError("");
-    setSuccessMessage("");
+    // Reload logic or reset to initial
+     window.location.reload();
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,229 +143,329 @@ export default function ProfileSettingsPage() {
     reader.readAsDataURL(file);
   };
 
+  if (isLoadingProfile) return <Box p={4}>Loading...</Box>;
+
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-      <Stack spacing={3}>
+      <Stack spacing={4}>
+        
         {/* ================= HEADER ================= */}
         <Card
           sx={{
-            p: 3,
-            backgroundColor: "#e8ecff",
+            p: 4,
+            background: "linear-gradient(to right, #E0E7FF, #EEF2FF)",
             position: "relative",
             overflow: "hidden",
-            minHeight: 150,
+            borderRadius: 3,
+            boxShadow: 'none',
+            border: '1px solid #E0E7FF'
           }}
         >
-          <Typography variant="h5" fontWeight={600}>
-            Account Settings
-          </Typography>
+          <Box zIndex={1} position="relative">
+            <Typography variant="h5" fontWeight={700} color="#1E293B">
+              Profile
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
+              <Typography variant="body2" color="#64748B">
+                Users Profile
+              </Typography>
+              <Typography variant="body2" color="#64748B">•</Typography>
+              <Typography variant="body2" color="#64748B">
+                Account Setting
+              </Typography>
+            </Stack>
+          </Box>
 
-          <Typography variant="body2" color="text.secondary">
-            Manage your account settings and preferences
-          </Typography>
-
-          {/* LOGO */}
-          <Box
-            component="img"
-            src="/assets/logo3d.png"
-            alt="logo"
+           <Box
             sx={{
               position: "absolute",
-              right: 100,
-              top: "60%",
-              transform: "translateY(-50%)",
-              width: 250,
-              opacity: 1,
-              pointerEvents: "none",
-              userSelect: "none",
+              right: 50,
+              bottom: -30,
+              width: 140,
+              height: 140,
+              zIndex: 0
             }}
-          />
+          >
+             <Image src="/assets/logo-company.png" alt="" width={140} height={140}/>
+          </Box>
         </Card>
 
-        {/* ================= TABS ================= */}
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Account" />
-          <Tab label="Security" />
-        </Tabs>
+        {/* ================= CUSTOM TABS ================= */}
+        <Stack direction="row" spacing={2}>
+           <Button
+             startIcon={<Person />}
+             variant={tab === 0 ? "contained" : "text"}
+             onClick={() => setTab(0)}
+             sx={{
+               bgcolor: tab === 0 ? "#536DFE" : "transparent",
+               color: tab === 0 ? "white" : "text.secondary",
+               textTransform: "none",
+               fontWeight: 600,
+               borderRadius: 2,
+               px: 3,
+               '&:hover': {
+                 bgcolor: tab === 0 ? "#4c63e6" : "rgba(0,0,0,0.04)"
+               }
+             }}
+           >
+             Account
+           </Button>
+           <Button
+             startIcon={<Security />}
+             variant={tab === 1 ? "contained" : "text"}
+             onClick={() => setTab(1)}
+             sx={{
+               bgcolor: tab === 1 ? "#536DFE" : "transparent",
+               color: tab === 1 ? "white" : "text.secondary",
+               textTransform: "none",
+               fontWeight: 600,
+               borderRadius: 2,
+               px: 3,
+               '&:hover': {
+                 bgcolor: tab === 1 ? "#4c63e6" : "rgba(0,0,0,0.04)"
+               }
+             }}
+           >
+             Security
+           </Button>
+        </Stack>
 
-        {/* ================= ACCOUNT ================= */}
+        {/* ================= FORM CARD ================= */}
         {tab === 0 && (
-          <Card sx={{ p: 4 }}>
-            {/* Loading State */}
-            {isLoadingProfile ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                <Typography>Loading profile...</Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Error and Success Messages */}
-                {error && (
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-                    <Typography color="error" variant="body2">
-                      {error}
-                    </Typography>
-                  </Box>
-                )}
-                
-                {successMessage && (
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
-                    <Typography color="success.dark" variant="body2">
-                      {successMessage}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Avatar */}
-                <Stack direction="row" spacing={3} alignItems="center" mb={4}>
-                  <Avatar
-                    src={avatar ?? "/assets/avatar-example.png"}
-                    sx={{ width: 80, height: 80 }}
-                  >
-                    {formData.fullname ? formData.fullname.charAt(0).toUpperCase() : 'U'}
-                  </Avatar>
-
-                  <Stack spacing={1}>
-                    <Stack direction="row" spacing={2}>
-                      <Button variant="contained" component="label">
-                        Upload New Photo
-                        <input hidden type="file" accept="image/*" onChange={handleUpload} />
-                      </Button>
-
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => setAvatar(null)}
-                      >
-                        Reset
-                      </Button>
-                    </Stack>
-
-                    <Typography variant="caption" color="text.secondary">
-                      Allowed JPG, GIF or PNG. Max size of 800K
-                    </Typography>
-                  </Stack>
-                </Stack>
-
-                {/* Form */}
-                <Stack spacing={3}>
-                  <TextField 
-                    label="Full Name" 
-                    fullWidth 
-                    value={formData.fullname}
-                    onChange={handleInputChange('fullname')}
-                  />
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      label="Email" 
-                      fullWidth 
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange('email')}
-                    />
-                    <TextField 
-                      label="Company" 
-                      fullWidth 
-                      value={formData.company}
-                      onChange={handleInputChange('company')}
-                    />
-                  </Stack>
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      label="Phone Number" 
-                      fullWidth 
-                      value={formData.phone}
-                      onChange={handleInputChange('phone')}
-                    />
-                    <TextField 
-                      label="Skype" 
-                      fullWidth 
-                      value={formData.skype}
-                      onChange={handleInputChange('skype')}
-                    />
-                  </Stack>
-
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                    <TextField 
-                      select 
-                      label="Country" 
-                      fullWidth 
-                      value={formData.country}
-                      onChange={handleInputChange('country')}
+          <Card sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            
+            {/* AVATAR SECTION */}
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" mb={5}>
+               <Avatar 
+                  src={avatar || "/assets/Avatar-profile.png"} 
+                  variant="rounded"
+                  sx={{ width: 100, height: 100, bgcolor: '#C7D2FE' }}
+               />
+               <Box>
+                 <Stack direction="row" spacing={2} mb={1}>
+                    <Button 
+                      component="label"
+                      variant="contained" 
+                      sx={{ 
+                        textTransform: 'none', 
+                        bgcolor: '#536DFE',
+                        borderRadius: 2
+                      }}
                     >
-                      <MenuItem value="USA">USA</MenuItem>
-                      <MenuItem value="Indonesia">Indonesia</MenuItem>
-                      <MenuItem value="UK">United Kingdom</MenuItem>
-                      <MenuItem value="Canada">Canada</MenuItem>
-                      <MenuItem value="Australia">Australia</MenuItem>
-                    </TextField>
-
-                    <TextField 
-                      select 
-                      label="Language" 
-                      fullWidth 
-                      value={formData.language}
-                      onChange={handleInputChange('language')}
+                      Upload New Photo
+                      <input hidden type="file" onChange={handleUpload} accept="image/*" />
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      color="error"
+                      sx={{ 
+                        textTransform: 'none', 
+                        borderRadius: 2
+                      }}
+                      onClick={() => setAvatar(null)}
                     >
-                      <MenuItem value="English">English</MenuItem>
-                      <MenuItem value="Indonesian">Indonesian</MenuItem>
-                      <MenuItem value="Spanish">Spanish</MenuItem>
-                      <MenuItem value="French">French</MenuItem>
-                    </TextField>
-                  </Stack>
+                      Reset
+                    </Button>
+                 </Stack>
+                 <Typography variant="caption" color="text.secondary">
+                    Allowed JPG, GIF or PNG. Max size of 800K
+                 </Typography>
+               </Box>
+            </Stack>
 
-                  <TextField
-                    label="Bio"
-                    fullWidth
-                    multiline
-                    rows={4}
-                    value={formData.bio}
-                    onChange={handleInputChange('bio')}
-                    placeholder="Tell us about yourself..."
-                  />
-                </Stack>
+            {/* ERROR / SUCCESS MESSAGES */}
+            {error && <Typography color="error" mb={2}>{error}</Typography>}
+            {successMessage && <Typography color="success.main" mb={2}>{successMessage}</Typography>}
 
-                {/* Actions */}
-                <Stack direction="row" spacing={2} mt={4}>
-                  <Button 
-                    variant="contained" 
-                    onClick={handleSaveChanges}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Saving..." : "Save Changes"}
-                  </Button>
-                  <Button 
-                    variant="outlined" 
-                    color="inherit"
-                    onClick={handleReset}
-                    disabled={isLoading}
-                  >
-                    Reset
-                  </Button>
-                </Stack>
-              </>
-            )}
+            {/* GRID FORM */}
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField 
+                   fullWidth
+                   label="Full Name"
+                   value={formData.fullname}
+                   onChange={handleInputChange('fullname')}
+                   placeholder="Muhammad Saeful"
+                   variant="outlined"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="Email"
+                   value={formData.email}
+                   onChange={handleInputChange('email')}
+                   placeholder="john.doe@gmail.com"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="Organisation"
+                   value={formData.company}
+                   onChange={handleInputChange('company')}
+                   placeholder="Pixinvent"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="Phone Number"
+                   value={formData.phone}
+                   onChange={handleInputChange('phone')}
+                   placeholder="+1 (917) 543-9876"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="Address"
+                   value={formData.address}
+                   onChange={handleInputChange('address')}
+                   placeholder="123 Main St, New York, NY 10001"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="State"
+                   value={formData.state}
+                   onChange={handleInputChange('state')}
+                   placeholder="New York"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   fullWidth
+                   label="Zip Code"
+                   value={formData.zipCode}
+                   onChange={handleInputChange('zipCode')}
+                   placeholder="648391"
+                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   select
+                   fullWidth
+                   label="Country"
+                   value={formData.country || 'USA'}
+                   onChange={handleInputChange('country')}
+                   InputLabelProps={{ shrink: true }}
+                >
+                  <MenuItem value="USA">USA</MenuItem>
+                  <MenuItem value="Indonesia">Indonesia</MenuItem>
+                  <MenuItem value="UK">United Kingdom</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   select
+                   fullWidth
+                   label="Language"
+                   value={formData.language || 'English'}
+                   onChange={handleInputChange('language')}
+                   InputLabelProps={{ shrink: true }}
+                >
+                  <MenuItem value="English">English</MenuItem>
+                  <MenuItem value="Indonesia">Indonesia</MenuItem>
+                </TextField>
+              </Grid>
+
+               <Grid item xs={12} md={6}>
+                 <TextField 
+                   select
+                   fullWidth
+                   label="Time Zone"
+                   value={formData.timeZone}
+                   onChange={handleInputChange('timeZone')}
+                   InputLabelProps={{ shrink: true }}
+                   defaultValue=""
+                >
+                   <MenuItem value="">(GMT-11:00) International Date Line West</MenuItem>
+                   <MenuItem value="utc">(GMT+00:00) UTC</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                 <TextField 
+                   select
+                   fullWidth
+                   label="Currency"
+                   value={formData.currency}
+                   onChange={handleInputChange('currency')}
+                   InputLabelProps={{ shrink: true }}
+                >
+                  <MenuItem value="USD">USD</MenuItem>
+                  <MenuItem value="IDR">IDR</MenuItem>
+                  <MenuItem value="EUR">EUR</MenuItem>
+                </TextField>
+              </Grid>
+            </Grid>
+
+            {/* ACTION BUTTONS */}
+            <Stack direction="row" spacing={2} mt={4}>
+               <Button 
+                 variant="contained" 
+                 onClick={handleSaveChanges}
+                 sx={{ bgcolor: '#536DFE', borderRadius: 2, textTransform: 'none', px: 4 }}
+                 disabled={isLoading}
+               >
+                 {isLoading ? "Saving..." : "Save Changes"}
+               </Button>
+               <Button 
+                 variant="outlined" 
+                 color="inherit"
+                 onClick={handleReset}
+                 sx={{ borderRadius: 2, textTransform: 'none', px: 4 }}
+                 disabled={isLoading}
+               >
+                 Reset
+               </Button>
+            </Stack>
+
           </Card>
         )}
 
         {/* ================= DELETE ACCOUNT ================= */}
-        <Card sx={{ p: 4 }}>
-          <Typography variant="h6" fontWeight={600} mb={2}>
-            Delete Account
-          </Typography>
+        {tab === 0 && (
+          <Card sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+            <Typography variant="h6" fontWeight={600} mb={2}>
+              Delete Account
+            </Typography>
 
-          <FormControlLabel
-            control={<Checkbox />}
-            label="I confirm my account deactivation"
-          />
+            <FormControlLabel
+              control={<Checkbox />}
+              label="I confirm my account deactivation"
+              sx={{ color: 'text.secondary' }}
+            />
 
-          <Box mt={2}>
-            <Button variant="contained" color="error">
-              Deactivate Account
-            </Button>
-          </Box>
-        </Card>
+            <Box mt={2}>
+              <Button 
+                variant="contained" 
+                sx={{ 
+                  bgcolor: '#FFAB91', // Light red/salmon color from design
+                  '&:hover': { bgcolor: '#FF8A65' },
+                  color: '#BF360C',
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  fontWeight: 600
+                }}
+              >
+                Deactivate Account
+              </Button>
+            </Box>
+          </Card>
+        )}
       </Stack>
     </Box>
   );

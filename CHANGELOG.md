@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2026-01-13
+
+### Detail Versi 0.2.1
+
+#### 🎨 UI/UX Enhancement
+
+- **Account Settings:**
+  - **Profile Settings:** Penyesuaian layout dan desain halaman pengaturan akun untuk konsistensi dengan desain baru.
+
 ## [0.2.0] - 2026-01-13
 
 ### Detail Versi 0.2.0

@@ -30,6 +30,17 @@ const OmnichannelIcon = ({ className }: { className?: string }) => {
   return <img src="/assets/omnichannel.svg" alt="Omnichannel" className={cn("w-5 h-5", className)} onError={() => setHasError(true)} style={{ display: hasError ? "none" : "block" }} />;
 };
 
+// Custom Data Intelligence Icon Component with robust fallback
+const DataIntelligenceIcon = ({ className }: { className?: string }) => {
+  const [hasError, setHasError] = useState(false);
+  
+  if (hasError) {
+    return <Users className={cn("w-5 h-5", className)} />;
+  }
+
+  return <img src="/icons/intelligence.png" alt="Data Intelligence" className={cn("w-5 h-5", className)} onError={() => setHasError(true)} style={{ display: hasError ? "none" : "block" }} />;
+};
+
 type MenuSubItem = {
   name: string;
   path: string;
@@ -90,6 +101,15 @@ const menuData: MenuSection[] = [
         children: [
           { name: "Company Intelligence", path: "/omnichannel/company-intelligence" },
           { name: "Unified Inbox", path: "/omnichannel/unified-inbox" },
+        ],
+      },
+      {
+        name: "Data Intelligence",
+        icon: DataIntelligenceIcon,
+        children: [
+          { name: "Company", path: "/data-intelligence/company" },
+          { name: "Industry Leader", path: "/data-intelligence/industry-leader" },
+          { name: "Individual", path: "/data-intelligence/individual" },
         ],
       },
       {

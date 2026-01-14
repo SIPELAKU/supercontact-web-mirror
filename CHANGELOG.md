@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### [0.5.0] - 2026-01-14
+
+#### ✨ Fitur Baru
+
+- **Deskripsi:**
+  - **Inbox:** Slicing inbox page.
+
+---
+
 ## [0.4.1] - 2026-01-14
 
 ### Detail Versi 0.4.1

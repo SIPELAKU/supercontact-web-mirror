@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] - 2026-01-14
+
+### Detail Versi 0.5.1
+
+#### ♻️ Refactor Add Contact Modal
+
+- **Deskripsi:**
+  - **Modal Architecture:** Refactor Add Contact modal dari SweetAlert2-based container menjadi standalone React modal (overlay).
+  - **Separation of Concerns:** Memisahkan lifecycle modal React dari SweetAlert2 untuk menghindari konflik state dan unmount tidak terduga.
+  - **Validation Handling:** Validasi form dipindahkan sepenuhnya ke React state agar error tidak memicu penutupan modal.
+  - **Technical Notes:** SweetAlert2 kini digunakan hanya untuk feedback (success dan global error), bukan sebagai container UI.
+  - **Impact:** Arsitektur UI lebih stabil, predictable, dan mudah di-maintain.
+
+#### 🐛 Bug Fix Contact Form Modal
+
+- **Deskripsi:**
+  - **Unexpected Modal Close:** Fix issue di mana Add Contact modal tertutup saat terjadi error validasi atau API error.
+  - **Reopen Failure:** Fix bug modal tidak bisa dibuka kembali setelah error tanpa reload halaman.
+  - **User Experience:** Modal tetap terbuka saat validasi gagal sehingga user dapat langsung memperbaiki input.
+  - **Impact:** Menghilangkan kebutuhan reload halaman dan mencegah kehilangan input user.
+
 ### [0.5.0] - 2026-01-14
 
 #### ✨ Fitur Baru

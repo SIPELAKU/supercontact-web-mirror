@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-01-14
+
+### Detail Versi 0.4.1
+
+#### 🚀 Peningkatan Performa
+
+- **Sidebar:** Hapus console.log.
+
+## [0.4.0] - 2026-01-14
+
+### Detail Versi 0.4.0
+
+#### ✨ Fitur Baru
+
+- **Deskripsi:**
+  - **Data Intelligence:** Tambah item sidebar baru yaitu Data Intelligence dengan child menu yaitu Company, Industry Leader, dan Individual.
+  - **Data Intelligence Icon:** Tambah icon untuk Data Intelligence.
+  - **Technical Notes:**
+    - Belum ada desain halaman Data Intelligence dari Tim UI/UX.
+
 ## [0.3.0] - 2026-01-14
 
 ### Detail Versi 0.3.0

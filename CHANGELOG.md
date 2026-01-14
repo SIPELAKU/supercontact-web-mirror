@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-01-14
+
+### Detail Versi 0.3.0
+
+#### ✨ Fitur Baru
+
+- **Deskripsi:**
+  - **Security Page:** Slicing security tab di halaman profile setting.
+
 ## [0.2.1] - 2026-01-13
 
 ### Detail Versi 0.2.1

@@ -166,18 +166,18 @@ export default function ProfilePage() {
                 <Button  
                    startIcon={<Lock />}
                    onClick={() => router.push('/profile/settings')}
-                   sx={{ 
-                     textTransform: 'none', 
-                     fontWeight: 600,
-                     px: 3,
-                     borderRadius: 2,
-                     bgcolor: "#4F6DF5",
-                     color: "white",
-                     hover: {
-                        bgcolor: "#3f58ce",
-                        color: "white",
-                     }
-                   }}
+                   variant={"contained"}
+                   sx={{
+                   bgcolor: "#536DFE",
+                   color: "white",
+                   textTransform: "none",
+                   fontWeight: 600,
+                   borderRadius: 2,
+                   px: 3,
+                   '&:hover': {
+                     bgcolor: "#4c63e6"
+                    }
+             }}
                 >
                   Settings
                 </Button>

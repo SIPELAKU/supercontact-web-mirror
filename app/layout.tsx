@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/context/AuthContext"
 import ReactQueryProvider from "@/lib/ReactQueryProvider"
 import { Poppins } from "next/font/google"
 import type React from "react"
+import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -26,6 +27,7 @@ export default function RootLayout({
         <link rel="preload" href="/assets/sc-logo.png" as="image" />
       </head>
       <body className="font-sans antialiased min-h-screen bg-[#ffffff]">
+        <Toaster position="top-right" />
         <ConfirmationProvider>
           <AuthProvider>
             <ReactQueryProvider>

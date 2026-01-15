@@ -13,6 +13,143 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-01-14
+
+### Detail Versi 0.6.0
+
+#### ✨ Fitur Baru
+
+# Email Marketing Section - Mail Marketing, All Subscribers, and Campaigns
+
+# Email Marketing Module 
+
+### 1. Subscribers Module
+- ✅ Subscribers table with search and pagination
+- ✅ Add subscriber (manual or import from contacts)
+- ✅ Edit subscriber
+- ✅ Delete single or multiple subscribers
+- ✅ All using mock data
+
+**Test at:** `/email-marketing/subscribers`
+
+### 2. Campaigns Module  
+- ✅ Campaigns table with search and pagination
+- ✅ Status badges (Draft, Sending, Sent, etc.)
+- ✅ Add campaign modal
+- ✅ View statistics (placeholder)
+- ✅ Edit campaign (placeholder)
+- ✅ Delete campaign
+- ✅ All using mock data
+
+**Test at:** `/email-marketing/campaigns`
+
+### 3. Mailing Lists Module
+- ✅ Mailing lists display with contact counts
+- ✅ Add mailing list
+- ✅ Edit mailing list (placeholder)
+- ✅ Delete mailing list
+- ✅ Click to view details (link ready)
+- ✅ All using mock data
+
+**Test at:** `/email-marketing/mailing-lists`
+
+## 📁 Files Created
+
+### Components
+```
+components/email-marketing/
+├── subscribers/
+│   ├── SubscribersTable.tsx
+│   └── modals/
+│       ├── AddSubscriberModal.tsx
+│       └── EditSubscriberModal.tsx
+├── campaigns/
+│   ├── CampaignsTable.tsx
+│   └── modals/
+│       └── AddCampaignModal.tsx
+└── mailing-lists/
+    ├── MailingListsTable.tsx
+    └── modals/
+        └── AddMailingListModal.tsx
+```
+
+### Pages
+```
+app/email-marketing/
+├── subscribers/page.tsx
+├── campaigns/page.tsx
+└── mailing-lists/page.tsx
+```
+
+### Supporting Files
+```
+lib/
+├── types/email-marketing.ts
+└── data/email-marketing-mock.ts
+
+components/forms/
+└── RichTextEditor.tsx
+
+app/layout.tsx (updated with Toaster)
+```
+
+## 🧪 Testing
+
+All three modules are ready to test with mock data:
+
+1. **Subscribers**: Full CRUD operations working
+2. **Campaigns**: Create, view, delete working (edit/view stats are placeholders)
+3. **Mailing Lists**: Create, delete working (edit is placeholder, detail page not yet created)
+
+## 🔄 Switching to Real API
+
+When your backend is ready, search for comments in the code:
+```typescript
+// TODO: Replace with real API call when backend is ready
+// MOCK DATA - Remove this when backend is ready
+```
+
+Then uncomment the real API calls and remove the mock data imports.
+
+## 📝 What's Not Included (Can Add Later)
+
+1. **Campaign Edit Modal** - Currently shows "coming soon" toast
+2. **Campaign View Statistics Modal** - Currently shows "coming soon" toast
+3. **Mailing List Edit Modal** - Currently shows "coming soon" toast
+4. **Mailing List Detail Page** - Link is ready at `/email-marketing/mailing-lists/[id]`
+5. **Visual Email Editor** - Using simple HTML textarea instead
+6. **AI Email Generation** - Not implemented
+7. **Email Templates** - Not implemented
+
+## 🎨 Features Included
+
+- ✅ Clean, consistent UI using MUI components
+- ✅ Toast notifications for all actions
+- ✅ Loading states
+- ✅ Error handling
+- ✅ Search functionality
+- ✅ Pagination
+- ✅ Confirmation dialogs for deletions
+- ✅ Status badges for campaigns
+- ✅ Responsive design
+- ✅ Mock data for testing
+
+## 🚀 Next Steps
+
+1. **Test all three modules** to ensure they work as expected
+2. **Report any issues or desired changes**
+3. **When backend is ready**, we can easily switch from mock to real API
+4. **Optional**: Add the missing features listed above
+
+## 💡 Notes
+
+- All components stil use standard MUI Table (no DataGrid dependency issues)
+- All icons use Lucide React (already in your project)
+- Toast notifications work globally
+- Mock data simulates realistic API delays
+- Code is clean and well-commented for easy maintenance
+
+
 ## [0.5.1] - 2026-01-14
 
 ### Detail Versi 0.5.1

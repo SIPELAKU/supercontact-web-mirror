@@ -91,8 +91,9 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
-          { name: "Mailing List", path: "/mailing-list" },
-          { name: "Subscribers", path: "/subscribers" },
+          { name: "All Subscribers", path: "/email-marketing/subscribers" },
+          { name: "Campaign", path: "/email-marketing/campaigns" },
+          { name: "Mailing List", path: "/email-marketing/mailing-lists" },
         ],
       },
       {

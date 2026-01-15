@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vscode/*
+
+# notes
+EMAIL-MARKETING-COMPLETE.md
+MAIL-MARKETING-INTEGRATION.md
+TESTING-WITH-MOCK-DATA.md

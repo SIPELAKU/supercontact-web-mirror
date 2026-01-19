@@ -62,25 +62,23 @@ function getFullUrl(path: string): string {
 // ============================================
 
 /**
- * Create a new quotation.
+ * Create a new quotation using FormData (multipart/form-data).
  */
-export async function createQuotation(token: string, quotationData: CreateQuotationData): Promise<any> {
+export async function createQuotation(token: string, formData: FormData): Promise<any> {
     try {
         const url = getFullUrl("/quotations");
 
-        logger.info("Making POST request to create quotation", {
-            url,
-            action: quotationData.action
+        logger.info("Making POST request to create quotation (multipart/form-data)", {
+            url
         });
 
         const res = await fetchWithTimeout(url, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
                 "Accept": "application/json",
                 Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(quotationData),
+            body: formData,
         });
 
         return await handleResponse(res, "Failed to create quotation");

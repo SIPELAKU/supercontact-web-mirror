@@ -110,20 +110,20 @@ export default function QuotationFormClient() {
     try {
       const token = await getToken();
 
-      const payload: CreateQuotationData = {
-        action,
-        lead_id: clientData.lead_id,
-        quotation_title: clientData.quotationTitle || "Untitled Quotation",
-        expire_date: clientData.expiryDate ? new Date(clientData.expiryDate).toISOString() : new Date().toISOString(),
-        items: items.map(item => ({
-          product_id: item.product_id,
-          quantity: item.qty,
-          notes: item.desc || "",
-          discount: item.discount || 0
-        }))
-      };
+      const formData = new FormData();
+      formData.append("action", action);
+      formData.append("lead_id", clientData.lead_id);
+      formData.append("quotation_title", clientData.quotationTitle || "Untitled Quotation");
+      formData.append("expire_date", clientData.expiryDate ? new Date(clientData.expiryDate).toISOString() : new Date().toISOString());
 
-      await createQuotation(token, payload);
+      items.forEach((item, index) => {
+        formData.append(`items[${index}][product_id]`, item.product_id);
+        formData.append(`items[${index}][quantity]`, item.qty.toString());
+        formData.append(`items[${index}][notes]`, item.desc || "");
+        formData.append(`items[${index}][discount]`, (item.discount || 0).toString());
+      });
+
+      await createQuotation(token, formData);
       toast.success(`Quotation saved as ${action} successfully!`);
       // Redirect or reset could happen here
     } catch (error: any) {

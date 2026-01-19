@@ -194,12 +194,12 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     const newErrors: Record<string, string> = {};
     if (!selectedContactId) newErrors.name = "Please search or select from the list";
 
-    // Email validation: standard check for @ and domain
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Email validation: must have @ and end with .com
+    const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
     if (!form.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(form.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = "Email must contain @ and end with .com";
     }
 
     // Phone validation: numbers only, min 10
@@ -340,7 +340,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                         {...params}
                         placeholder="Search existing contacts or enter new name"
                         error={!!errors.name}
-                        helperText={errors.name}
+                        helperText={errors.name || "Please search or select from the list"}
                         variant="outlined"
                         fullWidth
                       />
@@ -490,7 +490,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     }}
                     onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                     error={!!errors.assignedTo}
-                    helperText={errors.assignedTo}
+                    helperText={errors.assignedTo || "Please assign this lead to a user"}
                     variant="outlined"
                     fullWidth
                     sx={{
@@ -528,7 +528,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                           >
                             <div className="font-medium text-gray-900">{user.fullname}</div>
                             <div className="text-sm text-gray-500">{user.email}</div>
-                            <div className="text-sm text-gray-500 capitalize">{user.role}</div>
+                            <div className="text-sm text-gray-500 capitalize">{user.position}</div>
                           </div>
                         ))
                       ) : (

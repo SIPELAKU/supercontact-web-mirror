@@ -41,23 +41,8 @@ export function DataTable() {
 
   // Memoize the setFilteredData function to prevent unnecessary re-renders
   const handleSetFilteredData = useCallback((leads: Lead[]) => {
-    console.log('handleSetFilteredData called with leads:', leads.length, 'items');
     setFilteredData(leads);
   }, []);
-
-  // Initial effect to set filtered data when data is first loaded
-  useEffect(() => {
-    if (data.length > 0 && filteredData.length === 0) {
-      setFilteredData(data);
-    }
-  }, [data, filteredData.length]);
-
-  // Update filtered data when leads data changes
-  useEffect(() => {
-    if (data.length > 0) {
-      setFilteredData(data);
-    }
-  }, [data]);
 
   // Handle sorting
   const handleSort = (columnKey: string) => {

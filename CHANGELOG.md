@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.1] - 2026-01-19
+
+### Detail Versi 0.6.1
+
+#### 🐛 Bug Fix
+
+- **Deskripsi:**
+  - **Contact:** Update contact data fetching to use an authenticated external API endpoint.
+
 ## [0.6.0] - 2026-01-14
 
 ### Detail Versi 0.6.0
@@ -21,9 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Email Marketing Section - Mail Marketing, All Subscribers, and Campaigns
 
-# Email Marketing Module 
+# Email Marketing Module
 
 ### 1. Subscribers Module
+
 - ✅ Subscribers table with search and pagination
 - ✅ Add subscriber (manual or import from contacts)
 - ✅ Edit subscriber
@@ -32,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Test at:** `/email-marketing/subscribers`
 
-### 2. Campaigns Module  
+### 2. Campaigns Module
+
 - ✅ Campaigns table with search and pagination
 - ✅ Status badges (Draft, Sending, Sent, etc.)
 - ✅ Add campaign modal
@@ -44,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Test at:** `/email-marketing/campaigns`
 
 ### 3. Mailing Lists Module
+
 - ✅ Mailing lists display with contact counts
 - ✅ Add mailing list
 - ✅ Edit mailing list (placeholder)
@@ -56,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 📁 Files Created
 
 ### Components
+
 ```
 components/email-marketing/
 ├── subscribers/
@@ -74,6 +87,7 @@ components/email-marketing/
 ```
 
 ### Pages
+
 ```
 app/email-marketing/
 ├── subscribers/page.tsx
@@ -82,6 +96,7 @@ app/email-marketing/
 ```
 
 ### Supporting Files
+
 ```
 lib/
 ├── types/email-marketing.ts
@@ -104,6 +119,7 @@ All three modules are ready to test with mock data:
 ## 🔄 Switching to Real API
 
 When your backend is ready, search for comments in the code:
+
 ```typescript
 // TODO: Replace with real API call when backend is ready
 // MOCK DATA - Remove this when backend is ready
@@ -148,7 +164,6 @@ Then uncomment the real API calls and remove the mock data imports.
 - Toast notifications work globally
 - Mock data simulates realistic API delays
 - Code is clean and well-commented for easy maintenance
-
 
 ## [0.5.1] - 2026-01-14
 

@@ -7,7 +7,7 @@ import {
   Search,
   Upload,
   SlidersHorizontal,
-  Filter
+  Filter,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import AddContactModal from "@/components/modal/AddContact";
@@ -24,32 +24,39 @@ export default function ContactsPage() {
   const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
   const [dataContact, setDataContact] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [page, setPage] = useState<number>(1)
+  const [page, setPage] = useState<number>(1);
 
- const loadDataAgain = () => {
-  fetch("/api/contact")
-    .then((res) => res.json())
-    .then((res) => {
-      const contacts = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.contacts)
+  const loadDataAgain = () => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/contacts`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${
+          document.cookie.match(/access_token=([^;]+)/)?.[1] || ""
+        }`,
+      },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        const contacts = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.contacts)
           ? res.data.contacts
           : [];
-      setPage(res.data.page? res.data.page : 1)
-      setDataContact(contacts);
-    })
-    .catch(() => setDataContact([]));
-};
+        setPage(res.data.page ? res.data.page : 1);
+        setDataContact(contacts);
+      })
+      .catch(() => setDataContact([]));
+  };
 
   function handleEdit(item: Contact) {
     setSelectedItem(item);
     setOpenEdit(true);
   }
   function handleDelete(item: Contact) {
-    setSelectedItem(item)
+    setSelectedItem(item);
     setOpenDelete(true);
   }
-
 
   useEffect(() => {
     loadDataAgain();
@@ -78,7 +85,6 @@ export default function ContactsPage() {
         breadcrumbs={["Dashboard", "Contacts"]}
       />
       <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        
         <div className="flex flex-wrap gap-2">
           <button className="px-4 py-2 bg-[#DDE4FC] text-[#6739EC] text-sm rounded-lg flex items-center gap-2">
             <SlidersHorizontal /> Columns
@@ -115,11 +121,14 @@ export default function ContactsPage() {
           <thead>
             <tr className="text-left">
               <th className="text-right">
-                <input 
+                <input
                   type="checkbox"
                   onChange={handleSelectAll}
-                  checked={selected.length === dataContact?.length && dataContact.length > 0}
-                  className="w-6 h-6 border-2 border-gray-500 rounded appearance-none checked:bg-gray-300 checked:appearance-auto cursor-pointer" 
+                  checked={
+                    selected.length === dataContact?.length &&
+                    dataContact.length > 0
+                  }
+                  className="w-6 h-6 border-2 border-gray-500 rounded appearance-none checked:bg-gray-300 checked:appearance-auto cursor-pointer"
                 />
               </th>
               <th className="p-4">Nama</th>
@@ -134,7 +143,7 @@ export default function ContactsPage() {
             {dataContact?.map((item, i) => (
               <tr key={i} className="hover:bg-gray-50 text-sm">
                 <td className="text-right">
-                  <input 
+                  <input
                     type="checkbox"
                     onChange={() => handleSelectRow(i)}
                     checked={selected.includes(i)}
@@ -157,9 +166,7 @@ export default function ContactsPage() {
                 <td className="px-4 py-2 flex gap-3 text-gray-600">
                   <Eye className="cursor-pointer hover:text-purple-600" />
 
-                  <button
-                    onClick={() => handleEdit(item)}
-                  >
+                  <button onClick={() => handleEdit(item)}>
                     <Pencil className="cursor-pointer hover:text-purple-600" />
                   </button>
                   <button onClick={() => handleDelete(item)}>
@@ -177,7 +184,11 @@ export default function ContactsPage() {
       </section>
       {/* <Pagination page={}/> */}
 
-      <AddContactModal open={openAdd} onClose={() => setOpenAdd(false)} onSuccess={loadDataAgain} />
+      <AddContactModal
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        onSuccess={loadDataAgain}
+      />
       <EditContactModal
         open={openEdit}
         initialData={selectedItem}
@@ -187,7 +198,7 @@ export default function ContactsPage() {
       <DeleteContactModal
         open={openDelete}
         initialData={selectedItem}
-        onClose={()=>setOpenDelete(false)}
+        onClose={() => setOpenDelete(false)}
         onSuccess={loadDataAgain}
       />
     </div>

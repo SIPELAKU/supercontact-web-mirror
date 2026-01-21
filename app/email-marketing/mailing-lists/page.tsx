@@ -1,27 +1,35 @@
 "use client";
 
-import { Button, Card, CardContent, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import { Button, Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import MailingListsTable from '@/components/email-marketing/mailing-lists/MailingListsTable';
 import AddMailingListModal from '@/components/email-marketing/mailing-lists/modals/AddMailingListModal';
+import EditMailingListModal from '@/components/email-marketing/mailing-lists/modals/EditMailingListModal';
+import PageHeader from '@/components/ui-mui/page-header';
+import { useDeleteMailingList } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import { AlertTriangle } from 'lucide-react';
 
 export default function MailingListsPage() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [selectedList, setSelectedList] = useState<MailingList | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listToDelete, setListToDelete] = useState<MailingList | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const deleteMutation = useDeleteMailingList();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
   const handleCloseModals = () => {
     setAddModalOpen(false);
+    setEditModalOpen(false);
+    setSelectedList(null);
   };
 
   const handleSuccess = () => {
@@ -30,8 +38,8 @@ export default function MailingListsPage() {
   };
 
   const handleEdit = (list: MailingList) => {
-    toast.info('Edit functionality coming soon!');
-    // TODO: Implement edit modal
+    setSelectedList(list);
+    setEditModalOpen(true);
   };
 
   const handleDeleteRequest = (list: MailingList) => {
@@ -41,42 +49,55 @@ export default function MailingListsPage() {
 
   const handleConfirmDelete = async () => {
     if (!listToDelete) return;
-    setIsDeleting(true);
+    
     try {
-      // MOCK - Simulate success
-      const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-      await simulateApiDelay(500);
-      
+      await deleteMutation.mutateAsync(listToDelete.id);
       toast.success(`Mailing list "${listToDelete.name}" deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
-      toast.error('Failed to delete mailing list.');
+      toast.error(err.message || 'Failed to delete mailing list.');
     } finally {
       setConfirmOpen(false);
       setListToDelete(null);
-      setIsDeleting(false);
     }
   };
 
   return (
     <div className="p-8">
+      <PageHeader
+        title="Mailing Lists"
+        breadcrumbs={[
+          { label: "Email Marketing" },
+          { label: "Mailing Lists" },
+        ]}
+      />
+
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Mailing List</h1>
-        <p className="text-gray-600 mt-1">Manage your mailing lists</p>
+        <Typography component="h1" variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          Mailing Lists
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Manage your mailing lists
+        </Typography>
       </div>
 
-      <Card>
-        <CardContent>
-          <MailingListsTable
-            onAdd={handleOpenAddModal}
-            onEdit={handleEdit}
-            onDeleteRequest={handleDeleteRequest}
-            refreshTrigger={refreshTrigger}
-          />
-        </CardContent>
+      <Card sx={{ borderRadius: 4, padding: 1 }}>
+        <MailingListsTable
+          onAdd={handleOpenAddModal}
+          onEdit={handleEdit}
+          onDeleteRequest={handleDeleteRequest}
+          refreshTrigger={refreshTrigger}
+        />
       </Card>
 
       <AddMailingListModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
+      
+      <EditMailingListModal 
+        open={isEditModalOpen} 
+        onClose={handleCloseModals} 
+        onSuccess={handleSuccess}
+        mailingList={selectedList}
+      />
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>
@@ -92,8 +113,8 @@ export default function MailingListsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)} color="secondary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" disabled={isDeleting}>
-            {isDeleting ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
+            {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,28 +1,34 @@
 "use client";
 
-import { Button, Card, CardContent, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import { Button, Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import CampaignsTable from '@/components/email-marketing/campaigns/CampaignsTable';
 import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddCampaignModal';
+import EditCampaignModal from '@/components/email-marketing/campaigns/modals/EditCampaignModal';
+import PageHeader from '@/components/ui-mui/page-header';
+import { useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
 import { AlertTriangle } from 'lucide-react';
 
 export default function CampaignsPage() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const deleteMutation = useDeleteCampaign();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
   const handleCloseModals = () => {
     setAddModalOpen(false);
+    setEditModalOpen(false);
     setSelectedCampaign(null);
   };
 
@@ -32,12 +38,12 @@ export default function CampaignsPage() {
   };
 
   const handleEdit = (campaign: Campaign) => {
-    toast.info('Edit functionality coming soon!');
-    // TODO: Implement edit modal
+    setSelectedCampaign(campaign);
+    setEditModalOpen(true);
   };
 
   const handleView = (campaign: Campaign) => {
-    toast.info('View statistics coming soon!');
+    toast('View statistics coming soon!');
     // TODO: Implement view modal
   };
 
@@ -48,43 +54,56 @@ export default function CampaignsPage() {
 
   const handleConfirmDelete = async () => {
     if (!campaignToDelete) return;
-    setIsDeleting(true);
+    
     try {
-      // MOCK - Simulate success
-      const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-      await simulateApiDelay(500);
-      
+      await deleteMutation.mutateAsync(campaignToDelete.id);
       toast.success(`Campaign "${campaignToDelete.subject}" deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
-      toast.error('Failed to delete campaign.');
+      toast.error(err.message || 'Failed to delete campaign.');
     } finally {
       setConfirmOpen(false);
       setCampaignToDelete(null);
-      setIsDeleting(false);
     }
   };
 
   return (
     <div className="p-8">
+      <PageHeader
+        title="Campaigns"
+        breadcrumbs={[
+          { label: "Email Marketing" },
+          { label: "Campaigns" },
+        ]}
+      />
+
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Campaign</h1>
-        <p className="text-gray-600 mt-1">Manage your email marketing campaigns</p>
+        <Typography component="h1" variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+          Campaign
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Manage your email marketing campaigns
+        </Typography>
       </div>
 
-      <Card>
-        <CardContent>
-          <CampaignsTable
-            onAdd={handleOpenAddModal}
-            onEdit={handleEdit}
-            onDeleteRequest={handleDeleteRequest}
-            onView={handleView}
-            refreshTrigger={refreshTrigger}
-          />
-        </CardContent>
+      <Card sx={{ borderRadius: 4, padding: 1 }}>
+        <CampaignsTable
+          onAdd={handleOpenAddModal}
+          onEdit={handleEdit}
+          onDeleteRequest={handleDeleteRequest}
+          onView={handleView}
+          refreshTrigger={refreshTrigger}
+        />
       </Card>
 
       <AddCampaignModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
+      
+      <EditCampaignModal 
+        open={isEditModalOpen} 
+        onClose={handleCloseModals} 
+        onSuccess={handleSuccess}
+        campaign={selectedCampaign}
+      />
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>
@@ -100,8 +119,8 @@ export default function CampaignsPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)} color="secondary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" disabled={isDeleting}>
-            {isDeleting ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
+            {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
           </Button>
         </DialogActions>
       </Dialog>

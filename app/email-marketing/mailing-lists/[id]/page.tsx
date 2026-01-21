@@ -2,10 +2,11 @@
 "use client";
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
-import { Campaign, MailingList, Subscriber } from '@/lib/types/email-marketing';
+import PageHeader from '@/components/ui-mui/page-header';
+import { useDeleteMailingListSubscriber, useMailingListDetail } from '@/lib/hooks/useMailingLists';
+import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import {
     Box,
-    Breadcrumbs,
     Button,
     Chip,
     CircularProgress,
@@ -15,7 +16,6 @@ import {
     DialogContentText,
     DialogTitle,
     IconButton,
-    Link as MuiLink,
     Paper,
     Tab,
     Table,
@@ -32,23 +32,20 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { ArrowLeft, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 const MailingListDetailPage = () => {
     const params = useParams();
     const router = useRouter();
-    const listId = Number(params.id);
+    const listId = String(params.id);
 
-    const [mailingList, setMailingList] = useState<MailingList | null>(null);
-    const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId);
+    const deleteSubscriberMutation = useDeleteMailingListSubscriber();
+    
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
     
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
@@ -61,44 +58,10 @@ const MailingListDetailPage = () => {
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
     const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // MOCK DATA - Remove this when backend is ready
-                const { mockMailingLists, mockSubscribers, mockCampaigns, simulateApiDelay } = 
-                    await import('@/lib/data/email-marketing-mock');
-                await simulateApiDelay(300);
-
-                // Find the mailing list
-                const list = mockMailingLists.find(l => l.id === listId);
-                if (!list) {
-                    toast.error('Mailing list not found');
-                    router.push('/email-marketing/mailing-lists');
-                    return;
-                }
-                setMailingList(list);
-
-                // Filter subscribers that belong to this list
-                const listSubscribers = mockSubscribers.filter(s => 
-                    s.list_ids && s.list_ids.includes(listId)
-                );
-                setSubscribers(listSubscribers);
-
-                // Filter sent campaigns (for demo, showing all sent campaigns)
-                const sentCampaigns = mockCampaigns.filter(c => c.state === 'done');
-                setCampaigns(sentCampaigns);
-
-            } catch (err: any) {
-                toast.error('Failed to fetch mailing list details');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, [listId, router, refreshTrigger]);
+    const mailingList = mailingListData?.data;
+    const subscribers = mailingList?.subscribers?.contacts || [];
+    const campaigns: Campaign[] = []; // Campaigns will be implemented later
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
@@ -108,22 +71,16 @@ const MailingListDetailPage = () => {
     const handleDeleteSubscriber = async () => {
         if (!subscriberToDelete) return;
         
-        setIsDeleting(true);
         try {
-            // TODO: Replace with real API call when backend is ready
-            // await axiosClient.delete(`/subscribers/${subscriberToDelete.id}`);
-            
-            // MOCK - Simulate success
-            const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-            await simulateApiDelay(300);
+            await deleteSubscriberMutation.mutateAsync({
+                mailingListId: listId,
+                subscriberId: subscriberToDelete.id
+            });
             
             toast.success('Subscriber removed from list successfully');
-            setRefreshTrigger(prev => prev + 1);
-        } catch (err: any) {
-            toast.error('Failed to remove subscriber');
-        } finally {
-            setIsDeleting(false);
             setSubscriberToDelete(null);
+        } catch (err: any) {
+            toast.error(err.message || 'Failed to remove subscriber');
         }
     };
 
@@ -132,7 +89,7 @@ const MailingListDetailPage = () => {
         searchQuery === '' || 
         s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        s.company?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Filter campaigns based on search
@@ -140,6 +97,17 @@ const MailingListDetailPage = () => {
         searchQuery === '' || 
         c.subject.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Typography color="error">Failed to load mailing list details</Typography>
+                <Button onClick={() => router.push('/email-marketing/mailing-lists')} sx={{ mt: 2 }}>
+                    Back to Mailing Lists
+                </Button>
+            </Box>
+        );
+    }
 
     const paginatedSubscribers = filteredSubscribers.slice(
         subscriberPage * subscriberRowsPerPage,
@@ -165,69 +133,70 @@ const MailingListDetailPage = () => {
 
     return (
         <Box sx={{ p: 3 }}>
-            {/* Header with Breadcrumbs */}
-            <Box sx={{ mb: 3 }}>
-                <Breadcrumbs sx={{ mb: 2 }}>
-                    <MuiLink component={Link} href="/email-marketing/mailing-lists" underline="hover" color="inherit">
-                        Email Marketing
-                    </MuiLink>
-                    <MuiLink component={Link} href="/email-marketing/mailing-lists" underline="hover" color="inherit">
-                        Mailing List
-                    </MuiLink>
-                    <Typography color="text.primary">{mailingList.name}</Typography>
-                </Breadcrumbs>
+            {/* Page Header */}
+            <PageHeader
+                title={mailingList.name}
+                breadcrumbs={[
+                    { label: "Email Marketing" },
+                    { label: "Mailing Lists" },
+                    { label: mailingList.name }
+                ]}
+            />
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={() => router.push('/email-marketing/mailing-lists')}
-                    >
-                        Kembali ke Mailing List
-                    </Button>
-                </Box>
+            {/* Back Button */}
+            <Box sx={{ mb: 3 }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<ArrowLeft size={18} />}
+                    onClick={() => router.push('/email-marketing/mailing-lists')}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Kembali ke Mailing List
+                </Button>
             </Box>
 
-            {/* Title and Contact Count */}
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4" gutterBottom>
+            {/* Title with Contact Count Chip */}
+            <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600 }}>
                     {mailingList.name}
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    {mailingList.contact_count} Kontak
-                </Typography>
+                <Chip 
+                    label={`${mailingList.subscriber_count} Kontak`} 
+                    color="primary" 
+                    size="medium"
+                />
             </Box>
 
             {/* Tabs */}
-            <Paper sx={{ mb: 2 }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
                 <Tabs value={activeTab} onChange={handleTabChange}>
-                    <Tab 
-                        label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                Subscribers
-                                <Chip label={filteredSubscribers.length} size="small" />
-                            </Box>
-                        } 
-                    />
-                    <Tab 
-                        label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                Campaign Terkirim
-                                <Chip label={filteredCampaigns.length} size="small" />
-                            </Box>
-                        } 
-                    />
+                    <Tab label="Subscribers" />
+                    <Tab label="Campaign Terkirim" />
                 </Tabs>
-            </Paper>
+            </Box>
 
             {/* Tab Content */}
             <Box>
                 {/* Toolbar */}
-                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                <Box sx={{ mb: 2, p: 2, bgcolor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1 }}>
                         <Button
                             variant="outlined"
-                            startIcon={<Filter className="w-4 h-4" />}
+                            startIcon={<Filter size={18} />}
+                            sx={{ 
+                                textTransform: 'none',
+                                borderColor: 'transparent',
+                                color: '#5D87FF',
+                                bgcolor: '#ECF2FF',
+                                height: '42px',
+                                borderRadius: '8px',
+                                px: 2.5,
+                                fontWeight: 500,
+                                '&:hover': {
+                                    borderColor: 'transparent',
+                                    bgcolor: '#d5e5ff'
+                                }
+                            }}
                         >
                             Filters
                         </Button>
@@ -237,18 +206,50 @@ const MailingListDetailPage = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             InputProps={{
-                                startAdornment: <Search className="w-4 h-4 mr-2 text-gray-400" />
+                                startAdornment: <Search size={18} style={{ marginRight: 8, color: '#9ca3af' }} />
                             }}
-                            sx={{ minWidth: '300px' }}
+                            sx={{ 
+                                flex: 1,
+                                maxWidth: '400px',
+                                '& .MuiOutlinedInput-root': {
+                                    height: '42px',
+                                    borderRadius: '8px',
+                                    bgcolor: 'white',
+                                    '& fieldset': {
+                                        borderColor: '#e5e7eb',
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: '#d1d5db',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#5D87FF',
+                                        borderWidth: '1px',
+                                    }
+                                }
+                            }}
                         />
                     </Box>
                     {activeTab === 0 && (
                         <Button
                             variant="contained"
-                            startIcon={<UserPlus className="w-4 h-4" />}
+                            startIcon={<UserPlus size={18} />}
                             onClick={() => setShowAddSubscriberModal(true)}
+                            sx={{ 
+                                textTransform: 'none',
+                                fontSize: '0.875rem',
+                                height: '42px',
+                                borderRadius: '8px',
+                                px: 3,
+                                bgcolor: '#5D87FF',
+                                fontWeight: 600,
+                                boxShadow: 'none',
+                                '&:hover': {
+                                    bgcolor: '#4570ea',
+                                    boxShadow: 'none'
+                                }
+                            }}
                         >
-                            Tambah Subscriber
+                            
                         </Button>
                     )}
                 </Box>
@@ -256,21 +257,23 @@ const MailingListDetailPage = () => {
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
                     <>
-                        <TableContainer component={Paper} variant="outlined">
+                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
                             <Table>
-                                <TableHead>
+                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                                     <TableRow>
-                                        <TableCell>Email</TableCell>
-                                        <TableCell>Nama</TableCell>
-                                        <TableCell>Nama Perusahaan</TableCell>
-                                        <TableCell align="center">Aksi</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Nama</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Nama Perusahaan</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Aksi</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {paginatedSubscribers.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                                                {searchQuery ? 'No subscribers found matching your search.' : 'No subscribers in this list yet.'}
+                                            <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {searchQuery ? 'No subscribers found matching your search.' : 'No subscribers in this list yet.'}
+                                                </Typography>
                                             </TableCell>
                                         </TableRow>
                                     ) : (
@@ -278,7 +281,7 @@ const MailingListDetailPage = () => {
                                             <TableRow key={subscriber.id} hover>
                                                 <TableCell>{subscriber.email}</TableCell>
                                                 <TableCell>{subscriber.name || '-'}</TableCell>
-                                                <TableCell>{subscriber.company_name || '-'}</TableCell>
+                                                <TableCell>{subscriber.company || '-'}</TableCell>
                                                 <TableCell align="center">
                                                     <Tooltip title="Delete">
                                                         <IconButton 
@@ -286,7 +289,7 @@ const MailingListDetailPage = () => {
                                                             color="error"
                                                             onClick={() => setSubscriberToDelete(subscriber)}
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            <Trash2 size={18} />
                                                         </IconButton>
                                                     </Tooltip>
                                                 </TableCell>
@@ -314,23 +317,25 @@ const MailingListDetailPage = () => {
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
                     <>
-                        <TableContainer component={Paper} variant="outlined">
+                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
                             <Table>
-                                <TableHead>
+                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
                                     <TableRow>
-                                        <TableCell>Subject</TableCell>
-                                        <TableCell>Sent Date</TableCell>
-                                        <TableCell>Delivered</TableCell>
-                                        <TableCell>Opened</TableCell>
-                                        <TableCell>Open Rate</TableCell>
-                                        <TableCell align="center">Actions</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Sent Date</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Delivered</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Opened</TableCell>
+                                        <TableCell sx={{ fontWeight: 600 }}>Open Rate</TableCell>
+                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {paginatedCampaigns.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                                {searchQuery ? 'No campaigns found matching your search.' : 'No sent campaigns yet.'}
+                                            <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {searchQuery ? 'No campaigns found matching your search.' : 'No sent campaigns yet.'}
+                                                </Typography>
                                             </TableCell>
                                         </TableRow>
                                     ) : (
@@ -356,7 +361,7 @@ const MailingListDetailPage = () => {
                                                                 size="small"
                                                                 onClick={() => toast('View statistics feature coming soon!')}
                                                             >
-                                                                <Eye className="w-4 h-4" />
+                                                                <Eye size={18} />
                                                             </IconButton>
                                                         </Tooltip>
                                                     </TableCell>
@@ -387,14 +392,17 @@ const MailingListDetailPage = () => {
             <AddSubscriberModal
                 open={showAddSubscriberModal}
                 onClose={() => setShowAddSubscriberModal(false)}
-                onSuccess={() => setRefreshTrigger(prev => prev + 1)}
+                onSuccess={() => {
+                    setShowAddSubscriberModal(false);
+                }}
                 defaultListId={listId}
+                target="mailing_list"
             />
 
             {/* Delete Confirmation Dialog */}
             <Dialog
                 open={Boolean(subscriberToDelete)}
-                onClose={() => !isDeleting && setSubscriberToDelete(null)}
+                onClose={() => !deleteSubscriberMutation.isPending && setSubscriberToDelete(null)}
             >
                 <DialogTitle>Remove Subscriber</DialogTitle>
                 <DialogContent>
@@ -403,11 +411,11 @@ const MailingListDetailPage = () => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setSubscriberToDelete(null)} disabled={isDeleting}>
+                    <Button onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending}>
                         Cancel
                     </Button>
-                    <Button onClick={handleDeleteSubscriber} color="error" variant="contained" disabled={isDeleting}>
-                        {isDeleting ? <CircularProgress size={20} /> : 'Remove'}
+                    <Button onClick={handleDeleteSubscriber} color="error" variant="contained" disabled={deleteSubscriberMutation.isPending}>
+                        {deleteSubscriberMutation.isPending ? <CircularProgress size={20} /> : 'Remove'}
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -1,6 +1,7 @@
 // components/email-marketing/subscribers/SubscribersTable.tsx
 "use client";
 
+import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
     Box,
@@ -31,35 +32,20 @@ interface SubscribersTableProps {
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDeleting }: SubscribersTableProps) => {
-  const [rows, setRows] = useState<Subscriber[]>([]);
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: SubscribersTableProps) => {
+  const { data, isLoading, error } = useSubscribers();
+  
   const [filteredRows, setFilteredRows] = useState<Subscriber[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selected, setSelected] = useState<number[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // MOCK DATA - Remove this when backend is ready
-        const { mockSubscribers, simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-        await simulateApiDelay(300);
-        
-        setRows(mockSubscribers);
-        setFilteredRows(mockSubscribers);
-      } catch (err: any) {
-        toast.error(err.response?.data?.detail || 'Failed to fetch subscribers.');
-        setRows([]); 
-        setFilteredRows([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [refreshTrigger]);
+  const rows = data?.data?.contacts || [];
+
+  if (error) {
+    toast.error('Failed to fetch subscribers.');
+  }
 
   // Filter rows based on search query
   useEffect(() => {
@@ -70,12 +56,12 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDe
       const filtered = rows.filter(row => 
         row.email.toLowerCase().includes(query) ||
         row.name?.toLowerCase().includes(query) ||
-        row.company_name?.toLowerCase().includes(query)
+        row.company?.toLowerCase().includes(query)
       );
       setFilteredRows(filtered);
     }
     setPage(0); // Reset to first page when searching
-  }, [searchQuery, rows]);
+  }, [searchQuery, rows.length]); // Use rows.length instead of rows
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -86,9 +72,9 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDe
     setSelected([]);
   };
 
-  const handleSelectOne = (id: number) => {
+  const handleSelectOne = (id: string) => {
     const selectedIndex = selected.indexOf(id);
-    let newSelected: number[] = [];
+    let newSelected: string[] = [];
 
     if (selectedIndex === -1) {
       newSelected = newSelected.concat(selected, id);
@@ -115,7 +101,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDe
     setPage(0);
   };
 
-  const isSelected = (id: number) => selected.indexOf(id) !== -1;
+  const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -174,8 +160,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDe
               </TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Name</TableCell>
-              <TableCell>Company Name</TableCell>
-              <TableCell>Owner</TableCell>
+              <TableCell>Company</TableCell>
+              <TableCell>Position</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -211,8 +197,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger, isDe
                     </TableCell>
                     <TableCell>{row.email}</TableCell>
                     <TableCell>{row.name || '-'}</TableCell>
-                    <TableCell>{row.company_name || '-'}</TableCell>
-                    <TableCell>{row.x_studio_owner_id ? row.x_studio_owner_id[1] : 'N/A'}</TableCell>
+                    <TableCell>{row.company || '-'}</TableCell>
+                    <TableCell>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center">
                       <Tooltip title="Edit">
                         <IconButton size="small" onClick={() => onEdit(row)}>

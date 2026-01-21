@@ -1,8 +1,9 @@
-// components/email-marketing/campaigns/modals/AddCampaignModal.tsx
+// components/email-marketing/campaigns/modals/EditCampaignModal.tsx
 "use client";
 
-import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
+import { useUpdateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
+import { Campaign } from '@/lib/types/email-marketing';
 import {
     Alert,
     Box,
@@ -22,25 +23,36 @@ import {
     TextField,
     Typography
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
-interface AddCampaignModalProps {
+interface EditCampaignModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  campaign: Campaign | null;
 }
 
-const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) => {
+const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignModalProps) => {
   const [subject, setSubject] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'contact'>('mailing_list');
   const [selectedMailingLists, setSelectedMailingLists] = useState<string[]>([]);
   const [error, setError] = useState('');
 
-  const createMutation = useCreateCampaign();
+  const updateMutation = useUpdateCampaign();
   const { data: mailingListsData } = useMailingLists();
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
+
+  useEffect(() => {
+    if (open && campaign) {
+      setSubject(campaign.subject || '');
+      setHtmlContent(campaign.html_content || '');
+      setRecipientSource('mailing_list');
+      setSelectedMailingLists([]);
+      setError('');
+    }
+  }, [open, campaign]);
 
   const handleClose = () => {
     setSubject('');
@@ -60,6 +72,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   };
 
   const handleSubmit = async (action: 'send' | 'draft') => {
+    if (!campaign) return;
+
     if (!subject.trim()) {
       setError("Subject is required.");
       return;
@@ -76,28 +90,45 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setError('');
     
     try {
-      await createMutation.mutateAsync({
-        recipient_source: recipientSource,
-        subject: subject.trim(),
-        html_content: htmlContent.trim(),
-        action,
-        mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
-        contact_ids: recipientSource === 'contact' ? [] : undefined,
+      await updateMutation.mutateAsync({
+        campaignId: campaign.id,
+        data: {
+          recipient_source: recipientSource,
+          subject: subject.trim(),
+          html_content: htmlContent.trim(),
+          action,
+          mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
+          contact_ids: recipientSource === 'contact' ? [] : undefined,
+        }
       });
       
-      toast.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
+      toast.success(action === 'draft' ? 'Campaign updated and saved as draft.' : 'Campaign updated and sent!');
       onSuccess();
       handleClose();
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create campaign.';
+      const errorMessage = err.message || 'Failed to update campaign.';
       setError(errorMessage);
       toast.error(errorMessage);
     }
   };
 
+  if (open && !campaign) {
+    return (
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Campaign</DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="warning">Campaign data not found.</Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Create New Campaign</DialogTitle>
+      <DialogTitle>Edit Campaign</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
@@ -170,23 +201,23 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <Button onClick={handleClose} color="secondary" disabled={createMutation.isPending}>
+        <Button onClick={handleClose} color="secondary" disabled={updateMutation.isPending}>
           Cancel
         </Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button 
             onClick={() => handleSubmit('draft')} 
             variant="outlined" 
-            disabled={createMutation.isPending}
+            disabled={updateMutation.isPending}
           >
-            {createMutation.isPending ? <CircularProgress size={24} /> : 'Save as Draft'}
+            {updateMutation.isPending ? <CircularProgress size={24} /> : 'Save as Draft'}
           </Button>
           <Button 
             onClick={() => handleSubmit('send')} 
             variant="contained" 
-            disabled={createMutation.isPending}
+            disabled={updateMutation.isPending}
           >
-            {createMutation.isPending ? <CircularProgress size={24} /> : 'Create & Send'}
+            {updateMutation.isPending ? <CircularProgress size={24} /> : 'Update & Send'}
           </Button>
         </Box>
       </DialogActions>
@@ -194,4 +225,4 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   );
 };
 
-export default AddCampaignModal;
+export default EditCampaignModal;

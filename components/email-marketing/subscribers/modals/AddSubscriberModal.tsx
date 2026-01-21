@@ -1,7 +1,10 @@
 // components/email-marketing/subscribers/modals/AddSubscriberModal.tsx
 "use client";
 
-import { Contact, MailingList } from '@/lib/types/email-marketing';
+import { useContacts } from '@/lib/hooks/useContacts';
+import { useMailingLists } from '@/lib/hooks/useMailingLists';
+import { useCreateSubscriber } from '@/lib/hooks/useSubscribers';
+import { MailingList } from '@/lib/types/email-marketing';
 import {
     Alert, Autocomplete, Box,
     Button,
@@ -23,122 +26,119 @@ interface AddSubscriberModalProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    defaultListId?: number;
+    defaultListId?: string;
+    target?: 'subscriber' | 'mailing_list'; // Add target prop
 }
 
-const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubscriberModalProps) => {
+const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 'subscriber' }: AddSubscriberModalProps) => {
     const [creationMode, setCreationMode] = useState<'manual' | 'import'>('manual');
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
-    const [companyName, setCompanyName] = useState('');
-    const [selectedPartners, setSelectedPartners] = useState<Contact[]>([]);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [position, setPosition] = useState('');
+    const [company, setCompany] = useState('');
+    const [address, setAddress] = useState('');
+    const [selectedContacts, setSelectedContacts] = useState<any[]>([]);
     const [selectedLists, setSelectedLists] = useState<MailingList[]>([]);
 
-    const [partnerOptions, setPartnerOptions] = useState<Contact[]>([]);
-    const [listOptions, setListOptions] = useState<MailingList[]>([]);
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    const createMutation = useCreateSubscriber();
+    const { data: mailingListsData } = useMailingLists();
+    const { data: contactsData } = useContacts();
+
+    const listOptions = mailingListsData?.data?.mailing_lists || [];
+    const contactOptions = contactsData?.data?.contacts || [];
 
     useEffect(() => {
         if (open) {
-            setEmail(''); setName(''); setCompanyName(''); setSelectedPartners([]);
-            setSelectedLists([]); setError(''); setCreationMode('manual');
-            const fetchData = async () => {
-                try {
-                    // TODO: Replace with real API calls when backend is ready
-                    // const [partnersRes, listsRes] = await Promise.all([
-                    //     axiosClient.get('/contacts/for-selection'),
-                    //     axiosClient.get('/marketing/mailing-lists')
-                    // ]);
+            setEmail(''); 
+            setName(''); 
+            setPhoneNumber('');
+            setPosition('');
+            setCompany(''); 
+            setAddress('');
+            setSelectedContacts([]);
+            setSelectedLists([]); 
+            setError(''); 
+            setCreationMode('manual');
 
-                    // MOCK DATA - Remove this when backend is ready
-                    const { mockContacts, mockMailingLists, simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-                    await simulateApiDelay(300);
-                    
-                    const partnerData = mockContacts;
-                    const listData = mockMailingLists;
-
-                    setPartnerOptions(partnerData);
-                    setListOptions(listData);
-
-                    if (defaultListId) {
-                        const defaultList = listData.find((list) => list.id === defaultListId);
-                        if (defaultList) {
-                            setSelectedLists([defaultList]);
-                        }
-                    }
-
-                } catch (err) {
-                    console.error("Fetch data error:", err);
-                    toast.error("Failed to load contacts or mailing lists.");
+            if (defaultListId && listOptions.length > 0) {
+                const defaultList = listOptions.find((list) => list.id === defaultListId);
+                if (defaultList) {
+                    setSelectedLists([defaultList]);
                 }
-            };
-            fetchData();
+            }
         }
-    }, [open, defaultListId]);
+    }, [open, defaultListId, listOptions.length]);
 
     const handleClose = () => { onClose(); };
     
     const handleSubmit = async () => {
-        setIsSubmitting(true);
         setError('');
         try {
             const listIdsToSend = selectedLists.map(list => list.id);
 
             if (creationMode === 'import') {
-                if (selectedPartners.length === 0) {
+                if (selectedContacts.length === 0) {
                     setError("Please select at least one contact to import.");
-                    setIsSubmitting(false);
                     return;
                 }
 
-                // TODO: Replace with real API call when backend is ready
-                // const importPromises = selectedPartners.map(partner => {
-                //     const payload = { partner_id: partner.id, list_ids: listIdsToSend };
-                //     return axiosClient.post('/subscribers', payload);
-                // });
-                // const results = await Promise.allSettled(importPromises);
+                const contactIds = selectedContacts.map(contact => contact.id);
+                
+                await createMutation.mutateAsync({
+                    target: target,
+                    type_request: 'import',
+                    contact_ids: contactIds,
+                    mailing_list_ids: listIdsToSend
+                });
 
-                // MOCK - Simulate success
-                const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-                await simulateApiDelay(500);
-                const successfulImports = selectedPartners.length;
-
-                toast.success(`${successfulImports} subscriber(s) imported successfully.`);
+                toast.success(`${selectedContacts.length} subscriber(s) imported successfully.`);
                 onSuccess(); 
                 handleClose();
 
             } else {
+                // Validate required fields
                 if (!email.trim()) {
                     setError("Email is required.");
-                    setIsSubmitting(false);
+                    return;
+                }
+                if (!name.trim()) {
+                    setError("Name is required.");
+                    return;
+                }
+                if (!phoneNumber.trim()) {
+                    setError("Phone number is required.");
+                    return;
+                }
+                if (!position.trim()) {
+                    setError("Position is required.");
                     return;
                 }
                 
-                // TODO: Replace with real API call when backend is ready
-                // const payload = {
-                //     email,
-                //     name: name || undefined,
-                //     company_name: companyName || undefined,
-                //     list_ids: listIdsToSend
-                // };
-                // await axiosClient.post('/subscribers', payload);
-                
-                // MOCK - Simulate success
-                const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-                await simulateApiDelay(500);
+                await createMutation.mutateAsync({
+                    target: target,
+                    type_request: 'manual',
+                    new_contact: {
+                        name: name.trim(),
+                        email: email.trim(),
+                        phone_number: phoneNumber.trim(),
+                        position: position.trim(),
+                        company: company.trim(),
+                        address: address.trim()
+                    },
+                    mailing_list_ids: listIdsToSend
+                });
                 
                 toast.success('Subscriber added successfully.');
                 onSuccess();
                 handleClose();
             }
         } catch (err: any) {
-            const errorMessage = err.response?.data?.detail || 'An error occurred.';
+            const errorMessage = err.message || 'An error occurred.';
             setError(errorMessage);
             toast.error(errorMessage);
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -146,7 +146,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubs
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle>Add New Subscriber</DialogTitle>
             <DialogContent dividers>
-                {error && !isSubmitting && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {error && !createMutation.isPending && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                 <Stack spacing={3} sx={{ mt: 1 }}>
                     <Box sx={{ textAlign: 'center' }}>
                         <ToggleButtonGroup
@@ -155,10 +155,13 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubs
                             onChange={(_, newMode) => { 
                                 if (newMode) setCreationMode(newMode); 
                                 setError(''); 
-                                setSelectedPartners([]); 
+                                setSelectedContacts([]); 
                                 setEmail(''); 
                                 setName(''); 
-                                setCompanyName(''); 
+                                setPhoneNumber('');
+                                setPosition('');
+                                setCompany(''); 
+                                setAddress('');
                             }}
                             aria-label="creation mode"
                         >
@@ -180,45 +183,74 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubs
                                 onChange={(e) => setEmail(e.target.value)} 
                                 fullWidth 
                                 required 
-                                error={Boolean(error && creationMode === 'manual' && !email.trim())} 
-                                helperText={error && creationMode === 'manual' && !email.trim() ? "Email is required" : ""} 
+                                error={Boolean(error && !email.trim())} 
+                                helperText={error && !email.trim() ? "Email is required" : ""} 
                             />
                             <TextField 
-                                label="Name (Optional)" 
+                                label="Name" 
                                 value={name} 
                                 onChange={(e) => setName(e.target.value)} 
                                 fullWidth 
+                                required
+                                error={Boolean(error && !name.trim())} 
+                                helperText={error && !name.trim() ? "Name is required" : ""}
                             />
                             <TextField 
-                                label="Company Name (Optional)" 
-                                value={companyName} 
-                                onChange={(e) => setCompanyName(e.target.value)} 
+                                label="Phone Number" 
+                                value={phoneNumber} 
+                                onChange={(e) => setPhoneNumber(e.target.value)} 
                                 fullWidth 
+                                required
+                                error={Boolean(error && !phoneNumber.trim())} 
+                                helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
+                            />
+                            <TextField 
+                                label="Position" 
+                                value={position} 
+                                onChange={(e) => setPosition(e.target.value)} 
+                                fullWidth 
+                                required
+                                error={Boolean(error && !position.trim())} 
+                                helperText={error && !position.trim() ? "Position is required" : ""}
+                            />
+                            <TextField 
+                                label="Company" 
+                                value={company} 
+                                onChange={(e) => setCompany(e.target.value)} 
+                                fullWidth 
+                            />
+                            <TextField 
+                                label="Address" 
+                                value={address} 
+                                onChange={(e) => setAddress(e.target.value)} 
+                                fullWidth 
+                                multiline
+                                rows={2}
                             />
                         </>
                     ) : (
                         <Autocomplete
                             multiple
-                            options={partnerOptions}
+                            options={contactOptions}
                             filterOptions={(options, params) => {
                                 const filtered = options.filter(option =>
-                                    !selectedPartners.some(selected => selected.id === option.id) &&
+                                    !selectedContacts.some(selected => selected.id === option.id) &&
                                     ((option.name && option.name.toLowerCase().includes(params.inputValue.toLowerCase())) ||
                                         (option.email && option.email.toLowerCase().includes(params.inputValue.toLowerCase())))
                                 );
                                 return filtered.slice(0, 100);
                             }}
                             getOptionLabel={(option) => `${option.name || 'No Name'} (${option.email || 'No Email'})`}
-                            value={selectedPartners}
-                            onChange={(_, newValue) => setSelectedPartners(newValue)}
+                            value={selectedContacts}
+                            onChange={(_, newValue) => setSelectedContacts(newValue)}
                             isOptionEqualToValue={(option, value) => option.id === value.id}
                             renderInput={(params) => 
                                 <TextField 
                                     {...params} 
                                     label="Select Contacts to Import" 
                                     placeholder="Search name or email..." 
-                                    error={Boolean(error && creationMode === 'import' && selectedPartners.length === 0)} 
-                                    helperText={error && creationMode === 'import' && selectedPartners.length === 0 ? "Select at least one contact" : ""} 
+                                    error={Boolean(error && creationMode === 'import' && selectedContacts.length === 0)} 
+                                    helperText={error && creationMode === 'import' && selectedContacts.length === 0 ? "Select at least one contact" : ""} 
                                 />
                             }
                         />
@@ -227,7 +259,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubs
                     <Autocomplete
                         multiple
                         options={listOptions}
-                        getOptionLabel={(option) => `${option.name} (${option.contact_count})`}
+                        getOptionLabel={(option) => `${option.name} (${option.subscriber_count})`}
                         value={selectedLists}
                         onChange={(_, newValue) => setSelectedLists(newValue)}
                         isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -236,9 +268,9 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId }: AddSubs
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ p: '16px 24px' }}>
-                <Button onClick={handleClose} color="secondary" disabled={isSubmitting}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
-                    {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Save'}
+                <Button onClick={handleClose} color="secondary" disabled={createMutation.isPending}>Cancel</Button>
+                <Button onClick={handleSubmit} variant="contained" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save'}
                 </Button>
             </DialogActions>
         </Dialog>

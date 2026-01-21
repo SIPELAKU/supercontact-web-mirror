@@ -1,58 +1,186 @@
 // Type definitions for Email Marketing module
 
+// Subscriber/Contact types
 export interface Subscriber {
-  id: number;
+  id: string;
+  name: string;
   email: string;
-  name?: string;
-  company_name?: string;
-  x_studio_owner_id?: [number, string];
-  list_ids?: number[];
+  phone_number: string;
+  position: string;
+  company: string;
+  address: string;
+  is_subscribed: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Campaign {
-  id: number;
-  subject: string;
-  state: 'draft' | 'in_queue' | 'sending' | 'done' | 'canceled';
-  sent_date?: string;
-  delivered: number;
-  opened: number;
-  x_studio_owner_id?: [number, string];
+export interface SubscribersResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    contacts: Subscriber[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }
 
-export interface CampaignDetail extends Campaign {
-  body_html?: string;
-  total?: number;
-  sent?: number;
-  failed?: number;
-  received_ratio?: number;
-  opened_ratio?: number;
-  clicked?: number;
-  bounced?: number;
-  mail_template_id?: [number, string];
-  contact_list_ids?: RecipientDetail[];
-  mailing_domain_contacts?: RecipientDetail[];
-  mail_server_id?: [number, string];
+export interface CreateSubscriberData {
+  target: 'subscriber' | 'mailing_list';
+  type_request: 'manual' | 'import';
+  new_contact?: {
+    name: string;
+    email: string;
+    phone_number: string;
+    position: string;
+    company: string;
+    address: string;
+  };
+  contact_ids?: string[];
+  mailing_list_ids?: string[];
 }
 
-export interface RecipientDetail {
-  id: number;
-  name: string;
+export interface CreateSubscriberResponse {
+  success: boolean;
+  data: {
+    subscriber_count: number;
+    subscribers: Subscriber[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }
 
+export interface DeleteSubscriberResponse {
+  success: boolean;
+  data: {
+    id: string;
+    deleted: boolean;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+// Mailing List types
 export interface MailingList {
-  id: number;
+  id: string;
   name: string;
-  contact_count: number;
+  subscriber_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MailingListsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    mailing_lists: MailingList[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface MailingListDetailResponse {
+  success: boolean;
+  data: {
+    id: string;
+    name: string;
+    subscriber_count: number;
+    created_at: string;
+    updated_at: string;
+    subscribers: {
+      total: number;
+      page: number;
+      limit: number;
+      total_pages: number;
+      contacts: Subscriber[];
+    };
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface CreateMailingListData {
+  name: string;
+}
+
+export interface UpdateMailingListData {
+  name: string;
+}
+
+// Campaign types
+export interface Campaign {
+  id: string;
+  user_fullname: string;
+  subject: string;
+  html_content: string;
+  status: string;
+  sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CampaignsResponse {
+  success: boolean;
+  data: {
+    campaigns: Campaign[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface CampaignDetailResponse {
+  success: boolean;
+  data: Campaign;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface CreateCampaignData {
+  recipient_source: 'mailing_list' | 'contact';
+  subject: string;
+  html_content: string;
+  action: 'send' | 'draft';
+  contact_ids?: string[];
+  mailing_list_ids?: string[];
+}
+
+export interface UpdateCampaignData {
+  recipient_source: 'mailing_list' | 'contact';
+  subject: string;
+  html_content: string;
+  action: 'send' | 'draft';
+  contact_ids?: string[];
+  mailing_list_ids?: string[];
 }
 
 export interface Contact {
   id: number;
   name: string;
   email: string;
-}
-
-export interface MailServer {
-  id: number;
-  name: string;
-  x_studio_last_test_status: 'success' | 'failed' | 'none';
 }

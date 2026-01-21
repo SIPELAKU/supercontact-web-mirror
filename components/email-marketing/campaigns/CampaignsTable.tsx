@@ -1,6 +1,7 @@
 // components/email-marketing/campaigns/CampaignsTable.tsx
 "use client";
 
+import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
 import {
     Box,
@@ -21,7 +22,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { Eye, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface CampaignsTableProps {
@@ -32,61 +33,56 @@ interface CampaignsTableProps {
   refreshTrigger: number;
 }
 
-const getStatusChip = (status: Campaign['state']) => {
-  switch (status) {
+const getStatusChip = (status: string) => {
+  const statusLower = status.toLowerCase();
+  switch (statusLower) {
     case 'draft': return <Chip label="Draft" color="default" size="small" />;
-    case 'in_queue': return <Chip label="In Queue" color="info" size="small" />;
+    case 'in_queue': 
+    case 'queued': return <Chip label="In Queue" color="info" size="small" />;
     case 'sending': return <Chip label="Sending" color="primary" size="small" />;
+    case 'sent':
     case 'done': return <Chip label="Sent" color="success" size="small" />;
-    case 'canceled': return <Chip label="Canceled" color="error" size="small" />;
+    case 'canceled':
+    case 'cancelled': return <Chip label="Canceled" color="error" size="small" />;
     default: return <Chip label={status} size="small" />;
   }
 };
 
 const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger }: CampaignsTableProps) => {
-  const [rows, setRows] = useState<Campaign[]>([]);
-  const [filteredRows, setFilteredRows] = useState<Campaign[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { data, isLoading, error, refetch } = useCampaigns();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      // MOCK DATA - Remove this when backend is ready
-      const { mockCampaigns, simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-      await simulateApiDelay(300);
-      
-      setRows(mockCampaigns);
-      setFilteredRows(mockCampaigns);
-    } catch (err: any) {
-      toast.error('Failed to fetch campaigns.');
-      setRows([]); 
-      setFilteredRows([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const rows = useMemo(() => data?.data?.campaigns || [], [data?.data?.campaigns]);
 
   useEffect(() => {
-    fetchData();
+    if (error) {
+      toast.error('Failed to fetch campaigns.');
+    }
+  }, [error]);
+
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
 
   // Filter rows based on search query
-  useEffect(() => {
+  const filteredRows = useMemo(() => {
     if (searchQuery.trim() === '') {
-      setFilteredRows(rows);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = rows.filter(row => 
-        row.subject.toLowerCase().includes(query) ||
-        row.state.toLowerCase().includes(query)
-      );
-      setFilteredRows(filtered);
+      return rows;
     }
-    setPage(0);
+    const query = searchQuery.toLowerCase();
+    return rows.filter(row => 
+      row.subject.toLowerCase().includes(query) ||
+      row.status.toLowerCase().includes(query) ||
+      row.user_fullname.toLowerCase().includes(query)
+    );
   }, [searchQuery, rows]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -102,7 +98,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
   return (
     <Box sx={{ width: '100%' }}>
       {/* Toolbar */}
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <TextField
           size="small"
           placeholder="Search campaigns..."
@@ -119,7 +115,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
             variant="outlined" 
             color="primary"
             startIcon={<RefreshCw className="w-4 h-4" />}
-            onClick={fetchData}
+            onClick={() => refetch()}
           >
             Refresh
           </Button>
@@ -135,14 +131,13 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
       </Box>
 
       {/* Table */}
-      <TableContainer component={Paper} variant="outlined">
+      <TableContainer component={Paper} variant="outlined" sx={{ mx: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell>Subject</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Sent Date</TableCell>
-              <TableCell>Statistics (Delivered/Opened)</TableCell>
               <TableCell>Created By</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
@@ -150,28 +145,27 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : paginatedRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                   {searchQuery ? 'No campaigns found matching your search.' : 'No campaigns yet.'}
                 </TableCell>
               </TableRow>
             ) : (
               paginatedRows.map((row) => {
-                const canEditOrDelete = row.state === 'draft' || row.state === 'in_queue';
+                const canEditOrDelete = row.status.toLowerCase() === 'draft' || row.status.toLowerCase() === 'in_queue' || row.status.toLowerCase() === 'queued';
                 return (
                   <TableRow key={row.id} hover>
                     <TableCell>{row.subject}</TableCell>
-                    <TableCell>{getStatusChip(row.state)}</TableCell>
+                    <TableCell>{getStatusChip(row.status)}</TableCell>
                     <TableCell>
-                      {row.sent_date ? format(new Date(row.sent_date), 'dd MMM yyyy, HH:mm') : '-'}
+                      {row.sent_at ? format(new Date(row.sent_at), 'dd MMM yyyy, HH:mm') : '-'}
                     </TableCell>
-                    <TableCell>{row.delivered} / {row.opened}</TableCell>
-                    <TableCell>{row.x_studio_owner_id ? row.x_studio_owner_id[1] : 'N/A'}</TableCell>
+                    <TableCell>{row.user_fullname || 'N/A'}</TableCell>
                     <TableCell align="center">
                       <Tooltip title="View Statistics">
                         <IconButton size="small" onClick={() => onView(row)}>

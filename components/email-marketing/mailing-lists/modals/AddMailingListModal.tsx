@@ -1,6 +1,7 @@
 // components/email-marketing/mailing-lists/modals/AddMailingListModal.tsx
 "use client";
 
+import { useCreateMailingList } from '@/lib/hooks/useMailingLists';
 import {
     Alert,
     Button,
@@ -22,8 +23,9 @@ interface AddMailingListModalProps {
 
 const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalProps) => {
   const [name, setName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  const createMutation = useCreateMailingList();
 
   const handleClose = () => {
     setName('');
@@ -37,23 +39,17 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
       return;
     }
 
-    setIsSubmitting(true);
     setError('');
     
     try {
-      // MOCK - Simulate success
-      const { simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-      await simulateApiDelay(500);
-      
+      await createMutation.mutateAsync({ name: name.trim() });
       toast.success('Mailing list created successfully.');
       onSuccess();
       handleClose();
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Failed to create mailing list.';
+      const errorMessage = err.message || 'Failed to create mailing list.';
       setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -75,11 +71,11 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleClose} color="secondary" disabled={isSubmitting}>
+        <Button onClick={handleClose} color="secondary" disabled={createMutation.isPending}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Create List'}
+        <Button onClick={handleSubmit} variant="contained" disabled={createMutation.isPending}>
+          {createMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Create List'}
         </Button>
       </DialogActions>
     </Dialog>

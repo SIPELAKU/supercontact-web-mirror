@@ -802,3 +802,774 @@ export async function updateNote(token: string, noteId: string, noteData: NoteDa
     throw error;
   }
 }
+
+// ============================================
+// EMAIL MARKETING API FUNCTIONS
+// ============================================
+
+import type {
+    CreateMailingListData,
+    CreateSubscriberData,
+    CreateSubscriberResponse,
+    DeleteSubscriberResponse,
+    MailingListDetailResponse,
+    MailingListsResponse,
+    SubscribersResponse,
+    UpdateMailingListData
+} from './types/email-marketing';
+
+// Mailing Lists API
+export async function fetchMailingLists(token: string, page: number = 1, limit: number = 10): Promise<MailingListsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists?page=${page}&limit=${limit}`;
+  
+  logger.info("Making GET request to fetch mailing lists", { url, page, limit });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse mailing lists response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/mailing-lists (GET)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Fetch mailing lists failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch mailing lists (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch mailing lists request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function fetchMailingListDetail(token: string, mailingListId: string): Promise<MailingListDetailResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}`;
+  
+  logger.info("Making GET request to fetch mailing list detail", { url, mailingListId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse mailing list detail response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId} (GET)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Fetch mailing list detail failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch mailing list detail (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch mailing list detail request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function createMailingList(token: string, data: CreateMailingListData): Promise<MailingListsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists`;
+  
+  logger.info("Making POST request to create mailing list", { url, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse create mailing list response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/mailing-lists (POST)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Create mailing list failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to create mailing list (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Create mailing list request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function updateMailingList(token: string, mailingListId: string, data: UpdateMailingListData): Promise<MailingListsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}`;
+  
+  logger.info("Making PUT request to update mailing list", { url, mailingListId, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse update mailing list response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId} (PUT)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Update mailing list failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to update mailing list (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Update mailing list request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deleteMailingList(token: string, mailingListId: string): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}`;
+  
+  logger.info("Making DELETE request to delete mailing list", { url, mailingListId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete mailing list response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId} (DELETE)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Delete mailing list failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete mailing list (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Delete mailing list request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deleteMailingListSubscriber(token: string, mailingListId: string, subscriberId: string): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}/subscribers/${subscriberId}`;
+  
+  logger.info("Making DELETE request to delete subscriber from mailing list", { url, mailingListId, subscriberId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete subscriber response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId}/subscribers/${subscriberId} (DELETE)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Delete subscriber failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete subscriber (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Delete subscriber request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+// Subscribers API
+export async function fetchSubscribers(token: string, page: number = 1, limit: number = 10): Promise<SubscribersResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers?page=${page}&limit=${limit}`;
+  
+  logger.info("Making GET request to fetch subscribers", { url, page, limit });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse subscribers response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers (GET)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Fetch subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch subscribers (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function createSubscriber(token: string, data: CreateSubscriberData): Promise<CreateSubscriberResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers`;
+  
+  logger.info("Making POST request to create subscriber", { url, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse create subscriber response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers (POST)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Create subscriber failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to create subscriber (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Create subscriber request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deleteSubscriber(token: string, subscriberId: string): Promise<DeleteSubscriberResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/${subscriberId}`;
+  
+  logger.info("Making DELETE request to delete subscriber", { url, subscriberId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete subscriber response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/subscribers/${subscriberId} (DELETE)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Delete subscriber failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete subscriber (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Delete subscriber request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export interface UpdateSubscriberData {
+  name: string;
+  email: string;
+  phone_number: string;
+  position: string;
+  company: string;
+  address: string;
+}
+
+export async function updateSubscriber(token: string, subscriberId: string, data: UpdateSubscriberData): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/${subscriberId}`;
+  
+  logger.info("Making PUT request to update subscriber", { url, subscriberId, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse update subscriber response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/subscribers/${subscriberId} (PUT)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Update subscriber failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to update subscriber (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Update subscriber request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+// Campaigns API
+import type {
+    CampaignDetailResponse,
+    CampaignsResponse,
+    CreateCampaignData,
+    UpdateCampaignData
+} from './types/email-marketing';
+
+export async function fetchCampaigns(token: string): Promise<CampaignsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns`;
+  
+  logger.info("Making GET request to fetch campaigns", { url });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse campaigns response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/campaigns (GET)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Fetch campaigns failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch campaigns (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch campaigns request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function fetchCampaignDetail(token: string, campaignId: string): Promise<CampaignDetailResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}`;
+  
+  logger.info("Making GET request to fetch campaign detail", { url, campaignId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse campaign detail response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/campaigns/${campaignId} (GET)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Fetch campaign detail failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch campaign detail (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch campaign detail request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function createCampaign(token: string, data: CreateCampaignData): Promise<CampaignsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns`;
+  
+  logger.info("Making POST request to create campaign", { url, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse create campaign response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/campaigns (POST)", { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Create campaign failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to create campaign (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Create campaign request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function updateCampaign(token: string, campaignId: string, data: UpdateCampaignData): Promise<CampaignsResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}`;
+  
+  logger.info("Making PUT request to update campaign", { url, campaignId, data });
+
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse update campaign response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/campaigns/${campaignId} (PUT)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Update campaign failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to update campaign (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Update campaign request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deleteCampaign(token: string, campaignId: string): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}`;
+  
+  logger.info("Making DELETE request to delete campaign", { url, campaignId });
+
+  try {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete campaign response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/campaigns/${campaignId} (DELETE)`, { status: res.status, response: json });
+    
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+    
+    if (!res.ok) {
+      logger.error(`Delete campaign failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete campaign (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Delete campaign request failed", { error: error.message, url });
+    throw error;
+  }
+}

@@ -1,6 +1,7 @@
 // components/email-marketing/mailing-lists/MailingListsTable.tsx
 "use client";
 
+import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import {
     Box,
@@ -13,7 +14,6 @@ import {
 } from '@mui/material';
 import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 interface MailingListsTableProps {
@@ -23,34 +23,20 @@ interface MailingListsTableProps {
   refreshTrigger: number;
 }
 
-const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger }: MailingListsTableProps) => {
-  const [lists, setLists] = useState<MailingList[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTableProps) => {
+  const { data, isLoading, error, refetch } = useMailingLists();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // MOCK DATA - Remove this when backend is ready
-        const { mockMailingLists, simulateApiDelay } = await import('@/lib/data/email-marketing-mock');
-        await simulateApiDelay(300);
-        
-        setLists(mockMailingLists);
-      } catch (err: any) {
-        toast.error('Failed to fetch mailing lists.');
-        setLists([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [refreshTrigger]);
+  const lists = data?.data?.mailing_lists || [];
+
+  if (error) {
+    toast.error('Failed to fetch mailing lists.');
+  }
 
   return (
     <Box sx={{ width: '100%' }}>
       {/* Toolbar */}
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Mailing Lists</Typography>
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6">Mailing Lists ({lists.length})</Typography>
         <Button 
           variant="contained" 
           color="primary" 
@@ -62,7 +48,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger }: M
       </Box>
 
       {/* Lists */}
-      <Box sx={{ px: 2, pb: 2 }}>
+      <Box sx={{ px: 3, pb: 3 }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
@@ -80,6 +66,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger }: M
                 mb: 1.5, 
                 display: 'flex',
                 alignItems: 'center',
+                borderRadius: 2,
                 '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
               }}
             >
@@ -95,10 +82,10 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest, refreshTrigger }: M
                 }}
               >
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6">{list.name}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>{list.name}</Typography>
                 </Box>
                 <Box sx={{ textAlign: 'center', mx: 2, minWidth: '80px' }}>
-                  <Typography variant="body1" fontWeight={600}>{list.contact_count}</Typography>
+                  <Typography variant="body1" fontWeight={600}>{list.subscriber_count}</Typography>
                   <Typography variant="caption" color="text.secondary">Contacts</Typography>
                 </Box>
                 <ChevronRight className="w-5 h-5 text-gray-400" />

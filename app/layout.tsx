@@ -1,5 +1,5 @@
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout"
-import { ConfirmationProvider } from "@/components/ui-mui/confirm-modal"
+import { ConfirmationProvider } from "@/components/ui/confirm-modal"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import ReactQueryProvider from "@/lib/ReactQueryProvider"
 import { Poppins } from "next/font/google"

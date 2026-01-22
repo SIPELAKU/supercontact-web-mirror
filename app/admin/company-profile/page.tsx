@@ -2,7 +2,7 @@
 
 import { AiIntelligenceSummary, CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, SimiliarCompaniesCard } from "@/components/omnichannel";
 import RecentActivityCompany from "@/components/omnichannel/company/detail-company/RecentActivityDetailCompany";
-import PageHeader from "@/components/ui-mui/page-header";
+import PageHeader from "@/components/ui/page-header";
 import { RECENT_ACTIVITY_DETAIL_COMPANY } from "@/lib/data/recent-activity-detail-company";
 import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
 import { useState } from "react";

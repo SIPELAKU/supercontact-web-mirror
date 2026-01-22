@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyPersonType, Status } from "@/lib/type/Company";
+import { KeyPersonType, Status } from "@/lib/types/Company";
 import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";

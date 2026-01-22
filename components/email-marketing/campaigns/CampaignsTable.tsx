@@ -120,10 +120,17 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
             Refresh
           </Button>
           <Button 
-            variant="contained" 
-            color="primary" 
+            variant="contained"
             startIcon={<Plus className="w-4 h-4" />} 
             onClick={onAdd}
+            sx={{
+              bgcolor: '#5D87FF',
+              '&:hover': {
+                bgcolor: '#4570ea'
+              },
+              textTransform: 'none',
+              px: 3
+            }}
           >
             Create Campaign
           </Button>

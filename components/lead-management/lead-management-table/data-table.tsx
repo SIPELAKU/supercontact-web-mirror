@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
-import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Lead } from "@/lib/models/types";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";

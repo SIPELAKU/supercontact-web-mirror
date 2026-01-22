@@ -1,4 +1,4 @@
-import { Industry, IndustryOption } from "@/lib/type/Company";
+import { Industry, IndustryOption } from "@/lib/types/Company";
 import { FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 
 interface FilterByIndustryProps {

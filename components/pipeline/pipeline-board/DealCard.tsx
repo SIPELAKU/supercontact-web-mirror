@@ -1,9 +1,9 @@
-import { Card, CardContent } from "@/components/ui-mui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui-mui/avatar"
-import { Calendar } from "lucide-react"
-import { DealCardProps } from "@/lib/type/Pipeline"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
 import { formatRupiah } from "@/lib/helper/currency"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
+import { DealCardProps } from "@/lib/types/Pipeline"
+import { Calendar } from "lucide-react"
 
 export const dealStages = [
   { label: "Prospect", bgColor: "bg-[#26C6F9]/16", textColor: "text-[#26C6F9]" },

@@ -1,16 +1,16 @@
 "use client";
 
-import { Button, Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
+import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import CampaignsTable from '@/components/email-marketing/campaigns/CampaignsTable';
 import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddCampaignModal';
 import EditCampaignModal from '@/components/email-marketing/campaigns/modals/EditCampaignModal';
-import PageHeader from '@/components/ui-mui/page-header';
+import PageHeader from '@/components/ui/page-header';
 import { useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
-import { AlertTriangle } from 'lucide-react';
 
 export default function CampaignsPage() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -68,7 +68,7 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="w-full max-w-full mx-auto px-4 pt-6 space-y-6">
       <PageHeader
         title="Campaigns"
         breadcrumbs={[
@@ -118,10 +118,10 @@ export default function CampaignsPage() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)} color="secondary">Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
+          <MuiButton onClick={() => setConfirmOpen(false)} color="secondary">Cancel</MuiButton>
+          <MuiButton onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
             {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </Button>
+          </MuiButton>
         </DialogActions>
       </Dialog>
     </div>

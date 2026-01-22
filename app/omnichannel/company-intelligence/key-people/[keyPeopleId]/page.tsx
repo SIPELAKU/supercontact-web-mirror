@@ -1,9 +1,9 @@
 "use client";
 
 import KeyPeopleCard from "@/components/omnichannel/key-people/KeyPeopleCard";
-import PageHeader from "@/components/ui-mui/page-header";
 import InputSearch from "@/components/ui/input-search";
-import { KeyPersonType } from "@/lib/type/Company";
+import PageHeader from "@/components/ui/page-header";
+import { KeyPersonType } from "@/lib/types/Company";
 import { Button } from "@mui/material";
 import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

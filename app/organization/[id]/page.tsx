@@ -1,27 +1,27 @@
 "use client";
-import { ChangeEvent, useMemo, useState, MouseEvent, Suspense } from "react";
-import useDepartments from "../../../lib/hooks/useDepartments";
-import { UsersType } from "../../../lib/type/Users";
-import { useUsers } from "../../../lib/hooks/useUsers";
 import { Card, CardHeader, Divider, Typography } from "@mui/material";
 import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
+    useParams,
+    usePathname,
+    useRouter,
+    useSearchParams,
 } from "next/navigation";
+import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
+import useDepartments from "../../../lib/hooks/useDepartments";
+import { useUsers } from "../../../lib/hooks/useUsers";
+import { UsersType } from "../../../lib/type/Users";
 
-import { ExportButton, TableFilterUsers } from "@/components/users";
 import {
-  DepartmentsCardInfo,
-  AddMemberButton,
-  DeleteMembersModal,
-  DepartementTableMember,
-  DepartmentsCardInfoSkeleton,
+    AddMemberButton,
+    DeleteMembersModal,
+    DepartementTableMember,
+    DepartmentsCardInfo,
+    DepartmentsCardInfoSkeleton,
 } from "@/components/organization";
-import PageHeader from "@/components/ui-mui/page-header";
 import InputSearch from "@/components/ui/input-search";
+import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
+import { ExportButton, TableFilterUsers } from "@/components/users";
 
 export default function DetailDepartments() {
   const { id } = useParams();

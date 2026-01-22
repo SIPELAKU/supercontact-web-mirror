@@ -1,10 +1,10 @@
 "use client";
 
-import { Input } from "@/components/ui-mui/input";
-import { Button } from "@/components/ui-mui/button";
-import { Trash2, Plus, ChevronDown, Search } from "lucide-react";
-import type { ItemRow } from "@/lib/type/Quotation";
-import DropdownSelect, { DropdownSelectSearch } from "../ui-mui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { ItemRow } from "@/lib/types/Quotation";
+import { Plus, Trash2 } from "lucide-react";
+import DropdownSelect, { DropdownSelectSearch } from "../ui/dropdown-menu";
 
 export default function ProductsServicesCard({
   items,

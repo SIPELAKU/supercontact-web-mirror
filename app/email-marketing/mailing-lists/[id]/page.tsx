@@ -2,7 +2,7 @@
 "use client";
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
-import PageHeader from '@/components/ui-mui/page-header';
+import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingListSubscriber, useMailingListDetail } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import {
@@ -249,7 +249,7 @@ const MailingListDetailPage = () => {
                                 }
                             }}
                         >
-                            
+                            Tambah Subscriber
                         </Button>
                     )}
                 </Box>

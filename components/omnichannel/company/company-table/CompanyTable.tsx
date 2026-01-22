@@ -1,6 +1,6 @@
 "use client";
 
-import { CompanyType } from "@/lib/type/Company";
+import { CompanyType } from "@/lib/types/Company";
 import { Chip, LinearProgress, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";

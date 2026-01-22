@@ -38,10 +38,17 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">Mailing Lists ({lists.length})</Typography>
         <Button 
-          variant="contained" 
-          color="primary" 
+          variant="contained"
           startIcon={<Plus className="w-4 h-4" />} 
           onClick={onAdd}
+          sx={{
+            bgcolor: '#5D87FF',
+            '&:hover': {
+              bgcolor: '#4570ea'
+            },
+            textTransform: 'none',
+            px: 3
+          }}
         >
           Create New List
         </Button>

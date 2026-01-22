@@ -1,7 +1,7 @@
 "use client";
 
 import { ActivitySidebar, CompanyActivityStatCard, RecentActivityCompany } from "@/components/omnichannel";
-import PageHeader from "@/components/ui-mui/page-header";
+import PageHeader from "@/components/ui/page-header";
 import { Button } from "@mui/material";
 import { ArrowLeft, FileText, Linkedin, TrendingDown, Users } from "lucide-react";
 import { useRouter } from "next/navigation";

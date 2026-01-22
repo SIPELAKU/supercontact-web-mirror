@@ -1,20 +1,20 @@
 "use client"
 
 import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
+    closestCenter,
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+    type DragOverEvent,
+    type DragStartEvent,
 } from "@dnd-kit/core"
 import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useState } from "react"
 
@@ -23,12 +23,12 @@ import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { Button } from "@/components/ui-mui/button"
-import { FilterBar } from "@/components/ui-mui/filter"
+import { Button } from "@/components/ui/button"
+import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
 import { StageUI } from "@/lib/helper/transformPipeline"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
-import { Deal } from "@/lib/type/Pipeline"
+import { Deal } from "@/lib/types/Pipeline"
 import { Plus, Search } from "lucide-react"
 
 

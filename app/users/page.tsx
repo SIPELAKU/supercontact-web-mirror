@@ -5,8 +5,8 @@ import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 import { useUsers } from "../../lib/hooks/useUsers";
 import { UsersType } from "../../lib/type/Users";
 
-import PageHeader from "@/components/ui-mui/page-header";
 import InputSearch from "@/components/ui/input-search";
+import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import {
     AddUserButton,

@@ -1,13 +1,13 @@
 "use client"
 
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { Button } from "@/components/ui-mui/button"
-import { FilterBar } from "@/components/ui-mui/filter"
-import { CustomTable as Table } from "@/components/ui-mui/table"
+import { Button } from "@/components/ui/button"
+import { FilterBar } from "@/components/ui/filter"
+import { CustomTable as Table } from "@/components/ui/table"
 import { formatRupiah } from "@/lib/helper/currency"
 import { formatMDY } from "@/lib/helper/date"
 import { useGetQuotationstore } from "@/lib/store/quotation"
-import { Column } from "@/lib/type/Quotation"
+import { Column } from "@/lib/types/Quotation"
 import { Plus, Search } from "lucide-react"
 import Link from "next/link"
 

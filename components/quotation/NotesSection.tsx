@@ -1,6 +1,6 @@
 "use client";
 
-import { Textarea } from "@/components/ui-mui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 
 interface NotesCardProps {
   notes: string;

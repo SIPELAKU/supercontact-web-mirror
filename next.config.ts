@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  
+  // 5. Rewrites for proxy (only used when NEXT_PUBLIC_API_URL is /api/proxy)
   async rewrites() {
     return [
       {

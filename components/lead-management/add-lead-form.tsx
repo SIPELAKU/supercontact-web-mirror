@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui-mui/button";
+import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-} from "@/components/ui-mui/dialog";
-import { Label } from "@/components/ui-mui/label";
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";

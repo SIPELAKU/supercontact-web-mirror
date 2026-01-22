@@ -1,5 +1,4 @@
-import { Card, CardContent } from "@/components/ui-mui/card"
-import { formatRupiah } from "@/lib/helper/currency";
+import { Card, CardContent } from "@/components/ui/card";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 
 export default function MetricsCards() {

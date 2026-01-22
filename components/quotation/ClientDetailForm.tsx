@@ -1,10 +1,9 @@
 "use client"
 
-import { Input } from "@/components/ui-mui/input"
-import { Label } from "@/components/ui-mui/label"
-import { Select, SelectItem } from "@/components/ui-mui/select"
-import { DatePicker } from "@/components/ui-mui/date-picker"
-import { useState } from "react"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectItem } from "@/components/ui/select"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>

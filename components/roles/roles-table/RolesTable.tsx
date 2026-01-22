@@ -1,15 +1,15 @@
-import { RoleType } from "@/lib/type/Role";
+import { RoleType } from "@/lib/types/Role";
 import { Chip, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import RolesTableError from "./RolesTableError";
-import EditPermissionsButton from "../roles-button-open-modal/EditPermissionsButton";
 import DeleteRolesPermissionsButton from "../roles-button-open-modal/DeleteRolesPermissionsButton";
-import RolesTableSkeleton from "./RolesTableSkeleton";
+import EditPermissionsButton from "../roles-button-open-modal/EditPermissionsButton";
 import RolesTableDataNotFound from "./RolesTableDataNotFound";
+import RolesTableError from "./RolesTableError";
+import RolesTableSkeleton from "./RolesTableSkeleton";
 
 interface RolesTableProps {
   roles: RoleType[];

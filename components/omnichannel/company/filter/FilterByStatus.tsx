@@ -1,4 +1,4 @@
-import { CompanyStatus, StatusOption } from "@/lib/type/Company";
+import { CompanyStatus, StatusOption } from "@/lib/types/Company";
 import { FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 
 interface FilterByStatusProps {

@@ -2,12 +2,12 @@
 
 import useRoles from "@/lib/hooks/useRoles";
 
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import InputSearch from "@/components/ui/input-search";
 import { AddPermissionsButton, AddRoleButton, RolesTable } from "@/components/roles";
-import PageHeader from "@/components/ui-mui/page-header";
+import InputSearch from "@/components/ui/input-search";
+import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 
 export default function RolesPage() {
   const { roles, isLoading, error } = useRoles();

@@ -8,11 +8,11 @@ import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 
 import { CompanyStats, CompanyTable } from "@/components/omnichannel";
 import FilterByIndustry from "@/components/omnichannel/company/filter/FilterByIndustry";
-import PageHeader from "@/components/ui-mui/page-header";
-import InputSearch from "@/components/ui/input-search";
-import useCompany from "@/lib/hooks/useCompany";
-import { CompanyStatus, Industry, IndustryOption, StatusOption } from "@/lib/type/Company";
 import FilterByStatus from "@/components/omnichannel/company/filter/FilterByStatus";
+import InputSearch from "@/components/ui/input-search";
+import PageHeader from "@/components/ui/page-header";
+import useCompany from "@/lib/hooks/useCompany";
+import { CompanyStatus, Industry, IndustryOption, StatusOption } from "@/lib/types/Company";
 
 const INDUSTRY_OPTIONS: IndustryOption[] = [
   { label: "All Industries", value: "all" },

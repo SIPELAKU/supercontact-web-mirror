@@ -13,6 +13,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.2] - 2026-01-22
+
+### Detail Versi 0.6.2
+
+#### ♻️ Refactor & Code Cleanup
+
+- **Deskripsi:**
+
+  - **Remove ui-mui folder into one ui folder**
+
+  - **Update Context to hit Proxy instead of direct BE**
+  
+  - **Type Definitions Consolidation:** Merged duplicate `lib/type/` folder into `lib/types/` for better organization. Moved 7 type files (Company.ts, Departments.ts, Pipeline.ts, Products.ts, Quotation.ts, Role.ts, Users.ts) and updated 18 import statements across the codebase from `@/lib/type/` to `@/lib/types/`.
+  
+  - **Route Structure Cleanup:** Removed redundant `app/(dashboard)/` route group folder including duplicate layout.tsx and unused pages (email-marketing duplicate, contact, mailing-list, mytask, notes, notification). Moved 3 active pages to proper locations:
+    - `app/(dashboard)/profile/page.tsx` → `app/profile/page.tsx`
+    - `app/(dashboard)/inbox/page.tsx` → `app/inbox/page.tsx`
+    - `app/(dashboard)/profile-user-setting/page.tsx` → `app/profile-user-setting/page.tsx`
+  
+  - **Dependencies Cleanup:** Removed 8 unused npm packages from package.json:
+    - `@formkit/drag-and-drop`
+    - `@radix-ui/react-popover`
+    - `@radix-ui/react-select`
+    - `@radix-ui/react-tabs`
+    - `@tanstack/react-table`
+    - `react-day-picker`
+    - `react-redux`
+    - `@reduxjs/toolkit`
+  
+  - **Impact:** Cleaner codebase structure, reduced bundle size, eliminated confusion from duplicate folders and unused dependencies.
+
+#### 🎨 UI/UX Enhancement
+
+- **Email Marketing Button Standardization:**
+  - **Consistent Styling:** Updated all email marketing table buttons to use custom blue color (`#5D87FF`) matching lead-management style with hover effect (`#4570ea`).
+  - **Button Updates:**
+    - CampaignsTable.tsx - "Create Campaign" button
+    - MailingListsTable.tsx - "Create New List" button
+    - SubscribersTable.tsx - "Add Subscriber" button
+    - Mailing List Detail page - "Tambah Subscriber" button
+  - **Impact:** Consistent visual design across all email marketing modules, improved user experience with unified button styling.
+
+#### 📁 Files Modified
+
+```
+lib/types/ (consolidated from lib/type/)
+├── Company.ts
+├── Departments.ts
+├── Pipeline.ts
+├── Products.ts
+├── Quotation.ts
+├── Role.ts
+└── Users.ts
+
+app/
+├── profile/page.tsx (moved from (dashboard))
+├── inbox/page.tsx (moved from (dashboard))
+├── profile-user-setting/page.tsx (moved from (dashboard))
+└── email-marketing/mailing-lists/[id]/page.tsx (updated)
+
+components/email-marketing/
+├── campaigns/CampaignsTable.tsx (updated)
+├── mailing-lists/MailingListsTable.tsx (updated)
+└── subscribers/SubscribersTable.tsx (updated)
+
+package.json (cleaned up)
+```
+
+#### 🗑️ Files Removed
+
+```
+app/(dashboard)/ (entire folder removed)
+lib/type/ (merged into lib/types/)
+```
+  
+
+
 ## [0.6.1] - 2026-01-19
 
 ### Detail Versi 0.6.1

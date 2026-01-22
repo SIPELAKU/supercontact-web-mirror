@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import CustomSelectStage from "@/components/pipeline/SelectDealStage";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui-mui/dialog";
-import { Button } from "@/components/ui-mui/button";
-import { Input } from "@/components/ui-mui/input";
-import { Label } from "@/components/ui-mui/label";
-import { Textarea } from "@/components/ui-mui/textarea";
-import { DatePicker } from "@/components/ui-mui/date-picker";
-import { AddDealModalProps } from "@/lib/type/Pipeline";
-import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { useGetPipelineStore } from "@/lib/store/pipeline";
-import type { DealForm, reqBody } from "@/lib/store/pipeline";
+    Dialog,
+    DialogContent
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useGetContactStore } from "@/lib/store/contact";
+import type { DealForm, reqBody } from "@/lib/store/pipeline";
+import { useGetPipelineStore } from "@/lib/store/pipeline";
+import { AddDealModalProps } from "@/lib/types/Pipeline";
+import { useEffect, useMemo, useState } from "react";
 
 export const dealStages = [
   { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },

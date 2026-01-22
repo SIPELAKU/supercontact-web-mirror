@@ -1,6 +1,5 @@
-import { Deal } from "@/lib/type/Pipeline";
 import { formatMDY } from "@/lib/helper/date";
-import { formatRupiah } from "@/lib/helper/currency";
+import { Deal } from "@/lib/types/Pipeline";
 
 export type StageUI = {
   id: string;

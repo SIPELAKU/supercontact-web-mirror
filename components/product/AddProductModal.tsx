@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui-mui/dialog";
-import { Button } from "@/components/ui-mui/button";
-import { Input } from "@/components/ui-mui/input";
-import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import type { AddProductModalProps } from "@/lib/type/Products";
+import CustomSelectStage from "@/components/pipeline/SelectDealStage";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Product, useGetProductStore } from "@/lib/store/product";
+import type { AddProductModalProps } from "@/lib/types/Products";
+import { useEffect, useMemo, useState } from "react";
 
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
 export type ProductPayload = Omit<Product, "id">;

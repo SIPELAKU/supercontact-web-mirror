@@ -1,24 +1,24 @@
 "use client";
 
-import useDepartments from "../../lib/hooks/useDepartments";
-import { DepartmentsType } from "../../lib/type/Departments";
+import {
+    AddDepartmentsButton,
+    DeleteDepartmentsModal,
+    DepartementTableFilter,
+    DepartmentsTableList,
+    EditDepartmentsModal,
+} from "@/components/organization";
 import { CardHeader, Divider } from "@mui/material";
 import Card from "@mui/material/Card";
-import { Suspense, useMemo, useState, MouseEvent, ChangeEvent } from "react";
-import {
-  DepartmentsTableList,
-  DeleteDepartmentsModal,
-  EditDepartmentsModal,
-  AddDepartmentsButton,
-  DepartementTableFilter,
-} from "@/components/organization";
+import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
+import useDepartments from "../../lib/hooks/useDepartments";
+import { DepartmentsType } from "../../lib/type/Departments";
 
 import { ExportButton } from "@/components/users";
 
-import PageHeader from "@/components/ui-mui/page-header";
 import InputSearch from "@/components/ui/input-search";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function OrganizationStructurePage() {
   const { departments, isLoading, error } = useDepartments();

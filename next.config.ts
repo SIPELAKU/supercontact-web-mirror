@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
-
 const nextConfig: NextConfig = {
   // 1. Bypass Error ESLint
   eslint: {
@@ -33,17 +31,7 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // 5. Rewrites for proxy (only used when NEXT_PUBLIC_API_URL is /api/proxy)
   async rewrites() {
-    // Only create rewrites if we're using the proxy approach
-    if (process.env.NEXT_PUBLIC_API_URL === '/api/proxy') {
-      return [
-        {
-          source: "/api/proxy/:path*",
-          destination: `${process.env.BACKEND_API_URL || 'https://147.139.132.60:18011/api/v1'}/:path*`, 
-        },
-      ];
-    }
     return [];
   },
   

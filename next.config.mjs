@@ -1,8 +1,5 @@
-import type { NextConfig } from "next";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // 1. Bypass Error ESLint
   eslint: {
     ignoreDuringBuilds: true,
@@ -33,14 +30,8 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // 5. Rewrites for proxy (only used when NEXT_PUBLIC_API_URL is /api/proxy)
   async rewrites() {
-    return [
-      {
-        source: "/api/proxy/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
-      },
-    ];
+    return [];
   },
   
   // Config lainnya...

@@ -1,9 +1,7 @@
 "use client"
 
-import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectItem } from "@/components/ui/select"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>
@@ -47,15 +45,17 @@ export default function ClientDetailsSection({
         
         <div className="space-y-2">
           <Label>Client Name</Label>
-          <Select
-            value={clientData.clientName || ""}
-            onChange={(v) => handleChange("clientName", v)}
-            className="h-10 bg-white"
-          >
-            <SelectItem value="john-doe">John Doe</SelectItem>
-            <SelectItem value="jane-smith">Jane Smith</SelectItem>
-            <SelectItem value="acme-corp">ACME Corp</SelectItem>
-          </Select>
+          <FormControl fullWidth size="small">
+            <MuiSelect
+              value={clientData.clientName || ""}
+              onChange={(e) => handleChange("clientName", e.target.value)}
+              sx={{ height: '40px', bgcolor: 'white' }}
+            >
+              <MenuItem value="john-doe">John Doe</MenuItem>
+              <MenuItem value="jane-smith">Jane Smith</MenuItem>
+              <MenuItem value="acme-corp">ACME Corp</MenuItem>
+            </MuiSelect>
+          </FormControl>
         </div>
 
         <div className="space-y-2">
@@ -112,17 +112,19 @@ export default function ClientDetailsSection({
 
         <div className="space-y-2">
           <Label>Issue Date</Label>
-          <DatePicker
-            value={clientData.issueDate || new Date()}
-            onChange={(v) => handleChange("issueDate", v)}
+          <Input
+            type="date"
+            value={clientData.issueDate ? new Date(clientData.issueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+            onChange={(e) => handleChange("issueDate", e.target.value ? new Date(e.target.value) : new Date())}
           />
         </div>
 
         <div className="space-y-2">
           <Label>Expiry Date</Label>
-          <DatePicker
-            value={clientData.expiryDate || new Date()}
-            onChange={(v) => handleChange("expiryDate", v)}
+          <Input
+            type="date"
+            value={clientData.expiryDate ? new Date(clientData.expiryDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+            onChange={(e) => handleChange("expiryDate", e.target.value ? new Date(e.target.value) : new Date())}
           />
         </div>
       </div>

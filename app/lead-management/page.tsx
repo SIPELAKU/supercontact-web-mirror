@@ -3,8 +3,8 @@
 import AddLeadForm from "@/components/lead-management/add-lead-form";
 import LeadManagement from "@/components/lead-management/lead-management";
 import PageHeader from "@/components/ui/page-header";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewMode } from "@/lib/hooks/useLeadStore";
+import { Tab, Tabs } from "@mui/material";
 
 export default function LeadManagementPage() {
   const { viewMode, setViewMode } = useViewMode();
@@ -23,15 +23,13 @@ export default function LeadManagementPage() {
       <div className="flex justify-between">
         <Tabs
           value={viewMode}
-          onValueChange={(val) =>
+          onChange={(_, val) =>
             setViewMode(val as "table-view" | "kanban-view")
           }
-          className="h-8"
+          sx={{ minHeight: '32px' }}
         >
-          <TabsList>
-            <TabsTrigger value="table-view">Table View</TabsTrigger>
-            <TabsTrigger value="kanban-view" className="whitespace-nowrap">Kanban View</TabsTrigger>
-          </TabsList>
+          <Tab label="Table View" value="table-view" />
+          <Tab label="Kanban View" value="kanban-view" />
         </Tabs>
         <AddLeadForm />
       </div>

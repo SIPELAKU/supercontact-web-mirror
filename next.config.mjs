@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // 1. Bypass Error ESLint
   eslint: {
     ignoreDuringBuilds: true,
@@ -31,7 +30,6 @@ const nextConfig: NextConfig = {
     ];
   },
   
-
   async rewrites() {
     return [];
   },

@@ -1,9 +1,7 @@
 "use client";
 
-import DateRangePicker from "@/components/ui/daterangepicker";
 import { Lead } from "@/lib/models/types";
 import { useEffect, useState } from "react";
-import type { DateRange } from "react-day-picker";
 
 
 export default function LeadFilters({
@@ -18,7 +16,7 @@ export default function LeadFilters({
   const [source, setSource] = useState("placeholder-source"); 
   const [assignedto, setAssignedto] = useState("placeholder-assigned"); 
 
-  const [dateRange, setDateRange] = useState<DateRange>({
+  const [dateRange, setDateRange] = useState<{from?: Date; to?: Date}>({
     from: undefined,
     to: undefined,
   });
@@ -135,13 +133,24 @@ export default function LeadFilters({
       </div>
 
       {/* Date Range */}
-      <div className="flex-1 min-w-0">
-        <DateRangePicker
-          value={dateRange}
-          onChange={(range) =>
-            setDateRange(range ?? { from: undefined, to: undefined })
+      <div className="flex-1 min-w-0 flex gap-2">
+        <input
+          type="date"
+          value={dateRange.from ? dateRange.from.toISOString().split('T')[0] : ''}
+          onChange={(e) =>
+            setDateRange({ ...dateRange, from: e.target.value ? new Date(e.target.value) : undefined })
           }
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none justify-between"
+          className="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none"
+          placeholder="From Date"
+        />
+        <input
+          type="date"
+          value={dateRange.to ? dateRange.to.toISOString().split('T')[0] : ''}
+          onChange={(e) =>
+            setDateRange({ ...dateRange, to: e.target.value ? new Date(e.target.value) : undefined })
+          }
+          className="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none"
+          placeholder="To Date"
         />
       </div>
     </div>

@@ -2,16 +2,15 @@ import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout"
 import { ConfirmationProvider } from "@/components/ui/confirm-modal"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import ReactQueryProvider from "@/lib/ReactQueryProvider"
-import { Poppins } from "next/font/google"
 import type React from "react"
 import { Toaster } from "react-hot-toast"
 import "./globals.css"
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-})
+// const poppins = Poppins({
+//   subsets: ["latin"],
+//   weight: ["300", "400", "500", "600", "700"],
+//   variable: "--font-poppins",
+// })
 
 export default function RootLayout({
   children,
@@ -19,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={poppins.variable}>
+    <html lang="en" >
       <head>
         {/* Preload critical SVG icons */}
         <link rel="preload" href="/assets/sales-icon-sb.svg" as="image" type="image/svg+xml" />

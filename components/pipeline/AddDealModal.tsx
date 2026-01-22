@@ -2,10 +2,9 @@
 
 import CustomSelectStage from "@/components/pipeline/SelectDealStage";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
-    Dialog,
-    DialogContent
+  Dialog,
+  DialogContent
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -266,13 +265,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
               <Label className="text-sm font-medium text-gray-700">
                 Expected Close Date
               </Label>
-              <DatePicker
-                mode="single"
-                value={formData.expected_close_date}
-                onChange={(date) => {
+              <Input
+                type="date"
+                value={formData.expected_close_date ? new Date(formData.expected_close_date).toISOString().split('T')[0] : ''}
+                onChange={(e) => {
                   setFormData({
                     ...formData,
-                    expected_close_date: date,
+                    expected_close_date: e.target.value ? new Date(e.target.value) : undefined,
                   });
                 }}
                 placeholder="Select close date"

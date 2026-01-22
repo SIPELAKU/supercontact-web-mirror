@@ -31,7 +31,18 @@ const nextConfig = {
   },
   
   async rewrites() {
-    return [];
+    const backendUrl = process.env.BACKEND_URL;
+
+    if (!backendUrl) {
+        console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
+    }
+
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: `${backendUrl}/:path*`, 
+      },
+    ];
   },
   
   // Config lainnya...

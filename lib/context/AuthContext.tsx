@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import { cookieUtils } from '@/lib/utils/cookies';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -48,26 +48,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       // Call actual login API
-      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+
+      const loginRes = await fetch(`/api/proxy/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const json = await loginRes.json();
-      
+
       if (!loginRes.ok || !json.success) {
         console.error('Login failed:', json);
         return false;
       }
       console.log('login result', json)
       const accessToken = json.data.access_token;
-      
+
       cookieUtils.setAuthToken(accessToken);
-      
+
       setToken(accessToken);
       setIsAuthenticated(true);
-      
+
       return true;
     } catch (error) {
       console.error('Login failed:', error);

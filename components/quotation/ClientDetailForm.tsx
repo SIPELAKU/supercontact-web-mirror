@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FormControl, MenuItem, Select as MuiSelect } from "@mui/material"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>

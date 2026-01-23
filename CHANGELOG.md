@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.6.2] - 2026-01-22
+## [1.0.0] - 2026-01-23
 
-### Detail Versi 0.6.2
+### Detail Versi 1.0.0
 
 #### ♻️ Refactor & Code Cleanup
 
@@ -87,21 +87,11 @@ package.json (cleaned up)
 app/(dashboard)/ (entire folder removed)
 lib/type/ (merged into lib/types/)
 ```
-  
-
-
-## [0.6.1] - 2026-01-19
-
-### Detail Versi 0.6.1
 
 #### 🐛 Bug Fix
 
 - **Deskripsi:**
   - **Contact:** Update contact data fetching to use an authenticated external API endpoint.
-
-## [0.6.0] - 2026-01-14
-
-### Detail Versi 0.6.0
 
 #### ✨ Fitur Baru
 

@@ -1,6 +1,6 @@
 # 📚 DOKUMENTASI PROJECT - SuperContact Web
 
-> **Version**: 0.6.2  
+> **Version**: 1.0.0 
 > **Last Updated**: 23 Januari 2026  
 > **Framework**: Next.js 14.2.5 (App Router)
 

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import Cookies from "js-cookie";
 
 const MySwal = withReactContent(Swal);
 
@@ -166,16 +167,29 @@ interface AddNoteModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  contactId: number | string;
 }
 
 const AddNoteModal: React.FC<AddNoteModalProps> = ({
   open,
   onClose,
   onSuccess,
+  contactId,
 }) => {
   const reactRootRef = useRef<Root | null>(null);
 
   const handleSubmit = async (data: NoteData) => {
+    const token = Cookies.get("access_token");
+    
+    if (!token) {
+      MySwal.fire({
+        icon: "error",
+        title: "Authentication required",
+        text: "Please login again",
+      });
+      return;
+    }
+
     const res = await fetch("/api/proxy/notes", {
       method: "POST",
       headers: {

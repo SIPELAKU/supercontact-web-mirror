@@ -216,6 +216,7 @@ import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { Contact, ContactReq } from "@/lib/models/types";
+import Cookies from "js-cookie";
 
 const MySwal = withReactContent(Swal);
 
@@ -319,6 +320,17 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
 
   const handleSubmit = async (data: ContactReq) => {
     if (!initialData) return;
+
+    const token = Cookies.get("access_token");
+    
+    if (!token) {
+      MySwal.fire({
+        icon: "error",
+        title: "Authentication required",
+        text: "Please login again",
+      });
+      return;
+    }
 
     try {
       const res = await fetch(`/api/proxy/contacts/${initialData.id}`, {

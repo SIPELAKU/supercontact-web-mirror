@@ -162,7 +162,7 @@ export interface CampaignDetailResponse {
 }
 
 export interface CreateCampaignData {
-  recipient_source: 'mailing_list' | 'contact';
+  recipient_source: 'mailing_list' | 'subscriber';
   subject: string;
   html_content: string;
   action: 'send' | 'draft';
@@ -171,7 +171,7 @@ export interface CreateCampaignData {
 }
 
 export interface UpdateCampaignData {
-  recipient_source: 'mailing_list' | 'contact';
+  recipient_source: 'mailing_list' | 'subscriber';
   subject: string;
   html_content: string;
   action: 'send' | 'draft';

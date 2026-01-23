@@ -3,6 +3,7 @@
 
 import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
+import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import {
     Alert,
     Box,
@@ -34,19 +35,27 @@ interface AddCampaignModalProps {
 const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) => {
   const [subject, setSubject] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
-  const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'contact'>('mailing_list');
+  const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'subscriber'>('mailing_list');
   const [selectedMailingLists, setSelectedMailingLists] = useState<string[]>([]);
+  const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [error, setError] = useState('');
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
+  const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
+  const subscribers = subscribersData?.data?.contacts || []; // API returns contacts field
+  
+  // Debug log to see what we're getting
+  console.log('Subscribers data:', subscribersData);
+  console.log('Subscribers array:', subscribers);
 
   const handleClose = () => {
     setSubject('');
     setHtmlContent('');
     setRecipientSource('mailing_list');
     setSelectedMailingLists([]);
+    setSelectedSubscribers([]);
     setError('');
     onClose();
   };
@@ -56,6 +65,14 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       prev.includes(listId) 
         ? prev.filter(id => id !== listId)
         : [...prev, listId]
+    );
+  };
+
+  const handleSubscriberToggle = (subscriberId: string) => {
+    setSelectedSubscribers(prev => 
+      prev.includes(subscriberId) 
+        ? prev.filter(id => id !== subscriberId)
+        : [...prev, subscriberId]
     );
   };
 
@@ -72,6 +89,10 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       setError("Please select at least one mailing list.");
       return;
     }
+    if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
+      setError("Please select at least one subscriber.");
+      return;
+    }
 
     setError('');
     
@@ -82,7 +103,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         html_content: htmlContent.trim(),
         action,
         mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
-        contact_ids: recipientSource === 'contact' ? [] : undefined,
+        contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
       });
       
       toast.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
@@ -128,10 +149,15 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
             <FormLabel component="legend">Recipient Source</FormLabel>
             <RadioGroup
               value={recipientSource}
-              onChange={(e) => setRecipientSource(e.target.value as 'mailing_list' | 'contact')}
+              onChange={(e) => {
+                setRecipientSource(e.target.value as 'mailing_list' | 'subscriber');
+                // Clear selections when switching
+                setSelectedMailingLists([]);
+                setSelectedSubscribers([]);
+              }}
             >
               <FormControlLabel value="mailing_list" control={<Radio />} label="Mailing List" />
-              <FormControlLabel value="contact" control={<Radio />} label="Contact" disabled />
+              <FormControlLabel value="subscriber" control={<Radio />} label="Contact (Subscribers)" />
             </RadioGroup>
           </FormControl>
 
@@ -163,6 +189,43 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               {error && selectedMailingLists.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   Please select at least one mailing list
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          {recipientSource === 'subscriber' && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Select Subscribers *
+              </Typography>
+              {isLoadingSubscribers ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : subscribers.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No subscribers available. Please add subscribers first.
+                </Typography>
+              ) : (
+                <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
+                  {subscribers.map((subscriber) => (
+                    <FormControlLabel
+                      key={subscriber.id}
+                      control={
+                        <Checkbox
+                          checked={selectedSubscribers.includes(subscriber.id)}
+                          onChange={() => handleSubscriberToggle(subscriber.id)}
+                        />
+                      }
+                      label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
+                    />
+                  ))}
+                </Box>
+              )}
+              {error && selectedSubscribers.length === 0 && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                  Please select at least one subscriber
                 </Typography>
               )}
             </Box>

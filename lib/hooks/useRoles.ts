@@ -10,7 +10,7 @@ const useRoles = () => {
     try {
       setIsLoading(true);
 
-      const response = await fetch("/api/roles");
+      const response = await fetch("/api/proxy/roles");
       const data = await response.json();
 
       if (!response.ok) {

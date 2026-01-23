@@ -29,21 +29,21 @@ const nextConfig = {
       },
     ];
   },
-  
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_URL;
+  //comment utk dev purpose need to be reverted back
+  // async rewrites() {
+  //   const backendUrl = process.env.BACKEND_URL;
 
-    if (!backendUrl) {
-        console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
-    }
+  //   if (!backendUrl) {
+  //       console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
+  //   }
 
-    return [
-      {
-        source: '/api/proxy/:path*',
-        destination: `${backendUrl}/:path*`, 
-      },
-    ];
-  },
+  //   return [
+  //     {
+  //       source: '/api/proxy/:path*',
+  //       destination: `${backendUrl}/:path*`, 
+  //     },
+  //   ];
+  // },
 };
 
 export default nextConfig;

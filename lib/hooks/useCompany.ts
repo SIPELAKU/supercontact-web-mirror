@@ -10,7 +10,7 @@ const useCompany = () => {
     try {
       setIsLoading(true);
 
-      const response = await fetch("/api/company");
+      const response = await fetch("/api/proxy/company");
       const data = await response.json();
 
       if (!response.ok) {

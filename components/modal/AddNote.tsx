@@ -176,16 +176,16 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   const reactRootRef = useRef<Root | null>(null);
 
   const handleSubmit = async (data: NoteData) => {
-    const res = await fetch("/api/notes", {
+    const res = await fetch("/api/proxy/notes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
       body: JSON.stringify({
-        title: data.title,
-        content: data.content,
-        reminder_date: data.reminder_date,
-        reminder_time: data.reminder_time,
+        contact_id: contactId,
+        note: data.content,
+        reminder_date: `${data.reminder_date}T${data.reminder_time}:00.000Z`,
       }),
     });
 

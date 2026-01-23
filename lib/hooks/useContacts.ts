@@ -1,9 +1,9 @@
 // lib/hooks/useContacts.ts
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchContacts, ContactResponse } from "../api";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { ContactResponse, fetchContacts } from "../api";
 
 export function useContacts() {
   const { getToken } = useAuth();

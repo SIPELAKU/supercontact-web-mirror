@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const checkAuthStatus = () => {
       const storedToken = cookieUtils.getAuthToken();
       if (cookieUtils.hasAuthToken() && storedToken) {
         // Simply trust the stored token since we don't have /auth/me endpoint
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     checkAuthStatus();
 
-    // Listen for cookie changes (using a polling approach since there's no direct cookie change event)
+    // Check cookie state when user returns to tab (more efficient than polling)
     const checkCookieChanges = () => {
       if (!cookieUtils.hasAuthToken() && isAuthenticated) {
         // Cookie was removed, logout user
@@ -41,8 +41,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const interval = setInterval(checkCookieChanges, 1000); // Check every second
-    return () => clearInterval(interval);
+    // Use visibility change and focus events instead of setInterval
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkCookieChanges();
+      }
+    };
+
+    const handleFocus = () => {
+      checkCookieChanges();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [isAuthenticated]);
 
   const login = async (email: string, password: string): Promise<boolean> => {

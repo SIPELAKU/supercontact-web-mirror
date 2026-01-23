@@ -1,0 +1,190 @@
+// lib/api/users.ts
+// Users and Profile API functions
+
+import { logger } from "../utils/logger";
+
+// ============================================
+// Types
+// ============================================
+
+export interface User {
+  id: string;
+  fullname: string;
+  email: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    users: User[];
+  };
+  error: string | null;
+}
+
+export interface ProfileData {
+  id: string;
+  fullname: string;
+  email: string;
+  avatar_initial: string;
+  role: string | null;
+  joined_date: string;
+  company: string;
+  country: string;
+  language: string;
+  phone: string;
+  skype: string;
+  bio: string;
+}
+
+export interface ProfileResponse {
+  success: boolean;
+  data: ProfileData;
+  error: string | null;
+}
+
+export interface UpdateProfileData {
+  fullname: string;
+  email: string;
+  company: string;
+  country: string;
+  language: string;
+  phone: string;
+  skype: string;
+  bio: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
+// ============================================
+// Functions
+// ============================================
+
+export async function fetchUsers(token: string): Promise<UserResponse> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+  console.log("Users API response:", json);
+  
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+  
+  if (!res.ok) throw new Error("Failed to load users");
+  
+  return {
+    success: true,
+    data: {
+      total: json.total,
+      page: json.page,
+      limit: json.limit,
+      users: json.users
+    },
+    error: null
+  };
+}
+
+export async function fetchProfile(token: string): Promise<ProfileResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
+  
+  logger.info("Making GET request to fetch profile", { url });
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse profile response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/user-profile/profile (GET)", { status: res.status, response: json });
+    
+    if (!res.ok) {
+      logger.error(`Fetch profile failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Failed to fetch profile (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch profile request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function updateProfile(token: string, profileData: UpdateProfileData): Promise<UpdateProfileResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
+  
+  logger.info("Making PATCH request to update profile", { 
+    url, 
+    profileData
+  });
+
+  try {
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse profile update response JSON", { 
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message 
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/user-profile/profile (PATCH)", { status: res.status, response: json });
+    
+    if (!res.ok) {
+      logger.error(`Profile update failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Profile update failed (${res.status}: ${res.statusText})`);
+    }
+    
+    return json;
+  } catch (error: any) {
+    logger.error("Profile update request failed", { error: error.message, url });
+    throw error;
+  }
+}

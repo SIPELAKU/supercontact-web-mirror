@@ -44,13 +44,6 @@ const nextConfig = {
       },
     ];
   },
-  
-  // Config lainnya...
-  ...(process.env.NODE_ENV === 'development' && {
-    experimental: {
-      serverComponentsExternalPackages: [],
-    },
-  }),
 };
 
 export default nextConfig;

@@ -18,15 +18,15 @@ import {
 } from "@mui/material";
 import toast from "react-hot-toast";
 import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
-import { useAuth } from "@/lib/context/AuthContext";
 import { handleError } from "@/lib/utils/errorHandler";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function ProfileUserSettingClient() {
+  const { getToken } = useAuth();
   const [tab, setTab] = useState(0);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { getToken } = useAuth();
 
   // Profile form data
   const [profileData, setProfileData] = useState<UpdateProfileData>({
@@ -56,6 +56,7 @@ export default function ProfileUserSettingClient() {
         setLoading(true);
         
         const token = await getToken();
+        if (!token) throw new Error('No authentication token');
         const response = await fetchProfile(token);
         
         if (response.success && response.data) {
@@ -82,7 +83,7 @@ export default function ProfileUserSettingClient() {
     };
 
     loadProfile();
-  }, [getToken]);
+  }, []);
 
   const handleInputChange = (field: keyof UpdateProfileData) => (
     event: React.ChangeEvent<HTMLInputElement>
@@ -98,6 +99,7 @@ export default function ProfileUserSettingClient() {
       setSaving(true);
       
       const token = await getToken();
+      if (!token) throw new Error('No authentication token');
       const response = await updateProfile(token, profileData);
       
       if (response.success) {
@@ -117,6 +119,7 @@ export default function ProfileUserSettingClient() {
     try {
       setLoading(true);
       const token = await getToken();
+      if (!token) throw new Error('No authentication token');
       const response = await fetchProfile(token);
       
       if (response.success && response.data) {

@@ -10,11 +10,11 @@ import { useState } from "react";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { Contact, createLead, CreateLeadData, User } from "@/lib/api";
-import { useAuth } from "@/lib/context/AuthContext";
 import { useContacts } from "@/lib/hooks/useContacts";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
+import { useAuth } from "@/lib/context/AuthContext";
 
 // Lead status options with colors
 export const leadStatusOptions = [
@@ -54,6 +54,7 @@ interface AddLeadFormProps {
 }
 
 export default function AddLeadForm({ onSave }: AddLeadFormProps) {
+  const { getToken } = useAuth();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showContactDropdown, setShowContactDropdown] = useState(false);
@@ -61,7 +62,6 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
-  const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const { data: contactsResponse } = useContacts();
   const { data: usersResponse } = useUsers();
@@ -153,6 +153,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
 
     try {
       const token = await getToken();
+      if (!token) throw new Error('No authentication token');
       
       // Create lead with all data in one request
       const leadData: CreateLeadData = selectedContactId ? {

@@ -5,7 +5,6 @@ import {
   updateSubscriber,
   UpdateSubscriberData
 } from '@/lib/api';
-import { useAuth } from '@/lib/context/AuthContext';
 import type {
   CreateSubscriberData,
   CreateSubscriberResponse,
@@ -13,26 +12,25 @@ import type {
   SubscribersResponse
 } from '@/lib/types/email-marketing';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Cookies from 'js-cookie';
 
 export function useSubscribers(page: number = 1, limit: number = 100) {
-  const { token } = useAuth();
-
   return useQuery<SubscribersResponse>({
     queryKey: ['subscribers', page, limit],
     queryFn: () => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return fetchSubscribers(token, page, limit);
     },
-    enabled: !!token,
   });
 }
 
 export function useCreateSubscriber() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation<CreateSubscriberResponse, Error, CreateSubscriberData>({
     mutationFn: (data: CreateSubscriberData) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return createSubscriber(token, data);
     },
@@ -45,11 +43,11 @@ export function useCreateSubscriber() {
 }
 
 export function useDeleteSubscriber() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation<DeleteSubscriberResponse, Error, string>({
     mutationFn: (subscriberId: string) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteSubscriber(token, subscriberId);
     },
@@ -62,11 +60,11 @@ export function useDeleteSubscriber() {
 }
 
 export function useUpdateSubscriber() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ subscriberId, data }: { subscriberId: string; data: UpdateSubscriberData }) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return updateSubscriber(token, subscriberId, data);
     },

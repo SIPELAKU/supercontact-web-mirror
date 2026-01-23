@@ -6,7 +6,6 @@ import {
     fetchMailingLists,
     updateMailingList
 } from '@/lib/api';
-import { useAuth } from '@/lib/context/AuthContext';
 import type {
     CreateMailingListData,
     MailingListDetailResponse,
@@ -14,39 +13,37 @@ import type {
     UpdateMailingListData
 } from '@/lib/types/email-marketing';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Cookies from 'js-cookie';
 
 export function useMailingLists(page: number = 1, limit: number = 100) {
-  const { token } = useAuth();
-
   return useQuery<MailingListsResponse>({
     queryKey: ['mailing-lists', page, limit],
     queryFn: () => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return fetchMailingLists(token, page, limit);
     },
-    enabled: !!token,
   });
 }
 
 export function useMailingListDetail(mailingListId: string) {
-  const { token } = useAuth();
-
   return useQuery<MailingListDetailResponse>({
     queryKey: ['mailing-list', mailingListId],
     queryFn: () => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return fetchMailingListDetail(token, mailingListId);
     },
-    enabled: !!token && !!mailingListId,
+    enabled: !!mailingListId,
   });
 }
 
 export function useCreateMailingList() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateMailingListData) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return createMailingList(token, data);
     },
@@ -57,11 +54,11 @@ export function useCreateMailingList() {
 }
 
 export function useUpdateMailingList() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ mailingListId, data }: { mailingListId: string; data: UpdateMailingListData }) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return updateMailingList(token, mailingListId, data);
     },
@@ -73,11 +70,11 @@ export function useUpdateMailingList() {
 }
 
 export function useDeleteMailingList() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (mailingListId: string) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteMailingList(token, mailingListId);
     },
@@ -88,11 +85,11 @@ export function useDeleteMailingList() {
 }
 
 export function useDeleteMailingListSubscriber() {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ mailingListId, subscriberId }: { mailingListId: string; subscriberId: string }) => {
+      const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteMailingListSubscriber(token, mailingListId, subscriberId);
     },

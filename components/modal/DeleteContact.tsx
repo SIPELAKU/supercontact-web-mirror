@@ -5,6 +5,7 @@ import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import { Contact, ContactReq } from "@/lib/models/types";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const MySwal = withReactContent(Swal);
 
@@ -75,12 +76,23 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
   initialData,
 // id,
 }) => {
+  const { getToken } = useAuth();
   const reactRootRef = useRef<Root | null>(null);
 
   const handleSubmit = async (initialData: Contact) => {
     if (!initialData) return;
 
     try {
+      const token = await getToken();
+      if (!token) {
+        MySwal.fire({
+          icon: "error",
+          title: "Authentication required",
+          text: "Please log in again",
+        });
+        return;
+      }
+
       const res = await fetch(`/api/proxy/contacts/${initialData.id}`, {
         method: "DELETE",
         headers: { 

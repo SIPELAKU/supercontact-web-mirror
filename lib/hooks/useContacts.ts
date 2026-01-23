@@ -1,17 +1,16 @@
 // lib/hooks/useContacts.ts
 "use client";
 
-import { useAuth } from "@/lib/context/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { ContactResponse, fetchContacts } from "../api";
+import Cookies from 'js-cookie';
 
 export function useContacts() {
-  const { getToken } = useAuth();
-  
   return useQuery<ContactResponse, Error>({
     queryKey: ["contacts"],
     queryFn: async () => {
-      const token = await getToken();
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
       return fetchContacts(token);
     },
     staleTime: 1000 * 60, // 1 minute cache

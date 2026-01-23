@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const MySwal = withReactContent(Swal);
 
@@ -182,6 +183,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
   initialData,
   id,
 }) => {
+  const { getToken } = useAuth();
   const reactRootRef = useRef<Root | null>(null);
   
   const handleSubmit = async (data: {
@@ -191,6 +193,16 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
     time: string;
   }) => {
     try {
+      const token = await getToken();
+      if (!token) {
+        MySwal.fire({
+          icon: "error",
+          title: "Authentication required",
+          text: "Please log in again",
+        });
+        return;
+      }
+
       // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
       const reminderTimeFixed = `${data.date}T${data.time}:00.000Z`;
 

@@ -4,6 +4,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const MySwal = withReactContent(Swal);
 
@@ -56,6 +57,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
     phone: "",
@@ -110,6 +112,16 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     }
 
     try {
+      const token = await getToken();
+      if (!token) {
+        MySwal.fire({
+          icon: "error",
+          title: "Authentication required",
+          text: "Please log in again",
+        });
+        return;
+      }
+
       const res = await fetch("/api/proxy/contacts", {
         method: "POST",
         headers: {

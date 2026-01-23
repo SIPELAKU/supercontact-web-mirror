@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import Cookies from "js-cookie";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const MySwal = withReactContent(Swal);
 
@@ -177,31 +177,24 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   contactId,
 }) => {
   const reactRootRef = useRef<Root | null>(null);
+  const { getToken } = useAuth();
 
   const handleSubmit = async (data: NoteData) => {
-    const token = Cookies.get("access_token");
-    
-    if (!token) {
-      MySwal.fire({
-        icon: "error",
-        title: "Authentication required",
-        text: "Please login again",
+    try {
+      const token = await getToken();
+      
+      const res = await fetch("/api/proxy/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contact_id: contactId,
+          note: data.content,
+          reminder_date: `${data.reminder_date}T${data.reminder_time}:00.000Z`,
+        }),
       });
-      return;
-    }
-
-    const res = await fetch("/api/proxy/notes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        contact_id: contactId,
-        note: data.content,
-        reminder_date: `${data.reminder_date}T${data.reminder_time}:00.000Z`,
-      }),
-    });
 
     MySwal.close();
     onClose();   
@@ -221,6 +214,13 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         title: "Failed to save notes",
         timer: 1400,
         showConfirmButton: false,
+      });
+    }
+    } catch (error) {
+      MySwal.fire({
+        icon: "error",
+        title: "Authentication required",
+        text: "Please login again",
       });
     }
   };

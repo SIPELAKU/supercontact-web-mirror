@@ -37,6 +37,7 @@ export default function ProfileClient() {
     const loadData = async () => {
       try {
         const token = await getToken();
+        if (!token) throw new Error('No authentication token');
         const res = await fetchProfile(token);
         if (res.success) {
           setProfile(res.data);
@@ -48,7 +49,7 @@ export default function ProfileClient() {
       }
     };
     loadData();
-  }, [getToken]);
+  }, []);
 
   if (loading) return <Box p={4}>Loading...</Box>;
 

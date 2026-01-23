@@ -8,12 +8,12 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { updateLead, UpdateLeadData, User } from "@/lib/api";
-import { useAuth } from "@/lib/context/AuthContext";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { Lead } from "@/lib/models/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { logger } from "../../lib/utils/logger";
+import { useAuth } from "@/lib/context/AuthContext";
 
 //export type LeadStatus = "New" | "Contacted" | "Qualified" | "Proposal" | "Closed - Won" | "Closed - Lost";
 export const leadStatusOptions = [
@@ -58,11 +58,11 @@ interface FormData {
 }
 
 export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetailModalProps) {
+  const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
-  const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const { data: usersResponse } = useUsers();
 
@@ -129,6 +129,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
     try {
       const token = await getToken();
+      if (!token) throw new Error('No authentication token');
       
       const updateData: UpdateLeadData = {
         contact_id: lead.contact.id,

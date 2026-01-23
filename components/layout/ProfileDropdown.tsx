@@ -32,6 +32,7 @@ const ProfileDropdown = () => {
     const loadProfile = async () => {
       try {
         const token = await getToken();
+        if (!token) throw new Error('No authentication token');
         const response = await fetchProfile(token);
         
         if (response.success && response.data) {
@@ -53,7 +54,7 @@ const ProfileDropdown = () => {
     };
 
     loadProfile();
-  }, [getToken]);
+  }, []);
 
   // Get initials from full name
   const getInitials = (name: string) => {

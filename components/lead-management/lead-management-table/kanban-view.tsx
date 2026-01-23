@@ -27,11 +27,11 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-import { useAuth } from "@/lib/context/AuthContext";
 import LeadDetailModal from "../lead-detail-modal";
 import { MoreVertical } from "lucide-react";
 import { deleteLead } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/context/AuthContext";
 
 /* -------------------------
    FIXED STATUS ORDER
@@ -61,8 +61,8 @@ const statusColors: Record<string, string> = {
    SORTABLE CARD
 ------------------------- */
 function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: Lead) => void }) {
-  const [showMenu, setShowMenu] = React.useState(false);
   const { getToken } = useAuth();
+  const [showMenu, setShowMenu] = React.useState(false);
   const queryClient = useQueryClient();
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -95,6 +95,7 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
     if (confirm(`Are you sure you want to delete lead "${lead.contact.name}"?`)) {
       try {
         const token = await getToken();
+        if (!token) throw new Error('No authentication token');
         await deleteLead(token, lead.id);
         
         // Refresh the leads data
@@ -203,11 +204,11 @@ type KanbanBoardProps = {
 };
 
 export default function KanbanView({ data, isLoading, error }: KanbanBoardProps) {
+  const { getToken } = useAuth();
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = React.useState<Lead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = React.useState(false);
-  const { getToken } = useAuth();
 
   // Update leads when data changes
   React.useEffect(() => {
@@ -278,8 +279,13 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
       )
     );
 
-    const token = await getToken();
     try {
+      const token = await getToken();
+      if (!token) {
+        console.error('No authentication token');
+        return;
+      }
+      
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

@@ -81,12 +81,12 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
     if (!initialData) return;
 
     try {
-      const res = await fetch(`/api/contact`, {
+      const res = await fetch(`/api/proxy/contacts/${initialData.id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            id: initialData.id,
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       const text = await res.text();

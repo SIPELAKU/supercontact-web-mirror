@@ -192,19 +192,17 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
   }) => {
     try {
       // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
-      const reminderTimeFixed = `${data.time}:00.000Z`;
+      const reminderTimeFixed = `${data.date}T${data.time}:00.000Z`;
 
-      const res = await fetch("/api/notes", {
+      const res = await fetch(`/api/proxy/notes/${id}`, {
         method: "PUT",
         headers: { 
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          id,
-          title: data.title,
-          content: data.content,
-          reminder_date: data.date,
-          reminder_time: reminderTimeFixed,
+          note: data.content,
+          reminder_date: reminderTimeFixed,
         }),
       });
 

@@ -51,14 +51,10 @@ class Logger {
   }
 
   private sendToExternalLogger(logEntry: LogEntry) {
-    // Send logs to our API endpoint for server-side logging
-    if (logEntry.level === 'error' || logEntry.level === 'warn') {
-      fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logEntry),
-      }).catch(() => {}); // Fail silently to avoid infinite loops
-    }
+    // Disabled: Previously sent logs to /api/logs endpoint
+    // Now logs are only stored in browser console
+    // If you need server-side logging, implement it in your backend
+    // and call /api/proxy/logs instead
   }
 
   debug(message: string, data?: any) {

@@ -321,13 +321,13 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     if (!initialData) return;
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch(`/api/proxy/contacts/${initialData.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: initialData.id,
-          ...data,
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
       });
 
       const text = await res.text();

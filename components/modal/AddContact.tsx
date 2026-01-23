@@ -110,10 +110,11 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     }
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/api/proxy/contacts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(local),
       });

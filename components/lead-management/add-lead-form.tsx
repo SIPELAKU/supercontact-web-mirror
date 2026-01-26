@@ -64,7 +64,16 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [assignedToName, setAssignedToName] = useState<string>("");
   const queryClient = useQueryClient();
   const { data: contactsResponse } = useContacts();
-  const { data: usersResponse } = useUsers();
+  const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
+  
+  // Debug logs
+  console.log('Users Response:', usersResponse);
+  console.log('Users Response Data:', usersResponse?.data);
+  console.log('Is Loading Users:', isLoadingUsers);
+  console.log('Users Error:', usersError);
+  console.log('Users Array:', usersResponse?.data?.users);
+  console.log('Is Loading Users:', isLoadingUsers);
+  console.log('Users Error:', usersError);
 
   const [form, setForm] = useState<LeadData>({
     name: "",
@@ -118,7 +127,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     setAssignedToName(value);
     setSelectedUserId("");
     updateField("assignedTo", "");
-    setShowUserDropdown(value.length > 0);
+    // Always show dropdown when typing
+    setShowUserDropdown(true);
   };
 
   const filteredUsers = usersResponse?.data?.users?.filter(user =>
@@ -395,7 +405,15 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* User Dropdown */}
                 {showUserDropdown && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredUsers.length > 0 ? (
+                    {isLoadingUsers ? (
+                      <div className="px-4 py-3 text-gray-500 text-center">
+                        Loading users...
+                      </div>
+                    ) : usersError ? (
+                      <div className="px-4 py-3 text-red-500 text-center">
+                        Error loading users: {usersError.message}
+                      </div>
+                    ) : filteredUsers.length > 0 ? (
                       filteredUsers.slice(0, 5).map((user) => (
                         <div
                           key={user.id}
@@ -409,7 +427,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                       ))
                     ) : (
                       <div className="px-4 py-3 text-gray-500 text-center">
-                        {usersResponse?.data?.users ? 'No users found' : 'Loading users...'}
+                        No users found
                       </div>
                     )}
                   </div>

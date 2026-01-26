@@ -84,16 +84,8 @@ export async function fetchUsers(token: string): Promise<UserResponse> {
   
   if (!res.ok) throw new Error("Failed to load users");
   
-  return {
-    success: true,
-    data: {
-      total: json.total,
-      page: json.page,
-      limit: json.limit,
-      users: json.users
-    },
-    error: null
-  };
+  // API already returns the correct structure, just return it
+  return json;
 }
 
 export async function fetchProfile(token: string): Promise<ProfileResponse> {

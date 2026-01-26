@@ -81,13 +81,13 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   useEffect(() => {
     if (lead) {
       setForm({
-        industry: lead.office_location  || "",
-        companySize: lead.company_size, // Default since not in lead data
-        officeLocation: lead.contact?.company, // Contact doesn't have address property
+        industry: lead.industry || "",
+        companySize: lead.company_size,
+        officeLocation: lead.office_location || "",
         leadStatus: lead.lead_status,
         leadSource: lead.lead_source,
         assignedTo: lead.user?.id || "",
-        tag: lead.tag, // Default since not in lead data
+        tag: lead.tag,
         notes: lead.notes,
       });
       
@@ -152,13 +152,16 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
       await updateLead(token, lead.id, updateData);
 
-      // Refresh the leads data
-      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      // Refresh the leads data and wait for it to complete
+      await queryClient.refetchQueries({ queryKey: ["leads"] });
 
       // Close modal
       onOpenChange(false);
       
       logger.info("Lead updated successfully!", { leadId: lead.id });
+      
+      // Show success message
+      alert("Lead updated successfully!");
     } catch (error: any) {
       logger.error("Error updating lead", { 
         leadId: lead.id, 

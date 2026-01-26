@@ -1,10 +1,19 @@
 "use client";
+
+import { AppButton } from "@/components/ui/AppButton";
+import { AppInput } from "@/components/ui/AppInput";
 import axios from "axios";
+import { Poppins } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -12,20 +21,25 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setIsLoading(true);
     setError("");
-    
+
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/otp/resend`, {
-        email: email,
-        otp_type: "Reset Password"
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/otp/resend`,
+        {
+          email: email,
+          otp_type: "Reset Password",
+        },
+      );
 
       if (response.status === 200) {
         // Redirect to OTP verification page
-        router.push(`/forgot-password/verify-otp?email=${encodeURIComponent(email)}`);
+        router.push(
+          `/forgot-password/verify-otp?email=${encodeURIComponent(email)}`,
+        );
       } else {
         setError(response.data?.message || "Failed to send reset link");
       }
@@ -41,46 +55,59 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
+    <div
+      className={`min-h-screen flex items-center justify-center bg-[#F5F6FA] px-4 ${poppins.className}`}
+    >
+      <div className="bg-white w-full max-w-[440px] h-screen flex flex-col">
         {/* Logo */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-16 mt-[50px]">
           <Image
             src="/assets/sc-logo.png"
             alt="SuperContact Logo"
-            width={240}
-            height={80}
+            width={158}
+            height={38}
             className="object-contain"
             priority
           />
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
+        <div className="p-10 space-y-8 mt-[150px]">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Forget Password?
+          <div className="text-center space-y-2">
+            <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
+              Forgot Password?
             </h1>
-            <p className="text-gray-600 leading-relaxed">
-              Don't worry. Enter your registered email address and we'll send you a password reset link.
+            <p className="text-[#6B7280] text-sm leading-relaxed px-0">
+              Don't worry. Enter your registered email address and we'll send
+              you a password reset link.
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmit();
+              }
+            }}
+          >
+            <div className="space-y-1.5">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email
               </label>
-              <input
+              <AppInput
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
                 required
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] focus:bg-white outline-none transition-all placeholder-gray-400"
               />
             </div>
 
@@ -90,25 +117,30 @@ export default function ForgotPasswordPage() {
               </div>
             )}
 
-            <button
-              type="submit"
+            <AppButton
+              variantStyle="primary"
+              color="primary"
               disabled={isLoading || !email}
-              className="w-full bg-[#5479EE] hover:bg-[#4366d9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              fullWidth
+              onClick={handleSubmit}
             >
               {isLoading ? "Sending..." : "Send Link Reset Password"}
-            </button>
+            </AppButton>
           </form>
 
           {/* Footer */}
-          <div className="text-center">
+          <div className="text-center text-sm">
             <span className="text-gray-500">Back to </span>
             <Link
               href="/login"
-              className="text-[#5479EE] hover:text-[#4366d9] font-medium transition-colors"
+              className="text-[#5479EE] font-semibold hover:underline"
             >
               Login Page
             </Link>
           </div>
+
+          {/* Divider */}
+          <div className="pt-4 border-t border-gray-100"></div>
         </div>
       </div>
     </div>

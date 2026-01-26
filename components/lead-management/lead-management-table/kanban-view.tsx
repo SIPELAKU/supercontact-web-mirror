@@ -13,9 +13,7 @@ import {
   PointerSensor,
   DragEndEvent,
   useDroppable,
-  pointerWithin,
-  rectIntersection,
-  CollisionDetection,
+  closestCenter,
   DragOverlay,
   DragStartEvent
 } from "@dnd-kit/core";
@@ -89,6 +87,12 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
     isDragging,
   } = useSortable({ id: lead.id.toString() });
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
   const handleDeleteLead = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -112,59 +116,51 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
   };
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => {
-        // Only trigger card click if not dragging and not clicking menu
-        if (!isDragging && !showMenu) {
-          e.stopPropagation();
-          onCardClick(lead);
-        }
-      }}
-      className={cn(
-        "bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing relative",
-        isDragging && "opacity-0" // HIDE original card when dragging
-      )}
-    >
-      {/* Three dots menu */}
-      <div className="absolute top-2 right-2" ref={menuRef}>
-        <button
-          onClick={(e) => {
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Card
+        onClick={(e) => {
+          // Only trigger card click if not dragging and not clicking menu
+          if (!isDragging && !showMenu) {
             e.stopPropagation();
-            setShowMenu(!showMenu);
-          }}
-          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <MoreVertical className="h-4 w-4 text-gray-500" />
-        </button>
-        
-        {/* Dropdown menu */}
-        {showMenu && (
-          <div className="absolute top-8 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[140px] z-50">
-            <button
-              onClick={handleDeleteLead}
-              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
-            >
-              Remove card
-            </button>
-          </div>
-        )}
-      </div>
+            onCardClick(lead);
+          }
+        }}
+        className="bg-white rounded-xl shadow p-4 text-black hover:shadow-md transition cursor-grab active:cursor-grabbing relative"
+      >
+        {/* Three dots menu */}
+        <div className="absolute top-2 right-2" ref={menuRef} style={{ zIndex: 10 }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors bg-white"
+          >
+            <MoreVertical className="h-4 w-4 text-gray-500" />
+          </button>
+          
+          {/* Dropdown menu */}
+          {showMenu && (
+            <div className="absolute top-8 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[140px] z-50">
+              <button
+                onClick={handleDeleteLead}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+              >
+                Remove card
+              </button>
+            </div>
+          )}
+        </div>
 
-      <p className="font-semibold mb-1 pr-8">{lead.contact.name}</p>
-      <p className="text-sm opacity-80 mb-1">Status: {lead.lead_status}</p>
+        <p className="font-semibold mb-1 pr-8">{lead.contact.name}</p>
+        <p className="text-sm opacity-80 mb-1">Status: {lead.lead_status}</p>
 
-      <div className="text-sm flex items-center gap-2 opacity-80">
-        {sourceIcon[lead.lead_source as LeadSource]}
-        <span>{lead.lead_source}</span>
-      </div>
-    </Card>
+        <div className="text-sm flex items-center gap-2 opacity-80">
+          {sourceIcon[lead.lead_source as LeadSource]}
+          <span>{lead.lead_source}</span>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -232,30 +228,14 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
   );
 
   /* -------------------------
-     FIXED COLLISION DETECTION
-------------------------- */
-  const collisionDetection = React.useCallback<CollisionDetection>(
-    (args) => {
-      const pointerHits = pointerWithin(args).filter((hit) =>
-        statuses.includes(hit.id as LeadStatus)
-      );
-      if (pointerHits.length) return pointerHits;
-
-      const rectHits = rectIntersection(args).filter((hit) =>
-        statuses.includes(hit.id as LeadStatus)
-      );
-      return rectHits;
-    },
-    [statuses]
-  );
-
-  /* -------------------------
      DRAG START
 ------------------------- */
   const handleDragStart = (event: DragStartEvent) => {
     const leadId = event.active.id;
     const lead = leads.find((l) => l.id.toString() === leadId);
-    if (lead) setActiveLead(lead);
+    if (lead) {
+      setActiveLead(lead);
+    }
   };
 
   /* -------------------------
@@ -353,7 +333,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={collisionDetection}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}      
       onDragEnd={handleDragEnd}
     >
@@ -381,22 +361,19 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
         </div>
       </div>
 
-      {/* ---------------------
-         DRAG OVERLAY
-      ---------------------- */}
-      <DragOverlay>
+      {/* DRAG OVERLAY */}
+      <DragOverlay dropAnimation={null}>
         {activeLead ? (
-          <Card className="bg-white rounded-xl shadow-2xl p-4 text-black scale-105">
-            <p className="font-semibold mb-1">{activeLead.contact.name}</p>
-            <p className="text-sm opacity-80 mb-1">
-              Status: {activeLead.lead_status}
-            </p>
-
-            <div className="text-sm flex items-center gap-2 opacity-80">
-              {sourceIcon[activeLead.lead_source as LeadSource]}
-              <span>{activeLead.lead_source}</span>
-            </div>
-          </Card>
+          <div className="rotate-3 scale-105">
+            <Card className="bg-white rounded-xl shadow-lg p-4 text-black border-2 border-blue-500">
+              <p className="font-semibold mb-1 pr-8">{activeLead.contact.name}</p>
+              <p className="text-sm opacity-80 mb-1">Status: {activeLead.lead_status}</p>
+              <div className="text-sm flex items-center gap-2 opacity-80">
+                {sourceIcon[activeLead.lead_source as LeadSource]}
+                <span>{activeLead.lead_source}</span>
+              </div>
+            </Card>
+          </div>
         ) : null}
       </DragOverlay>
 

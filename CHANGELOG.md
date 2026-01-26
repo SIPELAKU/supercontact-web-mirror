@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-01-26
+
+### Detail Versi 1.1.1
+
+#### ♻️ Refactor
+
+- **Deskripsi:**
+  - **Company Intelligence Migration:** Moved Company Intelligence page from "Omnichannel" to "Data Intelligence" section in the Sidebar to better organize the application structure.
+  - **Navigation Update:** Updated `Sidebar.tsx` to reflect the new route `/data-intelligence/company-intelligence` and removed the old link from Omnichannel.
+  - **Breadcrumbs:** Updated breadcrumbs in Company Intelligence pages to show "Data Intelligence" instead of "Omnichannel".
+
 ## [1.1.1] - 2026-01-23
 
 ### Detail Versi 1.1.1
@@ -20,8 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🐛 Bug Fix
 
 - **Fixing DND for Updated Components same as Pipeline**
-  
-  -DND Bug 
+
+  -DND Bug
 
   -Fix Structure type for Users in Leads
 

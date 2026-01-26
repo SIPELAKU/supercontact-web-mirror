@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-01-23
+
+### Detail Versi 1.1.1
+
+#### 🐛 Bug Fix
+
+- **Fixing DND for Updated Components same as Pipeline**
+  
+  -DND Bug 
+
+  -Fix Structure type for Users in Leads
+
 ## [1.1.0] - 2026-01-26
 
 ### Detail Versi 1.1.0

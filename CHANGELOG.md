@@ -13,17 +13,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.1] - 2026-01-23
+## [1.1.0] - 2026-01-26
 
-### Detail Versi 1.0.1
+### Detail Versi 1.1.0
+
+#### ♻️ Refactor & Code Cleanup
+
+- **Deskripsi:**
+  - **Codebase Conflict Resolution:** Resolved git conflicts and standardized authentication implementation across contact-related modals (`AddContact`, `EditContact`, `DeleteContact`, `AddNote`).
+  - **MUI Date Adapter Optimization:** Optimized `MuiLocalizationProvider` to use `AdapterDateFnsV3` and downgraded `@mui/x-date-pickers` to v7.23.0 to resolve version mismatch with simple `@mui/material` v5 installation, preventing "Module not found" errors.
+
+  - **Type Safety Enhancements:** Improved type definitions in `useContacts` hook to ensure secure and type-safe token retrieval.
 
 #### 🐛 Bug Fix
 
-- **Fixing DND for Updated Components same as Pipeline**
-  
-  -DND Bug 
+- **Deskripsi:**
+  - **MUI Date Picker Adapter Error:** Fixed `ENOENT: no such file or directory` error by correcting the import path for `AdapterDateFns` and ensuring `date-fns` v3 compatibility.
 
-  -Fix Structure type for Users in Leads
+  - **Import not found errors**: Fixed "Module not found" errors for `@mui/material/version` by aligning `@mui/x-date-pickers` version with the project's `@mui/material` version.
+
+#### ✨ Fitur Baru
+
+- **Deskripsi:**
+  - **Bulk Import Data Contacts:**
+    - **Import Interface:** A new streamlined modal (`ImportContactModal`) for bulk importing contacts.
+    - **File Support:** Support for `.xlsx` (Excel) and `.csv` files.
+    - **Smart Integration:** Drag-and-drop support, template download, and automatic data parsing.
+    - **Seamless API:** Direct integration with `/api/proxy/contacts/bulk` for secure data submission.
 
 ## [1.0.0] - 2026-01-23
 
@@ -32,18 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### ♻️ Refactor & Code Cleanup
 
 - **Deskripsi:**
-
   - **Remove ui-mui folder into one ui folder**
 
   - **Update Context to hit Proxy instead of direct BE**
-  
   - **Type Definitions Consolidation:** Merged duplicate `lib/type/` folder into `lib/types/` for better organization. Moved 7 type files (Company.ts, Departments.ts, Pipeline.ts, Products.ts, Quotation.ts, Role.ts, Users.ts) and updated 18 import statements across the codebase from `@/lib/type/` to `@/lib/types/`.
-  
   - **Route Structure Cleanup:** Removed redundant `app/(dashboard)/` route group folder including duplicate layout.tsx and unused pages (email-marketing duplicate, contact, mailing-list, mytask, notes, notification). Moved 3 active pages to proper locations:
     - `app/(dashboard)/profile/page.tsx` → `app/profile/page.tsx`
     - `app/(dashboard)/inbox/page.tsx` → `app/inbox/page.tsx`
     - `app/(dashboard)/profile-user-setting/page.tsx` → `app/profile-user-setting/page.tsx`
-  
   - **Dependencies Cleanup:** Removed 8 unused npm packages from package.json:
     - `@formkit/drag-and-drop`
     - `@radix-ui/react-popover`
@@ -53,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `react-day-picker`
     - `react-redux`
     - `@reduxjs/toolkit`
-  
   - **Impact:** Cleaner codebase structure, reduced bundle size, eliminated confusion from duplicate folders and unused dependencies.
 
 #### 🎨 UI/UX Enhancement

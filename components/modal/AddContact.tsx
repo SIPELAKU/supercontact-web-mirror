@@ -5,6 +5,8 @@ import withReactContent from "sweetalert2-react-content";
 import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
+import { Loader2 } from "lucide-react";
+import router from "next/router";
 
 const MySwal = withReactContent(Swal);
 
@@ -57,13 +59,14 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const [isLoadiNg, setIsLoading] = useState(false);
   const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
-    phone: "",
+    phone_number: "",
     email: "",
     company: "",
-    job_title: "",
+    position: "",
     address: "",
   });
 
@@ -72,10 +75,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     if (open) {
       setLocal({
         name: "",
-        phone: "",
+        phone_number: "",
         email: "",
         company: "",
-        job_title: "",
+        position: "",
         address: "",
       });
     }
@@ -84,14 +87,26 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   const validateRequiredFields = (data: ContactReq) => {
     const errors: { label: string }[] = [];
     if (!data.name) errors.push({ label: "Name" });
-    if (!data.phone) errors.push({ label: "Phone Number" });
+    if (!data.phone_number) errors.push({ label: "Phone" });
     if (!data.email) errors.push({ label: "Email" });
-    if (!data.job_title) errors.push({ label: "Job Title" });
+    if (!data.position) errors.push({ label: "Position" });
 
     return errors;
   };
 
   const handleSubmit = async () => {
+    setIsLoading(true);
+    const token = await getToken();
+    if (!token) {
+      MySwal.fire({
+        icon: "error",
+        title: "Token not found",
+        timer: 1000,
+        showConfirmButton: false,
+      });
+      router.push("/login");
+      return;
+    }
     // Validasi data
     const errors = validateRequiredFields(local);
     const Toast = Swal.mixin({
@@ -108,6 +123,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         title: "Field is required",
         html: errors.map((e) => `• ${e.label} is required`).join("<br/>"),
       });
+      setIsLoading(false);
       return;
     }
 
@@ -126,7 +142,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(local),
       });
@@ -151,6 +167,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
           text: message,
           html: details || message,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -168,14 +185,18 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         text: "Please try again later",
       });
     }
+    setIsLoading(false);
   };
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
@@ -223,21 +244,21 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
               <InputField
                 isRequired
                 label="Phone Number"
-                value={local.phone}
+                value={local.phone_number}
                 onChange={(e) =>
-                  setLocal((s) => ({ ...s, phone: e.target.value }))
+                  setLocal((s) => ({ ...s, phone_number: e.target.value }))
                 }
                 placeholder="Enter phone number"
               />
 
               <InputField
                 isRequired
-                label="Job Title"
-                value={local.job_title}
+                label="Position"
+                value={local.position}
                 onChange={(e) =>
-                  setLocal((s) => ({ ...s, job_title: e.target.value }))
+                  setLocal((s) => ({ ...s, position: e.target.value }))
                 }
-                placeholder="Enter job title"
+                placeholder="Enter position"
               />
               <InputField
                 isRequired={false}
@@ -261,9 +282,14 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
             <button
               onClick={handleSubmit}
+              disabled={isLoadiNg}
               className="px-6 py-4 rounded-lg bg-[#6739EC] text-white hover:bg-[#5b32d1] transition-colors"
             >
-              Save Contact
+              {isLoadiNg ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Save Contact"
+              )}
             </button>
           </div>
         </div>

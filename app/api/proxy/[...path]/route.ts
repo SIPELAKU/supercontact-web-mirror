@@ -67,9 +67,9 @@ async function proxyRequest(
       }
     });
 
-    // Get body for POST/PUT/PATCH requests
+    // Get body for POST/PUT/PATCH/DELETE requests
     let body = undefined;
-    if (method !== 'GET' && method !== 'DELETE') {
+    if (method !== 'GET') {
       try {
         body = await request.text();
       } catch (e) {

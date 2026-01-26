@@ -20,7 +20,7 @@ export {
 
 // Contacts API
 export {
-    fetchContacts,
+    deleteContact, fetchContacts,
     type Contact,
     type ContactResponse
 } from './contacts';

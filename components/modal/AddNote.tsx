@@ -1,10 +1,10 @@
 "use client";
 
+import { useAuth } from "@/lib/context/AuthContext";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, Root } from "react-dom/client";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { useAuth } from "@/lib/context/AuthContext";
 
 const MySwal = withReactContent(Swal);
 
@@ -78,10 +78,7 @@ interface ModalContentProps {
   onSubmit: (data: NoteData) => void;
 }
 
-const ModalContent: React.FC<ModalContentProps> = ({
-  onClose,
-  onSubmit,
-}) => {
+const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
   const [local, setLocal] = useState<NoteData>({
     title: "",
     content: "",
@@ -102,25 +99,19 @@ const ModalContent: React.FC<ModalContentProps> = ({
         <InputField
           label="Title"
           value={local.title}
-          onChange={(e) =>
-            setLocal((s) => ({ ...s, title: e.target.value }))
-          }
+          onChange={(e) => setLocal((s) => ({ ...s, title: e.target.value }))}
           placeholder="Enter Title Notes"
         />
 
         <TextAreaField
           label="Content"
           value={local.content}
-          onChange={(e) =>
-            setLocal((s) => ({ ...s, content: e.target.value }))
-          }
+          onChange={(e) => setLocal((s) => ({ ...s, content: e.target.value }))}
           placeholder="Write your notes here"
         />
 
         <div className="flex flex-col gap-2">
-          <label className="font-medium text-gray-700">
-            Set Reminder
-          </label>
+          <label className="font-medium text-gray-700">Set Reminder</label>
 
           <div className="flex flex-col md:flex-row gap-3">
             <input
@@ -182,12 +173,12 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   const handleSubmit = async (data: NoteData) => {
     try {
       const token = await getToken();
-      
+
       const res = await fetch("/api/proxy/notes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           contact_id: contactId,
@@ -196,26 +187,26 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         }),
       });
 
-    MySwal.close();
-    onClose();   
-    if (res.ok) {
-      onSuccess();
       MySwal.close();
+      onClose();
+      if (res.ok) {
+        onSuccess();
+        MySwal.close();
 
-      MySwal.fire({
-        icon: "success",
-        title: "Notes saved!",
-        timer: 1200,
-        showConfirmButton: false,
-      });
-    } else {
-      MySwal.fire({
-        icon: "error",
-        title: "Failed to save notes",
-        timer: 1400,
-        showConfirmButton: false,
-      });
-    }
+        MySwal.fire({
+          icon: "success",
+          title: "Notes saved!",
+          timer: 1200,
+          showConfirmButton: false,
+        });
+      } else {
+        MySwal.fire({
+          icon: "error",
+          title: "Failed to save notes",
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      }
     } catch (error) {
       MySwal.fire({
         icon: "error",
@@ -233,20 +224,18 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
       showConfirmButton: false,
       allowOutsideClick: true,
       customClass: {
-      popup: `
+        popup: `
             w-[92%]
             sm:w-full
             sm:max-w-lg
             md:max-w-xl
             rounded-xl
             `,
-        },
+      },
       padding: 0,
 
       didOpen: () => {
-        const container = document.getElementById(
-          "react-swal-container"
-        );
+        const container = document.getElementById("react-swal-container");
         if (container) {
           reactRootRef.current = createRoot(container);
           reactRootRef.current.render(
@@ -256,13 +245,13 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
                 onClose();
               }}
               onSubmit={handleSubmit}
-            />
+            />,
           );
         }
       },
 
-      didClose: ()=>{
-        onClose()
+      didClose: () => {
+        onClose();
       },
       willClose: () => {
         if (reactRootRef.current) {

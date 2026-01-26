@@ -21,7 +21,7 @@ export default function Pagination({
   count,
   onPageChange,
   onRowsPerPageChange,
-  rowsPerPageOptions = [5, 10, 25, 50, 100],
+  rowsPerPageOptions = [10, 25, 50],
 }: PaginationProps) {
   return (
     <TablePagination

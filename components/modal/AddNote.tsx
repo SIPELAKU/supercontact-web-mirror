@@ -158,14 +158,12 @@ interface AddNoteModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  contactId: number | string;
 }
 
 const AddNoteModal: React.FC<AddNoteModalProps> = ({
   open,
   onClose,
   onSuccess,
-  contactId,
 }) => {
   const reactRootRef = useRef<Root | null>(null);
   const { getToken } = useAuth();
@@ -174,16 +172,17 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
     try {
       const token = await getToken();
 
-      const res = await fetch("/api/proxy/notes", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          contact_id: contactId,
-          note: data.content,
-          reminder_date: `${data.reminder_date}T${data.reminder_time}:00.000Z`,
+          title: data.title,
+          content: data.content,
+          reminder_date: data.reminder_date,
+          reminder_time: data.reminder_time,
         }),
       });
 

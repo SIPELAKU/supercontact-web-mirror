@@ -2,9 +2,9 @@
 
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-import { useDeleteContact } from "@/lib/hooks/useContacts";
 import React from "react";
 import { Contact } from "@/lib/models/types";
+import { useDeleteMultipleContacts } from "@/lib/hooks/useContacts";
 
 const MySwal = withReactContent(Swal);
 
@@ -12,22 +12,31 @@ interface DeleteContactModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  initialData: Contact | null;
+  selected: Contact[];
 }
 
-const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
+const DeleteMultipleContactModal: React.FC<DeleteContactModalProps> = ({
   open,
   onClose,
   onSuccess,
-  initialData,
+  selected,
 }) => {
-  const deleteContactMutation = useDeleteContact();
+  const deleteMultipleContactsMutation = useDeleteMultipleContacts();
 
   const handleSubmit = async () => {
-    if (!initialData) return;
+    if (!selected.length) {
+      MySwal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please select at least one contact",
+      });
+      return;
+    }
 
     try {
-      await deleteContactMutation.mutateAsync(initialData.id);
+      await deleteMultipleContactsMutation.mutateAsync(
+        selected.map((contact) => contact.id),
+      );
 
       const Toast = Swal.mixin({
         toast: true,
@@ -42,13 +51,13 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
 
       Toast.fire({
         icon: "success",
-        title: "Contact deleted!",
+        title: "Contact deleted successfully!",
       });
     } catch (err: any) {
       MySwal.fire({
         icon: "error",
         title: "Error",
-        text: err.message || "Failed to delete contact",
+        text: err.message || "Failed to delete multiple contacts",
       });
     }
   };
@@ -65,27 +74,23 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 text-start">
-          <h2 className="text-2xl font-semibold text-[#6739EC]">
-            Delete Contact
+          <h2 className="text-2xl font-semibold text-[#FF4D49]">
+            Are you sure you want to delete all selected list?
           </h2>
-          <p className="text-gray-600 text-md mt-1">
-            Are you sure you want to delete contact{" "}
-            <span className="font-semibold text-gray-900">
-              {initialData?.name}
-            </span>
-            ?
+          <p className="text-gray-600 text-md mt-[24px] font-bold">
+            This action is permanent and cannot be undone
           </p>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
             <button
               onClick={onClose}
-              className="px-5 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+              className="cursor-pointer px-5 py-3 rounded-lg text-[#FF4D49] border-[#FF4D49] border"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-3 rounded-lg bg-[#FF4D49] text-white hover:bg-[#e04440] transition-colors"
+              className="cursor-pointer px-6 py-3 rounded-lg bg-[#FF4D49] text-white hover:bg-[#e04440] transition-colors"
             >
               Delete Contact
             </button>
@@ -96,4 +101,4 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
   );
 };
 
-export default DeleteContactModal;
+export default DeleteMultipleContactModal;

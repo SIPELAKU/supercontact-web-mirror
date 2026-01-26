@@ -459,6 +459,29 @@ export async function fetchContacts(token: string): Promise<ContactResponse> {
   return json;
 }
 
+export async function deleteMultipleContacts(token: string, contactIds: string[]): Promise<any> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contacts`, {
+    method: 'DELETE',
+    headers: { 
+      Authorization: `Bearer ${token}` 
+    },
+    body: JSON.stringify({ contact_ids: contactIds }),
+  });
+
+  console.log("Delete multiple contacts response status:", res.status);
+  
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+  
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.message || "Failed to delete multiple contacts");
+  }
+  
+  return { success: true };
+}
+
 export interface UserResponse {
   success: boolean;
   data: {

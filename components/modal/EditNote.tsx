@@ -193,13 +193,17 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
 }) => {
   const { getToken } = useAuth();
   const reactRootRef = useRef<Root | null>(null);
-  
+  const isSubmittingRef = useRef(false);
+
   const handleSubmit = async (data: {
     title: string;
     content: string;
     date: string;
     time: string;
   }) => {
+    if (isSubmittingRef.current) return; // Prevent duplicate submissions
+
+    isSubmittingRef.current = true;
     try {
       const token = await getToken();
       if (!token) {
@@ -213,7 +217,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes?note_id=${id}`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
@@ -247,13 +251,15 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
     } catch (error) {
       MySwal.close();
       onClose();
-      
+
       MySwal.fire({
         icon: "error",
         title: "Server error",
         timer: 1400,
         showConfirmButton: false,
       });
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 

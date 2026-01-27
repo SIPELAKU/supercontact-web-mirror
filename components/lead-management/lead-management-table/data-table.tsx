@@ -18,11 +18,11 @@ import TableRow from "@mui/material/TableRow";
 
 // TanStack Table
 import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
-    useReactTable,
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
 import LeadDetailModal from "../lead-detail-modal";
 import LeadFilters from "./LeadFilters";
@@ -32,7 +32,6 @@ interface DataTableProps {
 }
 
 export function DataTable({ columns }: DataTableProps) {
-  const { data: leadsResponse, isLoading, error } = useLeads();
   const [filteredData, setFilteredData] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -40,6 +39,8 @@ export function DataTable({ columns }: DataTableProps) {
     pageIndex: 0,
     pageSize: 10,
   });
+
+  const { data: leadsResponse, isLoading, error } = useLeads(pageIndex + 1, pageSize);
 
   const data = leadsResponse?.data?.leads || [];
   const totalCount = leadsResponse?.data?.total || 0;
@@ -99,8 +100,8 @@ export function DataTable({ columns }: DataTableProps) {
           Loading filters...
         </div>
         <Divider />
-        <TableSkeleton 
-          columns={columns.map(() => ({ width: undefined }))} 
+        <TableSkeleton
+          columns={columns.map(() => ({ width: undefined }))}
           rows={pageSize}
         />
       </Card>
@@ -169,7 +170,7 @@ export function DataTable({ columns }: DataTableProps) {
 
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow 
+              <TableRow
                 key={row.id}
                 onClick={() => {
                   setSelectedLead(row.original);

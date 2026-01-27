@@ -13,6 +13,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.4] - 2026-01-27
+
+### Detail Versi 1.2.4
+
+#### ✨ Lead Management Enhancements & Validation
+
+- **Comprehensive Validation:**
+  - Implemented mandatory field validation for all lead fields in both `AddLeadForm` and `LeadDetailModal`.
+  - Fields validated: Name, Email, Phone, Company, Industry, Company Size, Office Location, Lead Status, Lead Source, Assigned To, and Tag.
+  - Added real-time visual feedback with red highlighting and specific error messages.
+
+- **Editable & Sync Details:**
+  - Upgraded `LeadDetailModal` to allow editing of contact information (Name, Email, Phone, Company) which was previously restricted.
+  - Standardized Lead Source options to "Manual Entry", "Web Form", and "WhatsApp" across all modals.
+  - Normalized `company_size` values to a consistent format (e.g., "1-50 Employees") with automatic space removal in payloads.
+
+- **Reliability & Performance:**
+  - **API Safety:** Integrated standardized error handling in `lib/api/leads.ts` with try-catch blocks and a centralized response helper to prevent crashes and improve user feedback.
+  - **Smooth UI:** Optimized the `useLeads` hook using `keepPreviousData` to ensure stable transitions during pagination in both Kanban and Table views.
+  - **Payload Fix:** Corrected an issue where `phone_number` and `company` were missing from create/update payloads when selecting existing contacts.
+
+---
+
+## [1.2.3] - 2026-01-27
+
+### Detail Versi 1.2.3
+
+#### 🐛 Bug Fix
+
+- **fix: pipeline + notes double added + leads**
+  - **Pipeline:** Fixed TypeScript argument mismatch and ensured stage updates are correctly persisted to the API during drag-and-drop operations.
+  - **Notes:** Added submission locking (`isSubmittingRef`) to prevent duplicate note creation when clicking the submit button multiple times.
+  - **Leads:** 
+    - Implemented server-side pagination for the Leads table.
+    - Fixed Kanban status update error when dropping a card onto another card by correctly resolving the target status name.
+
+---
+
 ## [1.2.2] - 2026-01-27
 
 ### Detail Versi 1.2.2

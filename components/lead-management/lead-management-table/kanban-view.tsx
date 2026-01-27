@@ -77,7 +77,7 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showMenu]);
-  
+
   const {
     setNodeRef,
     attributes,
@@ -95,23 +95,23 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
 
   const handleDeleteLead = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (confirm(`Are you sure you want to delete lead "${lead.contact.name}"?`)) {
       try {
         const token = await getToken();
         if (!token) throw new Error('No authentication token');
         await deleteLead(token, lead.id);
-        
+
         // Refresh the leads data
         queryClient.invalidateQueries({ queryKey: ["leads"] });
-        
+
         console.log("Lead deleted successfully!");
       } catch (error) {
         console.error("Error deleting lead:", error);
         alert("Failed to delete lead. Please try again.");
       }
     }
-    
+
     setShowMenu(false);
   };
 
@@ -138,7 +138,7 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
           >
             <MoreVertical className="h-4 w-4 text-gray-500" />
           </button>
-          
+
           {/* Dropdown menu */}
           {showMenu && (
             <div className="absolute top-8 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[140px] z-50">
@@ -193,7 +193,7 @@ function DroppableColumn({
 /* -------------------------
    MAIN KANBAN COMPONENT
 ------------------------- */
-type KanbanBoardProps = { 
+type KanbanBoardProps = {
   data: leadResponse | undefined;
   isLoading: boolean;
   error: Error | null;
@@ -248,7 +248,18 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
     if (!over) return;
 
     const leadId = active.id.toString();
-    const newStatus = over.id as LeadStatus;
+    const overId = over.id.toString();
+
+    // Resolve correctly whether dropped on a status column or another card
+    let newStatus: LeadStatus;
+    if (FIXED_STATUSES.includes(overId as LeadStatus)) {
+      newStatus = overId as LeadStatus;
+    } else {
+      const targetLead = leads.find((l) => l.id.toString() === overId);
+      if (!targetLead) return;
+      newStatus = targetLead.lead_status;
+    }
+
     const oldStatus = leads.find((l) => l.id.toString() === leadId)?.lead_status;
 
     if (!oldStatus || newStatus === oldStatus) return;
@@ -265,7 +276,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
         console.error('No authentication token');
         return;
       }
-      
+
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -279,7 +290,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
   /* -------------------------
      RENDER
 ------------------------- */
-  
+
   // Loading state
   if (isLoading) {
     return (
@@ -334,7 +345,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={handleDragStart}      
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div className="overflow-x-auto">
@@ -348,9 +359,9 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
               >
                 <div className="p-3 flex flex-col gap-3">
                   {getLeadsByStatus(status).map((lead) => (
-                    <SortableCard 
-                      key={lead.id.toString()} 
-                      lead={lead} 
+                    <SortableCard
+                      key={lead.id.toString()}
+                      lead={lead}
                       onCardClick={handleCardClick}
                     />
                   ))}

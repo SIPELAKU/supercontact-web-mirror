@@ -11,7 +11,7 @@ const COLORS = {
   primary: {
     main: "#5479EE",
     hover: "#3F66E0",
-    light: "#EEF2FF",
+    light: "#DDE4FC",
   },
   danger: {
     main: "#EF4444",
@@ -28,7 +28,7 @@ const COLORS = {
 // --- Types ---
 export interface AppButtonProps extends Omit<ButtonProps, "variant" | "color"> {
   children: React.ReactNode;
-  variantStyle?: "primary" | "outline" | "danger" | "text";
+  variantStyle?: "primary" | "outline" | "danger" | "text" | "soft";
   color?: "primary" | "danger" | "gray";
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
@@ -129,6 +129,20 @@ const StyledButton = styled(Button, {
         "&:hover": {
           textDecoration: "none", // Or 'underline' if requested, req says "underline or background very light"
           backgroundColor: COLORS.primary.light,
+        },
+      };
+
+    case "soft":
+      return {
+        ...contentStyle,
+        backgroundColor: lightColor,
+        color: mainColor,
+        "&:hover": {
+          backgroundColor: alpha(mainColor, 0.12),
+        },
+        "&.Mui-disabled": {
+          backgroundColor: alpha(mainColor, 0.05),
+          color: alpha(mainColor, 0.38),
         },
       };
 

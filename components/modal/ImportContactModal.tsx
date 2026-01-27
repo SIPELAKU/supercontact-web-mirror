@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, X, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { ContactReq } from "@/lib/models/types";
+import { notify } from "@/lib/notifications";
+import { AppButton } from "../ui/app-button";
 
 const MySwal = withReactContent(Swal);
 
@@ -69,11 +71,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
     ) {
       setFile(file);
     } else {
-      MySwal.fire({
-        icon: "error",
-        title: "Invalid File Format",
-        text: "Please upload an .xlsx or .csv file",
-      });
+      notify.error("Please upload an .xlsx or .csv file");
     }
   };
 
@@ -138,11 +136,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
       await uploadContacts(validContacts);
     } catch (error: any) {
-      MySwal.fire({
-        icon: "error",
-        title: "Error Processing File",
-        text: error.message,
-      });
+      notify.error("Error Processing File: ", error.message);
       setIsLoading(false);
     }
   };
@@ -164,20 +158,12 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         throw new Error(text || "Failed to upload contacts");
       }
 
-      MySwal.fire({
-        icon: "success",
-        title: "Success",
-        text: `Successfully imported ${contacts.length} contacts`,
-      });
+      notify.success(`Successfully imported ${contacts.length} contacts`);
       setFile(null);
       onSuccess();
       onClose();
     } catch (error: any) {
-      MySwal.fire({
-        icon: "error",
-        title: "Upload Failed",
-        text: "Failed to upload contacts to server. Please try again.",
-      });
+      notify.error("Failed to upload contacts to server. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -195,11 +181,9 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <h2 className="text-2xl font-semibold text-[#6739EC]">
-            Add New Contact
-          </h2>
+          <h2 className="text-2xl font-bold text-[#5479EE]">Import Contact</h2>
           <p className="text-gray-600 text-md mt-1 mb-6">
-            Fill in the details below to add a new contact to your CRM.
+            Fill in the details below to import a new contact to your CRM.
           </p>
 
           <div
@@ -207,7 +191,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
               border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors
               ${
                 dragActive
-                  ? "border-[#6739EC] bg-purple-50"
+                  ? "border-[#5479EE] bg-purple-50"
                   : "border-gray-300 bg-white"
               }
             `}
@@ -218,7 +202,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
           >
             {file ? (
               <div className="flex flex-col items-center gap-3">
-                <FileSpreadsheet className="w-12 h-12 text-[#6739EC]" />
+                <FileSpreadsheet className="w-12 h-12 text-[#5479EE]" />
                 <p className="font-medium text-gray-900">{file.name}</p>
                 <p className="text-sm text-gray-500">
                   {(file.size / 1024).toFixed(2)} KB
@@ -250,7 +234,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                 />
                 <button
                   onClick={() => inputRef.current?.click()}
-                  className="px-6 py-2 border border-[#6739EC] text-[#6739EC] rounded-lg font-medium hover:bg-purple-50 transition-colors"
+                  className="px-6 py-2 border border-[#5479EE] text-[#5479EE] rounded-lg font-medium hover:bg-[#5479EE] hover:text-white transition-colors"
                 >
                   Browse File
                 </button>
@@ -262,31 +246,22 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
             <a
               href="/documents/template_contacts.xlsx"
               download
-              className="text-sm text-[#6739EC] hover:underline flex items-center gap-1"
+              className="text-sm text-[#5479EE] hover:underline flex items-center gap-1"
             >
               <Download className="w-4 h-4" /> Download Template
             </a>
           </div>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <button
-              onClick={onClose}
-              className="px-5 py-4 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-            >
+            <AppButton onClick={onClose} variantStyle="outline" color="primary">
               Cancel
-            </button>
+            </AppButton>
 
-            <button
+            <AppButton
               onClick={processFile}
               disabled={isLoading || !file}
-              className={`
-                px-6 py-4 rounded-lg text-white transition-colors
-                ${
-                  isLoading || !file
-                    ? "bg-purple-300 cursor-not-allowed"
-                    : "bg-[#6739EC] hover:bg-[#5b32d1]"
-                }
-              `}
+              variantStyle="primary"
+              color="primary"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -296,7 +271,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
               ) : (
                 "Import Data"
               )}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

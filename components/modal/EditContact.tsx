@@ -1,17 +1,17 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useState } from "react";
 import { Contact, ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
-
-const MySwal = withReactContent(Swal);
+import { notify } from "@/lib/notifications";
+import { useRouter } from "next/navigation";
+import { AppInput } from "../ui/app-input";
+import { AppButton } from "../ui/app-button";
 
 interface InputProps {
   label: string;
   placeholder: string;
-  value: string;
+  value: string | null;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isRequired?: boolean;
 }
@@ -28,17 +28,13 @@ const InputField: React.FC<InputProps> = ({
       {label}
       {isRequired && <span className="text-red-500">*</span>}
     </label>
-    <input
+    <AppInput
       required={isRequired}
       type="text"
-      value={value}
+      value={value ?? ""}
       onChange={onChange}
       placeholder={placeholder}
-      className="
-          mt-1 px-4 py-3 border border-gray-300 rounded-lg 
-          placeholder-gray-400 text-md font-medium
-          focus:outline-none focus:ring-2 focus:ring-purple-400
-        "
+      isBgWhite
     />
   </div>
 );
@@ -58,6 +54,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   onDelete,
   initialData,
 }) => {
+  const router = useRouter();
   const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
@@ -81,12 +78,61 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     }
   }, [initialData]);
 
-  const validateRequiredFields = (data: ContactReq) => {
-    const errors: { label: string }[] = [];
-    if (!data.name) errors.push({ label: "Name" });
-    if (!data.phone_number) errors.push({ label: "Phone" });
-    if (!data.email) errors.push({ label: "Email" });
-    if (!data.position) errors.push({ label: "Position" });
+  const validateFields = (data: ContactReq) => {
+    const errors: { label: string; message: string }[] = [];
+
+    // Name validation
+    if (!data.name) {
+      errors.push({ label: "Name", message: "is required" });
+    } else if (data.name.length < 3) {
+      errors.push({ label: "Name", message: "must be at least 3 characters" });
+    }
+
+    // Phone validation
+    const phoneRegex = /^[0-9]+$/;
+    if (!data.phone_number) {
+      errors.push({ label: "Phone", message: "is required" });
+    } else {
+      if (!phoneRegex.test(data.phone_number)) {
+        errors.push({ label: "Phone", message: "must contain only numbers" });
+      }
+      if (data.phone_number.length < 10 || data.phone_number.length > 15) {
+        errors.push({
+          label: "Phone",
+          message: "must be between 10 and 15 characters",
+        });
+      }
+    }
+
+    // Email validation
+    if (!data.email) {
+      errors.push({ label: "Email", message: "is required" });
+    }
+
+    // Position validation
+    if (!data.position) {
+      errors.push({ label: "Position", message: "is required" });
+    } else if (data.position.length < 3) {
+      errors.push({
+        label: "Position",
+        message: "must be at least 3 characters",
+      });
+    }
+
+    // Optional fields validation
+    if (data.company && data.company.length < 3) {
+      errors.push({
+        label: "Company",
+        message: "must be at least 3 characters",
+      });
+    }
+
+    if (data.address && data.address.length < 6) {
+      errors.push({
+        label: "Address",
+        message: "must be at least 6 characters",
+      });
+    }
 
     return errors;
   };
@@ -94,33 +140,31 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   const handleSubmit = async () => {
     const token = await getToken();
     if (!token) {
-      MySwal.fire({
-        icon: "error",
-        title: "Authentication required",
-        text: "Please login again",
+      notify.error("Token not found", {
+        description: "Please login again",
       });
+      router.push("/login");
       return;
     }
     if (!initialData) return;
 
     // Validate data
-    const errors = validateRequiredFields(local);
-    const Toast = Swal.mixin({
-      toast: true,
-      position: "top-end",
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-    });
+    const validationErrors = validateFields(local);
 
-    if (errors.length > 0) {
-      Toast.fire({
-        icon: "warning",
-        title: "Field is required",
-        html: errors.map((e) => `• ${e.label} is required`).join("<br/>"),
+    if (validationErrors.length > 0) {
+      notify.error("Validation Error", {
+        description: validationErrors
+          .map((e) => `• ${e.label} ${e.message}`)
+          .join("<br/>"),
       });
       return;
     }
+
+    const payload: ContactReq = {
+      ...local,
+      company: local.company?.trim() === "" ? null : local.company,
+      address: local.address?.trim() === "" ? null : local.address,
+    };
 
     try {
       const token = await getToken();
@@ -133,7 +177,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
         },
         body: JSON.stringify({
           id: initialData.id,
-          ...local,
+          ...payload,
         }),
       });
 
@@ -151,11 +195,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
           ?.map((e: any) => `• ${e.loc.join(".")}: ${e.msg}`)
           .join("<br/>");
 
-        MySwal.fire({
-          icon: "error",
-          title: "Error",
-          text: message,
-          html: details || message,
+        notify.error("Error", {
+          description: details || message,
         });
         return;
       }
@@ -163,15 +204,10 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       onSuccess();
       onClose();
 
-      Toast.fire({
-        icon: "success",
-        title: "Contact updated!",
-      });
+      notify.success("Contact updated!");
     } catch (error) {
-      MySwal.fire({
-        icon: "error",
-        title: "Network error",
-        text: "Please try again later",
+      notify.error("Network error", {
+        description: "Please try again later",
       });
     }
   };
@@ -184,11 +220,11 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <h2 className="text-2xl font-semibold text-primary">Edit Contact</h2>
+          <h2 className="text-2xl font-bold text-primary">Edit Contact</h2>
           <p className="text-gray-600 text-md mt-1">
             Update contact information
           </p>
@@ -254,18 +290,16 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
           </div>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <button
-              onClick={onDelete}
-              className="px-5 py-4 rounded-lg bg-[#FF4D49] text-white hover:bg-[#FF4D49] transition-colors"
-            >
+            <AppButton onClick={onDelete} variantStyle="danger" color="danger">
               Delete
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               onClick={handleSubmit}
-              className="px-6 py-4 rounded-lg bg-[#6739EC] text-white hover:bg-[#5b32d1] transition-colors"
+              variantStyle="primary"
+              color="primary"
             >
-              Update Contacts
-            </button>
+              Update Contact
+            </AppButton>
           </div>
         </div>
       </div>

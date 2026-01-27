@@ -112,7 +112,7 @@ export interface ContactReq {
   name: string;
   email: string;
   phone_number: string;
-  company: string;
+  company: string | null;
   position: string;
-  address: string;
-} 
+  address: string | null;
+}

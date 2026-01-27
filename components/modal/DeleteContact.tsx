@@ -5,6 +5,7 @@ import withReactContent from "sweetalert2-react-content";
 import { useDeleteContact } from "@/lib/hooks/useContacts";
 import React from "react";
 import { Contact } from "@/lib/models/types";
+import { AppButton } from "../ui/app-button";
 
 const MySwal = withReactContent(Swal);
 
@@ -65,10 +66,8 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 text-start">
-          <h2 className="text-2xl font-semibold text-[#6739EC]">
-            Delete Contact
-          </h2>
-          <p className="text-gray-600 text-md mt-1">
+          <h2 className="text-2xl font-bold text-[#5479EE]">Delete Contact</h2>
+          <p className="text-gray-600 text-md mt-2">
             Are you sure you want to delete contact{" "}
             <span className="font-semibold text-gray-900">
               {initialData?.name}
@@ -77,18 +76,16 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
           </p>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <button
-              onClick={onClose}
-              className="px-5 py-3 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-            >
+            <AppButton onClick={onClose} variantStyle="outline" color="primary">
               Cancel
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               onClick={handleSubmit}
-              className="px-6 py-3 rounded-lg bg-[#FF4D49] text-white hover:bg-[#e04440] transition-colors"
+              variantStyle="danger"
+              color="danger"
             >
               Delete Contact
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

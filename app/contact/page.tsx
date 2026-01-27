@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, Search, Upload, Download } from "lucide-react";
+import { Pencil, Trash2, Search, Upload, Download, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/modal/AddContact";
@@ -15,6 +15,8 @@ import { Contact } from "@/lib/models/types";
 import Pagination from "@/components/ui/pagination";
 import DeleteMultipleContactModal from "@/components/modal/DeleteMultipleContact";
 import ImportContactModal from "@/components/modal/ImportContactModal";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -263,39 +265,47 @@ export default function ContactsPage() {
           <DensityPopover density={density} onChange={setDensity} />
           <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
           <div className="flex items-center relative w-full md:w-64">
-            <Search className="absolute left-3 text-gray-500" />
+            {/* <Search className="absolute left-3 text-gray-500" />
             <input
               type="text"
               placeholder="Search by email"
               className="w-full border rounded-lg px-10 py-2 text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+            /> */}
+            <AppInput
+              startIcon={<Search size={16} />}
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              isBgWhite
             />
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-3">
           {selectedContacts.length > 0 && (
-            <button
-              className="flex items-center px-4 py-2 border border-[#FF4D4F] text-[#FF4D4F] text-sm rounded-lg cursor-pointer"
+            <AppButton
               onClick={() => setOpenDeleteMultiple(true)}
+              variantStyle="danger"
+              startIcon={<Trash2 size={16} />}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
               Delete
-            </button>
+            </AppButton>
           )}
-          <button
+          <AppButton
             onClick={() => setOpenImport(true)}
-            className="flex items-center px-4 py-2 bg-[#6739EC] text-white text-sm rounded-lg cursor-pointer"
+            variantStyle="primary"
+            startIcon={<Download size={16} />}
           >
-            <Download className="mr-2 h-4 w-4" />
             Import
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             onClick={() => setOpenAdd(true)}
-            className="px-4 py-2 bg-[#6739EC] text-white text-sm rounded-lg cursor-pointer"
+            variantStyle="primary"
+            startIcon={<Plus size={16} />}
           >
-            + Add Contact
-          </button>
+            Add Contact
+          </AppButton>
         </div>
       </section>
       <section className="w-full overflow-x-auto">
@@ -348,7 +358,7 @@ export default function ContactsPage() {
                   <td
                     className={`px-4 flex items-center gap-3 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#6739EC]"></div>
+                    <div className="w-8 h-8 rounded-full bg-[#5479EE]"></div>
                     <div className="flex flex-col">
                       <span className="font-semibold">{item.name}</span>
                       <span className="text-gray-500 text-sm">

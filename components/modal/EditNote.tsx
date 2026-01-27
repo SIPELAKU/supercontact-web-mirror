@@ -69,12 +69,20 @@ interface ModalContentProps {
   id: string | null;
 }
 
+interface LocalNoteState {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  time: string;
+}
+
 const ModalContent: React.FC<ModalContentProps> = ({
   onClose,
   onSubmit,
   initialData,
 }) => {
-  const [local, setLocal] = useState<Note>({
+  const [local, setLocal] = useState<LocalNoteState>({
     id: "",
     title: "",
     content: "",
@@ -88,8 +96,8 @@ const ModalContent: React.FC<ModalContentProps> = ({
         id: initialData.id,
         title: initialData.title || "",
         content: initialData.content || "",
-        date: initialData.date || "",
-        time: initialData.time ? initialData.time.slice(0, 5) : "",
+        date: initialData.reminder_date || "",
+        time: initialData.reminder_time ? initialData.reminder_time.slice(0, 5) : "",
       });
     }
   }, [initialData]);
@@ -203,18 +211,17 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
         return;
       }
 
-      // ⬇️ FIX BENAR: TANPA Date(), TANPA TIMEZONE SHIFT
-      const reminderTimeFixed = `${data.date}T${data.time}:00.000Z`;
-
-      const res = await fetch(`/api/proxy/notes/${id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes?note_id=${id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
-          note: data.content,
-          reminder_date: reminderTimeFixed,
+          title: data.title,
+          content: data.content,
+          reminder_date: data.date,
+          reminder_time: data.time,
         }),
       });
 

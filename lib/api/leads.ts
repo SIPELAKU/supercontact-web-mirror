@@ -15,7 +15,7 @@ export interface CreateLeadData {
   // For new contact (required if contact_id not provided)
   name?: string;
   email?: string;
-  phone?: string;
+  phone_number?: string;
   company?: string;
 
   // Lead specific fields (always required)

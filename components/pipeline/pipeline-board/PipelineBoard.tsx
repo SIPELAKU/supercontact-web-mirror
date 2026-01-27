@@ -1,20 +1,20 @@
 "use client"
 
 import {
-    closestCenter,
-    DndContext,
-    DragOverlay,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-    type DragOverEvent,
-    type DragStartEvent,
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core"
 import {
-    arrayMove,
-    SortableContext,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useState } from "react"
 
@@ -60,6 +60,9 @@ export default function PipelineBoard() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
 
+  // Track how many deals are visible per stage (defaults to 20)
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({})
+
   useEffect(() => {
     if (listPipeline.length > 0) {
       setStages(listPipeline)
@@ -67,12 +70,14 @@ export default function PipelineBoard() {
   }, [listPipeline])
 
 
-  const computeStageTotals = (stages: StageUI[]) => {
-    return stages.map(stage => ({
-      ...stage,
-      value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
-    }))
-  }
+  const computeStageTotals = useMemo(() => {
+    return (currentStages: StageUI[]) => {
+      return currentStages.map(stage => ({
+        ...stage,
+        value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
+      }))
+    }
+  }, [])
 
   const searchQueryLower = searchQuery.toLowerCase();
 
@@ -112,9 +117,11 @@ export default function PipelineBoard() {
           return { ...stage, deals: [] };
         });
 
+    // Reset visible counts when filters change
+    setVisibleCounts({})
     return stageFiltered
 
-  }, [searchPipeline, statusFilter, dateRangeFilter]);
+  }, [searchPipeline, statusFilter]);
 
 
 
@@ -161,8 +168,6 @@ export default function PipelineBoard() {
     const from = findDeal(activeId, stages);
     if (!from) return;
 
-    const updated = JSON.parse(JSON.stringify(stages));
-
     const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
 
     if (isOverColumn) {
@@ -170,22 +175,28 @@ export default function PipelineBoard() {
       const toStageIndex = stages.findIndex(s => s.name === stageName);
 
       if (toStageIndex !== -1 && from.stageIndex !== toStageIndex) {
+        const updated = [...stages];
+        updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] };
+        updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] };
+
         const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
         updated[toStageIndex].deals.push(moved);
         setStages(updated);
       }
+    } else {
+      const to = findDeal(overId, stages);
+      if (!to) return;
 
-      return;
+      if (from.stageIndex === to.stageIndex) return;
+
+      const updated = [...stages];
+      updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] };
+      updated[to.stageIndex] = { ...updated[to.stageIndex], deals: [...updated[to.stageIndex].deals] };
+
+      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
+      updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
+      setStages(updated);
     }
-
-    const to = findDeal(overId, updated);
-    if (!to) return;
-
-    const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
-    updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
-
-    
-    setStages(updated);
   };
 
 
@@ -205,7 +216,8 @@ export default function PipelineBoard() {
     const from = findDeal(activeId, stages)
     if (!from) return
 
-    const updated = JSON.parse(JSON.stringify(stages))
+    const updated = [...stages]
+    updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] }
 
     if (overId.startsWith("column-")) {
       const toStageName = overId.replace("column-", "")
@@ -213,22 +225,26 @@ export default function PipelineBoard() {
 
       if (from.stageIndex === toStageIndex) return
 
+
+
+      updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] }
+
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[toStageIndex].deals.push(moved)
-      
-      
+
+
       const updatedWithTotals = computeStageTotals(updated)
       setStages(updatedWithTotals)
 
-      
+
       try {
         await updateStagePipeline(activeId, toStageName);
       } catch (error) {
         console.error("Failed to update stage:", error);
-       
+
         // setStages(computeStageTotals(stages));
       }
-      
+
       return
     }
 
@@ -238,23 +254,24 @@ export default function PipelineBoard() {
     if (from.stageIndex === to.stageIndex) {
       updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
     } else {
+      updated[to.stageIndex] = { ...updated[to.stageIndex], deals: [...updated[to.stageIndex].deals] }
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
     }
 
-    
+
     const updatedWithTotals = computeStageTotals(updated)
     setStages(updatedWithTotals)
-    
+
     const toStage = updated[to.stageIndex].name;
 
-    
+
     if (from.stageIndex !== to.stageIndex) {
       try {
         await updateStagePipeline(activeId, toStage);
       } catch (error) {
         console.error("Failed to update stage:", error);
-        
+
         // setStages(computeStageTotals(stages));
       }
     }
@@ -426,10 +443,10 @@ export default function PipelineBoard() {
 
             {filteredStages.map((stage) => (
               <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>
-                <div className="w-70 shrink-0">
+                <div className="w-80 shrink-0 flex flex-col max-h-[calc(100vh-220px)]">
 
                   <div
-                    className={`rounded-xl p-4 min-h-37.5 shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
+                    className={`rounded-xl p-4 flex flex-col h-full shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
                   >
 
                     <div className="flex items-center justify-between mb-4 px-1">
@@ -439,29 +456,61 @@ export default function PipelineBoard() {
                       </span>
                     </div>
 
-                    <SortableContext
-                      items={stage.deals.map((d: Deal) => d.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="flex flex-col gap-4 min-h-25">
+                    {(() => {
+                      const limit = visibleCounts[stage.name] || 20;
+                      const visibleDeals = stage.deals.slice(0, limit);
 
-                        {stage.deals.length === 0 && (
-                          <div className="h-24 flex items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
-                            Drag deals here
+                      // If active deal is in this stage but hidden by lazy loading, add it to the list
+                      // This is critical for dnd-kit to not lose track of the active item
+                      const dealsToShow = [...visibleDeals];
+                      if (activeDeal) {
+                        const activeDealInStageIndex = stage.deals.findIndex(d => d.id === activeDeal.id);
+                        if (activeDealInStageIndex !== -1) {
+                          const isAlreadyVisible = visibleDeals.some(d => d.id === activeDeal.id);
+                          if (!isAlreadyVisible) {
+                            dealsToShow.push(stage.deals[activeDealInStageIndex]);
+                          }
+                        }
+                      }
+
+                      return (
+                        <SortableContext
+                          items={dealsToShow.map((d) => d.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="flex flex-col gap-3 min-h-25 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                            {stage.deals.length === 0 && (
+                              <div className="h-24 flex shrink-0 items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
+                                Drag deals here
+                              </div>
+                            )}
+
+                            {dealsToShow.map((deal) => (
+                              <div key={deal.id} className="pointer-events-auto shrink-0">
+                                <SortableDeal id={deal.id}>
+                                  <DealCard {...deal} stageName={stage.name} />
+                                </SortableDeal>
+                              </div>
+                            ))}
+
+                            {stage.deals.length > limit && (
+                              <div className="pt-2 pb-1">
+                                <Button
+                                  variant="ghost"
+                                  className="w-full text-xs text-gray-500 hover:text-gray-900 h-8"
+                                  onClick={() => setVisibleCounts(prev => ({
+                                    ...prev,
+                                    [stage.name]: (prev[stage.name] || 20) + 20
+                                  }))}
+                                >
+                                  Load More ({stage.deals.length - limit} remaining)
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        )}
-
-                        {stage.deals.map((deal: Deal) => (
-                          <div key={deal.id} className="pointer-events-auto">
-                            <SortableDeal id={deal.id}>
-                              <DealCard {...deal} stageName={stage.name} />
-                            </SortableDeal>
-                          </div>
-                        ))}
-
-                      </div>
-                    </SortableContext>
-
+                        </SortableContext>
+                      );
+                    })()}
 
                   </div>
                 </div>

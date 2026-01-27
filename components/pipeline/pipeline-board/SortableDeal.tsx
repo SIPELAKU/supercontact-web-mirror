@@ -1,15 +1,16 @@
 "use client"
 
-import { useSortable } from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
 import type { UniqueIdentifier } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import React from "react";
 
 type SortableDealProps = {
   id: UniqueIdentifier;
   children: React.ReactNode;
 };
 
-export default function SortableDeal({ id, children }: SortableDealProps) {
+function SortableDealComponent({ id, children }: SortableDealProps) {
   const {
     attributes,
     listeners,
@@ -31,3 +32,5 @@ export default function SortableDeal({ id, children }: SortableDealProps) {
     </div>
   )
 }
+
+export default React.memo(SortableDealComponent)

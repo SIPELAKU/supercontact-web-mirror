@@ -46,7 +46,7 @@ const getAcronym = (text: string) => {
 
 export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const { postFormProduct, id, listProduct, updateFormProduct, setEditId } = useGetProductStore();
-    const [errors, setErrors] = useState<FormErrors>({});
+    const [setErrors] = useState<FormErrors>({});
 
     // State untuk menyimpan nama company dari API
     const [companyAcronym, setCompanyAcronym] = useState<string>("CORP");

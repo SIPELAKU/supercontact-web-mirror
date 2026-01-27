@@ -13,14 +13,43 @@ import { Plus, Search } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 
+// --- PERBAIKAN DI SINI (COLUMNS) ---
 const columns: Column<Product>[] = [
-    { key: "product_name", label: "Product Name", width: 8 },
-    { key: "sku", label: "SKU", width: 8 },
+    {
+        key: "product_name",
+        label: "Product Name",
+        width: 8,
+        // Tambahkan render kustom untuk handling text panjang
+        render: (row: Product) => (
+            <div
+                className="truncate font-medium text-gray-900 max-w-50 xl:max-w-75"
+                title={row.product_name} // Tooltip native browser saat hover
+            >
+                {row.product_name}
+            </div>
+        ),
+    },
+    {
+        key: "sku",
+        label: "SKU",
+        width: 8,
+        // Tambahkan render kustom untuk SKU
+        render: (row: Product) => (
+            <div
+                className="truncate font-medium text-gray-700 max-w-37.5"
+                title={row.sku}
+            >
+                {row.sku}
+            </div>
+        ),
+    },
     {
         key: "price",
         label: "Price",
         render: (row: Product) => (
-            <span className="font-medium text-gray-900">{formatRupiah(row.price)}</span>
+            <span className="font-medium text-gray-900 whitespace-nowrap">
+                {formatRupiah(row.price)}
+            </span>
         ),
         width: 8,
     },
@@ -35,7 +64,7 @@ const columns: Column<Product>[] = [
 ];
 
 export default function ProductTable() {
-    const { listProduct, pagination, setLimit, setPage, loading, setEditId, id, deleteProduct, searchQuery, setSearchQuery } = useGetProductStore();
+    const { listProduct, pagination, setLimit, setPage, loading, setEditId, deleteProduct, searchQuery, setSearchQuery } = useGetProductStore();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const { showConfirmation } = useConfirmation()
 
@@ -95,7 +124,7 @@ export default function ProductTable() {
                         key="edit"
                         onClick={() => {
                             console.log(row.id);
-                            
+
                             setIsModalOpen(!isModalOpen)
                             setEditId(row.id)
                         }}

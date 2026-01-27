@@ -4,6 +4,7 @@ import CustomSelectStage from "@/components/pipeline/SelectDealStage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { fetchProfile } from "@/lib/api/users";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import type { AddProductModalProps } from "@/lib/types/Products";
 import { RefreshCcw } from "lucide-react";
@@ -46,10 +47,10 @@ const getAcronym = (text: string) => {
 
 export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const { postFormProduct, id, listProduct, updateFormProduct, setEditId } = useGetProductStore();
-    const [setErrors] = useState<FormErrors>({});
+    const [, setErrors] = useState<FormErrors>({});
 
     // State untuk menyimpan nama company dari API
-    const [companyAcronym, setCompanyAcronym] = useState<string>("CORP");
+    const [companyAcronym, setCompanyAcronym] = useState<string>("");
 
     const [formData, setFormData] = useState<ProductForm>({
         productName: "",
@@ -61,28 +62,31 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
 
     // --- FETCH USER PROFILE UNTUK DAPAT NAMA COMPANY ---
     useEffect(() => {
-        const fetchProfile = async () => {
+        const loadUserProfile = async () => {
             try {
-                // Menggunakan process.env.NEXT_PUBLIC_API_URL (/api/proxy)
-                // Pastikan Next.js Rewrites Anda sudah dikonfigurasi untuk meneruskan /api/proxy ke BACKEND_URL
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-                const res = await fetch(`${baseUrl}/user-profile/profile`);
+                const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-                const json = await res.json();
+                if (!token) {
+                    console.warn("No access token found, skipping profile fetch.");
+                    return;
+                }
 
-                if (json.success && json.data) {
-                    const companyName = json.data.company;
-                    const fallback = json.data.fullname ? getAcronym(json.data.fullname) : "CORP";
+                const response = await fetchProfile(token);
 
+                if (response.success && response.data) {
+                    const companyName = response.data.company;
+                    const fullname = response.data.fullname;
+
+                    const fallback = fullname ? getAcronym(fullname) : "";
                     setCompanyAcronym(companyName ? getAcronym(companyName) : fallback);
                 }
             } catch (error) {
-                console.error("Failed to fetch user profile:", error);
+                console.error("Failed to load user profile:", error);
             }
         };
 
         if (open) {
-            fetchProfile();
+            loadUserProfile();
         }
     }, [open]);
 

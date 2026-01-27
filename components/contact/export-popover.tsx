@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { Popover } from "@mui/material";
+import { AppButton } from "../ui/app-button";
 
 interface ExportPopoverProps {
   onExportCSV: () => void;
@@ -27,12 +28,13 @@ export default function ExportPopover({
 
   return (
     <>
-      <button
+      <AppButton
         onClick={handleClick}
-        className="px-4 py-2 bg-[#DDE4FC] text-[#6739EC] text-sm rounded-lg flex items-center gap-2 cursor-pointer transition-colors hover:bg-[#D1DAFB]"
+        variantStyle="soft"
+        startIcon={<Upload size={16} />}
       >
-        <Upload size={16} /> Export
-      </button>
+        Export
+      </AppButton>
 
       <Popover
         open={open}

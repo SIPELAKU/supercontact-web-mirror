@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Popover } from "@mui/material";
 import { cn } from "@/lib/utils";
+import { AppButton } from "../ui/app-button";
 
 export type Density = "compact" | "standard" | "comfortable";
 
@@ -53,12 +54,13 @@ export default function DensityPopover({
 
   return (
     <>
-      <button
+      <AppButton
         onClick={handleClick}
-        className="px-4 py-2 bg-[#DDE4FC] text-[#6739EC] text-sm rounded-lg flex items-center gap-2 cursor-pointer transition-colors hover:bg-[#D1DAFB]"
+        variantStyle="soft"
+        startIcon={<SlidersHorizontal size={16} />}
       >
-        <SlidersHorizontal size={16} /> Density
-      </button>
+        Density
+      </AppButton>
 
       <Popover
         open={open}

@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-01-27
+
+### Detail Versi 1.2.0
+
+#### ♻️ Refactor: Reusable Components Standardization
+
+- **Deskripsi:**
+  - **Core Components Update:** Standardized and upgraded core UI components (`AppButton`, `AppInput`, `AppSelect`, `AppDatePicker`, `AppAlert`) using Material UI (MUI) for better accessibility and design consistency.
+  - **ConfirmModal System:** Implemented a new context-based confirmation system (`useConfirmation`) for streamlined approval/deletion flows.
+  - **Enhanced Input Features:** Added password visibility toggles and customizable background colors to `AppInput`.
+  - **Date Range Support:** Extended `AppDatePicker` to support full date range selection modes.
+  - **Design Token Integration:** Applied consistent primary color (#5479EE) and refined typography across all updated components.
+  - **Documentation:** Created `REUSABLE_COMPONENTS_GUIDE.md` for clear implementation guidance.
+
+#### 📁 Files Created
+
+- `REUSABLE_COMPONENTS_GUIDE.md`
+
+---
+
 ## [1.1.2] - 2026-01-26
 
 ### Detail Versi 1.1.1

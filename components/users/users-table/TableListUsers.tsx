@@ -1,6 +1,6 @@
 "use client";
 
-import { UsersType } from "../../../lib/type/Users";
+import { UsersType } from "@/lib/types/Users";
 import { Avatar, Checkbox, IconButton } from "@mui/material";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import Table from "@mui/material/Table";
@@ -29,7 +29,6 @@ interface TableListUsersProps {
   };
 }
 
-
 export default function TableListUsers({
   data,
   selected,
@@ -37,13 +36,8 @@ export default function TableListUsers({
   error,
   actions,
 }: TableListUsersProps) {
-  
-  const { onSelectOne,
-    onSelectAll,
-    onOpenEdit,
-    onOpenDetail,
-    onOpenDelete,
-  } = actions;
+  const { onSelectOne, onSelectAll, onOpenEdit, onOpenDetail, onOpenDelete } =
+    actions;
 
   const isAllChecked = data.length > 0 && selected.length === data.length;
   const isSomeChecked = selected.length > 0 && !isAllChecked;
@@ -113,8 +107,8 @@ export default function TableListUsers({
                   user.status === "active"
                     ? "bg-green-100 text-green-700"
                     : user.status === "inactive"
-                    ? "bg-gray-200 text-gray-700"
-                    : "bg-yellow-100 text-yellow-700"
+                      ? "bg-gray-200 text-gray-700"
+                      : "bg-yellow-100 text-yellow-700"
                 } `}
               >
                 {user.status}

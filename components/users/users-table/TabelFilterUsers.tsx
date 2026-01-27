@@ -7,7 +7,8 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 
-import type { UsersType } from "../../../lib/type/Users";
+import { AppSelect } from "@/components/ui/app-select";
+import type { UsersType } from "@/lib/types/Users";
 
 export type UserTableFilter = {
   role?: UsersType["role"];
@@ -20,53 +21,51 @@ type Props = {
 };
 
 const TableFilterUsers = ({ filter, onChange }: Props) => {
+  const roleOptions = [
+    { value: "", label: "All Position" },
+    { value: "Support Agent", label: "Support Agent" },
+    { value: "Frontend Engineer", label: "Frontend Engineer" },
+    { value: "HR Generalist", label: "HR Generalist" },
+    { value: "Content Specialist", label: "Content Specialist" },
+    { value: "Sales Development", label: "Sales Development" },
+  ];
+
+  const statusOptions = [
+    { value: "", label: "All Status" },
+    { value: "pending", label: "Pending" },
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+  ];
+
   return (
-    <CardContent>
-      <Grid container spacing={5}>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <FormControl fullWidth>
-            <InputLabel id="role-select">Select Role</InputLabel>
-            <Select
-              labelId="role-select"
-              label="Select Role"
-              value={filter.role ?? ""}
-              onChange={(e) =>
-                onChange({
-                  ...filter,
-                  role: e.target.value || undefined,
-                })
-              }
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="Support Agent">Support Agent</MenuItem>
-              <MenuItem value="Frontend Engineer">Frontend Engineer</MenuItem>
-              <MenuItem value="HR Generalist">HR Generalist</MenuItem>
-              <MenuItem value="Content Specialist">Content Specialist</MenuItem>
-              <MenuItem value="Sales Development">Sales Development</MenuItem>
-            </Select>
-          </FormControl>
+    <CardContent sx={{ pt: 0, px: 4, pb: 3 }}>
+      <Grid container spacing={3} sx={{ mt: -3 }}>
+        <Grid item xs={12} sm={6}>
+          <AppSelect
+            placeholder="Select Position"
+            value={filter.role ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...filter,
+                role: (e.target.value as string) || undefined,
+              })
+            }
+            options={roleOptions}
+          />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <FormControl fullWidth>
-            <InputLabel id="status-select">Select Status</InputLabel>
-            <Select
-              labelId="status-select"
-              label="Select Status"
-              value={filter.status ?? ""}
-              onChange={(e) =>
-                onChange({
-                  ...filter,
-                  status: e.target.value || undefined,
-                })
-              }
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </Select>
-          </FormControl>
+        <Grid item xs={12} sm={6}>
+          <AppSelect
+            placeholder="Select Status"
+            value={filter.status ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...filter,
+                status: (e.target.value as UsersType["status"]) || undefined,
+              })
+            }
+            options={statusOptions}
+          />
         </Grid>
       </Grid>
     </CardContent>

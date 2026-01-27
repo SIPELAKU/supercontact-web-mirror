@@ -1,10 +1,18 @@
 "use client";
 
+import { AppButton } from "@/components/ui/app-button";
 import { resendOTP, verifyOTP } from "@/lib/api";
 import { logger } from "@/lib/utils/logger";
+import { Poppins } from "next/font/google";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 export default function ForgotPasswordVerifyOTPPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -28,7 +36,7 @@ export default function ForgotPasswordVerifyOTPPage() {
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -57,19 +65,19 @@ export default function ForgotPasswordVerifyOTPPage() {
 
     try {
       logger.info("Verifying OTP for password reset");
-      
+
       const response = await verifyOTP({
         email: email,
         code: otpCode,
-        otp_type: "Reset Password"
+        otp_type: "Reset Password",
       });
 
       if (response.success && response.data?.reset_token) {
         logger.info("OTP verification successful, storing reset token");
-        
+
         // Store the reset token in localStorage
-        localStorage.setItem('reset_token', response.data.reset_token);
-        
+        localStorage.setItem("reset_token", response.data.reset_token);
+
         // Redirect to new password page
         router.push(`/new-password`);
       } else {
@@ -77,7 +85,8 @@ export default function ForgotPasswordVerifyOTPPage() {
         logger.error("OTP verification failed", { message: response.message });
       }
     } catch (error: any) {
-      const errorMessage = error.message || "Something went wrong. Please try again.";
+      const errorMessage =
+        error.message || "Something went wrong. Please try again.";
       setError(errorMessage);
       logger.error("OTP verification error", { error: error.message });
     } finally {
@@ -90,12 +99,12 @@ export default function ForgotPasswordVerifyOTPPage() {
 
     try {
       logger.info("Resending OTP code");
-      
+
       await resendOTP({
         email: email,
-        otp_type: "Reset Password"
+        otp_type: "Reset Password",
       });
-      
+
       setCountdown(59);
       setCanResend(false);
       setError("");
@@ -108,28 +117,30 @@ export default function ForgotPasswordVerifyOTPPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
+    <div
+      className={`min-h-screen flex items-center justify-center bg-[#F5F6FA] px-4 ${poppins.className}`}
+    >
+      <div className="bg-white w-full max-w-[440px] h-screen flex flex-col">
         {/* Logo */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-16 mt-[50px]">
           <Image
             src="/assets/sc-logo.png"
             alt="SuperContact Logo"
-            width={240}
-            height={80}
+            width={158}
+            height={38}
             className="object-contain"
             priority
           />
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
+        <div className="p-10 space-y-8 mt-[150px]">
           {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="text-center space-y-2">
+            <h1 className="text-[32px] font-bold text-gray-900 leading-tight">
               Verification your email
             </h1>
-            <p className="text-gray-600 leading-relaxed">
+            <p className="text-[#6B7280] text-sm leading-relaxed px-0">
               We have sent a 6 digit OTP code to:
             </p>
             <p className="text-gray-900 font-medium">
@@ -167,31 +178,39 @@ export default function ForgotPasswordVerifyOTPPage() {
               </div>
             )}
 
-            <button
-              onClick={handleVerifyOtp}
+            <AppButton
+              variantStyle="primary"
+              color="primary"
               disabled={isLoading || otp.join("").length !== 6}
-              className="w-full bg-[#5479EE] hover:bg-[#4366d9] disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              fullWidth
+              onClick={handleVerifyOtp}
             >
               {isLoading ? "Verifying..." : "Continue Reset Password"}
-            </button>
+            </AppButton>
           </div>
 
           {/* Resend Code */}
-          <div className="text-center">
+          <div className="text-center text-sm">
             <span className="text-gray-500">Didn't receive the code? </span>
             {canResend ? (
-              <button
+              <AppButton
+                variantStyle="primary"
+                color="primary"
+                disabled={isLoading}
+                fullWidth
                 onClick={handleResendCode}
-                className="text-[#5479EE] hover:text-[#4366d9] font-medium transition-colors"
               >
                 Resend Code
-              </button>
+              </AppButton>
             ) : (
               <span className="text-gray-400">
                 Resend Code ({countdown.toString().padStart(2, "0")})
               </span>
             )}
           </div>
+
+          {/* Divider */}
+          <div className="pt-4 border-t border-gray-100"></div>
         </div>
       </div>
     </div>

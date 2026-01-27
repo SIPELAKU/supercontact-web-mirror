@@ -9,11 +9,11 @@ import Typography from "@mui/material/Typography";
 import * as React from "react";
 
 import {
-    CheckIcon,
-    ChevronDown,
-    ChevronRightIcon,
-    CircleIcon,
-    Search,
+  CheckIcon,
+  ChevronDown,
+  ChevronRightIcon,
+  CircleIcon,
+  Search,
 } from "lucide-react";
 
 
@@ -89,7 +89,7 @@ export function DropdownSelectSearch({
   className = "",
 }: {
   value: string;
-  options: string[];
+  options: { value: string; label: string }[];
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
@@ -99,10 +99,13 @@ export function DropdownSelectSearch({
   const [query, setQuery] = React.useState("");
 
   const filteredOptions = React.useMemo(() => {
+    if (!options || !Array.isArray(options)) return [];
     return options.filter((opt) =>
-      opt.toLowerCase().includes(query.toLowerCase())
+      opt && (opt.label || "").toString().toLowerCase().includes((query || "").toLowerCase())
     );
   }, [query, options]);
+
+  const selectedOption = (options || []).find(opt => opt && opt.value === value);
 
   return (
     <DropdownMenu>
@@ -119,7 +122,7 @@ export function DropdownSelectSearch({
             className
           )}
         >
-          <span>{value || placeholder}</span>
+          <span>{selectedOption ? selectedOption.label : placeholder}</span>
           <ChevronDown
             className={cn(
               "w-4 h-4 text-gray-500 transition",
@@ -162,15 +165,15 @@ export function DropdownSelectSearch({
         ) : (
           filteredOptions.map((opt) => (
             <DropdownMenuItem
-              key={opt}
+              key={opt.value}
               onClick={() => {
-                onChange(opt);
+                onChange(opt.value);
                 setAnchorEl(null);
                 setQuery("");
               }}
               className="text-sm py-2"
             >
-              {opt}
+              {opt.label}
             </DropdownMenuItem>
           ))
         )}
@@ -224,12 +227,10 @@ function DropdownMenuContent({
       anchorEl={anchorEl}
       open={open}
       onClose={onClose}
-      slotProps={{
-        list: {
-          autoFocusItem: false,
-          disableListWrap: true,
-          onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
-        },
+      MenuListProps={{
+        autoFocusItem: false,
+        disableListWrap: true,
+        onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
       }}
       anchorOrigin={{
         vertical: "bottom",
@@ -421,9 +422,9 @@ function DropdownMenuSubContent({
 }
 
 export {
-    DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
-    DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup,
-    DropdownMenuRadioItem, DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup,
+  DropdownMenuRadioItem, DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger
 };

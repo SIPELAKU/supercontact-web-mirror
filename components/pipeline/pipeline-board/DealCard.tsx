@@ -4,6 +4,7 @@ import { formatRupiah } from "@/lib/helper/currency"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { DealCardProps } from "@/lib/types/Pipeline"
 import { Calendar } from "lucide-react"
+import React from "react"
 
 export const dealStages = [
   { label: "Prospect", bgColor: "bg-[#26C6F9]/16", textColor: "text-[#26C6F9]" },
@@ -14,7 +15,7 @@ export const dealStages = [
   { label: "Closed - Lost", bgColor: "bg-[#FF4D49]/16", textColor: "text-[#FF4D49]" },
 ] as const
 
-export function DealCard({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
+function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
   const getStageColor = (stageName?: string) => {
     if (!stageName) {
@@ -76,3 +77,5 @@ export function DealCard({ id, deal_name, company, amount, expected_close_date, 
     </Card>
   )
 }
+
+export const DealCard = React.memo(DealCardComponent)

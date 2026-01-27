@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.2.2] - 2026-01-27
+## [1.2.3] - 2026-01-27
 
-### Detail Versi 1.2.2
+### Detail Versi 1.2.3
 
 #### 🐛 Bug Fix
 
@@ -27,6 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fixed Kanban status update error when dropping a card onto another card by correctly resolving the target status name.
 
 ---
+
+## [1.2.2] - 2026-01-27
+
+### Detail Versi 1.2.2
+
+#### ✨ Fitur Baru: Import Contact Modal Enhancements
+
+- **Deskripsi:**
+  - **UI/UX Improvement:**
+    - Mengubah tampilan tombol Cancel dan Import Data menjadi komponen `AppButton` dengan gaya yang konsisten.
+    - Mengubah warna tombol Cancel menjadi biru dan tombol Import Data menjadi biru dengan efek hover.
+    - Mengubah tampilan tombol Cancel menjadi "Cancel" dan tombol Import Data menjadi "Import Data".
+    - Mengubah tampilan tombol Cancel menjadi "Cancel" dan tombol Import Data menjadi "Import Data".
 
 ## [1.2.1] - 2026-01-27
 

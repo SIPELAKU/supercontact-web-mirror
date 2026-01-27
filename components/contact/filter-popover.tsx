@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Filter, X } from "lucide-react";
 import { Popover, Select, MenuItem, FormControl } from "@mui/material";
 import { Input } from "@/components/ui/input";
+import { AppButton } from "../ui/app-button";
 
 interface FilterRow {
   id: string;
@@ -87,12 +88,13 @@ export default function FilterPopover({
 
   return (
     <>
-      <button
+      <AppButton
         onClick={handleClick}
-        className="px-4 py-2 bg-[#DDE4FC] text-[#6739EC] text-sm rounded-lg flex items-center gap-2 cursor-pointer transition-colors hover:bg-[#D1DAFB]"
+        variantStyle="soft"
+        startIcon={<Filter size={16} />}
       >
-        <Filter size={16} /> Filters
-      </button>
+        Filters
+      </AppButton>
 
       <Popover
         open={open}

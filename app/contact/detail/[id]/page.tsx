@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Contact, Note, Task } from "@/lib/models/types";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -12,6 +11,7 @@ import AddTaskModal from "@/components/modal/AddTaskModal";
 import { Box, Divider, Tab, Tabs } from "@mui/material";
 import DeleteContactModal from "@/components/modal/DeleteContact";
 import { useAuth } from "@/lib/context/AuthContext";
+import { AppButton } from "@/components/ui/app-button";
 
 const MySwal = withReactContent(Swal);
 
@@ -188,10 +188,9 @@ export default function ContactDetailPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 overflow-hidden text-2xl font-semibold">
-            {/* Using UI Avatars with same logic */}
+          <div className="w-16 h-16 rounded-full bg-[#5479EE] flex items-center justify-center text-white overflow-hidden text-2xl font-semibold">
             <img
-              src={`https://ui-avatars.com/api/?name=${contact.name}&background=6739EC&color=fff`}
+              src={`https://ui-avatars.com/api/?name=${contact.name}&background=5479EE&color=fff`}
               alt={contact.name}
               className="w-full h-full object-cover"
             />
@@ -204,12 +203,9 @@ export default function ContactDetailPage() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button
-            className="bg-[#6739EC] hover:bg-[#5628D2]"
-            onClick={() => setOpenEdit(true)}
-          >
+          <AppButton onClick={() => setOpenEdit(true)} variantStyle="primary">
             Edit
-          </Button>
+          </AppButton>
         </div>
       </div>
 
@@ -295,9 +291,9 @@ export default function ContactDetailPage() {
                 className="w-full min-h-[100px] bg-[#F6F6F8] p-3 rounded-lg border border-gray-200 focus:border-primary resize-none placeholder-gray-400 focus:outline-none"
               />
               <div className="flex justify-end mt-2">
-                <Button
+                <AppButton
                   onClick={handleSaveNote}
-                  className="bg-[#6739EC] hover:bg-[#5628D2]"
+                  variantStyle="primary"
                   disabled={isloadingCreateNote}
                 >
                   {isloadingCreateNote ? (
@@ -305,7 +301,7 @@ export default function ContactDetailPage() {
                   ) : (
                     "Save Note"
                   )}
-                </Button>
+                </AppButton>
               </div>
             </CustomTabPanel>
           </div>
@@ -363,13 +359,9 @@ export default function ContactDetailPage() {
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Task</h3>
-          <Button
-            size="sm"
-            onClick={handleCreateTask}
-            className="bg-[#6739EC] hover:bg-[#5628D2]"
-          >
+          <AppButton onClick={handleCreateTask} variantStyle="primary">
             Add Task
-          </Button>
+          </AppButton>
         </div>
         <Divider />
 

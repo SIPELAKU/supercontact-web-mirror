@@ -5,18 +5,21 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   SelectProps,
   Box,
   Typography,
 } from "@mui/material";
 import { ChevronDown } from "lucide-react";
 
+// --- Design Tokens ---
+const INPUT_BG = "#FAFAF6";
+
 interface AppSelectProps extends Omit<SelectProps, "label"> {
   label?: string;
   placeholder?: string;
   options: { value: string | number; label: string }[];
   containerClassName?: string;
+  isBgWhite?: boolean;
 }
 
 const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
@@ -30,6 +33,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
       fullWidth = true,
       containerClassName,
       sx,
+      isBgWhite = false,
       ...props
     },
     ref,
@@ -49,7 +53,11 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             {label}
           </Typography>
         )}
-        <FormControl fullWidth={fullWidth} size="small">
+        <FormControl
+          fullWidth={fullWidth}
+          size="small"
+          sx={{ backgroundColor: isBgWhite ? "white" : INPUT_BG }}
+        >
           <Select
             labelId={labelId}
             value={value}
@@ -86,7 +94,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             sx={{
               height: "48px",
               borderRadius: "8px",
-              backgroundColor: "background.paper",
+              backgroundColor: isBgWhite ? "white" : INPUT_BG,
               "& .MuiSelect-select": {
                 padding: "10px 14px",
                 display: "flex",

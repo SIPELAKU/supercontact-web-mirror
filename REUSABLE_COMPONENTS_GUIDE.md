@@ -49,10 +49,12 @@ import { Plus } from "lucide-react";
 
 ### 2. `AppInput`
 
-Input field standar dengan label dan dukungan untuk field password.
+Input field standar dengan label dan dukungan untuk berbagai tipe input termasuk password dan checkbox.
 
 **Fitur Baru:**
 
+- **Checkbox Support**: Mendukung `type="checkbox"` yang merender MUI Checkbox secara otomatis.
+- **Icon Support**: Mendukung `startIcon` dan `endIcon` untuk menambahkan elemen visual di dalam input.
 - **Password Toggle**: Otomatis menampilkan icon mata untuk sembunyikan/tampilkan password jika `type="password"`.
 - **isBgWhite**: Opsi untuk mengubah background menjadi putih bersih (default: soft ivory).
 
@@ -60,16 +62,26 @@ Input field standar dengan label dan dukungan untuk field password.
 
 ```tsx
 import { AppInput } from "@/components/ui/app-input";
+import { Search, Mail } from "lucide-react";
 
+// Input dengan Start Icon
 <AppInput
-  label="Nama Lengkap"
-  placeholder="Masukkan nama..."
-  required
+  label="Email"
+  startIcon={<Mail size={18} />}
+  placeholder="example@mail.com"
 />
 
+// Input Password (Otomatis ada End Icon Mata)
 <AppInput
   label="Kata Sandi"
   type="password"
+/>
+
+// Checkbox
+<AppInput
+  type="checkbox"
+  checked={accepted}
+  onChange={(e) => setAccepted(e.target.checked)}
 />
 ```
 

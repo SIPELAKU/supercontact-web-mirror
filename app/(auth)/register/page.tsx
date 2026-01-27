@@ -11,6 +11,7 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
 import { MenuItem } from "@mui/material";
 import { Poppins } from "next/font/google";
+import { AppSelect } from "@/components/ui/app-select";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -211,24 +212,15 @@ export default function RegisterPage() {
             <label className="block text-sm font-medium text-gray-700">
               Position <span className="text-red-500">*</span>
             </label>
-            <AppInput
-              select
+            <AppSelect
               id="position"
               name="position"
+              placeholder="Select a position"
               value={position}
-              onChange={(e) => setPosition(e.target.value)}
+              onChange={(e) => setPosition(e.target.value as string)}
               required
-            >
-              {positions.map((option) => (
-                <MenuItem
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.value === ""}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </AppInput>
+              options={positions}
+            />
           </div>
 
           <div>
@@ -258,15 +250,13 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* <div className="flex justify-start mt-6 text-sm text-gray-600 text-start">
-            <input
+          <div className="flex justify-start items-center mt-6 text-sm text-gray-600 text-start">
+            <AppInput
               type="checkbox"
               id="terms"
               name="terms"
-              checked={acceptedTerms}
               onChange={toggleTerms}
               required
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
               I agree with{" "}
@@ -279,7 +269,7 @@ export default function RegisterPage() {
                 Terms & Conditions
               </Link>
             </label>
-          </div> */}
+          </div>
 
           <AppButton
             type="submit"

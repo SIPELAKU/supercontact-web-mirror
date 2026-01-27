@@ -4,19 +4,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ItemRow } from "@/lib/types/Quotation";
 import { Plus, Trash2 } from "lucide-react";
-import DropdownSelect, { DropdownSelectSearch } from "../ui/dropdown-menu";
+import DropdownSelect from "../ui/dropdown-menu";
+import { Product } from "@/lib/store/product";
 
 export default function ProductsServicesCard({
   items,
   updateQty,
+  updateItemField,
   addItem,
   removeItem,
+  listProduct = [],
+  loading = false,
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
+  updateItemField: (i: number, field: keyof ItemRow, value: any) => void;
   addItem: () => void;
   removeItem: (i: number) => void;
-}) {  
+  listProduct?: Product[];
+  loading?: boolean;
+}) {
+  const handleProductChange = (index: number, productId: string) => {
+    const selectedProduct = listProduct.find(p => p.id === productId);
+    if (selectedProduct) {
+      updateItemField(index, "product_id", selectedProduct.id);
+      updateItemField(index, "title", selectedProduct.product_name);
+      updateItemField(index, "sku", selectedProduct.sku);
+      updateItemField(index, "unitPrice", selectedProduct.price);
+    }
+  };
+
   return (
     <div className="bg-white px-6">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">
@@ -42,22 +59,22 @@ export default function ProductsServicesCard({
             <div className="col-span-4">
               <DropdownSelect
                 value={item.title}
-                options={["All","App Design", "Web Development", "SEO", "Branding"]}
+                options={listProduct.map(p => p.product_name)}
                 onChange={(val) => {
-                  // updateItemTitle(i, val);                  
+                  const product = listProduct.find(p => p.product_name === val);
+                  if (product) handleProductChange(i, product.id);
                 }}
+                placeholder={loading ? "Loading Products..." : "Select Product"}
                 className="border rounded-md h-10 px-3 flex items-center justify-between text-sm text-gray-600 bg-white"
               />
             </div>
 
             <div className="col-span-3">
-              <DropdownSelectSearch
+              <Input
                 value={item.sku}
-                options={["BLJ-SA-001", "BLJ-SA-002", "BLJ-SA-003", "MKJ-BD-001", "BKR-LO-001"]}
-                onChange={(v) => {
-                  // updateSKU(i, v)
-                }}
-                className="border rounded-md h-10 px-3 flex items-center text-sm text-gray-600 bg-white"
+                readOnly
+                placeholder="SKU"
+                className="h-10 border-gray-300 bg-gray-50 cursor-not-allowed"
               />
             </div>
 
@@ -95,13 +112,13 @@ export default function ProductsServicesCard({
                 placeholder="Description"
                 className="h-10"
                 value={item.desc}
-                readOnly
+                onChange={(e) => updateItemField(i, "desc", e.target.value)}
               />
             </div>
 
             <div className="col-span-5 flex items-center text-sm text-gray-700">
               <span className="mr-2">Discount:</span>
-              <span className="font-semibold">{item.discount ?? 28}%</span>
+              <span className="font-semibold">{item.discount ?? 0}%</span>
             </div>
           </div>
         </div>
@@ -112,6 +129,7 @@ export default function ProductsServicesCard({
         size="sm"
         onClick={addItem}
         className="mt-2 bg-[#5479EE] text-white px-4"
+        disabled={loading}
       >
         <Plus className="h-4 w-4 mr-2" /> Add Item
       </Button>

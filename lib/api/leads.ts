@@ -49,8 +49,12 @@ export interface UpdateLeadData {
 // Helper
 // ============================================
 
+/**
+ * Shared response handler to ensure consistent error parsing and authorization checks.
+ */
 async function handleResponse(res: Response, errorMessage: string) {
   if (res.status === 401) {
+    console.error("API Error: Unauthorized (401)");
     throw new Error("UNAUTHORIZED");
   }
 
@@ -58,12 +62,14 @@ async function handleResponse(res: Response, errorMessage: string) {
   try {
     json = await res.json();
   } catch (err) {
+    console.error(`Failed to parse JSON for ${res.url}`, { status: res.status });
     logger.error(`Failed to parse JSON for ${res.url}`, { status: res.status });
     throw new Error(`${errorMessage} (Invalid JSON response)`);
   }
 
   if (!res.ok || (json.success === false)) {
     const errorMsg = json.message || json.error?.message || json.error || errorMessage;
+    console.error(`API Error: ${res.url}`, { status: res.status, message: errorMsg, json });
     logger.error(`API Error: ${res.url}`, { status: res.status, json });
     throw new Error(errorMsg);
   }
@@ -71,93 +77,128 @@ async function handleResponse(res: Response, errorMessage: string) {
   return json;
 }
 
-function getFullUrl(path: string): URL {
+/**
+ * Constructs a full URL using the environment's base API URL.
+ */
+function getFullUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) {
+    console.error("NEXT_PUBLIC_API_URL is missing!");
     throw new Error("NEXT_PUBLIC_API_URL is not defined");
   }
 
-  // Handle potential relative path if needed
-  if (baseUrl.startsWith('http')) {
-    return new URL(`${baseUrl}${path}`);
-  } else {
-    // Fallback to origin if path is relative
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    return new URL(`${origin}${baseUrl}${path}`);
-  }
+  // Basic concatenation - assumes baseUrl doesn't end with slash if path starts with one
+  return `${baseUrl}${path}`;
 }
 
 // ============================================
 // Functions
 // ============================================
 
+/**
+ * Fetch a paginated list of leads.
+ */
 export async function fetchLeads(token: string, page: number = 1, limit: number = 10): Promise<leadResponse> {
+  console.log('[fetchLeads] Starting...', { page, limit });
   try {
-    const url = getFullUrl("/leads");
+    const baseUrl = getFullUrl("/leads");
+    const url = new URL(baseUrl);
     url.searchParams.append("page", String(page));
     url.searchParams.append("limit", String(limit));
 
+    console.log('[fetchLeads] URL:', url.toString());
+
     const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Accept': 'application/json'
+      },
     });
 
+    console.log('[fetchLeads] Response status:', res.status);
     return await handleResponse(res, "Failed to load leads");
   } catch (error: any) {
+    console.error("[fetchLeads] Error catch:", error.message);
     logger.error("fetchLeads error:", error);
     throw error;
   }
 }
 
+/**
+ * Create a new lead.
+ */
 export async function createLead(token: string, leadData: CreateLeadData): Promise<any> {
+  console.log('[createLead] Starting...', leadData);
   try {
     const url = getFullUrl("/leads");
-    const res = await fetch(url.toString(), {
+
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(leadData),
     });
 
+    console.log('[createLead] Response status:', res.status);
     return await handleResponse(res, "Failed to create lead");
   } catch (error: any) {
+    console.error("[createLead] Error catch:", error.message);
     logger.error("createLead error:", error);
     throw error;
   }
 }
 
+/**
+ * Update an existing lead.
+ */
 export async function updateLead(token: string, leadId: string, leadData: UpdateLeadData): Promise<any> {
+  console.log('[updateLead] Starting...', { leadId, leadData });
   try {
     const url = getFullUrl(`/leads/${leadId}`);
-    const res = await fetch(url.toString(), {
+
+    const res = await fetch(url, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        "Accept": "application/json",
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(leadData),
     });
 
+    console.log('[updateLead] Response status:', res.status);
     return await handleResponse(res, "Failed to update lead");
   } catch (error: any) {
+    console.error("[updateLead] Error catch:", error.message);
     logger.error("updateLead error:", error);
     throw error;
   }
 }
 
+/**
+ * Delete a lead by ID.
+ */
 export async function deleteLead(token: string, leadId: string): Promise<any> {
+  console.log('[deleteLead] Starting...', { leadId });
   try {
     const url = getFullUrl(`/leads/${leadId}`);
-    const res = await fetch(url.toString(), {
+
+    const res = await fetch(url, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
+        "Accept": "application/json"
       },
     });
 
+    console.log('[deleteLead] Response status:', res.status);
     return await handleResponse(res, "Failed to delete lead");
   } catch (error: any) {
+    console.error("[deleteLead] Error catch:", error.message);
     logger.error("deleteLead error:", error);
     throw error;
   }

@@ -46,122 +46,117 @@ export interface UpdateLeadData {
 }
 
 // ============================================
-// Functions
+// Helper
 // ============================================
 
-export async function fetchLeads(token: string, page: number = 1, limit: number = 10): Promise<leadResponse> {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/leads`);
-  url.searchParams.append("page", String(page));
-  url.searchParams.append("limit", String(limit));
-
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const json = await res.json();
-  console.log("API response:", json);
-
+async function handleResponse(res: Response, errorMessage: string) {
   if (res.status === 401) {
     throw new Error("UNAUTHORIZED");
   }
-
-  if (!res.ok || !json.success) throw new Error("Failed to load leads");
-  return json;
-}
-
-export async function createLead(token: string, leadData: CreateLeadData): Promise<any> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(leadData),
-  });
-
-  const json = await res.json();
-  console.log("Create lead response:", json);
-
-  if (res.status === 401) {
-    throw new Error("UNAUTHORIZED");
-  }
-
-  if (!res.ok) {
-    throw new Error(json.message || "Failed to create lead");
-  }
-
-  return json;
-}
-
-export async function updateLead(token: string, leadId: string, leadData: UpdateLeadData): Promise<any> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`;
-
-  logger.info("Making PUT request to update lead", {
-    url,
-    leadId,
-    leadData,
-    hasToken: !!token
-  });
-
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(leadData),
-  });
 
   let json;
   try {
     json = await res.json();
-  } catch (parseError: any) {
-    logger.error("Failed to parse response JSON", {
-      status: res.status,
-      statusText: res.statusText,
-      parseError: parseError.message
-    });
-    throw new Error(`Server returned invalid response (${res.status})`);
+  } catch (err) {
+    logger.error(`Failed to parse JSON for ${res.url}`, { status: res.status });
+    throw new Error(`${errorMessage} (Invalid JSON response)`);
   }
 
-  logger.apiResponse(`/leads/${leadId} (PUT)`, { status: res.status, response: json });
-
-  if (res.status === 401) {
-    throw new Error("UNAUTHORIZED");
-  }
-
-  if (!res.ok) {
-    logger.error(`Update lead failed: ${res.status}`, {
-      status: res.status,
-      statusText: res.statusText,
-      response: json,
-      leadData,
-      url
-    });
-    throw new Error(json.message || json.error || `Failed to update lead (${res.status}: ${res.statusText})`);
+  if (!res.ok || (json.success === false)) {
+    const errorMsg = json.message || json.error?.message || json.error || errorMessage;
+    logger.error(`API Error: ${res.url}`, { status: res.status, json });
+    throw new Error(errorMsg);
   }
 
   return json;
 }
 
+// ============================================
+// Functions
+// ============================================
+
+export async function fetchLeads(token: string, page: number = 1, limit: number = 10): Promise<leadResponse> {
+  try {
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/leads`);
+    url.searchParams.append("page", String(page));
+    url.searchParams.append("limit", String(limit));
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return await handleResponse(res, "Failed to load leads");
+  } catch (error: any) {
+    logger.error("fetchLeads error:", error);
+    throw error;
+  }
+}
+
+export async function createLead(token: string, leadData: CreateLeadData): Promise<any> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(leadData),
+    });
+
+    return await handleResponse(res, "Failed to create lead");
+  } catch (error: any) {
+    logger.error("createLead error:", error);
+    throw error;
+  }
+}
+
+export async function updateLead(token: string, leadId: string, leadData: UpdateLeadData): Promise<any> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`;
+
+    logger.info("Making PUT request to update lead", {
+      url,
+      leadId,
+      hasToken: !!token
+    });
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(leadData),
+    });
+
+    return await handleResponse(res, "Failed to update lead");
+  } catch (error: any) {
+    logger.error("updateLead error:", error);
+    throw error;
+  }
+}
+
 export async function deleteLead(token: string, leadId: string): Promise<any> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-  });
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+    });
 
-  console.log("Delete lead response status:", res.status);
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
 
-  if (res.status === 401) {
-    throw new Error("UNAUTHORIZED");
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.message || "Failed to delete lead");
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    logger.error("deleteLead error:", error);
+    throw error;
   }
-
-  if (!res.ok) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(json.message || "Failed to delete lead");
-  }
-
-  return { success: true };
 }

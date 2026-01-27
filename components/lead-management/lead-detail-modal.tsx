@@ -47,6 +47,10 @@ interface LeadDetailModalProps {
 }
 
 interface FormData {
+  name: string;
+  email: string;
+  phone_number: string;
+  company: string;
   industry: string;
   companySize: string;
   officeLocation: string;
@@ -60,6 +64,7 @@ interface FormData {
 export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetailModalProps) {
   const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
@@ -67,6 +72,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   const { data: usersResponse } = useUsers();
 
   const [form, setForm] = useState<FormData>({
+    name: "",
+    email: "",
+    phone_number: "",
+    company: "",
     industry: "",
     companySize: "",
     officeLocation: "",
@@ -81,6 +90,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   useEffect(() => {
     if (lead) {
       setForm({
+        name: lead.contact.name || "",
+        email: lead.contact.email || "",
+        phone_number: lead.contact.phone_number || "",
+        company: lead.contact.company || "",
         industry: lead.industry || "",
         companySize: lead.company_size,
         officeLocation: lead.office_location || "",
@@ -101,6 +114,14 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    // Clear error when user types
+    if (errors[key]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
   };
 
   const handleUserSelect = (user: User) => {
@@ -121,9 +142,31 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
     user.fullname.toLowerCase().includes(assignedToName.toLowerCase())
   ) || [];
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.name.trim()) newErrors.name = "Name is required";
+    if (!form.email.trim()) newErrors.email = "Email is required";
+    if (!form.phone_number.trim()) newErrors.phone_number = "Phone number is required";
+    if (!form.company.trim()) newErrors.company = "Company is required";
+    if (!form.industry) newErrors.industry = "Industry is required";
+    if (!form.companySize) newErrors.companySize = "Company size is required";
+    if (!form.officeLocation.trim()) newErrors.officeLocation = "Office location is required";
+    if (!form.leadStatus) newErrors.leadStatus = "Lead status is required";
+    if (!form.leadSource) newErrors.leadSource = "Lead source is required";
+    if (!form.assignedTo) newErrors.assignedTo = "Please assign this lead to a user";
+    if (!form.tag) newErrors.tag = "Tag is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!lead) return;
+
+    if (!validateForm()) {
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -133,10 +176,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
       const updateData: UpdateLeadData = {
         contact_id: lead.contact.id,
-        name: lead.contact.name,
-        email: lead.contact.email,
-        phone_number: lead.contact.phone_number,
-        company: lead.contact.company,
+        name: form.name,
+        email: form.email,
+        phone_number: form.phone_number,
+        company: form.company,
         industry: form.industry,
         company_size: form.companySize.replace(/\s*-\s*/g, "-"),
         office_location: form.officeLocation,
@@ -217,48 +260,56 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-            {/* Name (Read-only) */}
+            {/* Name */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Name</Label>
               <input
                 type="text"
-                value={lead.contact.name}
-                readOnly
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
+                placeholder="Enter name"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
 
-            {/* Email (Read-only) */}
+            {/* Email */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Email</Label>
               <input
                 type="email"
-                value={lead.contact.email}
-                readOnly
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
+                placeholder="Enter email address"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
-            {/* Phone (Read-only) */}
+            {/* Phone */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
               <input
                 type="text"
-                value={lead.contact.phone_number}
-                readOnly
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
+                placeholder="Enter phone number"
+                value={form.phone_number}
+                onChange={(e) => updateField("phone_number", e.target.value)}
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
             </div>
 
-            {/* Company (Read-only) */}
+            {/* Company */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Company</Label>
               <input
                 type="text"
-                value={lead.contact.company}
-                readOnly
-                className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
+                placeholder="Enter company name"
+                value={form.company}
+                onChange={(e) => updateField("company", e.target.value)}
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.company ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.company && <p className="text-red-500 text-xs mt-1">{errors.company}</p>}
             </div>
 
             {/* Industry */}
@@ -267,14 +318,16 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <select
                 value={form.industry}
                 onChange={(e) => updateField("industry", e.target.value)}
-                className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
+                className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.industry ? 'border-red-500' : 'border-gray-300'}`}
               >
+                <option value="">Select Industry</option>
                 <option value="Healthcare">Healthcare</option>
                 <option value="Finance">Finance</option>
                 <option value="Logistics">Logistics</option>
                 <option value="Manufacturing">Manufacturing</option>
                 <option value="SaaS">SaaS</option>
               </select>
+              {errors.industry && <p className="text-red-500 text-xs mt-1">{errors.industry}</p>}
             </div>
 
             {/* Company Size */}
@@ -283,14 +336,16 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <select
                 value={form.companySize}
                 onChange={(e) => updateField("companySize", e.target.value)}
-                className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
+                className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.companySize ? 'border-red-500' : 'border-gray-300'}`}
               >
+                <option value="">Select Company Size</option>
                 <option value="1-50 Employees">1 - 50 Employees</option>
                 <option value="51-200 Employees">51 - 200 Employees</option>
                 <option value="201+ Employees">201+ Employees</option>
                 {/* <option value="501 - 1000 Employees">501-1000 Employees</option>
                 <option value="1000+ Employees">1000+ Karyawan</option> */}
               </select>
+              {errors.companySize && <p className="text-red-500 text-xs mt-1">{errors.companySize}</p>}
             </div>
 
             {/* Office Location */}
@@ -301,8 +356,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 placeholder="Enter Office Location"
                 value={form.officeLocation}
                 onChange={(e) => updateField("officeLocation", e.target.value)}
-                className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.officeLocation ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.officeLocation && <p className="text-red-500 text-xs mt-1">{errors.officeLocation}</p>}
             </div>
 
             {/* Lead Status */}
@@ -313,8 +369,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(val) => updateField("leadStatus", val)}
                 data={leadStatusOptions}
                 placeholder="Select lead status"
-                className="bg-white rounded-lg"
+                className={errors.leadStatus ? 'border-red-500' : ''}
               />
+              {errors.leadStatus && <p className="text-red-500 text-xs mt-1">{errors.leadStatus}</p>}
             </div>
 
             {/* Lead Source */}
@@ -323,12 +380,14 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <select
                 value={form.leadSource}
                 onChange={(e) => updateField("leadSource", e.target.value)}
-                className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
+                className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.leadSource ? 'border-red-500' : 'border-gray-300'}`}
               >
+                <option value="">Select Lead Source</option>
                 <option value="Manual Entry">Manual Entry</option>
                 <option value="Web Form">Web Form</option>
                 <option value="WhatsApp">WhatsApp</option>
               </select>
+              {errors.leadSource && <p className="text-red-500 text-xs mt-1">{errors.leadSource}</p>}
             </div>
 
             {/* Assigned To with Autocomplete */}
@@ -341,8 +400,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(e) => handleAssignedToChange(e.target.value)}
                 onFocus={() => setShowUserDropdown(assignedToName.length > 0)}
                 onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
-                className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.assignedTo ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {errors.assignedTo && <p className="text-red-500 text-xs mt-1">{errors.assignedTo}</p>}
 
               {/* User Dropdown */}
               {showUserDropdown && filteredUsers.length > 0 && (
@@ -371,8 +431,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               onChange={(val) => updateField("tag", val)}
               data={tagOptions}
               placeholder="Select tag"
-              className="bg-white rounded-lg"
+              className={errors.tag ? 'border-red-500' : ''}
             />
+            {errors.tag && <p className="text-red-500 text-xs mt-1">{errors.tag}</p>}
           </div>
 
           {/* Notes */}

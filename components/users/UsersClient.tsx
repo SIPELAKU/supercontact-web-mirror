@@ -4,20 +4,20 @@ import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, Divider } from "@mui/material";
 import { useUsers } from "@/lib/hooks/useUsers";
-import { UsersType } from "@/lib/type/Users";
-import InputSearch from "@/components/ui/input-search";
+import { UsersType } from "@/lib/types/Users";
 import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import {
-  AddUserButton,
   CardStatUsers,
   DeleteUserModal,
   DetailUsersModal,
   EditUsersModal,
-  ExportButton,
   TableFilterUsers,
   TableListUsers,
 } from "@/components/users";
+import { AppButton } from "../ui/app-button";
+import { DownloadIcon, Plus, Upload } from "lucide-react";
+import { AppInput } from "../ui/app-input";
 
 export default function UsersClient() {
   const { data: usersResponse, isLoading, error } = useUsers();
@@ -55,18 +55,18 @@ export default function UsersClient() {
 
   const filteredUsers = useMemo(() => {
     const apiUsers = usersResponse?.data?.users || [];
-    
+
     // Convert API User[] to UsersType[]
     const users: UsersType[] = apiUsers.map((user) => ({
       id: parseInt(user.id),
       fullName: user.fullname,
       email: user.email,
       role: user.role,
-      status: 'active' as const, // Default status since API doesn't provide it
+      status: "active" as const, // Default status since API doesn't provide it
       avatar_initial: user.fullname.charAt(0).toUpperCase(),
       id_employee: user.id,
     }));
-    
+
     return users.filter((user) => {
       // search name
       const matchSearch = searchQuery
@@ -93,13 +93,13 @@ export default function UsersClient() {
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number
+    newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -117,7 +117,7 @@ export default function UsersClient() {
 
   const handleSelectOne = (id: number) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -128,34 +128,65 @@ export default function UsersClient() {
         breadcrumbs={[{ label: "User Management" }, { label: "Manage User" }]}
       />
 
-      <div className="my-4 py-5">
-        <CardStatUsers />
-      </div>
+      {/* Card Statistik */}
+      <CardStatUsers />
 
-      <Card>
-        <CardHeader title="Filters" />
+      {/* Card Table */}
+      <Card
+        sx={{
+          borderRadius: "12px",
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+        }}
+      >
+        <CardHeader
+          title="Filters"
+          titleTypographyProps={{
+            variant: "h6",
+            sx: { fontWeight: 500, fontSize: "18px" },
+          }}
+        />
 
+        {/* Filter */}
         <TableFilterUsers filter={tableFilter} onChange={setTableFilter} />
 
         <Divider />
 
+        {/* Search & Button */}
         <div className="px-4 py-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <ExportButton />
-            </div>
+            <AppButton
+              variantStyle="outline"
+              color="gray"
+              startIcon={<Upload />}
+              onClick={() => {}}
+            >
+              Export
+            </AppButton>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div>
                 <Suspense>
-                  <InputSearch
+                  {/* <InputSearch
                     placeholder="Search User"
                     handleSearch={handleSearch}
                     searchParams={searchParams}
+                  /> */}
+                  <AppInput
+                    placeholder="Search User"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    isBgWhite
                   />
                 </Suspense>
               </div>
-              <AddUserButton />
+              <AppButton
+                variantStyle="primary"
+                color="primary"
+                startIcon={<Plus />}
+                onClick={() => {}}
+              >
+                Add New User
+              </AppButton>
             </div>
           </div>
         </div>

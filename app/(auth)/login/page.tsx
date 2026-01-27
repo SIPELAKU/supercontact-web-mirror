@@ -1,8 +1,8 @@
 // app/(auth)/login/page.tsx
 "use client";
 
-import { AppButton } from "@/components/ui/AppButton";
-import { AppInput } from "@/components/ui/AppInput";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
 import { useAuth } from "@/lib/context/AuthContext";
 import Image from "next/image";
 import Link from "next/link";

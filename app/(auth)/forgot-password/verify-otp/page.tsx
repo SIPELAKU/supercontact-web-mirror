@@ -1,6 +1,6 @@
 "use client";
 
-import { AppButton } from "@/components/ui/AppButton";
+import { AppButton } from "@/components/ui/app-button";
 import { resendOTP, verifyOTP } from "@/lib/api";
 import { logger } from "@/lib/utils/logger";
 import { Poppins } from "next/font/google";

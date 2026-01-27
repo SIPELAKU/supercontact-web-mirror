@@ -70,9 +70,10 @@ const StyledButton = styled(Button, {
   const contentStyle = {
     textTransform: "none",
     fontFamily: "inherit",
-    fontSize: "16px", // ✅ ukuran text
-    fontWeight: 500, // ✅ weight
-    lineHeight: "24px", // ✅ penting untuk konsistensi vertical
+    fontSize: "16px",
+    fontWeight: 500,
+    lineHeight: "24px",
+    height: "40px",
     boxShadow: "none",
     borderRadius: "8px",
     padding: "8px 16px",

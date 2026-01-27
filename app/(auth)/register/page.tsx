@@ -7,8 +7,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AppInput } from "@/components/ui/AppInput";
-import { AppButton } from "@/components/ui/AppButton";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import { MenuItem } from "@mui/material";
 import { Poppins } from "next/font/google";
 

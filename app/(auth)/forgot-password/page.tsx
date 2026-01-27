@@ -1,7 +1,7 @@
 "use client";
 
-import { AppButton } from "@/components/ui/AppButton";
-import { AppInput } from "@/components/ui/AppInput";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
 import axios from "axios";
 import { Poppins } from "next/font/google";
 import Image from "next/image";

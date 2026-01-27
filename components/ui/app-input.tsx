@@ -17,10 +17,13 @@ const FOCUS_COLOR = "#5479EE";
 export interface AppInputProps extends Omit<TextFieldProps, "variant"> {
   label?: string;
   type?: "text" | "email" | "password" | "number" | "tel";
+  isBgWhite?: boolean;
 }
 
 // --- Styled Component ---
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField, {
+  shouldForwardProp: (prop) => prop !== "isBgWhite",
+})<{ isBgWhite?: boolean }>(({ theme, isBgWhite }) => ({
   "& .MuiInputLabel-root": {
     fontSize: "14px",
     fontWeight: 500,
@@ -29,7 +32,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 
   "& .MuiOutlinedInput-root": {
-    backgroundColor: INPUT_BG,
+    backgroundColor: isBgWhite ? "white" : INPUT_BG,
     borderRadius: "8px",
     fontSize: "16px",
     fontWeight: 400,
@@ -71,6 +74,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 export const AppInput: React.FC<AppInputProps> = ({
   type = "text",
   label,
+  isBgWhite = false,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -81,6 +85,7 @@ export const AppInput: React.FC<AppInputProps> = ({
     <StyledTextField
       fullWidth
       label={label}
+      isBgWhite={isBgWhite}
       type={isPassword ? (showPassword ? "text" : "password") : type}
       InputProps={{
         endAdornment: isPassword ? (

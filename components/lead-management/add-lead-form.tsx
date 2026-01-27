@@ -37,7 +37,7 @@ export const tagOptions = [
 interface LeadData {
   name: string;
   email: string;
-  phone: string;
+  phone_number: string;
   company: string;
   industry: string;
   companySize: string;
@@ -65,7 +65,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const queryClient = useQueryClient();
   const { data: contactsResponse } = useContacts();
   const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
-  
+
   // Debug logs
   console.log('Users Response:', usersResponse);
   console.log('Users Response Data:', usersResponse?.data);
@@ -78,10 +78,10 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [form, setForm] = useState<LeadData>({
     name: "",
     email: "",
-    phone: "",
+    phone_number: "",
     company: "",
     industry: "Finance",
-    companySize: "1 - 50 Karyawan",
+    companySize: "1-50 Employees",
     officeLocation: "",
     leadStatus: "",
     leadSource: "Web Form",
@@ -100,7 +100,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       ...prev,
       name: contact.name,
       email: contact.email,
-      phone: contact.phone,
+      phone_number: contact.phone,
       company: contact.company,
     }));
     setShowContactDropdown(false);
@@ -139,10 +139,10 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     setForm({
       name: "",
       email: "",
-      phone: "",
+      phone_number: "",
       company: "",
       industry: "Finance",
-      companySize: "1 - 50 Karyawan",
+      companySize: "1-50 Employees",
       officeLocation: "",
       leadStatus: "",
       leadSource: "Web Form",
@@ -164,27 +164,21 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     try {
       const token = await getToken();
       if (!token) throw new Error('No authentication token');
-      
+
       // Create lead with all data in one request
-      const leadData: CreateLeadData = selectedContactId ? {
-        // If existing contact is selected, use contact_id
-        contact_id: selectedContactId,
-        industry: form.industry,
-        company_size: form.companySize,
-        office_location: form.officeLocation,
-        lead_status: form.leadStatus,
-        lead_source: form.leadSource,
-        assigned_to: selectedUserId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        tag: form.tag,
-        notes: form.notes,
-      } : {
-        // If new contact, include all contact details
+      const leadData: CreateLeadData = {
+        // Contact details (always include these as requested)
         name: form.name,
         email: form.email,
-        phone: form.phone,
+        phone_number: form.phone_number,
         company: form.company,
+
+        // Conditional contact_id
+        ...(selectedContactId ? { contact_id: selectedContactId } : {}),
+
+        // Lead specific fields
         industry: form.industry,
-        company_size: form.companySize,
+        company_size: form.companySize.replace(/\s*-\s*/g, "-"),
         office_location: form.officeLocation,
         lead_status: form.leadStatus,
         lead_source: form.leadSource,
@@ -204,7 +198,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       // Reset form and close modal
       reset();
       setOpen(false);
-      
+
       console.log("Lead created successfully!");
     } catch (error) {
       console.error("Error creating lead:", error);
@@ -217,7 +211,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   console.log('filteredContacts', filteredContacts)
   return (
     <>
-      <Button 
+      <Button
         className="bg-[#5479EE] text-white hover:bg-[#4366d9]"
         onClick={() => setOpen(true)}
       >
@@ -256,7 +250,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onBlur={() => setTimeout(() => setShowContactDropdown(false), 200)}
                   className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                 />
-                
+
                 {/* Contact Dropdown */}
                 {showContactDropdown && filteredContacts.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -293,8 +287,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 <input
                   type="text"
                   placeholder="Enter phone number"
-                  value={form.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
+                  value={form.phone_number}
+                  onChange={(e) => updateField("phone_number", e.target.value)}
                   className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                 />
               </div>
@@ -335,11 +329,11 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onChange={(e) => updateField("companySize", e.target.value)}
                   className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
                 >
-                  <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
-                  <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-                  <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
-                  {/* <option value="501-1000 Karyawan">501-1000 Karyawan</option>
-                  <option value="1000+ Karyawan">1000+ Karyawan</option> */}
+                  <option value="1-50 Employees">1 - 50 Employees</option>
+                  <option value="51-200 Employees">51 - 200 Employees</option>
+                  <option value="201+ Employees">201+ Employees</option>
+                  {/* <option value="501-1000 Employees">501-1000 Employees</option>
+                  <option value="1000+ Employees">1000+ Employees</option> */}
                 </select>
               </div>
 
@@ -375,12 +369,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onChange={(e) => updateField("leadSource", e.target.value)}
                   className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
                 >
+                  <option value="Manual Entry">Manual Entry</option>
                   <option value="Web Form">Web Form</option>
-                  <option value="Social Media">Social Media</option>
-                  <option value="Email Campaign">Email Campaign</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Cold Call">Cold Call</option>
-                  <option value="Trade Show">Trade Show</option>
+                  <option value="WhatsApp">WhatsApp</option>
                 </select>
               </div>
 
@@ -401,7 +392,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                   className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                 />
-                
+
                 {/* User Dropdown */}
                 {showUserDropdown && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">

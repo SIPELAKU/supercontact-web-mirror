@@ -3,8 +3,8 @@
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
+  Dialog,
+  DialogContent,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { updateLead, UpdateLeadData, User } from "@/lib/api";
@@ -90,7 +90,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         tag: lead.tag,
         notes: lead.notes,
       });
-      
+
       // Set assigned user
       if (lead.user) {
         setSelectedUserId(lead.user.id);
@@ -124,17 +124,21 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!lead) return;
-    
+
     setIsSubmitting(true);
 
     try {
       const token = await getToken();
       if (!token) throw new Error('No authentication token');
-      
+
       const updateData: UpdateLeadData = {
         contact_id: lead.contact.id,
+        name: lead.contact.name,
+        email: lead.contact.email,
+        phone_number: lead.contact.phone_number,
+        company: lead.contact.company,
         industry: form.industry,
-        company_size: form.companySize,
+        company_size: form.companySize.replace(/\s*-\s*/g, "-"),
         office_location: form.officeLocation,
         lead_status: form.leadStatus,
         lead_source: form.leadSource,
@@ -157,14 +161,14 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
 
       // Close modal
       onOpenChange(false);
-      
+
       logger.info("Lead updated successfully!", { leadId: lead.id });
-      
+
       // Show success message
       alert("Lead updated successfully!");
     } catch (error: any) {
-      logger.error("Error updating lead", { 
-        leadId: lead.id, 
+      logger.error("Error updating lead", {
+        leadId: lead.id,
         error: error.message,
         updateData: {
           contact_id: lead.contact.id,
@@ -178,12 +182,12 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
           notes: form.notes,
         }
       });
-      
+
       // Show more specific error message
-      const errorMessage = error.message === "UNAUTHORIZED" 
+      const errorMessage = error.message === "UNAUTHORIZED"
         ? "Session expired. Please login again."
         : `Failed to update lead: ${error.message}`;
-        
+
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -240,7 +244,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
               <input
                 type="text"
-                value={lead.contact.phone}
+                value={lead.contact.phone_number}
                 readOnly
                 className="w-full h-12 px-4 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 cursor-not-allowed"
               />
@@ -266,10 +270,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
                 <option value="Healthcare">Healthcare</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Logistics">Logistics</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="SaaS">SaaS</option>
+                <option value="Finance">Finance</option>
+                <option value="Logistics">Logistics</option>
+                <option value="Manufacturing">Manufacturing</option>
+                <option value="SaaS">SaaS</option>
               </select>
             </div>
 
@@ -281,11 +285,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(e) => updateField("companySize", e.target.value)}
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
-                <option value="1 - 50 Karyawan">1 - 50 Karyawan</option>
-                <option value="51 - 200 Karyawan">51 - 200 Karyawan</option>
-               <option value="201 - 500 Karyawan">201 - 500 Karyawan</option>
-                {/* <option value="501 - 1000 Karyawan">501-1000 Karyawan</option>
-                <option value="1000+ Karyawan">1000+ Karyawan</option> */}
+                <option value="1-50 Employees">1 - 50 Employees</option>
+                <option value="51-200 Employees">51 - 200 Employees</option>
+                <option value="201+ Employees">201+ Employees</option>
+                {/* <option value="501 - 1000 Employees">501-1000 Employees</option>
+                <option value="1000+ Employees">1000+ Karyawan</option> */}
               </select>
             </div>
 
@@ -321,9 +325,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onChange={(e) => updateField("leadSource", e.target.value)}
                 className="w-full h-12 px-4 pr-10 bg-white border border-gray-300 rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center]"
               >
+                <option value="Manual Entry">Manual Entry</option>
                 <option value="Web Form">Web Form</option>
-                <option value="WhatsApp">Social Media</option>
-                <option value="Manual Entry">Email Campaign</option>
+                <option value="WhatsApp">WhatsApp</option>
               </select>
             </div>
 
@@ -339,7 +343,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                 onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                 className="w-full h-12 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
               />
-              
+
               {/* User Dropdown */}
               {showUserDropdown && filteredUsers.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">

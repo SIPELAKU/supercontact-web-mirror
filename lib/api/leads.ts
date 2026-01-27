@@ -31,6 +31,10 @@ export interface CreateLeadData {
 
 export interface UpdateLeadData {
   contact_id?: string;
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  company?: string;
   industry: string;
   company_size: string;
   office_location: string;

@@ -14,7 +14,7 @@ export const dealStages = [
   { label: "Closed - Lost", bgColor: "bg-[#FF4D49]/16", textColor: "text-[#FF4D49]" },
 ] as const
 
-export function DealCard({id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
+export function DealCard({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
   const getStageColor = (stageName?: string) => {
     if (!stageName) {
@@ -32,9 +32,9 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
   }
   const stageColor = getStageColor(stageName)
   return (
-    <Card 
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"  
-      onClick={()=>{
+    <Card
+      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"
+      onClick={() => {
         setEditId(id)
         setStage(stageName)
         setIsModalOpen(true)
@@ -65,7 +65,7 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
           )}
 
           <Avatar className="h-7 w-7 border">
-            <AvatarImage src={avatar || "/placeholder.svg"} alt={company.id} />
+            {avatar && <AvatarImage src={avatar} alt={company.id} />}
             <AvatarFallback className="bg-gray-300 text-gray-700 text-xs">
               {company.name.charAt(0)}
             </AvatarFallback>

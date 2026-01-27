@@ -1,20 +1,20 @@
 "use client"
 
 import {
-    closestCenter,
-    DndContext,
-    DragOverlay,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-    type DragOverEvent,
-    type DragStartEvent,
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core"
 import {
-    arrayMove,
-    SortableContext,
-    verticalListSortingStrategy,
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useState } from "react"
 
@@ -59,6 +59,7 @@ export default function PipelineBoard() {
   const [stages, setStages] = useState(listPipeline)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
+  const [dragStartStageName, setDragStartStageName] = useState<string | null>(null)
 
   useEffect(() => {
     if (listPipeline.length > 0) {
@@ -141,16 +142,20 @@ export default function PipelineBoard() {
   const handleDragStart = (
     event: DragStartEvent,
     stages: StageUI[],
-    setActiveDeal: (deal: Deal | null) => void
+    setActiveDeal: (deal: Deal | null) => void,
+    setDragStartStageName: (name: string | null) => void
   ) => {
-    const loc = findDeal(String(event.active.id), stages);
+    const loc = findDeal(String(event.active.id), filteredStages);
     if (!loc) return;
 
-    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
+    const stage = stages[loc.stageIndex];
+    setDragStartStageName(stage.name);
+    setActiveDeal(stage.deals[loc.dealIndex]);
   };
 
   const handleDragOver = (event: DragOverEvent,
-    stages: StageUI[],
+    filteredStages: StageUI[],
+    allStages: StageUI[],
     setStages: (s: StageUI[]) => void) => {
     const { active, over } = event;
     if (!over) return;
@@ -158,19 +163,25 @@ export default function PipelineBoard() {
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    const from = findDeal(activeId, stages);
+    // Find in filtered stages (what's visible)
+    const from = findDeal(activeId, filteredStages);
     if (!from) return;
 
-    const updated = JSON.parse(JSON.stringify(stages));
+    // Update the main stages array (source of truth)
+    const updated = JSON.parse(JSON.stringify(allStages));
 
-    const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
+    // Find the deal in the main stages array
+    const fromInMain = findDeal(activeId, updated);
+    if (!fromInMain) return;
+
+    const isOverColumn = overId.startsWith("column-") || allStages.some((s: StageUI) => s.name === overId);
 
     if (isOverColumn) {
       const stageName = overId.replace("column-", "");
-      const toStageIndex = stages.findIndex(s => s.name === stageName);
+      const toStageIndex = updated.findIndex((s: StageUI) => s.name === stageName);
 
-      if (toStageIndex !== -1 && from.stageIndex !== toStageIndex) {
-        const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
+      if (toStageIndex !== -1 && fromInMain.stageIndex !== toStageIndex) {
+        const [moved] = updated[fromInMain.stageIndex].deals.splice(fromInMain.dealIndex, 1);
         updated[toStageIndex].deals.push(moved);
         setStages(updated);
       }
@@ -181,83 +192,49 @@ export default function PipelineBoard() {
     const to = findDeal(overId, updated);
     if (!to) return;
 
-    const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
+    const [moved] = updated[fromInMain.stageIndex].deals.splice(fromInMain.dealIndex, 1);
     updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
 
-    
+
     setStages(updated);
   };
 
 
   const handleDragEnd = async (
     event: DragEndEvent,
-    stages: StageUI[],
+    filteredStages: StageUI[],
+    allStages: StageUI[],
     setStages: (s: StageUI[]) => void,
     setActiveDeal: (deal: Deal | null) => void,
+    dragStartStageName: string | null,
+    setDragStartStageName: (name: string | null) => void
   ) => {
     const { active, over } = event
     setActiveDeal(null)
+    setDragStartStageName(null)
     if (!over) return
 
     const activeId = String(active.id)
     const overId = String(over.id)
 
-    const from = findDeal(activeId, stages)
-    if (!from) return
+    // Find the deal in the updated allStages (handleDragOver already moved it)
+    const currentPos = findDeal(activeId, allStages)
+    if (!currentPos) return
 
-    const updated = JSON.parse(JSON.stringify(stages))
+    const currentStage = allStages[currentPos.stageIndex]
 
-    if (overId.startsWith("column-")) {
-      const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
-
-      if (from.stageIndex === toStageIndex) return
-
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-      updated[toStageIndex].deals.push(moved)
-      
-      
-      const updatedWithTotals = computeStageTotals(updated)
-      setStages(updatedWithTotals)
-
-      
+    // If the stage changed from the start of the drag, persist to API
+    if (dragStartStageName && currentStage.name !== dragStartStageName) {
       try {
-        await updateStagePipeline(activeId, toStageName);
+        await updateStagePipeline(activeId, currentStage.name);
       } catch (error) {
         console.error("Failed to update stage:", error);
-       
-        // setStages(computeStageTotals(stages));
       }
-      
-      return
     }
 
-    const to = findDeal(overId, updated)
-    if (!to) return
-
-    if (from.stageIndex === to.stageIndex) {
-      updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
-    } else {
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-      updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
-    }
-
-    
-    const updatedWithTotals = computeStageTotals(updated)
+    // Re-calculate totals just in case
+    const updatedWithTotals = computeStageTotals(allStages)
     setStages(updatedWithTotals)
-    
-    const toStage = updated[to.stageIndex].name;
-
-    
-    if (from.stageIndex !== to.stageIndex) {
-      try {
-        await updateStagePipeline(activeId, toStage);
-      } catch (error) {
-        console.error("Failed to update stage:", error);
-        
-        // setStages(computeStageTotals(stages));
-      }
-    }
   }
 
 
@@ -283,7 +260,7 @@ export default function PipelineBoard() {
         </div>
 
         <div className="w-full overflow-x-auto scrollbar-hide pb-6 pt-1 px-6">
-          <div className="inline-flex gap-6 min-w-full mt-4">
+          <div className="inline-flex gap-6 min-w-max mt-4">
 
             {[1, 2, 3, 4, 5].map((col) => (
               <div key={col} className="w-70 shrink-0">
@@ -418,11 +395,11 @@ export default function PipelineBoard() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragStart={(event) => handleDragStart(event, stages, setActiveDeal)}
-          onDragOver={(event) => handleDragOver(event, stages, setStages)}
-          onDragEnd={(event) => handleDragEnd(event, stages, setStages, setActiveDeal)}
+          onDragStart={(event) => handleDragStart(event, filteredStages, setActiveDeal, setDragStartStageName)}
+          onDragOver={(event) => handleDragOver(event, filteredStages, stages, setStages)}
+          onDragEnd={(event) => handleDragEnd(event, filteredStages, stages, setStages, setActiveDeal, dragStartStageName, setDragStartStageName)}
         >
-          <div className="inline-flex gap-6 min-w-full mt-4">
+          <div className="inline-flex gap-6 min-w-max mt-4">
 
             {filteredStages.map((stage) => (
               <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>

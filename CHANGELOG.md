@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2] - 2026-01-27
+
+### Detail Versi 1.2.2
+
+#### 🐛 Bug Fix
+
+- **fix: pipeline + notes double added + leads**
+  - **Pipeline:** Fixed TypeScript argument mismatch and ensured stage updates are correctly persisted to the API during drag-and-drop operations.
+  - **Notes:** Added submission locking (`isSubmittingRef`) to prevent duplicate note creation when clicking the submit button multiple times.
+  - **Leads:** 
+    - Implemented server-side pagination for the Leads table.
+    - Fixed Kanban status update error when dropping a card onto another card by correctly resolving the target status name.
+
+---
+
 ## [1.2.1] - 2026-01-27
 
 ### Detail Versi 1.2.1

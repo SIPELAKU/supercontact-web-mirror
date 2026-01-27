@@ -167,8 +167,12 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
 }) => {
   const reactRootRef = useRef<Root | null>(null);
   const { getToken } = useAuth();
+  const isSubmittingRef = useRef(false);
 
   const handleSubmit = async (data: NoteData) => {
+    if (isSubmittingRef.current) return; // Prevent duplicate submissions
+
+    isSubmittingRef.current = true;
     try {
       const token = await getToken();
 
@@ -212,6 +216,8 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         title: "Authentication required",
         text: "Please login again",
       });
+    } finally {
+      isSubmittingRef.current = false;
     }
   };
 

@@ -71,13 +71,29 @@ async function handleResponse(res: Response, errorMessage: string) {
   return json;
 }
 
+function getFullUrl(path: string): URL {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not defined");
+  }
+
+  // Handle potential relative path if needed
+  if (baseUrl.startsWith('http')) {
+    return new URL(`${baseUrl}${path}`);
+  } else {
+    // Fallback to origin if path is relative
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    return new URL(`${origin}${baseUrl}${path}`);
+  }
+}
+
 // ============================================
 // Functions
 // ============================================
 
 export async function fetchLeads(token: string, page: number = 1, limit: number = 10): Promise<leadResponse> {
   try {
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/leads`);
+    const url = getFullUrl("/leads");
     url.searchParams.append("page", String(page));
     url.searchParams.append("limit", String(limit));
 
@@ -94,11 +110,12 @@ export async function fetchLeads(token: string, page: number = 1, limit: number 
 
 export async function createLead(token: string, leadData: CreateLeadData): Promise<any> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
-      method: 'POST',
+    const url = getFullUrl("/leads");
+    const res = await fetch(url.toString(), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(leadData),
     });
@@ -112,19 +129,12 @@ export async function createLead(token: string, leadData: CreateLeadData): Promi
 
 export async function updateLead(token: string, leadId: string, leadData: UpdateLeadData): Promise<any> {
   try {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`;
-
-    logger.info("Making PUT request to update lead", {
-      url,
-      leadId,
-      hasToken: !!token
-    });
-
-    const res = await fetch(url, {
-      method: 'PUT',
+    const url = getFullUrl(`/leads/${leadId}`);
+    const res = await fetch(url.toString(), {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(leadData),
     });
@@ -138,23 +148,15 @@ export async function updateLead(token: string, leadId: string, leadData: Update
 
 export async function deleteLead(token: string, leadId: string): Promise<any> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads/${leadId}`, {
-      method: 'DELETE',
+    const url = getFullUrl(`/leads/${leadId}`);
+    const res = await fetch(url.toString(), {
+      method: "DELETE",
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
     });
 
-    if (res.status === 401) {
-      throw new Error("UNAUTHORIZED");
-    }
-
-    if (!res.ok) {
-      const json = await res.json().catch(() => ({}));
-      throw new Error(json.message || "Failed to delete lead");
-    }
-
-    return { success: true };
+    return await handleResponse(res, "Failed to delete lead");
   } catch (error: any) {
     logger.error("deleteLead error:", error);
     throw error;

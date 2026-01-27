@@ -9,10 +9,9 @@ import {
   Dialog,
   IconButton,
   DialogContent,
-  DialogActions,
 } from "@mui/material";
-import type { UsersType } from "../../../lib/type/Users";
-import { CircleX } from "lucide-react";
+import type { UsersType } from "@/lib/types/Users";
+import { X } from "lucide-react";
 
 type StatusType = UsersType["status"];
 
@@ -37,36 +36,19 @@ export default function DetailUserDialog({
 
   if (!userData) return <Typography>Loading...</Typography>;
 
-  const getStatusColor = (status: Exclude<StatusType, "">) => {
-    switch (status) {
-      case "active":
-        return "text-green-700";
-      case "pending":
-        return "text-yellow-600";
-      case "inactive":
-        return "text-gray-600";
-    }
-  };
-
   const badge: Record<Exclude<StatusType, "">, JSX.Element> = {
     active: (
-      <span
-        className={`rounded-md bg-green-100 px-2 ${getStatusColor("active")}`}
-      >
+      <span className="rounded-md bg-[#f0fdf4] px-2.5 py-0.5 text-sm font-medium text-[#22c55e]">
         Active
       </span>
     ),
     pending: (
-      <span
-        className={`rounded-md bg-yellow-100 px-2 ${getStatusColor("pending")}`}
-      >
+      <span className="rounded-md bg-yellow-50 px-2.5 py-0.5 text-sm font-medium text-yellow-600">
         Pending
       </span>
     ),
     inactive: (
-      <span
-        className={`rounded-md bg-gray-200 px-2 ${getStatusColor("inactive")}`}
-      >
+      <span className="rounded-md bg-gray-50 px-2.5 py-0.5 text-sm font-medium text-gray-500">
         Inactive
       </span>
     ),
@@ -78,106 +60,149 @@ export default function DetailUserDialog({
       onClose={handleCLose}
       fullWidth
       maxWidth="sm"
-      PaperProps={{ sx: {
+      PaperProps={{
+        sx: {
           borderRadius: 3,
-          p: 1,
-          boxShadow: 3,
-        }, }}
+          p: 2,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        },
+      }}
     >
-      <div className="flex">
-        <DialogActions>
-          <IconButton
-            onClick={handleCLose}
-            style={{ position: "absolute", right: 8, top: 8 }}
-          >
-            <CircleX size={30} className="hover:text-red-500" />
-          </IconButton>
-        </DialogActions>
+      <div className="relative p-4 pb-0">
+        {/* <IconButton
+          onClick={handleCLose}
+          size="small"
+          className="absolute right-0 top-0 transition-colors hover:bg-gray-100"
+          sx={{ color: "#94a3b8" }}
+        >
+          <X size={20} />
+        </IconButton> */}
 
-        <div>
-          <Typography variant="h6" component="h2">
-            <span className="font-semibold">User Information</span>
+        <div className="mb-4">
+          <Typography
+            variant="h5"
+            className="font-bold text-[#1e293b]"
+            sx={{ fontWeight: 700, fontSize: "1.5rem" }}
+          >
+            User Information
           </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Details and information about the user
+          <Typography
+            variant="body2"
+            className="text-[#64748b]"
+            sx={{ fontSize: "0.875rem", mt: 0.5 }}
+          >
+            Details and members of the marketing department
           </Typography>
         </div>
       </div>
 
-      <Divider />
+      <Divider sx={{ mx: 4, mb: 1, borderColor: "#f1f5f9" }} />
 
-      <DialogContent>
-        {/* Profile */}
-        <Grid container spacing={1} alignItems="center">
-          <div className="py-2">
-            <Grid>
-              <Typography className="pb-2">Profile Photo</Typography>
-              <Avatar
-                src="/broken-image.jpg"
-                sx={{ width: 78, height: 78, backgroundColor: "#5479EE" }}
-              />
-            </Grid>
+      <DialogContent className="p-4 pt-4">
+        {/* Profile Photo Section */}
+        <div className="mb-8">
+          <Typography
+            className="mb-4 text-sm font-semibold text-[#64748b]"
+            sx={{ mb: 2 }}
+          >
+            Profile Photo
+          </Typography>
+          <div className="flex items-center gap-4">
+            <Avatar
+              src={userData.avatar_initial || "/broken-image.jpg"}
+              sx={{ width: 80, height: 80, backgroundColor: "#5479EE" }}
+            />
+            <div className="flex flex-col gap-1">
+              <Typography
+                variant="h6"
+                className="font-bold text-[#1e293b]"
+                sx={{ fontWeight: 600, fontSize: "1.125rem", lineHeight: 1 }}
+              >
+                {userData.fullName || "Name1"}
+              </Typography>
+              <Typography
+                variant="body2"
+                className="text-[#64748b]"
+                sx={{ fontSize: "0.875rem" }}
+              >
+                {userData.email || "name1@example.com"}
+              </Typography>
+            </div>
           </div>
-
-          <Grid>
-            <Typography variant="subtitle1" className="pt-5">
-              {userData.fullName}
-            </Typography>
-            <Typography variant="subtitle2">{userData.email}</Typography>
-          </Grid>
-        </Grid>
+        </div>
 
         {/* Details Grid */}
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Department
             </Typography>
-            <Typography variant="subtitle2">Custommer Support</Typography>
+            <Typography className="font-semibold text-[#334155]">
+              Customer Support
+            </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Branch
             </Typography>
-            <Typography variant="subtitle2">The Branch</Typography>
+            <Typography className="font-semibold text-[#334155]">
+              Headquarters
+            </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Level
             </Typography>
-            <Typography variant="subtitle2">Staff</Typography>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
-              Role
+            <Typography className="font-semibold text-[#334155]">
+              Staff
             </Typography>
-            <Typography variant="subtitle2">{userData.role}</Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
+              Position
+            </Typography>
+            <Typography className="font-semibold text-[#334155]">
+              Support Agent
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Status
             </Typography>
-            <Typography variant="subtitle2">
-              {userData.status && badge[userData.status]}
+            <div className="mt-1">
+              {userData.status ? badge[userData.status] : badge["active"]}
+            </div>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
+              Role Access
+            </Typography>
+            <Typography className="font-semibold text-[#334155]">
+              {userData.role || "Support"}
             </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Employee ID
             </Typography>
-            <Typography variant="subtitle2">{userData.id_employee}</Typography>
+            <Typography className="font-semibold text-[#334155]">
+              {userData.id_employee || "CS -001"}
+            </Typography>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <Typography variant="subtitle2" className="py-2 text-gray-400">
+          <Grid item xs={12} sm={4}>
+            <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Member Since
             </Typography>
-            <Typography variant="subtitle2"> 2020-12-01</Typography>
+            <Typography className="font-semibold text-[#334155]">
+              2020-12-01
+            </Typography>
           </Grid>
         </Grid>
       </DialogContent>

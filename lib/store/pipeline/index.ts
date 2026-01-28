@@ -82,7 +82,7 @@ interface GetState {
     validation?: ValidationItem[];
   }>;
 
-  updateStagePipeline: (id: string, deal_stage: string) => Promise<void>;
+  updateStagePipeline: (deal: any, newStage: string) => Promise<void>;
 
   updateFormPipeline: (param?: reqBody, id?: string) => Promise<{
     success: boolean;
@@ -229,24 +229,52 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     }
   },
 
-  updateStagePipeline: async (id: string, stage: string) => {
+  updateStagePipeline: async (deal: any, newStage: string) => {
     try {
       set({ loading: true, error: null });
-      const res = await api.patch(`/pipelines/${id}/stage`, {
-        deal_stage: stage,
-      });
 
-      if (res.status === 200 || res.status === 204) {
-        await get().fetchPipeline();
-        set({ loading: false });
-        return;
+      // Convert date to ISO 8601 format for the API
+      // The UI uses MM/DD/YYYY format from formatMDY which needs conversion
+      let formattedDate = deal.expected_close_date;
+      if (typeof formattedDate === 'string' && formattedDate.includes('/')) {
+        const parts = formattedDate.split('/');
+        if (parts.length === 3) {
+          const [m, d, y] = parts;
+          formattedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T00:00:00.000Z`;
+        }
+      } else if (formattedDate && typeof formattedDate === 'string' && !formattedDate.includes('T')) {
+        const d = new Date(formattedDate);
+        if (!isNaN(d.getTime())) {
+          formattedDate = d.toISOString();
+        }
       }
 
-      throw new Error("Failed to update pipeline stage");
+      // Construct the full request body as required by the API
+      const requestBody = {
+        deal_name: deal.deal_name || "Untitled Deal",
+        client_account: deal.client_account,
+        deal_stage: newStage,
+        expected_close_date: formattedDate,
+        amount: Number(deal.amount) || 0,
+        probability_of_close: Number(deal.probability_of_close) || 0,
+        notes: deal.notes || "",
+      };
+
+      console.log("Updating pipeline with PUT:", deal.id, requestBody);
+
+      const res = await api.put(`/pipelines/${deal.id}`, requestBody);
+
+      // Refetch pipeline data to ensure UI stays in sync with backend
+      if (res.status === 200) {
+        await get().fetchPipeline({
+          assigned_to: get().salespersonFilter,
+          dateRange: get().dateRangeFilter,
+        });
+      }
     } catch (error) {
-      console.error("Error patching pipeline stage:", error);
-      set({ error: "Failed to update pipeline stage" });
-      throw error;
+      console.error("Failed to update pipeline:", error)
+      set({ error: "Failed to update data" });
+      throw error; // Re-throw so the caller can handle it
     } finally {
       set({ loading: false });
     }

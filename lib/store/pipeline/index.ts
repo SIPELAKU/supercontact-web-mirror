@@ -72,7 +72,7 @@ interface GetState {
   setEditId: (val: string) => void;
   setStage: (val: string) => void;
   setIsModalOpen: (val: boolean) => void;
-  fetchActiveUser: ()=> void;
+  fetchActiveUser: () => void;
 
   fetchPipeline: (param?: PipelineQuery) => Promise<void>;
 
@@ -104,30 +104,30 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   dateRangeFilter: "all",
 
   setSalespersonFilter: (v) => set({ salespersonFilter: v }),
-  
+
   setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
 
-  setEditId: (v) => set({id: v}),
+  setEditId: (v) => set({ id: v }),
 
-  setStage: (val: string) => set({stage: val}),
+  setStage: (val: string) => set({ stage: val }),
 
-  setIsModalOpen: (v) => set({isModalOpen: v}),
+  setIsModalOpen: (v) => set({ isModalOpen: v }),
 
-  fetchActiveUser: async() => {
+  fetchActiveUser: async () => {
     try {
       set({ loading: true, error: null });
-       const res = await api.get("/pipelines/active-users");
-       const data = res.data.data
-       const temp: DealStage[] = [{label: "All", value: 'all'}]
-       data.users.map((arr: Users)=>{
+      const res = await api.get("/pipelines/active-users");
+      const data = res.data.data
+      const temp: DealStage[] = [{ label: "All", value: 'all' }]
+      data.users.map((arr: Users) => {
         const body = {
           label: arr.fullname.charAt(0).toUpperCase() + arr.fullname.slice(1),
           value: arr.id
         }
         temp.push(body)
-       })
-       
-       set({listActiveUser: temp})
+      })
+
+      set({ listActiveUser: temp })
     } catch (err) {
       set({ error: "Failed to fetch data" });
     } finally {
@@ -139,47 +139,53 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
+      const { dateRangeFilter, salespersonFilter } = get();
+
+      const dateRange = param?.dateRange || dateRangeFilter;
+      const assignedTo = param?.assigned_to || salespersonFilter;
+
       const params: Record<string, string> = {};
 
-      if (param?.dateRange && param.dateRange !== "all") {
-        const range = getDateRange(param.dateRange);
+      if (dateRange && dateRange !== "all") {
+        const range = getDateRange(dateRange);
         if (range) {
           params.date_from = String(range.start);
           params.date_to = String(range.end);
         }
       }
 
-      if (param?.assigned_to && param.assigned_to !== "all") {
-        params.assigned_to = param.assigned_to;
+      if (assignedTo && assignedTo !== "all") {
+        params.assigned_to = assignedTo;
       }
 
+      console.log("[fetchPipeline] Requesting /pipelines with params:", params);
       const res = await api.get("/pipelines", { params });
-      
+
       const data = res.data.data
 
       const metrics = [
-          {
-            label: "Total Pipeline Value",
-            value: formatRupiah(data.stats.total_pipeline.value),
-            change: `${data.stats.total_pipeline.percent}%`,
-            isPositive: data.stats.total_pipeline.trend,
-          },
-          {
-            label: "Average Deal Size",
-            value: formatRupiah(data.stats.avg_pipeline.value),
-            change: `${data.stats.avg_pipeline.percent}%`,
-            isPositive: data.stats.avg_pipeline.trend,
-          },
-          {
-            label: "Win Rate",
-            value: `${data.stats.winrate_pipeline.value}%`,
-            change: `${data.stats.winrate_pipeline.percent}%`,
-            isPositive: data.stats.winrate_pipeline.trend,
-          },
-        ]
-        
+        {
+          label: "Total Pipeline Value",
+          value: formatRupiah(data.stats.total_pipeline.value),
+          change: `${data.stats.total_pipeline.percent}%`,
+          isPositive: data.stats.total_pipeline.trend,
+        },
+        {
+          label: "Average Deal Size",
+          value: formatRupiah(data.stats.avg_pipeline.value),
+          change: `${data.stats.avg_pipeline.percent}%`,
+          isPositive: data.stats.avg_pipeline.trend,
+        },
+        {
+          label: "Win Rate",
+          value: `${data.stats.winrate_pipeline.value}%`,
+          change: `${data.stats.winrate_pipeline.percent}%`,
+          isPositive: data.stats.winrate_pipeline.trend,
+        },
+      ]
+
       const groupedStages = transformPipelineResponse(data);
-      set({ 
+      set({
         listPipeline: groupedStages,
         stats: metrics
       });
@@ -190,11 +196,11 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     }
   },
 
-  postFormPipeline: async (body?: reqBody): Promise<{success: boolean;error?: string;validation?: ValidationItem[];}> => {
+  postFormPipeline: async (body?: reqBody): Promise<{ success: boolean; error?: string; validation?: ValidationItem[]; }> => {
     try {
       set({ loading: true, error: null });
-      
-      const res = await api.post("/pipelines", body );
+
+      const res = await api.post("/pipelines", body);
 
       if (res.status === 200) {
         await get().fetchPipeline();
@@ -226,12 +232,21 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   updateStagePipeline: async (id: string, stage: string) => {
     try {
       set({ loading: true, error: null });
-      const res = await api.patch(`/pipelines/${id}/stage`, { 
+      const res = await api.patch(`/pipelines/${id}/stage`, {
         deal_stage: stage,
       });
+
+      if (res.status === 200 || res.status === 204) {
+        await get().fetchPipeline();
+        set({ loading: false });
+        return;
+      }
+
+      throw new Error("Failed to update pipeline stage");
     } catch (error) {
-      console.info(error)
-      set({ error: "Failed to patch data" });
+      console.error("Error patching pipeline stage:", error);
+      set({ error: "Failed to update pipeline stage" });
+      throw error;
     } finally {
       set({ loading: false });
     }

@@ -52,3 +52,8 @@ export {
     type UpdateSubscriberData
 } from './email-marketing';
 
+// Quotations API
+export {
+    createQuotation, type CreateQuotationData, type QuotationItemData
+} from './quotations';
+

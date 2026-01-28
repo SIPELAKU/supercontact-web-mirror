@@ -1,12 +1,8 @@
 "use client";
 
+import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
 import React, { useEffect, useRef, useState } from "react";
-import { createRoot, Root } from "react-dom/client";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
-
-const MySwal = withReactContent(Swal);
 
 interface InputProps {
   label: string;
@@ -165,14 +161,13 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const reactRootRef = useRef<Root | null>(null);
   const { getToken } = useAuth();
-  const isSubmittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (data: NoteData) => {
-    if (isSubmittingRef.current) return; // Prevent duplicate submissions
+    if (isSubmitting) return;
 
-    isSubmittingRef.current = true;
+    setIsSubmitting(true);
     try {
       const token = await getToken();
 
@@ -190,84 +185,35 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         }),
       });
 
-      MySwal.close();
-      onClose();
       if (res.ok) {
+        notify.success("Notes saved!");
         onSuccess();
-        MySwal.close();
-
-        MySwal.fire({
-          icon: "success",
-          title: "Notes saved!",
-          timer: 1200,
-          showConfirmButton: false,
-        });
+        onClose();
       } else {
-        MySwal.fire({
-          icon: "error",
-          title: "Failed to save notes",
-          timer: 1400,
-          showConfirmButton: false,
-        });
+        notify.error("Failed to save notes");
       }
     } catch (error) {
-      MySwal.fire({
-        icon: "error",
-        title: "Authentication required",
-        text: "Please login again",
-      });
+      notify.error("Authentication required. Please login again.");
     } finally {
-      isSubmittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (!open) return;
+  if (!open) return null;
 
-    MySwal.fire({
-      html: `<div id="react-swal-container"></div>`,
-      showConfirmButton: false,
-      allowOutsideClick: true,
-      customClass: {
-        popup: `
-            w-[92%]
-            sm:w-full
-            sm:max-w-lg
-            md:max-w-xl
-            rounded-xl
-            `,
-      },
-      padding: 0,
-
-      didOpen: () => {
-        const container = document.getElementById("react-swal-container");
-        if (container) {
-          reactRootRef.current = createRoot(container);
-          reactRootRef.current.render(
-            <ModalContent
-              onClose={() => {
-                MySwal.close();
-                onClose();
-              }}
-              onSubmit={handleSubmit}
-            />,
-          );
-        }
-      },
-
-      didClose: () => {
-        onClose();
-      },
-      willClose: () => {
-        if (reactRootRef.current) {
-          reactRootRef.current.unmount();
-          reactRootRef.current = null;
-        }
-      },
-    });
-  }, [open]);
-
-  return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ModalContent onClose={onClose} onSubmit={handleSubmit} />
+      </div>
+    </div>
+  );
 };
 
 export default AddNoteModal;

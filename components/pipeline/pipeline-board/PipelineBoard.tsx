@@ -30,6 +30,7 @@ import { StageUI } from "@/lib/helper/transformPipeline"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { Deal } from "@/lib/types/Pipeline"
 import { Plus, Search } from "lucide-react"
+import { notify } from "@/lib/notifications"
 
 
 
@@ -53,7 +54,8 @@ export default function PipelineBoard() {
     listActiveUser,
     isModalOpen,
     setIsModalOpen,
-    updateStagePipeline
+    updateStagePipeline,
+    fetchPipeline
   } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [stages, setStages] = useState(listPipeline)
@@ -227,6 +229,9 @@ export default function PipelineBoard() {
 
     const activeId = String(active.id)
     const overId = String(over.id)
+
+    // Find the original stage from the store (not the optimistic state)
+    const originalStage = listPipeline.find(s => s.deals.some(d => String(d.id) === activeId))?.name;
 
     const from = findDeal(activeId, stages)
     if (!from) {

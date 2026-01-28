@@ -139,20 +139,26 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
+      const { dateRangeFilter, salespersonFilter } = get();
+
+      const dateRange = param?.dateRange || dateRangeFilter;
+      const assignedTo = param?.assigned_to || salespersonFilter;
+
       const params: Record<string, string> = {};
 
-      if (param?.dateRange && param.dateRange !== "all") {
-        const range = getDateRange(param.dateRange);
+      if (dateRange && dateRange !== "all") {
+        const range = getDateRange(dateRange);
         if (range) {
           params.date_from = String(range.start);
           params.date_to = String(range.end);
         }
       }
 
-      if (param?.assigned_to && param.assigned_to !== "all") {
-        params.assigned_to = param.assigned_to;
+      if (assignedTo && assignedTo !== "all") {
+        params.assigned_to = assignedTo;
       }
 
+      console.log("[fetchPipeline] Requesting /pipelines with params:", params);
       const res = await api.get("/pipelines", { params });
 
       const data = res.data.data

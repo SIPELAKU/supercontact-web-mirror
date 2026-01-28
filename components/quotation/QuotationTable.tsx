@@ -3,13 +3,18 @@
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import { Button } from "@/components/ui/button"
 import { FilterBar } from "@/components/ui/filter"
-import { CustomTable as Table } from "@/components/ui/table"
 import { formatRupiah } from "@/lib/helper/currency"
 import { formatMDY } from "@/lib/helper/date"
 import { useGetQuotationstore } from "@/lib/store/quotation"
-import { Column } from "@/lib/types/Quotation"
 import { Plus, Search } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableHead from "@mui/material/TableHead"
+import TablePagination from "@mui/material/TablePagination"
+import TableRow from "@mui/material/TableRow"
 
 export const quotationStatus = [
     { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
@@ -18,7 +23,8 @@ export const quotationStatus = [
     { value: "Rejected", label: "Rejected", bgColor: "bg-red-100", textColor: "text-red-800" },
 ]
 
-export default function QuatationTable() {
+export default function QuotationTable() {
+    const router = useRouter();
     const {
         listQuotations,
         pagination,
@@ -33,50 +39,9 @@ export default function QuatationTable() {
         setStatusFilter
     } = useGetQuotationstore();
 
-    const columns: Column<(typeof listQuotations)[0]>[] = [
-        {
-            key: "client",
-            label: "Client",
-            render: (row) => (
-                <span className="font-medium text-gray-900">{row.lead.contact.name}</span>
-            ),
-            width: 18
-        },
-        { key: "quotation_number", label: "Quotation ID", width: 14 },
-        { 
-            key: "date", 
-            label: "Date", 
-            render: (row) => (
-                <span className="font-medium text-gray-900">{formatMDY(row.expire_date)}</span>
-            ),
-            width: 12 
-        },
-        {
-            key: "status",
-            label: "Status",
-            render: (row) => (
-                <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${row.quotation_status === "Accepted"
-                        ? "bg-green-100 text-green-800"
-                        : row.quotation_status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                >
-                    {row.quotation_status}
-                </span>
-            ),
-            width: 12,
-        },
-        {
-            key: "amount",
-            label: "Amount",
-            render: (row) => (
-                <span className="font-medium text-gray-900">{formatRupiah(row.grand_total)}</span>
-            ),
-            width: 12,
-        },
-    ];
+    const handleRowClick = (quotationId: string) => {
+        router.push(`/sales/quotation/${quotationId}`);
+    };
 
     return (
         <div className="rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
@@ -145,18 +110,100 @@ export default function QuatationTable() {
                 </Link>
             </div>
 
-            <Table
-                data={listQuotations}
-                rowKey={(row) => row.id}
-                columns={columns}
-                loading={loading}
-                total={pagination.total}
-                page={pagination.page}
-                rowsPerPage={pagination.limit}
-                onPageChange={setPage}
-                onRowsPerPageChange={setLimit}
-            />
+            <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
+                <Table>
+                    <TableHead>
+                        <TableRow className="bg-[#EEF2FD]!">
+                            <TableCell><span className="text-[#6B7280]">Client</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Quotation ID</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Date</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Status</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Amount</span></TableCell>
+                        </TableRow>
+                    </TableHead>
 
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                    <div className="py-8 text-gray-500">Loading...</div>
+                                </TableCell>
+                            </TableRow>
+                        ) : listQuotations.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                    <div className="py-8 text-gray-500">No data available</div>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            listQuotations.map((quotation) => (
+                                <TableRow
+                                    key={quotation.id}
+                                    onClick={() => handleRowClick(quotation.id)}
+                                    className="cursor-pointer hover:bg-gray-50"
+                                    sx={{
+                                        '&:hover': {
+                                            backgroundColor: '#f9fafb',
+                                        },
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <TableCell>
+                                        <span className="font-medium text-gray-900">
+                                            {quotation.lead.contact.name}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="text-gray-900">
+                                            {quotation.quotation_number}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="font-medium text-gray-900">
+                                            {formatMDY(quotation.expire_date)}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span
+                                            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${quotation.quotation_status === "Accepted"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : quotation.quotation_status === "Pending"
+                                                        ? "bg-yellow-100 text-yellow-800"
+                                                        : "bg-red-100 text-red-800"
+                                                }`}
+                                        >
+                                            {quotation.quotation_status}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="font-medium text-gray-900">
+                                            {formatRupiah(quotation.grand_total)}
+                                        </span>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+
+                <TablePagination
+                    component="div"
+                    count={pagination.total}
+                    rowsPerPage={pagination.limit}
+                    page={pagination.page - 1}
+                    onPageChange={(_, page) => setPage(page + 1)}
+                    onRowsPerPageChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                    }}
+                    rowsPerPageOptions={[5, 10, 15, 20]}
+                    slotProps={{
+                        select: {
+                            inputProps: { 'aria-label': 'rows per page' }
+                        }
+                    }}
+                />
+            </div>
         </div>
     )
 }

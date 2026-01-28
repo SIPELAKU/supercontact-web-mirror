@@ -1,7 +1,5 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, X, Download } from "lucide-react";
@@ -9,8 +7,6 @@ import * as XLSX from "xlsx";
 import { ContactReq } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "../ui/app-button";
-
-const MySwal = withReactContent(Swal);
 
 interface ImportContactModalProps {
   open: boolean;
@@ -189,10 +185,9 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
           <div
             className={`
               border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors
-              ${
-                dragActive
-                  ? "border-[#5479EE] bg-purple-50"
-                  : "border-gray-300 bg-white"
+              ${dragActive
+                ? "border-[#5479EE] bg-purple-50"
+                : "border-gray-300 bg-white"
               }
             `}
             onDragEnter={handleDrag}

@@ -1,12 +1,9 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
+import { notify } from "@/lib/notifications";
 import React from "react";
 import { Contact } from "@/lib/models/types";
 import { useDeleteMultipleContacts } from "@/lib/hooks/useContacts";
-
-const MySwal = withReactContent(Swal);
 
 interface DeleteContactModalProps {
   open: boolean;
@@ -25,11 +22,7 @@ const DeleteMultipleContactModal: React.FC<DeleteContactModalProps> = ({
 
   const handleSubmit = async () => {
     if (!selected.length) {
-      MySwal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Please select at least one contact",
-      });
+      notify.error("Please select at least one contact");
       return;
     }
 
@@ -38,27 +31,12 @@ const DeleteMultipleContactModal: React.FC<DeleteContactModalProps> = ({
         selected.map((contact) => contact.id),
       );
 
-      const Toast = Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
-
       onSuccess();
       onClose();
 
-      Toast.fire({
-        icon: "success",
-        title: "Contact deleted successfully!",
-      });
+      notify.success("Contact deleted successfully!");
     } catch (err: any) {
-      MySwal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.message || "Failed to delete multiple contacts",
-      });
+      notify.error(err.message || "Failed to delete multiple contacts");
     }
   };
 

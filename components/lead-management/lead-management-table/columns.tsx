@@ -4,12 +4,10 @@ import { Lead, LeadSource, LeadStatus } from "@/lib/models/types";
 import { cn } from "@/lib/utils";
 import ManualEntry from "@/public/manual-entry.svg";
 import WAIcon from "@/public/wa.svg";
-import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Globe } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
-
 
 // Status badge colors
 const statusColors: Record<LeadStatus, string> = {
@@ -28,62 +26,64 @@ export const sourceIcon: Record<LeadSource, React.ReactNode> = {
   "Manual Entry": <Image src={ManualEntry} alt={"manual-entry"} className="h-4 w-4" />,
 };
 
-export const columns: ColumnDef<Lead>[] = [
+// Column configuration interface
+export interface LeadColumn {
+  key: string;
+  label: string;
+  render: (lead: Lead) => React.ReactNode;
+  sortable?: boolean;
+}
+
+// Column definitions for MUI Table
+export const leadColumns: LeadColumn[] = [
   {
-    accessorKey: "lead_name",
-    header: () => <span className="text-[#6B7280]">Lead Name</span>,
-    cell: ({ row }) => (
-      <span className="text-black">{row.original.contact.name}</span>
-    ),
+    key: "lead_name",
+    label: "Lead Name",
+    sortable: true,
+    render: (lead) => <span className="text-black">{lead.contact.name}</span>,
   },
   {
-    accessorKey: "lead_status",
-    header: () => <span className="text-[#6B7280]">Status</span>,
-    cell: ({ row }) => {
-      const status = row.getValue<LeadStatus>("lead_status"); 
-      return (
-        <span
-          className={cn(
-            "px-3 py-1 rounded-md text-white text-sm font-medium",
-            statusColors[status]
-          )}
-        >
-          {status}
-        </span>
-      );
-    },
-  },
-  {
-    accessorKey: "lead_source",
-    header: () => <span className="text-[#6B7280]">Source</span>,
-    cell: ({ row }) => {
-      const source = row.getValue<LeadSource>("lead_source");
-      // console.log('row', row);
-      // console.log('source', source);
-      return (
-        <div className="flex items-center gap-2 text-black">
-          {sourceIcon[source]}
-          <span>{source}</span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "user",
-    header: () => <span className="text-[#6B7280]">Assigned To</span>,
-    cell: ({ row }) => (
-      <span className="text-[#6B7280]">
-        {row.original.user.fullname}
+    key: "lead_status",
+    label: "Status",
+    sortable: true,
+    render: (lead) => (
+      <span
+        className={cn(
+          "px-3 py-1 rounded-md text-white text-sm font-medium",
+          statusColors[lead.lead_status]
+        )}
+      >
+        {lead.lead_status}
       </span>
     ),
   },
   {
-    accessorKey: "last_contacted",
-    header: () => <span className="text-[#6B7280]">Last Contacted</span>,
-    cell: ({ row }) => {
-      const dateString = row.original.contact.last_contacted?.created_at;
+    key: "lead_source",
+    label: "Source",
+    sortable: true,
+    render: (lead) => (
+      <div className="flex items-center gap-2 text-black">
+        {sourceIcon[lead.lead_source]}
+        <span>{lead.lead_source}</span>
+      </div>
+    ),
+  },
+  {
+    key: "user",
+    label: "Assigned To",
+    sortable: true,
+    render: (lead) => (
+      <span className="text-[#6B7280]">{lead.user.fullname}</span>
+    ),
+  },
+  {
+    key: "last_contacted",
+    label: "Last Contacted",
+    sortable: true,
+    render: (lead) => {
+      const dateString = lead.contact.last_contacted?.created_at;
       if (!dateString) return <span className="text-[#6B7280]">-</span>;
-      
+
       try {
         const date = new Date(dateString);
         return (

@@ -1,6 +1,5 @@
 "use client";
 
-import { columns } from "./lead-management-table/columns";
 import { DataTable } from "./lead-management-table/data-table";
 import KanbanView from "./lead-management-table/kanban-view";
 import { useViewMode } from "@/lib/hooks/useLeadStore";
@@ -15,7 +14,7 @@ export default function LeadManagement() {
     <div className=" min-h-screen max-w-screen p-4">
       <div className="">
         {viewMode === "table-view" && (
-          <DataTable columns={columns} />
+          <DataTable />
         )}
 
         {viewMode === "kanban-view" && (

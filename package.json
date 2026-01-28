@@ -30,7 +30,6 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@tabler/icons-react": "^3.36.1",
     "@tanstack/react-query": "5.90.19",
-    "@tanstack/react-table": "8.19.3",
     "axios": "^1.13.2",
     "bumpp": "^10.3.2",
     "class-variance-authority": "^0.7.1",
@@ -45,8 +44,6 @@
     "react-hot-toast": "2.6.0",
     "react-icons": "^5.5.0",
     "recharts": "2.12.7",
-    "sweetalert2": "^11.26.4",
-    "sweetalert2-react-content": "^5.1.0",
     "tailwind-merge": "^3.4.0",
     "xlsx": "^0.18.5",
     "zustand": "^5.0.9"

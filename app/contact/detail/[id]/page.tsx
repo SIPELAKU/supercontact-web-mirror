@@ -4,16 +4,13 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Contact, Note, Task } from "@/lib/models/types";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
+import { notify } from "@/lib/notifications";
 import EditContactModal from "@/components/modal/EditContact";
 import AddTaskModal from "@/components/modal/AddTaskModal";
-import { Box, Divider, Tab, Tabs } from "@mui/material";
 import DeleteContactModal from "@/components/modal/DeleteContact";
 import { useAuth } from "@/lib/context/AuthContext";
 import { AppButton } from "@/components/ui/app-button";
-
-const MySwal = withReactContent(Swal);
+import { Box, Divider, Tab, Tabs } from "@mui/material";
 
 // Mock data for tags since API wasn't provided for it
 const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
@@ -85,12 +82,7 @@ export default function ContactDetailPage() {
   const fetchContact = async () => {
     try {
       if (!token) {
-        MySwal.fire({
-          icon: "error",
-          title: "Token not found",
-          timer: 1000,
-          showConfirmButton: false,
-        });
+        notify.error("Token not found. Please log in again.");
         router.push("/login");
         return;
       }
@@ -131,12 +123,7 @@ export default function ContactDetailPage() {
     }
 
     if (!token) {
-      MySwal.fire({
-        icon: "error",
-        title: "Token not found",
-        timer: 1000,
-        showConfirmButton: false,
-      });
+      notify.error("Token not found. Please log in again.");
       router.push("/login");
       return;
     }
@@ -158,12 +145,7 @@ export default function ContactDetailPage() {
         setNewNote("");
         reloadData();
         setisloadingCreateNote(false);
-        MySwal.fire({
-          icon: "success",
-          title: "Note added!",
-          timer: 1000,
-          showConfirmButton: false,
-        });
+        notify.success("Note added!");
       }
     } catch (error) {
       console.error("Error saving note:", error);

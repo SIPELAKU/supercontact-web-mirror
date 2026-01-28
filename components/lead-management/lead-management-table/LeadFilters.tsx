@@ -2,6 +2,7 @@
 
 import { Lead } from "@/lib/models/types";
 import { useEffect, useState } from "react";
+import { AppDatePicker } from "@/components/ui/app-datepicker";
 
 
 export default function LeadFilters({
@@ -12,11 +13,11 @@ export default function LeadFilters({
   setFilteredLeads: (value: Lead[]) => void;
 }) {
   // Placeholder default state
-  const [status, setStatus] = useState("placeholder-status"); 
-  const [source, setSource] = useState("placeholder-source"); 
-  const [assignedto, setAssignedto] = useState("placeholder-assigned"); 
+  const [status, setStatus] = useState("placeholder-status");
+  const [source, setSource] = useState("placeholder-source");
+  const [assignedto, setAssignedto] = useState("placeholder-assigned");
 
-  const [dateRange, setDateRange] = useState<{from?: Date; to?: Date}>({
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
     from: undefined,
     to: undefined,
   });
@@ -39,11 +40,11 @@ export default function LeadFilters({
     if (status && status !== "All" && status !== "placeholder-status") {
       filtered = filtered.filter((l) => l.lead_status === status);
     }
-    
+
     if (source && source !== "All" && source !== "placeholder-source") {
       filtered = filtered.filter((l) => l.lead_source === source);
     }
-    
+
     if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned") {
       filtered = filtered.filter((l) => l.user.fullname === assignedto);
     }
@@ -61,17 +62,17 @@ export default function LeadFilters({
         if (!l.contact.last_contacted?.created_at) {
           return false; // Exclude leads without last contacted date
         }
-        
+
         const last = new Date(l.contact.last_contacted.created_at);
         const isInRange = last >= from && last <= to;
-        
+
         console.log('Date check:', {
           leadName: l.contact.name,
           lastContacted: l.contact.last_contacted.created_at,
           parsedDate: last,
           isInRange
         });
-        
+
         return isInRange;
       });
     }
@@ -132,25 +133,20 @@ export default function LeadFilters({
         </select>
       </div>
 
-      {/* Date Range */}
       <div className="flex-1 min-w-0 flex gap-2">
-        <input
-          type="date"
-          value={dateRange.from ? dateRange.from.toISOString().split('T')[0] : ''}
-          onChange={(e) =>
-            setDateRange({ ...dateRange, from: e.target.value ? new Date(e.target.value) : undefined })
-          }
-          className="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none"
-          placeholder="From Date"
-        />
-        <input
-          type="date"
-          value={dateRange.to ? dateRange.to.toISOString().split('T')[0] : ''}
-          onChange={(e) =>
-            setDateRange({ ...dateRange, to: e.target.value ? new Date(e.target.value) : undefined })
-          }
-          className="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none"
-          placeholder="To Date"
+        <AppDatePicker
+          mode="range"
+          value={dateRange.from && dateRange.to ? [dateRange.from, dateRange.to] : null}
+          isBgWhite={true}
+          onChange={(val: any) => {
+            if (Array.isArray(val)) {
+              setDateRange({ from: val[0] || undefined, to: val[1] || undefined });
+            } else {
+              setDateRange({ from: undefined, to: undefined });
+            }
+          }}
+          placeholder="Pick a date range"
+          label=""
         />
       </div>
     </div>

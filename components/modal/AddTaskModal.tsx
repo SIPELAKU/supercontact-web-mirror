@@ -5,20 +5,10 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { Input } from "@/components/ui/input";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
+import { notify } from "@/lib/notifications";
 import { Modal, Box, TextareaAutosize } from "@mui/material";
-import { useAuth } from "@/lib/context/AuthContext";
 import { useRouter } from "next/navigation";
-
-// Ensure Swal appears above MUI Modal (z-index 1300)
-const MySwal = withReactContent(
-  Swal.mixin({
-    customClass: {
-      container: "!z-[9999]",
-    },
-  }),
-);
+import { useAuth } from "@/lib/context/AuthContext";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -118,30 +108,17 @@ export default function AddTaskModal({
 
   const handleSubmit = async () => {
     if (!token) {
-      MySwal.fire({
-        icon: "error",
-        title: "Token not found",
-        timer: 1000,
-        showConfirmButton: false,
-      });
+      notify.error("Token not found. Please log in again.");
       router.push("/login");
       return;
     }
     if (!taskName.trim()) {
-      MySwal.fire({
-        icon: "error",
-        title: "Validation Error",
-        text: "Task name is required",
-      });
+      notify.error("Task name is required");
       return;
     }
 
     if (!date) {
-      MySwal.fire({
-        icon: "error",
-        title: "Validation Error",
-        text: "Date is required",
-      });
+      notify.error("Date is required");
       return;
     }
 
@@ -174,12 +151,7 @@ export default function AddTaskModal({
       );
 
       if (res.ok) {
-        MySwal.fire({
-          icon: "success",
-          title: "Task created!",
-          timer: 1000,
-          showConfirmButton: false,
-        });
+        notify.success("Task created!");
         onSuccess();
         onClose();
         // Reset form
@@ -190,19 +162,11 @@ export default function AddTaskModal({
         setSearchTerm("");
         setSelectedUser(null);
       } else {
-        MySwal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to create task",
-        });
+        notify.error("Failed to create task");
       }
     } catch (error) {
       console.error("Error creating task:", error);
-      MySwal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Something went wrong",
-      });
+      notify.error("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -338,11 +302,10 @@ export default function AddTaskModal({
               <button
                 key={p}
                 onClick={() => setPriority(p)}
-                className={`px-4 py-2 rounded-md text-sm transition-colors border ${
-                  priority === p
-                    ? "bg-blue-50 text-blue-600 border-blue-600 font-medium"
-                    : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                }`}
+                className={`px-4 py-2 rounded-md text-sm transition-colors border ${priority === p
+                  ? "bg-blue-50 text-blue-600 border-blue-600 font-medium"
+                  : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  }`}
               >
                 {p}
               </button>

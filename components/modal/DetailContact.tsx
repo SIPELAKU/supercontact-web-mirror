@@ -1,12 +1,5 @@
-"use client";
-
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import React, { useEffect, useRef, useState } from "react";
-import { createRoot, Root } from "react-dom/client";
 import { Contact } from "@/lib/models/types";
-
-const MySwal = withReactContent(Swal);
 
 interface InputProps {
   label: string;
@@ -45,10 +38,10 @@ const ModalContent: React.FC<ModalContentProps> = ({
 
       <div className="mt-6 flex flex-col gap-4">
         <ReadOnlyField label="Name" value={initialData.name ?? ""} />
-        <ReadOnlyField label="Phone Number" value={initialData.phone ?? ""} />
+        <ReadOnlyField label="Phone Number" value={initialData.phone_number ?? ""} />
         <ReadOnlyField label="Email" value={initialData.email ?? ""} />
         <ReadOnlyField label="Company" value={initialData.company ?? ""} />
-        <ReadOnlyField label="Job Title" value={initialData.job_title ?? ""} />
+        <ReadOnlyField label="Job Title" value={initialData.position ?? ""} />
         <ReadOnlyField label="Address" value={initialData.address ?? ""} />
       </div>
 
@@ -80,47 +73,25 @@ const DetailContactModal: React.FC<DetailContactModalProps> = ({
   onEdit,
   initialData,
 }) => {
-  const reactRootRef = useRef<Root | null>(null);
+  if (!open || !initialData) return null;
 
-  useEffect(() => {
-    if (!open || !initialData) return;
-
-    MySwal.fire({
-      html: `<div id="react-swal-container-detail"></div>`,
-      showConfirmButton: false,
-      width: "600px",
-      didOpen: () => {
-        const container = document.getElementById(
-          "react-swal-container-detail"
-        );
-        if (container) {
-          reactRootRef.current = createRoot(container);
-          reactRootRef.current.render(
-            <ModalContent
-              initialData={initialData}
-              onClose={() => {
-                MySwal.close();
-                onClose();
-              }}
-              onEdit={() => {
-                MySwal.close();
-                onEdit();
-              }}
-            />
-          );
-        }
-      },
-      didClose: () => {
-        onClose();
-      },
-      willClose: () => {
-        reactRootRef.current?.unmount();
-        reactRootRef.current = null;
-      },
-    });
-  }, [open, initialData]);
-
-  return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ModalContent
+          initialData={initialData}
+          onClose={onClose}
+          onEdit={onEdit}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default DetailContactModal;

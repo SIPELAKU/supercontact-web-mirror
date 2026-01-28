@@ -15,36 +15,27 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 
-// TanStack Table
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import LeadDetailModal from "../lead-detail-modal";
 import LeadFilters from "./LeadFilters";
+import { leadColumns, LeadColumn } from "./columns";
 
-interface DataTableProps {
-  columns: ColumnDef<Lead>[];
-}
+type SortOrder = 'asc' | 'desc';
 
-export function DataTable({ columns }: DataTableProps) {
+export function DataTable() {
   const [filteredData, setFilteredData] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [{ pageIndex, pageSize }, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const { data: leadsResponse, isLoading, error } = useLeads(pageIndex + 1, pageSize);
 
   const data = leadsResponse?.data?.leads || [];
   const totalCount = leadsResponse?.data?.total || 0;
-  const totalPages = Math.ceil(totalCount / pageSize);
 
   console.log('DataTable render - data length:', data.length, 'isLoading:', isLoading, 'filteredData length:', filteredData.length);
 
@@ -68,21 +59,49 @@ export function DataTable({ columns }: DataTableProps) {
     }
   }, [data]);
 
+  // Handle sorting
+  const handleSort = (columnKey: string) => {
+    const isAsc = sortBy === columnKey && sortOrder === 'asc';
+    setSortOrder(isAsc ? 'desc' : 'asc');
+    setSortBy(columnKey);
 
+    // Simple client-side sorting
+    const sorted = [...filteredData].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
 
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    state: { pagination: { pageIndex, pageSize } },
-    onPaginationChange: setPagination,
-    manualPagination: true,
-    pageCount: totalPages,
+      switch (columnKey) {
+        case 'lead_name':
+          aValue = a.contact.name;
+          bValue = b.contact.name;
+          break;
+        case 'lead_status':
+          aValue = a.lead_status;
+          bValue = b.lead_status;
+          break;
+        case 'lead_source':
+          aValue = a.lead_source;
+          bValue = b.lead_source;
+          break;
+        case 'user':
+          aValue = a.user.fullname;
+          bValue = b.user.fullname;
+          break;
+        case 'last_contacted':
+          aValue = a.contact.last_contacted?.created_at || '';
+          bValue = b.contact.last_contacted?.created_at || '';
+          break;
+        default:
+          return 0;
+      }
 
-    enableSorting: true,
-    getSortedRowModel: getSortedRowModel(),
+      if (aValue < bValue) return isAsc ? -1 : 1;
+      if (aValue > bValue) return isAsc ? 1 : -1;
+      return 0;
+    });
 
-    getCoreRowModel: getCoreRowModel(),
-  });
+    setFilteredData(sorted);
+  };
 
   // Show loading skeleton while data is being fetched
   if (isLoading) {
@@ -101,7 +120,7 @@ export function DataTable({ columns }: DataTableProps) {
         </div>
         <Divider />
         <TableSkeleton
-          columns={columns.map(() => ({ width: undefined }))}
+          columns={leadColumns.map(() => ({ width: undefined }))}
           rows={pageSize}
         />
       </Card>
@@ -140,47 +159,44 @@ export function DataTable({ columns }: DataTableProps) {
       <div className="overflow-hidden rounded-none!">
         <Table>
           <TableHead>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    sx={{
-                      cursor: header.column.getCanSort()
-                        ? "pointer"
-                        : "default",
-                    }}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-
-                    {/* Sorting icons */}
-                    {{
-                      asc: " 🔼",
-                      desc: " 🔽",
-                    }[header.column.getIsSorted() as string] ?? ""}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+            <TableRow className="bg-[#EEF2FD]!">
+              {leadColumns.map((column) => (
+                <TableCell key={column.key}>
+                  {column.sortable ? (
+                    <TableSortLabel
+                      active={sortBy === column.key}
+                      direction={sortBy === column.key ? sortOrder : 'asc'}
+                      onClick={() => handleSort(column.key)}
+                    >
+                      <span className="text-[#6B7280]">{column.label}</span>
+                    </TableSortLabel>
+                  ) : (
+                    <span className="text-[#6B7280]">{column.label}</span>
+                  )}
+                </TableCell>
+              ))}
+            </TableRow>
           </TableHead>
 
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
+            {filteredData.map((lead) => (
               <TableRow
-                key={row.id}
+                key={lead.id}
                 onClick={() => {
-                  setSelectedLead(row.original);
+                  setSelectedLead(lead);
                   setIsDetailModalOpen(true);
                 }}
                 className="cursor-pointer hover:bg-gray-50"
+                sx={{
+                  '&:hover': {
+                    backgroundColor: '#f9fafb',
+                  },
+                  cursor: 'pointer',
+                }}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                {leadColumns.map((column) => (
+                  <TableCell key={column.key}>
+                    {column.render(lead)}
                   </TableCell>
                 ))}
               </TableRow>
@@ -188,7 +204,7 @@ export function DataTable({ columns }: DataTableProps) {
 
             {filteredData.length === 0 && !isLoading && (
               <TableRow>
-                <TableCell colSpan={columns.length} align="center">
+                <TableCell colSpan={leadColumns.length} align="center">
                   No data available
                 </TableCell>
               </TableRow>
@@ -202,15 +218,11 @@ export function DataTable({ columns }: DataTableProps) {
         count={totalCount}
         rowsPerPage={pageSize}
         page={pageIndex}
-        onPageChange={(_, page) =>
-          setPagination((prev) => ({ ...prev, pageIndex: page }))
-        }
-        onRowsPerPageChange={(e) =>
-          setPagination({
-            pageIndex: 0,
-            pageSize: Number(e.target.value),
-          })
-        }
+        onPageChange={(_, page) => setPageIndex(page)}
+        onRowsPerPageChange={(e) => {
+          setPageSize(Number(e.target.value));
+          setPageIndex(0);
+        }}
         rowsPerPageOptions={[5, 10, 20, 50]}
         slotProps={{
           select: {

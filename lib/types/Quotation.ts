@@ -1,19 +1,3 @@
-export interface Column<T> {
-  key: string
-  label: string
-  width?: number
-  render?: (row: T) => React.ReactNode
-}
-
-export interface CustomTableProps<T> {
-  data: T[]
-  columns: Column<T>[]
-  selectable?: boolean
-  onSelectionChange?: (selectedRows: T[]) => void
-  actions?: (row: T) => React.ReactNode
-  actionMode?: "inline" | "menu"
-}
-
 export interface ItemRow {
   product_id: string
   title: string

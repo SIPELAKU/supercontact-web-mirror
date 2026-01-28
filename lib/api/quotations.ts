@@ -88,3 +88,30 @@ export async function createQuotation(token: string, quotationData: CreateQuotat
         throw error;
     }
 }
+
+/**
+ * Fetch a single quotation by ID.
+ */
+export async function fetchQuotationById(token: string, quotationId: string): Promise<any> {
+    try {
+        const url = getFullUrl(`/quotations/${quotationId}`);
+
+        logger.info("Making GET request to fetch quotation", {
+            url,
+            quotationId
+        });
+
+        const res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        return await handleResponse(res, "Failed to fetch quotation");
+    } catch (error: any) {
+        logger.error("fetchQuotationById error:", error);
+        throw error;
+    }
+}

@@ -3,71 +3,24 @@
 import { AddProductModal } from "@/components/product/AddProductModal"
 import { Button } from "@/components/ui/button"
 import { useConfirmation } from "@/components/ui/confirm-modal"
-import { CustomTable as Table } from "@/components/ui/table"
 import { formatRupiah } from "@/lib/helper/currency"
 import { Product, useGetProductStore } from "@/lib/store/product"
-import { Column } from "@/lib/types/Quotation"
 import Pencil from "@/public/icons/pencil.png"
 import Trash from "@/public/icons/trash.png"
 import { Plus, Search } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
-
-// --- PERBAIKAN DI SINI (COLUMNS) ---
-const columns: Column<Product>[] = [
-    {
-        key: "product_name",
-        label: "Product Name",
-        width: 8,
-        // Tambahkan render kustom untuk handling text panjang
-        render: (row: Product) => (
-            <div
-                className="truncate font-medium text-gray-900 max-w-50 xl:max-w-75"
-                title={row.product_name} // Tooltip native browser saat hover
-            >
-                {row.product_name}
-            </div>
-        ),
-    },
-    {
-        key: "sku",
-        label: "SKU",
-        width: 8,
-        // Tambahkan render kustom untuk SKU
-        render: (row: Product) => (
-            <div
-                className="truncate font-medium text-gray-700 max-w-37.5"
-                title={row.sku}
-            >
-                {row.sku}
-            </div>
-        ),
-    },
-    {
-        key: "price",
-        label: "Price",
-        render: (row: Product) => (
-            <span className="font-medium text-gray-900 whitespace-nowrap">
-                {formatRupiah(row.price)}
-            </span>
-        ),
-        width: 8,
-    },
-    {
-        key: "tax_rate",
-        label: "Tax Rate",
-        render: (row) => (
-            <span className="font-medium text-gray-900">{row.tax_rate}</span>
-        ),
-        width: 8,
-    },
-];
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableHead from "@mui/material/TableHead"
+import TablePagination from "@mui/material/TablePagination"
+import TableRow from "@mui/material/TableRow"
 
 export default function ProductTable() {
     const { listProduct, pagination, setLimit, setPage, loading, setEditId, deleteProduct, searchQuery, setSearchQuery } = useGetProductStore();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const { showConfirmation } = useConfirmation()
-
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
@@ -108,66 +61,130 @@ export default function ProductTable() {
                 </Button>
 
             </div>
-            <Table
-                data={listProduct}
-                columns={columns}
-                loading={loading}
-                actionMode="inline"
-                total={pagination.total}
-                page={pagination.page}
-                rowsPerPage={pagination.limit}
-                onPageChange={setPage}
-                onRowsPerPageChange={setLimit}
-                rowKey={(row) => row.id}
-                actions={(row) => [
-                    <button
-                        key="edit"
-                        onClick={() => {
-                            console.log(row.id);
 
-                            setIsModalOpen(!isModalOpen)
-                            setEditId(row.id)
-                        }}
-                        className="hover:underline text-sm"
-                    >
-                        <div className="flex gap-1 cursor-pointer">
-                            <Image
-                                src={Pencil}
-                                height={34}
-                                width={34}
-                                alt="edit-button"
-                            />
-                        </div>
-                    </button>,
-                    <button
-                        key="delete"
-                        onClick={() => {
-                            const data = listProduct.filter((item) => item.id === row.id)
-                            showConfirmation({
-                                type: "delete",
-                                title: "Delete Product",
-                                message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
-                                confirmText: "Delete",
-                                cancelText: "Cancel",
-                                onConfirm: async () => {
-                                    await new Promise((resolve) => setTimeout(resolve, 1000))
-                                    await deleteProduct(row.id)
-                                },
-                            })
-                        }}
-                        className="hover:underline text-sm"
-                    >
-                        <div className="flex gap-1 cursor-pointer">
-                            <Image
-                                src={Trash}
-                                height={34}
-                                width={34}
-                                alt="delete-button"
-                            />
-                        </div>
-                    </button>
-                ]}
-            />
+            <div className="overflow-hidden rounded-lg border border-gray-200 mx-4 mb-4">
+                <Table>
+                    <TableHead>
+                        <TableRow className="bg-[#EEF2FD]!">
+                            <TableCell><span className="text-[#6B7280]">Product Name</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">SKU</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Price</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Tax Rate</span></TableCell>
+                            <TableCell><span className="text-[#6B7280]">Actions</span></TableCell>
+                        </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                    <div className="py-8 text-gray-500">Loading...</div>
+                                </TableCell>
+                            </TableRow>
+                        ) : listProduct.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} align="center">
+                                    <div className="py-8 text-gray-500">No data available</div>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            listProduct.map((product) => (
+                                <TableRow key={product.id} className="hover:bg-gray-50">
+                                    <TableCell>
+                                        <div
+                                            className="truncate font-medium text-gray-900 max-w-50 xl:max-w-75"
+                                            title={product.product_name}
+                                        >
+                                            {product.product_name}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div
+                                            className="truncate font-medium text-gray-700 max-w-37.5"
+                                            title={product.sku}
+                                        >
+                                            {product.sku}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="font-medium text-gray-900 whitespace-nowrap">
+                                            {formatRupiah(product.price)}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="font-medium text-gray-900">{product.tax_rate}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => {
+                                                    console.log(product.id);
+                                                    setIsModalOpen(!isModalOpen)
+                                                    setEditId(product.id)
+                                                }}
+                                                className="hover:underline text-sm"
+                                            >
+                                                <div className="flex gap-1 cursor-pointer">
+                                                    <Image
+                                                        src={Pencil}
+                                                        height={34}
+                                                        width={34}
+                                                        alt="edit-button"
+                                                    />
+                                                </div>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const data = listProduct.filter((item) => item.id === product.id)
+                                                    showConfirmation({
+                                                        type: "delete",
+                                                        title: "Delete Product",
+                                                        message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
+                                                        confirmText: "Delete",
+                                                        cancelText: "Cancel",
+                                                        onConfirm: async () => {
+                                                            await new Promise((resolve) => setTimeout(resolve, 1000))
+                                                            await deleteProduct(product.id)
+                                                        },
+                                                    })
+                                                }}
+                                                className="hover:underline text-sm"
+                                            >
+                                                <div className="flex gap-1 cursor-pointer">
+                                                    <Image
+                                                        src={Trash}
+                                                        height={34}
+                                                        width={34}
+                                                        alt="delete-button"
+                                                    />
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+
+                <TablePagination
+                    component="div"
+                    count={pagination.total}
+                    rowsPerPage={pagination.limit}
+                    page={pagination.page - 1}
+                    onPageChange={(_, page) => setPage(page + 1)}
+                    onRowsPerPageChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                    }}
+                    rowsPerPageOptions={[5, 10, 15, 20]}
+                    slotProps={{
+                        select: {
+                            inputProps: { 'aria-label': 'rows per page' }
+                        }
+                    }}
+                />
+            </div>
         </div>
     )
 }

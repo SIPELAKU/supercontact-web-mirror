@@ -1,7 +1,5 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -11,7 +9,6 @@ import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
 
-const MySwal = withReactContent(Swal);
 
 interface InputProps {
   label: string;

@@ -16,41 +16,46 @@ export interface Lead {
   notes: string;
 }
 export interface Contact {
+  id: string,
+  name: string,
+  email: string,
+  phone_number: string,
+  position: string,
+  company: string,
+  address: string,
+  is_subscribed: boolean,
+  created_at: string,
+  updated_at: string,
+  last_contacted?: {
     id: string,
-    name: string,
-    email: string,
-    phone_number: string,
-    position: string,
-    company: string,
-    address: string,
-    is_subscribed: boolean,
     created_at: string,
-    updated_at: string,
-    contact_notes: [
-      {
-        id: string,
-        contact_id: string,
-        user_fullname: string,
-        note: string,
-        created_at: string
-      }
-    ],
-    contact_tasks: [
-      {
-        id: string,
-        contact_id: string,
-        assignee_id: string,
-        user_fullname: string,
-        task_name: string,
-        description: string,
-        due_date: string,
-        priority: string,
-        status: string,
-        created_at: string,
-        updated_at: string
-      }
-    ]
-  }
+    note: string
+  },
+  contact_notes: [
+    {
+      id: string,
+      contact_id: string,
+      user_fullname: string,
+      note: string,
+      created_at: string
+    }
+  ],
+  contact_tasks: [
+    {
+      id: string,
+      contact_id: string,
+      assignee_id: string,
+      user_fullname: string,
+      task_name: string,
+      description: string,
+      due_date: string,
+      priority: string,
+      status: string,
+      created_at: string,
+      updated_at: string
+    }
+  ]
+}
 export interface Task {
   id: string;
   contact_id: string;
@@ -72,7 +77,7 @@ interface LastContactedLeads {
 }
 interface User {
   id: string;
-  fullname: string; 
+  fullname: string;
   email: string;
 }
 export type leadResponse = {
@@ -87,17 +92,17 @@ export type leadResponse = {
 export type LeadSource = "Web Form" | "WhatsApp" | "Manual Entry";
 
 export interface Note {
-    id: string,
-    title: string,
-    content: string,
-    reminder_date: string,
-    reminder_time: string,
-    contact_id: string,
-    created_at: string,
-    note: string,
-    updated_at: string,
-    user_fullname: string,
-    user_id: string,
+  id: string,
+  title: string,
+  content: string,
+  reminder_date: string,
+  reminder_time: string,
+  contact_id: string,
+  created_at: string,
+  note: string,
+  updated_at: string,
+  user_fullname: string,
+  user_id: string,
 }
 
 export type SortOrder = "asc" | "desc" | "";

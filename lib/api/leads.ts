@@ -102,13 +102,18 @@ export async function fetchLeads(token: string, page: number = 1, limit: number 
   console.log('[fetchLeads] Starting...', { page, limit });
   try {
     const baseUrl = getFullUrl("/leads");
-    const url = new URL(baseUrl);
-    url.searchParams.append("page", String(page));
-    url.searchParams.append("limit", String(limit));
+    console.log('baseUrl', baseUrl);
 
-    console.log('[fetchLeads] URL:', url.toString());
+    // Build query parameters - works for both absolute and relative URLs
+    const queryParams = new URLSearchParams({
+      page: String(page),
+      limit: String(limit)
+    });
+    const url = `${baseUrl}?${queryParams.toString()}`;
 
-    const res = await fetch(url.toString(), {
+    console.log('[fetchLeads] URL:', url);
+
+    const res = await fetch(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

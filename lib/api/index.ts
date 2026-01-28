@@ -54,6 +54,7 @@ export {
 
 // Quotations API
 export {
-    createQuotation, type CreateQuotationData, type QuotationItemData
+    createQuotation, type CreateQuotationData, type QuotationItemData,
+    sendQuotationEmail
 } from './quotations';
 

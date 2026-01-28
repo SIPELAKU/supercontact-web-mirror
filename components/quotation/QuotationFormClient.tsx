@@ -10,7 +10,7 @@ import SummaryCard from "@/components/quotation/QuotationSummary";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/ui/page-header";
 import type { ItemRow } from "@/lib/types/Quotation";
-import { createQuotation, CreateQuotationData } from "@/lib/api";
+import { createQuotation, CreateQuotationData, sendQuotationEmail } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { useGetProductStore } from "@/lib/store/product";
@@ -107,8 +107,11 @@ export default function QuotationFormClient() {
     }
 
     setIsSubmitting(true);
+    const loadingToast = toast.loading(action === "publish" ? "Saving and sending..." : "Saving draft...");
+
     try {
       const token = await getToken();
+      if (!token) throw new Error("No authentication token");
 
       const payload: CreateQuotationData = {
         action,
@@ -123,12 +126,33 @@ export default function QuotationFormClient() {
         }))
       };
 
+      // 1. Save the quotation
       await createQuotation(token, payload);
-      toast.success(`Quotation saved as ${action} successfully!`);
-      // Redirect or reset could happen here
+
+      // 2. If action is "publish", also send the email
+      if (action === "publish") {
+        if (!clientData.emailAddress) {
+          throw new Error("Client email address is required to send the quotation");
+        }
+
+        // Generate a dummy PDF blob for now
+        // In a real scenario, you might use jsPDF or high-level PDF generation logic here
+        const pdfContent = `Quotation: ${clientData.quotationTitle}\nTotal: ${grandTotal}`;
+        const pdfBlob = new Blob([pdfContent], { type: "application/pdf" });
+
+        await sendQuotationEmail(token, {
+          to_email: clientData.emailAddress,
+          subject: `Quotation: ${clientData.quotationTitle}`,
+          file: pdfBlob
+        });
+
+        toast.success("Quotation saved and sent successfully!", { id: loadingToast });
+      } else {
+        toast.success("Quotation saved as draft successfully!", { id: loadingToast });
+      }
     } catch (error: any) {
-      console.error("Failed to save quotation:", error);
-      toast.error(error.message || "Failed to save quotation");
+      console.error("Failed to process quotation:", error);
+      toast.error(error.message || "Failed to process quotation", { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }

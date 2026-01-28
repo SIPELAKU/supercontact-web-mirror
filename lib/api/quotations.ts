@@ -1,6 +1,7 @@
 // lib/api/quotations.ts
 // Quotations API functions: CRUD operations for quotations
 
+import api from "../utils/axiosClient";
 import { logger } from "../utils/logger";
 
 // ============================================
@@ -23,40 +24,6 @@ export interface CreateQuotationData {
 }
 
 // ============================================
-// Helper
-// ============================================
-
-async function handleResponse(res: Response, errorMessage: string) {
-    if (res.status === 401) {
-        throw new Error("UNAUTHORIZED");
-    }
-
-    let json;
-    try {
-        json = await res.json();
-    } catch (err) {
-        logger.error(`Failed to parse JSON for ${res.url}`, { status: res.status });
-        throw new Error(`${errorMessage} (Invalid JSON response)`);
-    }
-
-    if (!res.ok || (json.success === false)) {
-        const errorMsg = json.message || json.error?.message || json.error || errorMessage;
-        logger.error(`API Error: ${res.url}`, { status: res.status, json });
-        throw new Error(errorMsg);
-    }
-
-    return json;
-}
-
-function getFullUrl(path: string): string {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) {
-        throw new Error("NEXT_PUBLIC_API_URL is not defined");
-    }
-    return `${baseUrl}${path}`;
-}
-
-// ============================================
 // Functions
 // ============================================
 
@@ -65,26 +32,55 @@ function getFullUrl(path: string): string {
  */
 export async function createQuotation(token: string, quotationData: CreateQuotationData): Promise<any> {
     try {
-        const url = getFullUrl("/quotations");
-
         logger.info("Making POST request to create quotation", {
-            url,
             action: quotationData.action
         });
 
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(quotationData),
-        });
+        // Using axiosClient instead of fetch for better body parsing compatibility
+        const res = await api.post("/quotations", quotationData);
 
-        return await handleResponse(res, "Failed to create quotation");
+        return res.data;
     } catch (error: any) {
         logger.error("createQuotation error:", error);
+
+        // Handle axios error format
+        if (error.response?.data) {
+            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to create quotation");
+        }
+        throw error;
+    }
+}
+
+/**
+ * Send quotation email with PDF attachment.
+ */
+export async function sendQuotationEmail(
+    token: string,
+    emailData: { to_email: string; subject: string; file: File | Blob }
+): Promise<any> {
+    try {
+        logger.info("Making POST request to send quotation email", {
+            to: emailData.to_email
+        });
+
+        const formData = new FormData();
+        formData.append("to_email", emailData.to_email);
+        formData.append("subject", emailData.subject);
+        formData.append("file", emailData.file);
+
+        // Axios handles FormData correctly with proper boundaries
+        const res = await api.post("/send-email", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+
+        return res.data;
+    } catch (error: any) {
+        logger.error("sendQuotationEmail error:", error);
+        if (error.response?.data) {
+            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to send email");
+        }
         throw error;
     }
 }
@@ -94,24 +90,13 @@ export async function createQuotation(token: string, quotationData: CreateQuotat
  */
 export async function fetchQuotationById(token: string, quotationId: string): Promise<any> {
     try {
-        const url = getFullUrl(`/quotations/${quotationId}`);
-
-        logger.info("Making GET request to fetch quotation", {
-            url,
-            quotationId
-        });
-
-        const res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Accept": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        return await handleResponse(res, "Failed to fetch quotation");
+        const res = await api.get(`/quotations/${quotationId}`);
+        return res.data;
     } catch (error: any) {
         logger.error("fetchQuotationById error:", error);
+        if (error.response?.data) {
+            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to fetch quotation");
+        }
         throw error;
     }
 }

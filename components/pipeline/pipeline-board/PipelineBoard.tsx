@@ -30,6 +30,7 @@ import { StageUI } from "@/lib/helper/transformPipeline"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { Deal } from "@/lib/types/Pipeline"
 import { Plus, Search } from "lucide-react"
+import { notify } from "@/lib/notifications"
 
 
 
@@ -53,7 +54,8 @@ export default function PipelineBoard() {
     listActiveUser,
     isModalOpen,
     setIsModalOpen,
-    updateStagePipeline
+    updateStagePipeline,
+    fetchPipeline
   } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [stages, setStages] = useState(listPipeline)
@@ -213,6 +215,9 @@ export default function PipelineBoard() {
     const activeId = String(active.id)
     const overId = String(over.id)
 
+    // Find the original stage from the store (not the optimistic state)
+    const originalStage = listPipeline.find(s => s.deals.some(d => String(d.id) === activeId))?.name;
+
     const from = findDeal(activeId, stages)
     if (!from) return
 
@@ -236,13 +241,15 @@ export default function PipelineBoard() {
       const updatedWithTotals = computeStageTotals(updated)
       setStages(updatedWithTotals)
 
-
-      try {
-        await updateStagePipeline(activeId, toStageName);
-      } catch (error) {
-        console.error("Failed to update stage:", error);
-
-        // setStages(computeStageTotals(stages));
+      if (originalStage && originalStage !== toStageName) {
+        try {
+          await updateStagePipeline(activeId, toStageName);
+          notify.success(`Moved to ${toStageName}`);
+        } catch (error) {
+          console.error("Failed to update stage:", error);
+          notify.error("Failed to update stage. Reverting...");
+          await fetchPipeline(); // Revert local state by re-fetching
+        }
       }
 
       return
@@ -265,14 +272,14 @@ export default function PipelineBoard() {
 
     const toStage = updated[to.stageIndex].name;
 
-
-    if (from.stageIndex !== to.stageIndex) {
+    if (originalStage && originalStage !== toStage) {
       try {
         await updateStagePipeline(activeId, toStage);
+        notify.success(`Moved to ${toStage}`);
       } catch (error) {
         console.error("Failed to update stage:", error);
-
-        // setStages(computeStageTotals(stages));
+        notify.error("Failed to update stage. Reverting...");
+        await fetchPipeline();
       }
     }
   }

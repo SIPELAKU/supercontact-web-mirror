@@ -66,7 +66,7 @@ function DealCardComponent({ id, deal_name, company, amount, expected_close_date
           )}
 
           <Avatar className="h-7 w-7 border">
-            {avatar && <AvatarImage src={avatar} alt={company.id} />}
+            <AvatarImage src={avatar || "/placeholder.svg"} alt={company.id} />
             <AvatarFallback className="bg-gray-300 text-gray-700 text-xs">
               {company.name.charAt(0)}
             </AvatarFallback>

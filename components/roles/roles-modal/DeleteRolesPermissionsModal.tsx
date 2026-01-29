@@ -1,25 +1,54 @@
 "use client";
 
+import { AppButton } from "@/components/ui/app-button";
+import { useAuth } from "@/lib/context/AuthContext";
+import useRoles from "@/lib/hooks/useRoles";
+import { notify } from "@/lib/notifications";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
 
 type DeleteRolesPermissionsProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  roleId: string;
 };
 
 export default function DeleteRolesPermissionsModal({
   open,
   setOpen,
+  roleId,
 }: DeleteRolesPermissionsProps) {
   const handleClose = () => setOpen(false);
+  const { token } = useAuth();
+  const router = useRouter();
+  const { deleteRole, isDeleting } = useRoles();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    try {
+      if (!token) {
+        notify.error("You are not authenticated", {
+          description: "Please login to continue",
+        });
+        router.push("/login");
+        return;
+      }
+
+      deleteRole(roleId);
+      notify.success("Role deleted successfully");
+      handleClose();
+    } catch (error) {
+      notify.error("Failed to delete role", {
+        description: "Please try again later",
+      });
+    }
   };
+
   return (
     <Dialog
       open={open}
@@ -32,7 +61,7 @@ export default function DeleteRolesPermissionsModal({
     >
       <DialogTitle className="relative px-8 pt-8 pb-4">
         <span className="font-semibold text-red-500">
-          Are you sure you want to delete this permissions?
+          Are you sure you want to delete this role?
         </span>
         <Typography
           component="p"
@@ -45,22 +74,22 @@ export default function DeleteRolesPermissionsModal({
 
       <form onSubmit={handleSubmit}>
         <DialogActions className="mr-2.5! py-6!">
-          <Button
-            variant="outlined"
+          <AppButton
+            variantStyle="outline"
+            color="danger"
             type="reset"
-            className="rounded-lg! border-red-500! text-red-500! hover:border-red-700!"
             onClick={() => setOpen(false)}
           >
             Cancel
-          </Button>
-          <Button
-            variant="contained"
+          </AppButton>
+          <AppButton
+            variantStyle="danger"
+            color="danger"
             type="submit"
-            className="rounded-lg! bg-red-500! hover:bg-red-500/80!"
-            onClick={handleClose}
+            disabled={isDeleting}
           >
-            Delete Permissions
-          </Button>
+            {isDeleting ? "Deleting..." : "Delete Role"}
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

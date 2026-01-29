@@ -3,15 +3,21 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers, UserResponse } from "../api";
-import Cookies from 'js-cookie';
+import { useAuth } from "../context/AuthContext";
 
-export function useUsers() {
+export function useUsers(
+  page: number, 
+  limit: number,
+  search?: string,
+  position?: string,
+  status?: string
+) {
+  const {token} = useAuth();
   return useQuery<UserResponse, Error>({
-    queryKey: ["users"],
-    queryFn: async () => {
-      const token = Cookies.get('access_token');
+    queryKey: ["users", page, limit, search, position, status],
+    queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchUsers(token);
+      return fetchUsers(token, page, limit, search, position, status);
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,

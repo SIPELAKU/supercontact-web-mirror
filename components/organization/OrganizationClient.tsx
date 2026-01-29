@@ -1,10 +1,9 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
+import { ChangeEvent, MouseEvent, Suspense, useState, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CardHeader, Divider, Card } from "@mui/material";
 import useDepartments from "@/lib/hooks/useDepartments";
-import { DepartmentsType } from "@/lib/type/Departments";
 import {
   AddDepartmentsButton,
   DeleteDepartmentsModal,
@@ -13,14 +12,16 @@ import {
   EditDepartmentsModal,
 } from "@/components/organization";
 import { ExportButton } from "@/components/users";
-import InputSearch from "@/components/ui/input-search";
 import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
+import { DepartmentsType } from "@/lib/types/Departments";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { Upload } from "lucide-react";
 
 export default function OrganizationClient() {
-  const { departments, isLoading, error } = useDepartments();
-
-  const [selected, setSelected] = useState<number[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [selectedDepartment, setSelectedDepartmnet] =
     useState<DepartmentsType | null>(null);
 
@@ -28,82 +29,69 @@ export default function OrganizationClient() {
   const [openDelete, setOpenDelete] = useState(false);
 
   const [tableFilter, setTableFilter] = useState<{
-    departments_name?: DepartmentsType["department_name"];
+    department?: DepartmentsType["department"];
     branch?: DepartmentsType["branch"];
   }>({});
 
-  // Reset pagination + update search
   const searchParams = useSearchParams();
   const { replace } = useRouter();
   const pathname = usePathname();
 
-  const handleSearch = (term: string) => {
+  // ===== SEARCH & DEBOUNCE ===== //
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") ?? "",
+  );
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");
 
-    if (term) {
-      params.set("q", term);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
     } else {
-      params.delete("q");
+      params.delete("search");
     }
 
+    setPage(0);
     replace(`${pathname}?${params.toString()}`);
-  };
+  }, [debouncedSearch, pathname, replace, searchParams]);
 
-  const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
-
-  const filteredDepartemets = useMemo(() => {
-    return departments.filter((department) => {
-      // search name
-      const matchSearch = searchQuery
-        ? department.manager_name?.toLowerCase().includes(searchQuery)
-        : true;
-
-      // department filter
-      const matchRole = tableFilter.departments_name
-        ? department.department_name === tableFilter.departments_name
-        : true;
-
-      // branch filter
-      const matchStatus = tableFilter.branch
-        ? department.branch === tableFilter.branch
-        : true;
-
-      return matchSearch && matchRole && matchStatus;
-    });
-  }, [departments, searchQuery, tableFilter]);
+  const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
 
   // ===== PAGINATION ===== //
   const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+
+  // ===== FETCH DATA ===== //
+  const { departments, total, isLoading, error } = useDepartments(
+    page,
+    rowsPerPage,
+    searchQuery,
+    tableFilter,
+  );
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number
+    newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const paginatedDepartments = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredDepartemets.slice(start, end);
-  }, [filteredDepartemets, page, rowsPerPage]);
-
   const handleSelectAll = (checked: boolean, data: DepartmentsType[]) => {
     setSelected(checked ? data.map((u) => u.id) : []);
   };
 
-  const handleSelectOne = (id: number) => {
+  const handleSelectOne = (id: string) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -116,8 +104,19 @@ export default function OrganizationClient() {
           { label: "Organization Structure" },
         ]}
       />
-      <Card>
-        <CardHeader title="Filters" />
+      <Card
+        sx={{
+          borderRadius: "12px",
+          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+        }}
+      >
+        <CardHeader
+          title="Filters"
+          titleTypographyProps={{
+            variant: "h6",
+            sx: { fontWeight: 500, fontSize: "18px" },
+          }}
+        />
 
         <DepartementTableFilter
           filter={tableFilter}
@@ -129,16 +128,24 @@ export default function OrganizationClient() {
         <div className="px-4 py-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <ExportButton />
+              <AppButton
+                variantStyle="outline"
+                color="gray"
+                startIcon={<Upload />}
+                onClick={() => {}}
+              >
+                Export
+              </AppButton>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div>
                 <Suspense>
-                  <InputSearch
-                    placeholder="Search User"
-                    handleSearch={handleSearch}
-                    searchParams={searchParams}
+                  <AppInput
+                    placeholder="Search Department"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    isBgWhite
                   />
                 </Suspense>
               </div>
@@ -149,7 +156,7 @@ export default function OrganizationClient() {
 
         <div>
           <DepartmentsTableList
-            data={paginatedDepartments}
+            data={departments}
             selected={selected}
             isLoading={isLoading}
             error={error}
@@ -160,12 +167,19 @@ export default function OrganizationClient() {
                 setSelectedDepartmnet(department);
                 setOpenEdit(true);
               },
-              onOpenDelete: () => setOpenDelete(true),
+              onOpenDelete: (department) => {
+                setSelectedDepartmnet(department);
+                setOpenDelete(true);
+              },
             }}
           />
         </div>
 
-        <DeleteDepartmentsModal open={openDelete} setOpen={setOpenDelete} />
+        <DeleteDepartmentsModal
+          open={openDelete}
+          setOpen={setOpenDelete}
+          departmentId={selectedDepartment?.id}
+        />
 
         {selectedDepartment && (
           <EditDepartmentsModal
@@ -179,7 +193,7 @@ export default function OrganizationClient() {
           <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
-            count={filteredDepartemets.length}
+            count={total}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
           />

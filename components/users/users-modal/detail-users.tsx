@@ -10,15 +10,15 @@ import {
   IconButton,
   DialogContent,
 } from "@mui/material";
-import type { UsersType } from "@/lib/types/Users";
+import type { ManageUser } from "@/lib/types/manage-users";
 import { X } from "lucide-react";
 
-type StatusType = UsersType["status"];
+type StatusType = ManageUser["status"];
 
 type DetailUserDialogProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  user: UsersType;
+  user: ManageUser;
 };
 
 export default function DetailUserDialog({
@@ -26,7 +26,7 @@ export default function DetailUserDialog({
   open,
   setOpen,
 }: DetailUserDialogProps) {
-  const [userData, setUserData] = useState<UsersType | null>(null);
+  const [userData, setUserData] = useState<ManageUser | null>(null);
 
   const handleCLose = () => setOpen(false);
 
@@ -109,7 +109,7 @@ export default function DetailUserDialog({
           </Typography>
           <div className="flex items-center gap-4">
             <Avatar
-              src={userData.avatar_initial || "/broken-image.jpg"}
+              src={userData.fullname || "/broken-image.jpg"}
               sx={{ width: 80, height: 80, backgroundColor: "#5479EE" }}
             />
             <div className="flex flex-col gap-1">
@@ -118,7 +118,7 @@ export default function DetailUserDialog({
                 className="font-bold text-[#1e293b]"
                 sx={{ fontWeight: 600, fontSize: "1.125rem", lineHeight: 1 }}
               >
-                {userData.fullName || "Name1"}
+                {userData.fullname || "Name1"}
               </Typography>
               <Typography
                 variant="body2"
@@ -183,7 +183,7 @@ export default function DetailUserDialog({
               Role Access
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              {userData.role || "Support"}
+              {userData.position || "Support"}
             </Typography>
           </Grid>
 
@@ -192,7 +192,7 @@ export default function DetailUserDialog({
               Employee ID
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              {userData.id_employee || "CS -001"}
+              {userData.employee_code || "CS -001"}
             </Typography>
           </Grid>
 

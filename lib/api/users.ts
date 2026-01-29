@@ -8,21 +8,20 @@ import { logger } from "../utils/logger";
 // ============================================
 
 export interface User {
-  id: string;
-  fullname: string;
   email: string;
-  role: string;
-  created_at: string;
-  updated_at: string;
+  employee_code: string;
+  fullname: string;
+  id: string;
+  position: string;
+  status: string;
 }
-
 export interface UserResponse {
   success: boolean;
   data: {
+    manage_users:User[];
     total: number;
     page: number;
     limit: number;
-    users: User[];
   };
   error: string | null;
 }
@@ -70,8 +69,23 @@ export interface UpdateProfileResponse {
 // Functions
 // ============================================
 
-export async function fetchUsers(token: string): Promise<UserResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+export async function fetchUsers(
+  token: string, 
+  page: number, 
+  limit: number,
+  search?: string,
+  position?: string,
+  status?: string
+): Promise<UserResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) params.append("search", search);
+  if (position) params.append("position", position);
+  if (status) params.append("status", status);
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

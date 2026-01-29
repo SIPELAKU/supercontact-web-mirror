@@ -1,51 +1,83 @@
-import { Input } from "@/components/ui/input";
-import Autocomplete from "@mui/material/Autocomplete";
-import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Poppins } from "next/font/google";
+import { useAuth } from "@/lib/context/AuthContext";
+import { notify } from "@/lib/notifications";
+import { useRouter } from "next/navigation";
+import useRoles from "@/lib/hooks/useRoles";
+import {
+  PERMISSIONS,
+  formatPermissionLabel,
+} from "@/lib/constants/permissions";
 
-type EditPermissionsModalProps = {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  permission: string;
-  assignedTo: string[];
-};
-
-const BASE_CHIP_STYLE = {
-  fontSize: "12px",
-  padding: "0px 6px",
-  borderRadius: "12px",
-  fontWeight: 500,
-};
-
-const ROLE_COLOR_STYLE: Record<string, { backgroundColor: string; color: string }> = {
-  Administrator: { backgroundColor: "#E8E4FF", color: "#6A5BF7" },
-  Manager: { backgroundColor: "#FFE9C7", color: "#D0941F" },
-  Support: { backgroundColor: "#DDF7FF", color: "#2BA8C8" },
-  "Restricted User": { backgroundColor: "#FFE0E0", color: "#E45353" },
-  Default: { backgroundColor: "#F1F1F1", color: "#666666" },
-};
-
-const getChipStyle = (role: string) => ({
-  ...BASE_CHIP_STYLE,
-  ...(ROLE_COLOR_STYLE[role] || ROLE_COLOR_STYLE.Default),
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
 });
 
-export default function EditPermissionsModalDialog({ open, setOpen, permission, assignedTo }: EditPermissionsModalProps) {
-  const [assigned, setAssigned] = useState<string[]>(assignedTo);
+type EditRoleModalProps = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  roleId: string;
+  initialRoleName: string;
+  initialPermissions: string[];
+};
 
+export default function EditRoleModalDialog({
+  open,
+  setOpen,
+  roleId,
+  initialRoleName,
+  initialPermissions,
+}: EditRoleModalProps) {
   const handleClose = () => setOpen(false);
+  const { token } = useAuth();
+  const router = useRouter();
+  const { editRole, isLoading: isEditing } = useRoles();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [roleName, setRoleName] = useState<string>(initialRoleName);
+  const [permissions, setPermissions] = useState<string[]>(initialPermissions);
+
+  useEffect(() => {
+    if (open) {
+      setRoleName(initialRoleName);
+      setPermissions(initialPermissions);
+    }
+  }, [open, initialRoleName, initialPermissions]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    try {
+      if (!token) {
+        notify.error("Unauthorized", {
+          description: "Please login to edit a role",
+        });
+        router.push("/login");
+        return;
+      }
+
+      // Convert all permissions to lower case
+      const formattedPermissions = permissions;
+      await editRole(roleName, formattedPermissions, roleId);
+
+      notify.success("Success", {
+        description: "Role updated successfully",
+      });
+      handleClose();
+    } catch (error) {
+      notify.error("Error", {
+        description: "Failed to update role",
+      });
+      console.error(error);
+    }
   };
+
   return (
     <Dialog
       open={open}
@@ -53,76 +85,88 @@ export default function EditPermissionsModalDialog({ open, setOpen, permission, 
       fullWidth
       maxWidth="xs"
       PaperProps={{
-        className: "rounded-lg! px-6 py-2 ",
+        className: "rounded-2xl! px-8 py-4",
+        sx: {
+          borderRadius: "16px",
+        },
       }}
     >
-      <DialogTitle className="px-0! py-2!">
-        <span className="font-semibold text-[#5479EE]">Edit Permissions</span>
-        <Typography component="p" variant="body2" className="mt-3! text-sm">
-          Update the permission details and access settings
-        </Typography>
+      <DialogTitle className="px-0! pt-4 pb-2!">
+        <h1
+          className={`font-bold text-[#5479EE] text-2xl mb-2 ${poppins.className}`}
+        >
+          Edit Role
+        </h1>
+        <p className={`text-[#262B43]/90 text-[14px] ${poppins.className}`}>
+          Update the details for this role
+        </p>
       </DialogTitle>
 
-      <Divider />
+      <div className="w-full h-px bg-[#E2E8F0] my-4" />
 
+      {/* Content */}
       <form onSubmit={handleSubmit}>
-        <DialogContent className="space-y-3! px-0! pt-6 pb-8">
-          <div>
-            <label htmlFor="permission-name">Permission Name</label>
-            <Input placeholder="Permission name" className="mt-2" defaultValue={permission}></Input>
-          </div>
-          <div>
-            <label htmlFor="assigned">Role Access</label>
-            <Autocomplete
-              multiple
-              options={["Administrator", "Manager", "Support", "Restricted User"]}
-              value={assigned}
-              onChange={(_, newValue) => setAssigned(newValue)}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                  const tagProps = getTagProps({ index });
-                  const { key, ...restTagProps } = tagProps;
-
-                  return <Chip key={key} label={option} variant="filled" {...restTagProps} sx={getChipStyle(option)} />;
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Add roles"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "7px",
-                      marginTop: "8px",
-                      paddingX: "12px",
-                      paddingY: "1px",
-                      fontSize: "14px",
-                    },
-                    "& .MuiButtonBase-root": {
-                      height: "20px",
-                    },
-                    "& .MuiChip-label": {
-                      paddingX: "8px",
-                    },
-                    "& .MuiSvgIcon-root": {
-                      width: "12px",
-                      height: "12px",
-                    },
-                  }}
-                />
-              )}
+        <DialogContent className="px-0! py-2! space-y-6!">
+          {/* Role Name */}
+          <div className="space-y-2">
+            <h2
+              className={`text-sm font-bold mb-1 text-[#262B43]/90 ${poppins.className}`}
+            >
+              Role Name
+            </h2>
+            <AppInput
+              placeholder="Enter role name"
+              isBgWhite
+              fullWidth
+              value={roleName}
+              onChange={(e) => setRoleName(e.target.value)}
             />
+          </div>
+
+          {/* Permissions */}
+          <div className="space-y-4">
+            <h2
+              className={`text-sm font-bold text-[#262B43]/90 ${poppins.className}`}
+            >
+              Permission
+            </h2>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 mt-3 ps-3">
+              {PERMISSIONS.map((permission) => (
+                <div
+                  key={permission}
+                  className="flex items-center justify-between"
+                >
+                  <h2 className={`text-sm text-[#374151] ${poppins.className}`}>
+                    {formatPermissionLabel(permission)}
+                  </h2>
+                  <AppInput
+                    type="checkbox"
+                    isBgWhite
+                    checked={permissions.includes(permission)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setPermissions([...permissions, permission]);
+                      } else {
+                        setPermissions(
+                          permissions.filter((p) => p !== permission),
+                        );
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </DialogContent>
 
         {/* Footer */}
-        <DialogActions className="px-0! pb-4!">
-          <Button variant="outlined" type="reset" onClick={() => setOpen(false)} className="capitalize!">
+        <DialogActions className="px-0! pt-8 pb-4! flex gap-3 justify-end mt-4">
+          <AppButton variantStyle="outline" onClick={handleClose}>
             Cancel
-          </Button>
-          <Button variant="contained" type="submit" className="bg-[#5479EE]! capitalize! hover:bg-[#5479EE]/80!" onClick={handleClose}>
-            Save Permissions
-          </Button>
+          </AppButton>
+          <AppButton variantStyle="primary" type="submit" isLoading={isEditing}>
+            {isEditing ? "Saving..." : "Save Role"}
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

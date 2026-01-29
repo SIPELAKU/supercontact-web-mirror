@@ -52,6 +52,18 @@ export {
     type UpdateSubscriberData
 } from './email-marketing';
 
+// Departments API
+export {
+    fetchDepartments,
+    fetchDepartmentById,
+    fetchDepartmentMembers,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+    type CreateDepartmentData,
+    type UpdateDepartmentData
+} from './departments';
+
 // Quotations API
 export {
     createQuotation, type CreateQuotationData, type QuotationItemData

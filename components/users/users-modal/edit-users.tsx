@@ -1,31 +1,28 @@
 "use client";
 
-import { useState, useEffect, JSX } from "react";
-import { Input }from "@/components/ui/input";
-import Button from "@mui/material/Button";
+import { useState, useMemo, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
-import { Search, Upload } from "lucide-react";
-import {
-  Avatar,
-  FormControl,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-} from "@mui/material";
+import { Search } from "lucide-react";
+import { AppInput } from "@/components/ui/app-input";
+import { AppSelect } from "@/components/ui/app-select";
+import { AppButton } from "@/components/ui/app-button";
+import { useUsers } from "@/lib/hooks/useUsers";
+import useDepartments from "@/lib/hooks/useDepartments";
+import { useUpdateManagedUser } from "@/lib/hooks/useManagedUser";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import useRoles from "@/lib/hooks/useRoles";
+import { ManageUser } from "@/lib/types/manage-users";
+import { notify } from "@/lib/notifications";
 
-import type { UsersType } from "../../../lib/type/Users";
-
-type StatusType = UsersType["status"];
-type UserType = UsersType["role"];
 type EditUserDialogProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  user: UsersType;
+  user: ManageUser;
 };
 
 export default function EditUserDialog({
@@ -33,71 +30,120 @@ export default function EditUserDialog({
   setOpen,
   user,
 }: EditUserDialogProps) {
-  const handleClose = () => setOpen(false);
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
-      fullName,
-      email,
-      department,
-      role,
-      employeeId,
-      status,
-    });
+  // Form State
+  const [email, setEmail] = useState("");
+  const [selectedEmail, setSelectedEmail] = useState("");
+  const [departmentName, setDepartmentName] = useState("");
+  const [departmentUuid, setDepartmentUuid] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [level, setLevel] = useState("Staff");
+  const [position, setPosition] = useState("Support Agent");
+  const [status, setStatus] = useState("Active");
+  const [roleId, setRoleId] = useState("");
+
+  // UI State
+  const [showEmailDropdown, setShowEmailDropdown] = useState(false);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+
+  const debouncedEmail = useDebounce(email, 300);
+  const debouncedBranch = useDebounce(branchName, 300);
+
+  // Hooks
+  const { data: usersResponse } = useUsers(1, 10, debouncedEmail);
+  const { departments: allDepartments } = useDepartments(0, 100);
+
+  const { departments: branchDepartments } = useDepartments(0, 100, "", {
+    department: departmentName,
+  });
+
+  const { roles: rolesData } = useRoles(1, 100);
+  const { mutateAsync: updateManagedUser, isPending: isSubmitting } =
+    useUpdateManagedUser();
+
+  // Populate form with user data
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email);
+      setStatus(
+        user.status.charAt(0).toUpperCase() + user.status.slice(1) || "Active",
+      );
+      setPosition(user.position);
+      setDepartmentName(user.department.department_name);
+      setBranchName(user.department.branch);
+      setDepartmentUuid(user.department.id);
+      setRoleId(user.role.id);
+      setLevel(user.level);
+    }
+  }, [user]);
+
+  const handleClose = () => {
     setOpen(false);
   };
 
-  // State untuk form
-  const [fullName, setFullName] = useState(user.fullName);
-  const [email, setEmail] = useState(user.email);
-  const [department, setDepartment] = useState<string>("");
-  const [role, setRole] = useState<UserType>(user.role);
-  const [employeeId, setEmployeeId] = useState(user.id_employee);
-  const [status, setStatus] = useState<StatusType>(user.status);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!departmentUuid || !roleId) {
+      notify.error("Please select a department/branch and a role.");
+      return;
+    }
 
-  useEffect(() => {
-    setFullName(user.fullName);
-    setEmail(user.email);
-    setRole(user.role);
-    setEmployeeId(user.id_employee);
-    setStatus(user.status);
-    // department bisa ambil dari user jika ada field
-  }, [user]);
-
-  const getStatusColor = (status: Exclude<StatusType, "">) => {
-    switch (status) {
-      case "active":
-        return "text-green-700";
-      case "pending":
-        return "text-yellow-600";
-      case "inactive":
-        return "text-gray-600";
+    try {
+      const response = await updateManagedUser({
+        id: String(user.id),
+        data: {
+          email: email,
+          department_id: departmentUuid,
+          user_level: level,
+          position: position,
+          role_id: roleId,
+          status: status,
+        },
+      });
+      notify.success("User edited successfully");
+      handleClose();
+    } catch (error: any) {
+      console.log("error", error);
+      console.error("Failed to edit user:", error);
+      notify.error("Failed to edit user: ", {
+        description: error.message || "Failed to edit user",
+      });
     }
   };
 
-  const badge: Record<Exclude<StatusType, "">, JSX.Element> = {
-    active: (
-      <span
-        className={`rounded-md bg-green-100 px-2 ${getStatusColor("active")}`}
-      >
-        Active
-      </span>
-    ),
-    pending: (
-      <span
-        className={`rounded-md bg-yellow-100 px-2 ${getStatusColor("pending")}`}
-      >
-        Pending
-      </span>
-    ),
-    inactive: (
-      <span
-        className={`rounded-md bg-gray-200 px-2 ${getStatusColor("inactive")}`}
-      >
-        Inactive
-      </span>
-    ),
+  const filteredEmails = usersResponse?.data?.manage_users || [];
+
+  // Filter branches based on input and selected department
+  const branches = useMemo(() => {
+    const list = branchDepartments.map((d) => d.branch);
+    return Array.from(new Set(list)).filter((b) =>
+      b.toLowerCase().includes(branchName.toLowerCase()),
+    );
+  }, [branchDepartments, branchName]);
+
+  const handleEmailSelect = (emailVal: string) => {
+    setEmail(emailVal);
+    setSelectedEmail(emailVal);
+    setShowEmailDropdown(false);
   };
+
+  const handleBranchSelect = (branchVal: string) => {
+    setBranchName(branchVal);
+    const deptMatch = branchDepartments.find(
+      (d) => d.branch === branchVal && d.department === departmentName,
+    );
+    if (deptMatch) {
+      setDepartmentUuid(deptMatch.id);
+    }
+    setShowBranchDropdown(false);
+  };
+
+  const roleOptions = useMemo(() => {
+    if (!rolesData?.roles) return [];
+    return rolesData.roles.map((r: any) => ({
+      value: r.id,
+      label: r.role_name,
+    }));
+  }, [rolesData]);
 
   return (
     <Dialog
@@ -105,135 +151,178 @@ export default function EditUserDialog({
       onClose={handleClose}
       fullWidth
       maxWidth="md"
-      PaperProps={{ sx: {
+      PaperProps={{
+        sx: {
           borderRadius: 3,
           p: 1,
           boxShadow: 3,
-        }, }}
+        },
+      }}
     >
       <DialogTitle>
-        <span className="text-xl font-bold text-[#5479EE]">Edit User</span>
+        <span className="text-2xl font-bold text-[#5479EE]">Edit User</span>
       </DialogTitle>
 
       <div className="px-6 pb-3">
         <Typography
           component="p"
           variant="body2"
-          className="text-md mt-1 font-semibold text-gray-600"
+          className="text-md mt-0 font-semibold text-gray-600"
         >
-          Update the user’s profile informasion and settings
+          Update the user's profile information and settings
         </Typography>
       </div>
 
       <Divider />
 
       <form onSubmit={handleSubmit}>
-        <DialogContent className="space-y-6 pt-6">
-          <div>
+        <DialogContent className="space-y-6 pt-6 overflow-visible">
+          {/* Email (Read Only or Informational) */}
+          <div className="relative">
             <label className="text-sm font-medium">Email</label>
-            <Input
+            <AppInput
               placeholder="name@example.com"
-              className="mt-2"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setSelectedEmail("");
+                setShowEmailDropdown(true);
+              }}
+              onFocus={() => setShowEmailDropdown(email.length > 0)}
+              onBlur={() => setTimeout(() => setShowEmailDropdown(false), 200)}
+              isBgWhite
+              autoComplete="off"
             />
+            {showEmailDropdown && filteredEmails.length > 0 && (
+              <div className="absolute z-1500 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {filteredEmails.map((u) => (
+                  <div
+                    key={u.id}
+                    onClick={() => handleEmailSelect(u.email)}
+                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="font-medium text-gray-900">
+                      {u.fullname}
+                    </div>
+                    <div className="text-sm text-gray-500">{u.email}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* TWO COLUMN GRID */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
             {/* Department */}
             <div>
               <div className="py-1">
                 <label className="text-sm font-medium">Department</label>
               </div>
-              <FormControl fullWidth size="small">
-                <Select
-                  displayEmpty
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  renderValue={(selected) =>
-                    selected || (
-                      <span className="text-sm text-gray-400">
-                        Select department
-                      </span>
-                    )
-                  }
-                >
-                  <MenuItem value="Engineering">Engineering</MenuItem>
-                  <MenuItem value="HR">HR</MenuItem>
-                  <MenuItem value="Finance">Finance</MenuItem>
-                  <MenuItem value="Sales">Sales</MenuItem>
-                </Select>
-              </FormControl>
+              <AppSelect
+                options={[
+                  { value: "", label: "Select department" },
+                  { value: "Marketing", label: "Marketing" },
+                  { value: "Sales", label: "Sales" },
+                  { value: "Engineering", label: "Engineering" },
+                  { value: "Human Resources", label: "Human Resources" },
+                  { value: "Customer Support", label: "Customer Support" },
+                ]}
+                placeholder="Select department"
+                value={departmentName}
+                onChange={(e) => {
+                  setDepartmentName(e.target.value as string);
+                  setBranchName("");
+                  setDepartmentUuid("");
+                }}
+                isBgWhite
+              />
             </div>
+
             {/* Branch */}
             <div className="relative">
               <label className="text-sm font-medium">Branch</label>
-
               <div className="relative mt-2">
-                <Input placeholder="Search for a Branch" className="pl-10" />
-
-                <Search
-                  className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500"
-                  size={18}
+                <AppInput
+                  startIcon={<Search size={18} />}
+                  placeholder="Search for a Branch"
+                  value={branchName}
+                  onChange={(e) => {
+                    setBranchName(e.target.value);
+                    setShowBranchDropdown(true);
+                  }}
+                  onFocus={() => setShowBranchDropdown(branchName.length > 0)}
+                  onBlur={() =>
+                    setTimeout(() => setShowBranchDropdown(false), 200)
+                  }
+                  isBgWhite
+                  autoComplete="off"
                 />
+                {showBranchDropdown && branches.length > 0 && (
+                  <div className="absolute z-1500 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {branches.map((b, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleBranchSelect(b)}
+                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="text-gray-900">{b}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Level */}
             <div>
               <div className="py-1">
                 <label className="text-sm font-medium">Level</label>
               </div>
-              <FormControl fullWidth size="small">
-                <Select
-                  displayEmpty
-                  defaultValue=""
-                  renderValue={(selected) => {
-                    if (selected === "") {
-                      return (
-                        <span className="text-sm text-gray-400">
-                          Select Level
-                        </span>
-                      );
-                    }
-                    return selected;
-                  }}
-                >
-                  <MenuItem value="Manager">Manager</MenuItem>
-                  <MenuItem value="Staff">Staff</MenuItem>
-                </Select>
-              </FormControl>
+              <AppSelect
+                options={[
+                  { value: "Manager", label: "Manager" },
+                  { value: "Staff", label: "Staff" },
+                ]}
+                placeholder="Select level"
+                value={level}
+                onChange={(e) => setLevel(e.target.value as string)}
+                isBgWhite
+              />
             </div>
 
-            {/* Role */}
+            {/* Role / Role Access */}
             <div>
               <div className="py-1">
-                <label className="text-sm font-medium">Role</label>
+                <label className="text-sm font-medium">Role Access</label>
               </div>
-              <FormControl fullWidth size="small">
-                <Select
-                  displayEmpty
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as UserType)}
-                  renderValue={(selected: UserType) =>
-                    selected || (
-                      <span className="text-sm text-gray-400">Select Role</span>
-                    )
-                  }
-                >
-                  <MenuItem value="Support Agent">Support Agent</MenuItem>
-                  <MenuItem value="Frontend Engineer">
-                    Frontend Engineer
-                  </MenuItem>
-                  <MenuItem value="HR Generalist">HR Generalist</MenuItem>
-                  <MenuItem value="Content Specialist">
-                    Content Specialist
-                  </MenuItem>
-                  <MenuItem value="Sales Development">
-                    Sales Development
-                  </MenuItem>
-                </Select>
-              </FormControl>
+              <AppSelect
+                options={roleOptions}
+                placeholder="Select role"
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value as string)}
+                isBgWhite
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* Position */}
+            <div>
+              <div className="py-1">
+                <label className="text-sm font-medium">Position</label>
+              </div>
+              <AppSelect
+                options={[
+                  { value: "Support Agent", label: "Support Agent" },
+                  { value: "Frontend Engineer", label: "Frontend Engineer" },
+                  { value: "HR Generalist", label: "HR Generalist" },
+                  { value: "Content Specialist", label: "Content Specialist" },
+                  { value: "Sales Development", label: "Sales Development" },
+                ]}
+                placeholder="Select position"
+                value={position}
+                onChange={(e) => setPosition(e.target.value as string)}
+                isBgWhite
+              />
             </div>
 
             {/* Status */}
@@ -241,62 +330,33 @@ export default function EditUserDialog({
               <div className="py-1">
                 <label className="text-sm font-medium">Status</label>
               </div>
-              <FormControl fullWidth size="small">
-                <Select
-                  displayEmpty
-                  value={status}
-                  onChange={(e: SelectChangeEvent) =>
-                    setStatus(e.target.value as StatusType)
-                  }
-                  renderValue={(selected: StatusType) =>
-                    selected ? (
-                      badge[selected]
-                    ) : (
-                      <span className="text-sm text-gray-400">
-                        Select Status
-                      </span>
-                    )
-                  }
-                >
-                  <MenuItem value="active">{badge.active}</MenuItem>
-                  <MenuItem value="pending">{badge.pending}</MenuItem>
-                  <MenuItem value="inactive">{badge.inactive}</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-
-            {/* Employee ID */}
-            <div>
-              <label className="text-sm font-medium">Employee ID</label>
-              <Input
-                placeholder="MKT-000"
-                className="mt-2"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
+              <AppSelect
+                options={[
+                  { value: "Active", label: "Active" },
+                  { value: "Inactive", label: "Inactive" },
+                  { value: "Pending", label: "Pending" },
+                ]}
+                placeholder="Select status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as string)}
+                isBgWhite
               />
             </div>
           </div>
         </DialogContent>
 
-        {/* FOOTER BUTTONS */}
         <DialogActions className="flex justify-end gap-3 px-2 pb-4">
-          <Button
-            variant="outlined"
-            onClick={handleClose}
-            className="border-[#D0D5DD] capitalize! text-[#344054]"
-            sx={{ borderRadius: "10px", paddingX: "18px" }}
-          >
+          <AppButton variantStyle="outline" onClick={handleClose}>
             Cancel
-          </Button>
+          </AppButton>
 
-          <Button
-            variant="contained"
+          <AppButton
+            variantStyle="primary"
             type="submit"
-            className="bg-[#5479EE]!  text-white capitalize! hover:bg-[#5479EE]/80!"
-            sx={{ borderRadius: "10px", paddingX: "22px" }}
+            disabled={isSubmitting}
           >
-            Save User
-          </Button>
+            {isSubmitting ? "Saving..." : "Save User"}
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

@@ -1,13 +1,21 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  MouseEvent,
+  Suspense,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, Divider } from "@mui/material";
-import { useUsers } from "@/lib/hooks/useUsers";
-import { UsersType } from "@/lib/types/Users";
+import { useManagedUsers } from "@/lib/hooks/useManagedUser";
+import { ManageUser } from "@/lib/types/manage-users";
 import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import {
+  AddUsersModal,
   CardStatUsers,
   DeleteUserModal,
   DetailUsersModal,
@@ -18,19 +26,19 @@ import {
 import { AppButton } from "../ui/app-button";
 import { DownloadIcon, Plus, Upload } from "lucide-react";
 import { AppInput } from "../ui/app-input";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 export default function UsersClient() {
-  const { data: usersResponse, isLoading, error } = useUsers();
-
-  const [selectedUser, setSelectedUser] = useState<UsersType | null>(null);
+  const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
-  const [selected, setSelected] = useState<number[]>([]);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
 
   const [tableFilter, setTableFilter] = useState<{
-    role?: UsersType["role"];
-    status?: UsersType["status"];
+    position?: ManageUser["position"];
+    status?: ManageUser["status"];
   }>({});
 
   // Reset pagination + update search
@@ -38,58 +46,70 @@ export default function UsersClient() {
   const { replace } = useRouter();
   const pathname = usePathname();
 
-  const handleSearch = (term: string) => {
+  // ===== PAGINATION ===== //
+  const [page, setPage] = useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [totalCount, setTotalCount] = useState<number>(0);
+
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") ?? "",
+  );
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");
 
-    if (term) {
-      params.set("q", term);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
     } else {
-      params.delete("q");
+      params.delete("search");
     }
 
+    setPage(0);
     replace(`${pathname}?${params.toString()}`);
+  }, [debouncedSearch, pathname, replace, searchParams]);
+
+  const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
+
+  const {
+    data: usersResponse,
+    isLoading,
+    error,
+  } = useManagedUsers(
+    page + 1, // API usually expects 1-indexed page
+    rowsPerPage,
+    searchQuery,
+    tableFilter.position,
+    tableFilter.status,
+  );
+
+  // Set total count when data changes
+  useEffect(() => {
+    if (usersResponse?.data?.total) {
+      setTotalCount(usersResponse.data.total);
+    }
+  }, [usersResponse]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
   };
 
-  const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
-
   const filteredUsers = useMemo(() => {
-    const apiUsers = usersResponse?.data?.users || [];
+    const apiUsers = usersResponse?.data?.manage_users || [];
 
+    return apiUsers;
     // Convert API User[] to UsersType[]
-    const users: UsersType[] = apiUsers.map((user) => ({
-      id: parseInt(user.id),
-      fullName: user.fullname,
-      email: user.email,
-      role: user.role,
-      status: "active" as const, // Default status since API doesn't provide it
-      avatar_initial: user.fullname.charAt(0).toUpperCase(),
-      id_employee: user.id,
-    }));
-
-    return users.filter((user) => {
-      // search name
-      const matchSearch = searchQuery
-        ? user.fullName?.toLowerCase().includes(searchQuery)
-        : true;
-
-      // role filter
-      const matchRole = tableFilter.role
-        ? user.role === tableFilter.role
-        : true;
-
-      // status filter
-      const matchStatus = tableFilter.status
-        ? user.status === tableFilter.status
-        : true;
-
-      return matchSearch && matchRole && matchStatus;
-    });
-  }, [usersResponse?.data?.users, searchQuery, tableFilter]);
-
-  // ===== PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+    // return apiUsers.map((user) => ({
+    //   id: parseInt(user.id),
+    //   fullName: user.fullname,
+    //   email: user.email,
+    //   position: user.position,
+    //   status: "active" as const, // Default for now
+    //   avatar_initial: user.fullname.charAt(0).toUpperCase(),
+    //   employee_code: user.employee_code,
+    // }));
+  }, [usersResponse?.data]);
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,
@@ -105,17 +125,14 @@ export default function UsersClient() {
     setPage(0);
   };
 
-  const paginatedUsers = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredUsers.slice(start, end);
-  }, [filteredUsers, page, rowsPerPage]);
+  // No more slicing here, data is already paginated from backend
+  const displayUsers = filteredUsers;
 
-  const handleSelectAll = (checked: boolean, data: UsersType[]) => {
+  const handleSelectAll = (checked: boolean, data: ManageUser[]) => {
     setSelected(checked ? data.map((u) => u.id) : []);
   };
 
-  const handleSelectOne = (id: number) => {
+  const handleSelectOne = (id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -173,7 +190,7 @@ export default function UsersClient() {
                   /> */}
                   <AppInput
                     placeholder="Search User"
-                    value={searchQuery}
+                    value={searchTerm}
                     onChange={(e) => handleSearch(e.target.value)}
                     isBgWhite
                   />
@@ -183,7 +200,7 @@ export default function UsersClient() {
                 variantStyle="primary"
                 color="primary"
                 startIcon={<Plus />}
-                onClick={() => {}}
+                onClick={() => setOpenAdd(true)}
               >
                 Add New User
               </AppButton>
@@ -191,9 +208,9 @@ export default function UsersClient() {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-x-auto">
           <TableListUsers
-            data={paginatedUsers}
+            data={displayUsers}
             selected={selected}
             isLoading={isLoading}
             error={error}
@@ -212,7 +229,13 @@ export default function UsersClient() {
             }}
           />
 
-          <DeleteUserModal open={openDelete} setOpen={setOpenDelete} />
+          <AddUsersModal open={openAdd} setOpen={setOpenAdd} />
+
+          <DeleteUserModal
+            open={openDelete}
+            setOpen={setOpenDelete}
+            managedUserId={selectedUser?.id}
+          />
 
           {selectedUser && (
             <EditUsersModal
@@ -234,7 +257,7 @@ export default function UsersClient() {
             <Pagination
               page={page}
               rowsPerPage={rowsPerPage}
-              count={filteredUsers.length}
+              count={totalCount}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

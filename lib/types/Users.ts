@@ -1,12 +1,9 @@
 export interface UsersType {
-    id: number;
+    id: string | number;
     fullName: string;
-    // password: string;
     email: string;
-    role: string
+    position: string
     status: 'active' | 'inactive' | 'pending' | '';
     avatar_initial: string;
-    id_employee: string;
-    // created_At: string;
-    // updated_At: string;
+    employee_code: string;
 }

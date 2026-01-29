@@ -1,27 +1,27 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { Button } from "@mui/material";
 import { useState } from "react";
-import { AddDepartmentsModal }from "@/components/organization";
+import { AddDepartmentsModal } from "@/components/organization";
+import { AppButton } from "@/components/ui/app-button";
 
 export default function AddDepartmentButton() {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleOpen = () => setOpen(true);
 
-  return (  
+  return (
     <div>
-      <Button
-        variant="contained"
+      <AppButton
+        variantStyle="primary"
+        color="primary"
         onClick={handleOpen}
-        className="bg-[#5479EE]! capitalize! hover:bg-[#5479EE]/80!"
+        startIcon={<Plus size={14} />}
       >
-        <Plus size={14} className="mr-2 h-3 w-4" /> Add New Department
-      </Button>
+        Add New Department
+      </AppButton>
 
-        <AddDepartmentsModal open={open} setOpen={setOpen} />
-
+      <AddDepartmentsModal open={open} setOpen={setOpen} />
     </div>
   );
 }

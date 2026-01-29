@@ -13,6 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.5] - 2026-01-29
+
+### Detail Versi 1.2.5
+
+#### ✨ User & Organization Management Enhancements
+
+- **User Management:**
+  - Implemented managed user API, types, and React Query hooks; refactored components to utilize them.
+  - Added support for pagination, search, and filtering by position and status.
+
+- **Department Management:**
+  - Implemented comprehensive department management with new API endpoints, dedicated components, and improved type definitions.
+
+- **Role Management:**
+  - Enhanced role management by centralizing permissions and updating the Add Role modal with permission selection.
+
+#### 🐛 Bug Fix
+
+- **fix: user management page**
+  - Resolved stability issues and improved component rendering on the user management page.
+
+---
+
 ## [1.2.4] - 2026-01-27
 
 ### Detail Versi 1.2.4
@@ -45,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **fix: pipeline + notes double added + leads**
   - **Pipeline:** Fixed TypeScript argument mismatch and ensured stage updates are correctly persisted to the API during drag-and-drop operations.
   - **Notes:** Added submission locking (`isSubmittingRef`) to prevent duplicate note creation when clicking the submit button multiple times.
-  - **Leads:** 
+  - **Leads:**
     - Implemented server-side pagination for the Leads table.
     - Fixed Kanban status update error when dropping a card onto another card by correctly resolving the target status name.
 

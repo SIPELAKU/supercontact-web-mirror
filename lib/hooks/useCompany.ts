@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CompanyType } from "../type/Company";
+import { CompanyType } from "../types/Company";
 
 const useCompany = () => {
   const [company, setCompany] = useState<CompanyType[]>([]);
@@ -18,7 +18,7 @@ const useCompany = () => {
         throw new Error("Error");
       }
 
-      setCompany(data?.data);
+      setCompany(data?.data || []);
     } catch (error: unknown) {
       console.error(error);
       if (error) {

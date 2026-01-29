@@ -1,6 +1,6 @@
 "use client";
 
-import { DepartmentsType } from "../../../lib/type/Departments";
+import { DepartmentsType } from "../../../lib/types/Departments";
 import { Avatar, Checkbox, IconButton } from "@mui/material";
 import { Pencil, Trash2 } from "lucide-react";
 import Table from "@mui/material/Table";
@@ -15,18 +15,20 @@ import {
 } from "@/components/organization";
 
 import Link from "next/link";
+import { randomInt } from "crypto";
+import { useRouter } from "next/navigation";
 
 interface TableListDepartmetsProps {
   data: DepartmentsType[];
-  selected: number[];
+  selected: string[];
   isLoading?: boolean;
   error?: string | null;
 
   actions: {
-    onSelectOne: (id: number) => void;
+    onSelectOne: (id: string) => void;
     onSelectAll: (checked: boolean, data: DepartmentsType[]) => void;
-    onOpenEdit: (user: DepartmentsType) => void;
-    onOpenDelete: () => void;
+    onOpenEdit: (department: DepartmentsType) => void;
+    onOpenDelete: (department: DepartmentsType) => void;
   };
 }
 
@@ -38,6 +40,20 @@ export default function TableListDepartment({
   actions,
 }: TableListDepartmetsProps) {
   const { onSelectOne, onSelectAll, onOpenEdit, onOpenDelete } = actions;
+  const router = useRouter();
+
+  function generateRandomString(length: number) {
+    const characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  }
+
+  const randomName = generateRandomString(8);
 
   if (isLoading) {
     return <DepartementTableSkeleton />;
@@ -76,10 +92,11 @@ export default function TableListDepartment({
       </TableHead>
 
       <TableBody>
-        {data.map((department) => (
+        {data.map((department, index) => (
           <TableRow
             key={department.id}
-            className="transition-all hover:bg-gray-100"
+            className="transition-all hover:bg-gray-100 cursor-pointer"
+            onClick={() => router.push(`/organization/${department.id}`)}
           >
             <TableCell padding="checkbox">
               <Checkbox
@@ -91,7 +108,7 @@ export default function TableListDepartment({
             <TableCell>
               <Link href={`/organization/${department.id}`}>
                 <span className="font-medium hover:underline">
-                  {department.department_name}
+                  {department.department}
                 </span>
               </Link>
             </TableCell>
@@ -104,19 +121,26 @@ export default function TableListDepartment({
                 <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
                   N
                 </Avatar>
-                <span className="font-medium">{department.manager_name}</span>
+                <span className="font-medium">
+                  {department.manager_name || randomName}
+                </span>
               </div>
             </TableCell>
-            <TableCell>{department.id_manager}</TableCell>
+            <TableCell>{department.manager_code}</TableCell>
 
-            <TableCell>{department.member_count}</TableCell>
+            <TableCell>
+              {department.member_count || Math.floor(Math.random() * 50) + 1}
+            </TableCell>
 
             <TableCell onClick={(e) => e.stopPropagation()}>
               <div className="flex gap-2">
                 <IconButton size="small" onClick={() => onOpenEdit(department)}>
                   <Pencil size={18} />
                 </IconButton>
-                <IconButton size="small" onClick={() => onOpenDelete()}>
+                <IconButton
+                  size="small"
+                  onClick={() => onOpenDelete(department)}
+                >
                   <Trash2 size={18} className="text-red-500" />
                 </IconButton>
               </div>

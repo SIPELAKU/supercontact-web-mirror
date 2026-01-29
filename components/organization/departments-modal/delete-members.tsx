@@ -1,22 +1,54 @@
 "use client";
 
-import Button from "@mui/material/Button";
+import { AppButton } from "@/components/ui/app-button";
+import { deleteMember } from "@/lib/api/departments";
+import { useAuth } from "@/lib/context/AuthContext";
+import useDepartments, { useDeleteMember } from "@/lib/hooks/useDepartments";
+import { notify } from "@/lib/notifications";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
 
 type DeleteMemberProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  memberId: string;
+  departmentId: string;
 };
 
-export default function DeleteMemberDialog({ open, setOpen }: DeleteMemberProps) {
+export default function DeleteMemberDialog({
+  open,
+  setOpen,
+  memberId,
+  departmentId,
+}: DeleteMemberProps) {
   const handleClose = () => setOpen(false);
+  const { token } = useAuth();
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (memberId && departmentId) {
+      try {
+        if (!token) {
+          notify.error("No authentication token", {
+            description: "Please login to continue",
+          });
+          router.push("/login");
+          return;
+        }
+        useDeleteMember(departmentId, memberId);
+        notify.success("Member deleted successfully");
+        handleClose();
+      } catch (error) {
+        console.error("Failed to delete department:", error);
+        notify.error("Failed to delete member");
+      }
+    }
   };
+
   return (
     <Dialog
       open={open}
@@ -42,22 +74,16 @@ export default function DeleteMemberDialog({ open, setOpen }: DeleteMemberProps)
 
       <form onSubmit={handleSubmit}>
         <DialogActions className="mr-2.5! py-6!">
-          <Button
-            variant="outlined"
+          <AppButton
+            variantStyle="outline"
             type="reset"
-            className="rounded-lg! capitalize! border-red-500! text-red-500! hover:border-red-700!"
             onClick={() => setOpen(false)}
           >
             Cancel
-          </Button>
-          <Button
-            variant="contained"
-            type="submit"
-            className="rounded-lg! capitalize! bg-red-500! hover:bg-red-500/80!"
-            onClick={handleClose}
-          >
+          </AppButton>
+          <AppButton variantStyle="danger" type="submit">
             Delete Member
-          </Button>
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

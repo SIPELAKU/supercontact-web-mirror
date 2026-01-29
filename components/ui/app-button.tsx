@@ -35,6 +35,7 @@ export interface AppButtonProps extends Omit<ButtonProps, "variant" | "color"> {
   disabled?: boolean;
   fullWidth?: boolean;
   className?: string;
+  isLoading?: boolean;
   // We omit generic 'sx' from Omit if we want to allow overrides,
   // but let's keep it available via ButtonProps inheritance (minus omitted ones)
 }
@@ -162,13 +163,13 @@ export const AppButton: React.FC<AppButtonProps> = ({
   disabled = false,
   fullWidth = false,
   className,
+  isLoading = false,
   ...props
 }) => {
   return (
     <StyledButton
       variantStyle={variantStyle}
       customColor={color}
-      disabled={disabled}
       fullWidth={fullWidth}
       startIcon={startIcon}
       endIcon={endIcon}
@@ -177,6 +178,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
       // We'll trust StyledComponent styles.
       disableElevation
       className={className}
+      disabled={disabled || isLoading}
       {...props}
     >
       {children}

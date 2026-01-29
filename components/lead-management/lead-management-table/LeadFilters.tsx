@@ -38,15 +38,15 @@ export default function LeadFilters({
     let filtered = [...leads];
 
     if (status && status !== "All" && status !== "placeholder-status") {
-      filtered = filtered.filter((l) => l.lead_status === status);
+      filtered = filtered.filter((l) => l.lead_status.toLowerCase() === status.toLowerCase());
     }
 
     if (source && source !== "All" && source !== "placeholder-source") {
-      filtered = filtered.filter((l) => l.lead_source === source);
+      filtered = filtered.filter((l) => l.lead_source.toLowerCase() === source.toLowerCase());
     }
 
     if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned") {
-      filtered = filtered.filter((l) => l.user.fullname === assignedto);
+      filtered = filtered.filter((l) => l.user.fullname.trim().toLowerCase() === assignedto.trim().toLowerCase());
     }
 
     if (dateRange.from && dateRange.to) {
@@ -58,20 +58,13 @@ export default function LeadFilters({
       console.log('Filtering by date range:', { from, to });
 
       filtered = filtered.filter((l) => {
-        // Check if last_contacted exists and has created_at
-        if (!l.contact.last_contacted?.created_at) {
-          return false; // Exclude leads without last contacted date
-        }
+        // Only filter by last_contacted date to match the "Last Contacted" column in the UI
+        const dateString = l.contact.last_contacted?.created_at;
 
-        const last = new Date(l.contact.last_contacted.created_at);
-        const isInRange = last >= from && last <= to;
+        if (!dateString) return false;
 
-        console.log('Date check:', {
-          leadName: l.contact.name,
-          lastContacted: l.contact.last_contacted.created_at,
-          parsedDate: last,
-          isInRange
-        });
+        const date = new Date(dateString);
+        const isInRange = date >= from && date <= to;
 
         return isInRange;
       });
@@ -136,7 +129,7 @@ export default function LeadFilters({
       <div className="flex-1 min-w-0 flex gap-2">
         <AppDatePicker
           mode="range"
-          value={dateRange.from && dateRange.to ? [dateRange.from, dateRange.to] : null}
+          value={[dateRange.from || null, dateRange.to || null]}
           isBgWhite={true}
           onChange={(val: any) => {
             if (Array.isArray(val)) {

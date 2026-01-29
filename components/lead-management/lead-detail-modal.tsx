@@ -415,7 +415,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                     >
                       <div className="font-medium text-gray-900">{user.fullname}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>
-                      <div className="text-sm text-gray-500 capitalize">{user.role}</div>
+                      <div className="text-sm text-gray-500 capitalize">{user.position}</div>
                     </div>
                   ))}
                 </div>

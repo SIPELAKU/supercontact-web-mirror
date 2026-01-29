@@ -6,13 +6,13 @@ import { fetchUsers, UserResponse } from "../api";
 import { useAuth } from "../context/AuthContext";
 
 export function useUsers(
-  page: number, 
-  limit: number,
+  page: number = 1,
+  limit: number = 10,
   search?: string,
   position?: string,
   status?: string
 ) {
-  const {token} = useAuth();
+  const { token } = useAuth();
   return useQuery<UserResponse, Error>({
     queryKey: ["users", page, limit, search, position, status],
     queryFn: () => {

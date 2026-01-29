@@ -19,7 +19,7 @@ export interface User {
 export interface UserResponse {
   success: boolean;
   data: {
-    manage_users:User[];
+    users: User[];
     total: number;
     page: number;
     limit: number;
@@ -71,47 +71,47 @@ export interface UpdateProfileResponse {
 // ============================================
 
 export async function fetchUsers(
-  token: string, 
-  page: number, 
-  limit: number,
+  token: string,
+  page: number = 1,
+  limit: number = 10,
   search?: string,
   position?: string,
   status?: string
 ): Promise<UserResponse> {
   const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
+    page: (page || 1).toString(),
+    limit: (limit || 10).toString(),
   });
   if (search) params.append("search", search);
   if (position) params.append("position", position);
   if (status) params.append("status", status);
 
-  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   const json = await res.json();
   console.log("Users API response:", json);
-  
+
   if (res.status === 401) {
     throw new Error("UNAUTHORIZED");
   }
-  
+
   if (!res.ok) throw new Error("Failed to load users");
-  
+
   // API already returns the correct structure, just return it
   return json;
 }
 
 export async function fetchProfile(token: string): Promise<ProfileResponse> {
   const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
-  
+
   logger.info("Making GET request to fetch profile", { url });
 
   try {
     const res = await fetchWithTimeout(url, {
       method: 'GET',
-      headers: { 
+      headers: {
         Authorization: `Bearer ${token}`
       },
     });
@@ -120,16 +120,16 @@ export async function fetchProfile(token: string): Promise<ProfileResponse> {
     try {
       json = await res.json();
     } catch (parseError: any) {
-      logger.error("Failed to parse profile response JSON", { 
+      logger.error("Failed to parse profile response JSON", {
         status: res.status,
         statusText: res.statusText,
-        parseError: parseError.message 
+        parseError: parseError.message
       });
       throw new Error(`Server returned invalid response (${res.status})`);
     }
 
     logger.apiResponse("/user-profile/profile (GET)", { status: res.status, response: json });
-    
+
     if (!res.ok) {
       logger.error(`Fetch profile failed: ${res.status}`, {
         status: res.status,
@@ -139,7 +139,7 @@ export async function fetchProfile(token: string): Promise<ProfileResponse> {
       });
       throw new Error(json.message || json.error?.message || `Failed to fetch profile (${res.status}: ${res.statusText})`);
     }
-    
+
     return json;
   } catch (error: any) {
     logger.error("Fetch profile request failed", { error: error.message, url });
@@ -149,16 +149,16 @@ export async function fetchProfile(token: string): Promise<ProfileResponse> {
 
 export async function updateProfile(token: string, profileData: UpdateProfileData): Promise<UpdateProfileResponse> {
   const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
-  
-  logger.info("Making PATCH request to update profile", { 
-    url, 
+
+  logger.info("Making PATCH request to update profile", {
+    url,
     profileData
   });
 
   try {
     const res = await fetchWithTimeout(url, {
       method: 'PATCH',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
       },
@@ -169,16 +169,16 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
     try {
       json = await res.json();
     } catch (parseError: any) {
-      logger.error("Failed to parse profile update response JSON", { 
+      logger.error("Failed to parse profile update response JSON", {
         status: res.status,
         statusText: res.statusText,
-        parseError: parseError.message 
+        parseError: parseError.message
       });
       throw new Error(`Server returned invalid response (${res.status})`);
     }
 
     logger.apiResponse("/user-profile/profile (PATCH)", { status: res.status, response: json });
-    
+
     if (!res.ok) {
       logger.error(`Profile update failed: ${res.status}`, {
         status: res.status,
@@ -188,7 +188,7 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
       });
       throw new Error(json.message || json.error?.message || `Profile update failed (${res.status}: ${res.statusText})`);
     }
-    
+
     return json;
   } catch (error: any) {
     logger.error("Profile update request failed", { error: error.message, url });

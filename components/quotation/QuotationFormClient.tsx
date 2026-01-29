@@ -72,7 +72,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     phoneNumber: "",
     emailAddress: "",
     quotationTitle: "New Project Proposal",
-    quotationId: "QT-2024-001",
+    quotationId: "",
     issueDate: new Date().toISOString().split('T')[0],
     expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
   });
@@ -88,7 +88,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         phoneNumber: initialData.lead?.contact?.phone_number || "",
         emailAddress: initialData.lead?.contact?.email || "",
         quotationTitle: initialData.quotation_title || "New Project Proposal",
-        quotationId: initialData.quotation_number || "QT-2024-001", // Assuming number is the ID/Display ID
+        quotationId: initialData.quotation_number || "", // Assuming number is the ID/Display ID
         issueDate: initialData.created_at ? new Date(initialData.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         expiryDate: initialData.expire_date ? new Date(initialData.expire_date).toISOString().split('T')[0] : "",
       });
@@ -416,7 +416,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         style={{ backgroundColor: "#ffffff", borderColor: "#d1d5db" }}>
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>{clientData.quotationTitle}</h1>
-          <p style={{ color: "#6b7280" }}>{clientData.quotationId}</p>
+          <p style={{ color: "#6b7280" }}>{clientData.quotationId === "QT-2024-001" ? "DRAFT" : clientData.quotationId}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-8 mb-8" style={{ color: "#000000" }}>

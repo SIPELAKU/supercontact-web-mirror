@@ -12,6 +12,7 @@ import {
   useSensors,
   PointerSensor,
   DragEndEvent,
+  DragOverEvent,
   useDroppable,
   closestCenter,
   DragOverlay,
@@ -30,6 +31,8 @@ import { MoreVertical } from "lucide-react";
 import { deleteLead } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/context/AuthContext";
+import { notify } from "@/lib/notifications";
+import { arrayMove } from "@dnd-kit/sortable";
 
 /* -------------------------
    FIXED STATUS ORDER
@@ -201,6 +204,7 @@ type KanbanBoardProps = {
 
 export default function KanbanView({ data, isLoading, error }: KanbanBoardProps) {
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   const [leads, setLeads] = React.useState<Lead[]>(data?.data?.leads ?? []);
   const [activeLead, setActiveLead] = React.useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = React.useState<Lead | null>(null);
@@ -239,41 +243,129 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
   };
 
   /* -------------------------
+     DRAG OVER
+  ------------------------- */
+  /* -------------------------
+     DRAG OVER
+  ------------------------- */
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
+
+    const activeIndex = leads.findIndex((l) => l.id.toString() === activeId);
+    if (activeIndex === -1) return;
+
+    // Resolve column status and target index
+    let overStatus: LeadStatus | null = null;
+    let overIndex = -1;
+
+    if (FIXED_STATUSES.includes(overId as LeadStatus)) {
+      overStatus = overId as LeadStatus;
+      // Dropping directly onto a column - move it to the end of that column
+      // To find the right place in the flat array, we should move it after the last lead of that status
+      const leadsInStatus = leads.filter(l => l.lead_status === overStatus);
+      if (leadsInStatus.length > 0) {
+        const lastLeadInStatus = leadsInStatus[leadsInStatus.length - 1];
+        overIndex = leads.indexOf(lastLeadInStatus);
+      } else {
+        // If column is empty, we can't easily find an index in flat array 
+        // that "belongs" to it without knowing where columns sit in the array.
+        // But actually, just changing the status is enough for the filter to pick it up.
+      }
+    } else {
+      const targetLead = leads.find((l) => l.id.toString() === overId);
+      if (targetLead) {
+        overStatus = targetLead.lead_status;
+        overIndex = leads.indexOf(targetLead);
+      }
+    }
+
+    if (!overStatus) return;
+
+    if (activeId !== overId) {
+      setLeads((prev) => {
+        const activeLead = prev[activeIndex];
+        const isSameStatus = activeLead.lead_status === overStatus;
+
+        if (isSameStatus) {
+          if (overIndex !== -1) {
+            return arrayMove(prev, activeIndex, overIndex);
+          }
+          return prev;
+        } else {
+          // Moving between columns
+          const updated = [...prev];
+          const movedItem = { ...activeLead, lead_status: overStatus! };
+          updated.splice(activeIndex, 1);
+
+          // If we have a target card, insert there
+          if (overIndex !== -1) {
+            // Adjust overIndex if it was after the activeIndex
+            const targetIdx = overIndex > activeIndex ? overIndex - 1 : overIndex;
+            updated.splice(targetIdx, 0, movedItem);
+          } else {
+            // Just add to the end
+            updated.push(movedItem);
+          }
+          return updated;
+        }
+      });
+    }
+  };
+
+  /* -------------------------
      DRAG END
-------------------------- */
+  ------------------------- */
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveLead(null);
 
-    if (!over) return;
+    if (!over) {
+      // Revert to original data if dropped outside
+      if (data?.data?.leads) {
+        setLeads(data.data.leads);
+      }
+      return;
+    }
 
     const leadId = active.id.toString();
     const overId = over.id.toString();
 
-    // Resolve correctly whether dropped on a status column or another card
+    // Check against original data
+    const originalLead = data?.data?.leads.find(l => l.id.toString() === leadId);
+    if (!originalLead) return;
+
+    const oldStatus = originalLead.lead_status;
+
+    // Resolve final status
     let newStatus: LeadStatus;
     if (FIXED_STATUSES.includes(overId as LeadStatus)) {
       newStatus = overId as LeadStatus;
     } else {
       const targetLead = leads.find((l) => l.id.toString() === overId);
-      if (!targetLead) return;
-      newStatus = targetLead.lead_status;
+      if (!targetLead) {
+        newStatus = oldStatus;
+      } else {
+        newStatus = targetLead.lead_status;
+      }
     }
 
-    const oldStatus = leads.find((l) => l.id.toString() === leadId)?.lead_status;
-
-    if (!oldStatus || newStatus === oldStatus) return;
-
-    setLeads((prev) =>
-      prev.map((l) =>
-        l.id.toString() === leadId ? { ...l, lead_status: newStatus } : l
-      )
-    );
+    // If no real change, just stop
+    if (newStatus === oldStatus) {
+      // Ensure state is synced with props
+      if (data?.data?.leads) {
+        setLeads(data.data.leads);
+      }
+      return;
+    }
 
     try {
       const token = await getToken();
       if (!token) {
-        console.error('No authentication token');
+        notify.error("Authentication required");
         return;
       }
 
@@ -282,8 +374,14 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ lead_status: newStatus }),
       });
+
+      notify.success(`Lead moved to ${newStatus}`);
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
     } catch (err) {
       console.error("Failed to update status:", err);
+      notify.error("Failed to update status. Reverting...");
+      // Re-fetch to sync state
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
     }
   };
 
@@ -346,6 +444,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="overflow-x-auto">

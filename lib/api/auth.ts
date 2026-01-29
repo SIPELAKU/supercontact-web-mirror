@@ -2,6 +2,7 @@
 // Authentication API functions: register, OTP, password reset
 
 import { logger } from "../utils/logger";
+import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -79,7 +80,7 @@ export async function registerUser(userData: RegisterData): Promise<RegisterResp
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -127,7 +128,7 @@ export async function verifyOTP(otpData: VerifyOTPData): Promise<VerifyOTPRespon
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ export async function resendOTP(resendData: ResendOTPData): Promise<ResendOTPRes
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -232,7 +233,7 @@ export async function resetPassword(resetData: ResetPasswordData, resetToken?: s
       headers['Authorization'] = `Bearer ${resetToken}`;
     }
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(resetData),

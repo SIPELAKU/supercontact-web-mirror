@@ -8,6 +8,7 @@ import type {
     SubscribersResponse
 } from '../../types/email-marketing';
 import { logger } from "../../utils/logger";
+import { fetchWithTimeout } from "../api-client";
 
 // ============================================
 // Types
@@ -32,7 +33,7 @@ export async function fetchSubscribers(token: string, page: number = 1, limit: n
   logger.info("Making GET request to fetch subscribers", { url, page, limit });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -81,7 +82,7 @@ export async function createSubscriber(token: string, data: CreateSubscriberData
   logger.info("Making POST request to create subscriber", { url, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -131,7 +132,7 @@ export async function deleteSubscriber(token: string, subscriberId: string): Pro
   logger.info("Making DELETE request to delete subscriber", { url, subscriberId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'DELETE',
       headers: { 
         Authorization: `Bearer ${token}`
@@ -179,7 +180,7 @@ export async function updateSubscriber(token: string, subscriberId: string, data
   logger.info("Making PUT request to update subscriber", { url, subscriberId, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',

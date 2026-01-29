@@ -3,6 +3,7 @@
 
 import { leadResponse } from "@/lib/models/types";
 import { logger } from "../utils/logger";
+import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -113,7 +114,7 @@ export async function fetchLeads(token: string, page: number = 1, limit: number 
 
     console.log('[fetchLeads] URL:', url);
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -138,7 +139,7 @@ export async function createLead(token: string, leadData: CreateLeadData): Promi
   try {
     const url = getFullUrl("/leads");
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -165,7 +166,7 @@ export async function updateLead(token: string, leadId: string, leadData: Update
   try {
     const url = getFullUrl(`/leads/${leadId}`);
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -192,7 +193,7 @@ export async function deleteLead(token: string, leadId: string): Promise<any> {
   try {
     const url = getFullUrl(`/leads/${leadId}`);
 
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

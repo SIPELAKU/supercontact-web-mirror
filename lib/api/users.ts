@@ -2,6 +2,7 @@
 // Users and Profile API functions
 
 import { logger } from "../utils/logger";
+import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -85,7 +86,7 @@ export async function fetchUsers(
   if (position) params.append("position", position);
   if (status) params.append("status", status);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -108,7 +109,7 @@ export async function fetchProfile(token: string): Promise<ProfileResponse> {
   logger.info("Making GET request to fetch profile", { url });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`
@@ -155,7 +156,7 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',

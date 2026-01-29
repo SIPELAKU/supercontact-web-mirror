@@ -40,6 +40,7 @@ export interface PipelineQuery {
   dateRange?: string;
   search?: string;
   assigned_to?: string;
+  isSilent?: boolean;
 }
 
 export interface reqBody {
@@ -137,7 +138,11 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
   fetchPipeline: async (param?: PipelineQuery) => {
     try {
-      set({ loading: true, error: null });
+      if (!param?.isSilent) {
+        set({ loading: true, error: null });
+      } else {
+        set({ error: null });
+      }
 
       const { dateRangeFilter, salespersonFilter } = get();
 
@@ -231,14 +236,14 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
   updateStagePipeline: async (id: string, stage: string) => {
     try {
-      set({ loading: true, error: null });
+      // Don't set global loading: true to avoid UI blocking
+      set({ error: null });
       const res = await api.patch(`/pipelines/${id}/stage`, {
         deal_stage: stage,
       });
 
       if (res.status === 200 || res.status === 204) {
-        await get().fetchPipeline();
-        set({ loading: false });
+        await get().fetchPipeline({ isSilent: true });
         return;
       }
 

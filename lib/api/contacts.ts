@@ -1,6 +1,8 @@
 // lib/api/contacts.ts
 // Contacts API functions
 
+import { fetchWithTimeout } from "./api-client";
+
 // ============================================
 // Types
 // ============================================
@@ -33,7 +35,7 @@ export interface ContactResponse {
 // ============================================
 
 export async function fetchContacts(token: string): Promise<ContactResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/contacts`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/contacts`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -49,7 +51,7 @@ export async function fetchContacts(token: string): Promise<ContactResponse> {
 }
 
 export async function deleteMultipleContacts(token: string, contactIds: string[]): Promise<ContactResponse> {
-  const res = await fetch(`/api/proxy/contacts`, {
+  const res = await fetchWithTimeout(`/api/proxy/contacts`, {
     method: "DELETE",
     headers: { 
       "Content-Type": "application/json",
@@ -70,7 +72,7 @@ export async function deleteMultipleContacts(token: string, contactIds: string[]
 }
 
 export async function deleteContact(token: string, contactId: string): Promise<any> {
-  const res = await fetch(`/api/proxy/contacts/${contactId}`, {
+  const res = await fetchWithTimeout(`/api/proxy/contacts/${contactId}`, {
     method: "DELETE",
     headers: { 
       "Content-Type": "application/json",

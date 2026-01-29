@@ -2,6 +2,7 @@
 // Notes API functions
 
 import { logger } from "../utils/logger";
+import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -36,7 +37,7 @@ export async function fetchNotes(token: string): Promise<NotesResponse> {
   logger.info("Making GET request to fetch notes", { url });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -84,7 +85,7 @@ export async function createNote(token: string, noteData: NoteData): Promise<any
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ export async function updateNote(token: string, noteId: string, noteData: NoteDa
   });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',

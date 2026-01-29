@@ -1,4 +1,5 @@
 import { ManageUserResponse, CreateManagedUserData, UpdateManagedUserData } from "../types/manage-users";
+import { fetchWithTimeout } from "./api-client";
 
 export async function fetchManagedUsers(
   token: string, 
@@ -16,7 +17,7 @@ export async function fetchManagedUsers(
   if (position) params.append("position", position);
   if (status) params.append("status", status);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -37,7 +38,7 @@ export async function createManagedUser(
   token: string,
   data: CreateManagedUserData
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -59,7 +60,7 @@ export async function updateManagedUser(
   id: string,
   data: UpdateManagedUserData
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users/${id}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -81,7 +82,7 @@ export async function deleteManagedUser(
   token: string,
   id: string
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/manage-users/${id}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

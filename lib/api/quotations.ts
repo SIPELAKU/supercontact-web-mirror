@@ -2,6 +2,7 @@
 // Quotations API functions: CRUD operations for quotations
 
 import { logger } from "../utils/logger";
+import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -72,7 +73,7 @@ export async function createQuotation(token: string, quotationData: CreateQuotat
             action: quotationData.action
         });
 
-        const res = await fetch(url, {
+        const res = await fetchWithTimeout(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -101,7 +102,7 @@ export async function fetchQuotationById(token: string, quotationId: string): Pr
             quotationId
         });
 
-        const res = await fetch(url, {
+        const res = await fetchWithTimeout(url, {
             method: "GET",
             headers: {
                 "Accept": "application/json",

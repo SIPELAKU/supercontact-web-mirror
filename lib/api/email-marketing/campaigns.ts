@@ -8,6 +8,7 @@ import type {
     UpdateCampaignData
 } from '../../types/email-marketing';
 import { logger } from "../../utils/logger";
+import { fetchWithTimeout } from "../api-client";
 
 // ============================================
 // Functions
@@ -19,7 +20,7 @@ export async function fetchCampaigns(token: string): Promise<CampaignsResponse> 
   logger.info("Making GET request to fetch campaigns", { url });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -68,7 +69,7 @@ export async function fetchCampaignDetail(token: string, campaignId: string): Pr
   logger.info("Making GET request to fetch campaign detail", { url, campaignId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -117,7 +118,7 @@ export async function createCampaign(token: string, data: CreateCampaignData): P
   logger.info("Making POST request to create campaign", { url, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -167,7 +168,7 @@ export async function updateCampaign(token: string, campaignId: string, data: Up
   logger.info("Making PUT request to update campaign", { url, campaignId, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
@@ -217,7 +218,7 @@ export async function deleteCampaign(token: string, campaignId: string): Promise
   logger.info("Making DELETE request to delete campaign", { url, campaignId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'DELETE',
       headers: { 
         Authorization: `Bearer ${token}`

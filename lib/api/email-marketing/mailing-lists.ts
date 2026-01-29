@@ -8,6 +8,7 @@ import type {
     UpdateMailingListData
 } from '../../types/email-marketing';
 import { logger } from "../../utils/logger";
+import { fetchWithTimeout } from "../api-client";
 
 // ============================================
 // Functions
@@ -19,7 +20,7 @@ export async function fetchMailingLists(token: string, page: number = 1, limit: 
   logger.info("Making GET request to fetch mailing lists", { url, page, limit });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -68,7 +69,7 @@ export async function fetchMailingListDetail(token: string, mailingListId: strin
   logger.info("Making GET request to fetch mailing list detail", { url, mailingListId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 
         Authorization: `Bearer ${token}`,
@@ -117,7 +118,7 @@ export async function createMailingList(token: string, data: CreateMailingListDa
   logger.info("Making POST request to create mailing list", { url, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -167,7 +168,7 @@ export async function updateMailingList(token: string, mailingListId: string, da
   logger.info("Making PUT request to update mailing list", { url, mailingListId, data });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
@@ -217,7 +218,7 @@ export async function deleteMailingList(token: string, mailingListId: string): P
   logger.info("Making DELETE request to delete mailing list", { url, mailingListId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'DELETE',
       headers: { 
         Authorization: `Bearer ${token}`
@@ -265,7 +266,7 @@ export async function deleteMailingListSubscriber(token: string, mailingListId: 
   logger.info("Making DELETE request to delete subscriber from mailing list", { url, mailingListId, subscriberId });
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method: 'DELETE',
       headers: { 
         Authorization: `Bearer ${token}`

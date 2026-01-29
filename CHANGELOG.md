@@ -13,6 +13,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.6] - 2026-01-29
+
+### Detail Versi 1.2.6
+
+#### 🐛 Bug Fix
+
+- **fix: add timeout to all API calls**
+  - Replaced direct `fetch` calls with a new `fetchWithTimeout` utility across all API modules.
+  - Added a default timeout of 30 seconds to prevent requests from hanging indefinitely.
+  - Improved error handling for timeout scenarios.
+
+#### 📁 Files Modified
+
+- `lib/api/api-client.ts`
+- `lib/api/auth.ts`
+- `lib/api/contacts.ts`
+- `lib/api/departments.ts`
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/api/leads.ts`
+- `lib/api/manage-users.ts`
+- `lib/api/notes.ts`
+- `lib/api/quotations.ts`
+- `lib/api/users.ts`
+
+---
+
 ## [1.2.5] - 2026-01-29
 
 ### Detail Versi 1.2.5

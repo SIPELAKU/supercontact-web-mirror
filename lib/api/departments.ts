@@ -1,4 +1,5 @@
 import { DepartmentsType, ResponseDepartmentsType, DepartmentDetailResponse, DepartmentMembersResponse } from "../types/Departments";
+import { fetchWithTimeout } from "./api-client";
 
 export interface CreateDepartmentData {
   department: string;
@@ -24,7 +25,7 @@ export async function fetchDepartments(
   if (department) params.append("department", department);
   if (branch) params.append("branch", branch);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -41,7 +42,7 @@ export async function fetchDepartmentById(
   token: string,
   departmentId: string
 ): Promise<DepartmentDetailResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -71,7 +72,7 @@ export async function fetchDepartmentMembers(
   if (position) params.append("position", position);
   if (status) params.append("status", status);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}/members?${params.toString()}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}/members?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -88,7 +89,7 @@ export async function createDepartment(
   token: string,
   data: CreateDepartmentData
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +107,7 @@ export async function updateDepartment(
   id: string,
   data: UpdateDepartmentData
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -123,7 +124,7 @@ export async function deleteDepartment(
   token: string,
   id: string
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -139,7 +140,7 @@ export async function deleteMember(
   departmentId: string,
   memberId: string
 ): Promise<{ success: boolean; message: string; data?: any; error?: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}/members/${memberId}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}/members/${memberId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,

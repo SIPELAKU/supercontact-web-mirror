@@ -238,17 +238,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         }
       }
 
-      // 2. If action is "publish", also send the email
+      // 2. If action is "publish", we no longer need to manually call send-email API
+      // as the backend handles it when action is "publish" and attachment is present.
       if (action === "publish" && pdfBlob) {
+        // Logic mainly to facilitate PDF generation for attachment; 
+        // explicit send call is removed as requested.
         if (!clientData.emailAddress) {
           throw new Error("Client email address is required to send the quotation");
         }
-
-        await sendQuotationEmail(token, {
-          to_email: clientData.emailAddress,
-          subject: `Quotation: ${clientData.quotationTitle}`,
-          file: pdfBlob
-        });
       }
     } catch (error: any) {
       console.error("Failed to process quotation:", error);

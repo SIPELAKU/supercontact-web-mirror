@@ -283,23 +283,25 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1.5, // Reduced scale to optimize size (was 2)
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      // Use JPEG with 0.75 quality instead of PNG to significantly reduce size
+      const imgData = canvas.toDataURL("image/jpeg", 0.75);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4"
+        format: "a4",
+        compress: true // Enable PDF compression
       });
 
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
       const blob = pdf.output("blob");
 
       document.body.removeChild(element);

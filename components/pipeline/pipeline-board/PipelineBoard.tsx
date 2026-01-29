@@ -16,7 +16,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
@@ -62,19 +62,14 @@ export default function PipelineBoard() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
 
-  // Track the original stage name when drag starts (persists across handleDragOver updates)
-  const dragStartStageRef = useRef<string | null>(null)
-
   // Track how many deals are visible per stage (defaults to 20)
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
-    // Only update local stages from store if we are NOT currently dragging
-    // This prevents the board from "snapping back" or resetting cards while a user is moving them
-    if (listPipeline.length > 0 && !activeDeal) {
+    if (listPipeline.length > 0) {
       setStages(listPipeline)
     }
-  }, [listPipeline, activeDeal])
+  }, [listPipeline])
 
 
   const computeStageTotals = useMemo(() => {
@@ -160,10 +155,6 @@ export default function PipelineBoard() {
     const loc = findDeal(String(event.active.id), stages);
     if (!loc) return;
 
-    // Store the original stage name in ref (won't be affected by handleDragOver)
-    dragStartStageRef.current = stages[loc.stageIndex].name;
-    console.log("=== DRAG START ===", "Original stage:", dragStartStageRef.current);
-
     setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
   };
 
@@ -218,14 +209,8 @@ export default function PipelineBoard() {
     setActiveDeal: (deal: Deal | null) => void,
   ) => {
     const { active, over } = event
-    console.log("=== DRAG END ===", { activeId: active.id, overId: over?.id })
-
     setActiveDeal(null)
-    if (!over) {
-      console.log("No over target, returning")
-      dragStartStageRef.current = null; // Reset ref
-      return
-    }
+    if (!over) return
 
     const activeId = String(active.id)
     const overId = String(over.id)
@@ -234,50 +219,37 @@ export default function PipelineBoard() {
     const originalStage = listPipeline.find(s => s.deals.some(d => String(d.id) === activeId))?.name;
 
     const from = findDeal(activeId, stages)
-    if (!from) {
-      console.log("Deal not found in stages:", activeId)
-      dragStartStageRef.current = null; // Reset ref
-      return
-    }
-
-    // Use the ref to get the ORIGINAL stage name (before handleDragOver modified it)
-    const originalStageName = dragStartStageRef.current || stages[from.stageIndex].name
-    console.log("Original stage from ref:", originalStageName, "Current stage:", stages[from.stageIndex].name)
+    if (!from) return
 
     const updated = [...stages]
     updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] }
 
     if (overId.startsWith("column-")) {
-      console.log("Dropped on column")
       const toStageName = overId.replace("column-", "")
       const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
 
-      // Check if moving to the same stage
-      if (originalStageName === toStageName) {
-        console.log("Same stage, returning:", originalStageName)
-        dragStartStageRef.current = null; // Reset ref
-        return
-      }
+      if (from.stageIndex === toStageIndex) return
+
+
 
       updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] }
 
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[toStageIndex].deals.push(moved)
 
+
       const updatedWithTotals = computeStageTotals(updated)
       setStages(updatedWithTotals)
 
-      // Always call API when moving to different stage
-      console.log(`Moving deal ${activeId} from "${originalStageName}" to "${toStageName}"`)
-      try {
-        await updateStagePipeline(moved, toStageName);
-        console.log("Stage update successful")
-      } catch (error) {
-        console.error("Failed to update stage:", error);
-        // Revert on error
-        setStages(computeStageTotals(stages));
-      } finally {
-        dragStartStageRef.current = null; // Reset ref
+      if (originalStage && originalStage !== toStageName) {
+        try {
+          await updateStagePipeline(activeId, toStageName);
+          notify.success(`Moved to ${toStageName}`);
+        } catch (error) {
+          console.error("Failed to update stage:", error);
+          notify.error("Failed to update stage. Reverting...");
+          await fetchPipeline(); // Revert local state by re-fetching
+        }
       }
 
       return
@@ -287,41 +259,33 @@ export default function PipelineBoard() {
     if (!to) return
 
     if (from.stageIndex === to.stageIndex) {
-      // Just reordering within same stage - no API call needed
       updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
-      const updatedWithTotals = computeStageTotals(updated)
-      setStages(updatedWithTotals)
-      dragStartStageRef.current = null; // Reset ref
     } else {
-      // Moving to different stage
       updated[to.stageIndex] = { ...updated[to.stageIndex], deals: [...updated[to.stageIndex].deals] }
       const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
       updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
+    }
 
-      const updatedWithTotals = computeStageTotals(updated)
-      setStages(updatedWithTotals)
 
-      const toStage = updated[to.stageIndex].name
+    const updatedWithTotals = computeStageTotals(updated)
+    setStages(updatedWithTotals)
 
-      // Always call API when moving to different stage
-      console.log(`Moving deal ${activeId} from "${originalStageName}" to "${toStage}"`)
+    const toStage = updated[to.stageIndex].name;
+
+    if (originalStage && originalStage !== toStage) {
       try {
-        await updateStagePipeline(moved, toStage);
-        console.log("Stage update successful")
+        await updateStagePipeline(activeId, toStage);
+        notify.success(`Moved to ${toStage}`);
       } catch (error) {
         console.error("Failed to update stage:", error);
-        // Revert on error
-        setStages(computeStageTotals(stages));
-      } finally {
-        dragStartStageRef.current = null; // Reset ref
+        notify.error("Failed to update stage. Reverting...");
+        await fetchPipeline();
       }
     }
   }
 
 
-  // Show loading skeleton ONLY on initial load (when listPipeline is empty)
-  // Subsequent background refetches should not unmount the board
-  if (loading && listPipeline.length === 0) {
+  if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8 animate-pulse">
 

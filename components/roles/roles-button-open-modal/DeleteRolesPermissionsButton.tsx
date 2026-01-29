@@ -10,7 +10,11 @@ const DeleteRolesPermissionsModal = dynamic(
   { ssr: false },
 );
 
-export default function DeleteRolesPermissionsButton() {
+export default function DeleteRolesPermissionsButton({
+  roleId,
+}: {
+  roleId: string;
+}) {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleOpen = () => {
@@ -22,7 +26,11 @@ export default function DeleteRolesPermissionsButton() {
         <Trash2 className="h-5 w-4 text-red-500" />
       </IconButton>
 
-      <DeleteRolesPermissionsModal open={open} setOpen={setOpen} />
+      <DeleteRolesPermissionsModal
+        open={open}
+        setOpen={setOpen}
+        roleId={roleId}
+      />
     </>
   );
 }

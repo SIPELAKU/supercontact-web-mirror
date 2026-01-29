@@ -17,7 +17,7 @@ const INPUT_BG = "#FAFAF6";
 interface AppSelectProps extends Omit<SelectProps, "label"> {
   label?: string;
   placeholder?: string;
-  options: { value: string | number; label: string }[];
+  options: { value: string | number; label: React.ReactNode }[];
   containerClassName?: string;
   isBgWhite?: boolean;
 }
@@ -76,9 +76,9 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
               const selectedOption = options.find(
                 (opt) => opt.value === selected,
               );
-              return (
-                selectedOption ? selectedOption.label : (selected as string)
-              ) as React.ReactNode;
+              return selectedOption
+                ? selectedOption.label
+                : (selected as React.ReactNode);
             }}
             IconComponent={(props) => (
               <ChevronDown
@@ -92,7 +92,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
               />
             )}
             sx={{
-              height: "48px",
+              height: "40px",
               borderRadius: "8px",
               backgroundColor: isBgWhite ? "white" : INPUT_BG,
               "& .MuiSelect-select": {
@@ -101,7 +101,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
                 alignItems: "center",
               },
               "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "rgba(0, 0, 0, 0.12)",
+                borderColor: "#262B43/22",
               },
               "&:hover .MuiOutlinedInput-notchedOutline": {
                 borderColor: "primary.main",

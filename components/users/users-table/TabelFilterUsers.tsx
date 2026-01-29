@@ -1,18 +1,14 @@
 "use client";
 
 import CardContent from "@mui/material/CardContent";
-import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
 
 import { AppSelect } from "@/components/ui/app-select";
-import type { UsersType } from "@/lib/types/Users";
+import type { ManageUser } from "@/lib/types/manage-users";
 
 export type UserTableFilter = {
-  role?: UsersType["role"];
-  status?: UsersType["status"];
+  position?: ManageUser["position"];
+  status?: ManageUser["status"];
 };
 
 type Props = {
@@ -21,7 +17,7 @@ type Props = {
 };
 
 const TableFilterUsers = ({ filter, onChange }: Props) => {
-  const roleOptions = [
+  const positionOptions = [
     { value: "", label: "All Position" },
     { value: "Support Agent", label: "Support Agent" },
     { value: "Frontend Engineer", label: "Frontend Engineer" },
@@ -32,9 +28,9 @@ const TableFilterUsers = ({ filter, onChange }: Props) => {
 
   const statusOptions = [
     { value: "", label: "All Status" },
-    { value: "pending", label: "Pending" },
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
+    { value: "Pending", label: "Pending" },
+    { value: "Active", label: "Active" },
+    { value: "Inactive", label: "Inactive" },
   ];
 
   return (
@@ -43,14 +39,15 @@ const TableFilterUsers = ({ filter, onChange }: Props) => {
         <Grid item xs={12} sm={6}>
           <AppSelect
             placeholder="Select Position"
-            value={filter.role ?? ""}
+            value={filter.position ?? ""}
             onChange={(e) =>
               onChange({
                 ...filter,
-                role: (e.target.value as string) || undefined,
+                position: (e.target.value as string) || undefined,
               })
             }
-            options={roleOptions}
+            options={positionOptions}
+            isBgWhite
           />
         </Grid>
 
@@ -61,10 +58,11 @@ const TableFilterUsers = ({ filter, onChange }: Props) => {
             onChange={(e) =>
               onChange({
                 ...filter,
-                status: (e.target.value as UsersType["status"]) || undefined,
+                status: (e.target.value as ManageUser["status"]) || undefined,
               })
             }
             options={statusOptions}
+            isBgWhite
           />
         </Grid>
       </Grid>

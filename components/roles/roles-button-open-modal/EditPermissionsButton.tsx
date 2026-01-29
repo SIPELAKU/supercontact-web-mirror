@@ -6,17 +6,22 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 
 interface EditPermissionsProps {
-  permission: string;
-  assignedTo: string[];
+  roleId: string;
+  roleName: string;
+  assignedPermissions: string[];
 }
 
-const EditPermissionsDialog = dynamic(() => import("../roles-modal/EditPermissionsModal"), {
-  ssr: false,
-});
+const EditPermissionsDialog = dynamic(
+  () => import("../roles-modal/EditPermissionsModal"),
+  {
+    ssr: false,
+  },
+);
 
 export default function EditPermissionsButton({
-  permission,
-  assignedTo,
+  roleId,
+  roleName,
+  assignedPermissions,
 }: EditPermissionsProps) {
   const [open, setOpen] = useState<boolean>(false);
 
@@ -39,8 +44,9 @@ export default function EditPermissionsButton({
       <EditPermissionsDialog
         open={open}
         setOpen={setOpen}
-        permission={permission}
-        assignedTo={assignedTo}
+        roleId={roleId}
+        initialRoleName={roleName}
+        initialPermissions={assignedPermissions}
       />
     </>
   );

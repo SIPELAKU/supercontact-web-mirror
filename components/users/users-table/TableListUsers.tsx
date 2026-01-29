@@ -1,6 +1,5 @@
 "use client";
 
-import { UsersType } from "@/lib/types/Users";
 import { Avatar, Checkbox, IconButton } from "@mui/material";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import Table from "@mui/material/Table";
@@ -13,18 +12,19 @@ import {
   UsersTableNotFound,
   UsersTableSkeleton,
 } from "@/components/users";
+import { ManageUser } from "@/lib/types/manage-users";
 
 interface TableListUsersProps {
-  data: UsersType[];
-  selected: number[];
+  data: ManageUser[];
+  selected: string[];
   isLoading?: boolean;
-  error?: string | null;
+  error?: Error | null | undefined;
 
   actions: {
-    onSelectOne: (id: number) => void;
-    onSelectAll: (checked: boolean, data: UsersType[]) => void;
-    onOpenEdit: (user: UsersType) => void;
-    onOpenDetail: (user: UsersType) => void;
+    onSelectOne: (id: string) => void;
+    onSelectAll: (checked: boolean, data: ManageUser[]) => void;
+    onOpenEdit: (user: ManageUser) => void;
+    onOpenDetail: (user: ManageUser) => void;
     onOpenDelete: () => void;
   };
 }
@@ -68,7 +68,7 @@ export default function TableListUsers({
 
           <TableCell>User</TableCell>
           <TableCell>Email</TableCell>
-          <TableCell>Role</TableCell>
+          <TableCell>Position</TableCell>
           <TableCell>Employee ID</TableCell>
           <TableCell>Status</TableCell>
           <TableCell>Action</TableCell>
@@ -88,18 +88,18 @@ export default function TableListUsers({
             <TableCell>
               <div className="flex items-center gap-3">
                 <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
-                  {user.avatar_initial}
+                  {user.fullname.charAt(0).toUpperCase()}
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="font-medium">{user.fullName}</span>
+                  <span className="font-medium">{user.fullname}</span>
                   <span className="text-xs text-gray-500">{user.email}</span>
                 </div>
               </div>
             </TableCell>
 
             <TableCell>{user.email}</TableCell>
-            <TableCell className="capitalize">{user.role}</TableCell>
-            <TableCell>{user.id_employee}</TableCell>
+            <TableCell className="capitalize">{user.position}</TableCell>
+            <TableCell>{user.employee_code}</TableCell>
 
             <TableCell>
               <span

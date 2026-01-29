@@ -1,40 +1,44 @@
 "use client";
 import { Card, CardHeader, Divider, Typography } from "@mui/material";
 import {
-    useParams,
-    usePathname,
-    useRouter,
-    useSearchParams,
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
 } from "next/navigation";
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
-import useDepartments from "../../../lib/hooks/useDepartments";
-import { useUsers } from "../../../lib/hooks/useUsers";
-import { UsersType } from "../../../lib/type/Users";
+import {
+  ChangeEvent,
+  MouseEvent,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import useDepartments, {
+  useDepartmentDetail,
+  useDepartmentMembers,
+} from "../../../lib/hooks/useDepartments";
 
 import {
-    AddMemberButton,
-    DeleteMembersModal,
-    DepartementTableMember,
-    DepartmentsCardInfo,
-    DepartmentsCardInfoSkeleton,
+  AddMemberButton,
+  DeleteMembersModal,
+  DepartementTableMember,
+  DepartmentsCardInfo,
+  DepartmentsCardInfoSkeleton,
 } from "@/components/organization";
 import InputSearch from "@/components/ui/input-search";
 import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import { ExportButton, TableFilterUsers } from "@/components/users";
+import { UsersType } from "@/lib/types/Users";
+import { AppInput } from "@/components/ui/app-input";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 export default function DetailDepartments() {
-  const { id } = useParams();
-
-  const { departments } = useDepartments();
-
-  const { data: usersResponse, isLoading, error } = useUsers();
-
-  const [openDelete, setOpenDelete] = useState(false);
-  const [selected, setSelected] = useState<number[]>([]);
+  const { id } = useParams() as { id: string };
 
   const [tableFilter, setTableFilter] = useState<{
-    role?: UsersType["role"];
+    position?: UsersType["position"];
     status?: UsersType["status"];
   }>({});
 
@@ -43,93 +47,91 @@ export default function DetailDepartments() {
   const { replace } = useRouter();
   const pathname = usePathname();
 
-  const handleSearch = (term: string) => {
+  // ===== SEARCH & DEBOUNCE ===== //
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") ?? "",
+  );
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");
 
-    if (term) {
-      params.set("q", term);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
     } else {
-      params.delete("q");
+      params.delete("search");
     }
 
+    setPage(0);
     replace(`${pathname}?${params.toString()}`);
-  };
+  }, [debouncedSearch, pathname, replace, searchParams]);
 
-  const searchQuery = searchParams.get("q")?.toLowerCase() ?? "";
-
-  const filteredUsers = useMemo(() => {
-    const apiUsers = usersResponse?.data?.users || [];
-    
-    // Convert API User[] to UsersType[]
-    const users: UsersType[] = apiUsers.map((user) => ({
-      id: parseInt(user.id),
-      fullName: user.fullname,
-      email: user.email,
-      role: user.role,
-      status: 'active' as const, // Default status since API doesn't provide it
-      avatar_initial: user.fullname.charAt(0).toUpperCase(),
-      id_employee: user.id,
-    }));
-    
-    return users.filter((user) => {
-      // search name
-      const matchSearch = searchQuery
-        ? user.fullName?.toLowerCase().includes(searchQuery)
-        : true;
-
-      // role filter
-      const matchRole = tableFilter.role
-        ? user.role === tableFilter.role
-        : true;
-
-      // status filter
-      const matchStatus = tableFilter.status
-        ? user.status === tableFilter.status
-        : true;
-
-      return matchSearch && matchRole && matchStatus;
-    });
-  }, [usersResponse?.data?.users, searchQuery, tableFilter]);
+  const searchQuery = searchParams.get("search") ?? "";
 
   // ===== PAGINATION ===== //
   const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+
+  const { data: departmentResponse, isLoading: isLoadingDept } =
+    useDepartmentDetail(id);
+  const {
+    data: membersResponse,
+    isLoading: isLoadingMembers,
+    isError: isErrorMembers,
+    error: errorMembers,
+  } = useDepartmentMembers(id, page, rowsPerPage, searchQuery, tableFilter);
+
+  const [openDelete, setOpenDelete] = useState(false);
+  const [selected, setSelected] = useState<(string | number)[]>([]);
+  const [departmentId, setDepartmentId] = useState<string | null>(null);
+  const [memberId, setMemberId] = useState<string | null>(null);
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number
+    newPage: number,
   ) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const paginatedUsers = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredUsers.slice(start, end);
-  }, [filteredUsers, page, rowsPerPage]);
+  const departmentData = departmentResponse?.data;
+  const members = useMemo(() => {
+    const apiMembers = membersResponse?.data?.members || [];
+    return apiMembers.map((member) => ({
+      id: member.id,
+      fullName: member.fullname,
+      email: member.email,
+      position: member.position,
+      status: member.status.toLowerCase() as any,
+      avatar_initial: member.fullname.charAt(0).toUpperCase(),
+      id_employee: member.employee_code,
+      department_id: id,
+    }));
+  }, [membersResponse]);
 
-  const handleSelectAll = (checked: boolean, data: UsersType[]) => {
+  const handleSelectAll = (checked: boolean, data: any[]) => {
     setSelected(checked ? data.map((u) => u.id) : []);
   };
 
-  const handleSelectOne = (id: number) => {
+  const handleSelectOne = (id: any) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
-  const departmentById = departments?.find((d) => Number(d.id) === Number(id));
-
-  if (!departmentById) {
+  if (isLoadingDept) {
     return <DepartmentsCardInfoSkeleton />;
+  }
+
+  if (!departmentData) {
+    return <div>Department not found</div>;
   }
 
   return (
@@ -139,22 +141,22 @@ export default function DetailDepartments() {
         breadcrumbs={[
           { label: "User Management" },
           { label: "Organization Structure" },
-          { label: `Department ${departmentById.department_name}` },
+          { label: `Department ${departmentData.department}` },
         ]}
       />
 
       <div className="my-5 px-4 py-4">
         <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-          {departmentById.department_name}
+          {departmentData.department}
         </Typography>
         <Typography className="text-gray-700">
-          Details and members of the{" "}
-          {departmentById.department_name.toLowerCase()} department
+          Details and members of the {departmentData.department.toLowerCase()}{" "}
+          department
         </Typography>
       </div>
 
       <div className="mb-4 pb-4">
-        <DepartmentsCardInfo department={departmentById} />
+        <DepartmentsCardInfo department={departmentData} />
       </div>
 
       <Card sx={{ borderRadius: 4, padding: 1 }}>
@@ -173,38 +175,46 @@ export default function DetailDepartments() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div>
                 <Suspense>
-                  <InputSearch
+                  <AppInput
+                    isBgWhite
                     placeholder="Search User"
-                    handleSearch={handleSearch}
-                    searchParams={searchParams}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTerm}
                   />
                 </Suspense>
               </div>
-              <AddMemberButton />
+              {/* <AddMemberButton /> */}
             </div>
           </div>
         </div>
 
         <div className="space-y-2">
           <DepartementTableMember
-            data={paginatedUsers}
+            data={members}
             selected={selected}
-            isLoading={isLoading}
-            error={error?.message || null}
+            isLoading={isLoadingMembers}
+            error={errorMembers?.message || null}
             actions={{
               onSelectOne: handleSelectOne,
               onSelectAll: handleSelectAll,
               onOpenDelete: () => setOpenDelete(true),
+              onDepartmentId: (id: string) => setDepartmentId(id),
+              onMemberId: (id: string) => setMemberId(id),
             }}
           />
 
-          <DeleteMembersModal open={openDelete} setOpen={setOpenDelete} />
+          <DeleteMembersModal
+            open={openDelete}
+            setOpen={setOpenDelete}
+            departmentId={departmentId!}
+            memberId={memberId!}
+          />
 
           <div className="flex justify-end pt-2">
             <Pagination
               page={page}
               rowsPerPage={rowsPerPage}
-              count={filteredUsers.length}
+              count={membersResponse?.data?.total || 0}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
             />

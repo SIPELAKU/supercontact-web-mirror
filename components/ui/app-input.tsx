@@ -11,20 +11,28 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 // --- Design Tokens ---
 const INPUT_BG = "#FAFAF6";
-const BORDER_COLOR = "#D1D5DB"; // soft gray
+const BORDER_COLOR = "#262B43/22"; // soft gray
 const FOCUS_COLOR = "#5479EE";
 
 // --- Types ---
-export interface AppInputProps extends Omit<
-  TextFieldProps,
-  "variant" | "type"
-> {
+type BaseInputProps = {
   label?: string;
-  type?: "text" | "email" | "password" | "number" | "tel" | "checkbox";
   isBgWhite?: boolean;
-  startIcon?: React.ReactNode;
-  endIcon?: React.ReactNode;
-}
+};
+
+type TextInputProps = BaseInputProps &
+  Omit<TextFieldProps, "variant" | "type"> & {
+    type?: "text" | "email" | "password" | "number" | "tel";
+    startIcon?: React.ReactNode;
+    endIcon?: React.ReactNode;
+  };
+
+type CheckboxInputProps = BaseInputProps &
+  Omit<CheckboxProps, "type"> & {
+    type: "checkbox";
+  };
+
+export type AppInputProps = TextInputProps | CheckboxInputProps;
 
 const BpIcon = styled("span")(({ theme }) => ({
   borderRadius: 6,
@@ -92,10 +100,11 @@ const StyledTextField = styled(TextField, {
 
   "& .MuiOutlinedInput-root": {
     backgroundColor: isBgWhite ? "white" : INPUT_BG,
-    borderRadius: "8px",
+    borderRadius: "6px",
     fontSize: "16px",
     fontWeight: 400,
     lineHeight: "24px",
+    height: "40px",
 
     "& fieldset": {
       borderColor: BORDER_COLOR,
@@ -130,36 +139,38 @@ const StyledTextField = styled(TextField, {
 }));
 
 // --- Component ---
-export const AppInput: React.FC<AppInputProps> = ({
-  type = "text",
-  label,
-  isBgWhite = false,
-  startIcon,
-  endIcon,
-  ...props
-}) => {
+export const AppInput: React.FC<AppInputProps> = (props) => {
   const [showPassword, setShowPassword] = useState(false);
 
-  const isPassword = type === "password";
-  const isCheckbox = type === "checkbox";
-
-  if (isCheckbox) {
+  if (props.type === "checkbox") {
+    const { sx, label, isBgWhite, type, ...checkboxProps } = props;
     return (
       <Checkbox
-        {...(props as CheckboxProps)}
+        {...checkboxProps}
         sx={{
           color: BORDER_COLOR,
           "&.Mui-checked": {
             color: FOCUS_COLOR,
           },
           padding: 0,
-          ...props.sx,
+          ...sx,
         }}
         checkedIcon={<BpCheckedIcon />}
         icon={<BpIcon />}
       />
     );
   }
+
+  const {
+    type = "text",
+    label,
+    isBgWhite = false,
+    startIcon,
+    endIcon,
+    ...textFieldProps
+  } = props;
+
+  const isPassword = type === "password";
 
   return (
     <StyledTextField
@@ -188,7 +199,7 @@ export const AppInput: React.FC<AppInputProps> = ({
             </InputAdornment>
           ) : undefined,
       }}
-      {...props}
+      {...textFieldProps}
     />
   );
 };

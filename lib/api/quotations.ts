@@ -34,11 +34,11 @@ export interface CreateQuotationData {
 export async function createQuotation(token: string, formData: FormData): Promise<any> {
     try {
         logger.info("Making POST request to create quotation", {
-            action: quotationData.action
+            action: formData.get("action")
         });
 
         // Using axiosClient instead of fetch for better body parsing compatibility
-        const res = await api.post("/quotations", quotationData);
+        const res = await api.post("/quotations", formData);
 
         return res.data;
     } catch (error: any) {
@@ -47,6 +47,31 @@ export async function createQuotation(token: string, formData: FormData): Promis
         // Handle axios error format
         if (error.response?.data) {
             throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to create quotation");
+        }
+        throw error;
+    }
+}
+
+/**
+ * Update an existing quotation (PUT) using FormData.
+ */
+export async function updateQuotation(token: string, quotationId: string, formData: FormData): Promise<any> {
+    try {
+        logger.info("Making PUT request to update quotation", {
+            id: quotationId,
+            action: formData.get("action")
+        });
+
+        // Using axiosClient instead of fetch for better body parsing compatibility
+        const res = await api.put(`/quotations/${quotationId}`, formData);
+
+        return res.data;
+    } catch (error: any) {
+        logger.error("updateQuotation error:", error);
+
+        // Handle axios error format
+        if (error.response?.data) {
+            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to update quotation");
         }
         throw error;
     }

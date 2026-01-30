@@ -17,6 +17,7 @@ import DeleteMultipleContactModal from "@/components/modal/DeleteMultipleContact
 import ImportContactModal from "@/components/modal/ImportContactModal";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
+import { Avatar } from "@mui/material";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -358,7 +359,16 @@ export default function ContactsPage() {
                   <td
                     className={`px-4 flex items-center gap-3 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-[#5479EE]"></div>
+                    <Avatar
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: "#5479EE",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {item.name?.charAt(0)}
+                    </Avatar>
                     <div className="flex flex-col">
                       <span className="font-semibold">{item.name}</span>
                       <span className="text-gray-500 text-sm">

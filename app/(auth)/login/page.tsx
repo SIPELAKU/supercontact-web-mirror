@@ -71,9 +71,9 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen grid grid-cols-1 md:grid-cols-3 bg-gray-50">
+    <main className="min-h-screen grid grid-cols-1 md:grid-cols-5 bg-gray-50">
       {/* Left Section */}
-      <section className="hidden md:flex md:col-span-2 items-center justify-center bg-gray-100">
+      <section className="hidden md:flex md:col-span-3 items-center justify-center bg-gray-100">
         <div className="p-10">
           <Image
             src="/assets/logo3d.png"
@@ -85,25 +85,33 @@ export default function LoginPage() {
       </section>
 
       {/* Right Section */}
-      <section
-        className={`flex flex-col md:col-span-1 justify-center px-8 md:px-20 py-10 bg-white`}
-      >
-        <h1
-          className={`text-[32px] font-bold text-gray-900 leading-tight text-center ${poppins.className}`}
-        >
-          Welcome back!
-        </h1>
+      <section className="flex flex-col md:col-span-2 justify-center px-6 md:px-10 lg:px-20 py-8 md:py-10 bg-white">
+        <div className="flex flex-col items-center md:items-start text-center md:text-start">
+          <div className="md:hidden mb-6">
+            <Image
+              src="/assets/logo3d.png"
+              alt="Supercontact Logo"
+              width={80}
+              height={80}
+              className="mx-auto"
+            />
+          </div>
 
-        <h2
-          className={`text-[32px] font-bold text-center ${poppins.className}`}
-        >
-          <span className="text-[#5479EE]">Super</span>
-          <span className="text-[#5BC557]">Contact</span>
-        </h2>
+          <h1
+            className={`text-2xl md:text-[32px] font-bold text-gray-900 leading-tight ${poppins.className}`}
+          >
+            Welcome back!
+          </h1>
 
-        <p className="mt-2 text-sm text-gray-500 text-center">
-          Login to your account
-        </p>
+          <h2
+            className={`text-2xl md:text-[32px] font-bold mt-1 ${poppins.className}`}
+          >
+            <span className="text-[#5479EE]">Super</span>
+            <span className="text-[#5BC557]">Contact</span>
+          </h2>
+
+          <p className="mt-2 text-sm text-gray-500">Login to your account</p>
+        </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           {error && (

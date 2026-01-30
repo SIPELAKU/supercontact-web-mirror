@@ -15,7 +15,7 @@ export type AlertVariant = "success" | "failed" | "warning" | "info";
 interface AppAlertProps {
   variant: AlertVariant;
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
   onClose?: () => void;
   className?: string;
 }
@@ -74,7 +74,7 @@ export function AppAlert({
           {title || config.defaultTitle}
         </h3>
         {description && (
-          <p className="mt-0.5 text-base font-medium text-white/90">
+          <p className="mt-0.5 whitespace-pre-line text-base font-medium text-white/90">
             {description}
           </p>
         )}

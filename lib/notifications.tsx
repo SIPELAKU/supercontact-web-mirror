@@ -4,7 +4,7 @@ import { AppAlert, AlertVariant } from "@/components/ui/app-alert";
 import toast from "react-hot-toast";
 
 interface ToastOptions {
-  description?: string;
+  description?: React.ReactNode;
   duration?: number;
 }
 

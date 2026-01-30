@@ -9,7 +9,6 @@ import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
 
-
 interface InputProps {
   label: string;
   placeholder: string;
@@ -49,6 +48,15 @@ interface AddContactModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+const fieldLabels: Record<string, string> = {
+  name: "Name",
+  phone_number: "Phone Number",
+  email: "Email",
+  company: "Company",
+  position: "Position",
+  address: "Address",
+};
 
 const AddContactModal: React.FC<AddContactModalProps> = ({
   open,
@@ -155,7 +163,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       notify.warning("Validation Error", {
         description: validationErrors
           .map((e) => `• ${e.label} ${e.message}`)
-          .join("<br/>"),
+          .join("\n"),
       });
       setIsLoading(false);
       return;
@@ -195,9 +203,12 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
       if (!res.ok) {
         const message = result?.error?.message ?? "Failed to add contact";
-        const details = result?.error?.details?.errors
-          ?.map((e: any) => `• ${e.loc.join(".")}: ${e.msg}`)
-          .join("<br/>");
+        const details = result?.error?.details
+          ?.map((e: any) => {
+            const label = fieldLabels[e.field] || e.field;
+            return `• ${label}: ${e.message}`;
+          })
+          .join("\n");
 
         notify.error("Error", {
           description: details || message,

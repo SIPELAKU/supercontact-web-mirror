@@ -1,6 +1,6 @@
-import { Input } from "@/components/ui/input";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import { Autocomplete, Chip, TextField } from "@mui/material";
-import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -20,7 +20,10 @@ const BASE_CHIP_STYLE = {
   fontWeight: 500,
 };
 
-const ROLE_COLOR_STYLE: Record<string, { backgroundColor: string; color: string }> = {
+const ROLE_COLOR_STYLE: Record<
+  string,
+  { backgroundColor: string; color: string }
+> = {
   Administrator: { backgroundColor: "#E8E4FF", color: "#6A5BF7" },
   Manager: { backgroundColor: "#FFE9C7", color: "#D0941F" },
   Support: { backgroundColor: "#DDF7FF", color: "#2BA8C8" },
@@ -33,7 +36,10 @@ const getChipStyle = (role: string) => ({
   ...(ROLE_COLOR_STYLE[role] || ROLE_COLOR_STYLE.Default),
 });
 
-export default function AddPermissionsDialog({ open, setOpen }: AddPermissionsProps) {
+export default function AddPermissionsDialog({
+  open,
+  setOpen,
+}: AddPermissionsProps) {
   const handleClose = () => setOpen(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -62,14 +68,33 @@ export default function AddPermissionsDialog({ open, setOpen }: AddPermissionsPr
       <form onSubmit={handleSubmit}>
         <DialogContent className="space-y-3! px-0! pt-6 pb-8">
           <div>
-            <label htmlFor="permission-name">Permission Name</label>
-            <Input placeholder="Enter permission name" className="mt-2"></Input>
+            <label
+              htmlFor="permission-name"
+              className="text-sm font-medium text-gray-700"
+            >
+              Permission Name
+            </label>
+            <AppInput
+              placeholder="Enter permission name"
+              className="mt-2"
+              fullWidth
+            />
           </div>
           <div>
-            <label htmlFor="assigned">Role Access</label>
+            <label
+              htmlFor="assigned"
+              className="text-sm font-medium text-gray-700"
+            >
+              Role Access
+            </label>
             <Autocomplete
               multiple
-              options={["Administrator", "Manager", "Support", "Restricted User"]}
+              options={[
+                "Administrator",
+                "Manager",
+                "Support",
+                "Restricted User",
+              ]}
               // value={assigned}
               // onChange={(_, newValue) => setAssigned(newValue)}
               renderTags={(value, getTagProps) =>
@@ -77,7 +102,15 @@ export default function AddPermissionsDialog({ open, setOpen }: AddPermissionsPr
                   const tagProps = getTagProps({ index });
                   const { key, ...restTagProps } = tagProps;
 
-                  return <Chip key={key} label={option} variant="filled" {...restTagProps} sx={getChipStyle(option)} />;
+                  return (
+                    <Chip
+                      key={key}
+                      label={option}
+                      variant="filled"
+                      {...restTagProps}
+                      sx={getChipStyle(option)}
+                    />
+                  );
                 })
               }
               renderInput={(params) => (
@@ -110,13 +143,24 @@ export default function AddPermissionsDialog({ open, setOpen }: AddPermissionsPr
         </DialogContent>
 
         {/* Footer */}
-        <DialogActions className="px-0! pb-4!">
-          <Button variant="outlined" type="reset" onClick={() => setOpen(false)} className="capitalize!">
+        <DialogActions className="px-0! pb-4! gap-3">
+          <AppButton
+            variantStyle="outline"
+            color="gray"
+            type="reset"
+            onClick={() => setOpen(false)}
+            fullWidth
+          >
             Cancel
-          </Button>
-          <Button variant="contained" type="submit" className="bg-[#5479EE]! capitalize! hover:bg-[#5479EE]/80!" onClick={handleClose}>
+          </AppButton>
+          <AppButton
+            variantStyle="primary"
+            type="submit"
+            onClick={handleClose}
+            fullWidth
+          >
             Save Permissions
-          </Button>
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

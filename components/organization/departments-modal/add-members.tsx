@@ -1,7 +1,7 @@
 "use client";
 
-import {Input} from "@/components/ui/input";
-import Button from "@mui/material/Button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -52,62 +52,63 @@ export default function AddMemberDialog({
 
       {/* FORM */}
       <form onSubmit={handleSubmit}>
-        <DialogContent className="space-y-2">
+        <DialogContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3">
-
-            <div className="relative">
-              <label className="text-sm font-medium">Manager</label>
-
-              <div className="relative mt-2">
-                <Input placeholder="Search for a member name" className="pl-10" />
-
-                <Search
-                  className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500"
-                  size={18}
-                />
-              </div>
-            </div>
-       
             <div>
-              <label className="text-sm font-medium">ID</label>
-              <Input placeholder="idads" className="mt-2" disabled/>
+              <label className="text-sm font-medium text-gray-700">
+                Manager
+              </label>
+              <AppInput
+                placeholder="Search for a member name"
+                startIcon={<Search size={18} />}
+                className="mt-2"
+                fullWidth
+              />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Role</label>
-              <Input placeholder="role" className="mt-2" disabled/>
+              <label className="text-sm font-medium text-gray-700">ID</label>
+              <AppInput
+                placeholder="idads"
+                className="mt-2"
+                disabled
+                fullWidth
+              />
             </div>
 
-             <div>
-              <label className="text-sm font-medium">Status</label>
-              <Input placeholder="status" className="mt-2" disabled/>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Role</label>
+              <AppInput
+                placeholder="role"
+                className="mt-2"
+                disabled
+                fullWidth
+              />
             </div>
 
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <AppInput
+                placeholder="status"
+                className="mt-2"
+                disabled
+                fullWidth
+              />
+            </div>
           </div>
         </DialogContent>
 
         {/* FOOTER BUTTONS */}
-        <DialogActions className="flex justify-end gap-3 px-2 pb-4">
-          <Button
-            variant="outlined"
-            onClick={handleClose}
-            className="border-[#D0D5DD] capitalize! text-[#344054]"
-            sx={{ borderRadius: "10px", paddingX: "18px" }}
-          >
+        <DialogActions className="flex justify-end gap-3 px-6 pb-4 pt-2">
+          <AppButton variantStyle="outline" color="gray" onClick={handleClose}>
             Cancel
-          </Button>
+          </AppButton>
 
-          <Button
-            variant="contained"
-            type="submit"
-            className="bg-[#5479EE]! text-white capitalize! hover:bg-[#5479EE]/80!"
-            sx={{
-              borderRadius: "10px",
-              paddingX: "22px",
-            }}
-          >
-            Save Memeber
-          </Button>
+          <AppButton variantStyle="primary" type="submit">
+            Save Member
+          </AppButton>
         </DialogActions>
       </form>
     </Dialog>

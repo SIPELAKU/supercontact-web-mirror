@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from "react";
 import {
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Checkbox,
-    CircularProgress,
-    FormControlLabel,
-    MenuItem,
-    Stack,
-    Tab,
-    Tabs,
-    TextField,
-    Typography
+  Avatar,
+  Box,
+  Card,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
 } from "@mui/material";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppSelect } from "@/components/ui/app-select";
 import toast from "react-hot-toast";
 import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -54,11 +54,11 @@ export default function ProfileUserSettingClient() {
     const loadProfile = async () => {
       try {
         setLoading(true);
-        
+
         const token = await getToken();
-        if (!token) throw new Error('No authentication token');
+        if (!token) throw new Error("No authentication token");
         const response = await fetchProfile(token);
-        
+
         if (response.success && response.data) {
           const profile = response.data;
           setProfileData({
@@ -85,23 +85,23 @@ export default function ProfileUserSettingClient() {
     loadProfile();
   }, []);
 
-  const handleInputChange = (field: keyof UpdateProfileData) => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setProfileData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
-  };
+  const handleInputChange =
+    (field: keyof UpdateProfileData) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setProfileData((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      
+
       const token = await getToken();
-      if (!token) throw new Error('No authentication token');
+      if (!token) throw new Error("No authentication token");
       const response = await updateProfile(token, profileData);
-      
+
       if (response.success) {
         toast.success("Profile updated successfully!");
       } else {
@@ -119,9 +119,9 @@ export default function ProfileUserSettingClient() {
     try {
       setLoading(true);
       const token = await getToken();
-      if (!token) throw new Error('No authentication token');
+      if (!token) throw new Error("No authentication token");
       const response = await fetchProfile(token);
-      
+
       if (response.success && response.data) {
         const profile = response.data;
         setProfileData({
@@ -164,7 +164,12 @@ export default function ProfileUserSettingClient() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -229,17 +234,22 @@ export default function ProfileUserSettingClient() {
 
                 <Stack spacing={1}>
                   <Stack direction="row" spacing={2}>
-                    <Button variant="contained" component="label">
+                    <AppButton component="label">
                       Upload New Photo
-                      <input hidden type="file" accept="image/*" onChange={handleUpload} />
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
+                      <input
+                        hidden
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUpload}
+                      />
+                    </AppButton>
+                    <AppButton
+                      variantStyle="outline"
+                      color="danger"
                       onClick={() => setAvatar(null)}
                     >
                       Reset
-                    </Button>
+                    </AppButton>
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
                     Allowed JPG, GIF or PNG. Max size of 800kb
@@ -250,15 +260,15 @@ export default function ProfileUserSettingClient() {
               {/* Form */}
               <Stack spacing={3}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <TextField 
-                    label="Full Name" 
-                    fullWidth 
+                  <AppInput
+                    label="Full Name"
+                    fullWidth
                     value={profileData.fullname}
                     onChange={handleInputChange("fullname")}
                   />
-                  <TextField 
-                    label="Email" 
-                    fullWidth 
+                  <AppInput
+                    label="Email"
+                    fullWidth
                     value={profileData.email}
                     onChange={handleInputChange("email")}
                     type="email"
@@ -266,58 +276,66 @@ export default function ProfileUserSettingClient() {
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <TextField 
-                    label="Phone Number" 
-                    fullWidth 
+                  <AppInput
+                    label="Phone Number"
+                    fullWidth
                     value={profileData.phone}
                     onChange={handleInputChange("phone")}
                   />
-                  <TextField 
-                    label="Company" 
-                    fullWidth 
+                  <AppInput
+                    label="Company"
+                    fullWidth
                     value={profileData.company}
                     onChange={handleInputChange("company")}
                   />
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <TextField 
-                    label="Skype" 
-                    fullWidth 
+                  <AppInput
+                    label="Skype"
+                    fullWidth
                     value={profileData.skype}
                     onChange={handleInputChange("skype")}
                   />
-                  <TextField 
-                    select 
-                    label="Country" 
-                    fullWidth 
+                  <AppSelect
+                    label="Country"
+                    fullWidth
                     value={profileData.country}
-                    onChange={handleInputChange("country")}
-                  >
-                    <MenuItem value="">Select Country</MenuItem>
-                    <MenuItem value="USA">USA</MenuItem>
-                    <MenuItem value="Indonesia">Indonesia</MenuItem>
-                    <MenuItem value="Singapore">Singapore</MenuItem>
-                    <MenuItem value="Malaysia">Malaysia</MenuItem>
-                  </TextField>
+                    onChange={(e: any) =>
+                      handleInputChange("country")({
+                        target: { value: e.target.value },
+                      } as any)
+                    }
+                    options={[
+                      { value: "", label: "Select Country" },
+                      { value: "USA", label: "USA" },
+                      { value: "Indonesia", label: "Indonesia" },
+                      { value: "Singapore", label: "Singapore" },
+                      { value: "Malaysia", label: "Malaysia" },
+                    ]}
+                  />
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <TextField 
-                    select 
-                    label="Language" 
-                    fullWidth 
+                  <AppSelect
+                    label="Language"
+                    fullWidth
                     value={profileData.language}
-                    onChange={handleInputChange("language")}
-                  >
-                    <MenuItem value="">Select Language</MenuItem>
-                    <MenuItem value="English">English</MenuItem>
-                    <MenuItem value="Indonesia">Indonesia</MenuItem>
-                  </TextField>
+                    onChange={(e: any) =>
+                      handleInputChange("language")({
+                        target: { value: e.target.value },
+                      } as any)
+                    }
+                    options={[
+                      { value: "", label: "Select Language" },
+                      { value: "English", label: "English" },
+                      { value: "Indonesia", label: "Indonesia" },
+                    ]}
+                  />
 
-                  <TextField 
-                    label="Bio" 
-                    fullWidth 
+                  <AppInput
+                    label="Bio"
+                    fullWidth
                     multiline
                     rows={1}
                     value={profileData.bio}
@@ -328,21 +346,17 @@ export default function ProfileUserSettingClient() {
               </Stack>
 
               <Stack direction="row" spacing={2} mt={4}>
-                <Button 
-                  variant="contained" 
-                  onClick={handleSaveProfile}
-                  disabled={saving}
-                >
-                  {saving ? <CircularProgress size={20} /> : "Save Changes"}
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  color="inherit"
+                <AppButton onClick={handleSaveProfile} isLoading={saving}>
+                  Save Changes
+                </AppButton>
+                <AppButton
+                  variantStyle="outline"
+                  color="gray"
                   onClick={handleResetProfile}
                   disabled={saving}
                 >
                   Reset
-                </Button>
+                </AppButton>
               </Stack>
             </Card>
 
@@ -355,9 +369,9 @@ export default function ProfileUserSettingClient() {
                 control={<Checkbox />}
                 label="I confirm my account deactivation"
               />
-              <Button variant="contained" color="error" sx={{ mt: 2 }}>
+              <AppButton variantStyle="danger" sx={{ mt: 2 }}>
                 Deactivate Account
-              </Button>
+              </AppButton>
             </Card>
           </Stack>
         )}
@@ -372,7 +386,7 @@ export default function ProfileUserSettingClient() {
               </Typography>
 
               <Stack spacing={3}>
-                <TextField
+                <AppInput
                   label="Current Password"
                   type="password"
                   fullWidth
@@ -381,14 +395,14 @@ export default function ProfileUserSettingClient() {
                 />
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <TextField
+                  <AppInput
                     label="New Password"
                     type="password"
                     fullWidth
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
-                  <TextField
+                  <AppInput
                     label="Confirm Password"
                     type="password"
                     fullWidth
@@ -407,10 +421,10 @@ export default function ProfileUserSettingClient() {
                   </ul>
                 </Box>
                 <Stack direction="row" spacing={2} mt={4}>
-                  <Button variant="contained">Save Changes</Button>
-                  <Button variant="outlined" color="inherit">
+                  <AppButton>Save Changes</AppButton>
+                  <AppButton variantStyle="outline" color="gray">
                     Reset
-                  </Button>
+                  </AppButton>
                 </Stack>
               </Stack>
             </Card>
@@ -422,13 +436,17 @@ export default function ProfileUserSettingClient() {
               </Typography>
               <ul style={{ paddingLeft: 20, color: "#6b7280" }}>
                 <li>Two factor authentication is not enabled yet</li>
-                <li>Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in.</li>
+                <li>
+                  Two-factor authentication adds an additional layer of security
+                  to your account by requiring more than just a password to log
+                  in.
+                </li>
               </ul>
               <Stack direction="row" spacing={2} mt={4}>
-                <Button variant="contained">Enable Two-Factor Authentication</Button>
+                <AppButton>Enable Two-Factor Authentication</AppButton>
               </Stack>
             </Card>
-            
+
             {/* API KEY */}
             <Card sx={{ p: 4 }}>
               <Typography variant="h6" fontWeight={600} mb={3}>
@@ -442,38 +460,27 @@ export default function ProfileUserSettingClient() {
               >
                 {/* FORM */}
                 <Stack spacing={3} flex={1}>
-                  <TextField
-                    select
+                  <AppSelect
                     fullWidth
                     value={apiType}
-                    onChange={(e) => setApiType(e.target.value)}
+                    onChange={(e: any) => setApiType(e.target.value)}
                     placeholder="Choose the API key type you want to create"
-                    SelectProps={{
-                      displayEmpty: true,
-                    }}
-                  >
-                    <MenuItem value="" disabled>
-                      Choose the API key type you want to create
-                    </MenuItem>
-                    <MenuItem value="full">Full Access</MenuItem>
-                    <MenuItem value="readonly">Read Only</MenuItem>
-                  </TextField>
+                    options={[
+                      { value: "full", label: "Full Access" },
+                      { value: "readonly", label: "Read Only" },
+                    ]}
+                  />
 
-                  <TextField
+                  <AppInput
                     fullWidth
                     placeholder="Name the API key"
                     value={apiName}
                     onChange={(e) => setApiName(e.target.value)}
                   />
 
-                  <Button
-                    variant="contained"
-                    size="large"
-                    sx={{ borderRadius: 2 }}
-                    fullWidth
-                  >
+                  <AppButton size="large" sx={{ borderRadius: 2 }} fullWidth>
                     Create Key
-                  </Button>
+                  </AppButton>
                 </Stack>
 
                 {/* AVATAR */}
@@ -496,11 +503,14 @@ export default function ProfileUserSettingClient() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary" mb={3}>
-                API keys are used to authenticate requests and manage access levels.
+                API keys are used to authenticate requests and manage access
+                levels.
               </Typography>
 
               {apiKeys.length === 0 ? (
-                <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
+                <Box
+                  sx={{ p: 4, textAlign: "center", color: "text.secondary" }}
+                >
                   <Typography variant="body2">
                     No API keys created yet. Create one above to get started.
                   </Typography>
@@ -529,9 +539,13 @@ export default function ProfileUserSettingClient() {
                               borderRadius: 10,
                               fontSize: 12,
                               backgroundColor:
-                                item.type === "Full Access" ? "#e8ecff" : "#e0f2fe",
+                                item.type === "Full Access"
+                                  ? "#e8ecff"
+                                  : "#e0f2fe",
                               color:
-                                item.type === "Full Access" ? "#4f46e5" : "#0284c7",
+                                item.type === "Full Access"
+                                  ? "#4f46e5"
+                                  : "#0284c7",
                             }}
                           >
                             {item.type}
@@ -542,14 +556,22 @@ export default function ProfileUserSettingClient() {
                           {item.key}
                         </Typography>
 
-                        <Typography variant="caption" display="block" color="text.secondary">
+                        <Typography
+                          variant="caption"
+                          display="block"
+                          color="text.secondary"
+                        >
                           Created at {item.createdAt}
                         </Typography>
                       </Box>
 
-                      <Button size="small" variant="outlined">
+                      <AppButton
+                        size="small"
+                        variantStyle="outline"
+                        color="gray"
+                      >
                         Copy
-                      </Button>
+                      </AppButton>
                     </Box>
                   ))}
                 </Stack>

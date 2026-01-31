@@ -3,7 +3,7 @@
 import { Lead } from "@/lib/models/types";
 import { useEffect, useState } from "react";
 import { AppDatePicker } from "@/components/ui/app-datepicker";
-
+import { AppSelect } from "@/components/ui/app-select";
 
 export default function LeadFilters({
   leads,
@@ -13,9 +13,9 @@ export default function LeadFilters({
   setFilteredLeads: (value: Lead[]) => void;
 }) {
   // Placeholder default state
-  const [status, setStatus] = useState("placeholder-status");
-  const [source, setSource] = useState("placeholder-source");
-  const [assignedto, setAssignedto] = useState("placeholder-assigned");
+  const [status, setStatus] = useState("All");
+  const [source, setSource] = useState("All");
+  const [assignedto, setAssignedto] = useState("All");
 
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
     from: undefined,
@@ -23,30 +23,30 @@ export default function LeadFilters({
   });
 
   const assignedToOptions = Array.from(
-    new Set(leads.map((l) => l.user.fullname).filter(Boolean))
+    new Set(leads.map((l) => l.user.fullname).filter(Boolean)),
   );
 
   useEffect(() => {
-    console.log('LeadFilters useEffect triggered:', {
-      leadsLength: leads.length,
-      status,
-      source,
-      assignedto,
-      dateRange
-    });
-
     let filtered = [...leads];
 
-    if (status && status !== "All" && status !== "placeholder-status") {
-      filtered = filtered.filter((l) => l.lead_status.toLowerCase() === status.toLowerCase());
+    if (status && status !== "All") {
+      filtered = filtered.filter(
+        (l) => l.lead_status.toLowerCase() === status.toLowerCase(),
+      );
     }
 
-    if (source && source !== "All" && source !== "placeholder-source") {
-      filtered = filtered.filter((l) => l.lead_source.toLowerCase() === source.toLowerCase());
+    if (source && source !== "All") {
+      filtered = filtered.filter(
+        (l) => l.lead_source.toLowerCase() === source.toLowerCase(),
+      );
     }
 
-    if (assignedto && assignedto !== "All" && assignedto !== "placeholder-assigned") {
-      filtered = filtered.filter((l) => l.user.fullname.trim().toLowerCase() === assignedto.trim().toLowerCase());
+    if (assignedto && assignedto !== "All") {
+      filtered = filtered.filter(
+        (l) =>
+          l.user.fullname.trim().toLowerCase() ===
+          assignedto.trim().toLowerCase(),
+      );
     }
 
     if (dateRange.from && dateRange.to) {
@@ -55,75 +55,69 @@ export default function LeadFilters({
       const to = new Date(dateRange.to);
       to.setHours(23, 59, 59, 999);
 
-      console.log('Filtering by date range:', { from, to });
-
       filtered = filtered.filter((l) => {
-        // Only filter by last_contacted date to match the "Last Contacted" column in the UI
         const dateString = l.contact.last_contacted?.created_at;
-
         if (!dateString) return false;
-
         const date = new Date(dateString);
-        const isInRange = date >= from && date <= to;
-
-        return isInRange;
+        return date >= from && date <= to;
       });
     }
 
-    console.log('Final filtered results:', filtered.length);
     setFilteredLeads(filtered);
   }, [status, source, assignedto, dateRange, leads, setFilteredLeads]);
 
   return (
-    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">
+    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Select Status */}
       <div className="flex-1 min-w-0">
-        <select
+        <AppSelect
+          placeholder="Select Status"
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-status" disabled>Select Status</option>
-          <option value="All">All</option>
-          <option value="New">New</option>
-          <option value="Contacted">Contacted</option>
-          <option value="Qualified">Qualified</option>
-          <option value="Proposal">Proposal</option>
-          <option value="Closed - Won">Closed - Won</option>
-          <option value="Closed - Lost">Closed - Lost</option>
-        </select>
+          onChange={(e: any) => setStatus(e.target.value)}
+          options={[
+            { value: "All", label: "All Status" },
+            { value: "New", label: "New" },
+            { value: "Contacted", label: "Contacted" },
+            { value: "Qualified", label: "Qualified" },
+            { value: "Proposal", label: "Proposal" },
+            { value: "Closed - Won", label: "Closed - Won" },
+            { value: "Closed - Lost", label: "Closed - Lost" },
+          ]}
+          isBgWhite
+        />
       </div>
 
       {/* Select Source */}
       <div className="flex-1 min-w-0">
-        <select
+        <AppSelect
+          placeholder="Select Source"
           value={source}
-          onChange={(e) => setSource(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-source" disabled>Select Source</option>
-          <option value="All">All</option>
-          <option value="Web Form">Web Form</option>
-          <option value="WhatsApp">WhatsApp</option>
-          <option value="Manual Entry">Manual Entry</option>
-        </select>
+          onChange={(e: any) => setSource(e.target.value)}
+          options={[
+            { value: "All", label: "All Source" },
+            { value: "Web Form", label: "Web Form" },
+            { value: "WhatsApp", label: "WhatsApp" },
+            { value: "Manual Entry", label: "Manual Entry" },
+          ]}
+          isBgWhite
+        />
       </div>
 
       {/* Select Assigned To */}
       <div className="flex-1 min-w-0">
-        <select
+        <AppSelect
+          placeholder="Select Assigned To"
           value={assignedto}
-          onChange={(e) => setAssignedto(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-assigned" disabled>Select Assigned To</option>
-          <option value="All">All</option>
-          {assignedToOptions.map((user) => (
-            <option key={user} value={user}>
-              {user}
-            </option>
-          ))}
-        </select>
+          onChange={(e: any) => setAssignedto(e.target.value)}
+          options={[
+            { value: "All", label: "All Assigned To" },
+            ...assignedToOptions.map((user) => ({
+              value: user,
+              label: user,
+            })),
+          ]}
+          isBgWhite
+        />
       </div>
 
       <div className="flex-1 min-w-0 flex gap-2">
@@ -133,7 +127,10 @@ export default function LeadFilters({
           isBgWhite={true}
           onChange={(val: any) => {
             if (Array.isArray(val)) {
-              setDateRange({ from: val[0] || undefined, to: val[1] || undefined });
+              setDateRange({
+                from: val[0] || undefined,
+                to: val[1] || undefined,
+              });
             } else {
               setDateRange({ from: undefined, to: undefined });
             }

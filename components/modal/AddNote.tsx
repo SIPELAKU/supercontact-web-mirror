@@ -2,65 +2,23 @@
 
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppTextarea } from "@/components/ui/app-textarea";
+import { AppDatePicker } from "@/components/ui/app-datepicker";
+import { AppTimePicker } from "@/components/ui/app-timepicker";
+import { parse, format as formatDate } from "date-fns";
 
-interface InputProps {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import { Poppins } from "next/font/google";
+import { DateCalendar } from "@mui/x-date-pickers";
+import { useRouter } from "next/navigation";
 
-const InputField: React.FC<InputProps> = ({
-  label,
-  value,
-  onChange,
-  placeholder,
-}) => (
-  <div className="flex flex-col gap-2">
-    <label className="font-medium text-gray-700">{label}</label>
-    <input
-      type="text"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="
-        px-4 py-3 border border-gray-300 rounded-lg
-        placeholder-gray-400 text-md
-        focus:outline-none focus:ring-2 focus:ring-purple-400
-      "
-    />
-  </div>
-);
-
-interface TextAreaProps {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-}
-
-const TextAreaField: React.FC<TextAreaProps> = ({
-  label,
-  value,
-  onChange,
-  placeholder,
-}) => (
-  <div className="flex flex-col gap-2">
-    <label className="font-medium text-gray-700">{label}</label>
-    <textarea
-      rows={4}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="
-        px-4 py-3 border border-gray-300 rounded-lg
-        placeholder-gray-400 text-md resize-none
-        focus:outline-none focus:ring-2 focus:ring-purple-400
-      "
-    />
-  </div>
-);
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 interface NoteData {
   title: string;
@@ -79,12 +37,50 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
     title: "",
     content: "",
     reminder_date: "",
-    reminder_time: "",
+    reminder_time: "09:30 AM",
   });
 
+  // Time state
+  const [hour, setHour] = useState("09");
+  const [min, setMin] = useState("30");
+  const [period, setPeriod] = useState<"AM" | "PM">("AM");
+
+  const syncTime = (h: string, m: string, p: "AM" | "PM") => {
+    setLocal((prev) => ({ ...prev, reminder_time: `${h}:${m} ${p}` }));
+  };
+
+  const handleHourChange = (val: string) => {
+    setHour(val);
+    syncTime(val, min, period);
+  };
+
+  const handleMinuteChange = (val: string) => {
+    setMin(val);
+    syncTime(hour, val, period);
+  };
+
+  const handlePeriodChange = (val: "AM" | "PM") => {
+    setPeriod(val);
+    syncTime(hour, min, val);
+  };
+
+  const handleDateChange = (val: unknown) => {
+    const date = val as Date | null;
+    setLocal((s: NoteData) => ({
+      ...s,
+      reminder_date: date ? formatDate(date, "yyyy-MM-dd") : "",
+    }));
+  };
+
+  const dateValue = local.reminder_date
+    ? parse(local.reminder_date, "yyyy-MM-dd", new Date())
+    : null;
+
   return (
-    <div className="flex flex-col w-full p-5 md:p-2 text-start">
-      <h2 className="text-xl md:text-2xl font-semibold text-[#6739EC]">
+    <div
+      className={`flex flex-col w-full p-5 md:p-6 text-start ${poppins.className}`}
+    >
+      <h2 className="text-xl md:text-2xl font-semibold text-[#5479EE]">
         Add New Notes
       </h2>
       <p className="text-gray-600 text-sm md:text-md mt-1">
@@ -92,59 +88,83 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
       </p>
 
       <div className="mt-6 flex flex-col gap-4">
-        <InputField
-          label="Title"
-          value={local.title}
-          onChange={(e) => setLocal((s) => ({ ...s, title: e.target.value }))}
-          placeholder="Enter Title Notes"
-        />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[16px] font-medium text-gray-700">Title</label>
+          <AppInput
+            value={local.title}
+            onChange={(e) =>
+              setLocal((s: NoteData) => ({ ...s, title: e.target.value }))
+            }
+            placeholder="Enter Title Notes"
+            fullWidth
+            isBgWhite
+            rounded="12px"
+          />
+        </div>
 
-        <TextAreaField
-          label="Content"
-          value={local.content}
-          onChange={(e) => setLocal((s) => ({ ...s, content: e.target.value }))}
-          placeholder="Write your notes here"
-        />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700">Content</label>
+          <AppTextarea
+            value={local.content}
+            onChange={(
+              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+            ) => setLocal((s: NoteData) => ({ ...s, content: e.target.value }))}
+            placeholder="Write your notes here"
+            rows={4}
+            fullWidth
+            isBgWhite
+            rounded="12px"
+          />
+        </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="font-medium text-gray-700">Set Reminder</label>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700">
+            Set Reminder
+          </label>
 
           <div className="flex flex-col md:flex-row gap-3">
-            <input
-              type="date"
-              value={local.reminder_date}
-              onChange={(e) =>
-                setLocal((s) => ({ ...s, reminder_date: e.target.value }))
-              }
-              className="border border-gray-300 px-4 py-3 rounded-lg"
-            />
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa]">
+              <DateCalendar
+                value={dateValue}
+                onChange={(newDate) => handleDateChange(newDate)}
+                sx={{
+                  width: "100%",
+                  "& .MuiPickersDay-root.Mui-selected": {
+                    backgroundColor: "#2563eb", // blue-600
+                  },
+                  "& .MuiPickersDay-root.Mui-selected:hover": {
+                    backgroundColor: "#1d4ed8",
+                  },
+                  "& .MuiPickersCalendarHeader-root": {
+                    paddingLeft: "16px",
+                    paddingRight: "8px",
+                  },
+                }}
+              />
+            </div>
 
-            <input
-              type="time"
-              value={local.reminder_time}
-              onChange={(e) =>
-                setLocal((s) => ({ ...s, reminder_time: e.target.value }))
-              }
-              className="border border-gray-300 px-4 py-3 rounded-lg"
+            <AppTimePicker
+              label="Time"
+              hour={hour}
+              minute={min}
+              period={period}
+              onHourChange={handleHourChange}
+              onMinuteChange={handleMinuteChange}
+              onPeriodChange={handlePeriodChange}
+              isBgWhite
             />
           </div>
         </div>
       </div>
 
       <div className="flex justify-end gap-3 mt-8 font-medium">
-        <button
-          onClick={onClose}
-          className="px-5 py-3 rounded-lg bg-gray-200 text-gray-700"
-        >
+        <AppButton variantStyle="outline" color="primary" onClick={onClose}>
           Cancel
-        </button>
+        </AppButton>
 
-        <button
-          onClick={() => onSubmit(local)}
-          className="px-6 py-3 rounded-lg bg-[#6739EC] text-white"
-        >
+        <AppButton onClick={() => onSubmit(local)} variantStyle="primary">
           Save Notes
-        </button>
+        </AppButton>
       </div>
     </div>
   );
@@ -161,15 +181,38 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { getToken } = useAuth();
+  const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (data: NoteData) => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      const token = await getToken();
+      if (!token) {
+        notify.error("Authentication required. Please login again.", {
+          description: "Please login again to continue.",
+        });
+        router.push("/login");
+        return;
+      }
+
+      const convertTo24Hour = (time12h: string): string => {
+        if (!time12h) throw new Error("TIME_EMPTY");
+
+        const [time, modifier] = time12h.trim().split(" "); // "09:30", "AM"
+        let [hours, minutes] = time.split(":").map(Number);
+
+        if (isNaN(hours) || isNaN(minutes)) {
+          throw new Error("INVALID_TIME_FORMAT");
+        }
+
+        if (modifier === "PM" && hours !== 12) hours += 12;
+        if (modifier === "AM" && hours === 12) hours = 0;
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+      };
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes`, {
         method: "POST",
@@ -181,7 +224,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
           title: data.title,
           content: data.content,
           reminder_date: data.reminder_date,
-          reminder_time: data.reminder_time,
+          reminder_time: convertTo24Hour(data.reminder_time),
         }),
       });
 
@@ -193,7 +236,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         notify.error("Failed to save notes");
       }
     } catch (error) {
-      notify.error("Authentication required. Please login again.");
+      notify.error("Failed to save notes");
     } finally {
       setIsSubmitting(false);
     }
@@ -207,7 +250,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="bg-white rounded-xl shadow-xl w-full max-w-[601px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <ModalContent onClose={onClose} onSubmit={handleSubmit} />

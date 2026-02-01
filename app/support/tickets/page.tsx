@@ -4,19 +4,21 @@ import { useState } from "react";
 import { Plus, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppSelect } from "@/components/ui/app-select";
-import { InputSearch } from "@/components/ui/input-search";
+import InputSearch from "@/components/ui/input-search";
 import BannerDashboard from "@/components/ui/banner-dashboard";
 import { TicketTable } from "@/components/support/tickets/TicketTable";
 import { useTickets, useDeleteTicket } from "@/lib/hooks/useTickets";
-import { useManageUsers } from "@/lib/hooks/useManageUsers";
+import { useManagedUsers } from "@/lib/hooks/useManagedUser";
 import { AddTicketModal } from "@/components/support/tickets/modals/AddTicketModal";
 import { EditTicketModal } from "@/components/support/tickets/modals/EditTicketModal";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useConfirmation } from "@/components/ui/confirm-modal";
 import { Ticket } from "@/lib/types/Ticket";
 import { notify } from "@/lib/notifications";
 import Pagination from "@/components/ui/pagination";
+import { useSearchParams } from "next/navigation";
 
 export default function TicketManagementPage() {
+    const searchParams = useSearchParams();
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10); // Standardize to 10 rows
     const [search, setSearch] = useState("");
@@ -26,45 +28,50 @@ export default function TicketManagementPage() {
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-    const [deletingTicket, setDeletingTicket] = useState<Ticket | null>(null);
+
+    // Confirmation Hook
+    const { showConfirmation } = useConfirmation();
 
     // Data Fetching
     const { data: ticketData, isLoading } = useTickets(page, limit, search, statusFilter, priorityFilter, agentFilter);
-    const { users: agents } = useManageUsers(1, 100);
+    const { data: userData } = useManagedUsers(1, 100);
     const deleteMutation = useDeleteTicket();
 
     const tickets = ticketData?.data?.tickets || [];
     const totalPages = ticketData?.data?.total_pages || 1;
+    const agents = userData?.data?.manage_users || [];
 
     // Handlers
     const handleEdit = (ticket: Ticket) => setEditingTicket(ticket);
-    const handleDeleteClick = (ticket: Ticket) => setDeletingTicket(ticket);
-
-    const handleConfirmDelete = async () => {
-        if (!deletingTicket) return;
-        try {
-            await deleteMutation.mutateAsync(deletingTicket.id);
-            notify.success("Success", { description: "Ticket deleted successfully!" });
-            setDeletingTicket(null);
-        } catch (error: any) {
-            notify.error("Error", { description: error.message || "Failed to delete ticket" });
-        }
+    const handleDeleteClick = (ticket: Ticket) => {
+        showConfirmation({
+            type: "delete",
+            title: "Delete Ticket",
+            message: `Are you sure you want to delete ticket #${ticket.id}? This action cannot be undone.`,
+            confirmText: "Delete",
+            onConfirm: async () => {
+                try {
+                    await deleteMutation.mutateAsync(ticket.id);
+                    notify.success("Success", { description: "Ticket deleted successfully!" });
+                } catch (error: any) {
+                    notify.error("Error", { description: error.message || "Failed to delete ticket" });
+                }
+            },
+        });
     };
 
     const agentOptions = [
         { label: "Select Agent", value: "Select Agent" },
-        ...agents.map((a: any) => ({ label: a.name, value: a.user_id }))
+        ...agents.map((a: any) => ({ label: a.fullname, value: a.id }))
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
-            <BannerDashboard
-                title="Ticket Management"
-                description="Support • Ticket Management"
-                variant="blue"
-            />
+        <div className="min-h-screen bg-[#ffffff] p-6">
+            <div className="max-w-[1600px] mx-auto space-y-6">
+                <BannerDashboard
+                    title="Ticket Management"
+                />
 
-            <div className="p-6 max-w-[1600px] mx-auto space-y-6">
                 {/* Filters */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border space-y-4">
                     <h3 className="font-semibold text-lg text-gray-800">Filters</h3>
@@ -78,7 +85,8 @@ export default function TicketManagementPage() {
                             ]}
                             placeholder="Select Status"
                             value={statusFilter}
-                            onChange={setStatusFilter}
+                            isBgWhite={true}
+                            onChange={(e) => setStatusFilter(e.target.value as string)}
                         />
                         <AppSelect
                             options={[
@@ -89,13 +97,15 @@ export default function TicketManagementPage() {
                             ]}
                             placeholder="Select Priority"
                             value={priorityFilter}
-                            onChange={setPriorityFilter}
+                            isBgWhite={true}
+                            onChange={(e) => setPriorityFilter(e.target.value as string)}
                         />
                         <AppSelect
                             options={agentOptions}
                             placeholder="Select Agent"
                             value={agentFilter}
-                            onChange={setAgentFilter}
+                            isBgWhite={true}
+                            onChange={(e) => setAgentFilter(e.target.value as string)}
                         />
                     </div>
 
@@ -108,13 +118,13 @@ export default function TicketManagementPage() {
                         <div className="flex gap-4">
                             <div className="relative w-full md:w-[320px]">
                                 <InputSearch
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search by ID, subject, or keyword"
+                                    handleSearch={setSearch}
+                                    searchParams={searchParams}
                                 />
                             </div>
                             <Button
-                                className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                                className="bg-[#5479EE] hover:bg-[#4a6cd9] text-white gap-2"
                                 onClick={() => setIsAddModalOpen(true)}
                             >
                                 <Plus className="w-4 h-4" />
@@ -154,17 +164,6 @@ export default function TicketManagementPage() {
                 isOpen={!!editingTicket}
                 onClose={() => setEditingTicket(null)}
                 ticket={editingTicket}
-            />
-
-            <ConfirmModal
-                isOpen={!!deletingTicket}
-                onClose={() => setDeletingTicket(null)}
-                onConfirm={handleConfirmDelete}
-                title="Are you sure you want to delete this ticket?"
-                description="This action is permanent and cannot be undone"
-                confirmText="Delete Ticket"
-                variant="danger"
-                isLoading={deleteMutation.isPending}
             />
         </div>
     );

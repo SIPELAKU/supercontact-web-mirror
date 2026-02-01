@@ -4,21 +4,21 @@
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
 import {
-    Box,
-    Button,
-    Chip,
-    CircularProgress,
-    IconButton,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TextField,
-    Tooltip
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+  Tooltip
 } from '@mui/material';
 import { format } from 'date-fns';
 import { Eye, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
@@ -37,7 +37,7 @@ const getStatusChip = (status: string) => {
   const statusLower = status.toLowerCase();
   switch (statusLower) {
     case 'draft': return <Chip label="Draft" color="default" size="small" />;
-    case 'in_queue': 
+    case 'in_queue':
     case 'queued': return <Chip label="In Queue" color="info" size="small" />;
     case 'sending': return <Chip label="Sending" color="primary" size="small" />;
     case 'sent':
@@ -73,7 +73,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
       return rows;
     }
     const query = searchQuery.toLowerCase();
-    return rows.filter(row => 
+    return rows.filter(row =>
       row.subject.toLowerCase().includes(query) ||
       row.status.toLowerCase().includes(query) ||
       row.user_fullname.toLowerCase().includes(query)
@@ -96,7 +96,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
   const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
       {/* Toolbar */}
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <TextField
@@ -109,19 +109,20 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
           }}
           sx={{ minWidth: '250px' }}
         />
-        
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             color="primary"
             startIcon={<RefreshCw className="w-4 h-4" />}
             onClick={() => refetch()}
+            sx={{ borderRadius: '8px', textTransform: 'none' }}
           >
             Refresh
           </Button>
-          <Button 
+          <Button
             variant="contained"
-            startIcon={<Plus className="w-4 h-4" />} 
+            startIcon={<Plus className="w-4 h-4" />}
             onClick={onAdd}
             sx={{
               bgcolor: '#5D87FF',
@@ -129,7 +130,8 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
                 bgcolor: '#4570ea'
               },
               textTransform: 'none',
-              px: 3
+              px: 3,
+              borderRadius: '8px'
             }}
           >
             Create Campaign
@@ -138,70 +140,85 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
       </Box>
 
       {/* Table */}
-      <TableContainer component={Paper} variant="outlined" sx={{ mx: 2 }}>
-        <Table>
+      <TableContainer sx={{ px: 0, pb: 2 }}>
+        <Table sx={{ minWidth: 650 }}>
           <TableHead>
-            <TableRow>
-              <TableCell>Subject</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Sent Date</TableCell>
-              <TableCell>Created By</TableCell>
-              <TableCell align="center">Actions</TableCell>
+            <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
+              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Status</TableCell>
+              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
+              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Created By</TableCell>
+              <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  <CircularProgress />
+                <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <CircularProgress size={30} />
                 </TableCell>
               </TableRow>
             ) : paginatedRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
-                  {searchQuery ? 'No campaigns found matching your search.' : 'No campaigns yet.'}
+                <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <span className="text-gray-500">
+                    {searchQuery ? 'No campaigns found matching your search.' : 'No campaigns yet.'}
+                  </span>
                 </TableCell>
               </TableRow>
             ) : (
               paginatedRows.map((row) => {
                 const canEditOrDelete = row.status.toLowerCase() === 'draft' || row.status.toLowerCase() === 'in_queue' || row.status.toLowerCase() === 'queued';
                 return (
-                  <TableRow key={row.id} hover>
-                    <TableCell>{row.subject}</TableCell>
-                    <TableCell>{getStatusChip(row.status)}</TableCell>
-                    <TableCell>
+                  <TableRow
+                    key={row.id}
+                    hover
+                    sx={{
+                      '&:hover': { bgcolor: '#f9fafb' },
+                      '& td': { borderBottom: '1px solid #f3f4f6' }
+                    }}
+                  >
+                    <TableCell sx={{ py: 2, pl: 3 }}>
+                      <span className="font-medium text-gray-900">{row.subject}</span>
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>{getStatusChip(row.status)}</TableCell>
+                    <TableCell sx={{ py: 2 }}>
                       {row.sent_at ? format(new Date(row.sent_at), 'dd MMM yyyy, HH:mm') : '-'}
                     </TableCell>
-                    <TableCell>{row.user_fullname || 'N/A'}</TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="View Statistics">
-                        <IconButton size="small" onClick={() => onView(row)}>
-                          <Eye className="w-4 h-4" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"}>
-                        <span>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => onEdit(row)}
-                            disabled={!canEditOrDelete}
-                          >
-                            <Pencil className="w-4 h-4" />
+                    <TableCell sx={{ py: 2 }}>{row.user_fullname || 'N/A'}</TableCell>
+                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Tooltip title="View Statistics">
+                          <IconButton size="small" onClick={() => onView(row)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' } }}>
+                            <Eye className="w-4 h-4" />
                           </IconButton>
-                        </span>
-                      </Tooltip>
-                      <Tooltip title={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"}>
-                        <span>
-                          <IconButton 
-                            size="small" 
-                            color="error" 
-                            onClick={() => onDeleteRequest(row)}
-                            disabled={!canEditOrDelete}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+                        </Tooltip>
+                        <Tooltip title={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              onClick={() => onEdit(row)}
+                              disabled={!canEditOrDelete}
+                              sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' } }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => onDeleteRequest(row)}
+                              disabled={!canEditOrDelete}
+                              sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 );
@@ -221,7 +238,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-    </Box>
+    </div>
   );
 };
 

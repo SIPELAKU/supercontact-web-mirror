@@ -3,6 +3,7 @@
 import { Lead } from "@/lib/models/types";
 import { useEffect, useState } from "react";
 import { AppDatePicker } from "@/components/ui/app-datepicker";
+import { AppSelect } from "@/components/ui/app-select";
 
 
 export default function LeadFilters({
@@ -78,52 +79,54 @@ export default function LeadFilters({
     <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">
       {/* Select Status */}
       <div className="flex-1 min-w-0">
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-status" disabled>Select Status</option>
-          <option value="All">All</option>
-          <option value="New">New</option>
-          <option value="Contacted">Contacted</option>
-          <option value="Qualified">Qualified</option>
-          <option value="Proposal">Proposal</option>
-          <option value="Closed - Won">Closed - Won</option>
-          <option value="Closed - Lost">Closed - Lost</option>
-        </select>
+        <AppSelect
+          value={status === "placeholder-status" ? "" : status}
+          onChange={(val) => setStatus(val as string)}
+          placeholder="Select Status"
+          isBgWhite={true}
+          options={[
+            { label: "All", value: "All" },
+            { label: "New", value: "New" },
+            { label: "Contacted", value: "Contacted" },
+            { label: "Qualified", value: "Qualified" },
+            { label: "Proposal", value: "Proposal" },
+            { label: "Closed - Won", value: "Closed - Won" },
+            { label: "Closed - Lost", value: "Closed - Lost" },
+          ]}
+        />
       </div>
 
       {/* Select Source */}
       <div className="flex-1 min-w-0">
-        <select
-          value={source}
-          onChange={(e) => setSource(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-source" disabled>Select Source</option>
-          <option value="All">All</option>
-          <option value="Web Form">Web Form</option>
-          <option value="WhatsApp">WhatsApp</option>
-          <option value="Manual Entry">Manual Entry</option>
-        </select>
+        <AppSelect
+          value={source === "placeholder-source" ? "" : source}
+          onChange={(val) => setSource(val as string)}
+          placeholder="Select Source"
+          isBgWhite={true}
+          options={[
+            { label: "All", value: "All" },
+            { label: "Web Form", value: "Web Form" },
+            { label: "WhatsApp", value: "WhatsApp" },
+            { label: "Manual Entry", value: "Manual Entry" },
+          ]}
+        />
       </div>
 
       {/* Select Assigned To */}
       <div className="flex-1 min-w-0">
-        <select
-          value={assignedto}
-          onChange={(e) => setAssignedto(e.target.value)}
-          className="w-full h-12 px-4 pr-[14px] bg-white border border-gray-300 rounded-xl text-gray-600 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_14px_center]"
-        >
-          <option value="placeholder-assigned" disabled>Select Assigned To</option>
-          <option value="All">All</option>
-          {assignedToOptions.map((user) => (
-            <option key={user} value={user}>
-              {user}
-            </option>
-          ))}
-        </select>
+        <AppSelect
+          value={assignedto === "placeholder-assigned" ? "" : assignedto}
+          onChange={(val) => setAssignedto(val as string)}
+          placeholder="Select Assigned To"
+          isBgWhite={true}
+          options={[
+            { label: "All", value: "All" },
+            ...assignedToOptions.map((user) => ({
+              label: user,
+              value: user,
+            })),
+          ]}
+        />
       </div>
 
       <div className="flex-1 min-w-0 flex gap-2">

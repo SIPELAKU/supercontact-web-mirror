@@ -26,10 +26,10 @@ export function EditTicketModal({ isOpen, onClose, ticket }: EditTicketModalProp
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[700px]">
+        <Dialog open={isOpen} onOpenChange={onClose} maxWidth="sm">
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-blue-600">Edit Ticket</DialogTitle>
+                    <DialogTitle className="text-xl font-bold text-[#5479EE]">Edit Ticket</DialogTitle>
                     <p className="text-sm text-gray-500 mt-1">Fill in the details below to update the support ticket</p>
                 </DialogHeader>
                 {ticket && (

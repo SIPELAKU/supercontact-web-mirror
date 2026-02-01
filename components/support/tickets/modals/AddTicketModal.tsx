@@ -22,10 +22,10 @@ export function AddTicketModal({ isOpen, onClose }: AddTicketModalProps) {
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[700px]">
+        <Dialog open={isOpen} onOpenChange={onClose} maxWidth="sm">
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-blue-600">Add Ticket</DialogTitle>
+                    <DialogTitle className="text-xl font-bold text-[#5479EE]">Add Ticket</DialogTitle>
                     <p className="text-sm text-gray-500 mt-1">Fill in the details below to create a new support ticket</p>
                 </DialogHeader>
                 <TicketForm

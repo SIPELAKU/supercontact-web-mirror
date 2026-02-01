@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.1] - 2026-02-02
+
+### Detail Versi 1.3.1
+
+#### 🎨 UI/UX Enhancement
+
+- **Table Standardization:**
+  - **Contact Module:** Refactored Contacts table to align with Sales/Product design standards (MUI Table, consistent header styling, white card container).
+  - **Email Marketing:** Refactored `CampaignsTable` and `SubscribersTable` to match the standardized table design.
+
+- **Visual Improvements:**
+  - **Ticket Management:** Updated page background color to white (`#ffffff`) for a cleaner look.
+
+---
+
 ## [1.3.0] - 2026-01-30
 
 ### Detail Versi 1.3.0

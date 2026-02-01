@@ -1,18 +1,19 @@
-import { useState } from "react";
 import { Edit2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import {
     Table,
     TableBody,
     TableCell,
+    TableContainer,
     TableHead,
-    TableHeader,
     TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
+    Paper,
+    Checkbox,
+    IconButton,
+} from "@mui/material";
+
 import { Ticket } from "@/lib/types/Ticket";
 import { TicketPriorityBadge, TicketStatusBadge } from "./TicketBadges";
-import { Button } from "@/components/ui/button";
 
 interface TicketTableProps {
     tickets: Ticket[];
@@ -31,26 +32,26 @@ export function TicketTable({ tickets, isLoading, onEdit, onDelete }: TicketTabl
     }
 
     return (
-        <div className="bg-white rounded-lg border shadow-sm">
+        <TableContainer component={Paper} className="shadow-sm border rounded-lg">
             <Table>
-                <TableHeader>
+                <TableHead>
                     <TableRow className="bg-gray-50/50">
-                        <TableHead className="w-12">
+                        <TableCell padding="checkbox">
                             <Checkbox />
-                        </TableHead>
-                        <TableHead>Ticket ID</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Priority</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Assigned Agent</TableHead>
-                        <TableHead>Last Updated</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        </TableCell>
+                        <TableCell>Ticket ID</TableCell>
+                        <TableCell>Subject</TableCell>
+                        <TableCell>Priority</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Assigned Agent</TableCell>
+                        <TableCell>Last Updated</TableCell>
+                        <TableCell align="right">Action</TableCell>
                     </TableRow>
-                </TableHeader>
+                </TableHead>
                 <TableBody>
                     {tickets.map((ticket) => (
-                        <TableRow key={ticket.id} className="hover:bg-gray-50">
-                            <TableCell>
+                        <TableRow key={ticket.id} hover>
+                            <TableCell padding="checkbox">
                                 <Checkbox />
                             </TableCell>
                             <TableCell className="font-medium">{ticket.id.substring(0, 8)}...</TableCell>
@@ -69,20 +70,20 @@ export function TicketTable({ tickets, isLoading, onEdit, onDelete }: TicketTabl
                             <TableCell className="text-gray-500 text-sm">
                                 {ticket.updated_at ? formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true }) : "-"}
                             </TableCell>
-                            <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => onEdit(ticket)} className="h-8 w-8 text-gray-500 hover:text-blue-600">
+                            <TableCell align="right">
+                                <div className="flex justify-end gap-1">
+                                    <IconButton size="small" onClick={() => onEdit(ticket)} className="text-gray-500 hover:text-blue-600">
                                         <Edit2 className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => onDelete(ticket)} className="h-8 w-8 text-gray-500 hover:text-red-600">
+                                    </IconButton>
+                                    <IconButton size="small" onClick={() => onDelete(ticket)} className="text-gray-500 hover:text-red-600">
                                         <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    </IconButton>
                                 </div>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
-        </div>
+        </TableContainer>
     );
 }

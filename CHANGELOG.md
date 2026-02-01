@@ -13,6 +13,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.1] - 2026-02-02
+
+### Detail Versi 1.3.1
+
+#### 🎨 UI/UX Enhancement
+
+- **Table Standardization:**
+  - **Contact Module:** Refactored Contacts table to align with Sales/Product design standards (MUI Table, consistent header styling, white card container).
+  - **Email Marketing:** Refactored `CampaignsTable` and `SubscribersTable` to match the standardized table design.
+
+- **Visual Improvements:**
+  - **Ticket Management:** Updated page background color to white (`#ffffff`) for a cleaner look.
+
+---
+
+## [1.3.0] - 2026-01-30
+
+### Detail Versi 1.3.0
+
+#### ✨ Fitur Baru: Ticket Management Module
+
+- **Deskripsi:**
+  - **Ticket Management System:** Implementasi modul manajemen tiket lengkap di bawah menu Support > Tickets.
+  - **Full CRUD Capabilities:**
+    - **List View:** Tabel tiket dengan filter status, prioritas, dan agen, serta pencarian.
+    - **Add Ticket:** Modal form untuk membuat tiket baru dengan validasi.
+    - **Edit Ticket:** Kemampuan untuk mengedit detail tiket yang ada.
+    - **Delete Ticket:** Fitur penghapusan tiket dengan konfirmasi modal.
+  - **API Integration:** Integrasi penuh dengan endpoint `/tickets` (GET, POST, PUT, DELETE) menggunakan React Query untuk manajemen state yang efisien.
+  - **Reusable Components:** Penggunaan komponen UI yang konsisten seperti `TicketStatusBadge`, `TicketPriorityBadge`, dan form reusable.
+
+#### 📁 Files Created
+
+- `app/support/tickets/page.tsx`
+- `components/support/tickets/TicketTable.tsx`
+- `components/support/tickets/TicketForm.tsx`
+- `components/support/tickets/TicketBadges.tsx`
+- `components/support/tickets/modals/AddTicketModal.tsx`
+- `components/support/tickets/modals/EditTicketModal.tsx`
+- `lib/api/tickets.ts`
+- `lib/hooks/useTickets.ts`
+- `lib/types/Ticket.ts`
+
+## [1.2.7] - 2026-01-30
+
+### Detail Versi 1.2.7
+
+#### 🐛 Bug Fix
+
+- **Quotation PDF Generation**
+  - Fixed issues with PDF generation for quotations.
+  - Implemented `html2canvas-pro` and `jspdf` for reliable client-side PDF creation.
+
 ## [1.2.6] - 2026-01-29
 
 ### Detail Versi 1.2.6

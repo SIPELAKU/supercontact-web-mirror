@@ -17,6 +17,15 @@ import DeleteMultipleContactModal from "@/components/modal/DeleteMultipleContact
 import ImportContactModal from "@/components/modal/ImportContactModal";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Checkbox
+} from "@mui/material";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -55,18 +64,16 @@ export default function ContactsPage() {
 
   const loadDataAgain = (pageNum = page, limitNum = rowsPerPage) => {
     fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${
-        pageNum + 1
+      `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${pageNum + 1
       }&limit=${limitNum}&search=${debouncedSearch}`,
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            document.cookie
+          Authorization: `Bearer ${document.cookie
               .split("; ")
               .find((row) => row.startsWith("access_token="))
               ?.split("=")[1]
-          }`,
+            }`,
         },
       },
     )
@@ -130,13 +137,13 @@ export default function ContactsPage() {
     loadDataAgain();
   }, [debouncedSearch]);
 
-  const handleSelectAll = () => {
-    if (selected.length === dataContact.length) {
-      setSelected([]);
-      setSelectedContacts([]);
-    } else {
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
       setSelected(dataContact.map((_, i) => i));
       setSelectedContacts(dataContact);
+    } else {
+      setSelected([]);
+      setSelectedContacts([]);
     }
   };
 
@@ -249,182 +256,204 @@ export default function ContactsPage() {
         title="Contacts"
         breadcrumbs={["Dashboard", "Contacts"]}
       />
-      <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex flex-wrap gap-2">
-          <ColumnVisibilityPopover
-            columns={allColumns}
-            visibleColumns={visibleColumns}
-            onChange={setVisibleColumns}
-          />
-          <FilterPopover
-            columns={allColumns.filter(
-              (c) => c.id !== "selection" && c.id !== "action",
-            )}
-            onApply={setFilters}
-          />
-          <DensityPopover density={density} onChange={setDensity} />
-          <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
-          <div className="flex items-center relative w-full md:w-64">
-            {/* <Search className="absolute left-3 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search by email"
-              className="w-full border rounded-lg px-10 py-2 text-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            /> */}
-            <AppInput
-              startIcon={<Search size={16} />}
-              placeholder="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              isBgWhite
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 space-y-5">
+        <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <ColumnVisibilityPopover
+              columns={allColumns}
+              visibleColumns={visibleColumns}
+              onChange={setVisibleColumns}
             />
-          </div>
-        </div>
-        <div className="flex flex-col md:flex-row gap-3">
-          {selectedContacts.length > 0 && (
-            <AppButton
-              onClick={() => setOpenDeleteMultiple(true)}
-              variantStyle="danger"
-              startIcon={<Trash2 size={16} />}
-            >
-              Delete
-            </AppButton>
-          )}
-          <AppButton
-            onClick={() => setOpenImport(true)}
-            variantStyle="primary"
-            startIcon={<Download size={16} />}
-          >
-            Import
-          </AppButton>
-          <AppButton
-            onClick={() => setOpenAdd(true)}
-            variantStyle="primary"
-            startIcon={<Plus size={16} />}
-          >
-            Add Contact
-          </AppButton>
-        </div>
-      </section>
-      <section className="w-full overflow-x-auto">
-        <table className="w-full min-w-[900px]">
-          <thead>
-            <tr className="text-left">
-              {isColumnVisible("selection") && (
-                <th className="text-right">
-                  <input
-                    type="checkbox"
-                    onChange={handleSelectAll}
-                    checked={
-                      selected.length === filteredData?.length &&
-                      filteredData.length > 0
-                    }
-                    className="w-6 h-6 border-2 border-gray-500 rounded appearance-none checked:bg-gray-300 checked:appearance-auto cursor-pointer"
-                  />
-                </th>
+            <FilterPopover
+              columns={allColumns.filter(
+                (c) => c.id !== "selection" && c.id !== "action",
               )}
-              {isColumnVisible("name") && <th className="p-4">Name</th>}
-              {isColumnVisible("phone") && <th className="p-4">Phone</th>}
-              {isColumnVisible("position") && <th className="p-4">Position</th>}
-              {isColumnVisible("company") && <th className="p-4">Company</th>}
-              {isColumnVisible("action") && <th className="p-4">Action</th>}
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredData?.map((item, i) => (
-              <tr
-                key={i}
-                className="hover:bg-gray-50 text-sm cursor-pointer"
-                onClick={() => handleDetail(item)}
+              onApply={setFilters}
+            />
+            <DensityPopover density={density} onChange={setDensity} />
+            <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
+            <div className="flex items-center relative w-full md:w-64">
+              <AppInput
+                startIcon={<Search size={16} />}
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                isBgWhite
+              />
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-3">
+            {selectedContacts.length > 0 && (
+              <AppButton
+                onClick={() => setOpenDeleteMultiple(true)}
+                variantStyle="danger"
+                startIcon={<Trash2 size={16} />}
               >
-                {isColumnVisible("selection") && (
-                  <td
-                    className={`text-right ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      onChange={() => handleSelectRow(i)}
-                      onClick={(e) => e.stopPropagation()}
-                      checked={selected.includes(i)}
-                      className="w-6 h-6 border-2 border-gray-500 rounded appearance-none checked:bg-gray-300 checked:appearance-auto cursor-pointer"
-                    />
-                  </td>
-                )}
+                Delete
+              </AppButton>
+            )}
+            <AppButton
+              onClick={() => setOpenImport(true)}
+              variantStyle="primary"
+              startIcon={<Download size={16} />}
+            >
+              Import
+            </AppButton>
+            <AppButton
+              onClick={() => setOpenAdd(true)}
+              variantStyle="primary"
+              startIcon={<Plus size={16} />}
+            >
+              Add Contact
+            </AppButton>
+          </div>
+        </section>
 
-                {isColumnVisible("name") && (
-                  <td
-                    className={`px-4 flex items-center gap-3 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-[#5479EE]"></div>
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{item.name}</span>
-                      <span className="text-gray-500 text-sm">
-                        {item.email}
-                      </span>
-                    </div>
-                  </td>
-                )}
+        <section className="w-full">
+          <TableContainer>
+            <Table sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                  {isColumnVisible("selection") && (
+                    <TableCell align="right" sx={{ py: 2 }}>
+                      <Checkbox
+                        checked={
+                          selected.length === filteredData?.length &&
+                          filteredData.length > 0
+                        }
+                        onChange={handleSelectAll}
+                        color="primary"
+                        sx={{ p: 0 }}
+                      />
+                    </TableCell>
+                  )}
+                  {isColumnVisible("name") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Name</TableCell>}
+                  {isColumnVisible("phone") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Phone</TableCell>}
+                  {isColumnVisible("position") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>}
+                  {isColumnVisible("company") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>}
+                  {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Action</TableCell>}
+                </TableRow>
+              </TableHead>
 
-                {isColumnVisible("phone") && (
-                  <td
-                    className={`px-4 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
+              <TableBody>
+                {filteredData?.map((item, i) => (
+                  <TableRow
+                    key={i}
+                    hover
+                    onClick={() => handleDetail(item)}
+                    sx={{
+                      '&:hover': { bgcolor: '#f9fafb' },
+                      '& td': { borderBottom: '1px solid #f3f4f6' },
+                      cursor: 'pointer'
+                    }}
                   >
-                    {item.phone_number || "-"}
-                  </td>
-                )}
-                {isColumnVisible("position") && (
-                  <td
-                    className={`px-4 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
-                  >
-                    {item.position || "-"}
-                  </td>
-                )}
-                {isColumnVisible("company") && (
-                  <td
-                    className={`px-4 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
-                  >
-                    {item.company || "-"}
-                  </td>
-                )}
+                    {isColumnVisible("selection") && (
+                      <TableCell
+                        align="right"
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
+                        }}
+                      >
+                        <Checkbox
+                          checked={selected.includes(i)}
+                          onChange={() => handleSelectRow(i)}
+                          onClick={(e) => e.stopPropagation()}
+                          color="primary"
+                          sx={{ p: 0 }}
+                        />
+                      </TableCell>
+                    )}
 
-                {isColumnVisible("action") && (
-                  <td
-                    className={`px-4 flex gap-3 text-gray-600 ${density === "compact" ? "py-1" : density === "comfortable" ? "py-4" : "py-2"}`}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(item);
-                      }}
-                    >
-                      <Pencil className="cursor-pointer hover:text-purple-600" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(item);
-                      }}
-                    >
-                      <Trash2 className="cursor-pointer text-red-500" />
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+                    {isColumnVisible("name") && (
+                      <TableCell
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#5479EE] shrink-0"></div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900">{item.name}</span>
+                            <span className="text-gray-500 text-sm">{item.email}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                    )}
 
-      <Pagination
-        page={page}
-        rowsPerPage={rowsPerPage}
-        count={totalCount}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+                    {isColumnVisible("phone") && (
+                      <TableCell
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                          color: 'text.primary'
+                        }}
+                      >
+                        {item.phone_number || "-"}
+                      </TableCell>
+                    )}
+                    {isColumnVisible("position") && (
+                      <TableCell
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                          color: 'text.primary'
+                        }}
+                      >
+                        {item.position || "-"}
+                      </TableCell>
+                    )}
+                    {isColumnVisible("company") && (
+                      <TableCell
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                          color: 'text.primary'
+                        }}
+                      >
+                        {item.company || "-"}
+                      </TableCell>
+                    )}
+
+                    {isColumnVisible("action") && (
+                      <TableCell
+                        sx={{
+                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
+                        }}
+                      >
+                        <div className="flex gap-3 text-gray-600">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(item);
+                            }}
+                          >
+                            <Pencil className="cursor-pointer hover:text-purple-600" size={18} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(item);
+                            }}
+                          >
+                            <Trash2 className="cursor-pointer text-red-500" size={18} />
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </section>
+
+        <Pagination
+          page={page}
+          rowsPerPage={rowsPerPage}
+          count={totalCount}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </div>
+
       <AddContactModal
         open={openAdd}
         onClose={() => setOpenAdd(false)}

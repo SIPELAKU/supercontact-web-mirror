@@ -177,9 +177,9 @@ const MailingListDetailPage = () => {
             </Box>
 
             {/* Tab Content */}
-            <Box>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
                 {/* Toolbar */}
-                <Box sx={{ mb: 2, p: 2, bgcolor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1 }}>
                         <AppButton
                             variantStyle="soft"
@@ -238,14 +238,14 @@ const MailingListDetailPage = () => {
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
                     <>
-                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
+                        <TableContainer sx={{ px: 0, pb: 2 }}>
                             <Table>
-                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Nama</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Nama Perusahaan</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Aksi</TableCell>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Email</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama Perusahaan</TableCell>
+                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Aksi</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -259,11 +259,18 @@ const MailingListDetailPage = () => {
                                         </TableRow>
                                     ) : (
                                         paginatedSubscribers.map((subscriber) => (
-                                            <TableRow key={subscriber.id} hover>
-                                                <TableCell>{subscriber.email}</TableCell>
-                                                <TableCell>{subscriber.name || '-'}</TableCell>
-                                                <TableCell>{subscriber.company || '-'}</TableCell>
-                                                <TableCell align="center">
+                                            <TableRow
+                                                key={subscriber.id}
+                                                hover
+                                                sx={{
+                                                    '&:hover': { bgcolor: '#f9fafb' },
+                                                    '& td': { borderBottom: '1px solid #f3f4f6' }
+                                                }}
+                                            >
+                                                <TableCell sx={{ py: 2, pl: 3 }}>{subscriber.email}</TableCell>
+                                                <TableCell sx={{ py: 2 }}>{subscriber.name || '-'}</TableCell>
+                                                <TableCell sx={{ py: 2 }}>{subscriber.company || '-'}</TableCell>
+                                                <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                                                     <Tooltip title="Delete">
                                                         <IconButton
                                                             size="small"
@@ -298,16 +305,16 @@ const MailingListDetailPage = () => {
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
                     <>
-                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
+                        <TableContainer sx={{ px: 0, pb: 2 }}>
                             <Table>
-                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Sent Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Delivered</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Opened</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Open Rate</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Delivered</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Opened</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Open Rate</TableCell>
+                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -325,18 +332,25 @@ const MailingListDetailPage = () => {
                                                 ? ((campaign.opened / campaign.delivered) * 100).toFixed(1)
                                                 : '0';
                                             return (
-                                                <TableRow key={campaign.id} hover>
-                                                    <TableCell>{campaign.subject}</TableCell>
-                                                    <TableCell>
+                                                <TableRow
+                                                    key={campaign.id}
+                                                    hover
+                                                    sx={{
+                                                        '&:hover': { bgcolor: '#f9fafb' },
+                                                        '& td': { borderBottom: '1px solid #f3f4f6' }
+                                                    }}
+                                                >
+                                                    <TableCell sx={{ py: 2, pl: 3 }}>{campaign.subject}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>
                                                         {campaign.sent_date
                                                             ? format(new Date(campaign.sent_date), 'dd MMM yyyy, HH:mm')
                                                             : '-'
                                                         }
                                                     </TableCell>
-                                                    <TableCell>{campaign.delivered}</TableCell>
-                                                    <TableCell>{campaign.opened}</TableCell>
-                                                    <TableCell>{openRate}%</TableCell>
-                                                    <TableCell align="center">
+                                                    <TableCell sx={{ py: 2 }}>{campaign.delivered}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{campaign.opened}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{openRate}%</TableCell>
+                                                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                                                         <Tooltip title="View Statistics">
                                                             <IconButton
                                                                 size="small"
@@ -367,7 +381,7 @@ const MailingListDetailPage = () => {
                         />
                     </>
                 )}
-            </Box>
+            </div>
 
             {/* Add Subscriber Modal */}
             <AddSubscriberModal

@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Table Standardization:**
   - **Contact Module:** Refactored Contacts table to align with Sales/Product design standards (MUI Table, consistent header styling, white card container).
-  - **Email Marketing:** Refactored `CampaignsTable` and `SubscribersTable` to match the standardized table design.
+  - **Email Marketing:** Refactored `CampaignsTable`, `SubscribersTable`, and **Mailing List Detail tables** to match the standardized design.
 
 - **Visual Improvements:**
   - **Ticket Management:** Updated page background color to white (`#ffffff`) for a cleaner look.

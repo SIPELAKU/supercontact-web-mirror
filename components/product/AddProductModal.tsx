@@ -9,6 +9,9 @@ import { Product, useGetProductStore } from "@/lib/store/product";
 import type { AddProductModalProps } from "@/lib/types/Products";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { AppInput } from "../ui/app-input";
+import { AppTextarea } from "../ui/app-textarea";
+import { AppButton } from "../ui/app-button";
 
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
 export type ProductPayload = Omit<Product, "id">;
@@ -237,24 +240,24 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                     <div className="grid grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-900">Product Name</label>
-                            <Input
+                            <AppInput
                                 name="productName"
                                 placeholder="e.g., Aplikasi CRM Enterprise"
                                 value={formData.productName}
                                 onChange={handleChange}
-                                className="h-11 bg-white"
+                                isBgWhite
                             />
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-900">Price (IDR)</label>
-                            <Input
+                            <AppInput
                                 name="price"
                                 type="text"
                                 placeholder="e.g., 10.000"
                                 value={formData.price}
                                 onChange={handleChange}
-                                className="h-11 bg-white"
+                                isBgWhite
                             />
                         </div>
                     </div>
@@ -269,12 +272,12 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             </label>
 
                             <div className="relative">
-                                <Input
+                                <AppInput
                                     name="sku"
                                     placeholder="Auto-generated SKU"
                                     value={formData.sku}
                                     onChange={handleChange}
-                                    className="h-11 bg-white pr-12 font-mono text-sm"
+                                    isBgWhite
                                 />
                                 <button
                                     type="button"
@@ -302,32 +305,36 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
 
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-gray-900">Description</label>
-                        <textarea
+                        <AppTextarea
                             name="description"
                             placeholder="Enter product description..."
                             rows={6}
                             value={formData.description}
                             onChange={handleChange}
-                            className="w-full h-32 px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                            isBgWhite
                         />
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-10 border-t pt-4">
-                    <Button
-                        variant="outline"
+                    <AppButton
+                        variantStyle="outline"
+                        color="primary"
                         onClick={() => {
                             reset();
                             setEditId("");
                             onOpenChange(false);
                         }}
-                        className="px-6"
                     >
                         Cancel
-                    </Button>
-                    <Button className="px-6 bg-[#5479EE] text-white hover:bg-blue-700" onClick={handleSave}>
+                    </AppButton>
+                    <AppButton
+                        variantStyle="primary"
+                        color="primary"
+                        onClick={handleSave}
+                    >
                         {id ? "Update Product" : "Save Product"}
-                    </Button>
+                    </AppButton>
                 </div>
             </DialogContent>
         </Dialog>

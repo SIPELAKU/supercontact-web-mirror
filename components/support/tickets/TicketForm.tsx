@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useManagedUsers } from "@/lib/hooks/useManagedUser"; // For agent selection
+import { useUsers } from "@/lib/hooks/useUsers"; // For agent selection
 import { Ticket } from "@/lib/types/Ticket";
 
 interface TicketFormProps {
@@ -30,8 +31,8 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
     });
 
     // Fetch agents for assignment
-    const { data: userData } = useManagedUsers(1, 100);
-    const agents = userData?.data?.manage_users || [];
+    const { data: userData } = useUsers(1, 100);
+    const agents = userData?.data?.users || [];
 
     const agentOptions = agents.map((agent: any) => ({
         label: agent.fullname,

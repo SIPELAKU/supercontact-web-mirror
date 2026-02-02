@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.3.1] - 2026-02-02
 
+### Changed
+- Standardized table UI across the application (Leads, Quotations, Products, Email Marketing, and Contacts) with consistent 24px padding and margins.
+- Improved table containers with standardized borders and rounded corners.
+- Fixed Ticket Management background and assigned agent identification.
+- Fixed Lead Table "stick to card" issue by adjusting spacing and borders.
+
+---
+
 ### Detail Versi 1.3.1
 
 #### 🎨 UI/UX Enhancement

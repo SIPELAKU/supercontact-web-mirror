@@ -25,7 +25,7 @@ export default function ProductTable() {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
             <AddProductModal open={isModalOpen} onOpenChange={setIsModalOpen} />
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-4 pt-5 w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 pt-5 w-full">
                 <div
                     className="
                         flex items-center   
@@ -62,15 +62,15 @@ export default function ProductTable() {
 
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-gray-200 mx-4 mb-4">
+            <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                 <Table>
                     <TableHead>
                         <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell><span className="text-[#6B7280]">Product Name</span></TableCell>
+                            <TableCell sx={{ pl: 3 }}><span className="text-[#6B7280]">Product Name</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">SKU</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">Price</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">Tax Rate</span></TableCell>
-                            <TableCell><span className="text-[#6B7280]">Actions</span></TableCell>
+                            <TableCell sx={{ pr: 3 }}><span className="text-[#6B7280]">Actions</span></TableCell>
                         </TableRow>
                     </TableHead>
 
@@ -90,7 +90,7 @@ export default function ProductTable() {
                         ) : (
                             listProduct.map((product) => (
                                 <TableRow key={product.id} className="hover:bg-gray-50">
-                                    <TableCell>
+                                    <TableCell sx={{ pl: 3 }}>
                                         <div
                                             className="truncate font-medium text-gray-900 max-w-50 xl:max-w-75"
                                             title={product.product_name}
@@ -114,7 +114,7 @@ export default function ProductTable() {
                                     <TableCell>
                                         <span className="font-medium text-gray-900">{product.tax_rate}</span>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ pr: 3 }}>
                                         <div className="flex gap-4">
                                             <button
                                                 onClick={() => {

@@ -156,7 +156,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: Subscr
       </Box>
 
       {/* Table */}
-      <TableContainer sx={{ px: 0, pb: 2 }}>
+      <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
         <Table sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
@@ -238,18 +238,17 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: Subscr
             )}
           </TableBody>
         </Table>
-      </TableContainer>
 
-      {/* Pagination */}
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        component="div"
-        count={filteredRows.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={filteredRows.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </div>
     </div>
   );
 };

@@ -238,7 +238,7 @@ const MailingListDetailPage = () => {
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
                     <>
-                        <TableContainer sx={{ px: 0, pb: 2 }}>
+                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
@@ -286,26 +286,26 @@ const MailingListDetailPage = () => {
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25, 50]}
-                            component="div"
-                            count={filteredSubscribers.length}
-                            rowsPerPage={subscriberRowsPerPage}
-                            page={subscriberPage}
-                            onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
-                            onRowsPerPageChange={(e) => {
-                                setSubscriberRowsPerPage(parseInt(e.target.value, 10));
-                                setSubscriberPage(0);
-                            }}
-                        />
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={filteredSubscribers.length}
+                                rowsPerPage={subscriberRowsPerPage}
+                                page={subscriberPage}
+                                onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
+                                onRowsPerPageChange={(e) => {
+                                    setSubscriberRowsPerPage(parseInt(e.target.value, 10));
+                                    setSubscriberPage(0);
+                                }}
+                            />
+                        </div>
                     </>
                 )}
 
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
                     <>
-                        <TableContainer sx={{ px: 0, pb: 2 }}>
+                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
                                 <TableHead>
                                     <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
@@ -366,19 +366,19 @@ const MailingListDetailPage = () => {
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25, 50]}
-                            component="div"
-                            count={filteredCampaigns.length}
-                            rowsPerPage={campaignRowsPerPage}
-                            page={campaignPage}
-                            onPageChange={(_e, newPage) => setCampaignPage(newPage)}
-                            onRowsPerPageChange={(e) => {
-                                setCampaignRowsPerPage(parseInt(e.target.value, 10));
-                                setCampaignPage(0);
-                            }}
-                        />
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={filteredCampaigns.length}
+                                rowsPerPage={campaignRowsPerPage}
+                                page={campaignPage}
+                                onPageChange={(_e, newPage) => setCampaignPage(newPage)}
+                                onRowsPerPageChange={(e) => {
+                                    setCampaignRowsPerPage(parseInt(e.target.value, 10));
+                                    setCampaignPage(0);
+                                }}
+                            />
+                        </div>
                     </>
                 )}
             </div>

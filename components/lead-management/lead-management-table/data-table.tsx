@@ -141,61 +141,75 @@ export function DataTable() {
       <CardHeader title="Filters" />
       <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
       <Divider />
-      <div className="overflow-hidden rounded-none!">
-        <Table>
-          <TableHead>
-            <TableRow className="bg-[#EEF2FD]!">
-              {leadColumns.map((column) => (
-                <TableCell key={column.key}>
-                  {column.sortable ? (
-                    <TableSortLabel
-                      active={sortBy === column.key}
-                      direction={sortBy === column.key ? sortOrder : 'asc'}
-                      onClick={() => handleSort(column.key)}
-                    >
+      <div className="p-6">
+        <div className="overflow-hidden border border-gray-200 rounded-xl">
+          <Table>
+            <TableHead>
+              <TableRow className="bg-[#EEF2FD]!">
+                {leadColumns.map((column, index) => (
+                  <TableCell
+                    key={column.key}
+                    sx={{
+                      pl: index === 0 ? 3 : undefined,
+                      pr: index === leadColumns.length - 1 ? 3 : undefined
+                    }}
+                  >
+                    {column.sortable ? (
+                      <TableSortLabel
+                        active={sortBy === column.key}
+                        direction={sortBy === column.key ? sortOrder : 'asc'}
+                        onClick={() => handleSort(column.key)}
+                      >
+                        <span className="text-[#6B7280]">{column.label}</span>
+                      </TableSortLabel>
+                    ) : (
                       <span className="text-[#6B7280]">{column.label}</span>
-                    </TableSortLabel>
-                  ) : (
-                    <span className="text-[#6B7280]">{column.label}</span>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filteredData.map((lead) => (
-              <TableRow
-                key={lead.id}
-                onClick={() => {
-                  setSelectedLead(lead);
-                  setIsDetailModalOpen(true);
-                }}
-                className="cursor-pointer hover:bg-gray-50"
-                sx={{
-                  '&:hover': {
-                    backgroundColor: '#f9fafb',
-                  },
-                  cursor: 'pointer',
-                }}
-              >
-                {leadColumns.map((column) => (
-                  <TableCell key={column.key}>
-                    {column.render(lead)}
+                    )}
                   </TableCell>
                 ))}
               </TableRow>
-            ))}
+            </TableHead>
 
-            {filteredData.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell colSpan={leadColumns.length} align="center">
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            <TableBody>
+              {filteredData.map((lead) => (
+                <TableRow
+                  key={lead.id}
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setIsDetailModalOpen(true);
+                  }}
+                  className="cursor-pointer hover:bg-gray-50"
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: '#f9fafb',
+                    },
+                    cursor: 'pointer',
+                  }}
+                >
+                  {leadColumns.map((column, index) => (
+                    <TableCell
+                      key={column.key}
+                      sx={{
+                        pl: index === 0 ? 3 : undefined,
+                        pr: index === leadColumns.length - 1 ? 3 : undefined
+                      }}
+                    >
+                      {column.render(lead)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+
+              {filteredData.length === 0 && !isLoading && (
+                <TableRow>
+                  <TableCell colSpan={leadColumns.length} align="center">
+                    No data available
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <TablePagination

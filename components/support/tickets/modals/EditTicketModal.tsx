@@ -3,6 +3,7 @@ import { TicketForm } from "../TicketForm";
 import { useUpdateTicket } from "@/lib/hooks/useTickets";
 import { notify } from "@/lib/notifications";
 import { Ticket } from "@/lib/types/Ticket";
+import { Divider } from "@mui/material";
 
 interface EditTicketModalProps {
     isOpen: boolean;
@@ -28,8 +29,8 @@ export function EditTicketModal({ isOpen, onClose, ticket }: EditTicketModalProp
     return (
         <Dialog open={isOpen} onOpenChange={onClose} maxWidth="sm">
             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-[#5479EE]">Edit Ticket</DialogTitle>
+                <DialogHeader className="p-0 m-0">
+                    <DialogTitle className="text-[#5479EE] p-0 m-0" style={{ fontSize: '22px', fontWeight: 'bold', padding: 0, margin: 0 }}>Edit Ticket</DialogTitle>
                     <p className="text-sm text-gray-500 mt-1">Fill in the details below to update the support ticket</p>
                 </DialogHeader>
                 {ticket && (

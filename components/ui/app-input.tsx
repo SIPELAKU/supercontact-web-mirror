@@ -99,7 +99,7 @@ const StyledTextField = styled(TextField, {
   },
 
   "& .MuiOutlinedInput-root": {
-    backgroundColor: isBgWhite ? "white" : INPUT_BG,
+    backgroundColor: isBgWhite ? "white !important" : INPUT_BG,
     borderRadius: "6px",
     fontSize: "16px",
     fontWeight: 400,

@@ -70,9 +70,9 @@ export default function ContactsPage() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${document.cookie
-              .split("; ")
-              .find((row) => row.startsWith("access_token="))
-              ?.split("=")[1]
+            .split("; ")
+            .find((row) => row.startsWith("access_token="))
+            ?.split("=")[1]
             }`,
         },
       },
@@ -257,8 +257,8 @@ export default function ContactsPage() {
         breadcrumbs={["Dashboard", "Contacts"]}
       />
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 space-y-5">
-        <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
+        <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 pt-5">
           <div className="flex flex-wrap gap-2">
             <ColumnVisibilityPopover
               columns={allColumns}
@@ -310,148 +310,148 @@ export default function ContactsPage() {
           </div>
         </section>
 
-        <section className="w-full">
-          <TableContainer>
-            <Table sx={{ minWidth: 900 }}>
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
+          <Table sx={{ minWidth: 900 }}>
+            <TableHead>
+              <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                {isColumnVisible("selection") && (
+                  <TableCell align="right" sx={{ py: 2, pl: 3 }}>
+                    <Checkbox
+                      checked={
+                        selected.length === filteredData?.length &&
+                        filteredData.length > 0
+                      }
+                      onChange={handleSelectAll}
+                      color="primary"
+                      sx={{ p: 0 }}
+                    />
+                  </TableCell>
+                )}
+                {isColumnVisible("name") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Name</TableCell>}
+                {isColumnVisible("phone") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Phone</TableCell>}
+                {isColumnVisible("position") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>}
+                {isColumnVisible("company") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>}
+                {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Action</TableCell>}
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {filteredData?.map((item, i) => (
+                <TableRow
+                  key={i}
+                  hover
+                  onClick={() => handleDetail(item)}
+                  sx={{
+                    '&:hover': { bgcolor: '#f9fafb' },
+                    '& td': { borderBottom: '1px solid #f3f4f6' },
+                    cursor: 'pointer'
+                  }}
+                >
                   {isColumnVisible("selection") && (
-                    <TableCell align="right" sx={{ py: 2 }}>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                        pl: 3
+                      }}
+                    >
                       <Checkbox
-                        checked={
-                          selected.length === filteredData?.length &&
-                          filteredData.length > 0
-                        }
-                        onChange={handleSelectAll}
+                        checked={selected.includes(i)}
+                        onChange={() => handleSelectRow(i)}
+                        onClick={(e) => e.stopPropagation()}
                         color="primary"
                         sx={{ p: 0 }}
                       />
                     </TableCell>
                   )}
-                  {isColumnVisible("name") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Name</TableCell>}
-                  {isColumnVisible("phone") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Phone</TableCell>}
-                  {isColumnVisible("position") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>}
-                  {isColumnVisible("company") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>}
-                  {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Action</TableCell>}
+
+                  {isColumnVisible("name") && (
+                    <TableCell
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#5479EE] shrink-0"></div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900">{item.name}</span>
+                          <span className="text-gray-500 text-sm">{item.email}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible("phone") && (
+                    <TableCell
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                        color: 'text.primary'
+                      }}
+                    >
+                      {item.phone_number || "-"}
+                    </TableCell>
+                  )}
+                  {isColumnVisible("position") && (
+                    <TableCell
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                        color: 'text.primary'
+                      }}
+                    >
+                      {item.position || "-"}
+                    </TableCell>
+                  )}
+                  {isColumnVisible("company") && (
+                    <TableCell
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                        color: 'text.primary'
+                      }}
+                    >
+                      {item.company || "-"}
+                    </TableCell>
+                  )}
+
+                  {isColumnVisible("action") && (
+                    <TableCell
+                      sx={{
+                        py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
+                        pr: 3
+                      }}
+                    >
+                      <div className="flex gap-3 text-gray-600">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(item);
+                          }}
+                        >
+                          <Pencil className="cursor-pointer hover:text-purple-600" size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item);
+                          }}
+                        >
+                          <Trash2 className="cursor-pointer text-red-500" size={18} />
+                        </button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
-              </TableHead>
+              ))}
+            </TableBody>
+          </Table>
 
-              <TableBody>
-                {filteredData?.map((item, i) => (
-                  <TableRow
-                    key={i}
-                    hover
-                    onClick={() => handleDetail(item)}
-                    sx={{
-                      '&:hover': { bgcolor: '#f9fafb' },
-                      '& td': { borderBottom: '1px solid #f3f4f6' },
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isColumnVisible("selection") && (
-                      <TableCell
-                        align="right"
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
-                        }}
-                      >
-                        <Checkbox
-                          checked={selected.includes(i)}
-                          onChange={() => handleSelectRow(i)}
-                          onClick={(e) => e.stopPropagation()}
-                          color="primary"
-                          sx={{ p: 0 }}
-                        />
-                      </TableCell>
-                    )}
-
-                    {isColumnVisible("name") && (
-                      <TableCell
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#5479EE] shrink-0"></div>
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-gray-900">{item.name}</span>
-                            <span className="text-gray-500 text-sm">{item.email}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                    )}
-
-                    {isColumnVisible("phone") && (
-                      <TableCell
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                          color: 'text.primary'
-                        }}
-                      >
-                        {item.phone_number || "-"}
-                      </TableCell>
-                    )}
-                    {isColumnVisible("position") && (
-                      <TableCell
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                          color: 'text.primary'
-                        }}
-                      >
-                        {item.position || "-"}
-                      </TableCell>
-                    )}
-                    {isColumnVisible("company") && (
-                      <TableCell
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                          color: 'text.primary'
-                        }}
-                      >
-                        {item.company || "-"}
-                      </TableCell>
-                    )}
-
-                    {isColumnVisible("action") && (
-                      <TableCell
-                        sx={{
-                          py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
-                        }}
-                      >
-                        <div className="flex gap-3 text-gray-600">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(item);
-                            }}
-                          >
-                            <Pencil className="cursor-pointer hover:text-purple-600" size={18} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item);
-                            }}
-                          >
-                            <Trash2 className="cursor-pointer text-red-500" size={18} />
-                          </button>
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </section>
-
-        <Pagination
-          page={page}
-          rowsPerPage={rowsPerPage}
-          count={totalCount}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+          <Pagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            count={totalCount}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </div>
       </div>
 
       <AddContactModal

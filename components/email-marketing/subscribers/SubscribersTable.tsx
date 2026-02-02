@@ -159,7 +159,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: Subscr
       <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
         <Table sx={{ minWidth: 650 }}>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+            <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
               <TableCell padding="checkbox" sx={{ pl: 3 }}>
                 <Checkbox
                   indeterminate={selected.length > 0 && selected.length < filteredRows.length}

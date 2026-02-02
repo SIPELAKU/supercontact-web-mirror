@@ -56,7 +56,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
         <FormControl
           fullWidth={fullWidth}
           size="small"
-          sx={{ backgroundColor: isBgWhite ? "white" : INPUT_BG }}
+          sx={{ backgroundColor: isBgWhite ? "white !important" : INPUT_BG }}
         >
           <Select
             labelId={labelId}
@@ -94,7 +94,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             sx={{
               height: "40px",
               borderRadius: "8px",
-              backgroundColor: isBgWhite ? "white" : INPUT_BG,
+              backgroundColor: isBgWhite ? "white !important" : INPUT_BG,
               "& .MuiSelect-select": {
                 padding: "10px 14px",
                 display: "flex",

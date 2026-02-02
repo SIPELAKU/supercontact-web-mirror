@@ -2,30 +2,30 @@
 
 import { useState } from "react";
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    FormControl,
-    Grid,
-    LinearProgress,
-    MenuItem,
-    Paper,
-    Select,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  LinearProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
 } from "@mui/material";
 import {
-    Activity,
-    DollarSign,
-    Target,
-    Users
+  Activity,
+  DollarSign,
+  Target,
+  Users
 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import CardStatistik, { UserStatType } from "@/components/ui/card-stat";
@@ -162,35 +162,35 @@ export default function AnalyticsDashboardClient() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={salesTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
+                <XAxis
+                  dataKey="month"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#666' }}
                 />
-                <YAxis 
+                <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#666' }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="series1" 
-                  stroke="#3b82f6" 
+                <Line
+                  type="monotone"
+                  dataKey="series1"
+                  stroke="#3b82f6"
                   strokeWidth={3}
                   dot={false}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="series2" 
-                  stroke="#ec4899" 
+                <Line
+                  type="monotone"
+                  dataKey="series2"
+                  stroke="#ec4899"
                   strokeWidth={3}
                   dot={false}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="series3" 
-                  stroke="#eab308" 
+                <Line
+                  type="monotone"
+                  dataKey="series3"
+                  stroke="#eab308"
                   strokeWidth={3}
                   dot={false}
                 />
@@ -227,23 +227,23 @@ export default function AnalyticsDashboardClient() {
                     {member.name}
                   </Typography>
                 </Box>
-                <LinearProgress 
-                  variant="determinate" 
-                  value={member.value} 
-                  sx={{ 
-                    height: 12, 
+                <LinearProgress
+                  variant="determinate"
+                  value={member.value}
+                  sx={{
+                    height: 12,
                     borderRadius: 6,
                     bgcolor: '#f5f5f5',
                     '& .MuiLinearProgress-bar': {
                       borderRadius: 6,
                       bgcolor: '#2196f3'
                     }
-                  }} 
+                  }}
                 />
               </Box>
             ))}
           </Stack>
-          
+
           {/* X-axis labels */}
           <Box display="flex" justifyContent="space-between" mt={2} px={1}>
             <Typography variant="caption" color="text.secondary">Rp 0</Typography>
@@ -264,7 +264,7 @@ export default function AnalyticsDashboardClient() {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#f8f9fa' }}>
+                <TableRow className="bg-[#EEF2FD]!">
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Name</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Total Sales</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Conversion Rate</TableCell>
@@ -323,15 +323,15 @@ export default function AnalyticsDashboardClient() {
             {recentActivities.map((activity, index) => (
               <Paper key={index} sx={{ p: 2, bgcolor: '#fafafa' }}>
                 <Box display="flex" alignItems="flex-start" gap={2}>
-                  <Box 
-                    sx={{ 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
                       mt: 1,
-                      bgcolor: activity.status === 'success' ? '#4caf50' : 
-                               activity.status === 'info' ? '#2196f3' : '#ff9800'
-                    }} 
+                      bgcolor: activity.status === 'success' ? '#4caf50' :
+                        activity.status === 'info' ? '#2196f3' : '#ff9800'
+                    }}
                   />
                   <Box flex={1}>
                     <Box display="flex" justifyContent="space-between" alignItems="center">

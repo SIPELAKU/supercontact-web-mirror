@@ -241,7 +241,7 @@ const MailingListDetailPage = () => {
                         <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
                                 <TableHead>
-                                    <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Email</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama Perusahaan</TableCell>
@@ -308,7 +308,7 @@ const MailingListDetailPage = () => {
                         <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
                                 <TableHead>
-                                    <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Delivered</TableCell>

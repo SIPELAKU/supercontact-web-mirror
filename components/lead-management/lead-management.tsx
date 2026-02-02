@@ -8,25 +8,63 @@ import { Card, CardHeader, Divider, Tab, Tabs, Box } from "@mui/material";
 import AddLeadForm from "@/components/lead-management/add-lead-form";
 import LeadFilters from "./lead-management-table/LeadFilters";
 import { Lead } from "@/lib/models/types";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { leadColumns } from "./lead-management-table/columns";
 
 export default function LeadManagement() {
   const { viewMode, setViewMode } = useViewMode();
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
 
   // Fetch a larger set for Kanban or a standard set for Table
   // Note: DataTable has its own pagination, so fetching here might be redundant for Table view
   // however, for simplicity and unified filtering, we can fetch here or let components handle it.
   // The user wants filters at the top.
 
-  const { data: leadsResponse, isLoading, error } = useLeads(1, 100); // Fetch more for filtering/kanban
+  const { data: leadsResponse, isLoading, error } = useLeads(1, 100);
   const leads = leadsResponse?.data?.leads || [];
 
-  const handleSetFilteredLeads = useCallback((data: Lead[]) => {
-    setFilteredLeads(data);
-  }, []);
+  // --- Lifted Filter State ---
+  const [status, setStatus] = useState("");
+  const [source, setSource] = useState("");
+  const [assignedto, setAssignedto] = useState("");
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({
+    from: undefined,
+    to: undefined,
+  });
+
+  // --- Memoized Filtering Logic ---
+  const filteredLeads = useMemo(() => {
+    let filtered = [...leads];
+
+    if (status && status !== "All") {
+      filtered = filtered.filter((l) => l.lead_status?.toLowerCase() === status.toLowerCase());
+    }
+
+    if (source && source !== "All") {
+      filtered = filtered.filter((l) => l.lead_source?.toLowerCase() === source.toLowerCase());
+    }
+
+    if (assignedto && assignedto !== "All") {
+      filtered = filtered.filter((l) => l.user?.fullname?.trim().toLowerCase() === assignedto.trim().toLowerCase());
+    }
+
+    if (dateRange.from && dateRange.to) {
+      const from = new Date(dateRange.from);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(dateRange.to);
+      to.setHours(23, 59, 59, 999);
+
+      filtered = filtered.filter((l) => {
+        const dateString = l.contact.last_contacted?.created_at;
+        if (!dateString) return false;
+
+        const date = new Date(dateString);
+        return date >= from && date <= to;
+      });
+    }
+
+    return filtered;
+  }, [leads, status, source, assignedto, dateRange]);
 
   return (
     <div className="w-full">
@@ -38,7 +76,17 @@ export default function LeadManagement() {
         }}
       >
         <CardHeader title="Filters" />
-        <LeadFilters leads={leads} setFilteredLeads={handleSetFilteredLeads} />
+        <LeadFilters
+          leads={leads}
+          status={status}
+          setStatus={setStatus}
+          source={source}
+          setSource={setSource}
+          assignedto={assignedto}
+          setAssignedto={setAssignedto}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+        />
 
         <Divider />
 

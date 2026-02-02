@@ -2,9 +2,9 @@
 
 import { cn } from "@/lib/utils";
 import {
-    DialogActions,
-    DialogContent as MUIDialogContent,
-    DialogTitle as MUIDialogTitle
+  DialogActions,
+  DialogContent as MUIDialogContent,
+  DialogTitle as MUIDialogTitle
 } from "@mui/material";
 import clsx from "clsx";
 import type * as React from "react";
@@ -64,7 +64,7 @@ export function Dialog({
 
   if (!mounted) return null;
 
-    return createPortal(
+  return createPortal(
     <div className="fixed inset-0 z-50">
 
       <div
@@ -122,12 +122,14 @@ export function DialogHeader({
 export function DialogTitle({
   className,
   children,
+  style,
 }: {
   className?: string
   children: React.ReactNode
+  style?: React.CSSProperties
 }) {
   return (
-    <MUIDialogTitle className={cn("text-xl font-semibold leading-tight px-0", className)}>{children}</MUIDialogTitle>
+    <MUIDialogTitle className={cn("text-xl font-semibold leading-tight p-0 m-0", className)} style={style}>{children}</MUIDialogTitle>
   )
 }
 

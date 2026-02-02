@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { TicketForm } from "../TicketForm";
 import { useCreateTicket } from "@/lib/hooks/useTickets";
 import { notify } from "@/lib/notifications";
+import { Divider } from "@mui/material";
 
 interface AddTicketModalProps {
     isOpen: boolean;
@@ -24,15 +25,19 @@ export function AddTicketModal({ isOpen, onClose }: AddTicketModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose} maxWidth="sm">
             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-[#5479EE]">Add Ticket</DialogTitle>
-                    <p className="text-sm text-gray-500 mt-1">Fill in the details below to create a new support ticket</p>
+                <DialogHeader className="p-0 m-0">
+                    <DialogTitle className="text-[#5479EE] p-0 m-0" style={{ fontSize: '22px', fontWeight: 'bold', padding: 0, margin: 0 }}>Add Ticket</DialogTitle>
+                    <p className="text-sm text-black-500 mt-1 mb-2">Fill in the details below to create a new support ticket</p>
                 </DialogHeader>
-                <TicketForm
-                    onSubmit={handleSubmit}
-                    onCancel={onClose}
-                    isLoading={createMutation.isPending}
-                />
+                <Divider />
+                <div className="mt-6">
+                    <TicketForm
+                        onSubmit={handleSubmit}
+                        onCancel={onClose}
+                        isLoading={createMutation.isPending}
+                    />
+                </div>
+
             </DialogContent>
         </Dialog>
     );

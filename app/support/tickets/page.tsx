@@ -17,10 +17,12 @@ import { notify } from "@/lib/notifications";
 import Pagination from "@/components/ui/pagination";
 import { useSearchParams } from "next/navigation";
 
+import { Card, CardHeader, Divider, Box, TablePagination } from "@mui/material";
+
 export default function TicketManagementPage() {
     const searchParams = useSearchParams();
-    const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(10); // Standardize to 10 rows
+    const [page, setPage] = useState(0); // MUI TablePagination uses 0-indexed page
+    const [limit, setLimit] = useState(10);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("Select Status");
     const [priorityFilter, setPriorityFilter] = useState("Select Priority");
@@ -33,12 +35,12 @@ export default function TicketManagementPage() {
     const { showConfirmation } = useConfirmation();
 
     // Data Fetching
-    const { data: ticketData, isLoading } = useTickets(page, limit, search, statusFilter, priorityFilter, agentFilter);
+    const { data: ticketData, isLoading } = useTickets(page + 1, limit, search, statusFilter, priorityFilter, agentFilter);
     const { data: userData } = useManagedUsers(1, 100);
     const deleteMutation = useDeleteTicket();
 
     const tickets = ticketData?.data?.tickets || [];
-    const totalPages = ticketData?.data?.total_pages || 1;
+    const totalTickets = ticketData?.data?.total || 0;
     const agents = userData?.data?.manage_users || [];
 
     // Handlers
@@ -72,44 +74,48 @@ export default function TicketManagementPage() {
                     title="Ticket Management"
                 />
 
-                {/* Filters */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border space-y-4">
-                    <h3 className="font-semibold text-lg text-gray-800">Filters</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <AppSelect
-                            options={[
-                                { label: "Select Status", value: "Select Status" },
-                                { label: "Open", value: "Open" },
-                                { label: "In Progress", value: "In Progress" },
-                                { label: "Closed", value: "Closed" },
-                            ]}
-                            placeholder="Select Status"
-                            value={statusFilter}
-                            isBgWhite={true}
-                            onChange={(e) => setStatusFilter(e.target.value as string)}
-                        />
-                        <AppSelect
-                            options={[
-                                { label: "Select Priority", value: "Select Priority" },
-                                { label: "High", value: "High" },
-                                { label: "Medium", value: "Medium" },
-                                { label: "Low", value: "Low" },
-                            ]}
-                            placeholder="Select Priority"
-                            value={priorityFilter}
-                            isBgWhite={true}
-                            onChange={(e) => setPriorityFilter(e.target.value as string)}
-                        />
-                        <AppSelect
-                            options={agentOptions}
-                            placeholder="Select Agent"
-                            value={agentFilter}
-                            isBgWhite={true}
-                            onChange={(e) => setAgentFilter(e.target.value as string)}
-                        />
-                    </div>
+                <Card className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+                    <CardHeader title="Filters" />
+                    <Box sx={{ p: 4, pt: 0 }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <AppSelect
+                                options={[
+                                    { label: "Select Status", value: "Select Status" },
+                                    { label: "Open", value: "Open" },
+                                    { label: "In Progress", value: "In Progress" },
+                                    { label: "Closed", value: "Closed" },
+                                ]}
+                                placeholder="Select Status"
+                                value={statusFilter}
+                                isBgWhite={true}
+                                onChange={(e) => setStatusFilter(e.target.value as string)}
+                            />
+                            <AppSelect
+                                options={[
+                                    { label: "Select Priority", value: "Select Priority" },
+                                    { label: "High", value: "High" },
+                                    { label: "Medium", value: "Medium" },
+                                    { label: "Low", value: "Low" },
+                                ]}
+                                placeholder="Select Priority"
+                                value={priorityFilter}
+                                isBgWhite={true}
+                                onChange={(e) => setPriorityFilter(e.target.value as string)}
+                            />
+                            <AppSelect
+                                options={agentOptions}
+                                placeholder="Select Agent"
+                                value={agentFilter}
+                                isBgWhite={true}
+                                onChange={(e) => setAgentFilter(e.target.value as string)}
+                            />
+                        </div>
+                    </Box>
 
-                    <div className="flex flex-col md:flex-row justify-between gap-4 pt-2 border-t border-gray-100">
+                    <Divider />
+
+                    {/* Toolbar */}
+                    <Box sx={{ p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Button variant="outline" className="text-gray-600 gap-2">
                             <Upload className="w-4 h-4" />
                             Export
@@ -131,27 +137,33 @@ export default function TicketManagementPage() {
                                 Add Ticket
                             </Button>
                         </div>
-                    </div>
-                </div>
+                    </Box>
 
-                {/* Table */}
-                <TicketTable
-                    tickets={tickets}
-                    isLoading={isLoading}
-                    onEdit={handleEdit}
-                    onDelete={handleDeleteClick}
-                />
-
-                {/* Pagination */}
-                {!isLoading && tickets.length > 0 && (
-                    <div className="flex justify-end">
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={setPage}
+                    {/* Table Area */}
+                    <Box sx={{ p: 0 }}>
+                        <TicketTable
+                            tickets={tickets}
+                            isLoading={isLoading}
+                            onEdit={handleEdit}
+                            onDelete={handleDeleteClick}
                         />
-                    </div>
-                )}
+                    </Box>
+
+                    {/* Pagination */}
+                    <TablePagination
+                        component="div"
+                        count={totalTickets}
+                        page={page}
+                        onPageChange={(_, newPage) => setPage(newPage)}
+                        rowsPerPage={limit}
+                        onRowsPerPageChange={(e) => {
+                            setLimit(parseInt(e.target.value, 10));
+                            setPage(0);
+                        }}
+                        rowsPerPageOptions={[5, 10, 25, 50]}
+                        sx={{ borderTop: '1px solid #e5e7eb' }}
+                    />
+                </Card>
             </div>
 
             {/* Modals */}

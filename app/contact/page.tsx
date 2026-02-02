@@ -313,7 +313,7 @@ export default function ContactsPage() {
         <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
           <Table sx={{ minWidth: 900 }}>
             <TableHead>
-              <TableRow sx={{ bgcolor: '#EEF2FD', '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+              <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
                 {isColumnVisible("selection") && (
                   <TableCell align="right" sx={{ py: 2, pl: 3 }}>
                     <Checkbox

@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
+import { Spinner } from "../ui/spinner";
 
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
 export type ProductPayload = Omit<Product, "id">;
@@ -51,6 +52,7 @@ const getAcronym = (text: string) => {
 export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const { postFormProduct, id, listProduct, updateFormProduct, setEditId } = useGetProductStore();
     const [, setErrors] = useState<FormErrors>({});
+    const [loading, setLoading] = useState(false);
 
     // State untuk menyimpan nama company dari API
     const [companyAcronym, setCompanyAcronym] = useState<string>("");
@@ -170,6 +172,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     };
 
     const handleSave = async () => {
+        setLoading(true);
         const cleanPrice = formData.price.replace(/\./g, "");
 
         // Auto generate SKU jika user lupa klik tombol generate tapi nama produk ada
@@ -202,15 +205,19 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         }
 
         if (!id) {
+            setLoading(true);
             const response = await postFormProduct(body)
             if (response.success) {
+                setLoading(false);
                 onOpenChange(false);
                 reset();
                 setErrors({})
             }
         } else {
+            setLoading(true);
             const response = await updateFormProduct(body, id)
             if (response.success) {
+                setLoading(false);
                 onOpenChange(false);
                 reset();
                 setEditId("");
@@ -332,8 +339,9 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                         variantStyle="primary"
                         color="primary"
                         onClick={handleSave}
+                        disabled={loading}
                     >
-                        {id ? "Update Product" : "Save Product"}
+                        {loading ? <Spinner /> : id ? "Update Product" : "Save Product"}
                     </AppButton>
                 </div>
             </DialogContent>

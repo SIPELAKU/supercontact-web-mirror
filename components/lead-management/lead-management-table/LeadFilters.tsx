@@ -67,7 +67,7 @@ export default function LeadFilters({
   }, [status, source, assignedto, dateRange, leads, setFilteredLeads]);
 
   return (
-    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-xl">
       {/* Select Status */}
       <div className="flex-1 min-w-0">
         <AppSelect
@@ -84,6 +84,7 @@ export default function LeadFilters({
             { value: "Closed - Lost", label: "Closed - Lost" },
           ]}
           isBgWhite
+          height="48px"
         />
       </div>
 
@@ -100,6 +101,7 @@ export default function LeadFilters({
             { value: "Manual Entry", label: "Manual Entry" },
           ]}
           isBgWhite
+          height="48px"
         />
       </div>
 
@@ -117,6 +119,7 @@ export default function LeadFilters({
             })),
           ]}
           isBgWhite
+          height="48px"
         />
       </div>
 

@@ -20,6 +20,8 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import LeadDetailModal from "../lead-detail-modal";
 import LeadFilters from "./LeadFilters";
 import { leadColumns, LeadColumn } from "./columns";
+import { Spinner } from "@/components/ui/spinner";
+import { Box } from "@mui/material";
 
 type SortOrder = 'asc' | 'desc';
 
@@ -88,30 +90,6 @@ export function DataTable() {
     setFilteredData(sorted);
   };
 
-  // Show loading skeleton while data is being fetched
-  if (isLoading) {
-    return (
-      <Card
-        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-        sx={{
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        <CardHeader title="Filters" />
-        {/* Don't render LeadFilters during loading to prevent empty array filtering */}
-        <div className="p-4 bg-gray-50 text-gray-500 text-center">
-          Loading filters...
-        </div>
-        <Divider />
-        <TableSkeleton
-          columns={leadColumns.map(() => ({ width: undefined }))}
-          rows={pageSize}
-        />
-      </Card>
-    );
-  }
-
   // Show error state
   if (error) {
     return (
@@ -139,7 +117,13 @@ export function DataTable() {
       }}
     >
       <CardHeader title="Filters" />
-      <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
+      {isLoading ? (
+        <div className="p-4 mb-5 bg-gray-50 text-gray-500 text-center flex items-center justify-center">
+          <Spinner />
+        </div>
+      ) : (
+        <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
+      )}
       <Divider />
       <div className="overflow-hidden rounded-none!">
         <Table>
@@ -164,28 +148,45 @@ export function DataTable() {
           </TableHead>
 
           <TableBody>
-            {filteredData.map((lead) => (
-              <TableRow
-                key={lead.id}
-                onClick={() => {
-                  setSelectedLead(lead);
-                  setIsDetailModalOpen(true);
-                }}
-                className="cursor-pointer hover:bg-gray-50"
-                sx={{
-                  '&:hover': {
-                    backgroundColor: '#f9fafb',
-                  },
-                  cursor: 'pointer',
-                }}
-              >
-                {leadColumns.map((column) => (
-                  <TableCell key={column.key}>
-                    {column.render(lead)}
-                  </TableCell>
-                ))}
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={leadColumns.length} sx={{ p: 0 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: 120,
+                    }}
+                  >
+                    <Spinner />
+                  </Box>
+                </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredData.map((lead) => (
+                <TableRow
+                  key={lead.id}
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setIsDetailModalOpen(true);
+                  }}
+                  className="cursor-pointer hover:bg-gray-50"
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: '#f9fafb',
+                    },
+                    cursor: 'pointer',
+                  }}
+                >
+                  {leadColumns.map((column) => (
+                    <TableCell key={column.key}>
+                      {column.render(lead)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )))
+            }
 
             {filteredData.length === 0 && !isLoading && (
               <TableRow>

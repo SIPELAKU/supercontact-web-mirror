@@ -19,6 +19,8 @@ import TableRow from "@mui/material/TableRow";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { AppButtonIcon } from "../ui/app-button-icon";
+import { Spinner } from "../ui/spinner";
+import { Box } from "@mui/material";
 
 export default function ProductTable() {
   const {
@@ -84,8 +86,17 @@ export default function ProductTable() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
-                  <div className="py-8 text-gray-500">Loading...</div>
+                <TableCell colSpan={5} sx={{ p: 0 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: 120,
+                    }}
+                  >
+                    <Spinner />
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : listProduct.length === 0 ? (

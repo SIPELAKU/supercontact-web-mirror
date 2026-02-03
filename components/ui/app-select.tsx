@@ -20,6 +20,8 @@ interface AppSelectProps extends Omit<SelectProps, "label"> {
   options: { value: string | number; label: React.ReactNode }[];
   containerClassName?: string;
   isBgWhite?: boolean;
+  height?: string;
+  rounded?: string;
 }
 
 const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
@@ -34,6 +36,8 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
       containerClassName,
       sx,
       isBgWhite = false,
+      height,
+      rounded,
       ...props
     },
     ref,
@@ -43,7 +47,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
     return (
       <Box
         className={containerClassName}
-        sx={{ width: fullWidth ? "100%" : "auto", ...sx }}
+        sx={{ width: fullWidth ? "100%" : "auto", ...sx, height, borderRadius: rounded }}
       >
         {label && (
           <Typography
@@ -92,8 +96,8 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
               />
             )}
             sx={{
-              height: "40px",
-              borderRadius: "8px",
+              height: height ? height : "40px",
+              borderRadius: rounded ? rounded : "8px",
               backgroundColor: isBgWhite ? "white" : INPUT_BG,
               "& .MuiSelect-select": {
                 padding: "10px 14px",

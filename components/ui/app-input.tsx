@@ -19,6 +19,8 @@ type BaseInputProps = {
   label?: string;
   isBgWhite?: boolean;
   rounded?: string;
+  height?: string;
+  width?: string;
 };
 
 type TextInputProps = BaseInputProps &
@@ -92,8 +94,8 @@ const BpCheckedIcon = styled(BpIcon)({
 // --- Styled Component ---
 const StyledTextField = styled(TextField, {
   shouldForwardProp: (prop) => prop !== "isBgWhite",
-})<{ isBgWhite?: boolean; rounded?: string }>(
-  ({ theme, isBgWhite, rounded }) => ({
+})<{ isBgWhite?: boolean; rounded?: string; height?: string; width?: string }>(
+  ({ theme, isBgWhite, rounded, height, width }) => ({
     "& .MuiInputLabel-root": {
       fontSize: "14px",
       fontWeight: 500,
@@ -107,7 +109,8 @@ const StyledTextField = styled(TextField, {
       fontSize: "16px",
       fontWeight: 400,
       lineHeight: "24px",
-      height: "40px",
+      height: height ? height : "40px",
+      width: width ? width : "100%",
 
       "& fieldset": {
         borderColor: BORDER_COLOR,
@@ -172,6 +175,8 @@ export const AppInput: React.FC<AppInputProps> = (props) => {
     startIcon,
     endIcon,
     rounded,
+    height,
+    width,
     inputProps,
     ...textFieldProps
   } = props;
@@ -184,6 +189,8 @@ export const AppInput: React.FC<AppInputProps> = (props) => {
       label={label}
       isBgWhite={isBgWhite}
       rounded={rounded}
+      height={height}
+      width={width}
       type={isPassword ? (showPassword ? "text" : "password") : type}
       InputProps={{
         startAdornment: startIcon ? (

@@ -1,6 +1,8 @@
 // components/email-marketing/campaigns/CampaignsTable.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
 import {
@@ -99,29 +101,29 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
       {/* Toolbar */}
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <TextField
-          size="small"
-          placeholder="Search campaigns..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: <Search className="w-4 h-4 mr-2 text-gray-400" />
-          }}
-          sx={{ minWidth: '250px' }}
-        />
+        <Box className="w-[250px]">
+          <AppInput
+            placeholder="Search campaigns..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            isBgWhite
+            startIcon={<Search className="w-4 h-4" />}
+          />
+        </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            variant="outlined"
+          <AppButton
+            variantStyle="outline"
             color="primary"
             startIcon={<RefreshCw className="w-4 h-4" />}
             onClick={() => refetch()}
             sx={{ borderRadius: '8px', textTransform: 'none' }}
           >
             Refresh
-          </Button>
-          <Button
-            variant="contained"
+          </AppButton>
+          <AppButton
+            variantStyle="primary"
+            color="primary"
             startIcon={<Plus className="w-4 h-4" />}
             onClick={onAdd}
             sx={{
@@ -135,7 +137,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
             }}
           >
             Create Campaign
-          </Button>
+          </AppButton>
         </Box>
       </Box>
 

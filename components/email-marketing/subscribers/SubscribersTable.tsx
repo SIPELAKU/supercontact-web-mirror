@@ -1,6 +1,8 @@
 // components/email-marketing/subscribers/SubscribersTable.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
@@ -109,49 +111,40 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: Subscr
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
       {/* Toolbar */}
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <TextField
-          size="small"
-          placeholder="Search subscribers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: <Search className="w-4 h-4 mr-2 text-gray-400" />
-          }}
-          sx={{ minWidth: '250px' }}
-        />
+        <Box className="w-[250px]">
+          <AppInput
+            placeholder="Search subscribers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            isBgWhite
+            rounded='8px'
+            startIcon={<Search className="w-4 h-4 mr-2 text-gray-400" />}
+          />
+        </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
           {selected.length > 0 && (
-            <Button
-              variant="outlined"
-              color="error"
+            <AppButton
+              variantStyle="outline"
+              color="danger"
               startIcon={<Trash2 className="w-4 h-4" />}
               disabled={isDeleting}
               onClick={() => {
                 const subscribersToDelete = rows.filter(r => selected.includes(r.id));
                 onDeleteRequest(subscribersToDelete);
               }}
-              sx={{ borderRadius: '8px', textTransform: 'none' }}
             >
               Delete ({selected.length})
-            </Button>
+            </AppButton>
           )}
-          <Button
-            variant="contained"
+          <AppButton
+            variantStyle="primary"
+            color="primary"
             startIcon={<Plus className="w-4 h-4" />}
             onClick={onAdd}
-            sx={{
-              bgcolor: '#5D87FF',
-              '&:hover': {
-                bgcolor: '#4570ea'
-              },
-              textTransform: 'none',
-              px: 3,
-              borderRadius: '8px'
-            }}
           >
             Add Subscriber
-          </Button>
+          </AppButton>
         </Box>
       </Box>
 

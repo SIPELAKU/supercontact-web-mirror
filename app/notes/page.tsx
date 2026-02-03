@@ -113,6 +113,11 @@ export default function NotesPage() {
         </div>
       </div>
 
+      {dataNote.length === 0 && (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-gray-500">No notes found</p>
+        </div>
+      )}
       {dataNote.map((item, i) => (
         <button
           onClick={() => handleEdit(item, item.id)}

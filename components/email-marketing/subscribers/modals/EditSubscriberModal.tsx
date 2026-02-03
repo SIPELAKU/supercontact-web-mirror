@@ -1,18 +1,22 @@
 // components/email-marketing/subscribers/modals/EditSubscriberModal.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
+import { AppTextarea } from '@/components/ui/app-textarea';
 import { useUpdateSubscriber } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
-    Alert,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Stack,
-    TextField
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -47,11 +51,11 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
   }, [open, subscriberData]);
 
   const handleClose = () => {
-    setEmail(''); 
-    setName(''); 
+    setEmail('');
+    setName('');
     setPhoneNumber('');
     setPosition('');
-    setCompany(''); 
+    setCompany('');
     setAddress('');
     setError('');
     onClose();
@@ -91,7 +95,7 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
           address: address.trim()
         }
       });
-      
+
       toast.success('Subscriber updated successfully.');
       onSuccess();
       handleClose();
@@ -118,66 +122,84 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField 
-            label="Email" 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            fullWidth 
-            required 
-            disabled 
-            sx={{ backgroundColor: '#f5f5f5' }}
-            error={Boolean(error && !email.trim())} 
-            helperText="Email cannot be changed"
-          />
-          <TextField 
-            label="Name" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            fullWidth 
-            required
-            error={Boolean(error && !name.trim())} 
-            helperText={error && !name.trim() ? "Name is required" : ""}
-          />
-          <TextField 
-            label="Phone Number" 
-            value={phoneNumber} 
-            onChange={(e) => setPhoneNumber(e.target.value)} 
-            fullWidth 
-            required
-            error={Boolean(error && !phoneNumber.trim())} 
-            helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
-          />
-          <TextField 
-            label="Position" 
-            value={position} 
-            onChange={(e) => setPosition(e.target.value)} 
-            fullWidth 
-            required
-            error={Boolean(error && !position.trim())} 
-            helperText={error && !position.trim() ? "Position is required" : ""}
-          />
-          <TextField 
-            label="Company" 
-            value={company} 
-            onChange={(e) => setCompany(e.target.value)} 
-            fullWidth 
-          />
-          <TextField 
-            label="Address" 
-            value={address} 
-            onChange={(e) => setAddress(e.target.value)} 
-            fullWidth 
-            multiline
-            rows={2}
-          />
+          <Box>
+            <label>Email</label>
+            <AppInput
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              required
+              disabled
+              isBgWhite
+              error={Boolean(error && !email.trim())}
+              helperText="Email cannot be changed"
+            />
+          </Box>
+          <Box>
+            <label>Name</label>
+            <AppInput
+              value={name}
+              isBgWhite
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !name.trim())}
+              helperText={error && !name.trim() ? "Name is required" : ""}
+            />
+          </Box>
+          <Box>
+            <label>Phone Number</label>
+            <AppInput
+              type="tel"
+              value={phoneNumber}
+              isBgWhite
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !phoneNumber.trim())}
+              helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
+            />
+          </Box>
+          <Box>
+            <label>Position</label>
+            <AppInput
+              value={position}
+              isBgWhite
+              onChange={(e) => setPosition(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !position.trim())}
+              helperText={error && !position.trim() ? "Position is required" : ""}
+            />
+          </Box>
+          <Box>
+            <label>Company</label>
+            <AppInput
+              value={company}
+              isBgWhite
+              onChange={(e) => setCompany(e.target.value)}
+              fullWidth
+            />
+          </Box>
+          <Box>
+            <label>Address</label>
+            <AppTextarea
+              value={address}
+              isBgWhite
+              onChange={(e) => setAddress(e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+            />
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleClose} color="secondary" disabled={updateMutation.isPending}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={updateMutation.isPending}>
+        <AppButton variantStyle='outline' onClick={handleClose} color="gray" disabled={updateMutation.isPending}>Cancel</AppButton>
+        <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' disabled={updateMutation.isPending}>
           {updateMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

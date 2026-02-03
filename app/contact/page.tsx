@@ -357,6 +357,21 @@ export default function ContactsPage() {
                     </Box>
                   </TableCell>
                 </TableRow>
+              ) : filteredData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={allColumns.length} sx={{ p: 0 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: 120,
+                      }}
+                    >
+                      <p className="text-gray-500">No contacts found</p>
+                    </Box>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredData?.map((item, i) => (
                   <TableRow

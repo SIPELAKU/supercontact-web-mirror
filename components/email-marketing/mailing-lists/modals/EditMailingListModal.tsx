@@ -1,18 +1,20 @@
 // components/email-marketing/mailing-lists/modals/EditMailingListModal.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
 import { useUpdateMailingList } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import {
-    Alert,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Stack,
-    TextField
+  Alert,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -56,7 +58,7 @@ const EditMailingListModal = ({ open, onClose, onSuccess, mailingList }: EditMai
         mailingListId: mailingList.id,
         data: { name: name.trim() }
       });
-      
+
       toast.success('Mailing list updated successfully.');
       onSuccess();
       handleClose();
@@ -86,26 +88,29 @@ const EditMailingListModal = ({ open, onClose, onSuccess, mailingList }: EditMai
       <DialogTitle>Edit Mailing List</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField 
-            label="Mailing List Name" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)} 
-            fullWidth 
+        <Stack spacing={1} sx={{ mt: 1 }}>
+          <label htmlFor="name">Mailing List Name</label>
+          <AppInput
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+            isBgWhite
             required
-            error={Boolean(error && !name.trim())} 
-            helperText={error && !name.trim() ? "Name is required" : ""}
+            autoFocus
             placeholder="e.g., Newsletter Subscribers, VIP Customers"
+            error={Boolean(error && !name.trim())}
+            helperText={error && !name.trim() ? "Mailing list name is required" : ""}
           />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleClose} color="secondary" disabled={updateMutation.isPending}>
+        <AppButton onClick={handleClose} color="gray" variantStyle='outline' disabled={updateMutation.isPending}>
           Cancel
-        </Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={updateMutation.isPending}>
+        </AppButton>
+        <AppButton onClick={handleSubmit} variantStyle="primary" disabled={updateMutation.isPending}>
           {updateMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
-        </Button>
+        </AppButton>
       </DialogActions>
     </Dialog>
   );

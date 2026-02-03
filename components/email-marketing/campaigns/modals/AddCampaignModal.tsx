@@ -1,27 +1,29 @@
 // components/email-marketing/campaigns/modals/AddCampaignModal.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
 import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import {
-    Alert,
-    Box,
-    Button,
-    Checkbox,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControl,
-    FormControlLabel,
-    FormLabel,
-    Radio,
-    RadioGroup,
-    Stack,
-    TextField,
-    Typography
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Stack,
+  TextField,
+  Typography
 } from '@mui/material';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -45,7 +47,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || []; // API returns contacts field
-  
+
   // Debug log to see what we're getting
   console.log('Subscribers data:', subscribersData);
   console.log('Subscribers array:', subscribers);
@@ -61,16 +63,16 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   };
 
   const handleMailingListToggle = (listId: string) => {
-    setSelectedMailingLists(prev => 
-      prev.includes(listId) 
+    setSelectedMailingLists(prev =>
+      prev.includes(listId)
         ? prev.filter(id => id !== listId)
         : [...prev, listId]
     );
   };
 
   const handleSubscriberToggle = (subscriberId: string) => {
-    setSelectedSubscribers(prev => 
-      prev.includes(subscriberId) 
+    setSelectedSubscribers(prev =>
+      prev.includes(subscriberId)
         ? prev.filter(id => id !== subscriberId)
         : [...prev, subscriberId]
     );
@@ -95,7 +97,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     }
 
     setError('');
-    
+
     try {
       await createMutation.mutateAsync({
         recipient_source: recipientSource,
@@ -105,7 +107,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
         contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
       });
-      
+
       toast.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
       onSuccess();
       handleClose();
@@ -122,28 +124,36 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
-          <TextField
-            label="Email Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            fullWidth
-            required
-            error={Boolean(error && !subject.trim())}
-            helperText={error && !subject.trim() ? "Subject is required" : ""}
-          />
-          
-          <TextField
-            label="Email Content (HTML)"
-            value={htmlContent}
-            onChange={(e) => setHtmlContent(e.target.value)}
-            fullWidth
-            required
-            multiline
-            rows={10}
-            error={Boolean(error && !htmlContent.trim())}
-            helperText={error && !htmlContent.trim() ? "Content is required" : "You can use HTML tags"}
-            placeholder="<h1>Hello!</h1><p>Your email content here...</p>"
-          />
+          <Box>
+            <label htmlFor="email-subject">Email Subject</label>
+            <AppInput
+              isBgWhite
+              placeholder='Enter email subject'
+              id="email-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !subject.trim())}
+              helperText={error && !subject.trim() ? "Subject is required" : ""}
+            />
+          </Box>
+
+          <Box>
+            <label htmlFor="email-content">Email Content (HTML)</label>
+            <TextField
+              label="Email Content (HTML)"
+              value={htmlContent}
+              onChange={(e) => setHtmlContent(e.target.value)}
+              fullWidth
+              required
+              multiline
+              rows={10}
+              error={Boolean(error && !htmlContent.trim())}
+              helperText={error && !htmlContent.trim() ? "Content is required" : "You can use HTML tags"}
+              placeholder="<h1>Hello!</h1><p>Your email content here...</p>"
+            />
+          </Box>
 
           <FormControl component="fieldset">
             <FormLabel component="legend">Recipient Source</FormLabel>
@@ -233,24 +243,24 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <Button onClick={handleClose} color="secondary" disabled={createMutation.isPending}>
+        <AppButton onClick={handleClose} color="gray" variantStyle="outline" disabled={createMutation.isPending}>
           Cancel
-        </Button>
+        </AppButton>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            onClick={() => handleSubmit('draft')} 
-            variant="outlined" 
+          <AppButton
+            onClick={() => handleSubmit('draft')}
+            variantStyle="outline"
             disabled={createMutation.isPending}
           >
             {createMutation.isPending ? <CircularProgress size={24} /> : 'Save as Draft'}
-          </Button>
-          <Button 
-            onClick={() => handleSubmit('send')} 
-            variant="contained" 
+          </AppButton>
+          <AppButton
+            onClick={() => handleSubmit('send')}
+            variantStyle="primary"
             disabled={createMutation.isPending}
           >
             {createMutation.isPending ? <CircularProgress size={24} /> : 'Create & Send'}
-          </Button>
+          </AppButton>
         </Box>
       </DialogActions>
     </Dialog>

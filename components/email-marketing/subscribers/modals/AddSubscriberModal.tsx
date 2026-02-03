@@ -1,6 +1,9 @@
 // components/email-marketing/subscribers/modals/AddSubscriberModal.tsx
 "use client";
 
+import { AppInput } from '@/components/ui/app-input';
+import { AppAutocomplete } from '@/components/ui/app-autocomplete';
+import { AppTextarea } from '@/components/ui/app-textarea';
 import { useContacts } from '@/lib/hooks/useContacts';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useCreateSubscriber } from '@/lib/hooks/useSubscribers';
@@ -21,6 +24,7 @@ import {
 import { IconUser, IconUsers } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { AppButton } from '@/components/ui/app-button';
 
 interface AddSubscriberModalProps {
     open: boolean;
@@ -52,15 +56,15 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
 
     useEffect(() => {
         if (open) {
-            setEmail(''); 
-            setName(''); 
+            setEmail('');
+            setName('');
             setPhoneNumber('');
             setPosition('');
-            setCompany(''); 
+            setCompany('');
             setAddress('');
             setSelectedContacts([]);
-            setSelectedLists([]); 
-            setError(''); 
+            setSelectedLists([]);
+            setError('');
             setCreationMode('manual');
 
             if (defaultListId && listOptions.length > 0) {
@@ -73,7 +77,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
     }, [open, defaultListId, listOptions.length]);
 
     const handleClose = () => { onClose(); };
-    
+
     const handleSubmit = async () => {
         setError('');
         try {
@@ -86,7 +90,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                 }
 
                 const contactIds = selectedContacts.map(contact => contact.id);
-                
+
                 await createMutation.mutateAsync({
                     target: target,
                     type_request: 'import',
@@ -95,7 +99,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                 });
 
                 toast.success(`${selectedContacts.length} subscriber(s) imported successfully.`);
-                onSuccess(); 
+                onSuccess();
                 handleClose();
 
             } else {
@@ -116,7 +120,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     setError("Position is required.");
                     return;
                 }
-                
+
                 await createMutation.mutateAsync({
                     target: target,
                     type_request: 'manual',
@@ -130,7 +134,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     },
                     mailing_list_ids: listIdsToSend
                 });
-                
+
                 toast.success('Subscriber added successfully.');
                 onSuccess();
                 handleClose();
@@ -148,22 +152,23 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
             <DialogContent dividers>
                 {error && !createMutation.isPending && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                 <Stack spacing={3} sx={{ mt: 1 }}>
-                    <Box sx={{ textAlign: 'center' }}>
+                    <Box sx={{ textAlign: 'center', }}>
                         <ToggleButtonGroup
                             value={creationMode}
                             exclusive
-                            onChange={(_, newMode) => { 
-                                if (newMode) setCreationMode(newMode); 
-                                setError(''); 
-                                setSelectedContacts([]); 
-                                setEmail(''); 
-                                setName(''); 
+                            onChange={(_, newMode) => {
+                                if (newMode) setCreationMode(newMode);
+                                setError('');
+                                setSelectedContacts([]);
+                                setEmail('');
+                                setName('');
                                 setPhoneNumber('');
                                 setPosition('');
-                                setCompany(''); 
+                                setCompany('');
                                 setAddress('');
                             }}
                             aria-label="creation mode"
+                            sx={{ borderRadius: '8px', border: '1px solid #ccc' }}
                         >
                             <ToggleButton value="manual" aria-label="manual">
                                 <IconUser size="1rem" style={{ marginRight: 8 }} /> Manual
@@ -176,61 +181,85 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
 
                     {creationMode === 'manual' ? (
                         <>
-                            <TextField 
-                                label="Email" 
-                                type="email" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)} 
-                                fullWidth 
-                                required 
-                                error={Boolean(error && !email.trim())} 
-                                helperText={error && !email.trim() ? "Email is required" : ""} 
-                            />
-                            <TextField 
-                                label="Name" 
-                                value={name} 
-                                onChange={(e) => setName(e.target.value)} 
-                                fullWidth 
-                                required
-                                error={Boolean(error && !name.trim())} 
-                                helperText={error && !name.trim() ? "Name is required" : ""}
-                            />
-                            <TextField 
-                                label="Phone Number" 
-                                value={phoneNumber} 
-                                onChange={(e) => setPhoneNumber(e.target.value)} 
-                                fullWidth 
-                                required
-                                error={Boolean(error && !phoneNumber.trim())} 
-                                helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
-                            />
-                            <TextField 
-                                label="Position" 
-                                value={position} 
-                                onChange={(e) => setPosition(e.target.value)} 
-                                fullWidth 
-                                required
-                                error={Boolean(error && !position.trim())} 
-                                helperText={error && !position.trim() ? "Position is required" : ""}
-                            />
-                            <TextField 
-                                label="Company" 
-                                value={company} 
-                                onChange={(e) => setCompany(e.target.value)} 
-                                fullWidth 
-                            />
-                            <TextField 
-                                label="Address" 
-                                value={address} 
-                                onChange={(e) => setAddress(e.target.value)} 
-                                fullWidth 
-                                multiline
-                                rows={2}
-                            />
+                            <Box>
+                                <label htmlFor="email">Email <span style={{ color: 'red' }}>*</span> </label>
+                                <AppInput
+                                    isBgWhite
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    fullWidth
+                                    required
+                                    error={Boolean(error && !email.trim())}
+                                    helperText={error && !email.trim() ? "Email is required" : ""}
+                                />
+                            </Box>
+                            <Box>
+                                <label htmlFor="name">Name <span style={{ color: 'red' }}>*</span> </label>
+                                <AppInput
+                                    isBgWhite
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    fullWidth
+                                    required
+                                    error={Boolean(error && !name.trim())}
+                                    helperText={error && !name.trim() ? "Name is required" : ""}
+                                />
+                            </Box>
+                            <Box>
+                                <label htmlFor="phoneNumber">Phone Number <span style={{ color: 'red' }}>*</span> </label>
+                                <AppInput
+                                    isBgWhite
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    fullWidth
+                                    required
+                                    error={Boolean(error && !phoneNumber.trim())}
+                                    helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
+                                />
+                            </Box>
+
+                            <Box>
+                                <label htmlFor="position">Position <span style={{ color: 'red' }}>*</span> </label>
+                                <AppInput
+                                    isBgWhite
+                                    type="text"
+                                    value={position}
+                                    onChange={(e) => setPosition(e.target.value)}
+                                    fullWidth
+                                    required
+                                    error={Boolean(error && !position.trim())}
+                                    helperText={error && !position.trim() ? "Position is required" : ""}
+                                />
+                            </Box>
+                            <Box>
+                                <label htmlFor="company">Company</label>
+                                <AppInput
+                                    isBgWhite
+                                    type="text"
+                                    value={company}
+                                    onChange={(e) => setCompany(e.target.value)}
+                                    fullWidth
+                                />
+                            </Box>
+                            <Box>
+                                <label htmlFor="address">Address</label>
+                                <AppTextarea
+                                    isBgWhite
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                />
+                            </Box>
                         </>
                     ) : (
-                        <Autocomplete
+                        <AppAutocomplete
                             multiple
+                            isBgWhite
                             options={contactOptions}
                             filterOptions={(options, params) => {
                                 const filtered = options.filter(option =>
@@ -244,34 +273,31 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                             value={selectedContacts}
                             onChange={(_, newValue) => setSelectedContacts(newValue)}
                             isOptionEqualToValue={(option, value) => option.id === value.id}
-                            renderInput={(params) => 
-                                <TextField 
-                                    {...params} 
-                                    label="Select Contacts to Import" 
-                                    placeholder="Search name or email..." 
-                                    error={Boolean(error && creationMode === 'import' && selectedContacts.length === 0)} 
-                                    helperText={error && creationMode === 'import' && selectedContacts.length === 0 ? "Select at least one contact" : ""} 
-                                />
-                            }
+                            label="Select Contacts to Import"
+                            placeholder="Search name or email..."
+                            error={Boolean(error && creationMode === 'import' && selectedContacts.length === 0)}
+                            helperText={error && creationMode === 'import' && selectedContacts.length === 0 ? "Select at least one contact" : ""}
                         />
                     )}
 
-                    <Autocomplete
+                    <AppAutocomplete
+                        isBgWhite
                         multiple
                         options={listOptions}
                         getOptionLabel={(option) => `${option.name} (${option.subscriber_count})`}
                         value={selectedLists}
                         onChange={(_, newValue) => setSelectedLists(newValue)}
                         isOptionEqualToValue={(option, value) => option.id === value.id}
-                        renderInput={(params) => <TextField {...params} label="Add to Mailing Lists (Optional)" />}
+                        label="Add to Mailing Lists (Optional)"
+                        placeholder="Search name or email..."
                     />
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ p: '16px 24px' }}>
-                <Button onClick={handleClose} color="secondary" disabled={createMutation.isPending}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={createMutation.isPending}>
+                <AppButton onClick={handleClose} variantStyle="outline" color='danger' disabled={createMutation.isPending}>Cancel</AppButton>
+                <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' disabled={createMutation.isPending}>
                     {createMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save'}
-                </Button>
+                </AppButton>
             </DialogActions>
         </Dialog>
     );

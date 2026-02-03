@@ -4,7 +4,7 @@ import { AppAlert, AlertVariant } from "@/components/ui/app-alert";
 import toast from "react-hot-toast";
 
 interface ToastOptions {
-  description?: string;
+  description?: React.ReactNode;
   duration?: number;
 }
 
@@ -16,11 +16,11 @@ const showNotification = (
   return toast.custom(
     (t) => (
       <div
-        className={`${
-          t.visible
-            ? "animate-in fade-in slide-in-from-top-4"
-            : "animate-out fade-out slide-out-to-top-4"
-        } pointer-events-auto flex w-full max-w-md`}
+        key={t.id}
+        className={`${t.visible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-4 opacity-0"
+          } pointer-events-auto flex w-full max-w-md transition-all duration-300 ease-in-out`}
       >
         <AppAlert
           variant={variant}

@@ -7,6 +7,7 @@ import { Toaster } from "react-hot-toast";
 import { MuiLocalizationProvider } from "@/components/providers/MuiLocalizationProvider";
 import "./globals.css";
 import { Metadata } from "next";
+import { Poppins } from "next/font/google";
 
 // SEO Metadata
 export const metadata: Metadata = {
@@ -39,11 +40,11 @@ export const metadata: Metadata = {
   },
 };
 
-// const poppins = Poppins({
-//   subsets: ["latin"],
-//   weight: ["300", "400", "500", "600", "700"],
-//   variable: "--font-poppins",
-// })
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 
 export default function RootLayout({
   children,
@@ -68,7 +69,9 @@ export default function RootLayout({
         />
         <link rel="preload" href="/assets/sc-logo.png" as="image" />
       </head>
-      <body className="font-sans antialiased min-h-screen bg-[#ffffff]">
+      <body
+        className={`${poppins.className} antialiased min-h-screen bg-[#ffffff]`}
+      >
         <Toaster position="top-right" />
         <MuiLocalizationProvider>
           <ConfirmationProvider>

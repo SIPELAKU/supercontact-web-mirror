@@ -17,6 +17,9 @@ import { useGetProductStore } from "@/lib/store/product";
 import { notify } from "@/lib/notifications";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
+import { AppInput } from "../ui/app-input";
+import { AppButton } from "../ui/app-button";
+import { Spinner } from "../ui/spinner";
 
 interface QuotationFormClientProps {
   initialData?: any;
@@ -354,19 +357,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               <label htmlFor="salesperson" className="text-foreground font-medium">
                 Salesperson:
               </label>
-              <TextField
+              <AppInput
                 id="salesperson"
                 value={salesperson}
                 onChange={(e) => setSalesperson(e.target.value)}
                 placeholder="Enter salesperson name"
-                variant="outlined"
-                size="small"
-                sx={{
-                  width: "200px",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "white",
-                  },
-                }}
+                isBgWhite
+                height="40px"
               />
             </section>
             <SummaryCard
@@ -385,27 +382,28 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           <div className="flex justify-end items-center mb-8 px-6">
             <div className="flex gap-3">
               <Link href="/sales/quotation">
-                <Button variant="outline" className="h-11 px-8 rounded-xl border-gray-300 text-gray-600">
+                <AppButton variantStyle="outline" color="gray">
                   Cancel
-                </Button>
+                </AppButton>
               </Link>
 
-              <Button
-                variant="outline"
-                className="h-11 px-8 rounded-xl border-gray-300 text-gray-600"
+              <AppButton
+                variantStyle="outline"
+                color="gray"
                 onClick={() => handleSave("draft")}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : "Save as Draft"}
-              </Button>
+                {isSubmitting ? <Spinner /> : "Save as Draft"}
+              </AppButton>
 
-              <Button
-                className="h-11 px-8 rounded-xl bg-[#5479EE] text-white hover:bg-[#4364d1]"
+              <AppButton
+                variantStyle="primary"
+                color="primary"
                 onClick={() => handleSave("publish")}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Processing..." : "Save & Send"}
-              </Button>
+                {isSubmitting ? <Spinner /> : "Save & Send"}
+              </AppButton>
             </div>
           </div>
         </div>

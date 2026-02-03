@@ -15,6 +15,10 @@ import TableCell from "@mui/material/TableCell"
 import TableHead from "@mui/material/TableHead"
 import TablePagination from "@mui/material/TablePagination"
 import TableRow from "@mui/material/TableRow"
+import { AppInput } from "../ui/app-input"
+import { AppButton } from "../ui/app-button"
+import { Box } from "@mui/material"
+import { Spinner } from "../ui/spinner"
 
 export const quotationStatus = [
     { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
@@ -88,7 +92,7 @@ export default function QuotationTable() {
             <div className="border-b w-full p-0 border-gray-300" />
 
             <div className="flex justify-between items-center gap-4 px-6 w-full">
-                <div
+                {/* <div
                     className="flex items-center min-w-137.5 h-10 rounded-lg bg-white border border-[#E5E7EB] px-3 hover:border-[#D1D5DB] focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA] transition-all"
                 >
                     <Search className="h-5 w-5 text-gray-400 mr-2" />
@@ -99,14 +103,26 @@ export default function QuotationTable() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder:text-gray-400"
                     />
+                </div> */}
+                <div className="min-w-137.5">
+                    <AppInput
+                        placeholder="Search by name or quotation ID"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        startIcon={<Search />}
+                        isBgWhite
+                    />
                 </div>
 
                 <Link href={"/sales/quotation/add"}>
-                    <Button className="bg-[#4F6DF5] hover:bg-[#3f58ce] text-white gap-2 h-10 px-4 rounded-lg">
-                        <Plus className="h-4 w-4" />
+                    <AppButton
+                        variantStyle="primary"
+                        color="primary"
+                        startIcon={<Plus width={20} height={20} />}
+                    >
                         <span className="hidden font-semibold sm:inline">Add New Quotation</span>
                         <span className="sm:hidden font-semibold">Add</span>
-                    </Button>
+                    </AppButton>
                 </Link>
             </div>
 
@@ -125,8 +141,17 @@ export default function QuotationTable() {
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={5} align="center">
-                                    <div className="py-8 text-gray-500">Loading...</div>
+                                <TableCell colSpan={5} sx={{ p: 0 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            height: 120,
+                                        }}
+                                    >
+                                        <Spinner />
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                         ) : listQuotations.length === 0 ? (

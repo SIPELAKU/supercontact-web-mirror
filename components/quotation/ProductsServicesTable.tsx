@@ -6,6 +6,8 @@ import type { ItemRow } from "@/lib/types/Quotation";
 import { Plus, Trash2 } from "lucide-react";
 import DropdownSelect from "../ui/dropdown-menu";
 import { Product } from "@/lib/store/product";
+import { AppInput } from "../ui/app-input";
+import { AppButton } from "../ui/app-button";
 
 export default function ProductsServicesCard({
   items,
@@ -70,20 +72,22 @@ export default function ProductsServicesCard({
             </div>
 
             <div className="col-span-3">
-              <Input
+              <AppInput
                 value={item.sku}
                 readOnly
                 placeholder="SKU"
-                className="h-10 border-gray-300 bg-gray-50 cursor-not-allowed"
+                isBgWhite
+                height="40px"
               />
             </div>
 
             <div className="col-span-2">
-              <Input
+              <AppInput
                 type="number"
                 value={item.qty}
                 onChange={(e) => updateQty(i, Number(e.target.value))}
-                className="h-10 text-center"
+                isBgWhite
+                height="40px"
               />
             </div>
 
@@ -108,9 +112,10 @@ export default function ProductsServicesCard({
           <div className="grid grid-cols-12 gap-4 mt-4">
 
             <div className="col-span-7">
-              <Input
+              <AppInput
                 placeholder="Description"
-                className="h-10"
+                isBgWhite
+                height="40px"
                 value={item.desc}
                 onChange={(e) => updateItemField(i, "desc", e.target.value)}
               />
@@ -124,15 +129,14 @@ export default function ProductsServicesCard({
         </div>
       ))}
 
-      <Button
-        variant="default"
-        size="sm"
+      <AppButton
+        variantStyle="primary"
+        color="primary"
         onClick={addItem}
-        className="mt-2 bg-[#5479EE] text-white px-4"
         disabled={loading}
       >
         <Plus className="h-4 w-4 mr-2" /> Add Item
-      </Button>
+      </AppButton>
     </div>
   );
 }

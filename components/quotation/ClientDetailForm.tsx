@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lead } from "@/lib/models/types"
 import { DropdownSelectSearch } from "../ui/dropdown-menu"
+import { AppInput } from "../ui/app-input"
+import { AppDatePicker } from "../ui/app-datepicker"
+import { format } from "date-fns"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>
@@ -80,73 +83,76 @@ export default function ClientDetailsSection({
 
         <div className="space-y-2">
           <Label>Company Name</Label>
-          <Input
+          <AppInput
             placeholder="Enter company name"
             value={clientData.companyName || ""}
             onChange={(e) => handleChange("companyName", e.target.value)}
-            className="h-10 border-gray-300"
+            isBgWhite
+            height="40px"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Phone Number</Label>
-          <Input
+          <AppInput
             placeholder="Enter phone number"
             type="tel"
             value={clientData.phoneNumber || ""}
             onChange={(e) => handleChange("phoneNumber", e.target.value)}
-            className="h-10 border-gray-300"
+            isBgWhite
+            height="40px"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Email Address</Label>
-          <Input
+          <AppInput
             placeholder="Enter email address"
             type="email"
             value={clientData.emailAddress || ""}
             onChange={(e) => handleChange("emailAddress", e.target.value)}
-            className="h-10 border-gray-300"
+            isBgWhite
+            height="40px"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Quotation Title</Label>
-          <Input
+          <AppInput
             placeholder="Enter quotation title"
             value={clientData.quotationTitle || ""}
             onChange={(e) => handleChange("quotationTitle", e.target.value)}
-            className="h-10 border-gray-300"
+            isBgWhite
+            height="40px"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Quotation ID</Label>
-          <Input
+          <AppInput
             placeholder="Enter quotation ID"
             value={clientData.quotationId || ""}
             onChange={(e) => handleChange("quotationId", e.target.value)}
-            className="h-10 border-gray-300"
+            isBgWhite
+            height="40px"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Issue Date</Label>
-          <Input
-            type="date"
-            value={clientData.issueDate || ""}
-            onChange={(e) => handleChange("issueDate", e.target.value)}
-            className="h-10 border-gray-300"
+          <AppDatePicker
+            isBgWhite
+            value={clientData.issueDate ? new Date(clientData.issueDate) : null}
+            onChange={(date: any) => handleChange("issueDate", date ? format(date, "yyyy-MM-dd") : "")}
           />
         </div>
 
         <div className="space-y-2">
           <Label>Expiry Date</Label>
-          <Input
-            type="date"
-            value={clientData.expiryDate || ""}
-            onChange={(e) => handleChange("expiryDate", e.target.value)}
-            className="h-10 border-gray-300"
+          <AppDatePicker
+            isBgWhite
+            value={clientData.expiryDate ? new Date(clientData.expiryDate) : null}
+            onChange={(date: any) => handleChange("expiryDate", date ? format(date, "yyyy-MM-dd") : "")}
           />
         </div>
       </div>

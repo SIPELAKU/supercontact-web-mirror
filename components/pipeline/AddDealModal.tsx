@@ -14,6 +14,11 @@ import type { DealForm, reqBody } from "@/lib/store/pipeline";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 import { AddDealModalProps } from "@/lib/types/Pipeline";
 import { useEffect, useMemo, useState } from "react";
+import { AppInput } from "../ui/app-input";
+import { AppDatePicker } from "../ui/app-datepicker";
+import { AppTextarea } from "../ui/app-textarea";
+import { AppButton } from "../ui/app-button";
+import { Spinner } from "../ui/spinner";
 
 export const dealStages = [
   { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
@@ -40,6 +45,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     probability_of_close: "0",
     notes: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reset = () =>
     setFormData({
@@ -145,6 +151,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    setIsSubmitting(true);
     e.preventDefault();
 
     const validationErrors = validateForm(formData);
@@ -161,23 +168,27 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     };
 
     if (!id) {
+      setIsSubmitting(true);
       const response = await postFormPipeline(body)
 
       if (response.success) {
         setTimeout(() => (
           onOpenChange(false)
         ), 500)
+        setIsSubmitting(false);
         reset();
         setErrors({})
         setEditId("")
       }
     } else {
+      setIsSubmitting(true);
       const response = await updateFormPipeline(body, id)
 
       if (response.success) {
         setTimeout(() => (
           onOpenChange(false)
         ), 500)
+        setIsSubmitting(false);
         reset();
         setErrors({})
         setEditId("")
@@ -207,15 +218,17 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Deal Name</Label>
-              <Input
+              <Label className="text-sm font-medium text-gray-700 mb-1">Deal Name</Label>
+              <AppInput
                 disabled={id ? true : false}
                 placeholder="Enter deal name"
                 value={formData.deal_name}
                 onChange={(e) =>
                   setFormData({ ...formData, deal_name: e.target.value })
                 }
-                className="h-12 rounded-xl bg-white border-gray-300"
+                isBgWhite
+                height="48px"
+                rounded="8px"
               />
               {errors.deal_name && (
                 <p className="text-sm text-red-500 mt-1">{errors.deal_name}</p>
@@ -223,7 +236,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Client/Account</label>
+              <label className="text-sm font-medium text-gray-700 mb-1">Client/Account</label>
               <CustomSelectStage
                 isSearch={true}
                 disabled={id ? true : false}
@@ -240,7 +253,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }}
                 onChange={(value: string) => setFormData({ ...formData, client_account: value })}
                 data={contactOptions}
-                className="bg-white rounded-md"
+                className="bg-white rounded-[8px]"
               />
               {errors.client_account && (
                 <p className="text-sm text-red-500 mt-1">{errors.client_account}</p>
@@ -248,13 +261,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Deal Stage</label>
+              <label className="text-sm font-medium text-gray-700 mb-1">Deal Stage</label>
               <CustomSelectStage
                 value={formData.deal_stage}
                 disabled={id ? true : false}
                 onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
                 data={dealStages}
-                className="bg-white rounded-md"
+                className="bg-white rounded-[8px]"
               />
               {errors.deal_stage && (
                 <p className="text-sm text-red-500 mt-1">{errors.deal_stage}</p>
@@ -262,30 +275,26 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700 mb-1">
                 Expected Close Date
               </Label>
-              <Input
-                type="date"
-                value={formData.expected_close_date ? new Date(formData.expected_close_date).toISOString().split('T')[0] : ''}
-                onChange={(e) => {
-                  setFormData({
-                    ...formData,
-                    expected_close_date: e.target.value ? new Date(e.target.value) : undefined,
-                  });
+              <AppDatePicker
+                value={formData.expected_close_date}
+                onChange={(value) => {
+                  if (Array.isArray(value)) return;
+                  setFormData({ ...formData, expected_close_date: value ?? undefined });
                 }}
                 placeholder="Select close date"
+                isBgWhite
               />
               {errors.expected_close_date && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.expected_close_date}
-                </p>
+                <p className="text-sm text-red-500 mt-1">{errors.expected_close_date}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Amount</Label>
-              <Input
+              <Label className="text-sm font-medium text-gray-700 mb-1">Amount</Label>
+              <AppInput
                 type="number"
                 disabled={id ? true : false}
                 placeholder="0.00"
@@ -293,7 +302,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, amount: Number(e.target.value) })
                 }
-                className="h-12 rounded-xl bg-white border-gray-300"
+                isBgWhite
+                height="48px"
+                rounded="8px"
               />
               {errors.amount && (
                 <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
@@ -327,45 +338,41 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Notes</Label>
-            <Textarea
+            <AppTextarea
               disabled={id ? true : false}
               placeholder="Add any relevant notes here..."
               value={formData.notes}
               onChange={(e) =>
                 setFormData({ ...formData, notes: e.target.value })
               }
-              className="rounded-xl min-h-12 bg-white border-gray-300 resize-none"
+              isBgWhite
+              rounded="8px"
             />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button
+            <AppButton
               type="button"
-              variant="outline"
+              variantStyle="outline"
+              color="gray"
               onClick={() => {
                 reset();
                 setErrors({})
                 setEditId("")
                 onOpenChange(false);
               }}
-              className="
-                px-8 h-11 rounded-xl
-                border-gray-300 text-gray-600
-              "
             >
               Cancel
-            </Button>
+            </AppButton>
 
-            <Button
+            <AppButton
               type="submit"
-              className="
-                px-8 h-11 rounded-xl
-                bg-[#5479EE] hover:bg-[#3f58ce] 
-                text-white
-              "
+              variantStyle="primary"
+              color="primary"
+              disabled={isSubmitting}
             >
-              {id ? "Update Deal" : "Save Deal"}
-            </Button>
+              {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
+            </AppButton>
           </div>
         </form>
       </DialogContent>

@@ -116,7 +116,7 @@ export default function CustomDealStageSelect({
         disabled={disabled}
         onClick={() => !disabled && setOpen(!open)}
         className={cn(
-          "w-full h-11 px-3 flex items-center justify-between border shadow-sm",
+          "w-full h-[48px] px-3 flex items-center justify-between border",
           disabled
             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
             : "bg-white border-gray-300 hover:border-gray-400"

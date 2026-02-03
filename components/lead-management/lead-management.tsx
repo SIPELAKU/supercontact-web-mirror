@@ -94,18 +94,61 @@ export default function LeadManagement() {
         <Box sx={{ p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Tabs
             value={viewMode}
-            onChange={(_, val) => setViewMode(val as "table-view" | "kanban-view")}
+            onChange={(_, val) =>
+              setViewMode(val as "table-view" | "kanban-view")
+            }
             sx={{
-              minHeight: '40px',
-              '& .MuiTab-root': {
-                minHeight: '40px',
-                textTransform: 'none',
-                fontWeight: 600
-              }
+              minHeight: "unset",
+              padding: "4px",
+              backgroundColor: "#f0f2f5",
+              borderRadius: "8px",
+              "& .MuiTabs-indicator": {
+                display: "none",
+              },
             }}
           >
-            <Tab label="Table View" value="table-view" />
-            <Tab label="Kanban View" value="kanban-view" />
+            <Tab
+              label="Table View"
+              value="table-view"
+              disableRipple
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                minHeight: "32px",
+                minWidth: "auto",
+                padding: "6px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                color: "#64748B",
+                transition: "all 0.2s",
+                "&.Mui-selected": {
+                  color: "#0F172A",
+                  backgroundColor: "#FFFFFF",
+                  boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
+                },
+              }}
+            />
+            <Tab
+              label="Kanban View"
+              value="kanban-view"
+              disableRipple
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                minHeight: "32px",
+                minWidth: "auto",
+                padding: "6px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                color: "#64748B",
+                transition: "all 0.2s",
+                "&.Mui-selected": {
+                  color: "#0F172A",
+                  backgroundColor: "#FFFFFF",
+                  boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
+                },
+              }}
+            />
           </Tabs>
           <AddLeadForm />
         </Box>

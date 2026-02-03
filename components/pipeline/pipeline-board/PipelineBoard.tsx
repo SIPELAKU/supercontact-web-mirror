@@ -31,6 +31,8 @@ import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { Deal } from "@/lib/types/Pipeline"
 import { Plus, Search } from "lucide-react"
 import { notify } from "@/lib/notifications"
+import { AppInput } from "@/components/ui/app-input"
+import { AppButton } from "@/components/ui/app-button"
 
 
 
@@ -400,40 +402,25 @@ export default function PipelineBoard() {
       <div className="border-b w-full p-0 border-gray-300" />
 
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 w-full">
-
-        <div
-          className="
-            flex items-center
-            lg:w-[50%] w-full
-            h-10 rounded-lg bg-white border border-[#E5E7EB] px-3
-            hover:border-[#D1D5DB]
-            focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA]
-            transition-all
-          "
-        >
-          <Search className="h-5 w-5 text-gray-400 mr-2" />
-          <input
-            type="text"
+        <div className="lg:w-[50%] w-full">
+          <AppInput
+            isBgWhite
+            rounded="8px"
             placeholder="Search by name or company"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder:text-gray-400"
+            startIcon={<Search />}
           />
         </div>
 
-        <Button
+        <AppButton
           onClick={() => setIsModalOpen(!isModalOpen)}
-          className="
-            w-full sm:w-auto
-            bg-[#4F6DF5] hover:bg-[#3f58ce]
-            text-white gap-2 h-10 px-4 rounded-lg
-            flex justify-center
-          "
+          variantStyle="primary"
+          color="primary"
+          startIcon={<Plus />}
         >
-          <Plus className="h-4 w-4" />
-          <span className="hidden font-semibold sm:inline">Add New Pipeline</span>
-          <span className="sm:hidden font-semibold">Add</span>
-        </Button>
+          Add New Pipeline
+        </AppButton>
 
       </div>
 

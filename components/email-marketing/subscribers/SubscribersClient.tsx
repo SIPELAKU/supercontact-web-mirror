@@ -11,6 +11,7 @@ import EditSubscriberModal from '@/components/email-marketing/subscribers/modals
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteSubscriber } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
+import { AppButton } from '@/components/ui/app-button';
 
 export default function SubscribersClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function SubscribersClient() {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<Subscriber[] | null>(null);
-  
+
   const deleteMutation = useDeleteSubscriber();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
@@ -51,13 +52,13 @@ export default function SubscribersClient() {
 
   const handleConfirmDelete = async () => {
     if (!selectedToDelete) return;
-    
+
     try {
       // Delete subscribers one by one
       for (const subscriber of selectedToDelete) {
         await deleteMutation.mutateAsync(subscriber.id);
       }
-      
+
       toast.success(`${selectedToDelete.length} subscriber(s) deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
@@ -121,10 +122,10 @@ export default function SubscribersClient() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <MuiButton onClick={() => setConfirmOpen(false)} color="secondary">Cancel</MuiButton>
-          <MuiButton onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
+          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
+          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending}>
             {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </MuiButton>
+          </AppButton>
         </DialogActions>
       </Dialog>
     </div>

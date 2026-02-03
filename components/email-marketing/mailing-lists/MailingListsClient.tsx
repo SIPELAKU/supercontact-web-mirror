@@ -11,6 +11,7 @@ import EditMailingListModal from '@/components/email-marketing/mailing-lists/mod
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingList } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
+import { AppButton } from '@/components/ui/app-button';
 
 export default function MailingListsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function MailingListsClient() {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [listToDelete, setListToDelete] = useState<MailingList | null>(null);
-  
+
   const deleteMutation = useDeleteMailingList();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
@@ -49,7 +50,7 @@ export default function MailingListsClient() {
 
   const handleConfirmDelete = async () => {
     if (!listToDelete) return;
-    
+
     try {
       await deleteMutation.mutateAsync(listToDelete.id);
       toast.success(`Mailing list "${listToDelete.name}" deleted successfully.`);
@@ -91,10 +92,10 @@ export default function MailingListsClient() {
       </Card>
 
       <AddMailingListModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      
-      <EditMailingListModal 
-        open={isEditModalOpen} 
-        onClose={handleCloseModals} 
+
+      <EditMailingListModal
+        open={isEditModalOpen}
+        onClose={handleCloseModals}
         onSuccess={handleSuccess}
         mailingList={selectedList}
       />
@@ -112,10 +113,10 @@ export default function MailingListsClient() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <MuiButton onClick={() => setConfirmOpen(false)} color="secondary">Cancel</MuiButton>
-          <MuiButton onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
+          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
+          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending}>
             {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </MuiButton>
+          </AppButton>
         </DialogActions>
       </Dialog>
     </div>

@@ -18,13 +18,17 @@ const FOCUS_COLOR = "#5479EE";
 type BaseInputProps = {
   label?: string;
   isBgWhite?: boolean;
+  rounded?: string;
+  height?: string;
+  width?: string;
 };
 
 type TextInputProps = BaseInputProps &
   Omit<TextFieldProps, "variant" | "type"> & {
-    type?: "text" | "email" | "password" | "number" | "tel";
+    type?: "text" | "email" | "password" | "number" | "tel" | "time";
     startIcon?: React.ReactNode;
     endIcon?: React.ReactNode;
+    inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   };
 
 type CheckboxInputProps = BaseInputProps &
@@ -90,53 +94,56 @@ const BpCheckedIcon = styled(BpIcon)({
 // --- Styled Component ---
 const StyledTextField = styled(TextField, {
   shouldForwardProp: (prop) => prop !== "isBgWhite",
-})<{ isBgWhite?: boolean }>(({ theme, isBgWhite }) => ({
-  "& .MuiInputLabel-root": {
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "#6B7280",
-    marginBottom: "6px",
-  },
-
-  "& .MuiOutlinedInput-root": {
-    backgroundColor: isBgWhite ? "white !important" : INPUT_BG,
-    borderRadius: "6px",
-    fontSize: "16px",
-    fontWeight: 400,
-    lineHeight: "24px",
-    height: "40px",
-
-    "& fieldset": {
-      borderColor: BORDER_COLOR,
+})<{ isBgWhite?: boolean; rounded?: string; height?: string; width?: string }>(
+  ({ theme, isBgWhite, rounded, height, width }) => ({
+    "& .MuiInputLabel-root": {
+      fontSize: "14px",
+      fontWeight: 500,
+      color: "#6B7280",
+      marginBottom: "6px",
     },
 
-    "&:hover fieldset": {
-      borderColor: BORDER_COLOR,
+    "& .MuiOutlinedInput-root": {
+      backgroundColor: isBgWhite ? "white" : INPUT_BG,
+      borderRadius: rounded ? rounded : "6px",
+      fontSize: "16px",
+      fontWeight: 400,
+      lineHeight: "24px",
+      height: height ? height : "40px",
+      width: width ? width : "100%",
+
+      "& fieldset": {
+        borderColor: BORDER_COLOR,
+      },
+
+      "&:hover fieldset": {
+        borderColor: BORDER_COLOR,
+      },
+
+      "&.Mui-focused fieldset": {
+        borderColor: FOCUS_COLOR,
+        borderWidth: "1px",
+      },
+
+      "&.Mui-error fieldset": {
+        borderColor: theme.palette.error.main,
+      },
     },
 
-    "&.Mui-focused fieldset": {
-      borderColor: FOCUS_COLOR,
-      borderWidth: "1px",
+    "& .MuiInputBase-input": {
+      padding: "12px 14px",
     },
 
-    "&.Mui-error fieldset": {
-      borderColor: theme.palette.error.main,
+    "& .MuiFormHelperText-root": {
+      marginLeft: 0,
+      fontSize: "12px",
     },
-  },
 
-  "& .MuiInputBase-input": {
-    padding: "12px 14px",
-  },
-
-  "& .MuiFormHelperText-root": {
-    marginLeft: 0,
-    fontSize: "12px",
-  },
-
-  "& .MuiFormLabel-asterisk": {
-    color: "#EF4444", // red-500
-  },
-}));
+    "& .MuiFormLabel-asterisk": {
+      color: "#EF4444", // red-500
+    },
+  }),
+);
 
 // --- Component ---
 export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref) => {
@@ -168,6 +175,10 @@ export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref
     isBgWhite = false,
     startIcon,
     endIcon,
+    rounded,
+    height,
+    width,
+    inputProps,
     ...textFieldProps
   } = props;
 
@@ -178,6 +189,9 @@ export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref
       fullWidth
       label={label}
       isBgWhite={isBgWhite}
+      rounded={rounded}
+      height={height}
+      width={width}
       type={isPassword ? (showPassword ? "text" : "password") : type}
       inputRef={ref}
       InputProps={{
@@ -201,6 +215,7 @@ export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref
             </InputAdornment>
           ) : undefined,
       }}
+      inputProps={inputProps}
       {...textFieldProps}
     />
   );

@@ -17,6 +17,11 @@ import { GrAdd } from "react-icons/gr";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 import { Autocomplete, TextField, createTheme, ThemeProvider } from "@mui/material";
+import { AppButton } from "../ui/app-button";
+import { AppInput } from "../ui/app-input";
+import { AppSelect } from "../ui/app-select";
+import { AppTextarea } from "../ui/app-textarea";
+import { Spinner } from "../ui/spinner";
 
 // MUI Theme for consistent styling
 const theme = createTheme({
@@ -271,21 +276,24 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       setOpen(false);
 
       console.log("Lead created successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating lead:", error);
-      notify.error("Failed to create lead. Please try again.");
+      notify.error("Failed to create lead. Please try again.", {
+        description: error?.message
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
   return (
     <>
-      <Button
-        className="bg-[#5479EE] text-white hover:bg-[#4366d9]"
+      <AppButton
+        variantStyle="primary"
+        color="primary"
         onClick={() => setOpen(true)}
       >
         <GrAdd className="text-lg mr-2" /> Add New Lead
-      </Button>
+      </AppButton>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
@@ -364,12 +372,15 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Email */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Email</Label>
-                  <input
+                  <AppInput
                     type="email"
                     placeholder="Enter email address"
                     value={form.email}
                     onChange={(e) => updateField("email", e.target.value)}
-                    className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
@@ -377,12 +388,15 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Phone Number */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
-                  <input
+                  <AppInput
                     type="text"
                     placeholder="Enter phone number"
                     value={form.phone_number}
                     onChange={(e) => updateField("phone_number", e.target.value)}
-                    className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`${errors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                   />
                   {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
                 </div>
@@ -390,12 +404,15 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Company */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Company</Label>
-                  <input
+                  <AppInput
                     type="text"
                     placeholder="Enter company name"
                     value={form.company}
                     onChange={(e) => updateField("company", e.target.value)}
-                    className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.company ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`${errors.company ? 'border-red-500' : 'border-gray-300'}`}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                   />
                   {errors.company && <p className="text-red-500 text-xs mt-1">{errors.company}</p>}
                 </div>
@@ -403,48 +420,56 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Industry */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Industry</Label>
-                  <select
+                  <AppSelect
                     value={form.industry}
-                    onChange={(e) => updateField("industry", e.target.value)}
-                    className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.industry ? 'border-red-500' : 'border-gray-300'}`}
-                  >
-                    <option value="">Select Industry</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Logistics">Logistics</option>
-                    <option value="Manufacturing">Manufacturing</option>
-                    <option value="SaaS">SaaS</option>
-                  </select>
+                    onChange={(e) => updateField("industry", e.target.value as string)}
+                    height="48px"
+                    rounded="8px"
+                    options={[
+                      { value: "", label: "Select Industry" },
+                      { value: "Healthcare", label: "Healthcare" },
+                      { value: "Finance", label: "Finance" },
+                      { value: "Logistics", label: "Logistics" },
+                      { value: "Manufacturing", label: "Manufacturing" },
+                      { value: "SaaS", label: "SaaS" },
+                    ]}
+                    placeholder="Select Industry"
+                    isBgWhite
+                  />
                   {errors.industry && <p className="text-red-500 text-xs mt-1">{errors.industry}</p>}
                 </div>
 
                 {/* Company Size */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Company Size</Label>
-                  <select
+                  <AppSelect
                     value={form.companySize}
-                    onChange={(e) => updateField("companySize", e.target.value)}
-                    className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.companySize ? 'border-red-500' : 'border-gray-300'}`}
-                  >
-                    <option value="">Select Company Size</option>
-                    <option value="1-50 Employees">1 - 50 Employees</option>
-                    <option value="51-200 Employees">51 - 200 Employees</option>
-                    <option value="201+ Employees">201+ Employees</option>
-                    {/* <option value="501-1000 Employees">501-1000 Employees</option>
-                  <option value="1000+ Employees">1000+ Employees</option> */}
-                  </select>
+                    onChange={(e) => updateField("companySize", e.target.value as string)}
+                    height="48px"
+                    rounded="8px"
+                    options={[
+                      { value: "", label: "Select Company Size" },
+                      { value: "1-50 Employees", label: "1 - 50 Employees" },
+                      { value: "51-200 Employees", label: "51 - 200 Employees" },
+                      { value: "201+ Employees", label: "201+ Employees" },
+                    ]}
+                    placeholder="Select Company Size"
+                    isBgWhite
+                  />
                   {errors.companySize && <p className="text-red-500 text-xs mt-1">{errors.companySize}</p>}
                 </div>
 
                 {/* Office Location */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Office Location</Label>
-                  <input
+                  <AppInput
                     type="text"
                     placeholder="Enter Office Location"
                     value={form.officeLocation}
                     onChange={(e) => updateField("officeLocation", e.target.value)}
-                    className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.officeLocation ? 'border-red-500' : 'border-gray-300'}`}
+                    height="48px"
+                    rounded="12px"
+                    isBgWhite
                   />
                   {errors.officeLocation && <p className="text-red-500 text-xs mt-1">{errors.officeLocation}</p>}
                 </div>
@@ -465,16 +490,23 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Lead Source */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">Lead Source</Label>
-                  <select
+                  <AppSelect
                     value={form.leadSource}
-                    onChange={(e) => updateField("leadSource", e.target.value)}
-                    className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.leadSource ? 'border-red-500' : 'border-gray-300'}`}
-                  >
-                    <option value="">Select Lead Source</option>
-                    <option value="Manual Entry">Manual Entry</option>
-                    <option value="Web Form">Web Form</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                  </select>
+                    onChange={(e) => updateField("leadSource", e.target.value as string)}
+                    height="48px"
+                    rounded="8px"
+                    options={[
+                      { value: "", label: "Select Lead Source" },
+                      { value: "Website", label: "Website" },
+                      { value: "Referral", label: "Referral" },
+                      { value: "Other", label: "Other" },
+                      { value: "Manual Entry", label: "Manual Entry" },
+                      { value: "Web Form", label: "Web Form" },
+                      { value: "WhatsApp", label: "WhatsApp" },
+                    ]}
+                    placeholder="Select Lead Source"
+                    isBgWhite
+                  />
                   {errors.leadSource && <p className="text-red-500 text-xs mt-1">{errors.leadSource}</p>}
                 </div>
 
@@ -557,43 +589,37 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
               {/* Notes */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Notes</Label>
-                <textarea
+                <AppTextarea
                   placeholder="Add any relevant notes here..."
                   value={form.notes}
                   onChange={(e) => updateField("notes", e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all"
+                  rounded="8px"
+                  isBgWhite
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button
+                <AppButton
                   type="button"
-                  variant="outline"
+                  variantStyle="outline"
+                  color="primary"
                   onClick={() => {
                     reset();
                     setOpen(false);
                   }}
-                  className="
-                  px-8 h-11 rounded-xl
-                  border-gray-300 text-gray-600
-                "
                 >
                   Cancel
-                </Button>
+                </AppButton>
 
-                <Button
+                <AppButton
                   type="submit"
                   disabled={isSubmitting}
-                  className="
-                  px-8 h-11 rounded-xl
-                  bg-[#5479EE] hover:bg-[#3f58ce] 
-                  text-white
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                "
+                  color="primary"
+                  variantStyle="primary"
                 >
-                  {isSubmitting ? "Creating..." : "Save Lead"}
-                </Button>
+                  {isSubmitting ? <Spinner /> : "Save Lead"}
+                </AppButton>
               </div>
             </ThemeProvider>
           </form>

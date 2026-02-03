@@ -13,6 +13,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.3] - 2026-02-03
+
+### Detail Versi 1.3.3
+
+#### ✨ Fitur Baru
+
+- **Lead Management & Contacts:**
+  - Introduce Lead Management component with table and Kanban views, and Contact Management page with data table and CRUD operations.
+  - Implement contact listing and detail pages.
+  - Implement initial lead management, quotation, pipeline, and product features with new UI components.
+
+- **Email Marketing & Notes:**
+  - Implement comprehensive email marketing functionality including mailing lists, subscribers, and campaigns, alongside new UI components and dedicated pages for notes and contact.
+  - Implement notes page with listing, search, sort, add, and edit functionalities.
+
+- **Product Management:**
+  - Implement product creation and editing modal with auto-generated SKU and price formatting.
+
+- **UI Components & UX:**
+  - Introduce and integrate new `AppInput`, `AppTextarea`, `AppTimePicker`, `AppDatePicker`, and `AppButton` UI components across various forms and modals.
+  - Display contact initials using Material-UI Avatar component instead of a plain div.
+  - Improve login page responsiveness and replace contact list placeholder with MUI Avatar component.
+
+- **Utilities & Notifications:**
+  - Add notification utility with success, error, warning, and info types.
+  - Enhance error and notification messages with React node support, improved multi-line formatting, and user-friendly field labels.
+
+---
+
 ## [1.3.2] - 2026-02-02
 
 ### Detail Versi 1.3.2

@@ -20,6 +20,8 @@ import TableSortLabel from "@mui/material/TableSortLabel";
 import LeadDetailModal from "../lead-detail-modal";
 import LeadFilters from "./LeadFilters";
 import { leadColumns, LeadColumn } from "./columns";
+import { Spinner } from "@/components/ui/spinner";
+import { Box } from "@mui/material";
 
 type SortOrder = 'asc' | 'desc';
 

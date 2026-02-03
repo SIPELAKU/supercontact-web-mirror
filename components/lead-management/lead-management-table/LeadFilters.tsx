@@ -4,7 +4,6 @@ import { Lead } from "@/lib/models/types";
 import { AppDatePicker } from "@/components/ui/app-datepicker";
 import { AppSelect } from "@/components/ui/app-select";
 
-
 export default function LeadFilters({
   leads,
   status,
@@ -27,11 +26,11 @@ export default function LeadFilters({
   setDateRange: (val: { from?: Date; to?: Date }) => void;
 }) {
   const assignedToOptions = Array.from(
-    new Set(leads.map((l) => l.user.fullname).filter(Boolean))
+    new Set(leads.map((l) => l.user.fullname).filter(Boolean)),
   );
 
   return (
-    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-lg">
+    <div className="flex gap-4 items-center mb-6 p-4 bg-white rounded-xl">
       {/* Select Status */}
       <div className="flex-1 min-w-0">
         <AppSelect
@@ -64,6 +63,7 @@ export default function LeadFilters({
             { label: "WhatsApp", value: "WhatsApp" },
             { label: "Manual Entry", value: "Manual Entry" },
           ]}
+          height="48px"
         />
       </div>
 
@@ -81,6 +81,7 @@ export default function LeadFilters({
               value: user,
             })),
           ]}
+          height="48px"
         />
       </div>
 
@@ -91,7 +92,10 @@ export default function LeadFilters({
           isBgWhite={true}
           onChange={(val: any) => {
             if (Array.isArray(val)) {
-              setDateRange({ from: val[0] || undefined, to: val[1] || undefined });
+              setDateRange({
+                from: val[0] || undefined,
+                to: val[1] || undefined,
+              });
             } else {
               setDateRange({ from: undefined, to: undefined });
             }

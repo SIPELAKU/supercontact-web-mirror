@@ -83,7 +83,7 @@ export const useGetProductStore = create<GetState>((set, get) => ({
   searchQuery: "",
   pagination: {
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 1,
   },

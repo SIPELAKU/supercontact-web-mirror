@@ -1,16 +1,17 @@
 // components/email-marketing/mailing-lists/MailingListsTable.tsx
 "use client";
 
+import { AppButton } from '@/components/ui/app-button';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import {
-    Box,
-    Button,
-    CircularProgress,
-    IconButton,
-    Paper,
-    Tooltip,
-    Typography
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  Paper,
+  Tooltip,
+  Typography
 } from '@mui/material';
 import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
@@ -37,21 +38,13 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
       {/* Toolbar */}
       <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">Mailing Lists ({lists.length})</Typography>
-        <Button 
-          variant="contained"
-          startIcon={<Plus className="w-4 h-4" />} 
+        <AppButton
+          variantStyle="primary"
+          startIcon={<Plus className="w-4 h-4" />}
           onClick={onAdd}
-          sx={{
-            bgcolor: '#5D87FF',
-            '&:hover': {
-              bgcolor: '#4570ea'
-            },
-            textTransform: 'none',
-            px: 3
-          }}
         >
           Create New List
-        </Button>
+        </AppButton>
       </Box>
 
       {/* Lists */}
@@ -69,19 +62,19 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
             <Paper
               key={list.id}
               variant="outlined"
-              sx={{ 
-                mb: 1.5, 
+              sx={{
+                mb: 1.5,
                 display: 'flex',
                 alignItems: 'center',
                 borderRadius: 2,
                 '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
               }}
             >
-              <Link 
+              <Link
                 href={`/email-marketing/mailing-lists/${list.id}`}
-                style={{ 
-                  flex: 1, 
-                  textDecoration: 'none', 
+                style={{
+                  flex: 1,
+                  textDecoration: 'none',
                   color: 'inherit',
                   display: 'flex',
                   alignItems: 'center',

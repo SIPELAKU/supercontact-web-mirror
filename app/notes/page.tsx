@@ -14,6 +14,7 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import PageHeader from "@/components/ui/page-header";
 
 export default function NotesPage() {
   const { getToken } = useAuth();
@@ -65,10 +66,12 @@ export default function NotesPage() {
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-      <BannerDashboard title="Notes" breadcrumbs={["Dashboard", "Notes"]} />
+      <PageHeader
+        title="Notes"
+        breadcrumbs={[{ label: "Dashboard" }, { label: "Notes" }]}
+      />
 
       <div className="w-full flex flex-col md:flex-row md:items-center gap-3 md:gap-4 border-b pb-4">
-        {/* SEARCH — selalu prioritas lebar */}
         <div className="w-full md:flex-1">
           <AppInput
             startIcon={<IoIosSearch />}

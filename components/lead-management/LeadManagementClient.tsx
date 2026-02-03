@@ -18,21 +18,6 @@ export default function LeadManagementClient() {
           { label: "Lead Management" },
         ]}
       />
-      
-      {/* Tabs */}
-      <div className="flex justify-between">
-        <Tabs
-          value={viewMode}
-          onChange={(_, val) =>
-            setViewMode(val as "table-view" | "kanban-view")
-          }
-          sx={{ minHeight: '32px' }}
-        >
-          <Tab label="Table View" value="table-view" />
-          <Tab label="Kanban View" value="kanban-view" />
-        </Tabs>
-        <AddLeadForm />
-      </div>
 
       <LeadManagement />
     </div>

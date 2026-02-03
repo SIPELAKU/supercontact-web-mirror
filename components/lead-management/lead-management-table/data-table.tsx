@@ -25,8 +25,7 @@ import { Box } from "@mui/material";
 
 type SortOrder = 'asc' | 'desc';
 
-export function DataTable() {
-  const [filteredData, setFilteredData] = useState<Lead[]>([]);
+export function DataTable({ initialData }: { initialData?: Lead[] }) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
@@ -34,137 +33,90 @@ export function DataTable() {
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-  const { data: leadsResponse, isLoading, error } = useLeads(pageIndex + 1, pageSize);
+  // Use initialData as the source of truth if provided
+  const data = initialData || [];
+  const totalCount = data.length;
 
-  const data = leadsResponse?.data?.leads || [];
-  const totalCount = leadsResponse?.data?.total || 0;
+  // Handle local sorting
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortBy) return 0;
+    const isAsc = sortOrder === 'asc';
 
-  console.log('DataTable render - data length:', data.length, 'isLoading:', isLoading, 'filteredData length:', filteredData.length);
+    let aValue: any;
+    let bValue: any;
 
-  // Memoize the setFilteredData function to prevent unnecessary re-renders
-  const handleSetFilteredData = useCallback((leads: Lead[]) => {
-    setFilteredData(leads);
-  }, []);
+    switch (sortBy) {
+      case 'lead_name':
+        aValue = a.contact.name;
+        bValue = b.contact.name;
+        break;
+      case 'lead_status':
+        aValue = a.lead_status;
+        bValue = b.lead_status;
+        break;
+      case 'lead_source':
+        aValue = a.lead_source;
+        bValue = b.lead_source;
+        break;
+      case 'user':
+        aValue = a.user.fullname;
+        bValue = b.user.fullname;
+        break;
+      case 'last_contacted':
+        aValue = a.contact.last_contacted?.created_at || '';
+        bValue = b.contact.last_contacted?.created_at || '';
+        break;
+      default:
+        return 0;
+    }
 
-  // Handle sorting
+    if (aValue < bValue) return isAsc ? -1 : 1;
+    if (aValue > bValue) return isAsc ? 1 : -1;
+    return 0;
+  });
+
   const handleSort = (columnKey: string) => {
     const isAsc = sortBy === columnKey && sortOrder === 'asc';
     setSortOrder(isAsc ? 'desc' : 'asc');
     setSortBy(columnKey);
-
-    // Simple client-side sorting
-    const sorted = [...filteredData].sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (columnKey) {
-        case 'lead_name':
-          aValue = a.contact.name;
-          bValue = b.contact.name;
-          break;
-        case 'lead_status':
-          aValue = a.lead_status;
-          bValue = b.lead_status;
-          break;
-        case 'lead_source':
-          aValue = a.lead_source;
-          bValue = b.lead_source;
-          break;
-        case 'user':
-          aValue = a.user.fullname;
-          bValue = b.user.fullname;
-          break;
-        case 'last_contacted':
-          aValue = a.contact.last_contacted?.created_at || '';
-          bValue = b.contact.last_contacted?.created_at || '';
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return isAsc ? -1 : 1;
-      if (aValue > bValue) return isAsc ? 1 : -1;
-      return 0;
-    });
-
-    setFilteredData(sorted);
   };
 
-  // Show error state
-  if (error) {
-    return (
-      <Card
-        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-        sx={{
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        <CardHeader title="Error" />
-        <div className="p-6 text-center text-red-600">
-          Failed to load leads: {error.message}
-        </div>
-      </Card>
-    );
-  }
+  // Local pagination for the filtered data
+  const paginatedData = sortedData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
   return (
-    <Card
-      className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-      sx={{
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}
-    >
-      <CardHeader title="Filters" />
-      {isLoading ? (
-        <div className="p-4 mb-5 bg-gray-50 text-gray-500 text-center flex items-center justify-center">
-          <Spinner />
-        </div>
-      ) : (
-        <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
-      )}
-      <Divider />
-      <div className="overflow-hidden rounded-none!">
-        <Table>
-          <TableHead>
-            <TableRow className="bg-[#EEF2FD]!">
-              {leadColumns.map((column) => (
-                <TableCell key={column.key}>
-                  {column.sortable ? (
-                    <TableSortLabel
-                      active={sortBy === column.key}
-                      direction={sortBy === column.key ? sortOrder : 'asc'}
-                      onClick={() => handleSort(column.key)}
-                    >
-                      <span className="text-[#6B7280]">{column.label}</span>
-                    </TableSortLabel>
-                  ) : (
-                    <span className="text-[#6B7280]">{column.label}</span>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={leadColumns.length} sx={{ p: 0 }}>
-                  <Box
+    <div className="w-full">
+      <div className="p-0">
+        <div className="mx-6 mb-6 overflow-hidden border border-gray-200 rounded-xl">
+          <Table>
+            <TableHead>
+              <TableRow className="bg-[#EEF2FD]!">
+                {leadColumns.map((column, index) => (
+                  <TableCell
+                    key={column.key}
                     sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      height: 120,
+                      pl: index === 0 ? 3 : undefined,
+                      pr: index === leadColumns.length - 1 ? 3 : undefined
                     }}
                   >
-                    <Spinner />
-                  </Box>
-                </TableCell>
+                    {column.sortable ? (
+                      <TableSortLabel
+                        active={sortBy === column.key}
+                        direction={sortBy === column.key ? sortOrder : 'asc'}
+                        onClick={() => handleSort(column.key)}
+                      >
+                        <span className="text-[#6B7280]">{column.label}</span>
+                      </TableSortLabel>
+                    ) : (
+                      <span className="text-[#6B7280]">{column.label}</span>
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
-            ) : (
-              filteredData.map((lead) => (
+            </TableHead>
+
+            <TableBody>
+              {paginatedData.map((lead) => (
                 <TableRow
                   key={lead.id}
                   onClick={() => {
@@ -179,24 +131,30 @@ export function DataTable() {
                     cursor: 'pointer',
                   }}
                 >
-                  {leadColumns.map((column) => (
-                    <TableCell key={column.key}>
+                  {leadColumns.map((column, index) => (
+                    <TableCell
+                      key={column.key}
+                      sx={{
+                        pl: index === 0 ? 3 : undefined,
+                        pr: index === leadColumns.length - 1 ? 3 : undefined
+                      }}
+                    >
                       {column.render(lead)}
                     </TableCell>
                   ))}
                 </TableRow>
-              )))
-            }
+              ))}
 
-            {filteredData.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell colSpan={leadColumns.length} align="center">
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              {paginatedData.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={leadColumns.length} align="center">
+                    No data available
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <TablePagination
@@ -210,11 +168,7 @@ export function DataTable() {
           setPageIndex(0);
         }}
         rowsPerPageOptions={[5, 10, 20, 50]}
-        slotProps={{
-          select: {
-            inputProps: { 'aria-label': 'rows per page' }
-          }
-        }}
+        sx={{ borderTop: '1px solid #e5e7eb' }}
       />
 
       {/* Lead Detail Modal */}
@@ -223,6 +177,6 @@ export function DataTable() {
         onOpenChange={setIsDetailModalOpen}
         lead={selectedLead}
       />
-    </Card>
+    </div>
   );
 }

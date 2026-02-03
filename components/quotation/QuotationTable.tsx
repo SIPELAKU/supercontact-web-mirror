@@ -48,7 +48,7 @@ export default function QuotationTable() {
     };
 
     return (
-        <div className="rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
             <div className="px-6 pt-5">
                 <h2 className="font-medium pb-2">Filters</h2>
                 <FilterBar
@@ -130,11 +130,11 @@ export default function QuotationTable() {
                 <Table>
                     <TableHead>
                         <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell><span className="text-[#6B7280]">Client</span></TableCell>
+                            <TableCell sx={{ pl: 3 }}><span className="text-[#6B7280]">Client</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">Quotation ID</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">Date</span></TableCell>
                             <TableCell><span className="text-[#6B7280]">Status</span></TableCell>
-                            <TableCell><span className="text-[#6B7280]">Amount</span></TableCell>
+                            <TableCell sx={{ pr: 3 }}><span className="text-[#6B7280]">Amount</span></TableCell>
                         </TableRow>
                     </TableHead>
 
@@ -173,7 +173,7 @@ export default function QuotationTable() {
                                         cursor: 'pointer',
                                     }}
                                 >
-                                    <TableCell>
+                                    <TableCell sx={{ pl: 3 }}>
                                         <span className="font-medium text-gray-900">
                                             {quotation.lead.contact.name}
                                         </span>
@@ -200,7 +200,7 @@ export default function QuotationTable() {
                                             {quotation.quotation_status}
                                         </span>
                                     </TableCell>
-                                    <TableCell>
+                                    <TableCell sx={{ pr: 3 }}>
                                         <span className="font-medium text-gray-900">
                                             {formatRupiah(quotation.grand_total)}
                                         </span>

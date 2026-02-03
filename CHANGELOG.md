@@ -13,6 +13,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.2] - 2026-02-02
+
+### Detail Versi 1.3.2
+
+#### 🚀 Lead Management Stability & Restructuring
+- **Stability Fix**: Resolved "Maximum update depth exceeded" crash and "status.toLowerCase is not a function" error by lifting filter state and implementing memoized filtering.
+- **Unified Card Layout**: Integrated Filters, View Mode toggles (Table/Kanban), and "Add Lead" button into a single, cohesive card structure.
+- **Improved Performance**: Refactored `LeadFilters` into a pure controlled component to eliminate redundant re-renders.
+
+#### 🎨 Support Ticket UI & UX Standardization
+- **Refined Layout**: Migrated the Ticket Management page to a card-based structure with a unified search/action toolbar and MUI `TablePagination`.
+- **High-Fidelity Modals**:
+  - Enforced a strictly compliant **22px bold** title design for Add/Edit Ticket modals.
+  - Eliminated default padding/margin on modal headers for precise design alignment.
+  - Applied forceful white backgrounds (`isBgWhite={true}`) to all form inputs and selects.
+  - Standardized label font weight to `bold` for better readability.
+- **Data Mapping Fix**: Resolved the "Unassigned" agent bug by correctly mapping nested `assigned_agent` objects and displaying human-readable `ticket_code` (e.g., `TKT-005`).
+
+#### 🎨 General UI Standardization
+- **Header Color Sync**: Globally standardized table header backgrounds to `bg-[#EEF2FD]!` across all modules.
+- **Table Refinement**: Applied the standard 24px padding and consistent border styling to the Contact Management table.
+
+---
+
+## [1.3.1] - 2026-02-02
+
+### Changed
+- Standardized table UI across the application (Leads, Quotations, Products, Email Marketing, and Contacts) with consistent 24px padding and margins.
+- Improved table containers with standardized borders and rounded corners.
+- Fixed Ticket Management background and assigned agent identification.
+- Fixed Lead Table "stick to card" issue by adjusting spacing and borders.
+
+---
+
+### Detail Versi 1.3.1
+
+#### 🎨 UI/UX Enhancement
+
+- **Table Standardization:**
+  - **Contact Module:** Refactored Contacts table to align with Sales/Product design standards (MUI Table, consistent header styling, white card container).
+  - **Email Marketing:** Refactored `CampaignsTable`, `SubscribersTable`, and **Mailing List Detail tables** to match the standardized design.
+
+- **Visual Improvements:**
+  - **Ticket Management:** Updated page background color to white (`#ffffff`) for a cleaner look.
+
+---
+
+## [1.3.0] - 2026-01-30
+
+### Detail Versi 1.3.0
+
+#### ✨ Fitur Baru: Ticket Management Module
+
+- **Deskripsi:**
+  - **Ticket Management System:** Implementasi modul manajemen tiket lengkap di bawah menu Support > Tickets.
+  - **Full CRUD Capabilities:**
+    - **List View:** Tabel tiket dengan filter status, prioritas, dan agen, serta pencarian.
+    - **Add Ticket:** Modal form untuk membuat tiket baru dengan validasi.
+    - **Edit Ticket:** Kemampuan untuk mengedit detail tiket yang ada.
+    - **Delete Ticket:** Fitur penghapusan tiket dengan konfirmasi modal.
+  - **API Integration:** Integrasi penuh dengan endpoint `/tickets` (GET, POST, PUT, DELETE) menggunakan React Query untuk manajemen state yang efisien.
+  - **Reusable Components:** Penggunaan komponen UI yang konsisten seperti `TicketStatusBadge`, `TicketPriorityBadge`, dan form reusable.
+
+#### 📁 Files Created
+
+- `app/support/tickets/page.tsx`
+- `components/support/tickets/TicketTable.tsx`
+- `components/support/tickets/TicketForm.tsx`
+- `components/support/tickets/TicketBadges.tsx`
+- `components/support/tickets/modals/AddTicketModal.tsx`
+- `components/support/tickets/modals/EditTicketModal.tsx`
+- `lib/api/tickets.ts`
+- `lib/hooks/useTickets.ts`
+- `lib/types/Ticket.ts`
+
+## [1.2.7] - 2026-01-30
+
+### Detail Versi 1.2.7
+
+#### 🐛 Bug Fix
+
+- **Quotation PDF Generation**
+  - Fixed issues with PDF generation for quotations.
+  - Implemented `html2canvas-pro` and `jspdf` for reliable client-side PDF creation.
+
 ## [1.2.6] - 2026-01-29
 
 ### Detail Versi 1.2.6

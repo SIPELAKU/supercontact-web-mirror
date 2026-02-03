@@ -2,12 +2,12 @@
 "use client";
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
+import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingListSubscriber, useMailingListDetail } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import {
     Box,
-    Button,
     Chip,
     CircularProgress,
     Dialog,
@@ -43,14 +43,14 @@ const MailingListDetailPage = () => {
 
     const { data: mailingListData, isLoading, error } = useMailingListDetail(listId);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
-    
+
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
     const [subscriberRowsPerPage, setSubscriberRowsPerPage] = useState(10);
-    
+
     // Pagination for campaigns
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
@@ -70,13 +70,13 @@ const MailingListDetailPage = () => {
 
     const handleDeleteSubscriber = async () => {
         if (!subscriberToDelete) return;
-        
+
         try {
             await deleteSubscriberMutation.mutateAsync({
                 mailingListId: listId,
                 subscriberId: subscriberToDelete.id
             });
-            
+
             toast.success('Subscriber removed from list successfully');
             setSubscriberToDelete(null);
         } catch (err: any) {
@@ -85,16 +85,16 @@ const MailingListDetailPage = () => {
     };
 
     // Filter subscribers based on search
-    const filteredSubscribers = subscribers.filter(s => 
-        searchQuery === '' || 
+    const filteredSubscribers = subscribers.filter(s =>
+        searchQuery === '' ||
         s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.company?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Filter campaigns based on search
-    const filteredCampaigns = campaigns.filter(c => 
-        searchQuery === '' || 
+    const filteredCampaigns = campaigns.filter(c =>
+        searchQuery === '' ||
         c.subject.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -102,9 +102,9 @@ const MailingListDetailPage = () => {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography color="error">Failed to load mailing list details</Typography>
-                <Button onClick={() => router.push('/email-marketing/mailing-lists')} sx={{ mt: 2 }}>
+                <AppButton onClick={() => router.push('/email-marketing/mailing-lists')} sx={{ mt: 2 }}>
                     Back to Mailing Lists
-                </Button>
+                </AppButton>
             </Box>
         );
     }
@@ -145,14 +145,15 @@ const MailingListDetailPage = () => {
 
             {/* Back Button */}
             <Box sx={{ mb: 3 }}>
-                <Button
-                    variant="outlined"
+                <AppButton
+                    variantStyle="outline"
+                    color="gray"
                     startIcon={<ArrowLeft size={18} />}
                     onClick={() => router.push('/email-marketing/mailing-lists')}
                     sx={{ textTransform: 'none' }}
                 >
                     Kembali ke Mailing List
-                </Button>
+                </AppButton>
             </Box>
 
             {/* Title with Contact Count Chip */}
@@ -160,9 +161,9 @@ const MailingListDetailPage = () => {
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                     {mailingList.name}
                 </Typography>
-                <Chip 
-                    label={`${mailingList.subscriber_count} Kontak`} 
-                    color="primary" 
+                <Chip
+                    label={`${mailingList.subscriber_count} Kontak`}
+                    color="primary"
                     size="medium"
                 />
             </Box>
@@ -176,30 +177,20 @@ const MailingListDetailPage = () => {
             </Box>
 
             {/* Tab Content */}
-            <Box>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
                 {/* Toolbar */}
-                <Box sx={{ mb: 2, p: 2, bgcolor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1 }}>
-                        <Button
-                            variant="outlined"
+                        <AppButton
+                            variantStyle="soft"
                             startIcon={<Filter size={18} />}
-                            sx={{ 
-                                textTransform: 'none',
-                                borderColor: 'transparent',
-                                color: '#5D87FF',
-                                bgcolor: '#ECF2FF',
+                            sx={{
                                 height: '42px',
-                                borderRadius: '8px',
-                                px: 2.5,
-                                fontWeight: 500,
-                                '&:hover': {
-                                    borderColor: 'transparent',
-                                    bgcolor: '#d5e5ff'
-                                }
+                                px: 2.5
                             }}
                         >
                             Filters
-                        </Button>
+                        </AppButton>
                         <TextField
                             size="small"
                             placeholder={activeTab === 0 ? "Search..." : "Search campaigns..."}
@@ -208,7 +199,7 @@ const MailingListDetailPage = () => {
                             InputProps={{
                                 startAdornment: <Search size={18} style={{ marginRight: 8, color: '#9ca3af' }} />
                             }}
-                            sx={{ 
+                            sx={{
                                 flex: 1,
                                 maxWidth: '400px',
                                 '& .MuiOutlinedInput-root': {
@@ -230,41 +221,31 @@ const MailingListDetailPage = () => {
                         />
                     </Box>
                     {activeTab === 0 && (
-                        <Button
-                            variant="contained"
+                        <AppButton
+                            variantStyle="primary"
                             startIcon={<UserPlus size={18} />}
                             onClick={() => setShowAddSubscriberModal(true)}
-                            sx={{ 
-                                textTransform: 'none',
-                                fontSize: '0.875rem',
+                            sx={{
                                 height: '42px',
-                                borderRadius: '8px',
                                 px: 3,
-                                bgcolor: '#5D87FF',
-                                fontWeight: 600,
-                                boxShadow: 'none',
-                                '&:hover': {
-                                    bgcolor: '#4570ea',
-                                    boxShadow: 'none'
-                                }
                             }}
                         >
                             Tambah Subscriber
-                        </Button>
+                        </AppButton>
                     )}
                 </Box>
 
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
                     <>
-                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
+                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
-                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Nama</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Nama Perusahaan</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Aksi</TableCell>
+                                <TableHead>
+                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Email</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama Perusahaan</TableCell>
+                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Aksi</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -278,14 +259,21 @@ const MailingListDetailPage = () => {
                                         </TableRow>
                                     ) : (
                                         paginatedSubscribers.map((subscriber) => (
-                                            <TableRow key={subscriber.id} hover>
-                                                <TableCell>{subscriber.email}</TableCell>
-                                                <TableCell>{subscriber.name || '-'}</TableCell>
-                                                <TableCell>{subscriber.company || '-'}</TableCell>
-                                                <TableCell align="center">
+                                            <TableRow
+                                                key={subscriber.id}
+                                                hover
+                                                sx={{
+                                                    '&:hover': { bgcolor: '#f9fafb' },
+                                                    '& td': { borderBottom: '1px solid #f3f4f6' }
+                                                }}
+                                            >
+                                                <TableCell sx={{ py: 2, pl: 3 }}>{subscriber.email}</TableCell>
+                                                <TableCell sx={{ py: 2 }}>{subscriber.name || '-'}</TableCell>
+                                                <TableCell sx={{ py: 2 }}>{subscriber.company || '-'}</TableCell>
+                                                <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                                                     <Tooltip title="Delete">
-                                                        <IconButton 
-                                                            size="small" 
+                                                        <IconButton
+                                                            size="small"
                                                             color="error"
                                                             onClick={() => setSubscriberToDelete(subscriber)}
                                                         >
@@ -298,35 +286,35 @@ const MailingListDetailPage = () => {
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25, 50]}
-                            component="div"
-                            count={filteredSubscribers.length}
-                            rowsPerPage={subscriberRowsPerPage}
-                            page={subscriberPage}
-                            onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
-                            onRowsPerPageChange={(e) => {
-                                setSubscriberRowsPerPage(parseInt(e.target.value, 10));
-                                setSubscriberPage(0);
-                            }}
-                        />
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={filteredSubscribers.length}
+                                rowsPerPage={subscriberRowsPerPage}
+                                page={subscriberPage}
+                                onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
+                                onRowsPerPageChange={(e) => {
+                                    setSubscriberRowsPerPage(parseInt(e.target.value, 10));
+                                    setSubscriberPage(0);
+                                }}
+                            />
+                        </div>
                     </>
                 )}
 
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
                     <>
-                        <TableContainer component={Paper} sx={{ borderRadius: 1 }}>
+                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
                             <Table>
-                                <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Sent Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Delivered</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Opened</TableCell>
-                                        <TableCell sx={{ fontWeight: 600 }}>Open Rate</TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                                <TableHead>
+                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Delivered</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Opened</TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Open Rate</TableCell>
+                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -340,24 +328,31 @@ const MailingListDetailPage = () => {
                                         </TableRow>
                                     ) : (
                                         paginatedCampaigns.map((campaign) => {
-                                            const openRate = campaign.delivered > 0 
+                                            const openRate = campaign.delivered > 0
                                                 ? ((campaign.opened / campaign.delivered) * 100).toFixed(1)
                                                 : '0';
                                             return (
-                                                <TableRow key={campaign.id} hover>
-                                                    <TableCell>{campaign.subject}</TableCell>
-                                                    <TableCell>
-                                                        {campaign.sent_date 
+                                                <TableRow
+                                                    key={campaign.id}
+                                                    hover
+                                                    sx={{
+                                                        '&:hover': { bgcolor: '#f9fafb' },
+                                                        '& td': { borderBottom: '1px solid #f3f4f6' }
+                                                    }}
+                                                >
+                                                    <TableCell sx={{ py: 2, pl: 3 }}>{campaign.subject}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>
+                                                        {campaign.sent_date
                                                             ? format(new Date(campaign.sent_date), 'dd MMM yyyy, HH:mm')
                                                             : '-'
                                                         }
                                                     </TableCell>
-                                                    <TableCell>{campaign.delivered}</TableCell>
-                                                    <TableCell>{campaign.opened}</TableCell>
-                                                    <TableCell>{openRate}%</TableCell>
-                                                    <TableCell align="center">
+                                                    <TableCell sx={{ py: 2 }}>{campaign.delivered}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{campaign.opened}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{openRate}%</TableCell>
+                                                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                                                         <Tooltip title="View Statistics">
-                                                            <IconButton 
+                                                            <IconButton
                                                                 size="small"
                                                                 onClick={() => toast('View statistics feature coming soon!')}
                                                             >
@@ -371,22 +366,22 @@ const MailingListDetailPage = () => {
                                     )}
                                 </TableBody>
                             </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[5, 10, 25, 50]}
-                            component="div"
-                            count={filteredCampaigns.length}
-                            rowsPerPage={campaignRowsPerPage}
-                            page={campaignPage}
-                            onPageChange={(_e, newPage) => setCampaignPage(newPage)}
-                            onRowsPerPageChange={(e) => {
-                                setCampaignRowsPerPage(parseInt(e.target.value, 10));
-                                setCampaignPage(0);
-                            }}
-                        />
+                            <TablePagination
+                                rowsPerPageOptions={[5, 10, 25, 50]}
+                                component="div"
+                                count={filteredCampaigns.length}
+                                rowsPerPage={campaignRowsPerPage}
+                                page={campaignPage}
+                                onPageChange={(_e, newPage) => setCampaignPage(newPage)}
+                                onRowsPerPageChange={(e) => {
+                                    setCampaignRowsPerPage(parseInt(e.target.value, 10));
+                                    setCampaignPage(0);
+                                }}
+                            />
+                        </div>
                     </>
                 )}
-            </Box>
+            </div>
 
             {/* Add Subscriber Modal */}
             <AddSubscriberModal
@@ -411,12 +406,12 @@ const MailingListDetailPage = () => {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending}>
+                    <AppButton variantStyle="outline" onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending}>
                         Cancel
-                    </Button>
-                    <Button onClick={handleDeleteSubscriber} color="error" variant="contained" disabled={deleteSubscriberMutation.isPending}>
-                        {deleteSubscriberMutation.isPending ? <CircularProgress size={20} /> : 'Remove'}
-                    </Button>
+                    </AppButton>
+                    <AppButton variantStyle="danger" onClick={handleDeleteSubscriber} disabled={deleteSubscriberMutation.isPending}>
+                        {deleteSubscriberMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Remove'}
+                    </AppButton>
                 </DialogActions>
             </Dialog>
         </Box>

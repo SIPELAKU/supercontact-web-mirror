@@ -60,7 +60,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
         <FormControl
           fullWidth={fullWidth}
           size="small"
-          sx={{ backgroundColor: isBgWhite ? "white" : INPUT_BG }}
+          sx={{ backgroundColor: isBgWhite ? "white !important" : INPUT_BG }}
         >
           <Select
             labelId={labelId}

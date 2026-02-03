@@ -2,29 +2,29 @@
 
 import CardStatistik, { UserStatType } from "@/components/ui/card-stat";
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    FormControl,
-    Grid,
-    MenuItem,
-    Paper,
-    Select,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  FormControl,
+  Grid,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
 } from "@mui/material";
 import {
-    DollarSign,
-    Target,
-    TrendingUp,
-    Users
+  DollarSign,
+  Target,
+  TrendingUp,
+  Users
 } from "lucide-react";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
@@ -139,23 +139,23 @@ export default function DashboardClient() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={salesFunnelData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="stage" 
-                      axisLine={false} 
+                    <XAxis
+                      dataKey="stage"
+                      axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 11, fill: '#666' }}
                       angle={-45}
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis 
-                      axisLine={false} 
+                    <YAxis
+                      axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 12, fill: '#666' }}
                     />
-                    <Bar 
-                      dataKey="count" 
-                      fill="#3b82f6" 
+                    <Bar
+                      dataKey="count"
+                      fill="#3b82f6"
                       radius={[4, 4, 0, 0]}
                       maxBarSize={60}
                     />
@@ -182,16 +182,16 @@ export default function DashboardClient() {
                 {recentActivities.map((activity, index) => (
                   <Paper key={index} sx={{ p: 2, bgcolor: '#fafafa' }}>
                     <Box display="flex" alignItems="flex-start" gap={2}>
-                      <Box 
-                        sx={{ 
-                          width: 8, 
-                          height: 8, 
-                          borderRadius: '50%', 
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
                           mt: 1,
-                          bgcolor: activity.status === 'success' ? '#4caf50' : 
-                                   activity.status === 'info' ? '#2196f3' : 
-                                   activity.status === 'warning' ? '#ff9800' : '#f44336'
-                        }} 
+                          bgcolor: activity.status === 'success' ? '#4caf50' :
+                            activity.status === 'info' ? '#2196f3' :
+                              activity.status === 'warning' ? '#ff9800' : '#f44336'
+                        }}
                       />
                       <Box flex={1}>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -242,28 +242,28 @@ export default function DashboardClient() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueGrowthData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="month" 
+                <XAxis
+                  dataKey="month"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#666' }}
                 />
-                <YAxis 
+                <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#666' }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#3b82f6" 
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#3b82f6"
                   strokeWidth={3}
                   dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="target" 
-                  stroke="#e5e7eb" 
+                <Line
+                  type="monotone"
+                  dataKey="target"
+                  stroke="#e5e7eb"
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
@@ -296,7 +296,7 @@ export default function DashboardClient() {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#f8f9fa' }}>
+                <TableRow className="bg-[#EEF2FD]!">
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Deal Name</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Company</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Value</TableCell>

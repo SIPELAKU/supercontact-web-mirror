@@ -146,7 +146,7 @@ const StyledTextField = styled(TextField, {
 );
 
 // --- Component ---
-export const AppInput: React.FC<AppInputProps> = (props) => {
+export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref) => {
   const [showPassword, setShowPassword] = useState(false);
 
   if (props.type === "checkbox") {
@@ -154,6 +154,7 @@ export const AppInput: React.FC<AppInputProps> = (props) => {
     return (
       <Checkbox
         {...checkboxProps}
+        inputRef={ref}
         sx={{
           color: BORDER_COLOR,
           "&.Mui-checked": {
@@ -192,6 +193,7 @@ export const AppInput: React.FC<AppInputProps> = (props) => {
       height={height}
       width={width}
       type={isPassword ? (showPassword ? "text" : "password") : type}
+      inputRef={ref}
       InputProps={{
         startAdornment: startIcon ? (
           <InputAdornment position="start">{startIcon}</InputAdornment>
@@ -217,4 +219,6 @@ export const AppInput: React.FC<AppInputProps> = (props) => {
       {...textFieldProps}
     />
   );
-};
+});
+
+AppInput.displayName = "AppInput";

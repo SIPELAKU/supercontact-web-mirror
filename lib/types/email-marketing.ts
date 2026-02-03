@@ -134,7 +134,15 @@ export interface Campaign {
   subject: string;
   html_content: string;
   status: string;
+  total_target: number;
+  recipient_source: string;
   sent_at: string | null;
+  stats: {
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -180,7 +188,7 @@ export interface UpdateCampaignData {
 }
 
 export interface Contact {
-  id: number;
+  id: string;
   name: string;
   email: string;
 }

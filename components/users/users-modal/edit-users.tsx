@@ -110,7 +110,7 @@ export default function EditUserDialog({
     }
   };
 
-  const filteredEmails = usersResponse?.data?.manage_users || [];
+  const filteredEmails = usersResponse?.data?.users || [];
 
   // Filter branches based on input and selected department
   const branches = useMemo(() => {

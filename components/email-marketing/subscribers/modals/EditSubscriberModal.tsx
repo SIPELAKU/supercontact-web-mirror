@@ -4,6 +4,7 @@
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
 import { AppTextarea } from '@/components/ui/app-textarea';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useUpdateSubscriber } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
@@ -116,8 +117,10 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
     );
   }
 
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Subscriber</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -196,11 +199,41 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <AppButton variantStyle='outline' onClick={handleClose} color="gray" disabled={updateMutation.isPending}>Cancel</AppButton>
+        <AppButton
+          variantStyle='outline'
+          onClick={() => {
+            setEmail('');
+            setName('');
+            setPhoneNumber('');
+            setPosition('');
+            setCompany('');
+            setAddress('');
+            setError('');
+            onClose();
+          }}
+          color="gray"
+          disabled={updateMutation.isPending}
+        >
+          Cancel
+        </AppButton>
         <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' disabled={updateMutation.isPending}>
           {updateMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
         </AppButton>
       </DialogActions>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </Dialog>
   );
 };

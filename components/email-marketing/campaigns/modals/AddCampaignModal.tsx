@@ -3,6 +3,7 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
@@ -118,8 +119,10 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     }
   };
 
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="md" fullWidth>
       <DialogTitle>Create New Campaign</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -243,7 +246,20 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <AppButton onClick={handleClose} color="gray" variantStyle="outline" disabled={createMutation.isPending}>
+        <AppButton
+          onClick={() => {
+            setSubject('');
+            setHtmlContent('');
+            setRecipientSource('mailing_list');
+            setSelectedMailingLists([]);
+            setSelectedSubscribers([]);
+            setError('');
+            onClose();
+          }}
+          color="gray"
+          variantStyle="outline"
+          disabled={createMutation.isPending}
+        >
           Cancel
         </AppButton>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -263,6 +279,20 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
           </AppButton>
         </Box>
       </DialogActions>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </Dialog>
   );
 };

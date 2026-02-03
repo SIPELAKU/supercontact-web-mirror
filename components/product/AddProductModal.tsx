@@ -13,6 +13,7 @@ import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
 import { Spinner } from "../ui/spinner";
+import { ConfirmationPopup } from "../ui/confirmation-popup";
 
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
 export type ProductPayload = Omit<Product, "id">;
@@ -226,10 +227,28 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         }
     };
 
+    const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+    const handleOpenChange = (isOpen: boolean) => {
+        if (!isOpen) {
+            setShowCloseConfirmation(true);
+        } else {
+            onOpenChange(isOpen);
+        }
+    };
+
+    const handleConfirmClose = () => {
+        setShowCloseConfirmation(false);
+        onOpenChange(false);
+        reset();
+        setEditId("");
+    };
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange} maxWidth="md">
-            <DialogContent
-                className="
+        <>
+            <Dialog open={open} onOpenChange={handleOpenChange} maxWidth="md">
+                <DialogContent
+                    className="
                 max-w-205 
                 w-full 
                 px-10 py-8 
@@ -237,114 +256,126 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 bg-white
                 border border-gray-200
                 ">
-                <div className="mt-2">
-                    <h2 className="text-2xl font-semibold text-[#5479EE]">
-                        {id ? "Update Product" : "Add New Product"}
-                    </h2>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-900">Product Name</label>
-                            <AppInput
-                                name="productName"
-                                placeholder="e.g., Aplikasi CRM Enterprise"
-                                value={formData.productName}
-                                onChange={handleChange}
-                                isBgWhite
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-900">Price (IDR)</label>
-                            <AppInput
-                                name="price"
-                                type="text"
-                                placeholder="e.g., 10.000"
-                                value={formData.price}
-                                onChange={handleChange}
-                                isBgWhite
-                            />
-                        </div>
+                    <div className="mt-2">
+                        <h2 className="text-2xl font-semibold text-[#5479EE]">
+                            {id ? "Update Product" : "Add New Product"}
+                        </h2>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-900">
-                                SKU
-                                <span className="text-gray-400 font-normal ml-2 text-xs">
-                                    (Format: {getAcronym(formData.productName) || "XX"}-{companyAcronym}-001)
-                                </span>
-                            </label>
-
-                            <div className="relative">
+                    <div className="mt-6 space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">Product Name</label>
                                 <AppInput
-                                    name="sku"
-                                    placeholder="Auto-generated SKU"
-                                    value={formData.sku}
+                                    name="productName"
+                                    placeholder="e.g., Aplikasi CRM Enterprise"
+                                    value={formData.productName}
                                     onChange={handleChange}
                                     isBgWhite
                                 />
-                                <button
-                                    type="button"
-                                    onClick={generateSKU}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5479EE] transition-colors"
-                                    title="Generate Smart SKU"
-                                >
-                                    <RefreshCcw size={18} />
-                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">Price (IDR)</label>
+                                <AppInput
+                                    name="price"
+                                    type="text"
+                                    placeholder="e.g., 10.000"
+                                    value={formData.price}
+                                    onChange={handleChange}
+                                    isBgWhite
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">
+                                    SKU
+                                    <span className="text-gray-400 font-normal ml-2 text-xs">
+                                        (Format: {getAcronym(formData.productName) || "XX"}-{companyAcronym}-001)
+                                    </span>
+                                </label>
+
+                                <div className="relative">
+                                    <AppInput
+                                        name="sku"
+                                        placeholder="Auto-generated SKU"
+                                        value={formData.sku}
+                                        onChange={handleChange}
+                                        isBgWhite
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={generateSKU}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5479EE] transition-colors"
+                                        title="Generate Smart SKU"
+                                    >
+                                        <RefreshCcw size={18} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">Tax Rate</label>
+                                <CustomSelectStage
+                                    value={formData.taxRate ?? ""}
+                                    disabled={true}
+                                    onChange={() => null}
+                                    placeholder="Standard (11%)"
+                                    data={[{ label: "PNN", value: "he" }]}
+                                    className="bg-white rounded-md"
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-900">Tax Rate</label>
-                            <CustomSelectStage
-                                value={formData.taxRate ?? ""}
-                                disabled={true}
-                                onChange={() => null}
-                                placeholder="Standard (11%)"
-                                data={[{ label: "PNN", value: "he" }]}
-                                className="bg-white rounded-md"
+                            <label className="text-sm font-semibold text-gray-900">Description</label>
+                            <AppTextarea
+                                name="description"
+                                placeholder="Enter product description..."
+                                rows={6}
+                                value={formData.description}
+                                onChange={handleChange}
+                                isBgWhite
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-900">Description</label>
-                        <AppTextarea
-                            name="description"
-                            placeholder="Enter product description..."
-                            rows={6}
-                            value={formData.description}
-                            onChange={handleChange}
-                            isBgWhite
-                        />
+                    <div className="flex justify-end gap-3 mt-10 border-t pt-4">
+                        <AppButton
+                            variantStyle="outline"
+                            color="primary"
+                            onClick={() => {
+                                reset();
+                                setEditId("");
+                                onOpenChange(false);
+                            }}
+                        >
+                            Cancel
+                        </AppButton>
+                        <AppButton
+                            variantStyle="primary"
+                            color="primary"
+                            onClick={handleSave}
+                            disabled={loading}
+                        >
+                            {loading ? <Spinner /> : id ? "Update Product" : "Save Product"}
+                        </AppButton>
                     </div>
-                </div>
+                </DialogContent>
+            </Dialog>
 
-                <div className="flex justify-end gap-3 mt-10 border-t pt-4">
-                    <AppButton
-                        variantStyle="outline"
-                        color="primary"
-                        onClick={() => {
-                            reset();
-                            setEditId("");
-                            onOpenChange(false);
-                        }}
-                    >
-                        Cancel
-                    </AppButton>
-                    <AppButton
-                        variantStyle="primary"
-                        color="primary"
-                        onClick={handleSave}
-                        disabled={loading}
-                    >
-                        {loading ? <Spinner /> : id ? "Update Product" : "Save Product"}
-                    </AppButton>
-                </div>
-            </DialogContent>
-        </Dialog>
+            <ConfirmationPopup
+                isOpen={showCloseConfirmation}
+                onClose={() => setShowCloseConfirmation(false)}
+                onConfirm={handleConfirmClose}
+                title="Are you sure?"
+                description="This will discard your current record."
+                confirmText="Discard record"
+                cancelText="Cancel"
+                variant="danger"
+            />
+        </>
     );
 }

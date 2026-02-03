@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -127,8 +128,10 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
     );
   }
 
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="md" fullWidth>
       <DialogTitle>Edit Campaign</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -210,7 +213,19 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <AppButton onClick={handleClose} color="gray" variantStyle="outline" disabled={updateMutation.isPending}>
+        <AppButton
+          onClick={() => {
+            setSubject('');
+            setHtmlContent('');
+            setRecipientSource('mailing_list');
+            setSelectedMailingLists([]);
+            setError('');
+            onClose();
+          }}
+          color="gray"
+          variantStyle="outline"
+          disabled={updateMutation.isPending}
+        >
           Cancel
         </AppButton>
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -230,6 +245,20 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           </AppButton>
         </Box>
       </DialogActions>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </Dialog>
   );
 };

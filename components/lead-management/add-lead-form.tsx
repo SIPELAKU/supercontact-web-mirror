@@ -22,6 +22,7 @@ import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
 import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
+import { ConfirmationPopup } from "../ui/confirmation-popup";
 
 // MUI Theme for consistent styling
 const theme = createTheme({
@@ -285,6 +286,22 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       setIsSubmitting(false);
     }
   };
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setShowCloseConfirmation(true);
+    } else {
+      setOpen(isOpen);
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirmation(false);
+    reset();
+    setOpen(false);
+  };
+
   return (
     <>
       <AppButton
@@ -295,7 +312,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         <GrAdd className="text-lg mr-2" /> Add New Lead
       </AppButton>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="
             max-w-[820px] 
@@ -625,6 +642,17 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={handleConfirmClose}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </>
   );
 }

@@ -75,7 +75,10 @@ export function Dialog({
         onClick={() => onOpenChange(false)}
       />
 
-      <div className="absolute inset-0 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 flex items-center justify-center p-4"
+        onClick={() => onOpenChange(false)}
+      >
         <div
           className={clsx(
             "w-full transform rounded-3xl bg-white shadow-xl overflow-hidden",

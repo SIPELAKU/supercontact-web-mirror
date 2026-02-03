@@ -3,6 +3,7 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useCreateMailingList } from '@/lib/hooks/useMailingLists';
 import {
   Alert,
@@ -55,8 +56,10 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
     }
   };
 
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
       <DialogTitle>Create New Mailing List</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -75,13 +78,36 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <AppButton onClick={handleClose} color="gray" variantStyle='outline' disabled={createMutation.isPending}>
+        <AppButton
+          onClick={() => {
+            setName('');
+            setError('');
+            onClose();
+          }}
+          color="gray"
+          variantStyle='outline'
+          disabled={createMutation.isPending}
+        >
           Cancel
         </AppButton>
         <AppButton onClick={handleSubmit} variantStyle="primary" disabled={createMutation.isPending}>
           {createMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Create List'}
         </AppButton>
       </DialogActions>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </Dialog>
   );
 };

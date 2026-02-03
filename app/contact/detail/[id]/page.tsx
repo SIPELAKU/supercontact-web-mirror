@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Contact, Note, Task } from "@/lib/models/types";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ArrowLeftIcon, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import EditContactModal from "@/components/modal/EditContact";
 import AddTaskModal from "@/components/modal/AddTaskModal";
@@ -167,6 +167,17 @@ export default function ContactDetailPage() {
 
   return (
     <div className="w-full flex flex-col gap-6 p-4 md:p-8 bg-gray-50 min-h-screen">
+      <Box className="w-fit">
+        <AppButton
+          onClick={() => router.back()}
+          variantStyle="text"
+          startIcon={<ArrowLeftIcon />}
+        >
+          Back
+        </AppButton>
+      </Box>
+      <Divider />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-6">
         <div className="flex items-center gap-4">

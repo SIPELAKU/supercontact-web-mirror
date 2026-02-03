@@ -28,6 +28,7 @@ import {
   Checkbox
 } from "@mui/material";
 import { Spinner } from "@/components/ui/spinner";
+import PageHeader from "@/components/ui/page-header";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -257,9 +258,9 @@ export default function ContactsPage() {
 
   return (
     <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-      <BannerDashboard
+      <PageHeader
         title="Contacts"
-        breadcrumbs={["Dashboard", "Contacts"]}
+        breadcrumbs={[{ label: "Dashboard" }, { label: "Contacts" }]}
       />
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">

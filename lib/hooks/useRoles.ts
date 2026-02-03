@@ -1,8 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RoleResponse, RoleType } from "../types/Role";
+import { useAuth } from "../context/AuthContext";
+import { notify } from "../notifications";
+import { useRouter } from "next/navigation";
 
 const useRoles = (page: number, limit: number, search?: string,) => {
+  const { token } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const {
     data: rolesData,
@@ -12,13 +17,24 @@ const useRoles = (page: number, limit: number, search?: string,) => {
   } = useQuery({
     queryKey: ["roles", page, limit, search],
     queryFn: async () => {
+      if (!token) {
+        notify.error("Error fetching roles", {
+          description: "Please login to continue"
+        })
+        router.push("/login");
+        return;
+      }
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
       });
       if (search) params.append("search", search);
-      const response = await fetch(`/api/proxy/role-permissions?${params.toString()}`);
-      
+      const response = await fetch(`/api/proxy/role-permissions?${params.toString()}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
       if (!response.ok) {
         throw new Error("Failed to fetch roles");
       }
@@ -36,10 +52,18 @@ const useRoles = (page: number, limit: number, search?: string,) => {
       roleName: string;
       permissions: string[];
     }) => {
+      if (!token) {
+        notify.error("Error adding role", {
+          description: "Please login to continue"
+        })
+        router.push("/login");
+        return;
+      }
       const response = await fetch("/api/proxy/role-permissions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           role_name: roleName,
@@ -69,10 +93,18 @@ const useRoles = (page: number, limit: number, search?: string,) => {
       permissions: string[];
       roleId: string;
     }) => {
+      if (!token) {
+        notify.error("Error editing role", {
+          description: "Please login to continue"
+        })
+        router.push("/login");
+        return;
+      }
       const response = await fetch(`/api/proxy/role-permissions/${roleId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           role_name: roleName,
@@ -98,8 +130,18 @@ const useRoles = (page: number, limit: number, search?: string,) => {
     }: {
       roleId: string;
     }) => {
+      if (!token) {
+        notify.error("Error deleting role", {
+          description: "Please login to continue"
+        })
+        router.push("/login");
+        return;
+      }
       const response = await fetch(`/api/proxy/role-permissions/${roleId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {

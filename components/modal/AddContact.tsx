@@ -8,6 +8,7 @@ import router from "next/router";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface InputProps {
   label: string;
@@ -73,6 +74,20 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     position: "",
     address: "",
   });
+
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  const handleClose = () => {
+    onClose();
+    setLocal({
+      name: "",
+      phone_number: "",
+      email: "",
+      company: "",
+      position: "",
+      address: "",
+    });
+  };
 
   // Selalu reset form saat modal terbuka
   useEffect(() => {
@@ -234,101 +249,117 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-      onClick={onClose}
-    >
+    <>
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        onClick={() => setShowCloseConfirmation(true)}
       >
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
-          <p className="text-gray-600 text-md mt-1">
-            Fill in the details below to add a new contact to your CRM.
-          </p>
+        <div
+          className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
+            <p className="text-gray-600 text-md mt-1">
+              Fill in the details below to add a new contact to your CRM.
+            </p>
 
-          <div className="mt-6 flex flex-col md:flex-row gap-4">
-            <div className="w-full md:w-1/2 flex flex-col gap-4">
-              <InputField
-                isRequired
-                label="Name"
-                value={local.name}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, name: e.target.value }))
-                }
-                placeholder="Enter name"
-              />
+            <div className="mt-6 flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <InputField
+                  isRequired
+                  label="Name"
+                  value={local.name}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, name: e.target.value }))
+                  }
+                  placeholder="Enter name"
+                />
 
-              <InputField
-                isRequired
-                label="Email"
-                value={local.email}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, email: e.target.value }))
-                }
-                placeholder="Enter email"
-              />
+                <InputField
+                  isRequired
+                  label="Email"
+                  value={local.email}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, email: e.target.value }))
+                  }
+                  placeholder="Enter email"
+                />
 
-              <InputField
-                isRequired={false}
-                label="Company"
-                value={local.company}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, company: e.target.value }))
-                }
-                placeholder="Enter company"
-              />
+                <InputField
+                  isRequired={false}
+                  label="Company"
+                  value={local.company}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, company: e.target.value }))
+                  }
+                  placeholder="Enter company"
+                />
+              </div>
+
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <InputField
+                  isRequired
+                  label="Phone Number"
+                  value={local.phone_number}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, phone_number: e.target.value }))
+                  }
+                  placeholder="Enter phone number"
+                />
+
+                <InputField
+                  isRequired
+                  label="Position"
+                  value={local.position}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, position: e.target.value }))
+                  }
+                  placeholder="Enter position"
+                />
+                <InputField
+                  isRequired={false}
+                  label="Address"
+                  value={local.address}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, address: e.target.value }))
+                  }
+                  placeholder="Enter address"
+                />
+              </div>
             </div>
 
-            <div className="w-full md:w-1/2 flex flex-col gap-4">
-              <InputField
-                isRequired
-                label="Phone Number"
-                value={local.phone_number}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, phone_number: e.target.value }))
-                }
-                placeholder="Enter phone number"
-              />
+            <div className="flex justify-end gap-3 mt-8 font-medium">
+              <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                Cancel
+              </AppButton>
 
-              <InputField
-                isRequired
-                label="Position"
-                value={local.position}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, position: e.target.value }))
-                }
-                placeholder="Enter position"
-              />
-              <InputField
-                isRequired={false}
-                label="Address"
-                value={local.address}
-                onChange={(e) =>
-                  setLocal((s) => ({ ...s, address: e.target.value }))
-                }
-                placeholder="Enter address"
-              />
+              <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
+                {isLoadiNg ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  "Save Contact"
+                )}
+              </AppButton>
             </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-8 font-medium">
-            <AppButton onClick={onClose} variantStyle="outline" color="primary">
-              Cancel
-            </AppButton>
-
-            <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
-              {isLoadiNg ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                "Save Contact"
-              )}
-            </AppButton>
           </div>
         </div>
       </div>
-    </div>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
+    </>
   );
 };
 

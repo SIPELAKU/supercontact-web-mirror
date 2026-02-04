@@ -4,6 +4,8 @@ import { useUpdateTicket } from "@/lib/hooks/useTickets";
 import { notify } from "@/lib/notifications";
 import { Ticket } from "@/lib/types/Ticket";
 import { Divider } from "@mui/material";
+import { useState } from "react";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface EditTicketModalProps {
     isOpen: boolean;
@@ -26,22 +28,44 @@ export function EditTicketModal({ isOpen, onClose, ticket }: EditTicketModalProp
         }
     };
 
+    const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+    const handleClose = () => {
+        onClose();
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose} maxWidth="sm">
-            <DialogContent>
-                <DialogHeader className="p-0 m-0">
-                    <DialogTitle className="text-[#5479EE] p-0 m-0" style={{ fontSize: '22px', fontWeight: 'bold', padding: 0, margin: 0 }}>Edit Ticket</DialogTitle>
-                    <p className="text-sm text-gray-500 mt-1">Fill in the details below to update the support ticket</p>
-                </DialogHeader>
-                {ticket && (
-                    <TicketForm
-                        initialData={ticket}
-                        onSubmit={handleSubmit}
-                        onCancel={onClose}
-                        isLoading={updateMutation.isPending}
-                    />
-                )}
-            </DialogContent>
-        </Dialog>
+        <>
+            <Dialog open={isOpen} onOpenChange={() => setShowCloseConfirmation(true)} maxWidth="sm">
+                <DialogContent>
+                    <DialogHeader className="p-0 m-0">
+                        <DialogTitle className="text-[#5479EE] p-0 m-0" style={{ fontSize: '22px', fontWeight: 'bold', padding: 0, margin: 0 }}>Edit Ticket</DialogTitle>
+                        <p className="text-sm text-gray-500 mt-1">Fill in the details below to update the support ticket</p>
+                    </DialogHeader>
+                    {ticket && (
+                        <TicketForm
+                            initialData={ticket}
+                            onSubmit={handleSubmit}
+                            onCancel={() => setShowCloseConfirmation(true)}
+                            isLoading={updateMutation.isPending}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmationPopup
+                isOpen={showCloseConfirmation}
+                onClose={() => setShowCloseConfirmation(false)}
+                onConfirm={() => {
+                    setShowCloseConfirmation(false);
+                    handleClose();
+                }}
+                title="Are you sure?"
+                description="This will discard your current record."
+                confirmText="Discard record"
+                cancelText="Cancel"
+                variant="danger"
+            />
+        </>
     );
 }

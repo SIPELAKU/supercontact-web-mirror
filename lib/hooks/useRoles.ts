@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RoleResponse, RoleType } from "../types/Role";
+import { useAuth } from "../context/AuthContext";
 
-const useRoles = (page: number, limit: number, search?: string,) => {
+const useRoles = (page: number = 1, limit: number = 10, search?: string) => {
+  const { token } = useAuth();
   const queryClient = useQueryClient();
 
   const {
@@ -18,14 +20,15 @@ const useRoles = (page: number, limit: number, search?: string,) => {
       });
       if (search) params.append("search", search);
       const response = await fetch(`/api/proxy/role-permissions?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch roles");
       }
       const data = await response.json();
       return data?.data || [];
     },
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    staleTime: 5 * 60 * 1000,
+    enabled: !!page && !!limit && !!token,
   });
 
   const addRoleMutation = useMutation({

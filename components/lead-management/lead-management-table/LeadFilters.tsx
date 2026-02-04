@@ -47,6 +47,7 @@ export default function LeadFilters({
             { label: "Closed - Won", value: "Closed - Won" },
             { label: "Closed - Lost", value: "Closed - Lost" },
           ]}
+          height="48px"
         />
       </div>
 

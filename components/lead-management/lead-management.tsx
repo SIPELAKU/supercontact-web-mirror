@@ -4,7 +4,7 @@ import { DataTable } from "./lead-management-table/data-table";
 import KanbanView from "./lead-management-table/kanban-view";
 import { useViewMode } from "@/lib/hooks/useLeadStore";
 import { useLeads } from "@/lib/hooks/useLeads";
-import { Card, CardHeader, Divider, Tab, Tabs, Box } from "@mui/material";
+import { Card, CardHeader, Divider, Tab, Tabs, Box, CircularProgress } from "@mui/material";
 import AddLeadForm from "@/components/lead-management/add-lead-form";
 import LeadFilters from "./lead-management-table/LeadFilters";
 import { Lead } from "@/lib/models/types";
@@ -155,10 +155,16 @@ export default function LeadManagement() {
 
         <Box sx={{ p: viewMode === "table-view" ? 0 : 2 }}>
           {isLoading ? (
-            <TableSkeleton
-              columns={leadColumns.map(() => ({ width: undefined }))}
-              rows={10}
-            />
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: 120,
+              }}
+            >
+              <CircularProgress size={30} />
+            </Box>
           ) : error ? (
             <Box sx={{ p: 6, textAlign: 'center', color: 'error.main' }}>
               Failed to load leads: {error.message}

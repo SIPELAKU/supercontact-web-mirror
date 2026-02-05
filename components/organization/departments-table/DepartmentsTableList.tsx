@@ -1,7 +1,7 @@
 "use client";
 
 import { DepartmentsType } from "../../../lib/types/Departments";
-import { Avatar, Checkbox, IconButton } from "@mui/material";
+import { Avatar, Box, Checkbox, CircularProgress, IconButton } from "@mui/material";
 import { Pencil, Trash2 } from "lucide-react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -54,11 +54,6 @@ export default function TableListDepartment({
   }
 
   const randomName = generateRandomString(8);
-
-  if (isLoading) {
-    return <DepartementTableSkeleton />;
-  }
-
   if (error) {
     return <DeparmentsTableError message="Failed to load Department data." />;
   }
@@ -92,7 +87,20 @@ export default function TableListDepartment({
       </TableHead>
 
       <TableBody>
-        {data.map((department, index) => (
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={6}>
+              <Box sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: 120,
+              }} >
+                <CircularProgress />
+              </Box>
+            </TableCell>
+          </TableRow>
+        ) : data.map((department, index) => (
           <TableRow
             key={department.id}
             className="transition-all hover:bg-gray-100 cursor-pointer"

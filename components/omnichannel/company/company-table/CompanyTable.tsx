@@ -1,7 +1,7 @@
 "use client";
 
 import { CompanyType } from "@/lib/types/Company";
-import { Chip, LinearProgress, SxProps, Theme } from "@mui/material";
+import { Box, Chip, CircularProgress, LinearProgress, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -61,9 +61,7 @@ export default function CompanyTable({ company, isLoading, error }: CompanyTable
 
   const currentPath = usePathname();
 
-  if (isLoading) return <CompanyTableSkeleton />;
-  if (error) return <CompanyTableError message="" />;
-  if (company.length === 0) return <CompanyTableDataNotFound />;
+  if (error) return <CompanyTableError message="Failed to load company data" />;
   return (
     <Table>
       <TableHead>
@@ -81,64 +79,82 @@ export default function CompanyTable({ company, isLoading, error }: CompanyTable
       </TableHead>
 
       <TableBody>
-        {company?.map((company) => (
-          <TableRow key={company.id} className="h-[55px]">
-            <TableCell>
-              <input type="checkbox" />
-            </TableCell>
-
-            <TableCell onClick={() => router.push(`${currentPath}/1`)} className="cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF2FD] text-sm font-semibold text-[#6A5BF7]">{company.name.charAt(0)}</div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{company.name}</span>
-                  <span className="text-xs text-gray-500">{company.email}</span>
-                </div>
-              </div>
-            </TableCell>
-
-            {/* Industry chip */}
-            <TableCell>
-              <Chip label={company.industry} sx={getIndustryChipStyle(company.industry)} />
-            </TableCell>
-
-            <TableCell>{company.location}</TableCell>
-
-            <TableCell>{company.employees}</TableCell>
-
-            {/* Insight Score: bar + number */}
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <div className="w-24">
-                  <LinearProgress
-                    variant="determinate"
-                    value={company.insightScore}
-                    sx={{
-                      height: 8,
-                      borderRadius: 9999,
-                      backgroundColor: "#E5E7EB",
-
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor:
-                          company.insightScore > 80
-                            ? "#22C55E" // green-500
-                            : company.insightScore > 50
-                            ? "#FACC15" // yellow-400 (opsional)
-                            : "#EF4444", // red-500
-                      },
-                    }}
-                  />
-                </div>
-                <span className="text-sm font-semibold">{company.insightScore}</span>
-              </div>
-            </TableCell>
-
-            {/* Status chip */}
-            <TableCell>
-              <Chip label={company.status} sx={getStatusChipStyle(company.status)} />
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={7} sx={{ p: 0 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: 120,
+                }}
+              >
+                <CircularProgress size={30} />
+              </Box>
             </TableCell>
           </TableRow>
-        ))}
+        ) : company.length === 0 ? (
+          <CompanyTableDataNotFound />
+        ) : (
+          company?.map((company) => (
+            <TableRow key={company.id} className="h-[55px]">
+              <TableCell>
+                <input type="checkbox" />
+              </TableCell>
+
+              <TableCell onClick={() => router.push(`${currentPath}/1`)} className="cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF2FD] text-sm font-semibold text-[#6A5BF7]">{company.name.charAt(0)}</div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold">{company.name}</span>
+                    <span className="text-xs text-gray-500">{company.email}</span>
+                  </div>
+                </div>
+              </TableCell>
+
+              {/* Industry chip */}
+              <TableCell>
+                <Chip label={company.industry} sx={getIndustryChipStyle(company.industry)} />
+              </TableCell>
+
+              <TableCell>{company.location}</TableCell>
+
+              <TableCell>{company.employees}</TableCell>
+
+              {/* Insight Score: bar + number */}
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <div className="w-24">
+                    <LinearProgress
+                      variant="determinate"
+                      value={company.insightScore}
+                      sx={{
+                        height: 8,
+                        borderRadius: 9999,
+                        backgroundColor: "#E5E7EB",
+
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor:
+                            company.insightScore > 80
+                              ? "#22C55E" // green-500
+                              : company.insightScore > 50
+                                ? "#FACC15" // yellow-400 (opsional)
+                                : "#EF4444", // red-500
+                        },
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold">{company.insightScore}</span>
+                </div>
+              </TableCell>
+
+              {/* Status chip */}
+              <TableCell>
+                <Chip label={company.status} sx={getStatusChipStyle(company.status)} />
+              </TableCell>
+            </TableRow>
+          )))}
       </TableBody>
     </Table>
   );

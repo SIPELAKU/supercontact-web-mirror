@@ -3,7 +3,7 @@
 import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@mui/material";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Search, Upload } from "lucide-react";
 import { CompanyStats, CompanyTable } from "@/components/omnichannel";
 import FilterByIndustry from "@/components/omnichannel/company/filter/FilterByIndustry";
 import FilterByStatus from "@/components/omnichannel/company/filter/FilterByStatus";
@@ -17,6 +17,8 @@ import {
   IndustryOption,
   StatusOption,
 } from "@/lib/types/Company";
+import { AppInput } from "../ui/app-input";
+import { AppButton } from "../ui/app-button";
 
 const INDUSTRY_OPTIONS: IndustryOption[] = [
   { label: "All Industries", value: "all" },
@@ -128,8 +130,8 @@ export default function CompanyIntelligenceClient({
       </div>
 
       <div className="mt-6 overflow-auto rounded-lg shadow-lg">
-        <div className="flex min-w-[490px] flex-col-reverse lg:flex-row items-center justify-between md:px-4 py-6 gap-5 lg:gap-0">
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-12">
+        <div className="flex w-full flex-col-reverse justify-between gap-4 py-6 md:px-4 lg:flex-row lg:items-center">
+          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center md:gap-4 lg:w-auto">
             {/* Filter by Industry */}
             <FilterByIndustry
               INDUSTRY_OPTIONS={INDUSTRY_OPTIONS}
@@ -146,28 +148,24 @@ export default function CompanyIntelligenceClient({
 
             {/* Search */}
             <Suspense>
-              <InputSearch
+              <AppInput
                 placeholder="Search Company"
-                handleSearch={handleSearch}
-                searchParams={searchParams}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                isBgWhite
+                startIcon={<Search />}
               />
             </Suspense>
           </div>
 
-          <div className="flex max-h-[38px] gap-3">
-            <Button
-              variant="contained"
-              className="min-w-40! bg-[#5479EE]! pl-2! capitalize! hover:bg-[#5479EE]/80!"
-            >
-              <Plus className="mr-2 ml-1 h-3.5 w-3.5" /> Add Company
-            </Button>
+          <div className="flex w-full gap-3 lg:w-auto lg:justify-end">
+            <AppButton variantStyle="primary" startIcon={<Plus />}>
+              Add Company
+            </AppButton>
 
-            <Button
-              variant="outlined"
-              className="min-w-[98px]! border-gray-500! text-gray-500! capitalize!"
-            >
-              <Upload className="mr-2 ml-1 h-3.5 w-3.5" /> Export
-            </Button>
+            <AppButton variantStyle="outline" color="gray" startIcon={<Upload />}>
+              Export
+            </AppButton>
           </div>
         </div>
 
@@ -179,7 +177,7 @@ export default function CompanyIntelligenceClient({
         />
 
         {/* Pagination */}
-        <div className="flex min-w-[490px] justify-end">
+        <div className="flex w-full justify-end">
           <Pagination
             page={page}
             rowsPerPage={rowsPerPage}

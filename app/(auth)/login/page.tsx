@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Poppins } from "next/font/google";
+import { CircularProgress } from "@mui/material";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -86,7 +87,7 @@ export default function LoginPage() {
 
       {/* Right Section */}
       <section className="flex flex-col md:col-span-2 justify-center px-6 md:px-10 lg:px-20 py-8 md:py-10 bg-white">
-        <div className="flex flex-col items-center md:items-start text-center md:text-start">
+        <div className="flex flex-col items-center md:items-center text-center md:text-center">
           <div className="md:hidden mb-6">
             <Image
               src="/assets/logo3d.png"
@@ -187,7 +188,7 @@ export default function LoginPage() {
             fullWidth
             type="submit"
           >
-            {isLoading ? "Masuk..." : "Masuk"}
+            {isLoading ? <CircularProgress size={20} /> : "Login"}
           </AppButton>
         </form>
 

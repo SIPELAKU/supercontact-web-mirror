@@ -17,7 +17,7 @@ import DeleteMultipleContactModal from "@/components/modal/DeleteMultipleContact
 import ImportContactModal from "@/components/modal/ImportContactModal";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
-import { Avatar, Box } from "@mui/material";
+import { Avatar, Box, CircularProgress } from "@mui/material";
 import {
   Table,
   TableBody,
@@ -353,7 +353,7 @@ export default function ContactsPage() {
                         height: 120,
                       }}
                     >
-                      <Spinner />
+                      <CircularProgress size={30} />
                     </Box>
                   </TableCell>
                 </TableRow>

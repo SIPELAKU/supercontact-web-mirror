@@ -17,7 +17,7 @@ import TablePagination from "@mui/material/TablePagination"
 import TableRow from "@mui/material/TableRow"
 import { AppInput } from "../ui/app-input"
 import { AppButton } from "../ui/app-button"
-import { Box } from "@mui/material"
+import { Box, CircularProgress } from "@mui/material"
 import { Spinner } from "../ui/spinner"
 
 export const quotationStatus = [
@@ -150,7 +150,7 @@ export default function QuotationTable() {
                                             height: 120,
                                         }}
                                     >
-                                        <Spinner />
+                                        <CircularProgress size={30} />
                                     </Box>
                                 </TableCell>
                             </TableRow>

@@ -18,6 +18,7 @@ import { AppInput } from "../ui/app-input";
 import { AppDatePicker } from "../ui/app-datepicker";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
+import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { Spinner } from "../ui/spinner";
 
 export const dealStages = [
@@ -196,10 +197,20 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     }
   };
 
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  const handleClose = () => {
+    onOpenChange(false);
+    reset();
+    setErrors({})
+    setEditId("")
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="
+    <>
+      <Dialog open={open} onOpenChange={() => setShowCloseConfirmation(true)}>
+        <DialogContent
+          className="
           max-w-205 
           w-full 
           px-10 py-8 
@@ -207,175 +218,190 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
           bg-white
           border border-gray-200
         "
-      >
-        <div className="mt-2">
-          <h2 className="text-2xl font-semibold text-[#5479EE]">
-            {id === "" ? "Add New Pipeline" : "Update Pipeline"}
-          </h2>
-        </div>
+        >
+          <div className="mt-2">
+            <h2 className="text-2xl font-semibold text-[#5479EE]">
+              {id === "" ? "Add New Pipeline" : "Update Pipeline"}
+            </h2>
+          </div>
 
-        <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 mb-1">Deal Name</Label>
-              <AppInput
-                disabled={id ? true : false}
-                placeholder="Enter deal name"
-                value={formData.deal_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, deal_name: e.target.value })
-                }
-                isBgWhite
-                height="48px"
-                rounded="8px"
-              />
-              {errors.deal_name && (
-                <p className="text-sm text-red-500 mt-1">{errors.deal_name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Client/Account</label>
-              <CustomSelectStage
-                isSearch={true}
-                disabled={id ? true : false}
-                loading={loading}
-                value={formData.client_account}
-                placeholder="Select Client"
-                onSearch={(q) => {
-                  const keyword = q.trim();
-                  if (keyword.length < 1) {
-                    clearContact();
-                    return;
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700 mb-1">Deal Name</Label>
+                <AppInput
+                  disabled={id ? true : false}
+                  placeholder="Enter deal name"
+                  value={formData.deal_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deal_name: e.target.value })
                   }
-                  fetchContact({ query: q })
-                }}
-                onChange={(value: string) => setFormData({ ...formData, client_account: value })}
-                data={contactOptions}
-                className="bg-white rounded-[8px]"
-              />
-              {errors.client_account && (
-                <p className="text-sm text-red-500 mt-1">{errors.client_account}</p>
-              )}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                />
+                {errors.deal_name && (
+                  <p className="text-sm text-red-500 mt-1">{errors.deal_name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 mb-1">Client/Account</label>
+                <CustomSelectStage
+                  isSearch={true}
+                  disabled={id ? true : false}
+                  loading={loading}
+                  value={formData.client_account}
+                  placeholder="Select Client"
+                  onSearch={(q) => {
+                    const keyword = q.trim();
+                    if (keyword.length < 1) {
+                      clearContact();
+                      return;
+                    }
+                    fetchContact({ query: q })
+                  }}
+                  onChange={(value: string) => setFormData({ ...formData, client_account: value })}
+                  data={contactOptions}
+                  className="bg-white rounded-[8px]"
+                />
+                {errors.client_account && (
+                  <p className="text-sm text-red-500 mt-1">{errors.client_account}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 mb-1">Deal Stage</label>
+                <CustomSelectStage
+                  value={formData.deal_stage}
+                  disabled={id ? true : false}
+                  onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
+                  data={dealStages}
+                  className="bg-white rounded-[8px]"
+                />
+                {errors.deal_stage && (
+                  <p className="text-sm text-red-500 mt-1">{errors.deal_stage}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700 mb-1">
+                  Expected Close Date
+                </Label>
+                <AppDatePicker
+                  value={formData.expected_close_date}
+                  onChange={(value) => {
+                    if (Array.isArray(value)) return;
+                    setFormData({ ...formData, expected_close_date: value ?? undefined });
+                  }}
+                  placeholder="Select close date"
+                  isBgWhite
+                />
+                {errors.expected_close_date && (
+                  <p className="text-sm text-red-500 mt-1">{errors.expected_close_date}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700 mb-1">Amount</Label>
+                <AppInput
+                  type="number"
+                  disabled={id ? true : false}
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, amount: Number(e.target.value) })
+                  }
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                />
+                {errors.amount && (
+                  <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">   Probability of Close (%)</label>
+                <CustomSelectStage
+                  value={String(formData.probability_of_close)}
+                  onChange={(e) =>
+                    setFormData({ ...formData, probability_of_close: e })
+                  }
+                  placeholder="0"
+                  data={[
+                    { label: "20%", value: "20" },
+                    { label: "40%", value: "40" },
+                    { label: "60%", value: "60" },
+                    { label: "80%", value: "80" },
+                    { label: "100%", value: "100" },
+                  ]}
+                  className="bg-white rounded-md"
+                />
+                {errors.probability_of_close && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.probability_of_close}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Deal Stage</label>
-              <CustomSelectStage
-                value={formData.deal_stage}
+              <Label className="text-sm font-medium text-gray-700">Notes</Label>
+              <AppTextarea
                 disabled={id ? true : false}
-                onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
-                data={dealStages}
-                className="bg-white rounded-[8px]"
-              />
-              {errors.deal_stage && (
-                <p className="text-sm text-red-500 mt-1">{errors.deal_stage}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 mb-1">
-                Expected Close Date
-              </Label>
-              <AppDatePicker
-                value={formData.expected_close_date}
-                onChange={(value) => {
-                  if (Array.isArray(value)) return;
-                  setFormData({ ...formData, expected_close_date: value ?? undefined });
-                }}
-                placeholder="Select close date"
-                isBgWhite
-              />
-              {errors.expected_close_date && (
-                <p className="text-sm text-red-500 mt-1">{errors.expected_close_date}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700 mb-1">Amount</Label>
-              <AppInput
-                type="number"
-                disabled={id ? true : false}
-                placeholder="0.00"
-                value={formData.amount}
+                placeholder="Add any relevant notes here..."
+                value={formData.notes}
                 onChange={(e) =>
-                  setFormData({ ...formData, amount: Number(e.target.value) })
+                  setFormData({ ...formData, notes: e.target.value })
                 }
                 isBgWhite
-                height="48px"
                 rounded="8px"
               />
-              {errors.amount && (
-                <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
-              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">   Probability of Close (%)</label>
-              <CustomSelectStage
-                value={String(formData.probability_of_close)}
-                onChange={(e) =>
-                  setFormData({ ...formData, probability_of_close: e })
-                }
-                placeholder="0"
-                data={[
-                  { label: "20%", value: "20" },
-                  { label: "40%", value: "40" },
-                  { label: "60%", value: "60" },
-                  { label: "80%", value: "80" },
-                  { label: "100%", value: "100" },
-                ]}
-                className="bg-white rounded-md"
-              />
-              {errors.probability_of_close && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.probability_of_close}
-                </p>
-              )}
+            <div className="flex justify-end gap-3 pt-2">
+              <AppButton
+                type="button"
+                variantStyle="outline"
+                color="gray"
+                onClick={() => {
+                  reset();
+                  setErrors({})
+                  setEditId("")
+                  onOpenChange(false);
+                }}
+              >
+                Cancel
+              </AppButton>
+
+              <AppButton
+                type="submit"
+                variantStyle="primary"
+                color="primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
+              </AppButton>
             </div>
-          </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Notes</Label>
-            <AppTextarea
-              disabled={id ? true : false}
-              placeholder="Add any relevant notes here..."
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              isBgWhite
-              rounded="8px"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <AppButton
-              type="button"
-              variantStyle="outline"
-              color="gray"
-              onClick={() => {
-                reset();
-                setErrors({})
-                setEditId("")
-                onOpenChange(false);
-              }}
-            >
-              Cancel
-            </AppButton>
-
-            <AppButton
-              type="submit"
-              variantStyle="primary"
-              color="primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
-            </AppButton>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
+    </>
   );
 }

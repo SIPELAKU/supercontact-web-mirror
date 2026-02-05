@@ -1,5 +1,5 @@
 import { RoleType } from "@/lib/types/Role";
-import { Chip, SxProps, Theme } from "@mui/material";
+import { Box, Chip, CircularProgress, SxProps, Theme } from "@mui/material";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -67,9 +67,7 @@ export default function RolesTable({
   isLoading,
   isError,
 }: RolesTableProps) {
-  if (isLoading) {
-    return <RolesTableSkeleton />;
-  }
+
   if (isError) {
     return <RolesTableError message="Failed to load roles data." />;
   }
@@ -87,7 +85,20 @@ export default function RolesTable({
         </TableRow>
       </TableHead>
       <TableBody>
-        {roles?.map((role) => (
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={6}>
+              <Box sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: 120,
+              }} >
+                <CircularProgress />
+              </Box>
+            </TableCell>
+          </TableRow>
+        ) : roles?.map((role) => (
           <TableRow key={role.id} className="h-[55px]">
             <TableCell>
               <Chip

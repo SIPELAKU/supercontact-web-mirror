@@ -41,7 +41,8 @@ const useRoles = (page: number, limit: number, search?: string,) => {
       const data = await response.json();
       return data?.data || [];
     },
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    staleTime: 5 * 60 * 1000,
+    enabled: !!page && !!limit && !!token,
   });
 
   const addRoleMutation = useMutation({

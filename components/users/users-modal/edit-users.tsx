@@ -18,6 +18,7 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import useRoles from "@/lib/hooks/useRoles";
 import { ManageUser } from "@/lib/types/manage-users";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 type EditUserDialogProps = {
   open: boolean;
@@ -110,7 +111,7 @@ export default function EditUserDialog({
     }
   };
 
-  const filteredEmails = usersResponse?.data?.manage_users || [];
+  const filteredEmails = usersResponse?.data?.users || [];
 
   // Filter branches based on input and selected department
   const branches = useMemo(() => {

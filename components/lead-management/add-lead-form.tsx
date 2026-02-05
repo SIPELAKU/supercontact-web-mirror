@@ -22,6 +22,7 @@ import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
 import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
+import { ConfirmationPopup } from "../ui/confirmation-popup";
 
 // MUI Theme for consistent styling
 const theme = createTheme({
@@ -48,9 +49,7 @@ export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
-  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
 ];
 
 // Tag options with colors
@@ -285,6 +284,22 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       setIsSubmitting(false);
     }
   };
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setShowCloseConfirmation(true);
+    } else {
+      setOpen(isOpen);
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirmation(false);
+    reset();
+    setOpen(false);
+  };
+
   return (
     <>
       <AppButton
@@ -295,7 +310,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         <GrAdd className="text-lg mr-2" /> Add New Lead
       </AppButton>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="
             max-w-[820px] 
@@ -625,6 +640,17 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={handleConfirmClose}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </>
   );
 }

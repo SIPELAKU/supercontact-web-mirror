@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.4] - 2026-02-05
+
+### Detail Versi 1.3.4
+
+#### 🐛 Bug Fix
+
+- **Department Management:**
+  - Fixed issue with department management page not displaying data.
+  - Added loading state and error handling for department data.
+
+---
+
 ## [1.3.3] - 2026-02-03
 
 ### Detail Versi 1.3.3

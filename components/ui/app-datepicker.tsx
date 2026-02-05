@@ -99,12 +99,12 @@ const CustomPickersDay = styled(PickersDay, {
   ...(isSelected &&
     !isStart &&
     !isEnd && {
+    backgroundColor: PRIMARY_COLOR,
+    color: "white",
+    "&:hover": {
       backgroundColor: PRIMARY_COLOR,
-      color: "white",
-      "&:hover": {
-        backgroundColor: PRIMARY_COLOR,
-      },
-    }),
+    },
+  }),
 }));
 
 export const AppDatePicker: React.FC<AppDatePickerProps> = ({
@@ -168,9 +168,9 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
     const isInRange =
       start && end
         ? isWithinInterval(currentDay, {
-            start: startOfDay(start),
-            end: startOfDay(end),
-          })
+          start: startOfDay(start),
+          end: startOfDay(end),
+        })
         : false;
 
     return (
@@ -200,6 +200,13 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
     }
   }, [value, mode, placeholder]);
 
+  const hasValue = useMemo(() => {
+    if (!value) return false;
+    if (mode === "single") return value instanceof Date;
+    if (Array.isArray(value)) return !!value[0];
+    return false;
+  }, [value, mode]);
+
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onChange?.(mode === "single" ? null : [null, null]);
@@ -227,7 +234,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
             variant="body2"
             noWrap
             sx={{
-              color: value ? "#111827" : "#9CA3AF",
+              color: hasValue ? "#111827" : "#9CA3AF",
               fontSize: "0.875rem",
             }}
           >
@@ -235,7 +242,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
           </Typography>
         </Box>
         <Box className="flex items-center gap-1">
-          {value && (
+          {hasValue && (
             <IconButton
               size="small"
               onClick={handleClear}

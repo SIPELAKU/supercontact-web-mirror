@@ -146,7 +146,7 @@ const StyledTextField = styled(TextField, {
 );
 
 // --- Component ---
-export const AppInput = React.forwardRef<HTMLElement, AppInputProps>((props, ref) => {
+export const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>((props, ref) => {
   const [showPassword, setShowPassword] = useState(false);
 
   if (props.type === "checkbox") {

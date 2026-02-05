@@ -328,8 +328,8 @@ const MailingListDetailPage = () => {
                                         </TableRow>
                                     ) : (
                                         paginatedCampaigns.map((campaign) => {
-                                            const openRate = campaign.delivered > 0
-                                                ? ((campaign.opened / campaign.delivered) * 100).toFixed(1)
+                                            const openRate = campaign.stats.delivered > 0
+                                                ? ((campaign.stats.opened / campaign.stats.delivered) * 100).toFixed(1)
                                                 : '0';
                                             return (
                                                 <TableRow
@@ -342,13 +342,13 @@ const MailingListDetailPage = () => {
                                                 >
                                                     <TableCell sx={{ py: 2, pl: 3 }}>{campaign.subject}</TableCell>
                                                     <TableCell sx={{ py: 2 }}>
-                                                        {campaign.sent_date
-                                                            ? format(new Date(campaign.sent_date), 'dd MMM yyyy, HH:mm')
+                                                        {campaign.sent_at
+                                                            ? format(new Date(campaign.sent_at), 'dd MMM yyyy, HH:mm')
                                                             : '-'
                                                         }
                                                     </TableCell>
-                                                    <TableCell sx={{ py: 2 }}>{campaign.delivered}</TableCell>
-                                                    <TableCell sx={{ py: 2 }}>{campaign.opened}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{campaign.stats.delivered}</TableCell>
+                                                    <TableCell sx={{ py: 2 }}>{campaign.stats.opened}</TableCell>
                                                     <TableCell sx={{ py: 2 }}>{openRate}%</TableCell>
                                                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                                                         <Tooltip title="View Statistics">

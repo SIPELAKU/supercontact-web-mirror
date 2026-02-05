@@ -29,6 +29,7 @@ export default function FilterByStatus({
       onChange={handleChange}
       options={options}
       sx={{ minWidth: "175px" }}
+      isBgWhite
     />
   );
 }

@@ -20,7 +20,7 @@ import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { AppButtonIcon } from "../ui/app-button-icon";
 import { Spinner } from "../ui/spinner";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 
 export default function ProductTable() {
   const {
@@ -95,7 +95,7 @@ export default function ProductTable() {
                       height: 120,
                     }}
                   >
-                    <Spinner />
+                    <CircularProgress size={30} />
                   </Box>
                 </TableCell>
               </TableRow>

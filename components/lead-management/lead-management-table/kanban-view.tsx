@@ -41,9 +41,7 @@ const FIXED_STATUSES: LeadStatus[] = [
   "New",
   "Contacted",
   "Qualified",
-  "Proposal",
-  "Closed - Won",
-  "Closed - Lost",
+  "Unqualified",
 ];
 
 /* -------------------------
@@ -53,9 +51,7 @@ const statusColors: Record<string, string> = {
   New: "bg-[#6D788D]/20",
   Contacted: "bg-[#26C6F9]/20",
   Qualified: "bg-[#666CFF]/20",
-  Proposal: "bg-[#FDB528]/20",
-  "Closed - Won": "bg-[#72E128]/20",
-  "Closed - Lost": "bg-[#FF4D49]/20",
+  Unqualified: "bg-[#FF4D49]/20",
 };
 
 /* -------------------------

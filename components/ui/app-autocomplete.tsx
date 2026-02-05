@@ -106,25 +106,22 @@ export function AppAutocomplete<
         <Autocomplete
             {...autocompleteProps}
             renderInput={(params) => (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <label>{label}</label>
-                    <StyledTextField
-                        {...params}
-                        placeholder={placeholder}
-                        error={error}
-                        helperText={helperText}
-                        isBgWhite={isBgWhite}
-                        rounded={rounded}
-                        height={height}
-                        width={width}
-                        required={required}
-                        fullWidth
-                        InputLabelProps={{
-                            ...params.InputLabelProps,
-                            shrink: true, // Always shrink label for consistency or let it behave naturally
-                        }}
-                    />
-                </Box>
+                <StyledTextField
+                    {...params}
+                    placeholder={placeholder}
+                    error={error}
+                    helperText={helperText}
+                    isBgWhite={isBgWhite}
+                    rounded={rounded}
+                    height={height}
+                    width={width}
+                    required={required}
+                    fullWidth
+                    InputLabelProps={{
+                        ...params.InputLabelProps,
+                        shrink: true,
+                    }}
+                />
             )}
         />
     );

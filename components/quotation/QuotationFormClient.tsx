@@ -66,7 +66,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   }, []);
 
   const [items, setItems] = useState<ItemRow[]>([
-    { product_id: "", title: "Select Product", sku: "", desc: "Description…", qty: 1, discount: 0, unitPrice: 0 },
+    { product_id: "", title: "Select SKU", sku: "", desc: "Description…", qty: 1, discount: 0, unitPrice: 0 },
   ]);
   const [clientData, setClientData] = useState<Record<string, any>>({
     lead_id: "",
@@ -116,7 +116,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   }, [initialData]);
 
   const [salesperson, setSalesperson] = useState("Muhammad...");
-  const [discount, setDiscount] = useState(0);
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [notes, setNotes] = useState(
     "It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!"
@@ -124,18 +123,22 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.qty * i.unitPrice, 0),
+    () => items.reduce((sum, i) => sum + i.qty * Number(i.unitPrice), 0),
     [items]
   );
 
   const discountAmount = useMemo(
-    () => (subtotal * discount) / 100,
-    [subtotal, discount]
+    () => items.reduce((sum, i) => {
+      const itemTotal = i.qty * Number(i.unitPrice);
+      const itemDiscount = (itemTotal * (i.discount || 0)) / 100;
+      return sum + itemDiscount;
+    }, 0),
+    [items]
   );
 
   const taxAmount = useMemo(
-    () => (taxEnabled ? subtotal * 0.21 : 0),
-    [subtotal, taxEnabled]
+    () => (taxEnabled ? (subtotal - discountAmount) * 0.11 : 0),
+    [subtotal, discountAmount, taxEnabled]
   );
 
   const grandTotal = useMemo(
@@ -368,12 +371,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             </section>
             <SummaryCard
               subtotal={subtotal}
-              discount={discount}
               discountAmount={discountAmount}
               taxEnabled={taxEnabled}
               taxAmount={taxAmount}
               grandTotal={grandTotal}
-              setDiscount={setDiscount}
               setTaxEnabled={setTaxEnabled}
             />
           </div>
@@ -382,18 +383,18 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           <div className="flex justify-end items-center mb-8 px-6">
             <div className="flex gap-3">
               <Link href="/sales/quotation">
-                <AppButton variantStyle="outline" color="gray">
+                <AppButton variantStyle="danger" color="danger">
                   Cancel
                 </AppButton>
               </Link>
 
               <AppButton
                 variantStyle="outline"
-                color="gray"
+                color="primary"
                 onClick={() => handleSave("draft")}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <Spinner /> : "Save as Draft"}
+                {isSubmitting ? <Spinner /> : "Save As Draft"}
               </AppButton>
 
               <AppButton
@@ -402,7 +403,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                 onClick={() => handleSave("publish")}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <Spinner /> : "Save & Send"}
+                {isSubmitting ? <Spinner /> : "Publish"}
               </AppButton>
             </div>
           </div>

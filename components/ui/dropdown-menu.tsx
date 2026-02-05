@@ -87,12 +87,16 @@ export function DropdownSelectSearch({
   onChange,
   placeholder = "Select…",
   className = "",
+  height = "40px",
+  rounded = "8px",
 }: {
   value: string;
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
+  height?: string;
+  rounded?: string;
 }) {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -115,8 +119,9 @@ export function DropdownSelectSearch({
         }
       >
         <button
+          style={{ height, borderRadius: rounded }}
           className={cn(
-            "w-full h-10 px-3 border border-gray-300 rounded-md",
+            "w-full px-3 border border-gray-300",
             "bg-white text-sm flex items-center justify-between",
             "text-gray-700 hover:border-gray-400 transition",
             className

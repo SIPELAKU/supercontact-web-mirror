@@ -14,9 +14,7 @@ const statusColors: Record<LeadStatus, string> = {
   "New": "bg-[#EBEBEB] text-[#617589]",
   "Contacted": "bg-[#E8F4FD] text-[#2980B9]",
   "Qualified": "bg-[#F7EEFF] text-[#6B21A8]",
-  "Proposal": "bg-[#FEF5E7] text-[#F39C12]",
-  "Closed - Won": "bg-[#EDFDEC] text-[#5BC557]",
-  "Closed - Lost": "bg-[#FCE8E8] text-[#C0392B]",
+  "Unqualified": "bg-[#FCE8E8] text-[#C0392B]",
 };
 
 // Source icon mapping

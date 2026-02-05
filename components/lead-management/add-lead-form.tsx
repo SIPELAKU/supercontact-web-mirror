@@ -49,9 +49,7 @@ export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
-  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#E8FFE8]", textColor: "text-green-700" },
+  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
 ];
 
 // Tag options with colors

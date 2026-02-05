@@ -20,9 +20,7 @@ export const leadStatusOptions = [
   { value: "New", label: "New", bgColor: "bg-[#E8F0FF]", textColor: "text-blue-700" },
   { value: "Contacted", label: "Contacted", bgColor: "bg-[#FFF0E8]", textColor: "text-orange-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
-  { value: "Proposal", label: "Proposal", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
-  { value: "Closed - Won", label: "Closed - Won", bgColor: "bg-[#EDFDEC]", textColor: "text-[#5BC557]" },
-  { value: "Closed - Lost", label: "Closed - Lost", bgColor: "bg-[#FCE8E8]", textColor: "text-[#C0392B]" },
+  { value: "Unqualified", label: "Unqualified", bgColor: "bg-[#FFE8E8]", textColor: "text-red-700" },
 ];
 // const statusColors: Record<LeadStatus, string> = {
 //   "New": "bg-[#EBEBEB] text-[#617589]",

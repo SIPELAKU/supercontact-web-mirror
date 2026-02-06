@@ -146,11 +146,29 @@ export default function InboxClient() {
   useEffect(() => {
     if (!token) return;
 
-    // Use default URL if env not set
-    const wsBaseUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'wss://api.example.com';
-    // WebSocket placeholder implementation
-    // const wsUrl = `${wsBaseUrl}/api/v1/chat/ws/chat/${SELF_ID}?token=${token}`;
-    // wsRef.current = new WebSocket(wsUrl);
+    // Helper to decode JWT
+    const parseJwt = (t: string) => {
+      try {
+        return JSON.parse(atob(t.split('.')[1]));
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const user = parseJwt(token);
+    const userId = user?.user_id;
+
+    if (!userId) {
+      console.error("Could not extract user_id from token for WS connection");
+      return;
+    }
+
+    // Use proxy path for WebSocket to leverage Next.js rewrites (supports WSS -> WS upgrade)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/proxy/chat/ws/chat/${userId}?token=${token}`;
+
+    console.log("Connecting to WS:", wsUrl);
+    wsRef.current = new WebSocket(wsUrl);
 
     if (wsRef.current) {
       wsRef.current.onopen = () => console.log('WS Connected');

@@ -89,6 +89,7 @@ export default function ClientDetailsSection({
               placeholder="Enter company name"
               value={clientData.companyName || ""}
               onChange={(e) => handleChange("companyName", e.target.value)}
+              disabled={true}
               isBgWhite
               height="48px"
               rounded="8px"
@@ -101,6 +102,7 @@ export default function ClientDetailsSection({
               placeholder="Enter office location"
               value={clientData.officeLocation || ""}
               onChange={(e) => handleChange("officeLocation", e.target.value)}
+              disabled={true}
               isBgWhite
               height="48px"
               rounded="8px"
@@ -117,6 +119,7 @@ export default function ClientDetailsSection({
               type="tel"
               value={clientData.phoneNumber || ""}
               onChange={(e) => handleChange("phoneNumber", e.target.value)}
+              disabled={true}
               isBgWhite
               height="48px"
               rounded="8px"
@@ -130,6 +133,7 @@ export default function ClientDetailsSection({
               type="email"
               value={clientData.emailAddress || ""}
               onChange={(e) => handleChange("emailAddress", e.target.value)}
+              disabled={true}
               isBgWhite
               height="48px"
               rounded="8px"

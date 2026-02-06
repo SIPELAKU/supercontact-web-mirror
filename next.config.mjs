@@ -8,14 +8,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  
+
   // 3. Image optimization settings
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
-  
+
   // 4. Custom headers for CORS (if needed)
   async headers() {
     return [
@@ -30,20 +30,20 @@ const nextConfig = {
     ];
   },
   //comment utk dev purpose need to be reverted back
-  // async rewrites() {
-  //   const backendUrl = process.env.BACKEND_URL;
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_API_URL;
 
-  //   if (!backendUrl) {
-  //       console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
-  //   }
+    if (!backendUrl) {
+      console.warn('⚠️ WARNING: BACKEND_API_URL is not set. Proxy rewrites might fail.');
+    }
 
-  //   return [
-  //     {
-  //       source: '/api/proxy/:path*',
-  //       destination: `${backendUrl}/:path*`, 
-  //     },
-  //   ];
-  // },
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

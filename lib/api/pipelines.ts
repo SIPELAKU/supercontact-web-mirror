@@ -50,6 +50,14 @@ export async function fetchPipelines(params?: PipelineQueryParams) {
 }
 
 /**
+ * Fetch a single pipeline by ID
+ */
+export async function fetchPipelineById(id: string) {
+    const response = await api.get(`/pipelines/${id}`);
+    return response.data;
+}
+
+/**
  * Fetch active users for filtering
  */
 export async function fetchActiveUsers() {

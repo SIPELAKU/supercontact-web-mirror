@@ -147,7 +147,7 @@ const MailingListDetailPage = () => {
             <Box sx={{ mb: 3 }}>
                 <AppButton
                     variantStyle="outline"
-                    color="gray"
+                    color="primary"
                     startIcon={<ArrowLeft size={18} />}
                     onClick={() => router.push('/email-marketing/mailing-lists')}
                     sx={{ textTransform: 'none' }}

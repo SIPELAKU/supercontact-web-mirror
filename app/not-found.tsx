@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AppButton } from '@/components/ui/app-button';
 
 export default function NotFound() {
     return (
@@ -19,17 +20,15 @@ export default function NotFound() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link
-                        href="/"
-                        className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors inline-block"
-                    >
-                        Kembali ke Beranda
+                    <Link href="/">
+                        <AppButton variantStyle="primary" color="primary">
+                            Kembali ke Beranda
+                        </AppButton>
                     </Link>
-                    <Link
-                        href="/analytics/dashboard"
-                        className="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors inline-block"
-                    >
-                        Dashboard
+                    <Link href="/analytics/dashboard">
+                        <AppButton variantStyle="outline" color="primary">
+                            Dashboard
+                        </AppButton>
                     </Link>
                 </div>
             </div>

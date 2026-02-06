@@ -170,6 +170,8 @@ export default function InboxClient() {
     console.log("Connecting to WS:", wsUrl);
     wsRef.current = new WebSocket(wsUrl);
 
+    // (Redundant block removed)
+
     if (wsRef.current) {
       wsRef.current.onopen = () => console.log('WS Connected');
       wsRef.current.onmessage = (event) => {

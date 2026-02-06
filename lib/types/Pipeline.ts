@@ -86,10 +86,12 @@ export interface FilterBarProps {
 
 export interface BreadcrumbItem {
   label: string;
+  href?: string;
 }
 
 export interface PageHeaderProps {
   title: string;
+  description?: string;
   breadcrumbs: BreadcrumbItem[];
   image?: string | StaticImageData;
   imageWidth?: number;

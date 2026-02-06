@@ -2,10 +2,12 @@
 import { PageHeaderProps } from "@/lib/types/Pipeline";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
 // import LogoHeader from "@/assets/icons/headicon.png"
 
 export default function PageHeader({
   title,
+  description,
   breadcrumbs,
   imageWidth = 160,
   imageHeight = 160,
@@ -24,6 +26,11 @@ export default function PageHeader({
         <h1 className="text-2xl font-semibold text-foreground">
           {title}
         </h1>
+        {description && (
+          <p className="text-muted-foreground text-sm mt-1 mb-2">
+            {description}
+          </p>
+        )}
 
         <nav
           className="flex items-center gap-2 mt-1"
@@ -31,7 +38,13 @@ export default function PageHeader({
         >
           {breadcrumbs.map((item, i) => (
             <span key={i} className="flex items-center gap-2">
-              <span className="text-sm text-[#4C542F]">{item.label}</span>
+              {item.href ? (
+                <Link href={item.href} className="text-sm text-[#4C542F] hover:underline">
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="text-sm text-[#4C542F]">{item.label}</span>
+              )}
 
               {i < breadcrumbs.length - 1 && (
                 <span className="text-muted-foreground/40">•</span>

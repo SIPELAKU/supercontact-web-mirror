@@ -8,7 +8,6 @@ import router from "next/router";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
-import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface InputProps {
   label: string;
@@ -74,8 +73,6 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     position: "",
     address: "",
   });
-
-  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   const handleClose = () => {
     onClose();
@@ -255,7 +252,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     <>
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-        onClick={() => setShowCloseConfirmation(true)}
+        onClick={handleClose}
       >
         <div
           className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
@@ -333,7 +330,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
-              <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+              <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                 Cancel
               </AppButton>
 
@@ -348,20 +345,6 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
           </div>
         </div>
       </div>
-
-      <ConfirmationPopup
-        isOpen={showCloseConfirmation}
-        onClose={() => setShowCloseConfirmation(false)}
-        onConfirm={() => {
-          setShowCloseConfirmation(false);
-          handleClose();
-        }}
-        title="Are you sure?"
-        description="This will discard your current record."
-        confirmText="Discard record"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </>
   );
 };

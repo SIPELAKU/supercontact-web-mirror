@@ -20,9 +20,9 @@ import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
 import { AppAutocomplete } from "../ui/app-autocomplete";
 import { AppSelect } from "../ui/app-select";
-import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { Spinner } from "../ui/spinner";
 import { notify } from "@/lib/notifications";
+import * as pipelineAPI from "@/lib/api/pipelines";
 
 export const dealStages = [
   { value: "Prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
@@ -38,7 +38,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
   const { listContact, fetchContact, loading: loadingContacts, clearContact } = useGetContactStore();
   const { listProduct, fetchProduct } = useGetProductStore();
-  const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline } = useGetPipelineStore();
+  const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<DealForm>({
     client_account: "",
@@ -50,6 +50,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     notes: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [fetchedDeal, setFetchedDeal] = useState<any>(null);
 
   const reset = () =>
     setFormData({
@@ -62,40 +64,85 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       notes: ""
     });
 
-
-  const deal = useMemo(() => {
-    if (!id) return null;
-
-    return listPipeline
-      .flatMap(stage => stage.deals)
-      .find(d => d.id === id) ?? null;
-  }, [id, listPipeline]);
-
+  const deal = fetchedDeal;
 
   useEffect(() => {
-    if (!deal) return;
+    async function fetchDetails() {
+      if (!id) {
+        setFetchedDeal(null);
+        return;
+      }
+      try {
+        setLoadingDetails(true);
+        const response = await pipelineAPI.fetchPipelineById(id);
+        const detail = response?.data;
+        if (detail) {
+          setFetchedDeal(detail);
 
-    setFormData({
-      client_account: deal.company?.id ?? "",
-      product_id: deal.product?.id ?? "",
-      deal_stage: stage ?? "",
-      expected_close_date: deal.expected_close_date
-        ? new Date(deal.expected_close_date)
-        : undefined,
-      quantity: deal.quantity ?? 1,
-      probability_of_close: String(deal.probability_of_close ?? 0),
-      notes: deal.notes ?? "",
-    });
-  }, [deal, stage]);
+          // Determine client ID from contact or company object in detail
+          let clientId = "";
+          if (detail.contact?.id) clientId = detail.contact.id;
+          else if (detail.company?.id) clientId = detail.company.id;
+          else if (typeof detail.client_account === 'string') clientId = detail.client_account;
+
+          setFormData({
+            client_account: clientId,
+            product_id: detail.product?.id || detail.product_id || "",
+            deal_stage: detail.deal_stage || "",
+            expected_close_date: detail.expected_close_date
+              ? new Date(detail.expected_close_date)
+              : undefined,
+            quantity: detail.quantity ?? 1,
+            probability_of_close: String(detail.probability_of_close ?? 0),
+            notes: detail.notes ?? "",
+          });
+
+          if (detail.deal_stage) {
+            setStage(detail.deal_stage);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch pipeline details:", err);
+        notify.error("Error", { description: "Failed to load latest deal details." });
+      } finally {
+        setLoadingDetails(false);
+      }
+    }
+
+    if (id) {
+      fetchDetails();
+    } else {
+      setFetchedDeal(null);
+      reset();
+    }
+  }, [id, setStage]);
+
 
   const selectedContactOption = useMemo(() => {
-    if (!deal?.company) return null;
+    // Priority 1: If we have a fetched deal and the ID matches, use the detailed contact/company info from it
+    if (deal && (deal.contact?.id === formData.client_account || deal.company?.id === formData.client_account)) {
+      if (deal.contact) {
+        return {
+          value: deal.contact.id,
+          label: deal.contact.name || deal.contact.company
+        };
+      }
+      if (deal.company) {
+        return {
+          value: deal.company.id,
+          label: deal.company.name
+        };
+      }
+    }
 
-    return {
-      value: deal.company.id,
-      label: deal.company.name,
-    };
-  }, [deal]);
+    // Priority 2: Use the existing list of contacts
+    if (formData.client_account) {
+      const found = listContact.find(c => c.value === formData.client_account);
+      if (found) return found;
+    }
+
+    return null;
+  }, [deal, formData.client_account, listContact]);
 
   const contactOptions = useMemo(() => {
     if (!selectedContactOption) return listContact;
@@ -109,29 +156,44 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       : [selectedContactOption, ...listContact];
   }, [listContact, selectedContactOption]);
 
-
-  // Add product options state and memoization
   const selectedProductOption = useMemo(() => {
-    if (!deal?.product) return null;
-
-    return {
-      value: deal.product.id,
-      label: deal.product.sku,
-    };
-  }, [deal]);
+    // Priority 1: Fetched deal detail
+    if (deal?.product && deal.product.id === formData.product_id) {
+      return {
+        value: deal.product.id,
+        label: deal.product.sku,
+      };
+    }
+    // Priority 2: List product
+    if (formData.product_id) {
+      const found = listProduct.find(p => p.id === formData.product_id);
+      if (found) return { value: found.id, label: found.sku };
+    }
+    return null;
+  }, [deal, formData.product_id, listProduct]);
 
   const productOptions = useMemo(() => {
-    return listProduct.map(p => ({
+    const listOpts = listProduct.map(p => ({
       value: p.id,
       label: p.sku
     }));
-  }, [listProduct]);
+
+    if (selectedProductOption && !listOpts.find(o => o.value === selectedProductOption.value)) {
+      return [selectedProductOption, ...listOpts];
+    }
+    return listOpts;
+
+  }, [listProduct, selectedProductOption]);
 
   // Get selected product for displaying product name
   const selectedProduct = useMemo(() => {
     if (!formData.product_id) return null;
+
+    // Check if fetched deal has this product (likely if just loaded)
+    if (deal?.product && deal.product.id === formData.product_id) return deal.product;
+
     return listProduct.find(p => p.id === formData.product_id) || null;
-  }, [formData.product_id, listProduct]);
+  }, [formData.product_id, listProduct, deal]);
 
   const validateForm = (data: DealForm): FormErrors => {
     const errs: FormErrors = {};
@@ -184,6 +246,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setIsSubmitting(false);
       return;
     }
     setErrors({});
@@ -199,7 +262,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     };
 
     if (!id) {
-      setIsSubmitting(true);
+      // Create
       const response = await postFormPipeline(body)
 
       if (response.success) {
@@ -233,7 +296,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         }
       }
     } else {
-      setIsSubmitting(true);
+      // Update
       const response = await updateFormPipeline(body, id)
 
       if (response.success) {
@@ -269,8 +332,6 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     }
   };
 
-  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-
   const handleClose = () => {
     onOpenChange(false);
     reset();
@@ -279,10 +340,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={() => setShowCloseConfirmation(true)}>
-        <DialogContent
-          className="
+    <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
+      <DialogContent
+        className="
           max-w-205 
           w-full 
           px-10 py-8 
@@ -290,215 +350,197 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
           bg-white
           border border-gray-200
         "
-        >
-          <div className="mt-2">
-            <h2 className="text-2xl font-semibold text-[#5479EE]">
-              {id === "" ? "Add New Pipeline" : "Update Pipeline"}
-            </h2>
-          </div>
+      >
+        <div className="mt-2">
+          <h2 className="text-2xl font-semibold text-[#5479EE]">
+            {id === "" ? "Add New Pipeline" : "Update Pipeline"}
+          </h2>
+        </div>
 
-          <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">SKU</label>
-                <AppAutocomplete
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  disabled={id ? true : false}
-                  value={productOptions.find(p => p.value === formData.product_id) || null}
-                  options={productOptions}
-                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                  onChange={(_, newValue) => {
-                    if (newValue && typeof newValue !== 'string') {
-                      setFormData({ ...formData, product_id: newValue.value });
-                    }
-                  }}
-                  onInputChange={(_, inputValue) => {
-                    if (inputValue.trim().length > 0) {
-                      fetchProduct({ search: inputValue });
-                    }
-                  }}
-                  isOptionEqualToValue={(option, value) => {
-                    if (typeof option === 'string' || typeof value === 'string') return option === value;
-                    return option.value === value.value;
-                  }}
-                  placeholder="Search by SKU"
-                  error={Boolean(errors.product_id)}
-                  helperText={errors.product_id}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
-                <AppInput
-                  disabled={true}
-                  placeholder="Product name will appear here"
-                  value={selectedProduct?.product_name || ""}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  readOnly
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Client/Account</label>
-                <AppAutocomplete
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  disabled={id ? true : false}
-                  loading={loadingContacts}
-                  value={contactOptions.find(c => c.value === formData.client_account) || null}
-                  options={contactOptions}
-                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                  onChange={(_, newValue) => {
-                    if (newValue && typeof newValue !== 'string') {
-                      setFormData({ ...formData, client_account: newValue.value });
-                    }
-                  }}
-                  onInputChange={(_, inputValue) => {
-                    const keyword = inputValue.trim();
-                    if (keyword.length < 1) {
-                      clearContact();
-                      return;
-                    }
-                    fetchContact({ query: inputValue });
-                  }}
-                  isOptionEqualToValue={(option, value) => {
-                    if (typeof option === 'string' || typeof value === 'string') return option === value;
-                    return option.value === value.value;
-                  }}
-                  placeholder="Select Client"
-                  error={Boolean(errors.client_account)}
-                  helperText={errors.client_account}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Deal Stage</label>
-                <AppSelect
-                  value={formData.deal_stage}
-                  disabled={id ? true : false}
-                  onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
-                  options={dealStages}
-                  placeholder="Select Deal Stage"
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Expected Close Date</label>
-                <AppDatePicker
-                  value={formData.expected_close_date}
-                  onChange={(value) => {
-                    if (Array.isArray(value)) return;
-                    setFormData({ ...formData, expected_close_date: value ?? undefined });
-                  }}
-                  placeholder="Select close date"
-                  isBgWhite
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Quantity</label>
-                <AppInput
-                  type="number"
-                  disabled={id ? true : false}
-                  placeholder="1"
-                  value={formData.quantity}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quantity: Number(e.target.value) })
-                  }
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  error={Boolean(errors.quantity)}
-                  helperText={errors.quantity}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Probability of Close (%)</label>
-                <AppSelect
-                  value={String(formData.probability_of_close)}
-                  onChange={(e) =>
-                    setFormData({ ...formData, probability_of_close: e.target.value as string })
-                  }
-                  placeholder="0"
-                  options={[
-                    { label: "20%", value: "20" },
-                    { label: "40%", value: "40" },
-                    { label: "60%", value: "60" },
-                    { label: "80%", value: "80" },
-                    { label: "100%", value: "100" },
-                  ]}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Notes</Label>
-              <AppTextarea
-                disabled={id ? true : false}
-                placeholder="Add any relevant notes here..."
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">SKU</label>
+              <AppAutocomplete
                 isBgWhite
+                height="48px"
                 rounded="8px"
+                disabled={id ? true : false}
+                value={productOptions.find(p => p.value === formData.product_id) || null}
+                options={productOptions}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                onChange={(_, newValue) => {
+                  if (newValue && typeof newValue !== 'string') {
+                    setFormData({ ...formData, product_id: newValue.value });
+                  }
+                }}
+                onInputChange={(_, inputValue) => {
+                  if (inputValue.trim().length > 0) {
+                    fetchProduct({ search: inputValue });
+                  }
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' || typeof value === 'string') return option === value;
+                  return option.value === value.value;
+                }}
+                placeholder="Search by SKU"
+                error={Boolean(errors.product_id)}
+                helperText={errors.product_id}
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <AppButton
-                type="button"
-                variantStyle="outline"
-                color="gray"
-                onClick={() => {
-                  reset();
-                  setErrors({})
-                  setEditId("")
-                  onOpenChange(false);
-                }}
-              >
-                Cancel
-              </AppButton>
-
-              <AppButton
-                type="submit"
-                variantStyle="primary"
-                color="primary"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
-              </AppButton>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
+              <AppInput
+                disabled={true}
+                placeholder="Product name will appear here"
+                value={selectedProduct?.product_name || ""}
+                isBgWhite
+                height="48px"
+                rounded="8px"
+                readOnly
+              />
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      <ConfirmationPopup
-        isOpen={showCloseConfirmation}
-        onClose={() => setShowCloseConfirmation(false)}
-        onConfirm={() => {
-          setShowCloseConfirmation(false);
-          handleClose();
-        }}
-        title="Are you sure?"
-        description="This will discard your current record."
-        confirmText="Discard record"
-        cancelText="Cancel"
-        variant="danger"
-      />
-    </>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Client/Account</label>
+              <AppAutocomplete
+                isBgWhite
+                height="48px"
+                rounded="8px"
+                disabled={id ? true : false}
+                loading={loadingContacts}
+                value={contactOptions.find(c => c.value === formData.client_account) || null}
+                options={contactOptions}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                onChange={(_, newValue) => {
+                  if (newValue && typeof newValue !== 'string') {
+                    setFormData({ ...formData, client_account: newValue.value });
+                  }
+                }}
+                onInputChange={(_, inputValue) => {
+                  const keyword = inputValue.trim();
+                  if (keyword.length < 1) {
+                    clearContact();
+                    return;
+                  }
+                  fetchContact({ query: inputValue });
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' || typeof value === 'string') return option === value;
+                  return option.value === value.value;
+                }}
+                placeholder="Select Client"
+                error={Boolean(errors.client_account)}
+                helperText={errors.client_account}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Deal Stage</label>
+              <AppSelect
+                value={formData.deal_stage}
+                disabled={false}
+                onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
+                options={dealStages}
+                placeholder="Select Deal Stage"
+                isBgWhite
+                height="48px"
+                rounded="8px"
+              // disabled={id ? true : false} // Corrected based on requirement to be editable
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Expected Close Date</label>
+              <AppDatePicker
+                value={formData.expected_close_date}
+                onChange={(value) => {
+                  if (Array.isArray(value)) return;
+                  setFormData({ ...formData, expected_close_date: value ?? undefined });
+                }}
+                placeholder="Select close date"
+                isBgWhite
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Quantity</label>
+              <AppInput
+                type="number"
+                disabled={false}
+                placeholder="1"
+                value={formData.quantity}
+                onChange={(e) =>
+                  setFormData({ ...formData, quantity: Number(e.target.value) })
+                }
+                isBgWhite
+                height="48px"
+                rounded="8px"
+                error={Boolean(errors.quantity)}
+                helperText={errors.quantity}
+              // disabled={id ? true : false} // Corrected
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Probability of Close (%)</label>
+              <AppSelect
+                value={String(formData.probability_of_close)}
+                onChange={(e) =>
+                  setFormData({ ...formData, probability_of_close: e.target.value as string })
+                }
+                placeholder="0"
+                options={[
+                  { label: "20%", value: "20" },
+                  { label: "40%", value: "40" },
+                  { label: "60%", value: "60" },
+                  { label: "80%", value: "80" },
+                  { label: "100%", value: "100" },
+                ]}
+                isBgWhite
+                height="48px"
+                rounded="8px"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Notes</Label>
+            <AppTextarea
+              disabled={id ? true : false}
+              placeholder="Add any relevant notes here..."
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+              isBgWhite
+              rounded="8px"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <AppButton
+              type="button"
+              variantStyle="outline"
+              color="gray"
+              onClick={handleClose}
+            >
+              Cancel
+            </AppButton>
+
+            <AppButton
+              type="submit"
+              variantStyle="primary"
+              color="primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
+            </AppButton>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

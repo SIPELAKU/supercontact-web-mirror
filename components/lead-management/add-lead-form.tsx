@@ -275,6 +275,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       setOpen(false);
 
       console.log("Lead created successfully!");
+      notify.success("Lead created!", {
+        description: "The new lead has been successfully added.",
+      });
     } catch (error: any) {
       console.error("Error creating lead:", error);
       notify.error("Failed to create lead. Please try again.", {
@@ -420,7 +423,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
 
                 {/* Company */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Company</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Company <span className="text-red-500">*</span>
+                  </Label>
                   <AppInput
                     type="text"
                     placeholder="Enter company name"

@@ -18,6 +18,13 @@ export interface PipelineAPIItem {
   id: string;
   deal_name: string;
   contact: PipelineContact;
+  product?: {
+    id: string;
+    product_name: string;
+    sku: string;
+    price: string;
+  };
+  quantity?: number;
   amount: number;
   notes?: string;
   avatar: string;
@@ -71,6 +78,8 @@ export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
         name: item.contact.name,
         company: item.contact.company,
       },
+      product: item.product,
+      quantity: item.quantity,
       amount: item.amount,
       avatar: '',
       // avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,

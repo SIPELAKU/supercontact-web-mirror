@@ -6,10 +6,19 @@ export interface Company {
   company: string;
 }
 
+export interface Product {
+  id: string;
+  product_name: string;
+  sku: string;
+  price: string;
+}
+
 export interface Deal {
   id: string;
   deal_name: string;
   company: Company;
+  product?: Product;
+  quantity?: number;
   amount: number;
   avatar: string;
   notes: string;
@@ -22,7 +31,7 @@ export interface Deal {
 }
 
 interface Stats {
-  total_pipeline: number 
+  total_pipeline: number
   avg_pipeline: number
   winrate_pipeline: number
 }
@@ -38,7 +47,9 @@ export type Stage = {
 export interface DealCardProps {
   id: string
   deal_name: string
-  company: {id: string, company: string, name: string}
+  company: { id: string, company: string, name: string }
+  product?: Product
+  quantity?: number
   amount: number
   avatar: string
   notes: string

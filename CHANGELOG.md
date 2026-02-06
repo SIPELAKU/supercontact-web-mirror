@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-02-06
+
+### Detail Versi 1.4.0
+
+#### ✨ Fitur Baru
+
+- **Inbox & Chat Client:**
+  - Implementasi inbox dan chat client lengkap dengan fitur real-time messaging, voice notes, dan integrasi API.
+
+---
+
 ## [1.3.5] - 2026-02-06
 
 ### Detail Versi 1.3.5

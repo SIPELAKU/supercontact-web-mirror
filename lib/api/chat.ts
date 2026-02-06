@@ -12,6 +12,9 @@ export interface ChatUser {
     last_message_preview: string;
     last_message_time: string; // datetime
     unread_count: number;
+    email: string;
+    phone: string;
+    about: string;
 }
 
 export interface NewChatUser {
@@ -20,6 +23,9 @@ export interface NewChatUser {
     avatar_initial: string;
     avatar: string | null;
     position: string;
+    email: string;
+    phone: string;
+    about: string;
 }
 
 export interface ChatMessage {
@@ -182,6 +188,7 @@ export async function pinMessage(
     if (!res.ok) throw new Error("Failed to pin message");
 }
 
+// 8. Unpin Message
 export async function unpinMessage(
     token: string,
     messageId: string
@@ -196,8 +203,8 @@ export async function unpinMessage(
     if (!res.ok) throw new Error("Failed to unpin message");
 }
 
-// 8. Delete Messages
-export async function deleteMessages(
+// 9. Delete Messages multiple messages by message ID
+export async function deleteMessagesMultiple(
     token: string,
     messageIds: string[]
 ): Promise<void> {
@@ -212,4 +219,19 @@ export async function deleteMessages(
         }
     );
     if (!res.ok) throw new Error("Failed to delete messages");
+}
+
+// 10. Delete entire conversation
+export async function deleteConversation(
+    token: string,
+    parent_id: string
+): Promise<void> {
+    const res = await fetchWithTimeout(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/conversation/${parent_id}`,
+        {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!res.ok) throw new Error("Failed to delete conversation");
 }

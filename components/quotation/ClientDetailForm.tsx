@@ -50,9 +50,9 @@ export default function ClientDetailsSection({
         lead_id: leadId,
         clientName: selectedLead.contact.name,
         companyName: selectedLead.contact.company,
+        officeLocation: selectedLead.office_location || "",
         phoneNumber: selectedLead.contact.phone_number,
         emailAddress: selectedLead.contact.email,
-        officeLocation: selectedLead.office_location || "",
         quotationTitle: `Quotation for ${selectedLead.contact.name}`,
       });
     }

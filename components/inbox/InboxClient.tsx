@@ -248,7 +248,10 @@ export default function InboxClient() {
       });
       const newMsg = response.data;
 
-      setActiveChatMessages(prev => [...prev, newMsg]);
+      setActiveChatMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
       // Update inbox preview
       setInboxList(prev => {
         const idx = prev.findIndex(c => c.user_id === activeChatId);

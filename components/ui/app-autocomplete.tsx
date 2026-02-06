@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Autocomplete, AutocompleteProps, Box, TextField } from "@mui/material";
+import { ChevronDown } from "lucide-react";
 import { styled } from "@mui/material/styles";
 
 // --- Design Tokens (copied from app-input.tsx for consistency) ---
@@ -104,6 +105,7 @@ export function AppAutocomplete<
 
     return (
         <Autocomplete
+            popupIcon={<ChevronDown size={18} className="text-gray-500" />}
             {...autocompleteProps}
             renderInput={(params) => (
                 <StyledTextField

@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.5] - 2026-02-06
+
+### Detail Versi 1.3.5
+
+#### ✨ Fitur Baru
+
+- **Contact Management:**
+  - Add `AppDatePicker` and `AppAutocomplete` UI components.
+  - Enhance contact table page with new UI components and improved styling.
+
+---
+
 ## [1.3.4] - 2026-02-05
 
 ### Detail Versi 1.3.4

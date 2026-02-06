@@ -254,7 +254,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
           <ChevronDown
             size={18}
             className={cn(
-              "text-gray-400 transition-transform duration-200",
+              "text-gray-500 transition-transform duration-200",
               open && "rotate-180",
             )}
           />

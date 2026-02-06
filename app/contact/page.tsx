@@ -289,7 +289,7 @@ export default function ContactsPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col flex-wrap md:flex-row gap-3">
             {selectedContacts.length > 0 && (
               <AppButton
                 onClick={() => setOpenDeleteMultiple(true)}
@@ -321,7 +321,7 @@ export default function ContactsPage() {
             <TableHead>
               <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
                 {isColumnVisible("selection") && (
-                  <TableCell align="right" sx={{ py: 2, pl: 3 }}>
+                  <TableCell align="center" sx={{ py: 2, pl: 3, maxWidth: 50, width: 30 }}>
                     <Checkbox
                       checked={
                         selected.length === filteredData?.length &&

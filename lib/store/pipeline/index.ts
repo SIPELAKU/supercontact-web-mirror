@@ -1,12 +1,11 @@
 "use client";
 
 import { create } from "zustand";
-import api from "@/lib/utils/axiosClient";
 import { StageUI, transformPipelineResponse } from "@/lib/helper/transformPipeline";
 import { formatRupiah } from "@/lib/helper/currency";
 import { getDateRange } from "@/lib/helper/getDateRange";
-import type { AxiosError } from "axios";
 import { DealStage } from "@/components/pipeline/SelectDealStage";
+import * as pipelineAPI from "@/lib/api/pipelines";
 
 
 export interface ValidationItem {
@@ -44,11 +43,11 @@ export interface PipelineQuery {
 }
 
 export interface reqBody {
-  deal_name: string;
   client_account: string;
+  product_id: string;
   deal_stage: string;
   expected_close_date: string;
-  amount: number;
+  quantity: number;
   probability_of_close: number | string;
   notes: string;
 }
@@ -117,8 +116,8 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   fetchActiveUser: async () => {
     try {
       set({ loading: true, error: null });
-      const res = await api.get("/pipelines/active-users");
-      const data = res.data.data
+      const res = await pipelineAPI.fetchActiveUsers();
+      const data = res.data
       const temp: DealStage[] = [{ label: "All", value: 'all' }]
       data.users.map((arr: Users) => {
         const body = {
@@ -149,7 +148,7 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       const dateRange = param?.dateRange || dateRangeFilter;
       const assignedTo = param?.assigned_to || salespersonFilter;
 
-      const params: Record<string, string> = {};
+      const params: pipelineAPI.PipelineQueryParams = {};
 
       if (dateRange && dateRange !== "all") {
         const range = getDateRange(dateRange);
@@ -164,9 +163,9 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       }
 
       console.log("[fetchPipeline] Requesting /pipelines with params:", params);
-      const res = await api.get("/pipelines", { params });
+      const res = await pipelineAPI.fetchPipelines(params);
 
-      const data = res.data.data
+      const data = res.data
 
       const metrics = [
         {
@@ -205,29 +204,22 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const res = await api.post("/pipelines", body);
+      const response = await pipelineAPI.createPipeline(body as pipelineAPI.CreatePipelineRequest);
 
-      if (res.status === 200) {
+      if (response.success) {
         await get().fetchPipeline();
         return { success: true };
       }
 
-      return { success: false, error: "Unexpected response" };
-    } catch (error) {
-      const axiosErr = error as AxiosError<PipelineValidationResponse>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
-        return {
-          success: false,
-          error: axiosErr.response.data.error,
-          validation: axiosErr.response.data.details,
-        };
-      }
       return {
         success: false,
-        error:
-          axiosErr.response?.data?.error ??
-          axiosErr.message ??
-          "Failed to post pipeline",
+        error: response.error || "Unexpected response",
+        validation: response.validation
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: "Failed to create pipeline",
       };
     } finally {
       set({ loading: false });
@@ -238,16 +230,10 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       // Don't set global loading: true to avoid UI blocking
       set({ error: null });
-      const res = await api.patch(`/pipelines/${id}/stage`, {
-        deal_stage: stage,
-      });
+      await pipelineAPI.updatePipelineStage(id, { deal_stage: stage });
 
-      if (res.status === 200 || res.status === 204) {
-        await get().fetchPipeline({ isSilent: true });
-        return;
-      }
-
-      throw new Error("Failed to update pipeline stage");
+      await get().fetchPipeline({ isSilent: true });
+      return;
     } catch (error) {
       console.error("Error patching pipeline stage:", error);
       set({ error: "Failed to update pipeline stage" });
@@ -261,31 +247,22 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     try {
       set({ loading: true, error: null });
 
-      const res = await api.put(`/pipelines/${id}`, body);
+      const response = await pipelineAPI.updatePipeline(id!, body as pipelineAPI.UpdatePipelineRequest);
 
-      if (res.status === 200) {
+      if (response.success) {
         await get().fetchPipeline();
         return { success: true };
       }
 
-      return { success: false, error: "Unexpected response" };
-
-    } catch (error) {
-
-      const axiosErr = error as AxiosError<PipelineValidationResponse>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
-        return {
-          success: false,
-          error: axiosErr.response.data.error,
-          validation: axiosErr.response.data.details,
-        };
-      }
       return {
         success: false,
-        error:
-          axiosErr.response?.data?.error ??
-          axiosErr.message ??
-          "Failed to post pipeline",
+        error: response.error || "Unexpected response",
+        validation: response.validation
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: "Failed to update pipeline",
       };
     } finally {
       set({ loading: false });

@@ -22,6 +22,7 @@ interface AppSelectProps extends Omit<SelectProps, "label"> {
   isBgWhite?: boolean;
   height?: string;
   rounded?: string;
+  error?: boolean;
 }
 
 const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
@@ -38,6 +39,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
       isBgWhite = false,
       height,
       rounded,
+      error,
       ...props
     },
     ref,
@@ -60,6 +62,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
         <FormControl
           fullWidth={fullWidth}
           size="small"
+          error={error}
           sx={{ backgroundColor: isBgWhite ? "white !important" : INPUT_BG }}
         >
           <Select
@@ -113,6 +116,9 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                 borderWidth: "1.5px",
                 borderColor: "primary.main",
+              },
+              "&.Mui-error .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#d32f2f", // Error red color
               },
               ...sx,
             }}

@@ -392,7 +392,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     placeholder="Enter email address"
                     value={form.email}
                     onChange={(e) => updateField("email", e.target.value)}
-                    className={`${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                    error={!!errors.email}
+                    className="border-gray-300"
                     isBgWhite
                     height="48px"
                     rounded="8px"
@@ -408,7 +409,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     placeholder="Enter phone number"
                     value={form.phone_number}
                     onChange={(e) => updateField("phone_number", e.target.value)}
-                    className={`${errors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
+                    error={!!errors.phone_number}
+                    className="border-gray-300"
                     isBgWhite
                     height="48px"
                     rounded="8px"
@@ -424,7 +426,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     placeholder="Enter company name"
                     value={form.company}
                     onChange={(e) => updateField("company", e.target.value)}
-                    className={`${errors.company ? 'border-red-500' : 'border-gray-300'}`}
+                    error={!!errors.company}
+                    className="border-gray-300"
                     isBgWhite
                     height="48px"
                     rounded="8px"
@@ -438,6 +441,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   <AppSelect
                     value={form.industry}
                     onChange={(e) => updateField("industry", e.target.value as string)}
+                    error={!!errors.industry}
                     height="48px"
                     rounded="8px"
                     options={[
@@ -460,6 +464,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   <AppSelect
                     value={form.companySize}
                     onChange={(e) => updateField("companySize", e.target.value as string)}
+                    error={!!errors.companySize}
                     height="48px"
                     rounded="8px"
                     options={[
@@ -482,6 +487,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     placeholder="Enter Office Location"
                     value={form.officeLocation}
                     onChange={(e) => updateField("officeLocation", e.target.value)}
+                    error={!!errors.officeLocation}
                     height="48px"
                     rounded="12px"
                     isBgWhite
@@ -497,7 +503,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     onChange={(val) => updateField("leadStatus", val)}
                     data={leadStatusOptions}
                     placeholder="Select lead status"
-                    className={errors.leadStatus ? 'border-red-500' : ''}
+                    error={!!errors.leadStatus}
                   />
                   {errors.leadStatus && <p className="text-red-500 text-xs mt-1">{errors.leadStatus}</p>}
                 </div>
@@ -508,6 +514,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   <AppSelect
                     value={form.leadSource}
                     onChange={(e) => updateField("leadSource", e.target.value as string)}
+                    error={!!errors.leadSource}
                     height="48px"
                     rounded="8px"
                     options={[
@@ -596,7 +603,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   onChange={(val) => updateField("tag", val)}
                   data={tagOptions}
                   placeholder="Select tag"
-                  className={errors.tag ? 'border-red-500' : ''}
+                  error={!!errors.tag}
                 />
                 {errors.tag && <p className="text-red-500 text-xs mt-1">{errors.tag}</p>}
               </div>

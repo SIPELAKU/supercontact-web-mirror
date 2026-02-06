@@ -1,6 +1,5 @@
 "use client";
 
-import CustomSelectStage from "@/components/pipeline/SelectDealStage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useGetContactStore } from "@/lib/store/contact";
+import { useGetProductStore } from "@/lib/store/product";
 import type { DealForm, reqBody } from "@/lib/store/pipeline";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 import { AddDealModalProps } from "@/lib/types/Pipeline";
@@ -18,11 +18,13 @@ import { AppInput } from "../ui/app-input";
 import { AppDatePicker } from "../ui/app-datepicker";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
+import { AppAutocomplete } from "../ui/app-autocomplete";
+import { AppSelect } from "../ui/app-select";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { Spinner } from "../ui/spinner";
+import { notify } from "@/lib/notifications";
 
 export const dealStages = [
-  { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
   { value: "Prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
   { value: "Negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
@@ -34,15 +36,16 @@ export const dealStages = [
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
-  const { listContact, fetchContact, loading, clearContact } = useGetContactStore();
+  const { listContact, fetchContact, loading: loadingContacts, clearContact } = useGetContactStore();
+  const { listProduct, fetchProduct } = useGetProductStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline } = useGetPipelineStore();
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<DealForm>({
-    deal_name: "",
     client_account: "",
+    product_id: "",
     deal_stage: "",
     expected_close_date: undefined,
-    amount: 0,
+    quantity: 1,
     probability_of_close: "0",
     notes: ""
   });
@@ -50,11 +53,11 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
   const reset = () =>
     setFormData({
-      deal_name: "",
       client_account: "",
+      product_id: "",
       deal_stage: "",
       expected_close_date: undefined,
-      amount: 0,
+      quantity: 1,
       probability_of_close: "0",
       notes: ""
     });
@@ -73,13 +76,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     if (!deal) return;
 
     setFormData({
-      deal_name: deal.deal_name ?? "",
       client_account: deal.company?.id ?? "",
+      product_id: deal.product?.id ?? "",
       deal_stage: stage ?? "",
       expected_close_date: deal.expected_close_date
         ? new Date(deal.expected_close_date)
         : undefined,
-      amount: deal.amount ?? 0,
+      quantity: deal.quantity ?? 1,
       probability_of_close: String(deal.probability_of_close ?? 0),
       notes: deal.notes ?? "",
     });
@@ -107,15 +110,38 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   }, [listContact, selectedContactOption]);
 
 
+  // Add product options state and memoization
+  const selectedProductOption = useMemo(() => {
+    if (!deal?.product) return null;
+
+    return {
+      value: deal.product.id,
+      label: deal.product.sku,
+    };
+  }, [deal]);
+
+  const productOptions = useMemo(() => {
+    return listProduct.map(p => ({
+      value: p.id,
+      label: p.sku
+    }));
+  }, [listProduct]);
+
+  // Get selected product for displaying product name
+  const selectedProduct = useMemo(() => {
+    if (!formData.product_id) return null;
+    return listProduct.find(p => p.id === formData.product_id) || null;
+  }, [formData.product_id, listProduct]);
+
   const validateForm = (data: DealForm): FormErrors => {
     const errs: FormErrors = {};
 
-    if (!data.deal_name.trim()) {
-      errs.deal_name = "Deal name is required";
-    }
-
     if (!data.client_account) {
       errs.client_account = "Client is required";
+    }
+
+    if (!data.product_id) {
+      errs.product_id = "Product is required";
     }
 
     if (!data.deal_stage) {
@@ -126,8 +152,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       errs.expected_close_date = "Expected close date is required";
     }
 
-    if (data.amount <= 0) {
-      errs.amount = "Amount must be greater than 0";
+    if (!data.quantity || data.quantity <= 0) {
+      errs.quantity = "Quantity must be greater than 0";
     }
 
     if (
@@ -163,9 +189,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     setErrors({});
 
     const body: reqBody = {
-      ...formData,
+      client_account: formData.client_account,
+      product_id: formData.product_id,
+      deal_stage: formData.deal_stage,
       expected_close_date: toApiDate(formData.expected_close_date),
-      probability_of_close: Number(formData.probability_of_close)
+      quantity: formData.quantity,
+      probability_of_close: Number(formData.probability_of_close),
+      notes: formData.notes
     };
 
     if (!id) {
@@ -173,6 +203,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       const response = await postFormPipeline(body)
 
       if (response.success) {
+        notify.success("Pipeline created successfully!");
         setTimeout(() => (
           onOpenChange(false)
         ), 500)
@@ -180,12 +211,33 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         reset();
         setErrors({})
         setEditId("")
+      } else {
+        setIsSubmitting(false);
+        // Show error notification
+        const errorMessage = typeof response.error === 'string'
+          ? response.error
+          : (response.error as any)?.message || "An error occurred";
+
+        notify.error("Failed to create pipeline", {
+          description: errorMessage
+        });
+
+        // If there are validation errors, show them in the form
+        if (response.validation && response.validation.length > 0) {
+          const validationErrors: FormErrors = {};
+          response.validation.forEach(err => {
+            const field = err.loc[err.loc.length - 1] as keyof reqBody;
+            validationErrors[field] = err.msg;
+          });
+          setErrors(validationErrors);
+        }
       }
     } else {
       setIsSubmitting(true);
       const response = await updateFormPipeline(body, id)
 
       if (response.success) {
+        notify.success("Pipeline updated successfully!");
         setTimeout(() => (
           onOpenChange(false)
         ), 500)
@@ -193,6 +245,26 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         reset();
         setErrors({})
         setEditId("")
+      } else {
+        setIsSubmitting(false);
+        // Show error notification
+        const errorMessage = typeof response.error === 'string'
+          ? response.error
+          : (response.error as any)?.message || "An error occurred";
+
+        notify.error("Failed to update pipeline", {
+          description: errorMessage
+        });
+
+        // If there are validation errors, show them in the form
+        if (response.validation && response.validation.length > 0) {
+          const validationErrors: FormErrors = {};
+          response.validation.forEach(err => {
+            const field = err.loc[err.loc.length - 1] as keyof reqBody;
+            validationErrors[field] = err.msg;
+          });
+          setErrors(validationErrors);
+        }
       }
     }
   };
@@ -228,67 +300,99 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
           <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 mb-1">Deal Name</Label>
-                <AppInput
-                  disabled={id ? true : false}
-                  placeholder="Enter deal name"
-                  value={formData.deal_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, deal_name: e.target.value })
-                  }
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">SKU</label>
+                <AppAutocomplete
                   isBgWhite
                   height="48px"
                   rounded="8px"
+                  disabled={id ? true : false}
+                  value={productOptions.find(p => p.value === formData.product_id) || null}
+                  options={productOptions}
+                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                  onChange={(_, newValue) => {
+                    if (newValue && typeof newValue !== 'string') {
+                      setFormData({ ...formData, product_id: newValue.value });
+                    }
+                  }}
+                  onInputChange={(_, inputValue) => {
+                    if (inputValue.trim().length > 0) {
+                      fetchProduct({ search: inputValue });
+                    }
+                  }}
+                  isOptionEqualToValue={(option, value) => {
+                    if (typeof option === 'string' || typeof value === 'string') return option === value;
+                    return option.value === value.value;
+                  }}
+                  placeholder="Search by SKU"
+                  error={Boolean(errors.product_id)}
+                  helperText={errors.product_id}
                 />
-                {errors.deal_name && (
-                  <p className="text-sm text-red-500 mt-1">{errors.deal_name}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 mb-1">Client/Account</label>
-                <CustomSelectStage
-                  isSearch={true}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
+                <AppInput
+                  disabled={true}
+                  placeholder="Product name will appear here"
+                  value={selectedProduct?.product_name || ""}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                  readOnly
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Client/Account</label>
+                <AppAutocomplete
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                   disabled={id ? true : false}
-                  loading={loading}
-                  value={formData.client_account}
-                  placeholder="Select Client"
-                  onSearch={(q) => {
-                    const keyword = q.trim();
+                  loading={loadingContacts}
+                  value={contactOptions.find(c => c.value === formData.client_account) || null}
+                  options={contactOptions}
+                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                  onChange={(_, newValue) => {
+                    if (newValue && typeof newValue !== 'string') {
+                      setFormData({ ...formData, client_account: newValue.value });
+                    }
+                  }}
+                  onInputChange={(_, inputValue) => {
+                    const keyword = inputValue.trim();
                     if (keyword.length < 1) {
                       clearContact();
                       return;
                     }
-                    fetchContact({ query: q })
+                    fetchContact({ query: inputValue });
                   }}
-                  onChange={(value: string) => setFormData({ ...formData, client_account: value })}
-                  data={contactOptions}
-                  className="bg-white rounded-[8px]"
+                  isOptionEqualToValue={(option, value) => {
+                    if (typeof option === 'string' || typeof value === 'string') return option === value;
+                    return option.value === value.value;
+                  }}
+                  placeholder="Select Client"
+                  error={Boolean(errors.client_account)}
+                  helperText={errors.client_account}
                 />
-                {errors.client_account && (
-                  <p className="text-sm text-red-500 mt-1">{errors.client_account}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 mb-1">Deal Stage</label>
-                <CustomSelectStage
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Deal Stage</label>
+                <AppSelect
                   value={formData.deal_stage}
                   disabled={id ? true : false}
-                  onChange={(value: string) => setFormData({ ...formData, deal_stage: value })}
-                  data={dealStages}
-                  className="bg-white rounded-[8px]"
+                  onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
+                  options={dealStages}
+                  placeholder="Select Deal Stage"
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.deal_stage && (
-                  <p className="text-sm text-red-500 mt-1">{errors.deal_stage}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 mb-1">
-                  Expected Close Date
-                </Label>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Expected Close Date</label>
                 <AppDatePicker
                   value={formData.expected_close_date}
                   onChange={(value) => {
@@ -298,52 +402,45 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   placeholder="Select close date"
                   isBgWhite
                 />
-                {errors.expected_close_date && (
-                  <p className="text-sm text-red-500 mt-1">{errors.expected_close_date}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700 mb-1">Amount</Label>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Quantity</label>
                 <AppInput
                   type="number"
                   disabled={id ? true : false}
-                  placeholder="0.00"
-                  value={formData.amount}
+                  placeholder="1"
+                  value={formData.quantity}
                   onChange={(e) =>
-                    setFormData({ ...formData, amount: Number(e.target.value) })
+                    setFormData({ ...formData, quantity: Number(e.target.value) })
                   }
                   isBgWhite
                   height="48px"
                   rounded="8px"
+                  error={Boolean(errors.quantity)}
+                  helperText={errors.quantity}
                 />
-                {errors.amount && (
-                  <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">   Probability of Close (%)</label>
-                <CustomSelectStage
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Probability of Close (%)</label>
+                <AppSelect
                   value={String(formData.probability_of_close)}
                   onChange={(e) =>
-                    setFormData({ ...formData, probability_of_close: e })
+                    setFormData({ ...formData, probability_of_close: e.target.value as string })
                   }
                   placeholder="0"
-                  data={[
+                  options={[
                     { label: "20%", value: "20" },
                     { label: "40%", value: "40" },
                     { label: "60%", value: "60" },
                     { label: "80%", value: "80" },
                     { label: "100%", value: "100" },
                   ]}
-                  className="bg-white rounded-md"
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.probability_of_close && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {errors.probability_of_close}
-                  </p>
-                )}
               </div>
             </div>
 

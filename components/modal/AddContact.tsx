@@ -145,7 +145,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     }
 
     // Optional fields validation
-    if (data.company && data.company.length < 3) {
+    // Company validation
+    if (!data.company) {
+      errors.push({ label: "Company", message: "is required" });
+    } else if (data.company.length < 3) {
       errors.push({
         label: "Company",
         message: "must be at least 3 characters",
@@ -287,7 +290,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 />
 
                 <InputField
-                  isRequired={false}
+                  isRequired={true}
                   label="Company"
                   value={local.company}
                   onChange={(e) =>

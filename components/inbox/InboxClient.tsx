@@ -170,20 +170,7 @@ export default function InboxClient() {
     console.log("Connecting to WS:", wsUrl);
     wsRef.current = new WebSocket(wsUrl);
 
-    const user = parseJwt(token);
-    const userId = user?.user_id;
-
-    if (!userId) {
-      console.error("Could not extract user_id from token for WS connection");
-      return;
-    }
-
-    // Use proxy path for WebSocket to leverage Next.js rewrites (supports WSS -> WS upgrade)
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/proxy/chat/ws/chat/${userId}?token=${token}`;
-
-    console.log("Connecting to WS:", wsUrl);
-    wsRef.current = new WebSocket(wsUrl);
+    // (Redundant block removed)
 
     if (wsRef.current) {
       wsRef.current.onopen = () => console.log('WS Connected');

@@ -22,6 +22,7 @@ interface Props {
   className?: string;
   isSearch?: boolean;
   disabled?: boolean;
+  error?: boolean;
 }
 
 const radiusFromClass = (className?: string) => {
@@ -53,6 +54,7 @@ export default function CustomDealStageSelect({
   className,
   isSearch = false,
   disabled = false,
+  error,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
@@ -117,9 +119,9 @@ export default function CustomDealStageSelect({
         onClick={() => !disabled && setOpen(!open)}
         className={cn(
           "w-full h-[48px] px-3 flex items-center justify-between border",
-          disabled
+          error ? "border-red-500" : (disabled
             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-white border-gray-300 hover:border-gray-400"
+            : "bg-white border-gray-300 hover:border-gray-400")
         )}
         style={{ borderRadius: radius }}
       >

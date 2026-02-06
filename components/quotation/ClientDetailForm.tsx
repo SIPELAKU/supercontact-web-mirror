@@ -52,7 +52,7 @@ export default function ClientDetailsSection({
         companyName: selectedLead.contact.company,
         phoneNumber: selectedLead.contact.phone_number,
         emailAddress: selectedLead.contact.email,
-        officeLocation: selectedLead.contact.address || "",
+        officeLocation: selectedLead.office_location || "",
         quotationTitle: `Quotation for ${selectedLead.contact.name}`,
       });
     }

@@ -64,7 +64,22 @@ export default function ClientDetailsSection({
 
   // Debounce search to avoid too many API calls
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const handleSearchInputChange = useCallback((event: any, value: string) => {
+  const handleSearchInputChange = useCallback((event: any, value: string, reason: string) => {
+    // Clear selection if user is typing and it doesn't match the current selection
+    if (reason === 'input' && clientData.lead_id && value !== clientData.clientName) {
+      setClientData({
+        ...clientData,
+        lead_id: "",
+        clientName: "",
+        companyName: "",
+        officeLocation: "",
+        phoneNumber: "",
+        emailAddress: "",
+        quotationTitle: "New Project Proposal",
+        salesperson: "",
+      });
+    }
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -72,7 +87,7 @@ export default function ClientDetailsSection({
     debounceTimerRef.current = setTimeout(() => {
       onClientSearch(value);
     }, 300); // 300ms debounce
-  }, [onClientSearch]);
+  }, [onClientSearch, clientData, setClientData]);
 
   return (
     <div className="bg-white px-6 pt-6">
@@ -97,6 +112,19 @@ export default function ClientDetailsSection({
               onChange={(event, newValue) => {
                 if (newValue && typeof newValue === 'object' && 'value' in newValue) {
                   handleLeadChange(newValue.value);
+                } else {
+                  // Clear client data when autocomplete is cleared
+                  setClientData({
+                    ...clientData,
+                    lead_id: "",
+                    clientName: "",
+                    companyName: "",
+                    officeLocation: "",
+                    phoneNumber: "",
+                    emailAddress: "",
+                    quotationTitle: "New Project Proposal",
+                    salesperson: "",
+                  });
                 }
               }}
               filterOptions={(options) => options}

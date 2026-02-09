@@ -1,17 +1,19 @@
 "use client"
 
 import { Label } from "@/components/ui/label"
-import { Lead } from "@/lib/models/types"
+import { QuotationLead } from "@/lib/api/quotations"
 import { AppInput } from "../ui/app-input"
 import { AppDatePicker } from "../ui/app-datepicker"
-import { AppSelect } from "../ui/app-select"
+import { AppAutocomplete } from "../ui/app-autocomplete"
 import { format } from "date-fns"
+import { useState, useCallback, useRef } from "react"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>
   setClientData?: (data: Record<string, any>) => void
-  leads?: Lead[]
+  leads?: QuotationLead[]
   isLoadingLeads?: boolean
+  onClientSearch?: (query: string) => void
 }
 
 interface ClientDetailsData {
@@ -31,6 +33,7 @@ export default function ClientDetailsSection({
   setClientData = () => { },
   leads = [],
   isLoadingLeads = false,
+  onClientSearch = () => { },
 }: ClientDetailsProps) {
   const handleChange = (
     field: keyof ClientDetailsData,
@@ -54,9 +57,22 @@ export default function ClientDetailsSection({
         phoneNumber: selectedLead.contact.phone_number,
         emailAddress: selectedLead.contact.email,
         quotationTitle: `Quotation for ${selectedLead.contact.name}`,
+        salesperson: selectedLead.user?.fullname || "",
       });
     }
   };
+
+  // Debounce search to avoid too many API calls
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const handleSearchInputChange = useCallback((event: any, value: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      onClientSearch(value);
+    }, 300); // 300ms debounce
+  }, [onClientSearch]);
 
   return (
     <div className="bg-white px-6 pt-6">
@@ -69,17 +85,37 @@ export default function ClientDetailsSection({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Client Name</Label>
-            <AppSelect
-              value={clientData.lead_id || ""}
+            <AppAutocomplete
               options={leads.map(lead => ({
                 value: lead.id,
                 label: lead.contact.name
               }))}
-              onChange={(e) => handleLeadChange(e.target.value as string)}
-              placeholder={isLoadingLeads ? "Loading Leads..." : "Select Client"}
+              value={clientData.lead_id ?
+                { value: clientData.lead_id, label: clientData.clientName || "" } :
+                null
+              }
+              onChange={(event, newValue) => {
+                if (newValue && typeof newValue === 'object' && 'value' in newValue) {
+                  handleLeadChange(newValue.value);
+                }
+              }}
+              filterOptions={(options) => options}
+              getOptionKey={(option) => {
+                if (typeof option === 'string') return option;
+                return option.value;
+              }}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') return option;
+                return option.label || '';
+              }}
+              isOptionEqualToValue={(option, value) => {
+                if (typeof option === 'string' || typeof value === 'string') return false;
+                return option.value === value.value;
+              }}
+              onInputChange={handleSearchInputChange}
+              placeholder={isLoadingLeads ? "Loading Leads..." : "Search client name..."}
               isBgWhite
               height="48px"
-              rounded="8px"
             />
           </div>
 

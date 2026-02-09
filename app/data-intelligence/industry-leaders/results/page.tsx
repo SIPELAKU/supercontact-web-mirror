@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, Plus, Search } from "lucide-react";
+import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import CompanyResultCard from "@/components/data-intelligence/CompanyResultCard";
@@ -79,8 +80,8 @@ export default function IndustryLeadersResultsPage() {
     }, [filterCriteria, searchQuery]);
 
     const handleViewProfile = (id: string) => {
-        // Navigate to company detail page (reuse existing company intelligence page)
-        router.push(`/data-intelligence/company-intelligence/${id}`);
+        // Navigate to industry leaders profile page
+        router.push(`/data-intelligence/industry-leaders/profile/${id}`);
     };
 
     const handleSaveToCRM = (id: string) => {
@@ -92,23 +93,15 @@ export default function IndustryLeadersResultsPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
             {/* Header with gradient background */}
-            <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-[#A9C1F5] via-[#B8CEFA] to-[#C7DBFF] p-8">
-                <div className="relative z-10">
-                    <h1 className="mb-2 text-3xl font-bold text-gray-900">
-                        Data Intelegence
-                    </h1>
-                    <p className="text-sm text-gray-700">
-                        Data Intelegence • Results • <span className="font-medium">Profile</span>
-                    </p>
-                </div>
-                {/* Decorative graphic */}
-                <div className="absolute right-8 top-0 h-32 w-32 opacity-40">
-                    <svg viewBox="0 0 100 100" className="h-full w-full">
-                        <polygon points="50,10 90,90 10,90" fill="#5479EE" opacity="0.6" />
-                        <polygon points="50,30 70,70 30,70" fill="#6EE7B7" opacity="0.8" />
-                    </svg>
-                </div>
-            </div>
+            {/* Header */}
+            <PageHeader
+                title="Search Results"
+                breadcrumbs={[
+                    { label: "Data Intelligence" },
+                    { label: "Target Customer" },
+                    { label: "Results" },
+                ]}
+            />
 
             {/* Back Button */}
             <div className="mb-6">

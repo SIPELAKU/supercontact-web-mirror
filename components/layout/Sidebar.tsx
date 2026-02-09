@@ -144,11 +144,11 @@ const menuData: MenuSection[] = [
         name: "Data Intelligence",
         icon: DataIntelligenceIcon,
         children: [
-          { name: "Company", path: "/data-intelligence/company-intelligence" },
           {
-            name: "Industry Leader",
+            name: "Target Customer",
             path: "/data-intelligence/industry-leaders",
           },
+          { name: "Company", path: "/data-intelligence/company-intelligence" },
           { name: "Individual", path: "/data-intelligence/individual" },
         ],
       },

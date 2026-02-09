@@ -15,6 +15,7 @@ export default function ProductsServicesCard({
   removeItem,
   listProduct = [],
   loading = false,
+  clientData = {},
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
@@ -23,6 +24,7 @@ export default function ProductsServicesCard({
   removeItem: (i: number) => void;
   listProduct?: Product[];
   loading?: boolean;
+  clientData?: Record<string, any>;
 }) {
   const handleSKUChange = (index: number, sku: string) => {
     const selectedProduct = listProduct.find(p => p.sku === sku);
@@ -38,6 +40,16 @@ export default function ProductsServicesCard({
     value: p.sku,
     label: p.sku
   }));
+
+  const getSkuPlaceholder = () => {
+    if (!clientData.lead_id) {
+      return "Please select client name first";
+    }
+    if (listProduct.length === 0) {
+      return "No products available for this client";
+    }
+    return "Select SKU";
+  };
 
   const discountOptions = [
     { value: "0", label: "0%" },
@@ -73,13 +85,13 @@ export default function ProductsServicesCard({
             <div className="col-span-2">
               <AppSelect
                 value={item.sku}
-                placeholder="Select SKU"
+                placeholder={getSkuPlaceholder()}
                 onChange={(e) => handleSKUChange(i, e.target.value as string)}
                 options={skuOptions}
                 isBgWhite
                 height="48px"
                 rounded="8px"
-                disabled={loading}
+                disabled={loading || !clientData.lead_id || listProduct.length === 0}
               />
             </div>
 

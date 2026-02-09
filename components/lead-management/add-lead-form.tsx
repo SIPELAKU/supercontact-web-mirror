@@ -10,7 +10,7 @@ import { useState } from "react";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { Contact, createLead, CreateLeadData, User } from "@/lib/api";
-import { useContacts } from "@/lib/hooks/useContacts";
+import { useAllContacts } from "@/lib/hooks/useContacts";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
@@ -89,7 +89,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
   const queryClient = useQueryClient();
-  const { data: contactsResponse } = useContacts();
+  const { data: contactsResponse } = useAllContacts();
   const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
 
   // Debug logs

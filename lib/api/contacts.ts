@@ -34,18 +34,35 @@ export interface ContactResponse {
 // Functions
 // ============================================
 
-export async function fetchContacts(token: string): Promise<ContactResponse> {
-  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/contacts`, {
+export async function fetchContacts(
+  token: string,
+  params?: { search?: string; page?: number; limit?: number }
+): Promise<ContactResponse> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.search) {
+    queryParams.append('search', params.search);
+  }
+  if (params?.page) {
+    queryParams.append('page', params.page.toString());
+  }
+  if (params?.limit) {
+    queryParams.append('limit', params.limit.toString());
+  }
+
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/contacts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+  const res = await fetchWithTimeout(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   const json = await res.json();
   console.log("Contacts API response:", json);
-  
+
   if (res.status === 401) {
     throw new Error("UNAUTHORIZED");
   }
-  
+
   if (!res.ok || !json.success) throw new Error("Failed to load contacts");
   return json;
 }
@@ -53,9 +70,9 @@ export async function fetchContacts(token: string): Promise<ContactResponse> {
 export async function deleteMultipleContacts(token: string, contactIds: string[]): Promise<ContactResponse> {
   const res = await fetchWithTimeout(`/api/proxy/contacts`, {
     method: "DELETE",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}` 
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ contact_ids: contactIds }),
   });
@@ -74,9 +91,9 @@ export async function deleteMultipleContacts(token: string, contactIds: string[]
 export async function deleteContact(token: string, contactId: string): Promise<any> {
   const res = await fetchWithTimeout(`/api/proxy/contacts/${contactId}`, {
     method: "DELETE",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}` 
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ id: contactId }),
   });

@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.1] - 2026-02-09
+
+### Detail Versi 1.4.1
+
+#### Revert
+
+- **InboxClient:**
+  - Revert InboxClient to state before post-deploy modifications.
+
+---
+
 ## [1.4.0] - 2026-02-06
 
 ### Detail Versi 1.4.0

@@ -32,7 +32,7 @@ export interface SubscribersResponse {
 
 export interface CreateSubscriberData {
   target: 'subscriber' | 'mailing_list';
-  type_request: 'manual' | 'import';
+  type_request: 'manual' | 'from_contacts';
   new_contact?: {
     name: string;
     email: string;

@@ -9,6 +9,48 @@ import { fetchWithTimeout } from "./api-client";
 // Types
 // ============================================
 
+export interface QuotationLeadItem {
+    id: string;
+    product_name: string;
+    sku: string;
+    price: string;
+    quantity: number;
+    total: string;
+    notes: string;
+}
+
+export interface QuotationLead {
+    id: string;
+    contact_id: string;
+    office_location: string;
+    assigned_to: string;
+    contact: {
+        id: string;
+        name: string;
+        email: string;
+        phone_number: string;
+        company: string;
+    };
+    user: {
+        id: string;
+        fullname: string;
+        email: string;
+    };
+    items: QuotationLeadItem[];
+}
+
+export interface QuotationLeadsResponse {
+    success: boolean;
+    data: {
+        page: number;
+        limit: number;
+        total: number;
+        total_pages: number;
+        leads: QuotationLead[];
+    };
+    error: any;
+}
+
 export interface QuotationItemData {
     product_id: string;
     quantity: number;
@@ -122,6 +164,32 @@ export async function fetchQuotationById(token: string, quotationId: string): Pr
         logger.error("fetchQuotationById error:", error);
         if (error.response?.data) {
             throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to fetch quotation");
+        }
+        throw error;
+    }
+}
+
+/**
+ * Fetch leads for quotation (combined data).
+ */
+export async function fetchQuotationLeads(token: string, page: number = 1, limit: number = 100, search?: string): Promise<QuotationLeadsResponse> {
+    try {
+        const params: any = { page, limit };
+        if (search && search.trim() !== "") {
+            params.search = search;
+        }
+
+        const res = await api.get("/quotations/lead", {
+            params,
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return res.data;
+    } catch (error: any) {
+        logger.error("fetchQuotationLeads error:", error);
+        if (error.response?.data) {
+            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to fetch quotation leads");
         }
         throw error;
     }

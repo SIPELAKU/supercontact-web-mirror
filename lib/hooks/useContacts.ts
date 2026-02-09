@@ -6,15 +6,31 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContactResponse, fetchContacts } from "../api";
 import { deleteContact, deleteMultipleContacts } from "../api/contacts";
 
-// Fetch all contacts
-export function useContacts() {
+// Fetch all contacts with optional search
+export function useContacts(search?: string) {
   const { getToken } = useAuth();
   return useQuery<ContactResponse, Error>({
-    queryKey: ["contacts"],
+    queryKey: ["contacts", search],
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error('No authentication token');
-      return fetchContacts(token);
+      return fetchContacts(token, { search, limit: 100 });
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: search !== undefined && search.length >= 2, // Only search if at least 2 characters
+  });
+}
+
+// Fetch all contacts without search (for backward compatibility)
+export function useAllContacts() {
+  const { getToken } = useAuth();
+  return useQuery<ContactResponse, Error>({
+    queryKey: ["all-contacts"],
+    queryFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error('No authentication token');
+      return fetchContacts(token, { limit: 100 });
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,
@@ -25,7 +41,7 @@ export function useContacts() {
 export function useDeleteMultipleContacts() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (contactIds: string[]) => {
       const token = await getToken();
@@ -41,7 +57,7 @@ export function useDeleteMultipleContacts() {
 export function useDeleteContact() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (contactId: string) => {
       const token = await getToken();

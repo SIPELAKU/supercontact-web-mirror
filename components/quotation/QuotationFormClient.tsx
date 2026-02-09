@@ -12,8 +12,9 @@ import PageHeader from "@/components/ui/page-header";
 import type { ItemRow } from "@/lib/types/Quotation";
 import { createQuotation, updateQuotation, sendQuotationEmail } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
-import { useLeads } from "@/lib/hooks/useLeads";
-import { useGetProductStore } from "@/lib/store/product";
+import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
+import type { QuotationLead } from "@/lib/api/quotations";
+
 import { notify } from "@/lib/notifications";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
@@ -21,53 +22,17 @@ import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { Spinner } from "../ui/spinner";
 
+
 interface QuotationFormClientProps {
   initialData?: any;
 }
 
 export default function QuotationFormClient({ initialData }: QuotationFormClientProps) {
   const { getToken } = useAuth();
-  const { data: leadsResponse, isLoading: isLoadingLeads } = useLeads(1, 100);
-  const { listProduct, fetchProduct, loading: isLoadingProducts } = useGetProductStore();
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const { data: leadsResponse, isLoading: isLoadingLeads } = useQuotationLeads(1, 100, clientSearchQuery);
   const leads = leadsResponse?.data?.leads || [];
 
-  // Ensure current lead is in the list for editing
-  const leadsWithCurrent = useMemo(() => {
-    if (initialData?.lead && !leads.find((l: any) => l.id === initialData.lead.id)) {
-      return [initialData.lead, ...leads];
-    }
-    return leads;
-  }, [leads, initialData]);
-
-  // Ensure current products are in the list for editing
-  const productsWithCurrent = useMemo(() => {
-    const currentProducts: any[] = [];
-    const rawItems = initialData?.items || initialData?.quotation_items || [];
-
-    if (rawItems.length > 0) {
-      rawItems.forEach((item: any) => {
-        if (item.product && !listProduct.find((p: any) => p.id === item.product.id)) {
-          // Check if we already added it to currentProducts to avoid duplicates
-          if (!currentProducts.find(p => p.id === item.product.id)) {
-            // Normalize product structure if needed, assuming item.product has necessary fields
-            currentProducts.push({
-              ...item.product,
-              id: item.product_id || item.product.id // Ensure ID exists
-            });
-          }
-        }
-      });
-    }
-    return [...currentProducts, ...listProduct];
-  }, [listProduct, initialData]);
-
-  useEffect(() => {
-    fetchProduct({ page: 1, limit: 100 });
-  }, []);
-
-  const [items, setItems] = useState<ItemRow[]>([
-    { product_id: "", title: "Select SKU", sku: "", desc: "Description…", qty: 1, discount: 0, unitPrice: 0 },
-  ]);
   const [clientData, setClientData] = useState<Record<string, any>>({
     lead_id: "",
     clientName: "",
@@ -78,7 +43,36 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     quotationId: "",
     issueDate: new Date().toISOString().split('T')[0],
     expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    salesperson: "",
   });
+
+  // Ensure current lead is in the list for editing
+  const leadsWithCurrent = useMemo(() => {
+    // Cast leads to any to avoid type mismatch during initialData check
+    if (initialData?.lead && !leads.find((l) => l.id === initialData.lead.id)) {
+      // Create a compatible object if initialData.lead is different
+      return [initialData.lead as QuotationLead, ...leads];
+    }
+    return leads;
+  }, [leads, initialData]);
+
+  // Derive available products from the selected lead's items
+  const availableProducts = useMemo(() => {
+    const selectedLead = leadsWithCurrent.find(l => l.id === clientData.lead_id);
+    if (!selectedLead || !selectedLead.items) return [];
+
+    return selectedLead.items.map(item => ({
+      id: item.id,
+      product_name: item.product_name,
+      sku: item.sku,
+      price: Number(item.price), // Ensure number
+      description: item.notes || ""
+    }));
+  }, [leadsWithCurrent, clientData.lead_id]);
+
+  const [items, setItems] = useState<ItemRow[]>([
+    { product_id: "", title: "", sku: "", desc: "", qty: 1, discount: 0, unitPrice: 0 },
+  ]);
 
   // Populate form if initialData is provided
   useEffect(() => {
@@ -115,7 +109,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     }
   }, [initialData]);
 
-  const [salesperson, setSalesperson] = useState("Muhammad...");
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [notes, setNotes] = useState(
     "It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!"
@@ -342,6 +335,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             setClientData={setClientData}
             leads={leadsWithCurrent}
             isLoadingLeads={isLoadingLeads}
+            onClientSearch={setClientSearchQuery}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
 
@@ -351,8 +345,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             updateItemField={updateItemField}
             addItem={addItem}
             removeItem={removeItem}
-            listProduct={productsWithCurrent}
-            loading={isLoadingProducts}
+            listProduct={availableProducts}
+            clientData={clientData}
+          // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <div className="flex items-center justify-between px-6">
@@ -362,9 +357,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               </label>
               <AppInput
                 id="salesperson"
-                value={salesperson}
-                onChange={(e) => setSalesperson(e.target.value)}
-                placeholder="Enter salesperson name"
+                value={clientData.salesperson || ""}
+                onChange={(e) => setClientData({ ...clientData, salesperson: e.target.value })}
+                placeholder="Select client to view salesperson"
+                disabled={true}
                 isBgWhite
                 height="40px"
               />

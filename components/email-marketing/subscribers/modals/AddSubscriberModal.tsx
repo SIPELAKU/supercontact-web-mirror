@@ -36,7 +36,7 @@ interface AddSubscriberModalProps {
 }
 
 const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 'subscriber' }: AddSubscriberModalProps) => {
-    const [creationMode, setCreationMode] = useState<'manual' | 'import'>('manual');
+    const [creationMode, setCreationMode] = useState<'manual' | 'from_contacts'>('manual');
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -45,12 +45,13 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
     const [address, setAddress] = useState('');
     const [selectedContacts, setSelectedContacts] = useState<any[]>([]);
     const [selectedLists, setSelectedLists] = useState<MailingList[]>([]);
+    const [contactSearchQuery, setContactSearchQuery] = useState('');
 
     const [error, setError] = useState('');
 
     const createMutation = useCreateSubscriber();
     const { data: mailingListsData } = useMailingLists();
-    const { data: contactsData } = useContacts();
+    const { data: contactsData, isLoading: isLoadingContacts } = useContacts(contactSearchQuery);
 
     const listOptions = mailingListsData?.data?.mailing_lists || [];
     const contactOptions = contactsData?.data?.contacts || [];
@@ -65,6 +66,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
             setAddress('');
             setSelectedContacts([]);
             setSelectedLists([]);
+            setContactSearchQuery('');
             setError('');
             setCreationMode('manual');
 
@@ -84,7 +86,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
         try {
             const listIdsToSend = selectedLists.map(list => list.id);
 
-            if (creationMode === 'import') {
+            if (creationMode === 'from_contacts') {
                 if (selectedContacts.length === 0) {
                     setError("Please select at least one contact to import.");
                     return;
@@ -94,7 +96,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
 
                 await createMutation.mutateAsync({
                     target: target,
-                    type_request: 'import',
+                    type_request: 'from_contacts',
                     contact_ids: contactIds,
                     mailing_list_ids: listIdsToSend
                 });
@@ -176,7 +178,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                             <ToggleButton value="manual" aria-label="manual">
                                 <IconUser size="1rem" style={{ marginRight: 8 }} /> Manual
                             </ToggleButton>
-                            <ToggleButton value="import" aria-label="import">
+                            <ToggleButton value="from_contacts" aria-label="import">
                                 <IconUsers size="1rem" style={{ marginRight: 8 }} /> Import from Contacts
                             </ToggleButton>
                         </ToggleButtonGroup>
@@ -264,35 +266,35 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                             multiple
                             isBgWhite
                             options={contactOptions}
-                            filterOptions={(options, params) => {
-                                const filtered = options.filter(option =>
-                                    !selectedContacts.some(selected => selected.id === option.id) &&
-                                    ((option.name && option.name.toLowerCase().includes(params.inputValue.toLowerCase())) ||
-                                        (option.email && option.email.toLowerCase().includes(params.inputValue.toLowerCase())))
-                                );
-                                return filtered.slice(0, 100);
-                            }}
+                            loading={isLoadingContacts}
                             getOptionLabel={(option) => `${option.name || 'No Name'} (${option.email || 'No Email'})`}
                             value={selectedContacts}
                             onChange={(_, newValue) => setSelectedContacts(newValue)}
+                            onInputChange={(_, newInputValue) => {
+                                setContactSearchQuery(newInputValue);
+                            }}
                             isOptionEqualToValue={(option, value) => option.id === value.id}
                             label="Select Contacts to Import"
                             placeholder="Search name or email..."
-                            error={Boolean(error && creationMode === 'import' && selectedContacts.length === 0)}
-                            helperText={error && creationMode === 'import' && selectedContacts.length === 0 ? "Select at least one contact" : ""}
+                            error={Boolean(error && creationMode === 'from_contacts' && selectedContacts.length === 0)}
+                            helperText={error && creationMode === 'from_contacts' && selectedContacts.length === 0 ? "Select at least one contact" : ""}
                         />
                     )}
 
-                    <AppAutocomplete
+                    <AppAutocomplete<MailingList, true, false, false>
                         isBgWhite
                         multiple
                         options={listOptions}
-                        getOptionLabel={(option) => `${option.name} (${option.subscriber_count})`}
+                        getOptionLabel={(option) => typeof option === 'string' ? option : `${option.name} (${option.subscriber_count})`}
                         value={selectedLists}
-                        onChange={(_, newValue) => setSelectedLists(newValue)}
+                        onChange={(_, newValue) => {
+                            if (Array.isArray(newValue) && newValue.every(item => typeof item !== 'string')) {
+                                setSelectedLists(newValue as MailingList[]);
+                            }
+                        }}
                         isOptionEqualToValue={(option, value) => option.id === value.id}
                         label="Add to Mailing Lists (Optional)"
-                        placeholder="Search name or email..."
+                        placeholder="Search mailing list..."
                     />
                 </Stack>
             </DialogContent>

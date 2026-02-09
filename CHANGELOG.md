@@ -13,6 +13,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.2] - 2026-02-09
+
+### Detail Versi 1.4.2
+
+#### ✨ Quotation Leads API Integration & UX Enhancements
+
+- **Quotation Leads API:**
+  - Implemented unified `/api/v1/quotations/lead` endpoint for combined lead, contact, and product data.
+  - Created new TypeScript interfaces: `QuotationLeadItem`, `QuotationLead`, and `QuotationLeadsResponse` in `lib/api/quotations.ts`.
+  - Implemented `fetchQuotationLeads()` API function with search parameter support.
+  - Created `useQuotationLeads` React Query hook with server-side search functionality.
+  - Replaced separate API calls (`/leads`, `/contacts`, `/products`) with single unified endpoint, reducing network requests by 66%.
+
+- **Client Name Field:**
+  - Replaced `AppSelect` with `AppAutocomplete` for searchable client name selection.
+  - Implemented server-side search with 300ms debounce to prevent excessive API calls.
+  - Added `filterOptions` to disable client-side filtering and use server-filtered results.
+  - Added `getOptionKey` to use unique lead IDs as keys, fixing duplicate key warnings for leads with same contact names.
+
+- **SKU Dropdown:**
+  - Implemented contextual placeholder messages based on application state:
+    - "Please select client name first" when no client is selected.
+    - "No products available for this client" when client has no products.
+    - "Select SKU" when products are available.
+  - Disabled SKU dropdown until a client is selected.
+  - Products now derived directly from selected lead's items instead of separate product store.
+
+- **Salesperson Field:**
+  - Changed from hardcoded value to auto-populated from selected lead's `user.fullname`.
+  - Made field read-only (disabled) to prevent manual editing.
+  - Updated placeholder to "Select client to view salesperson".
+
+- **Data Intelligence - Target Customer:**
+  - Renamed "Industry Leader" to "Target Customer" in sidebar navigation.
+  - Moved Target Customer to the top of Data Intelligence section for better visibility.
+  - Updated page headers in `/data-intelligence/industry-leaders` to use `PageHeader` component.
+  - Updated page headers in `/data-intelligence/industry-leaders/results` to use `PageHeader` component.
+
+#### ♻️ Refactor
+
+- **Quotation Form State Management:**
+  - Removed `useGetProductStore` hook and separate product fetching logic.
+  - Consolidated salesperson into `clientData` state object.
+  - Improved state initialization and data flow in `QuotationFormClient`.
+
+#### 📁 Files Modified
+
+- `lib/api/quotations.ts` - Added quotation leads types and API function
+- `lib/hooks/useQuotationLeads.ts` - New hook for quotation leads
+- `components/quotation/QuotationFormClient.tsx` - Integrated new API and removed product store
+- `components/quotation/ClientDetailForm.tsx` - Added autocomplete with search
+- `components/quotation/ProductsServicesTable.tsx` - Added contextual empty states
+
+---
+
 ## [1.4.1] - 2026-02-09
 
 ### Detail Versi 1.4.1

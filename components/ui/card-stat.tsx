@@ -2,14 +2,14 @@
 
 import React from "react";
 
+import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import Avatar from "@mui/material/Avatar";
 
 export type UserStatType = {
   title: string;
-  stats: string;
+  stats: React.ReactNode;
   avatarIcon: React.ElementType;
   avatarColor?: string;
   avatarBgColor?: string;
@@ -47,13 +47,14 @@ const CardStatistik = (props: UserStatType) => {
             {title}
           </Typography>
 
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 600, color: "text.primary", mb: 0.5 }}
+          >
+            {stats}
+          </Typography>
+
           <div className="flex items-center gap-2">
-            <Typography
-              variant="h4"
-              sx={{ fontWeight: 600, color: "text.primary" }}
-            >
-              {stats}
-            </Typography>
             <Typography
               variant="body2"
               sx={{
@@ -63,11 +64,10 @@ const CardStatistik = (props: UserStatType) => {
             >
               {`(${trend === "negative" ? "-" : "+"}${trendNumber})`}
             </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              {subtitle}
+            </Typography>
           </div>
-
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            {subtitle}
-          </Typography>
         </div>
 
         <Avatar

@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import {
   Box,
-  Typography,
-  Popover,
   IconButton,
   Button as MuiButton,
+  Popover,
   styled,
+  Typography,
 } from "@mui/material";
-import { Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { PickersDay, PickersDayProps } from "@mui/x-date-pickers/PickersDay";
 import { format, isSameDay, isWithinInterval, startOfDay } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 // --- Design Tokens ---
 const INPUT_BG = "#FAFAF6";
@@ -175,7 +175,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
 
     return (
       <CustomPickersDay
-        {...props}
+        {...(props as any)}
         isStart={isStart}
         isEnd={isEnd}
         isInRange={isInRange}

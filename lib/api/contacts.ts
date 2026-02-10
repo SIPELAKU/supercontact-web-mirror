@@ -63,7 +63,16 @@ export async function fetchContacts(
     throw new Error("UNAUTHORIZED");
   }
 
-  if (!res.ok || !json.success) throw new Error("Failed to load contacts");
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to load contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
   return json;
 }
 
@@ -84,7 +93,16 @@ export async function deleteMultipleContacts(token: string, contactIds: string[]
     throw new Error("UNAUTHORIZED");
   }
 
-  if (!res.ok || !json.success) throw new Error("Failed to delete multiple contacts");
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to delete multiple contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
   return json;
 }
 
@@ -105,6 +123,15 @@ export async function deleteContact(token: string, contactId: string): Promise<a
     throw new Error("UNAUTHORIZED");
   }
 
-  if (!res.ok || !json.success) throw new Error("Failed to delete contact");
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to delete contact";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
   return json;
 }

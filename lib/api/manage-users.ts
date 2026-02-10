@@ -2,8 +2,8 @@ import { ManageUserResponse, CreateManagedUserData, UpdateManagedUserData } from
 import { fetchWithTimeout } from "./api-client";
 
 export async function fetchManagedUsers(
-  token: string, 
-  page: number, 
+  token: string,
+  page: number,
   limit: number,
   search?: string,
   position?: string,
@@ -23,15 +23,15 @@ export async function fetchManagedUsers(
 
   const json = await res.json();
   console.log("Managed Users API response:", json);
-  
+
   if (res.status === 401) {
     throw new Error("UNAUTHORIZED");
   }
-  
+
   if (!res.ok) throw new Error("Failed to load managed users");
-  
+
   // API already returns the correct structure, just return it
-  return json;  
+  return json;
 }
 
 export async function createManagedUser(
@@ -49,7 +49,16 @@ export async function createManagedUser(
 
   if (!res.ok) {
     const errorData = await res.json();
-    throw new Error(errorData.error.message || "Failed to create managed user");
+    let errorMsg = errorData.error?.message || "Failed to create managed user";
+
+    if (errorData.error?.details && Array.isArray(errorData.error.details)) {
+      const details = errorData.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+
+    throw new Error(errorMsg);
   }
 
   return res.json();
@@ -72,7 +81,16 @@ export async function updateManagedUser(
   if (!res.ok) {
     const errorData = await res.json();
     console.log("errorData", errorData);
-    throw new Error(errorData.error.message || "Failed to update managed user");
+    let errorMsg = errorData.error?.message || "Failed to update managed user";
+
+    if (errorData.error?.details && Array.isArray(errorData.error.details)) {
+      const details = errorData.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+
+    throw new Error(errorMsg);
   }
 
   return res.json();

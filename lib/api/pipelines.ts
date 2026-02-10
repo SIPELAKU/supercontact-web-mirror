@@ -76,18 +76,18 @@ export async function createPipeline(data: CreatePipelineRequest) {
             data: response.data,
         };
     } catch (error) {
-        const axiosErr = error as AxiosError<PipelineValidationResponse>;
-        if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+        const axiosErr = error as AxiosError<any>;
+        if (axiosErr.response?.data?.error) {
+            const errorData = axiosErr.response.data.error;
             return {
                 success: false,
-                error: axiosErr.response.data.error,
-                validation: axiosErr.response.data.details,
+                error: typeof errorData === 'object' ? errorData.message : errorData,
+                validation: errorData.details,
             };
         }
         return {
             success: false,
             error:
-                axiosErr.response?.data?.error ??
                 axiosErr.message ??
                 "Failed to create pipeline",
         };
@@ -105,18 +105,18 @@ export async function updatePipeline(id: string, data: UpdatePipelineRequest) {
             data: response.data,
         };
     } catch (error) {
-        const axiosErr = error as AxiosError<PipelineValidationResponse>;
-        if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+        const axiosErr = error as AxiosError<any>;
+        if (axiosErr.response?.data?.error) {
+            const errorData = axiosErr.response.data.error;
             return {
                 success: false,
-                error: axiosErr.response.data.error,
-                validation: axiosErr.response.data.details,
+                error: typeof errorData === 'object' ? errorData.message : errorData,
+                validation: errorData.details,
             };
         }
         return {
             success: false,
             error:
-                axiosErr.response?.data?.error ??
                 axiosErr.message ??
                 "Failed to update pipeline",
         };

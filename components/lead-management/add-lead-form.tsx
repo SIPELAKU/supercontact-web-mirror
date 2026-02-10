@@ -219,12 +219,12 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     const newErrors: Record<string, string> = {};
     if (!selectedContactId) newErrors.name = "Please search or select from the list";
 
-    // Email validation: must have @ and end with .com
-    const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
+    // Email validation: simple check as backend handles validation
+    const emailRegex = /^[^\s@]+@[^\s@]+$/;
     if (!form.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!emailRegex.test(form.email)) {
-      newErrors.email = "Email must contain @ and end with .com";
+      newErrors.email = "Invalid email format";
     }
 
     // Phone validation: numbers only, min 10
@@ -414,6 +414,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     onChange={(e) => updateField("email", e.target.value)}
                     error={!!errors.email}
                     className="border-gray-300"
+                    autoComplete="off"
                     isBgWhite
                     height="48px"
                     rounded="8px"

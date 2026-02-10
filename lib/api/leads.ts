@@ -69,7 +69,16 @@ async function handleResponse(res: Response, errorMessage: string) {
   }
 
   if (!res.ok || (json.success === false)) {
-    const errorMsg = json.message || json.error?.message || json.error || errorMessage;
+    let errorMsg = json.message || json.error?.message || json.error || errorMessage;
+
+    // If there are validation details, use them for a more specific error message
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+
     console.error(`API Error: ${res.url}`, { status: res.status, message: errorMsg, json });
     logger.error(`API Error: ${res.url}`, { status: res.status, json });
     throw new Error(errorMsg);

@@ -11,7 +11,6 @@ import { Search } from "lucide-react";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
-import { useUsers } from "@/lib/hooks/useUsers";
 import { useCreateManagedUser } from "@/lib/hooks/useManagedUser";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import useRoles from "@/lib/hooks/useRoles";
@@ -27,7 +26,6 @@ type AddUserDialogProps = {
 export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   // Form State
   const [email, setEmail] = useState("");
-  const [selectedEmail, setSelectedEmail] = useState("");
   const [departmentName, setDepartmentName] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
   const [branchName, setBranchName] = useState("");
@@ -37,14 +35,11 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   const [roleId, setRoleId] = useState("");
 
   // UI State
-  const [showEmailDropdown, setShowEmailDropdown] = useState(false);
   const [showBranchDropdown, setShowBranchDropdown] = useState(false);
 
-  const debouncedEmail = useDebounce(email, 300);
   const debouncedBranch = useDebounce(branchName, 300);
 
   // Hooks
-  const { data: usersResponse } = useUsers(1, 10, debouncedEmail);
   const { departments: allDepartments } = useDepartments(0, 100);
 
   const { departments: branchDepartments } = useDepartments(0, 100, "", {
@@ -62,7 +57,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
   const resetForm = () => {
     setEmail("");
-    setSelectedEmail("");
     setDepartmentName("");
     setDepartmentUuid("");
     setBranchName("");
@@ -74,16 +68,16 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEmail || !departmentUuid || !roleId) {
+    if (!email || !departmentUuid || !roleId) {
       notify.error(
-        "Please fill in all required fields and select an email from the suggestions.",
+        "Please fill in all required fields.",
       );
       return;
     }
 
     try {
       await createManagedUser({
-        email: selectedEmail,
+        email: email,
         department_id: departmentUuid,
         user_level: level,
         position: position,
@@ -100,7 +94,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
     }
   };
 
-  const filteredEmails = usersResponse?.data?.users || [];
+
 
   // Filter branches based on input and selected department
   const branches = useMemo(() => {
@@ -109,12 +103,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
       b.toLowerCase().includes(branchName.toLowerCase()),
     );
   }, [branchDepartments, branchName]);
-
-  const handleEmailSelect = (emailVal: string) => {
-    setEmail(emailVal);
-    setSelectedEmail(emailVal);
-    setShowEmailDropdown(false);
-  };
 
   const handleBranchSelect = (branchVal: string) => {
     setBranchName(branchVal);
@@ -184,30 +172,10 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setSelectedEmail("");
-                  setShowEmailDropdown(true);
                 }}
-                onFocus={() => setShowEmailDropdown(email.length > 0)}
-                onBlur={() => setTimeout(() => setShowEmailDropdown(false), 200)}
                 isBgWhite
                 autoComplete="off"
               />
-              {showEmailDropdown && filteredEmails.length > 0 && (
-                <div className="absolute z-1500 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {filteredEmails.map((u) => (
-                    <div
-                      key={u.id}
-                      onClick={() => handleEmailSelect(u.email)}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="font-medium text-gray-900">
-                        {u.fullname}
-                      </div>
-                      <div className="text-sm text-gray-500">{u.email}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
@@ -352,7 +320,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
             <AppButton
               variantStyle="primary"
               type="submit"
-              disabled={isSubmitting || !selectedEmail}
+              disabled={isSubmitting || !email}
             >
               {isSubmitting ? "Saving..." : "Save User"}
             </AppButton>

@@ -102,8 +102,9 @@ export const useGetProductStore = create<GetState>((set, get) => ({
         limit: params?.limit ?? pagination.limit,
       };
 
-      if (params?.search && params.search.trim() !== "") {
-        query.search = params.search;
+      const search = params?.search ?? get().searchQuery;
+      if (search && search.trim() !== "") {
+        query.search = search;
       }
 
       const res = await api.get("/products", {

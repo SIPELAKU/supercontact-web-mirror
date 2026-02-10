@@ -12,7 +12,7 @@ export default function ProductClient() {
 
   useEffect(() => {
     fetchProduct({
-      page: pagination.page,
+      page: 1, // Reset to page 1 on new search
       limit: pagination.limit,
       search: searchDebounce
     });

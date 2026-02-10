@@ -143,7 +143,7 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
     setStatusFilter: (v) => set({ statusFilter: v }),
 
     setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
-    
+
     setEditId: (v) => set({ id: v }),
 
     setSearchQuery: (v) => set({ searchQuery: v }),
@@ -159,20 +159,23 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 limit: params?.limit ?? pagination.limit,
             };
 
-            if (params?.dateRange && params.dateRange !== "all") {
-                const range = getDateRange(params.dateRange);
+            const dateRange = params?.dateRange ?? get().dateRangeFilter;
+            if (dateRange && dateRange !== "all") {
+                const range = getDateRange(dateRange);
                 if (range) {
                     query.date_from = String(range.start);
                     query.date_to = String(range.end);
                 }
             }
 
-            if (params?.status && params.status.trim() !== "all") {
-                query.quotation_status = params.status;
+            const status = params?.status ?? get().statusFilter;
+            if (status && status.trim() !== "all") {
+                query.quotation_status = status;
             }
 
-            if (params?.search && params.search.trim() !== "") {
-                query.search = params.search;
+            const search = params?.search ?? get().searchQuery;
+            if (search && search.trim() !== "") {
+                query.search = search;
             }
 
             const res = await api.get("/quotations", {

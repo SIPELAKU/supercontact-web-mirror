@@ -10,12 +10,32 @@ export default function PipelineClient() {
   const { fetchPipeline, fetchActiveUser, dateRangeFilter, salespersonFilter } = useGetPipelineStore();
 
   useEffect(() => {
+    // Initial fetch of all data
     fetchPipeline({
-      dateRange: dateRangeFilter,
-      assigned_to: salespersonFilter
+      dateRange: "all",
+      assigned_to: "all"
     });
     fetchActiveUser();
-  }, [dateRangeFilter, salespersonFilter]);
+  }, []);
+
+  // Silent fetch for salesperson filter change
+  useEffect(() => {
+    if (salespersonFilter !== "all") {
+      fetchPipeline({
+        dateRange: "all", // Always fetch all dates
+        assigned_to: salespersonFilter,
+        isSilent: true
+      });
+    } else {
+      // If switching back to 'all', we might want to fetch everything again silently
+      // checking if we already have all data would be optimization, but for now just fetch
+      fetchPipeline({
+        dateRange: "all",
+        assigned_to: "all",
+        isSilent: true
+      });
+    }
+  }, [salespersonFilter]);
 
   return (
     <div className="p-6">

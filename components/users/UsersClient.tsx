@@ -139,7 +139,7 @@ export default function UsersClient() {
   };
 
   return (
-    <div className="p-8">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Manage User"
         breadcrumbs={[{ label: "User Management" }, { label: "Manage User" }]}
@@ -175,7 +175,7 @@ export default function UsersClient() {
               variantStyle="outline"
               color="gray"
               startIcon={<Upload />}
-              onClick={() => {}}
+              onClick={() => { }}
             >
               Export
             </AppButton>

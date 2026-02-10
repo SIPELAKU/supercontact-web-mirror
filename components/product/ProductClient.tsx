@@ -19,7 +19,7 @@ export default function ProductClient() {
   }, [searchDebounce]);
 
   return (
-    <div className="p-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <ProductHeader />
       <ProductTable />
     </div>

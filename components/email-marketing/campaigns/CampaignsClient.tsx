@@ -20,7 +20,7 @@ export default function CampaignsClient() {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
-  
+
   const deleteMutation = useDeleteCampaign();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
@@ -54,7 +54,7 @@ export default function CampaignsClient() {
 
   const handleConfirmDelete = async () => {
     if (!campaignToDelete) return;
-    
+
     try {
       await deleteMutation.mutateAsync(campaignToDelete.id);
       toast.success(`Campaign "${campaignToDelete.subject}" deleted successfully.`);
@@ -68,7 +68,7 @@ export default function CampaignsClient() {
   };
 
   return (
-    <div className="w-full max-w-full mx-auto px-4 pt-6 space-y-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Campaigns"
         breadcrumbs={[
@@ -97,10 +97,10 @@ export default function CampaignsClient() {
       </Card>
 
       <AddCampaignModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      
-      <EditCampaignModal 
-        open={isEditModalOpen} 
-        onClose={handleCloseModals} 
+
+      <EditCampaignModal
+        open={isEditModalOpen}
+        onClose={handleCloseModals}
         onSuccess={handleSuccess}
         campaign={selectedCampaign}
       />

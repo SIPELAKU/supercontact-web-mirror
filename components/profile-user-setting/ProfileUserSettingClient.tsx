@@ -20,10 +20,11 @@ import toast from "react-hot-toast";
 import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
+import PageHeader from "../ui/page-header";
 
 export default function ProfileUserSettingClient() {
   const { getToken } = useAuth();
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState("account");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,12 +88,12 @@ export default function ProfileUserSettingClient() {
 
   const handleInputChange =
     (field: keyof UpdateProfileData) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setProfileData((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }));
-    };
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setProfileData((prev) => ({
+          ...prev,
+          [field]: event.target.value,
+        }));
+      };
 
   const handleSaveProfile = async () => {
     try {
@@ -176,52 +177,78 @@ export default function ProfileUserSettingClient() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <Stack spacing={3}>
         {/* HEADER */}
-        <Card
-          sx={{
-            p: 3,
-            backgroundColor: "#e8ecff",
-            position: "relative",
-            overflow: "hidden",
-            minHeight: 150,
-          }}
-        >
-          <Typography variant="h5" fontWeight={600}>
-            Profile Settings
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            User Profile • Account Setting
-          </Typography>
-
-          {/* LOGO */}
-          <Box
-            component="img"
-            src="/images/logos/logo3d.png"
-            alt="logo"
-            sx={{
-              position: "absolute",
-              right: 100,
-              top: "60%",
-              transform: "translateY(-50%)",
-              width: 250,
-              opacity: 1,
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          />
-        </Card>
+        <PageHeader
+          title="Profile Settings"
+          breadcrumbs={[{ label: "Home", href: "/" }, { label: "Profile", href: "/profile" }, { label: "Profile Settings" }]}
+        />
 
         {/* TABS */}
-        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
-          <Tab label="Account" />
-          <Tab label="Security" />
-        </Tabs>
+        <Box sx={{ width: "fit-content" }}>
+          <Tabs
+            value={tab}
+            onChange={(_, val) =>
+              setTab(val as "account" | "security")
+            }
+            sx={{
+              minHeight: "unset",
+              padding: "4px",
+              backgroundColor: "#f0f2f5",
+              borderRadius: "8px",
+              "& .MuiTabs-indicator": {
+                display: "none",
+              },
+            }}
+          >
+            <Tab
+              label="Account"
+              value="account"
+              disableRipple
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                minHeight: "32px",
+                minWidth: "auto",
+                padding: "6px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                color: "#64748B",
+                transition: "all 0.2s",
+                "&.Mui-selected": {
+                  color: "#0F172A",
+                  backgroundColor: "#FFFFFF",
+                  boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
+                },
+              }}
+            />
+            <Tab
+              label="Security"
+              value="security"
+              disableRipple
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                minHeight: "32px",
+                minWidth: "auto",
+                padding: "6px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                color: "#64748B",
+                transition: "all 0.2s",
+                "&.Mui-selected": {
+                  color: "#0F172A",
+                  backgroundColor: "#FFFFFF",
+                  boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.06)",
+                },
+              }}
+            />
+          </Tabs>
+        </Box>
 
         {/* ================= ACCOUNT TAB ================= */}
-        {tab === 0 && (
+        {tab === "account" && (
           <Stack spacing={3}>
             {/* AVATAR + FORM */}
             <Card sx={{ p: 4 }}>
@@ -260,88 +287,112 @@ export default function ProfileUserSettingClient() {
               {/* Form */}
               <Stack spacing={3}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <AppInput
-                    label="Full Name"
-                    fullWidth
-                    value={profileData.fullname}
-                    onChange={handleInputChange("fullname")}
-                  />
-                  <AppInput
-                    label="Email"
-                    fullWidth
-                    value={profileData.email}
-                    onChange={handleInputChange("email")}
-                    type="email"
-                  />
+                  <Stack width={"100%"}>
+                    <label htmlFor="full-name">Full Name</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.fullname}
+                      onChange={handleInputChange("fullname")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="email">Email</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.email}
+                      onChange={handleInputChange("email")}
+                      type="email"
+                      isBgWhite
+                    />
+                  </Stack>
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <AppInput
-                    label="Phone Number"
-                    fullWidth
-                    value={profileData.phone}
-                    onChange={handleInputChange("phone")}
-                  />
-                  <AppInput
-                    label="Company"
-                    fullWidth
-                    value={profileData.company}
-                    onChange={handleInputChange("company")}
-                  />
+                  <Stack width={"100%"}>
+                    <label htmlFor="phone">Phone Number</label>
+                    <AppInput
+                      type="tel"
+                      fullWidth
+                      value={profileData.phone}
+                      onChange={handleInputChange("phone")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="company">Company</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.company}
+                      onChange={handleInputChange("company")}
+                      isBgWhite
+                    />
+                  </Stack>
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <AppInput
-                    label="Skype"
-                    fullWidth
-                    value={profileData.skype}
-                    onChange={handleInputChange("skype")}
-                  />
-                  <AppSelect
-                    label="Country"
-                    fullWidth
-                    value={profileData.country}
-                    onChange={(e: any) =>
-                      handleInputChange("country")({
-                        target: { value: e.target.value },
-                      } as any)
-                    }
-                    options={[
-                      { value: "", label: "Select Country" },
-                      { value: "USA", label: "USA" },
-                      { value: "Indonesia", label: "Indonesia" },
-                      { value: "Singapore", label: "Singapore" },
-                      { value: "Malaysia", label: "Malaysia" },
-                    ]}
-                  />
+                  <Stack width={"100%"}>
+                    <label htmlFor="skype">Skype</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.skype}
+                      onChange={handleInputChange("skype")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="country">Country</label>
+                    <AppSelect
+                      isBgWhite
+                      fullWidth
+                      value={profileData.country}
+                      onChange={(e: any) =>
+                        handleInputChange("country")({
+                          target: { value: e.target.value },
+                        } as any)
+                      }
+                      placeholder="Select Country"
+                      options={[
+                        { value: "USA", label: "USA" },
+                        { value: "Indonesia", label: "Indonesia" },
+                        { value: "Singapore", label: "Singapore" },
+                        { value: "Malaysia", label: "Malaysia" },
+                      ]}
+                    />
+                  </Stack>
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <AppSelect
-                    label="Language"
-                    fullWidth
-                    value={profileData.language}
-                    onChange={(e: any) =>
-                      handleInputChange("language")({
-                        target: { value: e.target.value },
-                      } as any)
-                    }
-                    options={[
-                      { value: "", label: "Select Language" },
-                      { value: "English", label: "English" },
-                      { value: "Indonesia", label: "Indonesia" },
-                    ]}
-                  />
-
-                  <AppInput
-                    label="Bio"
-                    fullWidth
-                    multiline
-                    rows={1}
-                    value={profileData.bio}
-                    onChange={handleInputChange("bio")}
-                    placeholder="Tell us about yourself"
-                  />
+                  <Stack width={"100%"}>
+                    <label htmlFor="language">Language</label>
+                    <AppSelect
+                      isBgWhite
+                      fullWidth
+                      value={profileData.language}
+                      onChange={(e: any) =>
+                        handleInputChange("language")({
+                          target: { value: e.target.value },
+                        } as any)
+                      }
+                      placeholder="Select Language"
+                      options={[
+                        { value: "English", label: "English" },
+                        { value: "Indonesia", label: "Indonesia" },
+                      ]}
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="bio">Bio</label>
+                    <AppInput
+                      isBgWhite
+                      fullWidth
+                      multiline
+                      rows={1}
+                      value={profileData.bio}
+                      onChange={handleInputChange("bio")}
+                      placeholder="Tell us about yourself"
+                    />
+                  </Stack>
                 </Stack>
               </Stack>
 
@@ -377,7 +428,7 @@ export default function ProfileUserSettingClient() {
         )}
 
         {/* ================= SECURITY TAB ================= */}
-        {tab === 1 && (
+        {tab === "security" && (
           <Stack spacing={3}>
             {/* CHANGE PASSWORD */}
             <Card sx={{ p: 4 }}>
@@ -386,29 +437,38 @@ export default function ProfileUserSettingClient() {
               </Typography>
 
               <Stack spacing={3}>
-                <AppInput
-                  label="Current Password"
-                  type="password"
-                  fullWidth
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
+                <Stack width={"100%"}>
+                  <label htmlFor="current-password">Current Password</label>
+                  <AppInput
+                    isBgWhite
+                    type="password"
+                    fullWidth
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <AppInput
-                    label="New Password"
-                    type="password"
-                    fullWidth
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <AppInput
-                    label="Confirm Password"
-                    type="password"
-                    fullWidth
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                  <Stack width={"100%"}>
+                    <label htmlFor="new-password">New Password</label>
+                    <AppInput
+                      isBgWhite
+                      type="password"
+                      fullWidth
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="confirm-password">Confirm Password</label>
+                    <AppInput
+                      isBgWhite
+                      type="password"
+                      fullWidth
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </Stack>
                 </Stack>
                 <Box>
                   <Typography variant="subtitle2" mb={1}>
@@ -461,6 +521,7 @@ export default function ProfileUserSettingClient() {
                 {/* FORM */}
                 <Stack spacing={3} flex={1}>
                   <AppSelect
+                    isBgWhite
                     fullWidth
                     value={apiType}
                     onChange={(e: any) => setApiType(e.target.value)}
@@ -472,6 +533,7 @@ export default function ProfileUserSettingClient() {
                   />
 
                   <AppInput
+                    isBgWhite
                     fullWidth
                     placeholder="Name the API key"
                     value={apiName}
@@ -486,7 +548,7 @@ export default function ProfileUserSettingClient() {
                 {/* AVATAR */}
                 <Box
                   component="img"
-                  src="/assets/avatar-setting.png"
+                  src="/assets/avatar-user-setting.png"
                   alt="3D Developer"
                   sx={{
                     width: 220,
@@ -580,6 +642,6 @@ export default function ProfileUserSettingClient() {
           </Stack>
         )}
       </Stack>
-    </Box>
+    </div>
   );
 }

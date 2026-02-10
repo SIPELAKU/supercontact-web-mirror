@@ -707,7 +707,7 @@ export default function InboxClient() {
   }, [previewImage]);
 
   return (
-    <div className="w-full h-[calc(100vh)] flex flex-col gap-5 p-4 md:p-6 overflow-hidden bg-transparent">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6 h-[calc(100vh)] flex flex-col gap-5 overflow-hidden bg-transparent">
       {viewMode === "inbox" ? (
         <>
           {/* Header Section */}

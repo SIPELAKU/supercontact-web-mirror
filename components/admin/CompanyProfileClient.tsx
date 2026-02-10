@@ -27,18 +27,18 @@ export default function CompanyProfileClient() {
   };
 
   return (
-    <div className="p-6 pt-6">
-      <PageHeader 
-        title="Solvera" 
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
+      <PageHeader
+        title="Solvera"
         breadcrumbs={[
-          { label: "Admin" }, 
+          { label: "Dashboard", href: "/" },
           { label: "Company Profile" }
-        ]} 
+        ]}
       />
 
-      <AiIntelligenceSummary 
-        description={solveraAiSummary.description} 
-        tags={solveraAiSummary.tags} 
+      <AiIntelligenceSummary
+        description={solveraAiSummary.description}
+        tags={solveraAiSummary.tags}
       />
 
       <div className="mt-[63px] grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">

@@ -22,7 +22,7 @@ import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
 import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
-import { ConfirmationPopup } from "../ui/confirmation-popup";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 // MUI Theme for consistent styling
 const theme = createTheme({

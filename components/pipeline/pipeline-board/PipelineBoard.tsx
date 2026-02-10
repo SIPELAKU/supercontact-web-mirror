@@ -95,10 +95,12 @@ export default function PipelineBoard() {
       const filteredDeals = stage.deals.filter((deal) => {
         const dealName = (deal?.deal_name || "").toLowerCase();
         const companyName = (deal?.company?.name || "").toLowerCase();
+        const productName = (deal?.product?.product_name || "").toLowerCase();
 
         return (
           dealName.includes(searchQueryLower) ||
-          companyName.includes(searchQueryLower)
+          companyName.includes(searchQueryLower) ||
+          productName.includes(searchQueryLower)
         );
       });
 

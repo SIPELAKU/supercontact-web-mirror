@@ -33,27 +33,29 @@ interface AppDatePickerProps {
   fullWidth?: boolean;
   className?: string;
   isBgWhite?: boolean;
+  error?: boolean;
+  helperText?: string;
 }
 
 // --- Styled Components ---
 const TriggerButton = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "isBgWhite" && prop !== "isFocused",
-})<{ isBgWhite?: boolean; isFocused?: boolean }>(
-  ({ isBgWhite, isFocused }) => ({
+  shouldForwardProp: (prop) => prop !== "isBgWhite" && prop !== "isFocused" && prop !== "isError",
+})<{ isBgWhite?: boolean; isFocused?: boolean; isError?: boolean }>(
+  ({ isBgWhite, isFocused, isError }) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: isBgWhite ? "white" : INPUT_BG,
-    border: `1px solid ${isFocused ? FOCUS_COLOR : BORDER_COLOR}`,
+    border: `1px solid ${isError ? "#EF4444" : isFocused ? FOCUS_COLOR : BORDER_COLOR}`,
     borderRadius: "8px",
     padding: "10px 14px",
     cursor: "pointer",
     transition: "all 0.2s ease",
     minHeight: "48px",
     width: "100%",
-    boxShadow: isFocused ? `0 0 0 2px ${FOCUS_COLOR}33` : "none",
+    boxShadow: isError ? "none" : isFocused ? `0 0 0 2px ${FOCUS_COLOR}33` : "none",
     "&:hover": {
-      borderColor: isFocused ? FOCUS_COLOR : "#9CA3AF",
+      borderColor: isError ? "#EF4444" : isFocused ? FOCUS_COLOR : "#9CA3AF",
     },
   }),
 );
@@ -116,6 +118,8 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
   fullWidth = true,
   className,
   isBgWhite = false,
+  error,
+  helperText,
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
@@ -227,6 +231,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
         onClick={handleClick}
         isBgWhite={isBgWhite}
         isFocused={open}
+        isError={error}
       >
         <Box className="flex items-center gap-2 overflow-hidden">
           <CalendarIcon size={18} className="text-gray-400 shrink-0" />
@@ -260,6 +265,19 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
           />
         </Box>
       </TriggerButton>
+      {helperText && (
+        <Typography
+          variant="caption"
+          sx={{
+            color: "#EF4444",
+            mt: 0.5,
+            display: "block",
+            fontSize: "0.75rem",
+          }}
+        >
+          {helperText}
+        </Typography>
+      )}
 
       <Popover
         id={id}

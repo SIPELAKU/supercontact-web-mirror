@@ -94,7 +94,7 @@ export default function QuotationSuccessModal({
                                 color="gray"
                             >
                                 <Copy size={16} className="mr-2" />
-                                Copy Link
+                                Copy SKU
                             </AppButton>
 
                             <Link href={`/sales/quotation/${quotationId}`} passHref>

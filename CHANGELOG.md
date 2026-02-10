@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.5.0] - 2026-02-10
+
+### Detail Versi 1.5.0
+
+#### ✨ Feature Enhancements & Bug Fixes
+
+- **Authentication & Core UI:**
+  - Fixed Auth response parsing to correctly handle nested `role` and `company` fields.
+  - Improved profile dropdown to display real-time user role from auth context.
+  - Persisted user role and company in `localStorage` for UI consistency and faster loading.
+
+- **Product Management:**
+  - Implemented smart SKU generation logic: abbreviations for single-word companies (e.g., SOL) and acronyms for multi-word companies (e.g., SGT).
+  - Integrated `notify` system for all Product CRUD actions (Create, Update, Delete).
+
+- **Support Tickets:**
+  - Upgraded agent selection and filtering to use `AppAutocomplete` for a smoother research/selection experience.
+  - Integrated dynamic agent fetching from the new `/tickets/assignable-agents` endpoint.
+  - Fixed "Unassigned" agent display by correctly mapping nested `assigned_agent` objects.
+
+- **Quotation Module:**
+  - Added "Include All Products" toggle in product selection for better flexibility.
+  - Refined product selection to prioritize lead-specific items by default, reducing manual search time.
+  - Added support for `item_others` to allow custom entries in quotations.
+  - Implemented Quotation Success Modal with Copy Link, View Quotation, and PDF download features.
+  - Standardized Quotation status filters for consistent search performance.
+
+- **Lead & Contact Management:**
+  - Implemented dynamic, debounced search for Lead Name field in "Add Lead" form, fetching results directly from the contacts API.
+  - Added safety client-side filtering for Contact search results to ensure high-relevance matches (e.g., filtering out "Contoh Nama" for specific searches like "afif").
+  - Standardized Pipeline/Lead/Ticket filters to use consistent `AppAutocomplete` and `AppSelect` components.
+  - Fixed Contact table search logic to correctly filter by name, email, and company.
+
+- **Unified Inbox & Routing:**
+  - Fixed Omnichannel routing logic to ensure unified inbox correctly handles incoming messages from different sources.
+
+#### ♻️ Refactor
+
+- **State Management:** Consolidated fetching logic in various modules to reduce redundant API calls.
+- **UI Components:** Standardized buttons to `AppButton` and selects to `AppSelect/AppAutocomplete` across major modules for a premium look and feel.
+
+#### 📁 Highlights of Modified Files
+
+- `lib/context/AuthContext.tsx` - Auth response fix and localStorage persistence
+- `components/lead-management/add-lead-form.tsx` - Dynamic contact search integration
+- `components/quotation/QuotationFormClient.tsx` - Lead-aware product selection
+- `components/quotation/ProductsServicesTable.tsx` - "Include All Products" toggle
+- `components/support/tickets/TicketForm.tsx` - Dynamic agent autocomplete
+- `components/product/AddProductModal.tsx` - Smart SKU generation logic
+- `lib/hooks/useContacts.ts` - Search parameter support
+- `lib/hooks/useAssignableAgents.ts` - New hook for dynamic agent fetching
+
 ### Added
 
 - Initial project setup placeholder

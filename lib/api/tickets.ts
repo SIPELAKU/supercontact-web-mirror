@@ -114,3 +114,19 @@ export async function deleteTicket(token: string, id: string): Promise<any> {
     });
     return await handleResponse(res, "Failed to delete ticket");
 }
+
+export async function fetchAssignableAgents(token: string, search?: string): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (search) queryParams.append("search", search);
+
+    const url = getFullUrl(`/tickets/assignable-agents?${queryParams.toString()}`);
+    const res = await fetchWithTimeout(url, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Accept': 'application/json'
+        },
+    });
+
+    return await handleResponse(res, "Failed to load assignable agents");
+}

@@ -6,11 +6,11 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
 import { Contact, createLead, CreateLeadData, User } from "@/lib/api";
-import { useAllContacts } from "@/lib/hooks/useContacts";
+import { useContacts } from "@/lib/hooks/useContacts";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
@@ -88,18 +88,11 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [selectedContactId, setSelectedContactId] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
+  const [contactSearch, setContactSearch] = useState("");
   const queryClient = useQueryClient();
-  const { data: contactsResponse } = useAllContacts();
+  const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
   const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
 
-  // Debug logs
-  console.log('Users Response:', usersResponse);
-  console.log('Users Response Data:', usersResponse?.data);
-  console.log('Is Loading Users:', isLoadingUsers);
-  console.log('Users Error:', usersError);
-  console.log('Users Array:', usersResponse?.data?.users);
-  console.log('Is Loading Users:', isLoadingUsers);
-  console.log('Users Error:', usersError);
 
   const [form, setForm] = useState<LeadData>({
     name: "",
@@ -128,6 +121,24 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     }
   };
 
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleContactSearchChange = useCallback((event: any, value: string) => {
+    // Update input value immediately for the form
+    if (value !== form.name) {
+      updateField("name", value);
+      setSelectedContactId("");
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setContactSearch(value);
+    }, 300);
+  }, [form.name, updateField]);
+
   const handleContactSelect = (contact: Contact | null) => {
     if (!contact) {
       setSelectedContactId("");
@@ -151,7 +162,17 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     }));
   };
 
-  const contacts = contactsResponse?.data?.contacts || [];
+  const contacts = useMemo(() => {
+    const rawContacts = contactsResponse?.data?.contacts || [];
+    if (!contactSearch) return rawContacts;
+
+    // Safety client-side filter in case backend returns extra results
+    return rawContacts.filter(c =>
+      c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
+      c.email.toLowerCase().includes(contactSearch.toLowerCase()) ||
+      c.company.toLowerCase().includes(contactSearch.toLowerCase())
+    );
+  }, [contactsResponse, contactSearch]);
 
   const handleUserSelect = (user: User) => {
     setSelectedUserId(user.id);
@@ -355,18 +376,14 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                         handleContactSelect(null);
                       }
                     }}
-                    onInputChange={(event, newInputValue) => {
-                      if (newInputValue !== form.name) {
-                        updateField("name", newInputValue);
-                        setSelectedContactId("");
-                      }
-                    }}
+                    loading={isLoadingContacts}
+                    onInputChange={handleContactSearchChange}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         placeholder="Search existing contacts or enter new name"
                         error={!!errors.name}
-                        helperText={errors.name || "Please search or select from the list"}
+                        helperText={errors.name || "Search by name, email, or company"}
                         variant="outlined"
                         fullWidth
                       />

@@ -14,6 +14,7 @@ import { createQuotation, updateQuotation, sendQuotationEmail } from "@/lib/api"
 import { useAuth } from "@/lib/context/AuthContext";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
 import type { QuotationLead } from "@/lib/api/quotations";
+import { useGetProductStore } from "@/lib/store/product";
 
 import { notify } from "@/lib/notifications";
 import jsPDF from "jspdf";
@@ -31,8 +32,19 @@ interface QuotationFormClientProps {
 export default function QuotationFormClient({ initialData }: QuotationFormClientProps) {
   const { getToken } = useAuth();
   const [clientSearchQuery, setClientSearchQuery] = useState("");
-  const { data: leadsResponse, isLoading: isLoadingLeads } = useQuotationLeads(1, 100, clientSearchQuery);
+  const { data: leadsResponse, isLoading: isLoadingLeads } = useQuotationLeads(
+    1,
+    100,
+    clientSearchQuery,
+    { enabled: !initialData || clientSearchQuery.length > 0 }
+  );
   const leads = leadsResponse?.data?.leads || [];
+
+  const { listProduct, fetchProduct } = useGetProductStore();
+
+  useEffect(() => {
+    fetchProduct({ limit: 100 });
+  }, [fetchProduct]);
 
   const [clientData, setClientData] = useState<Record<string, any>>({
     lead_id: "",
@@ -49,7 +61,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successData, setSuccessData] = useState({ id: "", pdfUrl: "" });
+  const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "" });
+  const [showAllProducts, setShowAllProducts] = useState(false);
 
   // Ensure current lead is in the list for editing
   const leadsWithCurrent = useMemo(() => {
@@ -64,16 +77,34 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // Derive available products from the selected lead's items
   const availableProducts = useMemo(() => {
     const selectedLead = leadsWithCurrent.find(l => l.id === clientData.lead_id);
-    if (!selectedLead || !selectedLead.items) return [];
-
-    return selectedLead.items.map(item => ({
+    const leadItems = selectedLead?.items ? selectedLead.items.map(item => ({
       id: item.id,
       product_name: item.product_name,
       sku: item.sku,
-      price: Number(item.price), // Ensure number
+      price: Number(item.price),
       description: item.notes || ""
-    }));
-  }, [leadsWithCurrent, clientData.lead_id]);
+    })) : [];
+
+    // If "Show All" is toggled or there's no lead selected, include all products
+    if (showAllProducts || !clientData.lead_id) {
+      // Merge lead items with global products, ensuring no duplicates by SKU
+      const globalProducts = listProduct.map(p => ({
+        ...p,
+        price: Number(p.price)
+      }));
+
+      // Combine and deduplicate by SKU
+      const combined = [...leadItems];
+      globalProducts.forEach(gp => {
+        if (!combined.find(li => li.sku === gp.sku)) {
+          combined.push(gp as any);
+        }
+      });
+      return combined;
+    }
+
+    return leadItems;
+  }, [listProduct, leadsWithCurrent, clientData.lead_id, showAllProducts]);
 
   const [items, setItems] = useState<ItemRow[]>([
     { product_id: "", title: "", sku: "", desc: "", qty: 1, discount: 0, unitPrice: 0 },
@@ -97,9 +128,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         salesperson: initialData.lead?.user?.fullname || "",
       });
 
-      const rawItems = initialData.items || initialData.quotation_items;
-      if (rawItems?.length > 0) {
-        setItems(rawItems.map((item: any) => ({
+      const rawItems = initialData.items || initialData.quotation_items || [];
+      const rawItemOthers = initialData.item_others || [];
+
+      // Merge both types of items
+      const allRawItems = [...rawItems, ...rawItemOthers];
+
+      if (allRawItems.length > 0) {
+        setItems(allRawItems.map((item: any) => ({
           product_id: item.product_id,
           title: item.product?.product_name || "Unknown Product",
           sku: item.product?.sku || "",
@@ -223,10 +259,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       }
 
       // 1. Save or Update the quotation
+      let result;
       if (initialData?.id || initialData?.quotation_number) {
         // It's an update
         const quotationId = initialData.id || initialData.quotation_number;
-        await updateQuotation(token, quotationId, payload);
+        result = await updateQuotation(token, quotationId, payload);
 
         if (action === "publish") {
           notify.success("Success", { description: "Quotation updated and sent successfully!" });
@@ -235,7 +272,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         }
       } else {
         // It's a creation
-        await createQuotation(token, payload);
+        result = await createQuotation(token, payload);
 
         if (action === "publish") {
           notify.success("Success", { description: "Quotation saved and sent successfully!" });
@@ -252,10 +289,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           throw new Error("Client email address is required to send the quotation");
         }
 
+        const realQuotationUuid = result?.data?.id || initialData?.id || "";
+        const realQuotationNumber = result?.data?.quotation_number || initialData?.quotation_number || "NEW-QUOTATION";
+
         if (pdfBlob) {
           const pdfUrl = URL.createObjectURL(pdfBlob);
           setSuccessData({
-            id: initialData?.quotation_number || initialData?.id || "NEW-QUOTATION", // We might need the real ID from response if it's a new creation
+            id: realQuotationUuid,
+            number: realQuotationNumber,
             pdfUrl
           });
           setShowSuccessModal(true);
@@ -351,6 +392,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             leads={leadsWithCurrent}
             isLoadingLeads={isLoadingLeads}
             onClientSearch={setClientSearchQuery}
+            isReadOnlyClient={!!initialData}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
 
@@ -362,6 +404,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             removeItem={removeItem}
             listProduct={availableProducts}
             clientData={clientData}
+            showAllProducts={showAllProducts}
+            setShowAllProducts={setShowAllProducts}
           // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
@@ -423,6 +467,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             open={showSuccessModal}
             onClose={() => setShowSuccessModal(false)}
             quotationId={successData.id}
+            quotationNumber={successData.number}
             pdfUrl={successData.pdfUrl}
           />
         </div>

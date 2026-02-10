@@ -23,7 +23,7 @@ const ProfileDropdown = () => {
     email: string;
     role?: string;
   } | null>(null);
-  const { logout, getToken } = useAuth();
+  const { logout, getToken, userRole } = useAuth();
 
   const open = Boolean(anchorEl);
 
@@ -34,12 +34,12 @@ const ProfileDropdown = () => {
         const token = await getToken();
         if (!token) throw new Error('No authentication token');
         const response = await fetchProfile(token);
-        
+
         if (response.success && response.data) {
           setProfileData({
             fullname: response.data.fullname || "User",
             email: response.data.email || "user@example.com",
-            role: "Administrator" // You can add role to the API response later
+            role: userRole || response.data.role || "User"
           });
         }
       } catch (error) {
@@ -48,7 +48,7 @@ const ProfileDropdown = () => {
         setProfileData({
           fullname: "User",
           email: "user@example.com",
-          role: "Administrator"
+          role: userRole || "User"
         });
       }
     };

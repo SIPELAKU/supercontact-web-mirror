@@ -14,6 +14,7 @@ interface ClientDetailsProps {
   leads?: QuotationLead[]
   isLoadingLeads?: boolean
   onClientSearch?: (query: string) => void
+  isReadOnlyClient?: boolean
 }
 
 interface ClientDetailsData {
@@ -35,6 +36,7 @@ export default function ClientDetailsSection({
   leads = [],
   isLoadingLeads = false,
   onClientSearch = () => { },
+  isReadOnlyClient = false,
 }: ClientDetailsProps) {
   const handleChange = (
     field: keyof ClientDetailsData,
@@ -101,51 +103,61 @@ export default function ClientDetailsSection({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Client Name</Label>
-            <AppAutocomplete
-              options={leads.map(lead => ({
-                value: lead.id,
-                label: lead.contact.name
-              }))}
-              value={clientData.lead_id ?
-                { value: clientData.lead_id, label: clientData.clientName || "" } :
-                null
-              }
-              onChange={(event, newValue) => {
-                if (newValue && typeof newValue === 'object' && 'value' in newValue) {
-                  handleLeadChange(newValue.value);
-                } else {
-                  // Clear client data when autocomplete is cleared
-                  setClientData({
-                    ...clientData,
-                    lead_id: "",
-                    clientName: "",
-                    companyName: "",
-                    officeLocation: "",
-                    phoneNumber: "",
-                    emailAddress: "",
-                    quotationTitle: "New Project Proposal",
-                    salesperson: "",
-                  });
+            {isReadOnlyClient ? (
+              <AppInput
+                value={clientData.clientName || ""}
+                disabled={true}
+                isBgWhite
+                height="48px"
+                rounded="8px"
+              />
+            ) : (
+              <AppAutocomplete
+                options={leads.map(lead => ({
+                  value: lead.id,
+                  label: lead.contact.name
+                }))}
+                value={clientData.lead_id ?
+                  { value: clientData.lead_id, label: clientData.clientName || "" } :
+                  null
                 }
-              }}
-              filterOptions={(options) => options}
-              getOptionKey={(option) => {
-                if (typeof option === 'string') return option;
-                return option.value;
-              }}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return option.label || '';
-              }}
-              isOptionEqualToValue={(option, value) => {
-                if (typeof option === 'string' || typeof value === 'string') return false;
-                return option.value === value.value;
-              }}
-              onInputChange={handleSearchInputChange}
-              placeholder={isLoadingLeads ? "Loading Leads..." : "Search client name..."}
-              isBgWhite
-              height="48px"
-            />
+                onChange={(event, newValue) => {
+                  if (newValue && typeof newValue === 'object' && 'value' in newValue) {
+                    handleLeadChange(newValue.value);
+                  } else {
+                    // Clear client data when autocomplete is cleared
+                    setClientData({
+                      ...clientData,
+                      lead_id: "",
+                      clientName: "",
+                      companyName: "",
+                      officeLocation: "",
+                      phoneNumber: "",
+                      emailAddress: "",
+                      quotationTitle: "New Project Proposal",
+                      salesperson: "",
+                    });
+                  }
+                }}
+                filterOptions={(options) => options}
+                getOptionKey={(option) => {
+                  if (typeof option === 'string') return option;
+                  return option.value;
+                }}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option;
+                  return option.label || '';
+                }}
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' || typeof value === 'string') return false;
+                  return option.value === value.value;
+                }}
+                onInputChange={handleSearchInputChange}
+                placeholder={isLoadingLeads ? "Loading Leads..." : "Search client name..."}
+                isBgWhite
+                height="48px"
+              />
+            )}
           </div>
 
           <div className="space-y-2">

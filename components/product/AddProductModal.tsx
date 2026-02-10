@@ -39,16 +39,22 @@ const formatPrice = (value: string | number) => {
     }).format(Number(onlyDigits));
 };
 
-// Helper untuk mengambil huruf depan (Acronym)
-// Contoh: "PT. Solvera Global Teknologi" -> "PSGT"
-const getAcronym = (text: string) => {
+// Helper untuk singkatan Cerdas (Smart Abbreviation)
+// 1 kata -> 3 huruf pertama (e.g., "Solvera" -> "SOL")
+// >1 kata -> Inisial/Acronym (e.g., "Solvera Global Teknologi" -> "SGT")
+const getSmartAbbreviation = (text: string) => {
     if (!text) return "";
-    return text
-        .replace(/[^a-zA-Z0-9 ]/g, "") // Hapus simbol aneh
-        .split(" ") // Pisahkan per spasi
-        .filter((word) => word.length > 0) // Hapus spasi ganda
-        .map((word) => word[0].toUpperCase()) // Ambil huruf pertama & kapital
-        .join(""); // Gabungkan
+    const cleanText = text.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+    if (!cleanText) return "";
+    const words = cleanText.split(/\s+/);
+
+    if (words.length >= 2) {
+        // Acronym: Ambil huruf pertama tiap kata
+        return words.map(w => w[0].toUpperCase()).join("");
+    } else {
+        // Single word: Ambil 3 huruf pertama
+        return cleanText.slice(0, 3).toUpperCase();
+    }
 };
 
 export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
@@ -57,7 +63,13 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const [loading, setLoading] = useState(false);
 
     // State untuk menyimpan nama company dari API
-    const [companyAcronym, setCompanyAcronym] = useState<string>("");
+    const [companyAcronym, setCompanyAcronym] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            const storedCompany = localStorage.getItem('userCompany');
+            if (storedCompany) return getSmartAbbreviation(storedCompany);
+        }
+        return "";
+    });
 
     const [formData, setFormData] = useState<ProductForm>({
         productName: "",
@@ -78,14 +90,24 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                     return;
                 }
 
+                // Check localStorage again just in case it was updated
+                const storedCompany = localStorage.getItem('userCompany');
+                if (storedCompany) {
+                    setCompanyAcronym(getSmartAbbreviation(storedCompany));
+                }
+
                 const response = await fetchProfile(token);
 
                 if (response.success && response.data) {
                     const companyName = response.data.company;
                     const fullname = response.data.fullname;
 
-                    const fallback = fullname ? getAcronym(fullname) : "";
-                    setCompanyAcronym(companyName ? getAcronym(companyName) : fallback);
+                    const fallback = fullname ? getSmartAbbreviation(fullname) : "";
+                    const finalAcronym = companyName ? getSmartAbbreviation(companyName) : fallback;
+
+                    if (finalAcronym) {
+                        setCompanyAcronym(finalAcronym);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load user profile:", error);
@@ -103,7 +125,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
 
         // Generate Acronym Produk
         // Jika kosong, gunakan "ITEM"
-        const prodPrefix = productName ? getAcronym(productName) : "ITEM";
+        const prodPrefix = productName ? getSmartAbbreviation(productName) : "HWG";
 
         // Generate Acronym Company (dari state yang sudah di-fetch)
         const compPrefix = companyAcronym;
@@ -180,12 +202,9 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         // Auto generate SKU jika user lupa klik tombol generate tapi nama produk ada
         let finalSku = formData.sku;
         if (!finalSku && formData.productName) {
-            // Kita jalankan logic generate manual di sini karena state update async
-            // (Versi simple: Langsung panggil ulang logic acronym di sini)
-            const prodPrefix = getAcronym(formData.productName);
+            const prodPrefix = getSmartAbbreviation(formData.productName);
             const baseSKU = `${prodPrefix}-${companyAcronym}`;
 
-            // Logic hitung nomor (sama seperti fungsi generateSKU)
             const existingNumbers = listProduct
                 .filter((p) => p.sku && p.sku.startsWith(`${baseSKU}-`))
                 .map((p) => parseInt(p.sku.split("-").pop() || "0", 10))
@@ -198,7 +217,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         const body: ProductPayload = {
             "product_name": formData.productName,
             "price": Number(cleanPrice),
-            "sku": finalSku || `SKU-${Date.now()}`, // Fallback terakhir banget
+            "sku": finalSku || `HWG-${Date.now()}`, // Fallback terakhir banget
             "description": formData.description,
         };
 
@@ -302,7 +321,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                 <label className="text-sm font-semibold text-gray-900">
                                     SKU
                                     <span className="text-gray-400 font-normal ml-2 text-xs">
-                                        (Format: {getAcronym(formData.productName) || "XX"}-{companyAcronym}-001)
+                                        (Format: {getSmartAbbreviation(formData.productName) || "HWG"}-{companyAcronym}-001)
                                     </span>
                                 </label>
 

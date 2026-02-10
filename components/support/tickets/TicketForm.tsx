@@ -1,13 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useManagedUsers } from "@/lib/hooks/useManagedUser"; // For agent selection
-import { useUsers } from "@/lib/hooks/useUsers"; // For agent selection
+import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import { Ticket } from "@/lib/types/Ticket";
 
 interface TicketFormProps {
@@ -30,14 +30,25 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
         }
     });
 
-    // Fetch agents for assignment
-    const { data: userData } = useUsers(1, 100);
-    const agents = userData?.data?.users || [];
+    const [agentSearch, setAgentSearch] = useState("");
+    const { data: agentData, isLoading: isLoadingAgents } = useAssignableAgents(agentSearch);
+    const agents = agentData?.data || [];
 
     const agentOptions = agents.map((agent: any) => ({
         label: agent.fullname,
         value: agent.id
     }));
+
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const handleAgentSearchChange = useCallback((event: any, value: string) => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(() => {
+            setAgentSearch(value);
+        }, 300);
+    }, []);
 
     const priorityOptions = [
         { label: "High", value: "High" },
@@ -160,12 +171,13 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     name="assigned_agent_id"
                     control={control}
                     render={({ field }) => (
-                        <AppSelect
+                        <AppAutocomplete
                             options={agentOptions}
-                            placeholder="Select Agent"
-                            value={field.value}
-                            isBgWhite={true}
-                            onChange={(e) => field.onChange(e.target.value)}
+                            placeholder="Search and select agent"
+                            value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
+                            onChange={(e, newValue) => field.onChange((newValue as { value: string; label: string } | null)?.value || "")}
+                            onInputChange={handleAgentSearchChange}
+                            loading={isLoadingAgents}
                         />
                     )}
                 />

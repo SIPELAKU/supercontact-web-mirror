@@ -6,6 +6,8 @@ import { Product } from "@/lib/store/product";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { AppSelect } from "../ui/app-select";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
 
 export default function ProductsServicesCard({
   items,
@@ -16,6 +18,8 @@ export default function ProductsServicesCard({
   listProduct = [],
   loading = false,
   clientData = {},
+  showAllProducts = false,
+  setShowAllProducts,
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
@@ -25,6 +29,8 @@ export default function ProductsServicesCard({
   listProduct?: Product[];
   loading?: boolean;
   clientData?: Record<string, any>;
+  showAllProducts?: boolean;
+  setShowAllProducts?: (val: boolean) => void;
 }) {
   const handleSKUChange = (index: number, sku: string) => {
     const selectedProduct = listProduct.find(p => p.sku === sku);
@@ -42,11 +48,8 @@ export default function ProductsServicesCard({
   }));
 
   const getSkuPlaceholder = () => {
-    if (!clientData.lead_id) {
-      return "Please select client name first";
-    }
     if (listProduct.length === 0) {
-      return "No Products";
+      return "No Products available";
     }
     return "Select SKU";
   };
@@ -55,9 +58,23 @@ export default function ProductsServicesCard({
 
   return (
     <div className="bg-white px-6">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">
-        Products & Services
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Products & Services
+        </h1>
+        {setShowAllProducts && (
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-all-products"
+              checked={showAllProducts}
+              onCheckedChange={setShowAllProducts}
+            />
+            <Label htmlFor="show-all-products" className="text-sm text-gray-600 font-medium cursor-pointer">
+              Include All Products
+            </Label>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-gray-200">
         <div className="col-span-2 text-xs font-semibold text-gray-700">SKU</div>
@@ -84,7 +101,7 @@ export default function ProductsServicesCard({
                 isBgWhite
                 height="48px"
                 rounded="8px"
-                disabled={loading || !clientData.lead_id || listProduct.length === 0}
+                disabled={loading || (listProduct.length === 0 && !item.sku)}
               />
             </div>
 

@@ -3,6 +3,7 @@
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import { Button } from "@/components/ui/button"
 import { FilterBar } from "@/components/ui/filter"
+import { useEffect, useMemo, useState } from "react"
 import { formatRupiah } from "@/lib/helper/currency"
 import { formatMDY } from "@/lib/helper/date"
 import { useGetQuotationstore } from "@/lib/store/quotation"
@@ -42,6 +43,11 @@ export default function QuotationTable() {
         statusFilter,
         setStatusFilter
     } = useGetQuotationstore();
+
+    // Reset page to 1 on search or filter change
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, dateRangeFilter, statusFilter]);
 
     const handleRowClick = (quotationId: string) => {
         router.push(`/sales/quotation/${quotationId}`);

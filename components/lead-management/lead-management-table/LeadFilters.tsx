@@ -39,7 +39,7 @@ export default function LeadFilters({
           placeholder="Select Status"
           isBgWhite={true}
           options={[
-            { label: "All Status", value: "all" },
+            { label: "All Status", value: "All" },
             { label: "New", value: "New" },
             { label: "Contacted", value: "Contacted" },
             { label: "Qualified", value: "Qualified" },

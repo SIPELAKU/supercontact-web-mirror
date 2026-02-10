@@ -33,6 +33,11 @@ export function DataTable({ initialData }: { initialData?: Lead[] }) {
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
+  // Reset page when data changes (e.g., from external filters)
+  useEffect(() => {
+    setPageIndex(0);
+  }, [initialData]);
+
   // Use initialData as the source of truth if provided
   const data = initialData || [];
   const totalCount = data.length;

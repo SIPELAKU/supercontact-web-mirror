@@ -27,8 +27,10 @@ import { Button } from "@/components/ui/button"
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
 import { StageUI } from "@/lib/helper/transformPipeline"
+
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { Deal } from "@/lib/types/Pipeline"
+import { getDateRange } from "@/lib/helper/getDateRange";
 import { Plus, Search } from "lucide-react"
 import { notify } from "@/lib/notifications"
 import { AppInput } from "@/components/ui/app-input"
@@ -109,6 +111,7 @@ export default function PipelineBoard() {
 
   const filteredStages = useMemo(() => {
 
+
     const stageFiltered =
       statusFilter === "all"
         ? searchPipeline
@@ -121,11 +124,33 @@ export default function PipelineBoard() {
           return { ...stage, deals: [] };
         });
 
+    // Client-side Date Range Filtering
+    const finalStages = stageFiltered.map((stage) => {
+      // If date filter is 'all', keep all deals
+      if (dateRangeFilter === 'all') return stage;
+
+      const range = getDateRange(dateRangeFilter);
+      if (!range) return stage;
+
+      const filteredDeals = stage.deals.filter((deal) => {
+        if (!deal.expected_close_date) return false;
+
+        // Parse dates safely. expected_close_date is YYYY-MM-DD or similar standard format
+        const dealDate = new Date(deal.expected_close_date);
+        const startDate = new Date(range.start);
+        const endDate = new Date(range.end);
+
+        return dealDate >= startDate && dealDate <= endDate;
+      });
+
+      return { ...stage, deals: filteredDeals };
+    });
+
     // Reset visible counts when filters change
     setVisibleCounts({})
-    return stageFiltered
+    return computeStageTotals(finalStages);
 
-  }, [searchPipeline, statusFilter]);
+  }, [searchPipeline, statusFilter, dateRangeFilter]);
 
 
 
@@ -359,7 +384,7 @@ export default function PipelineBoard() {
                   placeholder="Select All"
                   value={statusFilter}
                   onChange={setStatusFilter}
-                  data={dealStages}
+                  data={[dealStages]}
                   className="bg-white rounded-lg font-normal"
                 />
               )

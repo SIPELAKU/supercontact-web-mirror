@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppSelect } from "@/components/ui/app-select";
@@ -29,6 +29,12 @@ export default function TicketManagementPage() {
     const [agentFilter, setAgentFilter] = useState("Select Agent");
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+    // Reset page on search or filter change
+    useEffect(() => {
+        setPage(0);
+    }, [search, statusFilter, priorityFilter, agentFilter]);
+
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
 
     // Confirmation Hook

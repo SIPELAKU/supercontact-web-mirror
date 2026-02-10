@@ -187,7 +187,7 @@ export default function CustomDealStageSelect({
               >
                 <span
                   className={cn(
-                    "px-3 py-1 rounded-full",
+                    stage.bgColor && "px-3 py-1 rounded-full",
                     stage.bgColor,
                     stage.textColor
                   )}

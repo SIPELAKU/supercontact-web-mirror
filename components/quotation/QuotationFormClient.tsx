@@ -21,6 +21,7 @@ import html2canvas from "html2canvas-pro";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { Spinner } from "../ui/spinner";
+import QuotationSuccessModal from "./QuotationSuccessModal";
 
 
 interface QuotationFormClientProps {
@@ -46,6 +47,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     salesperson: "",
   });
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState({ id: "", pdfUrl: "" });
 
   // Ensure current lead is in the list for editing
   const leadsWithCurrent = useMemo(() => {
@@ -244,9 +248,17 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       // as the backend handles it when action is "publish" and attachment is present.
       if (action === "publish" && pdfBlob) {
         // Logic mainly to facilitate PDF generation for attachment; 
-        // explicit send call is removed as requested.
         if (!clientData.emailAddress) {
           throw new Error("Client email address is required to send the quotation");
+        }
+
+        if (pdfBlob) {
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          setSuccessData({
+            id: initialData?.quotation_number || initialData?.id || "NEW-QUOTATION", // We might need the real ID from response if it's a new creation
+            pdfUrl
+          });
+          setShowSuccessModal(true);
         }
       }
     } catch (error: any) {
@@ -406,8 +418,16 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               </AppButton>
             </div>
           </div>
+
+          <QuotationSuccessModal
+            open={showSuccessModal}
+            onClose={() => setShowSuccessModal(false)}
+            quotationId={successData.id}
+            pdfUrl={successData.pdfUrl}
+          />
         </div>
       </div>
+
 
       {/* Hidden printable area for PDF generation */}
       <div id="quotation-content" className="absolute top-[-10000px] left-[-10000px] w-[800px] p-8 border"
@@ -483,6 +503,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

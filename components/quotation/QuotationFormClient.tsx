@@ -37,6 +37,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     lead_id: "",
     clientName: "",
     companyName: "",
+    officeLocation: "",
     phoneNumber: "",
     emailAddress: "",
     quotationTitle: "New Project Proposal",
@@ -82,12 +83,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         lead_id: initialData.lead?.id || "",
         clientName: initialData.lead?.contact?.name || "",
         companyName: initialData.lead?.contact?.company || "",
+        officeLocation: initialData.lead?.office_location || "",
         phoneNumber: initialData.lead?.contact?.phone_number || "",
         emailAddress: initialData.lead?.contact?.email || "",
         quotationTitle: initialData.quotation_title || "New Project Proposal",
         quotationId: initialData.quotation_number || "", // Assuming number is the ID/Display ID
         issueDate: initialData.created_at ? new Date(initialData.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         expiryDate: initialData.expire_date ? new Date(initialData.expire_date).toISOString().split('T')[0] : "",
+        salesperson: initialData.lead?.user?.fullname || "",
       });
 
       const rawItems = initialData.items || initialData.quotation_items;
@@ -99,7 +102,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           desc: item.notes || "",
           qty: item.quantity || 1,
           discount: item.discount || 0,
-          unitPrice: item.unit_price || item.product?.price || 0,
+          unitPrice: item.product?.price || 0,
         })));
       }
 

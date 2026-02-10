@@ -46,19 +46,12 @@ export default function ProductsServicesCard({
       return "Please select client name first";
     }
     if (listProduct.length === 0) {
-      return "No products available for this client";
+      return "No Products";
     }
     return "Select SKU";
   };
 
-  const discountOptions = [
-    { value: "0", label: "0%" },
-    { value: "5", label: "5%" },
-    { value: "10", label: "10%" },
-    { value: "15", label: "15%" },
-    { value: "20", label: "20%" },
-    { value: "25", label: "25%" },
-  ];
+
 
   return (
     <div className="bg-white px-6">
@@ -156,14 +149,21 @@ export default function ProductsServicesCard({
 
             {/* Discount Dropdown */}
             <div className="col-span-4">
-              <AppSelect
-                value={String(item.discount || 0)}
-                placeholder="Discount"
-                onChange={(e) => updateItemField(i, "discount", Number(e.target.value))}
-                options={discountOptions}
+              <AppInput
+                type="number"
+                placeholder="0"
+                value={item.discount || 0}
+                onChange={(e) => {
+                  let val = parseFloat(e.target.value);
+                  if (isNaN(val)) val = 0;
+                  if (val < 0) val = 0;
+                  if (val > 100) val = 100;
+                  updateItemField(i, "discount", val);
+                }}
                 isBgWhite
                 height="48px"
                 rounded="8px"
+                inputProps={{ min: 0, max: 100 }}
               />
             </div>
           </div>

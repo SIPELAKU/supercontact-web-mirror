@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **SKU Dropdown:**
   - Implemented contextual placeholder messages based on application state:
     - "Please select client name first" when no client is selected.
-    - "No products available for this client" when client has no products.
+    - "No Products" when client has no products.
     - "Select SKU" when products are available.
   - Disabled SKU dropdown until a client is selected.
   - Products now derived directly from selected lead's items instead of separate product store.

@@ -6,8 +6,6 @@ import { Product } from "@/lib/store/product";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { AppSelect } from "../ui/app-select";
-import { Switch } from "../ui/switch";
-import { Label } from "../ui/label";
 
 export default function ProductsServicesCard({
   items,
@@ -18,8 +16,6 @@ export default function ProductsServicesCard({
   listProduct = [],
   loading = false,
   clientData = {},
-  showAllProducts = false,
-  setShowAllProducts,
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
@@ -29,8 +25,6 @@ export default function ProductsServicesCard({
   listProduct?: Product[];
   loading?: boolean;
   clientData?: Record<string, any>;
-  showAllProducts?: boolean;
-  setShowAllProducts?: (val: boolean) => void;
 }) {
   const handleSKUChange = (index: number, sku: string) => {
     const selectedProduct = listProduct.find(p => p.sku === sku);
@@ -62,18 +56,6 @@ export default function ProductsServicesCard({
         <h1 className="text-2xl font-bold text-gray-900">
           Products & Services
         </h1>
-        {setShowAllProducts && (
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="show-all-products"
-              checked={showAllProducts}
-              onCheckedChange={setShowAllProducts}
-            />
-            <Label htmlFor="show-all-products" className="text-sm text-gray-600 font-medium cursor-pointer">
-              Include All Products
-            </Label>
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-gray-200">
@@ -155,6 +137,7 @@ export default function ProductsServicesCard({
             {/* Notes */}
             <div className="col-span-8">
               <AppInput
+                label="Notes"
                 placeholder="Notes"
                 isBgWhite
                 height="48px"
@@ -164,10 +147,12 @@ export default function ProductsServicesCard({
               />
             </div>
 
-            {/* Discount Dropdown */}
+            {/* Discount Input */}
             <div className="col-span-4">
               <AppInput
                 type="number"
+                label="Discount"
+                endIcon={<span className="text-gray-500 font-medium">%</span>}
                 placeholder="0"
                 value={item.discount || 0}
                 onChange={(e) => {

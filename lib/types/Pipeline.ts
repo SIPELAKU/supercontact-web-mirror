@@ -21,6 +21,7 @@ export interface Deal {
   quantity?: number;
   amount: number;
   avatar: string;
+  avatar_initial?: string;
   notes: string;
   client_account: string;
   expected_close_date: string;
@@ -55,6 +56,7 @@ export interface DealCardProps {
   notes: string
   client_account: string
   expected_close_date?: string
+  avatar_initial?: string
   wonDate?: string
   lostDate?: string
   probability_of_close: number

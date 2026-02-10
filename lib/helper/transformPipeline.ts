@@ -18,6 +18,13 @@ export interface PipelineAPIItem {
   id: string;
   deal_name: string;
   contact: PipelineContact;
+  user: {
+    id: string;
+    fullname: string;
+    email: string;
+    avatar_initial: string;
+    avatar_url: string | null;
+  };
   product?: {
     id: string;
     product_name: string;
@@ -72,7 +79,7 @@ export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
 
     const mappedDeal: Deal = {
       id: item.id,
-      deal_name: item.deal_name,
+      deal_name: item.deal_name || item.product?.product_name || "",
       company: {
         id: item.contact.id,
         name: item.contact.name,
@@ -81,8 +88,8 @@ export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
       product: item.product,
       quantity: item.quantity,
       amount: Number(item.amount) || 0,
-      avatar: '',
-      // avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
+      avatar: item.user?.avatar_url || "",
+      avatar_initial: item.user?.avatar_initial || "",
       notes: item.notes ?? "",
       client_account: item.client_account ?? "",
       expected_close_date: formatMDY(item.expected_close_date),

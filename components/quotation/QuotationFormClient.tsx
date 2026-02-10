@@ -62,7 +62,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "" });
-  const [showAllProducts, setShowAllProducts] = useState(false);
 
   // Ensure current lead is in the list for editing
   const leadsWithCurrent = useMemo(() => {
@@ -74,7 +73,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     return leads;
   }, [leads, initialData]);
 
-  // Derive available products from the selected lead's items
+  // Derive available products from the selected lead's items and global products
   const availableProducts = useMemo(() => {
     const selectedLead = leadsWithCurrent.find(l => l.id === clientData.lead_id);
     const leadItems = selectedLead?.items ? selectedLead.items.map(item => ({
@@ -85,26 +84,22 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       description: item.notes || ""
     })) : [];
 
-    // If "Show All" is toggled or there's no lead selected, include all products
-    if (showAllProducts || !clientData.lead_id) {
-      // Merge lead items with global products, ensuring no duplicates by SKU
-      const globalProducts = listProduct.map(p => ({
-        ...p,
-        price: Number(p.price)
-      }));
+    // Merge lead items with global products, ensuring no duplicates by SKU
+    const globalProducts = listProduct.map(p => ({
+      ...p,
+      price: Number(p.price)
+    }));
 
-      // Combine and deduplicate by SKU
-      const combined = [...leadItems];
-      globalProducts.forEach(gp => {
-        if (!combined.find(li => li.sku === gp.sku)) {
-          combined.push(gp as any);
-        }
-      });
-      return combined;
-    }
+    // Combine and deduplicate by SKU
+    const combined = [...leadItems];
+    globalProducts.forEach(gp => {
+      if (!combined.find(li => li.sku === gp.sku)) {
+        combined.push(gp as any);
+      }
+    });
 
-    return leadItems;
-  }, [listProduct, leadsWithCurrent, clientData.lead_id, showAllProducts]);
+    return combined;
+  }, [listProduct, leadsWithCurrent, clientData.lead_id]);
 
   const [items, setItems] = useState<ItemRow[]>([
     { product_id: "", title: "", sku: "", desc: "", qty: 1, discount: 0, unitPrice: 0 },
@@ -404,8 +399,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             removeItem={removeItem}
             listProduct={availableProducts}
             clientData={clientData}
-            showAllProducts={showAllProducts}
-            setShowAllProducts={setShowAllProducts}
           // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />

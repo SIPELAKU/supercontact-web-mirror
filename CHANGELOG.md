@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.1] - 2026-02-10
+
+### Detail Versi 1.5.1
+
+#### ✨ Feature Enhancements & Bug Fixes
+
+- **Confirmation Dialogs:**
+  - Standardized all destructive actions (like lead deletion) and form discards to use the new red danger-themed `ConfirmationPopup`.
+  - Replaced browser-native `confirm()` and generic warning modals in Lead Detail, Add Lead, and Pipeline Detail for a premium, consistent feel.
+
+- **Quotation Builder:**
+  - Improved the discount field: switched to a text input with an automatic "%" symbol for better precision and alignment.
+  - Aligned the "Notes" and "Discount" fields perfectly within the product table rows.
+  - Simplified the interface by removing the "Include All Products" toggle and automatically merging lead items with the global product list.
+
+- **Pipeline & Type Safety:**
+  - Fixed a TypeScript error where `avatar_initial` was required in `DealCardProps` but could be undefined.
+  - Globalized absolute imports for `ConfirmationPopup` to prevent build issues.
+
+#### 📁 Files Modified
+
+- `components/lead-management/lead-management-table/kanban-view.tsx`
+- `components/pipeline/AddDealModal.tsx`
+- `components/quotation/ProductsServicesTable.tsx`
+- `components/quotation/QuotationFormClient.tsx`
+- `lib/types/Pipeline.ts`
+
+---
+
 ## [1.5.0] - 2026-02-10
 
 ### Detail Versi 1.5.0

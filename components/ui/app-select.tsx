@@ -23,6 +23,7 @@ interface AppSelectProps extends Omit<SelectProps, "label"> {
   height?: string;
   rounded?: string;
   error?: boolean;
+  helperText?: string;
 }
 
 const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
@@ -40,6 +41,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
       height,
       rounded,
       error,
+      helperText,
       ...props
     },
     ref,
@@ -132,6 +134,19 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             ))}
           </Select>
         </FormControl>
+        {helperText && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: "error.main",
+              mt: 0.5,
+              display: "block",
+              fontSize: "0.75rem",
+            }}
+          >
+            {helperText}
+          </Typography>
+        )}
       </Box>
     );
   },

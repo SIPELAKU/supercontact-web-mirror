@@ -5,6 +5,7 @@ import { Card } from "../../ui/card";
 import { cn } from "@/lib/utils";
 import { sourceIcon } from "./columns";
 import { Lead, leadResponse, LeadSource, LeadStatus } from "@/lib/models/types";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 import {
   DndContext,
@@ -60,6 +61,7 @@ const statusColors: Record<string, string> = {
 function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: Lead) => void }) {
   const { getToken } = useAuth();
   const [showMenu, setShowMenu] = React.useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = React.useState(false);
   const queryClient = useQueryClient();
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -92,26 +94,28 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
     opacity: isDragging ? 0.3 : 1,
   };
 
-  const handleDeleteLead = async (e: React.MouseEvent) => {
+  const handleDeleteLead = (e: React.MouseEvent) => {
     e.stopPropagation();
-
-    if (confirm(`Are you sure you want to delete lead "${lead.contact.name}"?`)) {
-      try {
-        const token = await getToken();
-        if (!token) throw new Error('No authentication token');
-        await deleteLead(token, lead.id);
-
-        // Refresh the leads data
-        queryClient.invalidateQueries({ queryKey: ["leads"] });
-
-        console.log("Lead deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting lead:", error);
-        alert("Failed to delete lead. Please try again.");
-      }
-    }
-
+    setShowDeleteConfirmation(true);
     setShowMenu(false);
+  };
+
+  const confirmDeleteLead = async () => {
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('No authentication token');
+      await deleteLead(token, lead.id);
+
+      // Refresh the leads data
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+
+      notify.success("Success", { description: "Lead deleted successfully!" });
+      setShowDeleteConfirmation(false);
+    } catch (error) {
+      console.error("Error deleting lead:", error);
+      notify.error("Error", { description: "Failed to delete lead. Please try again." });
+      setShowDeleteConfirmation(false);
+    }
   };
 
   return (
@@ -159,6 +163,17 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
           <span>{lead.lead_source}</span>
         </div>
       </Card>
+
+      <ConfirmationPopup
+        isOpen={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+        onConfirm={confirmDeleteLead}
+        title="Are you sure?"
+        description={`Are you sure you want to delete lead "${lead.contact.name}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

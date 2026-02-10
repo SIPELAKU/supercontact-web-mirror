@@ -21,6 +21,7 @@ import { AppButton } from "../ui/app-button";
 import { AppButtonIcon } from "../ui/app-button-icon";
 import { Spinner } from "../ui/spinner";
 import { Box, CircularProgress } from "@mui/material";
+import { notify } from "@/lib/notifications";
 
 export default function ProductTable() {
   const {
@@ -167,7 +168,12 @@ export default function ProductTable() {
                               await new Promise((resolve) =>
                                 setTimeout(resolve, 1000),
                               );
-                              await deleteProduct(product.id);
+                              const res = await deleteProduct(product.id);
+                              if (res.success) {
+                                notify.success("Product Deleted", { description: `Product "${product.product_name}" has been successfully deleted.` });
+                              } else {
+                                notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
+                              }
                             },
                           });
                         }}

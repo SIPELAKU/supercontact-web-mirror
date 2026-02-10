@@ -14,6 +14,7 @@ import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
 import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
+import { notify } from "@/lib/notifications";
 
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
 export type ProductPayload = Omit<Product, "id">;
@@ -209,20 +210,28 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
             setLoading(true);
             const response = await postFormProduct(body)
             if (response.success) {
+                notify.success("Product Saved", { description: "New product has been successfully created." });
                 setLoading(false);
                 onOpenChange(false);
                 reset();
                 setErrors({})
+            } else {
+                notify.error("Failed to Save", { description: response.error || "An error occurred while saving the product." });
+                setLoading(false);
             }
         } else {
             setLoading(true);
             const response = await updateFormProduct(body, id)
             if (response.success) {
+                notify.success("Product Updated", { description: "Product details have been successfully updated." });
                 setLoading(false);
                 onOpenChange(false);
                 reset();
                 setEditId("");
                 setErrors({})
+            } else {
+                notify.error("Failed to Update", { description: response.error || "An error occurred while updating the product." });
+                setLoading(false);
             }
         }
     };

@@ -365,39 +365,6 @@ export default function Sidebar() {
             ))}
           </nav>
 
-          {/* User Profile */}
-          <div className="px-4 py-4 border-t border-gray-200">
-            <div
-              className={cn(
-                "flex items-center gap-3 p-3 rounded-lg bg-blue-50",
-                isCollapsed && "justify-center",
-              )}
-            >
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-semibold text-sm">M</span>
-              </div>
-              {!isCollapsed && (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      Muhammad...
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-gray-500 truncate">
-                        Administrator
-                      </p>
-                      <span className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
-                        +2
-                      </span>
-                    </div>
-                  </div>
-                  <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
-                    <Power className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
         </div>
       </aside>
 

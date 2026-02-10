@@ -25,6 +25,7 @@ interface ClientDetailsData {
   emailAddress?: string;
   quotationTitle?: string;
   expiryDate?: string;
+  salesperson?: string;
 }
 
 

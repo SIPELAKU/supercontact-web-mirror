@@ -140,7 +140,8 @@ export default function ContactsPage() {
   }, [searchTerm]);
 
   useEffect(() => {
-    loadDataAgain();
+    setPage(0);
+    loadDataAgain(0);
   }, [debouncedSearch]);
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {

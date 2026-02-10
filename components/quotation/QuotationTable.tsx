@@ -44,14 +44,34 @@ export default function QuotationTable() {
         setStatusFilter
     } = useGetQuotationstore();
 
-    // Reset page to 1 on search or filter change
-    useEffect(() => {
-        setPage(1);
-    }, [searchQuery, dateRangeFilter, statusFilter]);
-
     const handleRowClick = (quotationId: string) => {
         router.push(`/sales/quotation/${quotationId}`);
     };
+
+    // Filter results locally as a safeguard in case the backend ignores query params
+    const filteredQuotations = useMemo(() => {
+        let list = [...listQuotations];
+
+        if (statusFilter && statusFilter !== "all") {
+            list = list.filter((q) => q.quotation_status.toLowerCase() === statusFilter.toLowerCase());
+        }
+
+        if (searchQuery && searchQuery.trim() !== "") {
+            const query = searchQuery.toLowerCase();
+            list = list.filter((q) => {
+                const clientName = (q.lead?.contact?.name || "").toLowerCase();
+                const quoNumber = (q.quotation_number || "").toLowerCase();
+                const quoTitle = (q.quotation_title || "").toLowerCase();
+                return (
+                    clientName.includes(query) ||
+                    quoNumber.includes(query) ||
+                    quoTitle.includes(query)
+                );
+            });
+        }
+
+        return list;
+    }, [listQuotations, statusFilter, searchQuery]);
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
@@ -160,14 +180,14 @@ export default function QuotationTable() {
                                     </Box>
                                 </TableCell>
                             </TableRow>
-                        ) : listQuotations.length === 0 ? (
+                        ) : filteredQuotations.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} align="center">
                                     <div className="py-8 text-gray-500">No data available</div>
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            listQuotations.map((quotation) => (
+                            filteredQuotations.map((quotation) => (
                                 <TableRow
                                     key={quotation.id}
                                     onClick={() => handleRowClick(quotation.id)}

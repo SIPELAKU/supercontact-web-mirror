@@ -80,7 +80,7 @@ export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
       },
       product: item.product,
       quantity: item.quantity,
-      amount: item.amount,
+      amount: Number(item.amount) || 0,
       avatar: '',
       // avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
       notes: item.notes ?? "",

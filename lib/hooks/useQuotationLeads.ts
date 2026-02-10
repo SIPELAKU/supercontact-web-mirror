@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchQuotationLeads, QuotationLeadsResponse } from "../api/quotations";
 import { useAuth } from "../context/AuthContext";
 
-export function useQuotationLeads(page: number = 1, limit: number = 100, search?: string) {
+export function useQuotationLeads(page: number = 1, limit: number = 100, search?: string, options?: { enabled?: boolean }) {
     const { getToken } = useAuth();
 
     return useQuery<QuotationLeadsResponse, Error>({
@@ -20,5 +20,6 @@ export function useQuotationLeads(page: number = 1, limit: number = 100, search?
         staleTime: 1000 * 60, // 1 minute cache
         refetchOnWindowFocus: false,
         placeholderData: keepPreviousData,
+        enabled: options?.enabled !== false,
     });
 }

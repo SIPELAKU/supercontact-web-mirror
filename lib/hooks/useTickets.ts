@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/lib/context/AuthContext";
-import { fetchTickets, fetchTicket, createTicket, updateTicket, deleteTicket } from "@/lib/api/tickets";
+import { fetchTickets, fetchTicket, createTicket, updateTicket, deleteTicket, fetchAssignableAgents } from "@/lib/api/tickets";
 import { CreateTicketDTO, UpdateTicketDTO } from "@/lib/types/Ticket";
 
 export function useTickets(
@@ -83,5 +83,20 @@ export function useDeleteTicket() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["tickets"] });
         },
+    });
+}
+
+export function useAssignableAgents(search?: string) {
+    const { getToken } = useAuth();
+
+    return useQuery({
+        queryKey: ["assignable-agents", search],
+        queryFn: async () => {
+            const token = await getToken();
+            if (!token) throw new Error("No auth token");
+            return fetchAssignableAgents(token, search);
+        },
+        placeholderData: keepPreviousData,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
     });
 }

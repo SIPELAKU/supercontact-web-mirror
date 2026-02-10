@@ -10,7 +10,8 @@ import { notify } from "@/lib/notifications";
 interface QuotationSuccessModalProps {
     open: boolean;
     onClose: () => void;
-    quotationId: string;
+    quotationId: string;    // The UUID for URLs
+    quotationNumber: string; // The professional ID for display (e.g. QUO-26-060)
     pdfUrl?: string; // Blob URL for the PDF
 }
 
@@ -18,6 +19,7 @@ export default function QuotationSuccessModal({
     open,
     onClose,
     quotationId,
+    quotationNumber,
     pdfUrl,
 }: QuotationSuccessModalProps) {
     const handleCopyLink = () => {
@@ -42,7 +44,7 @@ export default function QuotationSuccessModal({
         if (pdfUrl) {
             const link = document.createElement("a");
             link.href = pdfUrl;
-            link.download = `quotation-${quotationId}.pdf`;
+            link.download = `quotation-${quotationNumber}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -82,7 +84,7 @@ export default function QuotationSuccessModal({
                     <div className="flex items-center justify-between gap-4">
                         <div className="text-left">
                             <p className="text-xs text-gray-500 font-medium mb-1">Quotation ID</p>
-                            <p className="text-sm font-bold text-gray-900">{quotationId}</p>
+                            <p className="text-sm font-bold text-gray-900">{quotationNumber}</p>
                         </div>
 
                         <div className="flex gap-2">

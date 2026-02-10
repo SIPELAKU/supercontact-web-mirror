@@ -6,6 +6,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
+  userRole: string | null;
+  userCompany: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
@@ -17,6 +19,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userCompany, setUserCompany] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Simply trust the stored token since we don't have /auth/me endpoint
         setToken(storedToken);
         setIsAuthenticated(true);
+
+        // Load role and company from localStorage
+        const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
+        const company = typeof window !== 'undefined' ? localStorage.getItem('userCompany') : null;
+        setUserRole(role);
+        setUserCompany(company);
       }
       setLoading(false);
     };
@@ -36,8 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkCookieChanges = () => {
       if (!cookieUtils.hasAuthToken() && isAuthenticated) {
         // Cookie was removed, logout user
-        setToken(null);
-        setIsAuthenticated(false);
+        logout();
       }
     };
 
@@ -79,10 +88,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       console.log('login result', json)
       const accessToken = json.data.access_token;
+      const role = json.data.user?.role;
+      const company = json.data.user?.company;
 
       cookieUtils.setAuthToken(accessToken);
 
+      // Store extra info in localStorage
+      if (role && typeof window !== 'undefined') localStorage.setItem('userRole', role);
+      if (company && typeof window !== 'undefined') localStorage.setItem('userCompany', company);
+
       setToken(accessToken);
+      setUserRole(role);
+      setUserCompany(company);
       setIsAuthenticated(true);
 
       return true;
@@ -108,12 +125,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     cookieUtils.removeAuthToken();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userCompany');
+    }
     setToken(null);
+    setUserRole(null);
+    setUserCompany(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, logout, loading, getToken }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, login, logout, loading, getToken }}>
       {children}
     </AuthContext.Provider>
   );

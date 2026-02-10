@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import { AppButton } from "../ui/app-button";
 
 interface NotificationProps {
   open: boolean;
@@ -10,6 +12,11 @@ interface NotificationProps {
 
 export default function Notification({ open, onClose }: NotificationProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // close when click outside
   useEffect(() => {
@@ -26,10 +33,10 @@ export default function Notification({ open, onClose }: NotificationProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted || !open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50">
+  return createPortal(
+    <div className="fixed inset-0 z-[1300]">
       {/* overlay */}
       <div className="absolute inset-0 bg-black/20" />
 
@@ -43,7 +50,7 @@ export default function Notification({ open, onClose }: NotificationProps) {
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-sm">Notifications</h2>
           </div>
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">2 New</span>
+          <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">2 New</span>
         </div>
 
         {/* content */}
@@ -94,14 +101,15 @@ export default function Notification({ open, onClose }: NotificationProps) {
 
         {/* footer */}
         <div className="p-3 border-t">
-            <Link href={"/notification"}>
-                <button onClick={()=>onClose()} className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2">
-                    View All Notifications
-                </button>
-            </Link>
+          <Link href={"/notifications"}>
+            <AppButton onClick={() => onClose()} className="w-full">
+              View All Notifications
+            </AppButton>
+          </Link>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

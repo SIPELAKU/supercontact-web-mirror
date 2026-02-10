@@ -96,7 +96,7 @@ export default function OrganizationClient() {
   };
 
   return (
-    <div className="space-y-10 p-8">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Organization Structure"
         breadcrumbs={[
@@ -132,7 +132,7 @@ export default function OrganizationClient() {
                 variantStyle="outline"
                 color="gray"
                 startIcon={<Upload />}
-                onClick={() => {}}
+                onClick={() => { }}
               >
                 Export
               </AppButton>

@@ -67,6 +67,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-02-10
+
+### Detail Versi 1.5.0
+
+#### ✨ Fitur Baru: Sales Dashboard
+
+- **Deskripsi:**
+  - **Sales Dashboard Page:** Implementasi halaman Sales Dashboard (`/dashboard`) dengan integrasi penuh ke backend API (`/api/v1/sales/dashboard/*`).
+  - **Stat Cards:** Menampilkan Total Sales Value, Top Deals Value, dan Average Deal Size dengan growth indicator (trend up/down) dan formatting Rupiah.
+  - **Sales Funnel Chart:** Bar chart distribusi pipeline per stage (Prospect, Qualified, Negotiation, Proposal, Closed-Won, Closed-Lost) dengan toggle **Weekly/Monthly** yang memanfaatkan parameter `group_by` dari backend API.
+  - **Product Performance Chart:** Horizontal bar chart menampilkan top 10 produk berdasarkan value, dengan **independent date range filter** menggunakan `AppDatePicker` component.
+  - **Top Deals Table:** Tabel 5 deal terbesar dengan kolom Date, Salesperson, Customer, Deal Value, dan Status badge berwarna.
+  - **Global Filters:** Date range picker dan quick filter (Last 30 Days / This Month) untuk filtering data dashboard secara keseluruhan.
+  - **Export Feature:** Export data dashboard ke CSV atau Excel (client-side conversion menggunakan `xlsx` library).
+  - **API Service:** `lib/api/sales-dashboard.ts` baru dengan type definitions (`DashboardSummary`, `FunnelPeriodData`, `ProductItem`, `TopDealItem`) dan fungsi API (`fetchDashboardSummary`, `fetchSalesFunnel`, `fetchProductPerformance`, `fetchTopDeals`, `exportDashboard`).
+  - **Impact:** Memberikan overview performa sales secara visual dan interaktif untuk Supervisor dan Manager.
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **AppDatePicker Fix:** Memperbaiki TypeScript error pada `CustomPickersDay` component dengan proper type casting.
+  - **Card Stat Icons:** Update icon stat cards menggunakan Lucide React icons (`UsersRound`, `UserRoundCheck`, `UserRoundSearch`).
+  - **Responsive Layout:** Dashboard layout yang responsif dengan Material UI Grid system.
+  - **Number Formatting:** Compact notation untuk angka besar dengan tooltip untuk detail lengkap.
+
+#### 📁 Files Created
+
+- `lib/api/sales-dashboard.ts` - API service dan type definitions untuk Sales Dashboard
+
+#### 📁 Files Modified
+
+- `components/dashboard/DashboardClient.tsx` - Implementasi lengkap Sales Dashboard client component
+- `components/ui/app-datepicker.tsx` - Fix TypeScript error pada CustomPickersDay
+- `components/ui/card-stat.tsx` - Penyesuaian untuk icon baru
+- `app/dashboard/page.tsx` - Halaman dashboard dengan banner
+
+---
+
+## [1.4.3] - 2026-02-11
+
+### Detail Versi 1.4.3
+
+#### ✨ Peningkatan UI
+
+- **Notification System:**
+  - **Halaman Notifikasi:** Menambahkan halaman baru `/notifications` untuk melihat semua notifikasi dengan filter "Only show unread" dan pengelompokan tanggal (Today, Yesterday).
+  - **Overlay Fix:** Memperbaiki masalah overlay notifikasi sidebar dengan menggunakan `React Portal` dan `z-index: 1300`, memastikan modal tampil di atas semua elemen UI.
+
+- **User Profile & Settings:**
+  - **UI Refinement:** Mengganti header manual dengan komponen `PageHeader` yang standar pada halaman Profile dan Profile Settings.
+  - **Component Standardization:** Mengganti input native/lama dengan `AppInput` dan `AppSelect` yang memiliki prop `isBgWhite` untuk konsistensi visual.
+  - **Action Buttons:** Memperbarui tombol aksi menggunakan `AppButton` standar.
+
+#### 📁 Files Modified
+
+- `components/modal/Notification.tsx` - Implementasi React Portal dan fix z-index.
+- `app/notifications/page.tsx` - Halaman baru notifikasi.
+- `components/profile/ProfileClient.tsx` - Implementasi PageHeader & AppButton.
+- `components/profile-user-setting/ProfileUserSettingClient.tsx` - Implementasi PageHeader & AppInput standardization.
+
+---
+
 ## [1.4.2] - 2026-02-09
 
 ### Detail Versi 1.4.2

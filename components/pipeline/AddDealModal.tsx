@@ -25,7 +25,7 @@ import { notify } from "@/lib/notifications";
 import * as pipelineAPI from "@/lib/api/pipelines";
 
 export const dealStages = [
-
+  { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
   { value: "Prospect", label: "Prospect", bgColor: "bg-[#F3F4F6]", textColor: "text-gray-700" },
   { value: "Qualified", label: "Qualified", bgColor: "bg-[#F3EEFF]", textColor: "text-purple-700" },
   { value: "Negotiation", label: "Negotiation", bgColor: "bg-[#EAF6FF]", textColor: "text-blue-700" },
@@ -444,7 +444,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 value={formData.deal_stage}
                 disabled={false}
                 onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
-                options={dealStages}
+                options={dealStages.filter(s => s.value !== "all")}
                 placeholder="Select Deal Stage"
                 isBgWhite
                 height="48px"

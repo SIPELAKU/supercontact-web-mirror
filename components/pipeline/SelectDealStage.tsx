@@ -77,7 +77,7 @@ export default function CustomDealStageSelect({
     if (found) {
       setSelectedStage(found);
     }
-  }, [value]);
+  }, [value, data]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -100,16 +100,14 @@ export default function CustomDealStageSelect({
   }, [debounced]);
 
   const filteredStages = useMemo(() => {
-    if (!isSearch) return data;
-
-    if (!searchText.trim()) {
-      return selectedStage ? [selectedStage] : [];
+    if (!isSearch || !searchText.trim()) {
+      return data;
     }
 
     return data.filter((s) =>
       s.label.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [searchText, data, isSearch, selectedStage]);
+  }, [searchText, data, isSearch]);
 
   return (
     <div ref={rootRef} className={cn("relative w-full", className)}>

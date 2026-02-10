@@ -384,7 +384,7 @@ export default function PipelineBoard() {
                   placeholder="Select All"
                   value={statusFilter}
                   onChange={setStatusFilter}
-                  data={[dealStages]}
+                  data={dealStages}
                   className="bg-white rounded-lg font-normal"
                 />
               )

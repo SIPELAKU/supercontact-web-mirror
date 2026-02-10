@@ -13,6 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.3] - 2026-02-11
+
+### Detail Versi 1.4.3
+
+#### ✨ Peningkatan UI
+
+- **Notification System:**
+  - **Halaman Notifikasi:** Menambahkan halaman baru `/notifications` untuk melihat semua notifikasi dengan filter "Only show unread" dan pengelompokan tanggal (Today, Yesterday).
+  - **Overlay Fix:** Memperbaiki masalah overlay notifikasi sidebar dengan menggunakan `React Portal` dan `z-index: 1300`, memastikan modal tampil di atas semua elemen UI.
+
+- **User Profile & Settings:**
+  - **UI Refinement:** Mengganti header manual dengan komponen `PageHeader` yang standar pada halaman Profile dan Profile Settings.
+  - **Component Standardization:** Mengganti input native/lama dengan `AppInput` dan `AppSelect` yang memiliki prop `isBgWhite` untuk konsistensi visual.
+  - **Action Buttons:** Memperbarui tombol aksi menggunakan `AppButton` standar.
+
+#### 📁 Files Modified
+
+- `components/modal/Notification.tsx` - Implementasi React Portal dan fix z-index.
+- `app/notifications/page.tsx` - Halaman baru notifikasi.
+- `components/profile/ProfileClient.tsx` - Implementasi PageHeader & AppButton.
+- `components/profile-user-setting/ProfileUserSettingClient.tsx` - Implementasi PageHeader & AppInput standardization.
+
+---
+
 ## [1.4.2] - 2026-02-09
 
 ### Detail Versi 1.4.2

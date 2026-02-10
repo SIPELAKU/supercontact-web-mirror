@@ -15,6 +15,7 @@ import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import PageHeader from "@/components/ui/page-header";
+import { Stack } from "@mui/material";
 
 export default function NotesPage() {
   const { getToken } = useAuth();
@@ -65,7 +66,7 @@ export default function NotesPage() {
   }, [debouncedSearch, order]);
 
   return (
-    <div className="w-full flex flex-col gap-4 p-4 md:p-8">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Notes"
         breadcrumbs={[{ label: "Dashboard" }, { label: "Notes" }]}
@@ -121,25 +122,27 @@ export default function NotesPage() {
           <p className="text-gray-500">No notes found</p>
         </div>
       )}
-      {dataNote.map((item, i) => (
-        <button
-          onClick={() => handleEdit(item, item.id)}
-          key={i}
-          className="drop-shadow-xl cursor-pointer"
-        >
-          <div className="flex justify-between rounded-md items-center p-4 border-l-8 border-[#6739EC] bg-white">
-            <div className="flex flex-col items-start gap-2">
-              <div className="flex gap-2 items-center text-sm bg-amber-200 text-amber-500 px-4 py-2 rounded-full">
-                <BiSolidBellRing />
-                {GetRelativeTime(item.reminder_date, item.reminder_time)}
+      <Stack spacing={2}>
+        {dataNote.map((item, i) => (
+          <button
+            onClick={() => handleEdit(item, item.id)}
+            key={i}
+            className="drop-shadow-xl cursor-pointer"
+          >
+            <div className="flex justify-between rounded-md items-center p-4 border-l-8 border-[#6739EC] bg-white">
+              <div className="flex flex-col items-start gap-2">
+                <div className="flex gap-2 items-center text-sm bg-amber-200 text-amber-500 px-4 py-2 rounded-full">
+                  <BiSolidBellRing />
+                  {GetRelativeTime(item.reminder_date, item.reminder_time)}
+                </div>
+                <h1 className="font-semibold">{item?.title}</h1>
+                <div className="text-gray-500">{item?.content}</div>
               </div>
-              <h1 className="font-semibold">{item?.title}</h1>
-              <div className="text-gray-500">{item?.content}</div>
+              <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
             </div>
-            <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
-          </div>
-        </button>
-      ))}
+          </button>
+        ))}
+      </Stack>
 
       <AddNoteModal
         open={openAdd}

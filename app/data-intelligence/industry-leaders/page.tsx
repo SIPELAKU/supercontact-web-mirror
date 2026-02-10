@@ -68,7 +68,7 @@ export default function IndustryLeadersPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
             {/* Header with gradient background */}
             {/* Header */}
             <PageHeader

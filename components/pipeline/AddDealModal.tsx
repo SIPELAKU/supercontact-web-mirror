@@ -372,8 +372,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 options={productOptions}
                 getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
                 onChange={(_, newValue) => {
-                  if (newValue && typeof newValue !== 'string') {
-                    setFormData({ ...formData, product_id: newValue.value });
+                  if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                    setFormData({ ...formData, product_id: (newValue as any).value });
                   }
                 }}
                 onInputChange={(_, inputValue) => {
@@ -383,7 +383,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }}
                 isOptionEqualToValue={(option, value) => {
                   if (typeof option === 'string' || typeof value === 'string') return option === value;
-                  return option.value === value.value;
+                  return (option as any).value === (value as any).value;
                 }}
                 placeholder="Search by SKU"
                 error={Boolean(errors.product_id)}
@@ -416,8 +416,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 options={contactOptions}
                 getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
                 onChange={(_, newValue) => {
-                  if (newValue && typeof newValue !== 'string') {
-                    setFormData({ ...formData, client_account: newValue.value });
+                  if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                    setFormData({ ...formData, client_account: (newValue as any).value });
                   }
                 }}
                 onInputChange={(_, inputValue) => {
@@ -430,7 +430,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 }}
                 isOptionEqualToValue={(option, value) => {
                   if (typeof option === 'string' || typeof value === 'string') return option === value;
-                  return option.value === value.value;
+                  return (option as any).value === (value as any).value;
                 }}
                 placeholder="Select Client"
                 error={Boolean(errors.client_account)}

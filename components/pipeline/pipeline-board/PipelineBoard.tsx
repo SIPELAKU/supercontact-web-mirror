@@ -23,7 +23,7 @@ import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { Button } from "@/components/ui/button"
+
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
 import { StageUI } from "@/lib/helper/transformPipeline"
@@ -80,7 +80,7 @@ export default function PipelineBoard() {
     return (currentStages: StageUI[]) => {
       return currentStages.map(stage => ({
         ...stage,
-        value: stage.deals.reduce((sum, d) => sum + (d.amount || 0), 0)
+        value: stage.deals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)
       }))
     }
   }, [])
@@ -93,8 +93,8 @@ export default function PipelineBoard() {
 
     return stages.map((stage) => {
       const filteredDeals = stage.deals.filter((deal) => {
-        const dealName = deal.deal_name.toLowerCase();
-        const companyName = deal.company.name.toLowerCase();
+        const dealName = (deal?.deal_name || "").toLowerCase();
+        const companyName = (deal?.company?.name || "").toLowerCase();
 
         return (
           dealName.includes(searchQueryLower) ||
@@ -514,8 +514,8 @@ export default function PipelineBoard() {
 
                             {stage.deals.length > limit && (
                               <div className="pt-2 pb-1">
-                                <Button
-                                  variant="ghost"
+                                <AppButton
+                                  variantStyle="text"
                                   className="w-full text-xs text-gray-500 hover:text-gray-900 h-8"
                                   onClick={() => setVisibleCounts(prev => ({
                                     ...prev,
@@ -523,7 +523,7 @@ export default function PipelineBoard() {
                                   }))}
                                 >
                                   Load More ({stage.deals.length - limit} remaining)
-                                </Button>
+                                </AppButton>
                               </div>
                             )}
                           </div>

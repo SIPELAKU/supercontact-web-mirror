@@ -137,7 +137,7 @@ const menuData: MenuSection[] = [
         name: "Omnichannel",
         icon: OmnichannelIcon,
         children: [
-          { name: "Unified Inbox", path: "/omnichannel/unified-inbox" },
+          { name: "Unified Inbox", path: "/omnichannel" },
         ],
       },
       {

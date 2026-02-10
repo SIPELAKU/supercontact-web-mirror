@@ -18,7 +18,7 @@ export default function QuotationClient() {
       status: statusFilter,
       search: searchDebounce
     });
-  }, [dateRangeFilter, searchDebounce, statusFilter]);
+  }, [dateRangeFilter, searchDebounce, statusFilter, pagination.page, pagination.limit]);
 
   return (
     <div className="p-6">

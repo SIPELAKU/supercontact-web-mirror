@@ -89,7 +89,7 @@ export default function QuotationSuccessModal({
                             <AppButton
                                 onClick={handleCopyLink}
                                 variantStyle="outline"
-                                color="grey"
+                                color="gray"
                             >
                                 <Copy size={16} className="mr-2" />
                                 Copy Link
@@ -109,7 +109,7 @@ export default function QuotationSuccessModal({
                     <AppButton
                         onClick={handleDownloadPDF}
                         variantStyle="outline"
-                        color="grey"
+                        color="gray"
                         className="w-full justify-center"
                     >
                         <Download size={20} className="mr-2" />

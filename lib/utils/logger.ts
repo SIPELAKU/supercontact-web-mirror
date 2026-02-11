@@ -13,6 +13,18 @@ class Logger {
   private isDevelopment = process.env.NODE_ENV === 'development';
   private isClient = typeof window !== 'undefined';
 
+  constructor() {
+    // If logging is explicitly disabled via env var, override console methods
+    // This catches direct console.log() calls outside of this logger
+    if (this.isClient && process.env.NEXT_PUBLIC_ENABLE_LOGGER === 'false') {
+      console.log = () => {};
+      console.info = () => {};
+      console.debug = () => {};
+      console.warn = () => {};
+      // We keep console.error to track critical crashes in staging/prod
+    }
+  }
+
   private formatMessage(level: LogLevel, message: string, data?: any): LogEntry {
     return {
       level,
@@ -24,10 +36,19 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, data?: any) {
+    // Check for manual override via environment variable
+    // This allows disabling logs in staging/preview environments even if NODE_ENV is development
+    const enableLogger = process.env.NEXT_PUBLIC_ENABLE_LOGGER;
+    
+    if (enableLogger === 'false') {
+      return;
+    }
+
     const logEntry = this.formatMessage(level, message, data);
     
-    // Always log in development
-    if (this.isDevelopment) {
+    // Always log in development (unless manually disabled above)
+    // Or if manually enabled via env var
+    if (this.isDevelopment || enableLogger === 'true') {
       const consoleMethod = console[level] || console.log;
       consoleMethod(`[${level.toUpperCase()}]`, message, data || '');
       return;

@@ -16,8 +16,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Stack,
-  TextField
+  Stack
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -76,6 +75,10 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
     }
     if (!phoneNumber.trim()) {
       setError("Phone number is required.");
+      return;
+    }
+    if (phoneNumber.length < 10) {
+      setError("Phone number must be at least 10 characters.");
       return;
     }
     if (!position.trim()) {
@@ -154,14 +157,26 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
           <Box>
             <label>Phone Number</label>
             <AppInput
-              type="tel"
+              type="text"
+              inputMode='numeric'
               value={phoneNumber}
               isBgWhite
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                if (val.length <= 15) {
+                  setPhoneNumber(val);
+                }
+              }}
               fullWidth
               required
-              error={Boolean(error && !phoneNumber.trim())}
-              helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
+              error={Boolean(error && (!phoneNumber.trim() || phoneNumber.length < 10))}
+              helperText={
+                error && !phoneNumber.trim()
+                  ? "Phone number is required"
+                  : error && phoneNumber.length < 10
+                    ? "Phone number must be at least 10 characters"
+                    : ""
+              }
             />
           </Box>
           <Box>

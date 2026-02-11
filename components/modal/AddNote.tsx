@@ -1,17 +1,16 @@
 "use client";
 
-import { notify } from "@/lib/notifications";
-import { useAuth } from "@/lib/context/AuthContext";
-import React, { useState } from "react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
-import { AppDatePicker } from "@/components/ui/app-datepicker";
 import { AppTimePicker } from "@/components/ui/app-timepicker";
-import { parse, format as formatDate } from "date-fns";
+import { useAuth } from "@/lib/context/AuthContext";
+import { notify } from "@/lib/notifications";
+import { format as formatDate, parse } from "date-fns";
+import React, { useState } from "react";
 
-import { Poppins } from "next/font/google";
 import { DateCalendar } from "@mui/x-date-pickers";
+import { Poppins } from "next/font/google";
 import { useRouter } from "next/navigation";
 
 const poppins = Poppins({
@@ -250,7 +249,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-[601px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="bg-white rounded-xl shadow-xl w-full max-w-150.25 max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <ModalContent onClose={onClose} onSubmit={handleSubmit} />

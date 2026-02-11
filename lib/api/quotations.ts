@@ -3,7 +3,6 @@
 
 import api from "../utils/axiosClient";
 import { logger } from "../utils/logger";
-import { fetchWithTimeout } from "./api-client";
 
 // ============================================
 // Types
@@ -88,7 +87,10 @@ export async function createQuotation(token: string, formData: FormData): Promis
 
         // Handle axios error format
         if (error.response?.data) {
-            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to create quotation");
+            const message = error.response.data.message || error.response.data.error?.message || "Failed to create quotation";
+            const err: any = new Error(message);
+            err.details = error.response.data.error?.details;
+            throw err;
         }
         throw error;
     }
@@ -113,7 +115,10 @@ export async function updateQuotation(token: string, quotationId: string, formDa
 
         // Handle axios error format
         if (error.response?.data) {
-            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to update quotation");
+            const message = error.response.data.message || error.response.data.error?.message || "Failed to update quotation";
+            const err: any = new Error(message);
+            err.details = error.response.data.error?.details;
+            throw err;
         }
         throw error;
     }

@@ -1,10 +1,10 @@
 "use client";
 
+import { Product } from "@/lib/store/product";
 import type { ItemRow } from "@/lib/types/Quotation";
 import { Plus, Trash2 } from "lucide-react";
-import { Product } from "@/lib/store/product";
-import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
+import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
 
 export default function ProductsServicesCard({
@@ -16,6 +16,7 @@ export default function ProductsServicesCard({
   listProduct = [],
   loading = false,
   clientData = {},
+  validationErrors = null,
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
@@ -25,6 +26,7 @@ export default function ProductsServicesCard({
   listProduct?: Product[];
   loading?: boolean;
   clientData?: Record<string, any>;
+  validationErrors?: any;
 }) {
   const handleSKUChange = (index: number, sku: string) => {
     const selectedProduct = listProduct.find(p => p.sku === sku);
@@ -67,110 +69,119 @@ export default function ProductsServicesCard({
         <div className="col-span-1"></div>
       </div>
 
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className="border border-gray-200 rounded-lg p-4 mb-4 shadow-sm"
-        >
-          <div className="grid grid-cols-12 gap-4 items-center">
-            {/* SKU Dropdown */}
-            <div className="col-span-2">
-              <AppSelect
-                value={item.sku}
-                placeholder={getSkuPlaceholder()}
-                onChange={(e) => handleSKUChange(i, e.target.value as string)}
-                options={skuOptions}
-                isBgWhite
-                height="48px"
-                rounded="8px"
-                disabled={loading || (listProduct.length === 0 && !item.sku)}
-              />
+      {items.map((item, i) => {
+        // Extract error for this specific item if available
+        // Expected structure: validationErrors.items[i].errors = [{ field: "discount", message: "Error msg" }]
+        const itemError = validationErrors?.items?.[i];
+
+        return (
+          <div
+            key={i}
+            className="border border-gray-200 rounded-lg p-4 mb-4 shadow-sm"
+          >
+            <div className="grid grid-cols-12 gap-4 items-center">
+              {/* SKU Dropdown */}
+              <div className="col-span-2">
+                <AppSelect
+                  value={item.sku}
+                  placeholder={getSkuPlaceholder()}
+                  onChange={(e) => handleSKUChange(i, e.target.value as string)}
+                  options={skuOptions}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                  disabled={loading || (listProduct.length === 0 && !item.sku)}
+                />
+              </div>
+
+              {/* Item/Product Name (Read-only) */}
+              <div className="col-span-3">
+                <AppInput
+                  value={item.title}
+                  readOnly
+                  placeholder="Product name will appear here"
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                />
+              </div>
+
+              {/* Quantity */}
+              <div className="col-span-2">
+                <AppInput
+                  type="number"
+                  value={item.qty}
+                  onChange={(e) => updateQty(i, Number(e.target.value))}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                />
+              </div>
+
+              {/* Price */}
+              <div className="col-span-2 text-sm text-gray-900 font-medium">
+                Rp {Number(item.unitPrice).toLocaleString('id-ID')}
+              </div>
+
+              {/* Total */}
+              <div className="col-span-2 text-sm text-gray-900 font-semibold">
+                Rp {(item.qty * Number(item.unitPrice)).toLocaleString('id-ID')}
+              </div>
+
+              {/* Delete Button */}
+              <div className="col-span-1 flex justify-end">
+                <button
+                  onClick={() => removeItem(i)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            {/* Item/Product Name (Read-only) */}
-            <div className="col-span-3">
-              <AppInput
-                value={item.title}
-                readOnly
-                placeholder="Product name will appear here"
-                isBgWhite
-                height="48px"
-                rounded="8px"
-              />
-            </div>
+            {/* Row 2: Notes and Discount */}
+            <div className="grid grid-cols-12 gap-4 mt-4">
+              {/* Notes */}
+              <div className="col-span-8">
+                <AppInput
+                  label="Notes"
+                  placeholder="Notes"
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                  value={item.desc}
+                  onChange={(e) => updateItemField(i, "desc", e.target.value)}
+                />
+              </div>
 
-            {/* Quantity */}
-            <div className="col-span-2">
-              <AppInput
-                type="number"
-                value={item.qty}
-                onChange={(e) => updateQty(i, Number(e.target.value))}
-                isBgWhite
-                height="48px"
-                rounded="8px"
-              />
-            </div>
-
-            {/* Price */}
-            <div className="col-span-2 text-sm text-gray-900 font-medium">
-              Rp {Number(item.unitPrice).toLocaleString('id-ID')}
-            </div>
-
-            {/* Total */}
-            <div className="col-span-2 text-sm text-gray-900 font-semibold">
-              Rp {(item.qty * Number(item.unitPrice)).toLocaleString('id-ID')}
-            </div>
-
-            {/* Delete Button */}
-            <div className="col-span-1 flex justify-end">
-              <button
-                onClick={() => removeItem(i)}
-                className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              {/* Discount Input */}
+              <div className="col-span-4">
+                <AppInput
+                  type="number"
+                  label="Discount"
+                  endIcon={<span className="text-gray-500 font-medium">%</span>}
+                  placeholder="0"
+                  value={item.discount || 0}
+                  onChange={(e) => {
+                    let val = parseFloat(e.target.value);
+                    if (isNaN(val)) val = 0;
+                    if (val < 0) val = 0;
+                    if (val > 100) val = 100;
+                    updateItemField(i, "discount", val);
+                  }}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
+                  inputProps={{ min: 0, max: 100 }}
+                  // Display error if exists for discount field
+                  error={!!itemError?.errors?.find((e: any) => e.field === "discount")}
+                  helperText={itemError?.errors?.find((e: any) => e.field === "discount")?.message}
+                />
+              </div>
             </div>
           </div>
-
-          {/* Row 2: Notes and Discount */}
-          <div className="grid grid-cols-12 gap-4 mt-4">
-            {/* Notes */}
-            <div className="col-span-8">
-              <AppInput
-                label="Notes"
-                placeholder="Notes"
-                isBgWhite
-                height="48px"
-                rounded="8px"
-                value={item.desc}
-                onChange={(e) => updateItemField(i, "desc", e.target.value)}
-              />
-            </div>
-
-            {/* Discount Input */}
-            <div className="col-span-4">
-              <AppInput
-                type="number"
-                label="Discount"
-                endIcon={<span className="text-gray-500 font-medium">%</span>}
-                placeholder="0"
-                value={item.discount || 0}
-                onChange={(e) => {
-                  let val = parseFloat(e.target.value);
-                  if (isNaN(val)) val = 0;
-                  if (val < 0) val = 0;
-                  if (val > 100) val = 100;
-                  updateItemField(i, "discount", val);
-                }}
-                isBgWhite
-                height="48px"
-                rounded="8px"
-                inputProps={{ min: 0, max: 100 }}
-              />
-            </div>
-          </div>
-        </div>
-      ))}
+        )
+      })}
 
       <AppButton
         variantStyle="primary"

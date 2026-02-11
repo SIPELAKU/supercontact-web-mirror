@@ -1,26 +1,24 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
-import { TextField } from "@mui/material";
 import ClientDetailsCard from "@/components/quotation/ClientDetailForm";
 import NotesCard from "@/components/quotation/NotesSection";
 import ProductsServicesCard from "@/components/quotation/ProductsServicesTable";
 import SummaryCard from "@/components/quotation/QuotationSummary";
-import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/ui/page-header";
-import type { ItemRow } from "@/lib/types/Quotation";
-import { createQuotation, updateQuotation, sendQuotationEmail } from "@/lib/api";
+import { createQuotation, updateQuotation } from "@/lib/api";
+import type { QuotationLead } from "@/lib/api/quotations";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
-import type { QuotationLead } from "@/lib/api/quotations";
 import { useGetProductStore } from "@/lib/store/product";
+import type { ItemRow } from "@/lib/types/Quotation";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { notify } from "@/lib/notifications";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
-import { AppInput } from "../ui/app-input";
+import jsPDF from "jspdf";
 import { AppButton } from "../ui/app-button";
+import { AppInput } from "../ui/app-input";
 import { Spinner } from "../ui/spinner";
 import QuotationSuccessModal from "./QuotationSuccessModal";
 
@@ -202,7 +200,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const removeItem = (index: number) =>
     setItems((p) => p.filter((_, i) => i !== index));
 
+  /* Validation Errors State */
+  const [validationErrors, setValidationErrors] = useState<any>(null);
+
   const handleSave = async (action: "draft" | "publish") => {
+    // Reset errors on new submission
+    setValidationErrors(null);
+
     if (!clientData.lead_id) {
       notify.error("Validation Error", { description: "Please select a lead first" });
       return;
@@ -300,6 +304,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     } catch (error: any) {
       console.error("Failed to process quotation:", error);
       notify.error("Error", { description: error.message || "Failed to process quotation" });
+
+      // Set validations if details exist
+      if (error.details) {
+        setValidationErrors(error.details);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -399,6 +408,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             removeItem={removeItem}
             listProduct={availableProducts}
             clientData={clientData}
+            validationErrors={validationErrors}
           // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
@@ -468,7 +478,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
 
       {/* Hidden printable area for PDF generation */}
-      <div id="quotation-content" className="absolute top-[-10000px] left-[-10000px] w-[800px] p-8 border"
+      <div id="quotation-content" className="absolute -top-2500 -left-2500 w-200 p-8 border"
         style={{ backgroundColor: "#ffffff", borderColor: "#d1d5db" }}>
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>{clientData.quotationTitle}</h1>

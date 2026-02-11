@@ -35,6 +35,7 @@ interface AppDatePickerProps {
   isBgWhite?: boolean;
   error?: boolean;
   helperText?: string;
+  maxDate?: Date;
 }
 
 // --- Styled Components ---
@@ -120,6 +121,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
   isBgWhite = false,
   error,
   helperText,
+  maxDate,
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLDivElement | null>(null);
 
@@ -306,6 +308,7 @@ export const AppDatePicker: React.FC<AppDatePickerProps> = ({
           <DateCalendar
             value={mode === "single" ? (value as Date) : null}
             onChange={handleDateChange}
+            maxDate={maxDate}
             slots={{
               day: dayRenderer,
             }}

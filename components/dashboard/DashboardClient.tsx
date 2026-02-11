@@ -346,7 +346,7 @@ export default function DashboardClient() {
         avatarColor: "#666cff",
         avatarBgColor: "#e6e7ff",
         trend: summary.total_sales_growth.trend === "down" ? "negative" : "positive",
-        trendNumber: `${summary.total_sales_growth.percent.toFixed(0)}%`,
+        trendNumber: `${Math.abs(summary.total_sales_growth.percent).toFixed(0)}%`,
         subtitle: "vs Last period",
       },
       {
@@ -356,7 +356,7 @@ export default function DashboardClient() {
         avatarColor: "#72e128",
         avatarBgColor: "#e8fadc",
         trend: summary.top_deals_growth.trend === "down" ? "negative" : "positive",
-        trendNumber: `${summary.top_deals_growth.percent.toFixed(0)} Deals`,
+        trendNumber: `${Math.abs(summary.top_deals_growth.percent).toFixed(0)} Deals`,
         subtitle: "vs Last period",
       },
       {
@@ -375,7 +375,7 @@ export default function DashboardClient() {
         avatarColor: "#fdb528",
         avatarBgColor: "#fef3dc",
         trend: summary.average_deal_growth.trend === "down" ? "negative" : "positive",
-        trendNumber: `${summary.average_deal_growth.percent.toFixed(0)}%`,
+        trendNumber: `${Math.abs(summary.average_deal_growth.percent).toFixed(0)}%`,
         subtitle: "vs Last period",
       },
     ]
@@ -411,6 +411,7 @@ export default function DashboardClient() {
                   onChange={handleDateChange}
                   placeholder="Select By Date Range"
                   label=""
+                  maxDate={new Date()}
                 // AppDatePicker height is managed via minHeight: 48px in its style
                 />
               </Box>
@@ -616,6 +617,7 @@ export default function DashboardClient() {
                 placeholder="Select date range"
                 isBgWhite
                 value={[productDateFrom, productDateTo]}
+                maxDate={new Date()}
                 onChange={(val) => {
                   if (Array.isArray(val)) {
                     setProductDateFrom(val[0]);

@@ -40,9 +40,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.2] - 2026-02-11
 
+### Detail Versi 1.5.2
+
+#### ✨ Analytics Dashboard Enhancements
+
+- **Universal Date Filter:**
+  - Added comprehensive filtering system with Date Range Picker, Format Selection (CSV/Excel), and Quick Filters (Last 30 Days / This Month).
+  - Integrated filter logic with all analytics charts and summaries.
+
+- **Team Performance Overview:**
+  - Restored "Team Performance" section with its own independent date range picker.
+  - Replaced the temporary "Product Performance" view in this section to align with user requirements.
+
+- **Sales Trend Insights:**
+  - Added per-person total sales summary above the chart for quick comparison.
+  - Applied consistent "Rupiah" formatting to Y-axis (compact) and Tooltips (full currency) for better readability.
+
+- **UX Improvements:**
+  - Implemented `maxDate={new Date()}` on all date pickers (Dashboard & Analytics) to prevent future date selection.
+  - Improved chart legends and visual hierarchy.
+
+#### 📁 Files Modified
+
+- `components/analytics/AnalyticsDashboardClient.tsx`
+- `components/dashboard/DashboardClient.tsx`
+- `components/ui/app-datepicker.tsx`
+
+---
 
 ## [1.5.1] - 2026-02-10
+
 
 ### Detail Versi 1.5.1
 

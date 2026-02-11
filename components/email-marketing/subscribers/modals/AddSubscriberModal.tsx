@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import { IconUser, IconUsers } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 import { AppButton } from '@/components/ui/app-button';
 
 interface AddSubscriberModalProps {
@@ -101,7 +101,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     mailing_list_ids: listIdsToSend
                 });
 
-                toast.success(`${selectedContacts.length} subscriber(s) imported successfully.`);
+                notify.success(`${selectedContacts.length} subscriber(s) imported successfully.`);
                 onSuccess();
                 handleClose();
 
@@ -138,14 +138,14 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     mailing_list_ids: listIdsToSend
                 });
 
-                toast.success('Subscriber added successfully.');
+                notify.success('Subscriber added successfully.');
                 onSuccess();
                 handleClose();
             }
         } catch (err: any) {
             const errorMessage = err.message || 'An error occurred.';
             setError(errorMessage);
-            toast.error(errorMessage);
+            notify.error(errorMessage);
         }
     };
 

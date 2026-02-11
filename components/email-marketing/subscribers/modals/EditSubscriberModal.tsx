@@ -6,6 +6,7 @@ import { AppInput } from '@/components/ui/app-input';
 import { AppTextarea } from '@/components/ui/app-textarea';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useUpdateSubscriber } from '@/lib/hooks/useSubscribers';
+import { notify } from '@/lib/notifications';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
   Alert,
@@ -20,7 +21,6 @@ import {
   TextField
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 
 interface EditSubscriberModalProps {
   open: boolean;
@@ -97,13 +97,13 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
         }
       });
 
-      toast.success('Subscriber updated successfully.');
+      notify.success('Subscriber updated successfully.');
       onSuccess();
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update subscriber.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     }
   };
 

@@ -3,13 +3,16 @@
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
-import { AppTimePicker } from "@/components/ui/app-timepicker";
+// Removed AppTimePicker
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 import { format as formatDate, parse } from "date-fns";
 import React, { useState } from "react";
 
-import { DateCalendar } from "@mui/x-date-pickers";
+import { DateCalendar, StaticTimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
+import { enGB } from "date-fns/locale";
 import { Poppins } from "next/font/google";
 import { useRouter } from "next/navigation";
 
@@ -36,31 +39,13 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
     title: "",
     content: "",
     reminder_date: "",
-    reminder_time: "09:30 AM",
+    reminder_time: new Date().toISOString(),
   });
 
-  // Time state
-  const [hour, setHour] = useState("09");
-  const [min, setMin] = useState("30");
-  const [period, setPeriod] = useState<"AM" | "PM">("AM");
-
-  const syncTime = (h: string, m: string, p: "AM" | "PM") => {
-    setLocal((prev) => ({ ...prev, reminder_time: `${h}:${m} ${p}` }));
-  };
-
-  const handleHourChange = (val: string) => {
-    setHour(val);
-    syncTime(val, min, period);
-  };
-
-  const handleMinuteChange = (val: string) => {
-    setMin(val);
-    syncTime(hour, val, period);
-  };
-
-  const handlePeriodChange = (val: "AM" | "PM") => {
-    setPeriod(val);
-    syncTime(hour, min, val);
+  const handleTimeChange = (newTime: Date | null) => {
+    if (newTime) {
+      setLocal((prev) => ({ ...prev, reminder_time: newTime.toISOString() }));
+    }
   };
 
   const handleDateChange = (val: unknown) => {
@@ -141,17 +126,26 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
                 }}
               />
             </div>
-
-            <AppTimePicker
-              label="Time"
-              hour={hour}
-              minute={min}
-              period={period}
-              onHourChange={handleHourChange}
-              onMinuteChange={handleMinuteChange}
-              onPeriodChange={handlePeriodChange}
-              isBgWhite
-            />
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa]">
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
+                <StaticTimePicker
+                  orientation="portrait"
+                  value={local.reminder_time ? new Date(local.reminder_time) : null}
+                  onChange={handleTimeChange}
+                  ampm={false}
+                  slotProps={{
+                    actionBar: { actions: [] },
+                  }}
+                  sx={{
+                    backgroundColor: "#fafafa",
+                    borderRadius: "12px",
+                    "& .MuiPickersLayout-contentWrapper": {
+                      alignItems: "center",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
           </div>
         </div>
       </div>
@@ -197,22 +191,6 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         return;
       }
 
-      const convertTo24Hour = (time12h: string): string => {
-        if (!time12h) throw new Error("TIME_EMPTY");
-
-        const [time, modifier] = time12h.trim().split(" "); // "09:30", "AM"
-        let [hours, minutes] = time.split(":").map(Number);
-
-        if (isNaN(hours) || isNaN(minutes)) {
-          throw new Error("INVALID_TIME_FORMAT");
-        }
-
-        if (modifier === "PM" && hours !== 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-
-        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
-      };
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes`, {
         method: "POST",
         headers: {
@@ -223,7 +201,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
           title: data.title,
           content: data.content,
           reminder_date: data.reminder_date,
-          reminder_time: convertTo24Hour(data.reminder_time),
+          reminder_time: formatDate(new Date(data.reminder_time), "HH:mm:ss"),
         }),
       });
 
@@ -249,7 +227,7 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-150.25 max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="bg-white rounded-xl shadow-xl w-full max-w-170 max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <ModalContent onClose={onClose} onSubmit={handleSubmit} />

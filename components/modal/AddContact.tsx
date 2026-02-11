@@ -15,6 +15,7 @@ interface InputProps {
   value: string | null;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isRequired: boolean;
+  error?: string;
 }
 
 const InputField: React.FC<InputProps> = ({
@@ -23,6 +24,7 @@ const InputField: React.FC<InputProps> = ({
   onChange,
   placeholder,
   isRequired,
+  error,
 }) => {
   return (
     <div className="flex flex-col w-full gap-2">
@@ -38,7 +40,9 @@ const InputField: React.FC<InputProps> = ({
         onChange={onChange}
         placeholder={placeholder}
         isBgWhite
+        className={error ? "border-red-500" : ""}
       />
+      {error && <span className="text-red-500 text-sm">{error}</span>}
     </div>
   );
 };
@@ -73,6 +77,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     position: "",
     address: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleClose = () => {
     onClose();
@@ -84,6 +89,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       position: "",
       address: "",
     });
+    setErrors({});
   };
 
   // Selalu reset form saat modal terbuka
@@ -97,73 +103,65 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         position: "",
         address: "",
       });
+      setErrors({});
     }
   }, [open]);
 
   const validateFields = (data: ContactReq) => {
-    const errors: { label: string; message: string }[] = [];
+    const newErrors: Record<string, string> = {};
 
     // Name validation
     if (!data.name) {
-      errors.push({ label: "Name", message: "is required" });
+      newErrors.name = "is required";
     } else if (data.name.length < 3) {
-      errors.push({ label: "Name", message: "must be at least 3 characters" });
+      newErrors.name = "must be at least 3 characters";
     }
 
     // Phone validation
     const phoneRegex = /^[0-9]+$/;
     if (!data.phone_number) {
-      errors.push({ label: "Phone", message: "is required" });
+      newErrors.phone_number = "is required";
     } else {
       if (!phoneRegex.test(data.phone_number)) {
-        errors.push({ label: "Phone", message: "must contain only numbers" });
-      }
-      if (data.phone_number.length < 10 || data.phone_number.length > 15) {
-        errors.push({
-          label: "Phone",
-          message: "must be between 10 and 15 characters",
-        });
+        newErrors.phone_number = "must contain only numbers";
+      } else if (
+        data.phone_number.length < 10 ||
+        data.phone_number.length > 15
+      ) {
+        newErrors.phone_number = "must be between 10 and 15 characters";
       }
     }
 
     // Email validation
     if (!data.email) {
-      errors.push({ label: "Email", message: "is required" });
+      newErrors.email = "is required";
     }
 
     // Position validation
     if (!data.position) {
-      errors.push({ label: "Position", message: "is required" });
+      newErrors.position = "is required";
     } else if (data.position.length < 3) {
-      errors.push({
-        label: "Position",
-        message: "must be at least 3 characters",
-      });
+      newErrors.position = "must be at least 3 characters";
     }
 
     // Optional fields validation
     // Company validation
     if (!data.company) {
-      errors.push({ label: "Company", message: "is required" });
+      newErrors.company = "is required";
     } else if (data.company.length < 3) {
-      errors.push({
-        label: "Company",
-        message: "must be at least 3 characters",
-      });
+      newErrors.company = "must be at least 3 characters";
     }
 
     if (data.address && data.address.length < 6) {
-      errors.push({
-        label: "Address",
-        message: "must be at least 6 characters",
-      });
+      newErrors.address = "must be at least 6 characters";
     }
 
-    return errors;
+    return newErrors;
   };
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setErrors({});
     const token = await getToken();
     if (!token) {
       notify.error("Token not found", {
@@ -174,12 +172,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     }
     // Validasi data
     const validationErrors = validateFields(local);
-    if (validationErrors.length > 0) {
-      notify.warning("Validation Error", {
-        description: validationErrors
-          .map((e) => `• ${e.label} ${e.message}`)
-          .join("\n"),
-      });
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       setIsLoading(false);
       return;
     }
@@ -274,6 +268,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                     setLocal((s) => ({ ...s, name: e.target.value }))
                   }
                   placeholder="Enter name"
+                  error={errors.name}
                 />
 
                 <InputField
@@ -284,6 +279,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                     setLocal((s) => ({ ...s, email: e.target.value }))
                   }
                   placeholder="Enter email"
+                  error={errors.email}
                 />
 
                 <InputField
@@ -294,6 +290,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                     setLocal((s) => ({ ...s, company: e.target.value }))
                   }
                   placeholder="Enter company"
+                  error={errors.company}
                 />
               </div>
 
@@ -302,10 +299,24 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   isRequired
                   label="Phone Number"
                   value={local.phone_number}
-                  onChange={(e) =>
-                    setLocal((s) => ({ ...s, phone_number: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9]*$/.test(val)) {
+                      setLocal((s) => ({ ...s, phone_number: val }));
+
+                      let error = "";
+                      if (val.length < 10) {
+                        error = "must be between 10 and 15 characters";
+                      } else if (val.length > 15) {
+                        error = "must be between 10 and 15 characters";
+                        return setLocal((s) => ({ ...s, phone_number: val.slice(0, 15) }));
+                      }
+
+                      setErrors((prev) => ({ ...prev, phone_number: error }));
+                    }
+                  }}
                   placeholder="Enter phone number"
+                  error={errors.phone_number}
                 />
 
                 <InputField
@@ -316,6 +327,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                     setLocal((s) => ({ ...s, position: e.target.value }))
                   }
                   placeholder="Enter position"
+                  error={errors.position}
                 />
                 <InputField
                   isRequired={false}
@@ -325,6 +337,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                     setLocal((s) => ({ ...s, address: e.target.value }))
                   }
                   placeholder="Enter address"
+                  error={errors.address}
                 />
               </div>
             </div>

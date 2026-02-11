@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { DateCalendar, StaticTimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
+import { enGB } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { notify } from "@/lib/notifications";
-import { Modal, Box, TextareaAutosize } from "@mui/material";
+import { Modal, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
@@ -36,9 +39,7 @@ export default function AddTaskModal({
   const { token } = useAuth();
 
   // Time state
-  const [hour, setHour] = useState("09");
-  const [minute, setMinute] = useState("30");
-  const [period, setPeriod] = useState("AM");
+  const [time, setTime] = useState<Date | null>(new Date());
 
   const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
 
@@ -127,10 +128,9 @@ export default function AddTaskModal({
 
     // Construct due_date
     const dueDate = new Date(date);
-    let hours = parseInt(hour, 10);
-    if (period === "PM" && hours < 12) hours += 12;
-    if (period === "AM" && hours === 12) hours = 0;
-    dueDate.setHours(hours, parseInt(minute, 10), 0, 0);
+    if (time) {
+      dueDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
+    }
 
     try {
       const res = await fetch(
@@ -159,6 +159,7 @@ export default function AddTaskModal({
         setTaskName("");
         setDescription("");
         setDate(new Date());
+        setTime(new Date());
         setPriority("Medium");
         setSearchTerm("");
         setSelectedUser(null);
@@ -181,6 +182,7 @@ export default function AddTaskModal({
     setTaskName("");
     setDescription("");
     setDate(new Date());
+    setTime(new Date());
     setPriority("Medium");
     setSearchTerm("");
     setSelectedUser(null);
@@ -246,34 +248,28 @@ export default function AddTaskModal({
             </label>
 
             {/* Time Picker */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-16">
-                <Input
-                  value={hour}
-                  onChange={(e) => setHour(e.target.value)}
-                  className="text-center"
-                  maxLength={2}
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa] mb-4">
+              <LocalizationProvider
+                dateAdapter={AdapterDateFns}
+                adapterLocale={enGB}
+              >
+                <StaticTimePicker
+                  orientation="portrait"
+                  value={time}
+                  onChange={(newTime) => setTime(newTime)}
+                  ampm={false}
+                  slotProps={{
+                    actionBar: { actions: [] },
+                  }}
+                  sx={{
+                    backgroundColor: "#fafafa",
+                    borderRadius: "12px",
+                    "& .MuiPickersLayout-contentWrapper": {
+                      alignItems: "center",
+                    },
+                  }}
                 />
-              </div>
-              <span className="font-bold">:</span>
-              <div className="w-16">
-                <Input
-                  value={minute}
-                  onChange={(e) => setMinute(e.target.value)}
-                  className="text-center"
-                  maxLength={2}
-                />
-              </div>
-              <div className="w-20">
-                <select
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  className="w-full h-10 border border-gray-200 rounded-md px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              </div>
+              </LocalizationProvider>
             </div>
 
             {/* Calendar */}

@@ -219,12 +219,8 @@ export default function ContactsPage() {
       .filter((col) => col.id !== "selection" && col.id !== "action")
       .map((col) => col.id);
 
-    // Map column IDs to actual data keys if they differ
-    // id "position" -> data "job_title"
-    // id "company" -> data "company"
     const dataKeys = keys.map((key) => {
-      if (key === "position") return "job_title";
-      if (key === "company") return "company";
+      if (key === "phone") return "phone_number";
       return key;
     });
 
@@ -254,7 +250,74 @@ export default function ContactsPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printContent = filteredData;
+    const printWindow = window.open("", "", "height=600,width=800");
+
+    if (printWindow) {
+      printWindow.document.write("<html><head><title>Print Contacts</title>");
+      printWindow.document.write(`
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
+          .sub-text { font-size: 14px; color: #666; }
+          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
+          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
+          .date { color: #888; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      `);
+      printWindow.document.write("</head><body>");
+      printWindow.document.write(`
+        <div class="header">
+          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="page-info">
+          <h2 class="page-title">Contacts</h2>
+          <span class="date">${new Date().toLocaleDateString()}</span>
+        </div>
+      `);
+      printWindow.document.write("<table>");
+      printWindow.document.write(`
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Position</th>
+            <th>Company</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody>
+      `);
+
+      printContent.forEach((item) => {
+        printWindow.document.write(`
+          <tr>
+            <td>${item.name || "-"}</td>
+            <td>${item.phone_number || "-"}</td>
+            <td>${item.email || "-"}</td>
+            <td>${item.position || "-"}</td>
+            <td>${item.company || "-"}</td>
+            <td>${item.address || "-"}</td>
+          </tr>
+        `);
+      });
+
+      printWindow.document.write("</tbody></table>");
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   return (

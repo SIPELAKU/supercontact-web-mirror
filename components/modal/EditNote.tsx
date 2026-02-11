@@ -1,5 +1,3 @@
-"use client";
-
 import { notify } from "@/lib/notifications";
 import { Note } from "@/lib/models/types";
 import React, { useEffect, useRef, useState } from "react";
@@ -9,9 +7,12 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { AppDatePicker } from "@/components/ui/app-datepicker";
-import { AppTimePicker } from "@/components/ui/app-timepicker";
+// Removed AppTimePicker
 import { parse, format as formatDate } from "date-fns";
-import { DateCalendar } from "@mui/x-date-pickers";
+import { DateCalendar, StaticTimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
+import { enGB } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 
 interface ModalContentProps {
@@ -44,27 +45,29 @@ const ModalContent: React.FC<ModalContentProps> = ({
     title: "",
     content: "",
     date: "",
-    time: "",
+    time: new Date().toISOString(),
   });
-
-  // Time state
-  const [hour, setHour] = useState("09");
-  const [min, setMin] = useState("30");
-  const [period, setPeriod] = useState<"AM" | "PM">("AM");
-
-  const syncTime = (h: string, m: string, p: "AM" | "PM") => {
-    setLocal((prev) => ({ ...prev, time: `${h}:${m} ${p}` }));
-  };
 
   useEffect(() => {
     if (initialData) {
-      const timeStr = initialData.reminder_time || "09:30 AM";
-      // Simple parse for HH:mm AM/PM
-      const match = timeStr.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/i);
-      if (match) {
-        setHour(match[1]);
-        setMin(match[2]);
-        setPeriod(match[3].toUpperCase() as "AM" | "PM");
+      let timeStr = new Date().toISOString();
+      if (initialData.reminder_time) {
+        try {
+          // Try parsing if it's "HH:mm:ss" or "HH:mm"
+          const today = new Date();
+          const parsedTime = parse(initialData.reminder_time, "HH:mm:ss", today);
+          if (!isNaN(parsedTime.getTime())) {
+            timeStr = parsedTime.toISOString();
+          } else {
+            // Fallback for other formats if necessary, or keep current time
+            const parsedTimeSimple = parse(initialData.reminder_time, "HH:mm", today);
+            if (!isNaN(parsedTimeSimple.getTime())) {
+              timeStr = parsedTimeSimple.toISOString();
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing time:", e);
+        }
       }
 
       setLocal({
@@ -77,19 +80,10 @@ const ModalContent: React.FC<ModalContentProps> = ({
     }
   }, [initialData]);
 
-  const handleHourChange = (val: string) => {
-    setHour(val);
-    syncTime(val, min, period);
-  };
-
-  const handleMinuteChange = (val: string) => {
-    setMin(val);
-    syncTime(hour, val, period);
-  };
-
-  const handlePeriodChange = (val: "AM" | "PM") => {
-    setPeriod(val);
-    syncTime(hour, min, val);
+  const handleTimeChange = (newTime: Date | null) => {
+    if (newTime) {
+      setLocal((prev) => ({ ...prev, time: newTime.toISOString() }));
+    }
   };
 
   const handleDateChange = (val: unknown) => {
@@ -154,34 +148,46 @@ const ModalContent: React.FC<ModalContentProps> = ({
           </label>
 
           <div className="flex flex-col md:flex-row gap-3">
-            <DateCalendar
-              value={dateValue}
-              onChange={(newDate) => handleDateChange(newDate)}
-              sx={{
-                width: "100%",
-                "& .MuiPickersDay-root.Mui-selected": {
-                  backgroundColor: "#2563eb", // blue-600
-                },
-                "& .MuiPickersDay-root.Mui-selected:hover": {
-                  backgroundColor: "#1d4ed8",
-                },
-                "& .MuiPickersCalendarHeader-root": {
-                  paddingLeft: "16px",
-                  paddingRight: "8px",
-                },
-              }}
-            />
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa]">
+              <DateCalendar
+                value={dateValue}
+                onChange={(newDate) => handleDateChange(newDate)}
+                sx={{
+                  width: "100%",
+                  "& .MuiPickersDay-root.Mui-selected": {
+                    backgroundColor: "#2563eb", // blue-600
+                  },
+                  "& .MuiPickersDay-root.Mui-selected:hover": {
+                    backgroundColor: "#1d4ed8",
+                  },
+                  "& .MuiPickersCalendarHeader-root": {
+                    paddingLeft: "16px",
+                    paddingRight: "8px",
+                  },
+                }}
+              />
+            </div>
 
-            <AppTimePicker
-              label="Time"
-              hour={hour}
-              minute={min}
-              period={period}
-              onHourChange={handleHourChange}
-              onMinuteChange={handleMinuteChange}
-              onPeriodChange={handlePeriodChange}
-              isBgWhite
-            />
+            <div className="border border-gray-200 rounded-lg p-1 flex justify-center bg-[#fafafa]">
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
+                <StaticTimePicker
+                  orientation="portrait"
+                  value={local.time ? new Date(local.time) : null}
+                  onChange={handleTimeChange}
+                  ampm={false}
+                  slotProps={{
+                    actionBar: { actions: [] },
+                  }}
+                  sx={{
+                    backgroundColor: "#fafafa",
+                    borderRadius: "12px",
+                    "& .MuiPickersLayout-contentWrapper": {
+                      alignItems: "center",
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
           </div>
         </div>
       </div>
@@ -236,22 +242,6 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
         return;
       }
 
-      const convertTo24Hour = (time12h: string): string => {
-        if (!time12h) throw new Error("TIME_EMPTY");
-
-        const [time, modifier] = time12h.trim().split(" "); // "09:30", "AM"
-        let [hours, minutes] = time.split(":").map(Number);
-
-        if (isNaN(hours) || isNaN(minutes)) {
-          throw new Error("INVALID_TIME_FORMAT");
-        }
-
-        if (modifier === "PM" && hours !== 12) hours += 12;
-        if (modifier === "AM" && hours === 12) hours = 0;
-
-        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
-      };
-
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/notes?note_id=${id}`,
         {
@@ -264,7 +254,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
             title: data.title,
             content: data.content,
             reminder_date: data.date,
-            reminder_time: convertTo24Hour(data.time),
+            reminder_time: formatDate(new Date(data.time), "HH:mm:ss"),
           }),
         },
       );
@@ -291,7 +281,7 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-[601px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="bg-white rounded-xl shadow-xl w-full max-w-170 max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         <ModalContent

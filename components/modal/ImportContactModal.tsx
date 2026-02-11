@@ -151,7 +151,23 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || "Failed to upload contacts");
+        let errorMessage = text;
+        try {
+          const resJson = JSON.parse(text);
+          if (resJson?.error?.details && Array.isArray(resJson.error.details)) {
+            const uniqueErrors = Array.from(
+              new Set(
+                resJson.error.details.map(
+                  (d: any) => `${d.field}: ${d.message}`,
+                ),
+              ),
+            );
+            errorMessage = uniqueErrors.join(", ");
+          } else if (resJson?.error?.message) {
+            errorMessage = resJson.error.message;
+          }
+        } catch { }
+        throw new Error(errorMessage || "Failed to upload contacts");
       }
 
       notify.success(`Successfully imported ${contacts.length} contacts`);
@@ -159,7 +175,11 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
       onSuccess();
       onClose();
     } catch (error: any) {
-      notify.error("Failed to upload contacts to server. Please try again.");
+      console.log("error", error);
+      notify.error("Failed to upload contacts to server. Please try again.", {
+        description: error.message,
+        duration: 10000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +190,11 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-      onClick={onClose}
+      onClick={(e) => {
+        setFile(null);
+        e.stopPropagation();
+        onClose();
+      }}
     >
       <div
         className="bg-white rounded-xl shadow-xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
@@ -248,7 +272,10 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
           </div>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <AppButton onClick={onClose} variantStyle="outline" color="primary">
+            <AppButton onClick={() => {
+              setFile(null);
+              onClose();
+            }} variantStyle="outline" color="primary">
               Cancel
             </AppButton>
 

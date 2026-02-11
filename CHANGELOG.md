@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-02-11
+
+### Detail Versi 1.5.2
+
+#### ✨ General Enhancements & Bug Fixes
+
+- **Contact Management:**
+  - **CSV Export:** Fixed `phone` and `position` column mapping in Contact CSV export to ensure accurate data validation.
+  - **Import Validation:** Improved error handling in `ImportContactModal` to display specific validation messages from the backend (e.g., duplicate emails).
+  - **Phone Validation:** Implemented strict numeric input, length validation (10-15 digits), and real-time error feedback in `AddContact` and `EditContact` modals.
+  - **Print Layout:** Refined the "Print Contact List" feature with a clean HTML table layout, branding header, and improved readability.
+
+- **Note & Task Management:**
+  - **Time Picker Upgrade:** Replaced legacy time pickers with `StaticTimePicker` in `AddNote`, `EditNote`, and `AddTaskModal` for a consistent 24-hour format and better user experience.
+  - **Legacy Support:** Added fallback parsing for legacy time formats (e.g., "09:30 AM") in `EditNote` to prevent errors when editing older notes.
+
+- **Technical Fixes:**
+  - **Date Adapter:** Resolved version mismatch between `@mui/x-date-pickers` and `date-fns` v3 by switching to `AdapterDateFnsV3`.
+  - **Type Safety:** Enhanced type definitions for contact export and import structures.
+
+#### 📁 Files Modified
+
+- `app/contact/page.tsx`
+- `components/modal/ImportContactModal.tsx`
+- `components/modal/AddContact.tsx`
+- `components/modal/EditContact.tsx`
+- `components/modal/AddNote.tsx`
+- `components/modal/EditNote.tsx`
+- `components/modal/AddTaskModal.tsx`
+- `package.json`
+
 ---
+
+
 
 ## [1.5.1] - 2026-02-10
 

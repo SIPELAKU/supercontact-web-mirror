@@ -4,6 +4,7 @@
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
+import { notify } from '@/lib/notifications';
 import { Subscriber } from '@/lib/types/email-marketing';
 import {
   Box,
@@ -23,8 +24,7 @@ import {
   Tooltip
 } from '@mui/material';
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
   onAdd: () => void;
@@ -34,36 +34,46 @@ interface SubscribersTableProps {
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting }: SubscribersTableProps) => {
-  const { data, isLoading, error } = useSubscribers();
-
-  const [filteredRows, setFilteredRows] = useState<Subscriber[]>([]);
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+  const { data, isLoading, error, refetch } = useSubscribers();
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   const rows = data?.data?.contacts || [];
 
-  if (error) {
-    toast.error('Failed to fetch subscribers.');
-  }
-
-  // Filter rows based on search query
-  useEffect(() => {
+  // Filter rows based on search query using useMemo to avoid infinite loops
+  const filteredRows = useMemo(() => {
     if (searchQuery.trim() === '') {
-      setFilteredRows(rows);
+      return rows;
     } else {
       const query = searchQuery.toLowerCase();
-      const filtered = rows.filter(row =>
+      return rows.filter(row =>
         row.email.toLowerCase().includes(query) ||
         row.name?.toLowerCase().includes(query) ||
         row.company?.toLowerCase().includes(query)
       );
-      setFilteredRows(filtered);
     }
-    setPage(0); // Reset to first page when searching
-  }, [searchQuery, rows.length]); // Use rows.length instead of rows
+  }, [searchQuery, rows]);
+
+  // Reset to first page when searching
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
+
+  // Handle errors in an effect
+  useEffect(() => {
+    if (error) {
+      notify.error('Failed to fetch subscribers.');
+    }
+  }, [error]);
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {

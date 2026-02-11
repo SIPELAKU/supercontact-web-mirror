@@ -253,22 +253,20 @@ export default function PipelineBoard() {
     const updated = [...stages]
     updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] }
 
-    if (overId.startsWith("column-")) {
-      const toStageName = overId.replace("column-", "")
-      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName)
+    if (overId.startsWith("column-") || stages.some(s => s.name === overId)) {
+      const toStageName = overId.startsWith("column-") ? overId.replace("column-", "") : overId;
+      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName);
 
-      if (from.stageIndex === toStageIndex) return
+      // Even if from.stageIndex === toStageIndex (moved by onDragOver), 
+      // we still check if it needs a backend update vs originalStage.
+      if (from.stageIndex !== toStageIndex) {
+        updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] }
+        const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
+        updated[toStageIndex].deals.push(moved)
 
-
-
-      updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] }
-
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-      updated[toStageIndex].deals.push(moved)
-
-
-      const updatedWithTotals = computeStageTotals(updated)
-      setStages(updatedWithTotals)
+        const updatedWithTotals = computeStageTotals(updated)
+        setStages(updatedWithTotals)
+      }
 
       if (originalStage && originalStage !== toStageName) {
         try {
@@ -277,10 +275,9 @@ export default function PipelineBoard() {
         } catch (error) {
           console.error("Failed to update stage:", error);
           notify.error("Failed to update stage. Reverting...");
-          await fetchPipeline(); // Revert local state by re-fetching
+          await fetchPipeline();
         }
       }
-
       return
     }
 
@@ -467,7 +464,7 @@ export default function PipelineBoard() {
                 <div className="w-80 shrink-0 flex flex-col max-h-[calc(100vh-220px)]">
 
                   <div
-                    className={`rounded-xl p-4 flex flex-col h-full shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
+                    className={`rounded-xl p-4 flex flex-col h-full flex-grow shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
                   >
 
                     <div className="flex items-center justify-between mb-4 px-1">
@@ -499,7 +496,7 @@ export default function PipelineBoard() {
                           items={dealsToShow.map((d) => d.id)}
                           strategy={verticalListSortingStrategy}
                         >
-                          <div className="flex flex-col gap-3 min-h-25 overflow-y-auto custom-scrollbar pr-2 -mr-2">
+                          <div className="flex flex-col gap-3 flex-grow min-h-25 overflow-y-auto custom-scrollbar pr-2 -mr-2">
                             {stage.deals.length === 0 && (
                               <div className="h-24 flex shrink-0 items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
                                 Drag deals here

@@ -3,7 +3,7 @@
 import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 import SubscribersTable from '@/components/email-marketing/subscribers/SubscribersTable';
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
@@ -59,11 +59,11 @@ export default function SubscribersClient() {
         await deleteMutation.mutateAsync(subscriber.id);
       }
 
-      toast.success(`${selectedToDelete.length} subscriber(s) deleted successfully.`);
+      notify.success(`${selectedToDelete.length} subscriber(s) deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete subscriber(s).';
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setConfirmOpen(false);
       setSelectedToDelete(null);

@@ -22,7 +22,7 @@ export { default as CompanyAbout } from "./company/detail-company/CompanyAbout";
 export { default as CompanyDetailStats } from "./company/detail-company/CompanyDetailStats";
 export { default as OrganizationStructureCard } from "./company/detail-company/OrganizationStructureCard";
 export { default as RecentSignals } from "./company/detail-company/RecentSignals";
-export { default as SimiliarCompaniesCard } from "./company/detail-company/SimiliarCompaniesCard";
+export { default as CompanyDocumentsCard } from "./company/detail-company/CompanyDocumentsCard";
 
 export { default as CompanyKeyPeopleCard } from "./company/detail-company/KeyPeopleCard";
 export { default as CompanyKeyPeopleCardSkeleton } from "./company/detail-company/KeyPeopleCardSkeleton";

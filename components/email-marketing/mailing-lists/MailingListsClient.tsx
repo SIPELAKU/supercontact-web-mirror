@@ -12,6 +12,7 @@ import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingList } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
+import { DraftNotice } from '@/components/ui/draft-notice';
 
 export default function MailingListsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -74,9 +75,12 @@ export default function MailingListsClient() {
       />
 
       <div className="mb-6">
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-          Mailing Lists
-        </Typography>
+        <div className="flex items-center gap-3">
+          <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
+            Mailing Lists
+          </Typography>
+          <DraftNotice type="partial" message="Mailing lists management is active. Audience analytics are coming soon!" />
+        </div>
         <Typography variant="body2" color="text.secondary">
           Manage your mailing lists
         </Typography>

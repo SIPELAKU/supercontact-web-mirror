@@ -11,6 +11,7 @@ import EditCampaignModal from '@/components/email-marketing/campaigns/modals/Edi
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
+import { DraftNotice } from '@/components/ui/draft-notice';
 
 export default function CampaignsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -78,9 +79,12 @@ export default function CampaignsClient() {
       />
 
       <div className="mb-6">
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-          Campaign
-        </Typography>
+        <div className="flex items-center gap-3">
+          <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
+            Campaign
+          </Typography>
+          <DraftNotice type="partial" message="Campaign management is active. Analytics and detailed statistics are coming soon!" />
+        </div>
         <Typography variant="body2" color="text.secondary">
           Manage your email marketing campaigns
         </Typography>

@@ -23,6 +23,7 @@ import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { cn } from "@/lib/utils";
+import { DraftNotice } from "@/components/ui/draft-notice";
 
 // --- Dummy Data ---
 
@@ -180,7 +181,12 @@ export default function UnifiedInbox() {
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in duration-500">
             <PageHeader
-                title="Unified Inbox"
+                title={
+                    <div className="flex items-center gap-3">
+                        Unified Inbox
+                        <DraftNotice type="dummy" />
+                    </div>
+                }
                 description="Manage all your client communications in one place."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/" },

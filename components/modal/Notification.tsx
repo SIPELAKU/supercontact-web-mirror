@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
 import { AppButton } from "../ui/app-button";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { useAuth } from "@/lib/context/AuthContext";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
 
 interface NotificationProps {
   open: boolean;
@@ -12,7 +15,34 @@ interface NotificationProps {
 
 export default function Notification({ open, onClose }: NotificationProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { getToken, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!open || !isAuthenticated) return;
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const res = await fetchNotifications(token);
+        if (res.success) {
+          setNotifications(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to load notifications:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadNotifications();
+  }, [open, isAuthenticated, getToken]);
 
   useEffect(() => {
     setMounted(true);
@@ -33,6 +63,32 @@ export default function Notification({ open, onClose }: NotificationProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open, onClose]);
 
+  const handleMarkAllRead = async () => {
+    try {
+      const token = await getToken();
+      const res = await markAllNotificationsAsRead(token);
+      if (res.success) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      }
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      const token = await getToken();
+      const res = await markNotificationAsRead(token, id);
+      if (res.success) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+  };
+
   if (!mounted || !open) return null;
 
   return createPortal(
@@ -45,58 +101,39 @@ export default function Notification({ open, onClose }: NotificationProps) {
         ref={modalRef}
         className="absolute right-4 top-16 w-[360px] max-w-[calc(100vw-2rem)] rounded-xl bg-white shadow-xl border overflow-hidden"
       >
-        {/* header */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-sm">Notifications</h2>
           </div>
-          <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">2 New</span>
+          {notifications.filter(n => !n.is_read).length > 0 && (
+            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+              {notifications.filter(n => !n.is_read).length} New
+            </span>
+          )}
         </div>
 
         {/* content */}
         <div className="max-h-[70vh] overflow-y-auto">
-          {/* Today */}
-          <SectionLabel label="Today" action="Mark All as Read" />
-
-          <NotificationItem
-            tag="CRM Alerts"
-            tagColor="bg-cyan-100 text-cyan-700"
-            title="Kira Knox shared feedback on the new lead form"
-            time="5 Dec 2025 at 14:00"
-          />
-
-          <NotificationItem
-            tag="Update"
-            tagColor="bg-purple-100 text-purple-700"
-            title="Jane Cooper changed a deal status"
-            time="5 Dec 2025 at 09:41"
-          />
-
-          <NotificationItem
-            tag="Reminder"
-            tagColor="bg-amber-100 text-amber-700"
-            title="Sara Lamb has a meeting scheduled"
-            time="5 Dec 2025 at 09:00"
-          />
-
-          {/* Yesterday */}
-          <div className="bg-gray-50">
-            <SectionLabel label="Yesterday" />
-          </div>
-
-          <NotificationItem
-            tag="Mention"
-            tagColor="bg-emerald-100 text-emerald-700"
-            title="Budi Santoso mentioned you"
-            time="4 Dec 2025 at 20:07"
-          />
-
-          <NotificationItem
-            tag="Update"
-            tagColor="bg-purple-100 text-purple-700"
-            title="John Doe updated the project status"
-            time="4 Dec 2025 at 14:32"
-          />
+          {loading ? (
+            <div className="p-8 text-center text-sm text-gray-500">Loading notifications...</div>
+          ) : notifications.length === 0 ? (
+            <div className="p-8 text-center text-sm text-gray-500">No notifications yet</div>
+          ) : (
+            <>
+              <SectionLabel label="Recent" action="Mark All as Read" onAction={handleMarkAllRead} />
+              {notifications.map((notif) => (
+                <NotificationItem
+                  key={notif.id}
+                  tag={notif.type || "Update"}
+                  tagColor={getTagColor(notif.type)}
+                  title={notif.title}
+                  time={formatTime(notif.created_at)}
+                  isRead={notif.is_read}
+                  onClick={() => handleMarkRead(notif.id)}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         {/* footer */}
@@ -113,11 +150,11 @@ export default function Notification({ open, onClose }: NotificationProps) {
   );
 }
 
-function SectionLabel({ label, action }: { label: string; action?: string }) {
+function SectionLabel({ label, action, onAction }: { label: string; action?: string; onAction?: () => void }) {
   return (
     <div className="flex items-center justify-between px-4 py-2 text-xs text-gray-500">
       <span>{label}</span>
-      {action && <button className="text-indigo-600 hover:underline">{action}</button>}
+      {action && <button onClick={onAction} className="text-indigo-600 hover:underline">{action}</button>}
     </div>
   );
 }
@@ -127,19 +164,45 @@ function NotificationItem({
   tagColor,
   title,
   time,
+  isRead,
+  onClick,
 }: {
   tag: string;
   tagColor: string;
   title: string;
   time: string;
+  isRead?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <div className="px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer">
+    <div
+      onClick={onClick}
+      className={`px-4 py-3 border-b last:border-b-0 cursor-pointer ${isRead ? 'opacity-70' : 'bg-blue-50/30 hover:bg-gray-50'}`}
+    >
       <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${tagColor}`}>
         {tag}
       </span>
-      <p className="text-sm font-medium text-gray-800">{title}</p>
+      <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{title}</p>
       <p className="text-xs text-gray-400 mt-1">{time}</p>
     </div>
   );
+}
+
+function getTagColor(type: string) {
+  switch (type?.toLowerCase()) {
+    case 'update': return 'bg-purple-100 text-purple-700';
+    case 'reminder': return 'bg-amber-100 text-amber-700';
+    case 'mention': return 'bg-emerald-100 text-emerald-700';
+    case 'alert': return 'bg-cyan-100 text-cyan-700';
+    default: return 'bg-gray-100 text-gray-700';
+  }
+}
+
+function formatTime(dateString: string) {
+  if (!dateString) return "";
+  try {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  } catch (e) {
+    return dateString;
+  }
 }

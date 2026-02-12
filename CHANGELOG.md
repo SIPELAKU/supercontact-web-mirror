@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-02-12
+
+### Detail Versi 1.6.1
+
+#### ✨ Notification System & Profile Enhancements
+
+- **Integrated Notification System:**
+  - **Real-time Data:** Replaced mock notifications with real backend data using `/notifications` and `/notifications/unread-count` endpoints.
+  - **Read Status Management:** Implemented "Mark as Read" (individual) and "Mark All as Read" functionalities hitting backend `PATCH` endpoints.
+  - **Dynamic UI:** Added a live unread count badge to the Topbar and unread highlights (bold text/blue background) in both the modal and main page.
+  - **Filtering:** Added an "Only show unread" toggle on the `/notifications` page for better user focus.
+
+- **Profile & Avatar Management:**
+  - **Binary Avatar Upload:** Implemented new `uploadAvatar` API to support binary image uploads to `/user-profile/avatar`.
+  - **Unified Save Flow:** Integrated avatar upload directly into the "Save Changes" workflow in Profile Settings.
+  - **Premium Notifications:** Migrated all profile-related success and error messages to use the standard `notify` utility for a consistent, premium UI experience.
+
+- **Technical Fixes:**
+  - **Proxy Configuration:** Updated `BACKEND_URL` environment variable usage in `route.ts` and `next.config.mjs` for better Vercel compatibility.
+  - **Robust API Parsing:** Enhanced API layers to handle nested `data.notifications` structures and various unread count field names.
+  - **Bug Fix:** Resolved a `ReferenceError` in `NotificationItem` caused by missing prop destructuring.
+
+#### 📁 Files Modified
+
+- `lib/api/notifications.ts` - New read status API functions & response standardization.
+- `lib/api/users.ts` - New avatar upload API and profile update refinements.
+- `components/modal/Notification.tsx` - Backend integration & UI fixes.
+- `app/notifications/page.tsx` - Full backend sync & filtering logic.
+- `components/profile-user-setting/ProfileUserSettingClient.tsx` - Avatar upload & notify integration.
+- `components/layout/Topbar.tsx` - Dynamic unread count fetching.
+- `app/api/proxy/[...path]/route.ts` - Env variable alignment.
+- `next.config.mjs` - Proxy rewrite stability fix.
 ## [1.6.0] - 2026-02-12
 
 ### Detail Versi 1.6.0

@@ -25,13 +25,10 @@ export {
     type ContactResponse
 } from './contacts';
 
-// Users & Profile API
+// User/Profile API
 export {
-    fetchProfile, fetchUsers, updateProfile, type ProfileData,
-    type ProfileResponse,
-    type UpdateProfileData,
-    type UpdateProfileResponse, type User,
-    type UserResponse
+    fetchProfile, updateProfile, uploadAvatar,
+    type User, type UserResponse, type ProfileData, type UpdateProfileData, type ProfileResponse, type UpdateProfileResponse
 } from './users';
 
 // Notes API
@@ -70,3 +67,7 @@ export {
     sendQuotationEmail, updateQuotation
 } from './quotations';
 
+// Notifications API
+export {
+    fetchNotifications, fetchUnreadCount, markNotificationAsRead, markAllNotificationsAsRead, type NotificationData, type NotificationsResponse, type UnreadCountResponse
+} from './notifications';

@@ -16,8 +16,8 @@ import {
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
-import toast from "react-hot-toast";
-import { fetchProfile, updateProfile, UpdateProfileData } from "@/lib/api";
+import { notify } from "@/lib/notifications";
+import { fetchProfile, updateProfile, UpdateProfileData, uploadAvatar } from "@/lib/api";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
@@ -26,19 +26,24 @@ export default function ProfileUserSettingClient() {
   const { getToken } = useAuth();
   const [tab, setTab] = useState("account");
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Profile form data
   const [profileData, setProfileData] = useState<UpdateProfileData>({
     fullname: "",
     email: "",
-    phone: "",
     company: "",
     country: "",
     language: "",
-    skype: "",
     bio: "",
+    address: "",
+    currency: "",
+    state: "",
+    timezone: "",
+    zip_code: "",
+    phone: "",
+    skype: "",
   });
 
   // Password form data
@@ -65,19 +70,27 @@ export default function ProfileUserSettingClient() {
           setProfileData({
             fullname: profile.fullname || "",
             email: profile.email || "",
-            phone: profile.phone || "",
             company: profile.company || "",
             country: profile.country || "",
             language: profile.language || "",
-            skype: profile.skype || "",
             bio: profile.bio || "",
+            address: profile.address || "",
+            currency: profile.currency || "",
+            state: profile.state || "",
+            timezone: profile.timezone || "",
+            zip_code: profile.zip_code || "",
+            phone: profile.phone || "",
+            skype: profile.skype || "",
           });
+          if (profile.avatar_url) {
+            setAvatar(profile.avatar_url);
+          }
         } else {
-          toast.error("Failed to load profile data");
+          notify.error("Failed to load profile data");
         }
       } catch (err) {
         const errorMessage = handleError(err, "Load Profile");
-        toast.error(errorMessage);
+        notify.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -101,16 +114,29 @@ export default function ProfileUserSettingClient() {
 
       const token = await getToken();
       if (!token) throw new Error("No authentication token");
+
+      // 1. Upload Avatar if changed
+      if (avatarFile) {
+        try {
+          await uploadAvatar(token, avatarFile);
+          setAvatarFile(null); // Clear file after successful upload
+        } catch (avatarErr: any) {
+          console.error("Avatar upload failed, continuing with profile update...", avatarErr);
+          // We continue with profile update even if avatar fails
+        }
+      }
+
+      // 2. Update Profile Data
       const response = await updateProfile(token, profileData);
 
       if (response.success) {
-        toast.success("Profile updated successfully!");
+        notify.success("Profile updated successfully!");
       } else {
-        toast.error("Failed to update profile");
+        notify.error("Failed to update profile");
       }
     } catch (err) {
       const errorMessage = handleError(err, "Update Profile");
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -128,18 +154,26 @@ export default function ProfileUserSettingClient() {
         setProfileData({
           fullname: profile.fullname || "",
           email: profile.email || "",
-          phone: profile.phone || "",
           company: profile.company || "",
           country: profile.country || "",
           language: profile.language || "",
-          skype: profile.skype || "",
           bio: profile.bio || "",
+          address: profile.address || "",
+          currency: profile.currency || "",
+          state: profile.state || "",
+          timezone: profile.timezone || "",
+          zip_code: profile.zip_code || "",
+          phone: profile.phone || "",
+          skype: profile.skype || "",
         });
-        toast.success("Profile data reset to original values");
+        if (profile.avatar_url) {
+          setAvatar(profile.avatar_url);
+        }
+        notify.success("Profile data reset to original values");
       }
     } catch (err) {
       const errorMessage = handleError(err, "Reset Profile");
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -152,6 +186,7 @@ export default function ProfileUserSettingClient() {
     const reader = new FileReader();
     reader.onload = () => setAvatar(reader.result as string);
     reader.readAsDataURL(file);
+    setAvatarFile(file);
   };
 
   const [apiKeys] = useState<
@@ -255,7 +290,7 @@ export default function ProfileUserSettingClient() {
               {/* Avatar */}
               <Stack direction="row" spacing={3} alignItems="center" mb={4}>
                 <Avatar
-                  src={avatar ?? "/assets/avatar-profile.png"}
+                  src={avatar || "/assets/avatar-profile.png"}
                   sx={{ width: 80, height: 80 }}
                 />
 
@@ -273,7 +308,10 @@ export default function ProfileUserSettingClient() {
                     <AppButton
                       variantStyle="outline"
                       color="danger"
-                      onClick={() => setAvatar(null)}
+                      onClick={() => {
+                        setAvatar(null);
+                        setAvatarFile(null);
+                      }}
                     >
                       Reset
                     </AppButton>
@@ -288,7 +326,7 @@ export default function ProfileUserSettingClient() {
               <Stack spacing={3}>
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                   <Stack width={"100%"}>
-                    <label htmlFor="full-name">Full Name</label>
+                    <label htmlFor="fullname">Full Name</label>
                     <AppInput
                       fullWidth
                       value={profileData.fullname}
@@ -310,6 +348,90 @@ export default function ProfileUserSettingClient() {
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                   <Stack width={"100%"}>
+                    <label htmlFor="company">Company</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.company}
+                      onChange={handleInputChange("company")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="country">Country</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.country}
+                      onChange={handleInputChange("country")}
+                      isBgWhite
+                    />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+                  <Stack width={"100%"}>
+                    <label htmlFor="address">Address</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.address}
+                      onChange={handleInputChange("address")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="state">State</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.state}
+                      onChange={handleInputChange("state")}
+                      isBgWhite
+                    />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+                  <Stack width={"100%"}>
+                    <label htmlFor="zip_code">Zip Code</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.zip_code}
+                      onChange={handleInputChange("zip_code")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="currency">Currency</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.currency}
+                      onChange={handleInputChange("currency")}
+                      isBgWhite
+                    />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+                  <Stack width={"100%"}>
+                    <label htmlFor="language">Language</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.language}
+                      onChange={handleInputChange("language")}
+                      isBgWhite
+                    />
+                  </Stack>
+                  <Stack width={"100%"}>
+                    <label htmlFor="timezone">Timezone</label>
+                    <AppInput
+                      fullWidth
+                      value={profileData.timezone}
+                      onChange={handleInputChange("timezone")}
+                      isBgWhite
+                    />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+                  <Stack width={"100%"}>
                     <label htmlFor="phone">Phone Number</label>
                     <AppInput
                       type="tel"
@@ -320,18 +442,6 @@ export default function ProfileUserSettingClient() {
                     />
                   </Stack>
                   <Stack width={"100%"}>
-                    <label htmlFor="company">Company</label>
-                    <AppInput
-                      fullWidth
-                      value={profileData.company}
-                      onChange={handleInputChange("company")}
-                      isBgWhite
-                    />
-                  </Stack>
-                </Stack>
-
-                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <Stack width={"100%"}>
                     <label htmlFor="skype">Skype</label>
                     <AppInput
                       fullWidth
@@ -340,59 +450,21 @@ export default function ProfileUserSettingClient() {
                       isBgWhite
                     />
                   </Stack>
-                  <Stack width={"100%"}>
-                    <label htmlFor="country">Country</label>
-                    <AppSelect
-                      isBgWhite
-                      fullWidth
-                      value={profileData.country}
-                      onChange={(e: any) =>
-                        handleInputChange("country")({
-                          target: { value: e.target.value },
-                        } as any)
-                      }
-                      placeholder="Select Country"
-                      options={[
-                        { value: "USA", label: "USA" },
-                        { value: "Indonesia", label: "Indonesia" },
-                        { value: "Singapore", label: "Singapore" },
-                        { value: "Malaysia", label: "Malaysia" },
-                      ]}
-                    />
-                  </Stack>
                 </Stack>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <Stack width={"100%"}>
-                    <label htmlFor="language">Language</label>
-                    <AppSelect
-                      isBgWhite
-                      fullWidth
-                      value={profileData.language}
-                      onChange={(e: any) =>
-                        handleInputChange("language")({
-                          target: { value: e.target.value },
-                        } as any)
-                      }
-                      placeholder="Select Language"
-                      options={[
-                        { value: "English", label: "English" },
-                        { value: "Indonesia", label: "Indonesia" },
-                      ]}
-                    />
-                  </Stack>
-                  <Stack width={"100%"}>
-                    <label htmlFor="bio">Bio</label>
-                    <AppInput
-                      isBgWhite
-                      fullWidth
-                      multiline
-                      rows={1}
-                      value={profileData.bio}
-                      onChange={handleInputChange("bio")}
-                      placeholder="Tell us about yourself"
-                    />
-                  </Stack>
+
+                <Stack width={"100%"}>
+                  <label htmlFor="bio">Bio</label>
+                  <AppInput
+                    isBgWhite
+                    fullWidth
+                    multiline
+                    rows={3}
+                    height="auto"
+                    value={profileData.bio}
+                    onChange={handleInputChange("bio")}
+                    placeholder="Tell us about yourself"
+                  />
                 </Stack>
               </Stack>
 

@@ -133,7 +133,7 @@ const menuData: MenuSection[] = [
           { name: "Mailing List", path: "/email-marketing/mailing-lists" },
         ],
       },
-      {
+      /* {
         name: "Omnichannel",
         icon: OmnichannelIcon,
         children: [
@@ -151,14 +151,14 @@ const menuData: MenuSection[] = [
           { name: "Company", path: "/data-intelligence/company-intelligence" },
           { name: "Individual", path: "/data-intelligence/individual" },
         ],
-      },
+      }, */
       {
         name: "Analytics",
         icon: BarChart3,
         children: [
           { name: "Dashboard", path: "/analytics/dashboard" },
-          { name: "Customer Insight", path: "/analytics/customer-insight" },
-          { name: "Report Export", path: "/analytics/report-export" },
+          // { name: "Customer Insight", path: "/analytics/customer-insight" },
+          // { name: "Report Export", path: "/analytics/report-export" },
         ],
       },
       {

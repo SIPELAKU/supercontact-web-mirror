@@ -22,6 +22,7 @@ const ProfileDropdown = () => {
     fullname: string;
     email: string;
     role?: string;
+    avatarUrl?: string;
   } | null>(null);
   const { logout, getToken, userRole } = useAuth();
 
@@ -39,7 +40,8 @@ const ProfileDropdown = () => {
           setProfileData({
             fullname: response.data.fullname || "User",
             email: response.data.email || "user@example.com",
-            role: userRole || response.data.role || "User"
+            role: userRole || response.data.role || "User",
+            avatarUrl: response.data.avatar_url
           });
         }
       } catch (error) {
@@ -96,7 +98,7 @@ const ProfileDropdown = () => {
         }}
       >
         <Avatar
-          src="/assets/profile-icon.png"
+          src={profileData?.avatarUrl || "/assets/profile-icon.png"}
           alt="profile"
           sx={{ width: 35, height: 35, bgcolor: "#5479EE", color: "#fff" }}
         >
@@ -127,6 +129,7 @@ const ProfileDropdown = () => {
         {/* USER HEADER */}
         <Box display="flex" alignItems="center" gap={2} mb={2}>
           <Avatar
+            src={profileData?.avatarUrl || ""}
             sx={{ width: 48, height: 48, bgcolor: "#5479EE", color: "#fff" }}
           >
             {profileData ? getInitials(profileData.fullname) : "U"}
@@ -232,7 +235,7 @@ const ProfileDropdown = () => {
           </Box>
 
           {/* Item 3 */}
-          <Box
+          {/* <Box
             component={Link}
             href="/tasks"
             onClick={handleClose}
@@ -268,7 +271,7 @@ const ProfileDropdown = () => {
                 To-do & Daily Tasks
               </Typography>
             </Box>
-          </Box>
+          </Box> */}
         </Stack>
 
         {/* LOGOUT BUTTON */}

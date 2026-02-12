@@ -92,7 +92,7 @@ export interface BreadcrumbItem {
 }
 
 export interface PageHeaderProps {
-  title: string;
+  title: React.ReactNode;
   description?: string;
   breadcrumbs: BreadcrumbItem[];
   image?: string | StaticImageData;

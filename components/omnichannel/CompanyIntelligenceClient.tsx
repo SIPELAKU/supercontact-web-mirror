@@ -19,6 +19,8 @@ import {
 } from "@/lib/types/Company";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
+import ExportPopover from "./ExportPopover";
+import { notify } from "@/lib/notifications";
 
 const INDUSTRY_OPTIONS: IndustryOption[] = [
   { label: "All Industries", value: "all" },
@@ -114,6 +116,123 @@ export default function CompanyIntelligenceClient({
     return filteredAllCompanies.slice(start, end);
   }, [filteredAllCompanies, page, rowsPerPage]);
 
+  const columns = [
+    { id: "name", label: "Company Name" },
+    { id: "industry", label: "Industry" },
+    { id: "location", label: "Location" },
+    { id: "employees", label: "Employees" },
+    { id: "insightScore", label: "Insight Score" },
+    { id: "status", label: "Status" },
+  ];
+
+  const handleExportCSV = () => {
+    if (!paginatedCompany || paginatedCompany.length === 0) return notify.error("Error", {
+      description: "Company data is empty"
+    })
+    const headers = columns.map((col) => col.label);
+    const keys = columns.map((col) => col.id);
+
+    const getNestedValue = (obj: any, path: string) => {
+      return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    };
+
+    const csvContent = [
+      headers.join(","),
+      ...paginatedCompany.map((item) =>
+        keys
+          .map((key) => {
+            const val = getNestedValue(item, key) || "";
+            return `"${String(val).replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "companies_export.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handlePrint = () => {
+    const printContent = paginatedCompany;
+    console.log("printContent", printContent)
+    const printWindow = window.open("", "", "height=600,width=800");
+
+    if (printWindow) {
+      printWindow.document.write("<html><head><title>Print Company Data Intelligence</title>");
+      printWindow.document.write(`
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
+            .sub-text { font-size: 14px; color: #666; }
+            .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
+            .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+            .page-title { font-size: 20px; font-weight: bold; margin: 0; }
+            .date { color: #888; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            @media print {
+              body { -webkit-print-color-adjust: exact; }
+            }
+          </style>
+        `);
+      printWindow.document.write("</head><body>");
+      printWindow.document.write(`
+          <div class="header">
+            <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
+          </div>
+          <div class="divider"></div>
+          <div class="page-info">
+            <h2 class="page-title">Company Data Intelligence</h2>
+            <span class="date">${new Date().toLocaleDateString()}</span>
+          </div>
+        `);
+      printWindow.document.write("<table>");
+      printWindow.document.write(`
+          <thead>
+            <tr>
+              <th>Company Name</th>
+              <th>Industry</th>
+              <th>Location</th>
+              <th>Employees</th>
+              <th>Insight Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+        `);
+
+      printContent.forEach((item) => {
+        printWindow.document.write(`
+            <tr>
+              <td>${item.name || "-"}</td>
+              <td>${item.industry || "-"}</td>
+              <td>${item.location || "-"}</td>
+              <td>${item.employees || "-"}</td>
+              <td>${item.insightScore || 0}</td>
+              <td>${item.status || "-"}</td>
+            </tr>
+          `);
+      });
+
+      printWindow.document.write("</tbody></table>");
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       {/* Header */}
@@ -163,9 +282,10 @@ export default function CompanyIntelligenceClient({
               Add Company
             </AppButton>
 
-            <AppButton variantStyle="outline" color="gray" startIcon={<Upload />}>
-              Export
-            </AppButton>
+            <ExportPopover
+              onExportCSV={handleExportCSV}
+              onPrint={handlePrint}
+            />
           </div>
         </div>
 

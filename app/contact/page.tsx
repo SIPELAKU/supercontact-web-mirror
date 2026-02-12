@@ -29,6 +29,7 @@ import {
 } from "@mui/material";
 import { Spinner } from "@/components/ui/spinner";
 import PageHeader from "@/components/ui/page-header";
+import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 
 export default function ContactsPage() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -521,22 +522,8 @@ export default function ContactsPage() {
                         }}
                       >
                         <div className="flex gap-3 text-gray-600">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(item);
-                            }}
-                          >
-                            <Pencil className="cursor-pointer hover:text-purple-600" size={18} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item);
-                            }}
-                          >
-                            <Trash2 className="cursor-pointer text-red-500" size={18} />
-                          </button>
+                          <EditButton onClick={() => handleEdit(item)} />
+                          <DeleteButton onClick={() => handleDelete(item)} />
                         </div>
                       </TableCell>
                     )}

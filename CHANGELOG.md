@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-02-13
+
+### Detail Versi 1.6.2
+
+#### ✨ Universal Export Functionality
+
+- **Module-wide Export:**
+  - Implemented `ExportPopover` component across key system modules: **Support Tickets**, **Omnichannel**, **Organization (Departments)**, and **User Management**.
+  - Users can now export table data directly from these pages for better data portability and reporting.
+
+#### 🏢 Organization & Department Management
+
+- **Enhanced Structure:**
+  - Refactored Department management into dedicated sub-components (`DepartmentsTableList`, `DepartmentsTableFilter`) for better maintainability and performance.
+  - Improved "Add Department" and "Department Info" modals for a smoother user experience.
+  - Updated API (`lib/api/departments.ts`) and hooks (`useDepartments`) to support these UI improvements.
+
+#### 👥 User & Role Management
+
+- **User Management Enhancements:**
+  - Refined User Management UI with updated `TableListUsers` and `UsersClient`.
+  - Upgraded "Add User" and "User Detail" modals.
+  - Improved User interaction statistics with `card-stat-user` updates.
+- **Role Permissions:**
+  - Enhanced UX for editing and deleting role permissions (`EditPermissionsButton`, `DeleteRolesPermissionsButton`).
+
+#### ♻️ UI Standardization & Refactor
+
+- **Table Consistency:**
+  - Standardized table implementations in **Email Marketing** (Campaigns, Mailing Lists, Subscribers), **Products**, and **Support Tickets**.
+- **Component Updates:**
+  - Updated `card-stat` and `app-action-buttons-table` for consistent styling and behavior across the application.
+
+#### 📁 Files Created
+
+- `app/support/tickets/ExportPopover.tsx`
+- `components/omnichannel/ExportPopover.tsx`
+- `components/organization/ExportPopover.tsx`
+- `components/users/ExportPopover.tsx`
+- `components/ui/app-action-buttons-table.tsx`
+
+#### 📁 Highlights of Modified Files
+
+- `components/users/UsersClient.tsx`
+- `components/organization/OrganizationClient.tsx`
+- `lib/api/departments.ts`
+
+---
+
 ## [1.6.1] - 2026-02-12
 
 ### Detail Versi 1.6.1

@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { randomInt } from "crypto";
 import { useRouter } from "next/navigation";
+import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 
 interface TableListDepartmetsProps {
   data: DepartmentsType[];
@@ -42,18 +43,6 @@ export default function TableListDepartment({
   const { onSelectOne, onSelectAll, onOpenEdit, onOpenDelete } = actions;
   const router = useRouter();
 
-  function generateRandomString(length: number) {
-    const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-  }
-
-  const randomName = generateRandomString(8);
   if (error) {
     return <DeparmentsTableError message="Failed to load Department data." />;
   }
@@ -125,32 +114,27 @@ export default function TableListDepartment({
               <span className="text-gray-500">{department.branch}</span>
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-3">
-                <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
-                  N
-                </Avatar>
-                <span className="font-medium">
-                  {department.manager_name || randomName}
-                </span>
-              </div>
+              {department.manager === null ? "-" : (
+                <div className="flex items-center gap-3">
+                  <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
+                    N
+                  </Avatar>
+                  <span className="font-medium">
+                    {department.manager.name}
+                  </span>
+                </div>
+              )}
             </TableCell>
             <TableCell>{department.manager_code}</TableCell>
 
             <TableCell>
-              {department.member_count || Math.floor(Math.random() * 50) + 1}
+              {department.member_count}
             </TableCell>
 
             <TableCell onClick={(e) => e.stopPropagation()}>
               <div className="flex gap-2">
-                <IconButton size="small" onClick={() => onOpenEdit(department)}>
-                  <Pencil size={18} />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => onOpenDelete(department)}
-                >
-                  <Trash2 size={18} className="text-red-500" />
-                </IconButton>
+                <EditButton onClick={() => onOpenEdit(department)} />
+                <DeleteButton onClick={() => onOpenDelete(department)} />
               </div>
             </TableCell>
           </TableRow>

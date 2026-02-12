@@ -27,6 +27,7 @@ import { AppButton } from "../ui/app-button";
 import { DownloadIcon, Plus, Upload } from "lucide-react";
 import { AppInput } from "../ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import ExportPopover from "./ExportPopover";
 
 export default function UsersClient() {
   const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
@@ -99,16 +100,6 @@ export default function UsersClient() {
     const apiUsers = usersResponse?.data?.manage_users || [];
 
     return apiUsers;
-    // Convert API User[] to UsersType[]
-    // return apiUsers.map((user) => ({
-    //   id: parseInt(user.id),
-    //   fullName: user.fullname,
-    //   email: user.email,
-    //   position: user.position,
-    //   status: "active" as const, // Default for now
-    //   avatar_initial: user.fullname.charAt(0).toUpperCase(),
-    //   employee_code: user.employee_code,
-    // }));
   }, [usersResponse?.data]);
 
   const handleChangePage = (
@@ -137,6 +128,110 @@ export default function UsersClient() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
+
+  const columns = [
+    { id: "fullname", label: "User" },
+    { id: "email", label: "Email" },
+    { id: "position", label: "Position" },
+    { id: "employee_code", label: "Employee ID" },
+  ];
+
+  const handleExportCSV = () => {
+    const headers = columns.map((col) => col.label);
+    const keys = columns.map((col) => col.id);
+
+    const csvContent = [
+      headers.join(","),
+      ...filteredUsers.map((item) =>
+        keys
+          .map((key) => {
+            const val = (item as any)[key] || "";
+            return `"${String(val).replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "managed_users_export.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handlePrint = () => {
+    const printContent = filteredUsers;
+    const printWindow = window.open("", "", "height=600,width=800");
+
+    if (printWindow) {
+      printWindow.document.write("<html><head><title>Print Managed Users</title>");
+      printWindow.document.write(`
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
+          .sub-text { font-size: 14px; color: #666; }
+          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
+          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
+          .date { color: #888; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      `);
+      printWindow.document.write("</head><body>");
+      printWindow.document.write(`
+        <div class="header">
+          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="page-info">
+          <h2 class="page-title">Managed Users</h2>
+          <span class="date">${new Date().toLocaleDateString()}</span>
+        </div>
+      `);
+      printWindow.document.write("<table>");
+      printWindow.document.write(`
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Position</th>
+            <th>Employee ID</th>
+          </tr>
+        </thead>
+        <tbody>
+      `);
+
+      printContent.forEach((item) => {
+        printWindow.document.write(`
+          <tr>
+            <td>${item.fullname || "-"}</td>
+            <td>${item.email || "-"}</td>
+            <td>${item.position || "-"}</td>
+            <td>${item.employee_code || "-"}</td>
+          </tr>
+        `);
+      });
+
+      printWindow.document.write("</tbody></table>");
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -171,23 +266,14 @@ export default function UsersClient() {
         {/* Search & Button */}
         <div className="px-4 py-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <AppButton
-              variantStyle="outline"
-              color="gray"
-              startIcon={<Upload />}
-              onClick={() => { }}
-            >
-              Export
-            </AppButton>
+            <ExportPopover
+              onExportCSV={handleExportCSV}
+              onPrint={handlePrint}
+            />
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div>
                 <Suspense>
-                  {/* <InputSearch
-                    placeholder="Search User"
-                    handleSearch={handleSearch}
-                    searchParams={searchParams}
-                  /> */}
                   <AppInput
                     placeholder="Search User"
                     value={searchTerm}

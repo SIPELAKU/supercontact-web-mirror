@@ -1,5 +1,6 @@
 "use client";
 
+import { EditButton } from "@/components/ui/app-action-buttons-table";
 import IconButton from "@mui/material/IconButton";
 import { Pencil } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -32,13 +33,7 @@ export default function EditPermissionsButton({
   return (
     <>
       {/* Button */}
-      <IconButton
-        onClick={handleOpen}
-        className="text-[#5479EE] hover:text-[#5479EE]/80"
-        size="small"
-      >
-        <Pencil className="h-5 w-4" />
-      </IconButton>
+      <EditButton onClick={handleOpen} />
 
       {/* Dialog */}
       <EditPermissionsDialog

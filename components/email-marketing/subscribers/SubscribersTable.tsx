@@ -1,6 +1,7 @@
 // components/email-marketing/subscribers/SubscribersTable.tsx
 "use client";
 
+import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
@@ -223,16 +224,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshT
                     <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => onEdit(row)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' } }}>
-                            <Pencil className="w-4 h-4" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton size="small" color="error" onClick={() => onDeleteRequest([row])} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}>
-                            <Trash2 className="w-4 h-4" />
-                          </IconButton>
-                        </Tooltip>
+                        <EditButton onClick={() => onEdit(row)} />
+                        <DeleteButton onClick={() => onDeleteRequest([row])} />
                       </Box>
                     </TableCell>
                   </TableRow>

@@ -1,6 +1,7 @@
 // components/email-marketing/mailing-lists/MailingListsTable.tsx
 "use client";
 
+import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
@@ -92,16 +93,8 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
               </Link>
 
               <Box sx={{ borderLeft: 1, borderColor: 'divider', p: 1, display: 'flex', gap: 0.5 }}>
-                <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => onEdit(list)}>
-                    <Pencil className="w-4 h-4" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton size="small" color="error" onClick={() => onDeleteRequest(list)}>
-                    <Trash2 className="w-4 h-4" />
-                  </IconButton>
-                </Tooltip>
+                <EditButton onClick={() => onEdit(list)} />
+                <DeleteButton onClick={() => onDeleteRequest(list)} />
               </Box>
             </Paper>
           ))

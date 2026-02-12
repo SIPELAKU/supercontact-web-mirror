@@ -13,6 +13,7 @@ import {
   UsersTableSkeleton,
 } from "@/components/users";
 import { ManageUser } from "@/lib/types/manage-users";
+import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 
 interface TableListUsersProps {
   data: ManageUser[];
@@ -146,15 +147,9 @@ export default function TableListUsers({
 
               <TableCell>
                 <div className="flex gap-2">
-                  <IconButton size="small" onClick={() => onOpenDetail(user)}>
-                    <Eye size={18} />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => onOpenEdit(user)}>
-                    <Pencil size={18} />
-                  </IconButton>
-                  <IconButton size="small" onClick={onOpenDelete}>
-                    <Trash2 size={18} className="text-red-500" />
-                  </IconButton>
+                  <ViewButton onClick={() => onOpenDetail(user)} />
+                  <EditButton onClick={() => onOpenEdit(user)} />
+                  <DeleteButton onClick={onOpenDelete} />
                 </div>
               </TableCell>
             </TableRow>

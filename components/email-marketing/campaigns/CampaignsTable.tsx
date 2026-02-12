@@ -1,6 +1,7 @@
 // components/email-marketing/campaigns/CampaignsTable.tsx
 "use client";
 
+import { DeleteButton, EditButton, ViewButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
 import { useCampaigns } from '@/lib/hooks/useCampaigns';
@@ -180,36 +181,9 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
                     <TableCell sx={{ py: 2 }}>{row.user_fullname || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title="View Statistics">
-                          <IconButton size="small" onClick={() => onView(row)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' } }}>
-                            <Eye className="w-4 h-4" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"}>
-                          <span>
-                            <IconButton
-                              size="small"
-                              onClick={() => onEdit(row)}
-                              disabled={!canEditOrDelete}
-                              sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'primary.lighter' } }}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"}>
-                          <span>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => onDeleteRequest(row)}
-                              disabled={!canEditOrDelete}
-                              sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
+                        <ViewButton onClick={() => onView(row)} />
+                        <EditButton onClick={() => onEdit(row)} disabled={!canEditOrDelete} customTitle={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"} />
+                        <DeleteButton onClick={() => onDeleteRequest(row)} disabled={!canEditOrDelete} customTitle={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"} />
                       </Box>
                     </TableCell>
                   </TableRow>

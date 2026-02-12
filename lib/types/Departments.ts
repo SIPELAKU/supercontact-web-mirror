@@ -2,6 +2,14 @@ export interface DepartmentsType {
     id: string;
     department: string;
     branch: string;
+    manager: {
+        id: string;
+        name: string;
+        email: string;
+        position: string;
+        employee_code: string;
+        status: string;
+    } | null;
     manager_name: string
     manager_id: string;
     member_count: number;

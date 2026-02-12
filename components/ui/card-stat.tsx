@@ -6,6 +6,7 @@ import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
+import { CircularProgress } from "@mui/material";
 
 export type UserStatType = {
   title: string;
@@ -16,6 +17,7 @@ export type UserStatType = {
   trend: "positive" | "negative";
   trendNumber: string;
   subtitle: string;
+  isLoading?: boolean;
 };
 
 const CardStatistik = (props: UserStatType) => {
@@ -28,6 +30,7 @@ const CardStatistik = (props: UserStatType) => {
     trend,
     trendNumber,
     subtitle,
+    isLoading,
   } = props;
 
   return (
@@ -51,7 +54,7 @@ const CardStatistik = (props: UserStatType) => {
             variant="h4"
             sx={{ fontWeight: 600, color: "text.primary", mb: 0.5 }}
           >
-            {stats}
+            {isLoading ? <CircularProgress size={20} /> : stats}
           </Typography>
 
           <div className="flex items-center gap-2">
@@ -62,7 +65,7 @@ const CardStatistik = (props: UserStatType) => {
                 color: trend === "negative" ? "error.main" : "success.main",
               }}
             >
-              {`(${trend === "negative" ? "-" : "+"}${trendNumber})`}
+              {isLoading ? <CircularProgress size={20} /> : `(${trend === "negative" ? "-" : "+"}${trendNumber})`}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {subtitle}

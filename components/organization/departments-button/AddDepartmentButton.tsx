@@ -21,7 +21,9 @@ export default function AddDepartmentButton() {
         Add New Department
       </AppButton>
 
-      <AddDepartmentsModal open={open} setOpen={setOpen} />
+      {open && (
+        <AddDepartmentsModal open={open} setOpen={setOpen} />
+      )}
     </div>
   );
 }

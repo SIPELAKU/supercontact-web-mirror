@@ -3,15 +3,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DepartmentsType } from "../types/Departments";
 import { useAuth } from "../context/AuthContext";
-import { 
-  fetchDepartments, 
-  fetchDepartmentById, 
-  fetchDepartmentMembers, 
-  createDepartment, 
-  updateDepartment, 
+import {
+  fetchDepartments,
+  fetchDepartmentById,
+  fetchDepartmentMembers,
+  createDepartment,
+  updateDepartment,
   deleteDepartment,
   CreateDepartmentData,
-  UpdateDepartmentData
+  UpdateDepartmentData,
+  fetchBranches
 } from "../api";
 import { deleteMember } from "../api/departments";
 
@@ -26,7 +27,7 @@ const useDepartments = (
 ) => {
   const queryClient = useQueryClient();
   const { token } = useAuth();
-  
+
   const {
     data: departmentsData,
     isLoading,
@@ -39,6 +40,7 @@ const useDepartments = (
       return fetchDepartments(token, page + 1, rowsPerPage, searchQuery, filters.department, filters.branch);
     },
     enabled: !!token,
+    refetchOnWindowFocus: false,
   });
 
   const addDepartmentMutation = useMutation({
@@ -79,7 +81,7 @@ const useDepartments = (
     isError,
     error: isError ? (error instanceof Error ? error.message : "An error occurred") : null,
     addDepartment: (data: CreateDepartmentData) => addDepartmentMutation.mutateAsync(data),
-    updateDepartment: (id: string, data: UpdateDepartmentData) => 
+    updateDepartment: (id: string, data: UpdateDepartmentData) =>
       updateDepartmentMutation.mutateAsync({ id, data }),
     deleteDepartment: (id: string) => deleteDepartmentMutation.mutateAsync(id),
     isAdding: addDepartmentMutation.isPending,
@@ -132,6 +134,19 @@ export function useDeleteMember(departmentId: string, memberId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["department-members"] });
     },
+  });
+}
+
+
+export function useBranches() {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["branches"],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchBranches(token);
+    },
+    enabled: !!token,
   });
 }
 

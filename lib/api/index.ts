@@ -58,7 +58,8 @@ export {
     updateDepartment,
     deleteDepartment,
     type CreateDepartmentData,
-    type UpdateDepartmentData
+    type UpdateDepartmentData,
+    fetchBranches
 } from './departments';
 
 // Quotations API

@@ -18,6 +18,7 @@ import Pagination from "@/components/ui/pagination";
 import { useSearchParams } from "next/navigation";
 
 import { Card, CardHeader, Divider, Box, TablePagination } from "@mui/material";
+import ExportPopover from "./ExportPopover";
 
 export default function TicketManagementPage() {
     const searchParams = useSearchParams();
@@ -84,6 +85,120 @@ export default function TicketManagementPage() {
         }, 300);
     }, []);
 
+    const columns = [
+        { id: "ticket_code", label: "Ticket ID" },
+        { id: "subject", label: "Subject" },
+        { id: "priority", label: "Priority" },
+        { id: "status", label: "Status" },
+        { id: "assigned_agent.fullname", label: "Assigned Agent" },
+    ];
+
+    const handleExportCSV = () => {
+        if (!tickets || tickets.length === 0) return notify.error("Error", {
+            description: "Ticket data is empty"
+        })
+        const headers = columns.map((col) => col.label);
+        const keys = columns.map((col) => col.id);
+
+        const getNestedValue = (obj: any, path: string) => {
+            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+        };
+
+        const csvContent = [
+            headers.join(","),
+            ...tickets.map((item) =>
+                keys
+                    .map((key) => {
+                        const val = getNestedValue(item, key) || "";
+                        return `"${String(val).replace(/"/g, '""')}"`;
+                    })
+                    .join(","),
+            ),
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "ticket_export.csv");
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
+    const handlePrint = () => {
+        const printContent = tickets;
+        console.log("printContent", printContent)
+        const printWindow = window.open("", "", "height=600,width=800");
+
+        if (printWindow) {
+            printWindow.document.write("<html><head><title>Print Ticket Management</title>");
+            printWindow.document.write(`
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
+          .sub-text { font-size: 14px; color: #666; }
+          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
+          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
+          .date { color: #888; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      `);
+            printWindow.document.write("</head><body>");
+            printWindow.document.write(`
+        <div class="header">
+          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="page-info">
+          <h2 class="page-title">Ticket Management</h2>
+          <span class="date">${new Date().toLocaleDateString()}</span>
+        </div>
+      `);
+            printWindow.document.write("<table>");
+            printWindow.document.write(`
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+            <th>Subject</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned Agent</th>
+          </tr>
+        </thead>
+        <tbody>
+      `);
+
+            printContent.forEach((item) => {
+                printWindow.document.write(`
+          <tr>
+            <td>${item.ticket_code || "-"}</td>
+            <td>${item.subject || "-"}</td>
+            <td>${item.priority || "-"}</td>
+            <td>${item.status || "-"}</td>
+            <td>${item.assigned_agent?.fullname || 0}</td>
+          </tr>
+        `);
+            });
+
+            printWindow.document.write("</tbody></table>");
+            printWindow.document.write("</body></html>");
+            printWindow.document.close();
+            printWindow.print();
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#ffffff] p-6">
             <div className="max-w-[1600px] mx-auto space-y-6">
@@ -137,10 +252,9 @@ export default function TicketManagementPage() {
 
                     {/* Toolbar */}
                     <Box sx={{ p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Button variant="outline" className="text-gray-600 gap-2">
-                            <Upload className="w-4 h-4" />
-                            Export
-                        </Button>
+                        <ExportPopover
+                            onExportCSV={handleExportCSV} onPrint={handlePrint}
+                        />
 
                         <div className="flex gap-4">
                             <div className="relative w-full md:w-[320px]">

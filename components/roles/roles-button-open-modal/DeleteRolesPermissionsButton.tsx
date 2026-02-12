@@ -1,7 +1,6 @@
 "use client";
 
-import { IconButton } from "@mui/material";
-import { Trash2 } from "lucide-react";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
@@ -22,9 +21,7 @@ export default function DeleteRolesPermissionsButton({
   };
   return (
     <>
-      <IconButton onClick={handleOpen}>
-        <Trash2 className="h-5 w-4 text-red-500" />
-      </IconButton>
+      <DeleteButton onClick={handleOpen} />
 
       <DeleteRolesPermissionsModal
         open={open}

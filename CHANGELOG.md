@@ -39,6 +39,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/layout/Topbar.tsx` - Dynamic unread count fetching.
 - `app/api/proxy/[...path]/route.ts` - Env variable alignment.
 - `next.config.mjs` - Proxy rewrite stability fix.
+## [1.6.0] - 2026-02-12
+
+### Detail Versi 1.6.0
+
+#### ✨ Mail Server Management Overhaul
+
+- **Updated Status Management:**
+  - **Status Switch:** Replaced the "Priority" column with an interactive "Status" switch. Users can now toggle mail servers between `Active` and `Inactive` directly from the list, with immediate visual feedback and API synchronization.
+  - **Refined Loading State:** Status toggle loading indicator is now scoped to the specific row being updated, ensuring other rows remain interactive.
+
+- **Enhanced CRUD Operations:**
+  - **Delete Functionality:** Implemented a dedicated delete confirmation modal with robust error handling to prevent accidental data loss and inform users of dependency constraints.
+  - **Refined Edit Modal:** Standardized the `EditMailServerModal` to match the "Add New" experience, including making the password field optional during updates.
+  - **Connection Testing:** Added a "Test Connection" feature directly in the mail server list, allowing users to verify SMTP configurations without sending actual emails.
+  - **Connection Logs:** Implemented a log viewer modal to display detailed results of connection tests, including error codes and timestamps.
+
+- **Robust Error Handling:**
+  - **Structured Error Support:** Improved the API client to correctly parse and display structured error messages from the backend, providing users with clear, actionable feedback instead of generic error alerts.
+
+#### 📁 Files Modified
+
+- `app/admin/mail-servers/page.tsx`
+- `lib/api/mail-servers.ts`
+- `lib/hooks/useMailServers.ts`
+- `components/admin/mail-servers/AddMailServerModal.tsx`
+- `components/admin/mail-servers/EditMailServerModal.tsx`
+- `components/admin/mail-servers/DeleteMailServerModal.tsx`
+- `components/admin/mail-servers/ConnectionStatusModal.tsx`
+- `package.json`
 
 ---
 

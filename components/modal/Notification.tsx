@@ -127,6 +127,7 @@ export default function Notification({ open, onClose }: NotificationProps) {
                   tag={notif.type || "Update"}
                   tagColor={getTagColor(notif.type)}
                   title={notif.title}
+                  description={notif.description}
                   time={formatTime(notif.created_at)}
                   isRead={notif.is_read}
                   onClick={() => handleMarkRead(notif.id)}
@@ -163,6 +164,7 @@ function NotificationItem({
   tag,
   tagColor,
   title,
+  description,
   time,
   isRead,
   onClick,
@@ -170,6 +172,7 @@ function NotificationItem({
   tag: string;
   tagColor: string;
   title: string;
+  description?: string;
   time: string;
   isRead?: boolean;
   onClick?: () => void;
@@ -182,9 +185,10 @@ function NotificationItem({
       <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${tagColor}`}>
         {tag}
       </span>
-      <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{title}</p>
+      {/* <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{title}</p> */}
+      {description && <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{description}</p>}
       <p className="text-xs text-gray-400 mt-1">{time}</p>
-    </div>
+    </div >
   );
 }
 

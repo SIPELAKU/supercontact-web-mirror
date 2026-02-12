@@ -222,7 +222,9 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
         response: json,
         url
       });
-      throw new Error(json.message || json.error?.message || `Profile update failed (${res.status})`);
+      const error: any = new Error(json.message || json.error?.message || `Profile update failed (${res.status})`);
+      error.data = json; // Attach full response for handleError to see details
+      throw error;
     }
 
     return {
@@ -260,7 +262,9 @@ export async function uploadAvatar(token: string, file: File): Promise<{ success
     }
 
     if (!res.ok) {
-      throw new Error(json.message || json.error?.message || `Avatar upload failed (${res.status})`);
+      const error: any = new Error(json.message || json.error?.message || `Avatar upload failed (${res.status})`);
+      error.data = json;
+      throw error;
     }
 
     return {

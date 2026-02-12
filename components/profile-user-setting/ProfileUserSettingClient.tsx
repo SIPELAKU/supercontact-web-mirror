@@ -18,7 +18,7 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { notify } from "@/lib/notifications";
 import { fetchProfile, updateProfile, UpdateProfileData, uploadAvatar } from "@/lib/api";
-import { handleError } from "@/lib/utils/errorHandler";
+import { handleError, getErrorMessage } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 
@@ -132,7 +132,7 @@ export default function ProfileUserSettingClient() {
       if (response.success) {
         notify.success("Profile updated successfully!");
       } else {
-        notify.error("Failed to update profile");
+        notify.error(getErrorMessage(response, "Failed to update profile"));
       }
     } catch (err) {
       const errorMessage = handleError(err, "Update Profile");
@@ -368,12 +368,14 @@ export default function ProfileUserSettingClient() {
                 </Stack>
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
+
                   <Stack width={"100%"}>
-                    <label htmlFor="address">Address</label>
+                    <label htmlFor="phone">Phone Number</label>
                     <AppInput
+                      type="tel"
                       fullWidth
-                      value={profileData.address}
-                      onChange={handleInputChange("address")}
+                      value={profileData.phone}
+                      onChange={handleInputChange("phone")}
                       isBgWhite
                     />
                   </Stack>
@@ -399,18 +401,6 @@ export default function ProfileUserSettingClient() {
                     />
                   </Stack>
                   <Stack width={"100%"}>
-                    <label htmlFor="currency">Currency</label>
-                    <AppInput
-                      fullWidth
-                      value={profileData.currency}
-                      onChange={handleInputChange("currency")}
-                      isBgWhite
-                    />
-                  </Stack>
-                </Stack>
-
-                <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
-                  <Stack width={"100%"}>
                     <label htmlFor="language">Language</label>
                     <AppInput
                       fullWidth
@@ -419,29 +409,30 @@ export default function ProfileUserSettingClient() {
                       isBgWhite
                     />
                   </Stack>
-                  <Stack width={"100%"}>
-                    <label htmlFor="timezone">Timezone</label>
+                  {/* <Stack width={"100%"}>
+                    <label htmlFor="currency">Currency</label>
                     <AppInput
                       fullWidth
-                      value={profileData.timezone}
-                      onChange={handleInputChange("timezone")}
+                      value={profileData.currency}
+                      onChange={handleInputChange("currency")}
                       isBgWhite
                     />
-                  </Stack>
+                  </Stack> */}
                 </Stack>
+
+
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
                   <Stack width={"100%"}>
-                    <label htmlFor="phone">Phone Number</label>
+                    <label htmlFor="address">Address</label>
                     <AppInput
-                      type="tel"
                       fullWidth
-                      value={profileData.phone}
-                      onChange={handleInputChange("phone")}
+                      value={profileData.address}
+                      onChange={handleInputChange("address")}
                       isBgWhite
                     />
                   </Stack>
-                  <Stack width={"100%"}>
+                  {/* <Stack width={"100%"}>
                     <label htmlFor="skype">Skype</label>
                     <AppInput
                       fullWidth
@@ -449,7 +440,7 @@ export default function ProfileUserSettingClient() {
                       onChange={handleInputChange("skype")}
                       isBgWhite
                     />
-                  </Stack>
+                  </Stack> */}
                 </Stack>
 
 

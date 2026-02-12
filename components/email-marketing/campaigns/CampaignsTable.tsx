@@ -123,18 +123,8 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
           </AppButton>
           <AppButton
             variantStyle="primary"
-            color="primary"
             startIcon={<Plus className="w-4 h-4" />}
             onClick={onAdd}
-            sx={{
-              bgcolor: '#5D87FF',
-              '&:hover': {
-                bgcolor: '#4570ea'
-              },
-              textTransform: 'none',
-              px: 3,
-              borderRadius: '8px'
-            }}
           >
             Create Campaign
           </AppButton>

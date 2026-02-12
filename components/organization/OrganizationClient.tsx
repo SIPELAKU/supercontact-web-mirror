@@ -120,7 +120,10 @@ export default function OrganizationClient() {
 
         <DepartementTableFilter
           filter={tableFilter}
-          onChange={setTableFilter}
+          onChange={(newFilter) => {
+            setTableFilter(newFilter);
+            setPage(0);
+          }}
         />
 
         <Divider />

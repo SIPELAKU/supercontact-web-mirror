@@ -22,6 +22,7 @@ import { AppButtonIcon } from "../ui/app-button-icon";
 import { Spinner } from "../ui/spinner";
 import { Box, CircularProgress } from "@mui/material";
 import { notify } from "@/lib/notifications";
+import { DeleteButton, EditButton } from "../ui/app-action-buttons-table";
 
 export default function ProductTable() {
   const {
@@ -137,57 +138,33 @@ export default function ProductTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <AppButtonIcon
-                        onClick={() => {
-                          setIsModalOpen(!isModalOpen);
-                          setEditId(product.id);
-                        }}
-                        icon={
-                          <Image
-                            src={Pencil}
-                            height={24}
-                            width={24}
-                            alt="edit"
-                          />
-                        }
-                        color="primary"
-                        variantStyle="text"
-                      />
-                      <AppButtonIcon
-                        onClick={() => {
-                          const data = listProduct.filter(
-                            (item) => item.id === product.id,
-                          );
-                          showConfirmation({
-                            type: "delete",
-                            title: "Delete Product",
-                            message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
-                            confirmText: "Delete",
-                            cancelText: "Cancel",
-                            onConfirm: async () => {
-                              await new Promise((resolve) =>
-                                setTimeout(resolve, 1000),
-                              );
-                              const res = await deleteProduct(product.id);
-                              if (res.success) {
-                                notify.success("Product Deleted", { description: `Product "${product.product_name}" has been successfully deleted.` });
-                              } else {
-                                notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
-                              }
-                            },
-                          });
-                        }}
-                        icon={
-                          <Image
-                            src={Trash}
-                            height={24}
-                            width={24}
-                            alt="delete"
-                          />
-                        }
-                        color="danger"
-                        variantStyle="text"
-                      />
+                      <EditButton onClick={() => {
+                        setIsModalOpen(!isModalOpen);
+                        setEditId(product.id);
+                      }} />
+                      <DeleteButton onClick={() => {
+                        const data = listProduct.filter(
+                          (item) => item.id === product.id,
+                        );
+                        showConfirmation({
+                          type: "delete",
+                          title: "Delete Product",
+                          message: `Are you sure you want to delete "${data[0].product_name}"? This action cannot be undone.`,
+                          confirmText: "Delete",
+                          cancelText: "Cancel",
+                          onConfirm: async () => {
+                            await new Promise((resolve) =>
+                              setTimeout(resolve, 1000),
+                            );
+                            const res = await deleteProduct(product.id);
+                            if (res.success) {
+                              notify.success("Product Deleted", { description: `Product "${product.product_name}" has been successfully deleted.` });
+                            } else {
+                              notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
+                            }
+                          },
+                        });
+                      }} />
                     </div>
                   </TableCell>
                 </TableRow>

@@ -49,7 +49,7 @@ export default function DepartmentInfoCard({
               </Grid>
               <Grid item>
                 <Typography fontWeight={500}>
-                  {department?.manager_name || ""}
+                  {department?.manager_name || "-"}
                 </Typography>
               </Grid>
             </Grid>
@@ -61,7 +61,7 @@ export default function DepartmentInfoCard({
               Manager ID
             </Typography>
             <Typography fontWeight={500}>
-              {department?.manager_code || ""}
+              {department?.manager_code || "-"}
             </Typography>
           </Grid>
 
@@ -79,7 +79,7 @@ export default function DepartmentInfoCard({
               Member Count
             </Typography>
             <Typography fontWeight={500}>
-              {department?.member_count || ""}
+              {department?.member_count || "0"}
             </Typography>
           </Grid>
 

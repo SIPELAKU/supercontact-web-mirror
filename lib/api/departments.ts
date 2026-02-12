@@ -7,7 +7,7 @@ export interface CreateDepartmentData {
   manager_id: string;
 }
 
-export interface UpdateDepartmentData extends Partial<CreateDepartmentData> {}
+export interface UpdateDepartmentData extends Partial<CreateDepartmentData> { }
 
 export async function fetchDepartments(
   token: string,
@@ -34,6 +34,22 @@ export async function fetchDepartments(
   }
 
   if (!res.ok) throw new Error("Failed to load departments");
+
+  return res.json();
+}
+
+export async function fetchBranches(
+  token: string
+): Promise<{ success: boolean; data: string[]; error: string | null }> {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/branches`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) throw new Error("Failed to load branches");
 
   return res.json();
 }
@@ -98,7 +114,13 @@ export async function createDepartment(
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) throw new Error("Failed to create department");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const errorMessage = errorData?.error?.message || errorData?.message || "Failed to create department";
+    const error = new Error(errorMessage);
+    (error as any).response = { data: errorData, status: res.status };
+    throw error;
+  }
   return res.json();
 }
 
@@ -116,7 +138,13 @@ export async function updateDepartment(
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) throw new Error("Failed to update department");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const errorMessage = errorData?.error?.message || errorData?.message || "Failed to update department";
+    const error = new Error(errorMessage);
+    (error as any).response = { data: errorData, status: res.status };
+    throw error;
+  }
   return res.json();
 }
 
@@ -131,7 +159,13 @@ export async function deleteDepartment(
     },
   });
 
-  if (!res.ok) throw new Error("Failed to delete department");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const errorMessage = errorData?.error?.message || errorData?.message || "Failed to delete department";
+    const error = new Error(errorMessage);
+    (error as any).response = { data: errorData, status: res.status };
+    throw error;
+  }
   return res.json();
 }
 
@@ -147,6 +181,12 @@ export async function deleteMember(
     },
   });
 
-  if (!res.ok) throw new Error("Failed to delete member");
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const errorMessage = errorData?.error?.message || errorData?.message || "Failed to delete member";
+    const error = new Error(errorMessage);
+    (error as any).response = { data: errorData, status: res.status };
+    throw error;
+  }
   return res.json();
 }

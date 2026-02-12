@@ -34,20 +34,22 @@ export default function DetailUserDialog({
     setUserData(user);
   }, [user]);
 
+  console.log("userData", userData);
+
   if (!userData) return <Typography>Loading...</Typography>;
 
   const badge: Record<Exclude<StatusType, "">, JSX.Element> = {
-    active: (
+    Active: (
       <span className="rounded-md bg-[#f0fdf4] px-2.5 py-0.5 text-sm font-medium text-[#22c55e]">
         Active
       </span>
     ),
-    pending: (
+    Pending: (
       <span className="rounded-md bg-yellow-50 px-2.5 py-0.5 text-sm font-medium text-yellow-600">
         Pending
       </span>
     ),
-    inactive: (
+    Inactive: (
       <span className="rounded-md bg-gray-50 px-2.5 py-0.5 text-sm font-medium text-gray-500">
         Inactive
       </span>

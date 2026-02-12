@@ -19,6 +19,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { Upload } from "lucide-react";
+import ExportPopover from "./ExportPopover";
 
 export default function OrganizationClient() {
   const [selected, setSelected] = useState<string[]>([]);
@@ -95,6 +96,115 @@ export default function OrganizationClient() {
     );
   };
 
+  const columns = [
+    { id: "department", label: "Department" },
+    { id: "branch", label: "Branch" },
+    { id: "manager", label: "Manager" },
+    { id: "manager_code", label: "Manager ID" },
+    { id: "member_count", label: "Member Count" },
+  ];
+
+  const handleExportCSV = () => {
+    const headers = columns.map((col) => col.label);
+    const keys = columns.map((col) => col.id);
+
+    console.log("departments", departments);
+
+    const csvContent = [
+      headers.join(","),
+      ...departments.map((item) =>
+        keys
+          .map((key) => {
+            const val = (item as any)[key] || "";
+            return `"${String(val).replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "departments_export.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const handlePrint = () => {
+    const printContent = departments;
+    console.log("printContent", printContent)
+    const printWindow = window.open("", "", "height=600,width=800");
+
+    if (printWindow) {
+      printWindow.document.write("<html><head><title>Print Organization Structure</title>");
+      printWindow.document.write(`
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
+          .sub-text { font-size: 14px; color: #666; }
+          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
+          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
+          .date { color: #888; font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      `);
+      printWindow.document.write("</head><body>");
+      printWindow.document.write(`
+        <div class="header">
+          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="page-info">
+          <h2 class="page-title">Organization Structure</h2>
+          <span class="date">${new Date().toLocaleDateString()}</span>
+        </div>
+      `);
+      printWindow.document.write("<table>");
+      printWindow.document.write(`
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Branch</th>
+            <th>Manager</th>
+            <th>Manager ID</th>
+            <th>Member Count</th>
+          </tr>
+        </thead>
+        <tbody>
+      `);
+
+      printContent.forEach((item) => {
+        printWindow.document.write(`
+          <tr>
+            <td>${item.department || "-"}</td>
+            <td>${item.branch || "-"}</td>
+            <td>${item.manager_name || "-"}</td>
+            <td>${item.manager_code || "-"}</td>
+            <td>${item.member_count || 0}</td>
+          </tr>
+        `);
+      });
+
+      printWindow.document.write("</tbody></table>");
+      printWindow.document.write("</body></html>");
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
@@ -131,14 +241,7 @@ export default function OrganizationClient() {
         <div className="px-4 py-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <AppButton
-                variantStyle="outline"
-                color="gray"
-                startIcon={<Upload />}
-                onClick={() => { }}
-              >
-                Export
-              </AppButton>
+              <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

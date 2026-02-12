@@ -15,21 +15,25 @@ type Props = {
   onChange: (filter: DepartmentTableFilter) => void;
 };
 
+import { useBranches } from "@/lib/hooks/useDepartments";
+
 const TableFilterDepartment = ({ filter, onChange }: Props) => {
+  const { data: branchesData } = useBranches();
+
   const departmentOptions = [
     { value: "", label: "All Department" },
     { value: "Marketing", label: "Marketing" },
     { value: "Sales", label: "Sales" },
-    { value: "Engineering", label: "Engineering" },
+    { value: "Finance", label: "Finance" },
     { value: "Human Resources", label: "Human Resources" },
-    { value: "Customer Support", label: "Customer Support" },
   ];
 
   const branchOptions = [
     { value: "", label: "All Branch" },
-    { value: "headquarters", label: "Headquarters" },
-    { value: "North", label: "North" },
-    { value: "South", label: "South" },
+    ...(branchesData?.data || []).map((branch) => ({
+      value: branch,
+      label: branch,
+    })),
   ];
 
   return (

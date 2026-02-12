@@ -68,10 +68,24 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !departmentUuid || !roleId) {
+    const missingFields = [];
+    if (!email) missingFields.push("Email");
+    if (!departmentName) missingFields.push("Department");
+    if (!branchName) missingFields.push("Branch");
+    if (!roleId) missingFields.push("Role Access");
+
+    if (missingFields.length > 0) {
       notify.error(
-        "Please fill in all required fields.",
+        `Please fill in the following fields: ${missingFields.join(", ")}`,
       );
+      return;
+    }
+
+    if (!departmentUuid) {
+      notify.error("Error", {
+        description: "Invalid Branch selected for this Department. Please create a department first.",
+        duration: 2000,
+      });
       return;
     }
 

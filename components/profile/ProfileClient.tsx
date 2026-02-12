@@ -57,6 +57,17 @@ export default function ProfileClient() {
 
   const defaultAvatar = "/assets/Avatar-profile.png";
 
+  const formatJoinedDate = (dateString: string) => {
+    if (!dateString) return "Joined -";
+    try {
+      const date = new Date(dateString);
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      return `Joined ${months[date.getMonth()]} ${date.getFullYear()}`;
+    } catch (e) {
+      return "Joined -";
+    }
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <Stack spacing={4}>
@@ -101,7 +112,7 @@ export default function ProfileClient() {
                 }}
               >
                 <Avatar
-                  src={profile?.avatar || defaultAvatar}
+                  src={profile?.avatar_url || defaultAvatar}
                   variant="rounded"
                   sx={{ width: 120, height: 120, borderRadius: 2 }}
                 />
@@ -121,7 +132,7 @@ export default function ProfileClient() {
                 >
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Person fontSize="small" />
-                    <Typography variant="body2">Administrator</Typography>
+                    <Typography variant="body2">{profile?.role || "User"}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <LocationOn fontSize="small" />
@@ -129,7 +140,7 @@ export default function ProfileClient() {
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CalendarToday fontSize="small" />
-                    <Typography variant="body2">Joined April 2021</Typography>
+                    <Typography variant="body2">{formatJoinedDate(profile?.joined_date)}</Typography>
                   </Stack>
                 </Stack>
               </Box>
@@ -178,7 +189,7 @@ export default function ProfileClient() {
                   <Box>
                     <Typography variant="body2" fontWeight={600}>Role:</Typography>
                   </Box>
-                  <Typography variant="body2" fontWeight={600}>Administrator</Typography>
+                  <Typography variant="body2" fontWeight={600}>{profile?.role || "User"}</Typography>
                 </Stack>
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Box component="span" sx={{ fontSize: 20 }}>🏳️</Box>
@@ -228,7 +239,7 @@ export default function ProfileClient() {
             </Grid>
 
             {/* TEAMS (Mock Data) */}
-            <Grid item xs={12} md={6} lg={4}>
+            {/* <Grid item xs={12} md={6} lg={4}>
               <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
                 TEAMS
               </Typography>
@@ -242,10 +253,10 @@ export default function ProfileClient() {
                   <Typography variant="body2" color="text.secondary">(98 Members)</Typography>
                 </Stack>
               </Stack>
-            </Grid>
+            </Grid> */}
           </Grid>
 
-          <Divider sx={{ my: 4 }} />
+          {/* <Divider sx={{ my: 4 }} />
 
           <Grid container spacing={4}>
             <Grid item xs={12}>
@@ -256,27 +267,20 @@ export default function ProfileClient() {
                 <Stack direction="row" spacing={2} alignItems="center">
                   <CheckCircle sx={{ color: 'text.secondary', fontSize: 20 }} />
                   <Box>
-                    <Typography variant="body2" fontWeight={600}>Task Compiled:</Typography>
+                    <Typography variant="body2" fontWeight={600}>Projects Compiled:</Typography>
                   </Box>
-                  <Typography variant="body2" fontWeight={700}>John Doe</Typography>
+                  <Typography variant="body2" fontWeight={700}>{profile?.projects_compiled || 0}</Typography>
                 </Stack>
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Person sx={{ color: 'text.secondary', fontSize: 20 }} />
                   <Box>
                     <Typography variant="body2" fontWeight={600}>Connections:</Typography>
                   </Box>
-                  <Typography variant="body2" fontWeight={700}>897</Typography>
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Star sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Projects Compiled:</Typography>
-                  </Box>
-                  <Typography variant="body2" fontWeight={700}>146</Typography>
+                  <Typography variant="body2" fontWeight={700}>{profile?.connections_count || 0}</Typography>
                 </Stack>
               </Stack>
             </Grid>
-          </Grid>
+          </Grid> */}
 
         </Paper>
       </Stack>

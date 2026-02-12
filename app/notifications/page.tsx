@@ -1,84 +1,110 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BannerDashboard from "@/components/ui/banner-dashboard"
 import PageHeader from "@/components/ui/page-header";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { useAuth } from "@/lib/context/AuthContext";
+import { format, isToday, isYesterday } from "date-fns";
 
 interface Notification {
-    id: number;
+    id: string;
     category: string;
     title: string;
     description: string;
     time: string;
-    dateGroup: "Today" | "Yesterday";
-    read: boolean;
+    status: 'unread' | 'read';
+    created_at: string;
 }
 
-const initialNotifications: Notification[] = [
-    {
-        id: 1,
-        category: "CRM Alerts",
-        title: "Kira Jaxx shared feedback on the new lead form",
-        description: "Address feedback by Friday",
-        time: "5 Dec 2025 at 14:00",
-        dateGroup: "Today",
-        read: false,
-    },
-    {
-        id: 2,
-        category: "Update",
-        title: "Jane Cooper changed a deal status",
-        description: "Check for updates in the pipeline",
-        time: "5 Dec 2025 at 09:41",
-        dateGroup: "Today",
-        read: false,
-    },
-    {
-        id: 3,
-        category: "Reminder",
-        title: "Sara Lema has a meeting scheduled",
-        description: "Don’t forget to prepare the presentation",
-        time: "5 Dec 2025 at 09:00",
-        dateGroup: "Today",
-        read: true,
-    },
-    {
-        id: 4,
-        category: "Mention",
-        title: "Budi Santoso mentioned you",
-        description: "Please check this ticket, urgent",
-        time: "4 Dec 2025 at 20:07",
-        dateGroup: "Yesterday",
-        read: true,
-    },
-    {
-        id: 5,
-        category: "Update",
-        title: "John Doe updated the project status",
-        description: "Review the changes made in the last sprint",
-        time: "4 Dec 2025 at 14:32",
-        dateGroup: "Yesterday",
-        read: true,
-    },
-];
-
+// badge style based on type
 const badgeStyle: Record<string, string> = {
     "CRM Alerts": "bg-cyan-100 text-cyan-700",
     Update: "bg-purple-100 text-purple-700",
     Reminder: "bg-amber-100 text-amber-700",
     Mention: "bg-emerald-100 text-emerald-700",
+    Alert: "bg-cyan-100 text-cyan-700",
 };
 
+
+
 export default function NotificationPage() {
-    const [notifications, setNotifications] = useState(initialNotifications);
+    const { getToken, isAuthenticated } = useAuth();
+    const [notifications, setNotifications] = useState<NotificationData[]>([]);
+    const [loading, setLoading] = useState(true);
     const [onlyUnread, setOnlyUnread] = useState(false);
 
+    useEffect(() => {
+        const loadData = async () => {
+            if (!isAuthenticated) return;
+            try {
+                setLoading(true);
+                const token = await getToken();
+                const res = await fetchNotifications(token);
+                if (res.success) {
+                    setNotifications(res.data);
+                }
+            } catch (err) {
+                console.error("Failed to load notifications:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, [isAuthenticated, getToken]);
+
     const filtered = onlyUnread
-        ? notifications.filter((n) => !n.read)
+        ? notifications.filter((n) => !n.is_read)
         : notifications;
 
-    const markAllAsRead = () =>
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const groupNotifications = (notifs: NotificationData[]) => {
+        const groups: Record<string, NotificationData[]> = {
+            "Today": [],
+            "Yesterday": [],
+            "Older": []
+        };
+
+        if (Array.isArray(notifs)) {
+            notifs.forEach(n => {
+                const date = new Date(n.created_at);
+                if (isToday(date)) groups["Today"].push(n);
+                else if (isYesterday(date)) groups["Yesterday"].push(n);
+                else groups["Older"].push(n);
+            });
+        }
+
+        return groups;
+    };
+
+    const grouped = groupNotifications(filtered);
+
+    const markAllAsRead = async () => {
+        try {
+            const token = await getToken();
+            const res = await markAllNotificationsAsRead(token);
+            if (res.success) {
+                setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+            }
+        } catch (err) {
+            console.error("Failed to mark all as read:", err);
+        }
+    };
+
+    const handleNotificationClick = async (notif: NotificationData) => {
+        if (notif.is_read) return;
+
+        try {
+            const token = await getToken();
+            const res = await markNotificationAsRead(token, notif.id);
+            if (res.success) {
+                setNotifications((prev) => prev.map((n) =>
+                    n.id === notif.id ? { ...n, is_read: true } : n
+                ));
+            }
+        } catch (err) {
+            console.error("Failed to mark notification as read:", err);
+        }
+    };
 
     return (
         <div className="w-full flex flex-col p-4 md:p-8 min-h-screen overflow-y-scroll">
@@ -111,50 +137,63 @@ export default function NotificationPage() {
             </div>
 
             {/* Content */}
-            {(["Today", "Yesterday"] as const).map((group) => {
-                const groupItems = filtered.filter((n) => n.dateGroup === group);
-                if (!groupItems.length) return null;
+            {loading ? (
+                <div className="flex justify-center items-center py-20">
+                    <p className="text-gray-500">Loading notifications...</p>
+                </div>
+            ) : notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed">
+                    <p className="text-gray-500">No notifications found</p>
+                </div>
+            ) : (
+                (["Today", "Yesterday", "Older"] as const).map((group) => {
+                    const groupItems = grouped[group];
+                    if (!groupItems || groupItems.length === 0) return null;
 
-                return (
-                    <div key={group} className="">
-                        <h3 className="text-sm bg-gray-100 p-4 font-semibold text-gray-500">{group}</h3>
+                    return (
+                        <div key={group} className="mb-6">
+                            <h3 className="text-sm bg-gray-50 p-4 font-semibold text-gray-500 rounded-t-lg border-x border-t">{group}</h3>
 
-                        <div className="">
-                            {groupItems.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className={`relative border p-4 transition hover:shadow-sm cursor-pointer
-                    ${item.read ? "bg-white" : "bg-indigo-50"}`}
-                                >
-                                    {!item.read && (
-                                        <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-indigo-600" />
-                                    )}
+                            <div className="border-x border-b rounded-b-lg overflow-hidden">
+                                {groupItems.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => handleNotificationClick(item)}
+                                        className={`relative border-b last:border-b-0 p-4 transition hover:shadow-sm cursor-pointer
+                        ${item.is_read ? "bg-white" : "bg-indigo-50/40"}`}
+                                    >
+                                        {!item.is_read && (
+                                            <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+                                        )}
 
-                                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                                        <div className="flex-1">
-                                            <span
-                                                className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${badgeStyle[item.category]}`}
-                                            >
-                                                {item.category}
-                                            </span>
-                                            <h4 className="text-sm font-semibold text-gray-800">
-                                                {item.title}
-                                            </h4>
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                {item.description}
-                                            </p>
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                                            <div className="flex-1">
+                                                <span
+                                                    className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mb-2 ${badgeStyle[item.type] || "bg-gray-100 text-gray-600"}`}
+                                                >
+                                                    {item.type || "Update"}
+                                                </span>
+                                                <h4 className="text-sm font-semibold text-gray-800">
+                                                    {item.title}
+                                                </h4>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+
+                                            <div className="text-right">
+                                                <p className="text-xs text-gray-400 whitespace-nowrap">
+                                                    {format(new Date(item.created_at), "d MMM yyyy 'at' HH:mm")}
+                                                </p>
+                                            </div>
                                         </div>
-
-                                        <p className="text-xs text-gray-400 whitespace-nowrap md:text-right">
-                                            {item.time}
-                                        </p>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })
+            )}
         </div>
     );
 }

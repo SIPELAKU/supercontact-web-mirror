@@ -160,6 +160,7 @@ export default function UnifiedInbox() {
     const [selectedChatId, setSelectedChatId] = useState<string | null>(DUMMY_CONVERSATIONS[0].id);
     const [searchTerm, setSearchTerm] = useState("");
     const [inputText, setInputText] = useState("");
+    const [inputSubject, setInputSubject] = useState("");
 
     // Filter conversations
     const filteredConversations = DUMMY_CONVERSATIONS.filter((conv) => {
@@ -173,9 +174,15 @@ export default function UnifiedInbox() {
 
     const handleSendMessage = () => {
         if (!inputText.trim()) return;
-        // In a real app, this would append to the list. For dummy, we just clear input.
-        alert(`Sent to ${activeConversation?.channel}: ${inputText}`);
+
+        let messageLog = `Sent to ${activeConversation?.channel}: ${inputText}`;
+        if (activeConversation?.channel === "email") {
+            messageLog = `Subject: ${inputSubject || "No Subject"}\n` + messageLog;
+        }
+
+        alert(messageLog);
         setInputText("");
+        setInputSubject("");
     };
 
     return (
@@ -323,6 +330,11 @@ export default function UnifiedInbox() {
                                                 {activeConversation.channel}
                                             </span>
                                         </h2>
+                                        {activeConversation.channel === 'email' && activeConversation.messages.length > 0 && (
+                                            <h3 className="text-sm font-semibold text-primary truncate max-w-[400px]">
+                                                {activeConversation.messages[activeConversation.messages.length - 1].subject}
+                                            </h3>
+                                        )}
                                         <p className="text-sm text-gray-500 flex items-center gap-4">
                                             {activeConversation.email}
                                             {activeConversation.phone && (
@@ -415,33 +427,47 @@ export default function UnifiedInbox() {
 
                             {/* Input Area */}
                             <div className="p-4 bg-white border-t border-gray-100">
-                                <div className="flex items-end gap-3 bg-gray-50 p-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary/50 transition-all">
-                                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                                        <Paperclip className="w-5 h-5" />
-                                    </button>
-                                    <textarea
-                                        placeholder={activeConversation.channel === "email" ? "Write a reply..." : "Type a message..."}
-                                        value={inputText}
-                                        onChange={(e) => setInputText(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" && !e.shiftKey) {
-                                                e.preventDefault();
-                                                handleSendMessage();
-                                            }
-                                        }}
-                                        className="flex-1 bg-transparent border-none focus:outline-none resize-none py-2 text-sm max-h-32 min-h-[40px]"
-                                        rows={1}
-                                    />
-                                    <button
-                                        onClick={handleSendMessage}
-                                        className={cn(
-                                            "p-2.5 rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
-                                            inputText.trim() ? "bg-primary text-white hover:bg-primary/90" : "bg-gray-200 text-gray-400"
-                                        )}
-                                        disabled={!inputText.trim()}
-                                    >
-                                        <Send className="w-4 h-4" />
-                                    </button>
+                                <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary/50 transition-all">
+                                    {activeConversation.channel === 'email' && (
+                                        <div className="flex items-center gap-2 px-2 pb-2 border-b border-gray-200">
+                                            <span className="text-xs font-semibold text-gray-400 uppercase w-16">Subject:</span>
+                                            <input
+                                                type="text"
+                                                placeholder="Enter subject..."
+                                                value={inputSubject}
+                                                onChange={(e) => setInputSubject(e.target.value)}
+                                                className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-gray-700"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex items-end gap-3">
+                                        <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                            <Paperclip className="w-5 h-5" />
+                                        </button>
+                                        <textarea
+                                            placeholder={activeConversation.channel === "email" ? "Write a reply..." : "Type a message..."}
+                                            value={inputText}
+                                            onChange={(e) => setInputText(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleSendMessage();
+                                                }
+                                            }}
+                                            className="flex-1 bg-transparent border-none focus:outline-none resize-none py-2 text-sm max-h-32 min-h-[40px]"
+                                            rows={1}
+                                        />
+                                        <button
+                                            onClick={handleSendMessage}
+                                            className={cn(
+                                                "p-2.5 rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed",
+                                                inputText.trim() ? "bg-primary text-white hover:bg-primary/90" : "bg-gray-200 text-gray-400"
+                                            )}
+                                            disabled={!inputText.trim()}
+                                        >
+                                            <Send className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="mt-2 text-center">
                                     <p className="text-[10px] text-gray-400">

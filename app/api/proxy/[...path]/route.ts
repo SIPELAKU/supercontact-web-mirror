@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_API_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export async function GET(
   request: NextRequest,
@@ -86,7 +86,7 @@ async function proxyRequest(
 
     // Get response data
     const data = await response.text();
-    
+
     // Create response with same status
     return new NextResponse(data, {
       status: response.status,
@@ -97,9 +97,9 @@ async function proxyRequest(
   } catch (error: any) {
     console.error('[Proxy] Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: { message: error.message || 'Proxy request failed' } 
+      {
+        success: false,
+        error: { message: error.message || 'Proxy request failed' }
       },
       { status: 500 }
     );

@@ -37,9 +37,15 @@ export interface ProfileData {
   company: string;
   country: string;
   language: string;
-  phone: string;
-  skype: string;
+  phone?: string;
+  skype?: string;
   bio: string;
+  address?: string;
+  currency?: string;
+  state?: string;
+  timezone?: string;
+  zip_code?: string;
+  avatar_url?: string;
 }
 
 export interface ProfileResponse {
@@ -54,9 +60,14 @@ export interface UpdateProfileData {
   company: string;
   country: string;
   language: string;
-  phone: string;
-  skype: string;
   bio: string;
+  address: string;
+  currency: string;
+  state: string;
+  timezone: string;
+  zip_code: string;
+  phone?: string;
+  skype?: string;
 }
 
 export interface UpdateProfileResponse {
@@ -103,48 +114,72 @@ export async function fetchUsers(
   return json;
 }
 
-export async function fetchProfile(token: string): Promise<ProfileResponse> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
+// Basic in-memory cache for the profile fetch to prevent multiple hits
+let profilePromiseCache: Promise<ProfileResponse> | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 2000; // 2 seconds
 
+export async function fetchProfile(token: string): Promise<ProfileResponse> {
+  const now = Date.now();
+  if (profilePromiseCache && (now - lastCacheTime < CACHE_TTL)) {
+    logger.info("Using cached profile fetch promise");
+    return profilePromiseCache;
+  }
+
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/profile`;
   logger.info("Making GET request to fetch profile", { url });
 
-  try {
-    const res = await fetchWithTimeout(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-    });
-
-    let json;
+  profilePromiseCache = (async () => {
     try {
-      json = await res.json();
-    } catch (parseError: any) {
-      logger.error("Failed to parse profile response JSON", {
-        status: res.status,
-        statusText: res.statusText,
-        parseError: parseError.message
+      const res = await fetchWithTimeout(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
       });
-      throw new Error(`Server returned invalid response (${res.status})`);
+
+      let json;
+      try {
+        json = await res.json();
+      } catch (parseError: any) {
+        logger.error("Failed to parse profile response JSON", {
+          status: res.status,
+          statusText: res.statusText,
+          parseError: parseError.message
+        });
+        throw new Error(`Server returned invalid response (${res.status})`);
+      }
+
+      logger.apiResponse("/user-profile/profile (GET)", { status: res.status, response: json });
+
+      if (!res.ok) {
+        logger.error(`Fetch profile failed: ${res.status}`, {
+          status: res.status,
+          statusText: res.statusText,
+          response: json,
+          url
+        });
+        throw new Error(json.message || json.error?.message || `Failed to fetch profile (${res.status})`);
+      }
+
+      // Handle different API response structures
+      const data = {
+        success: json.success !== undefined ? json.success : true,
+        data: json.data !== undefined ? json.data : json,
+        error: json.error || null
+      };
+
+      return data;
+    } catch (error: any) {
+      // Clear cache on error so next retry can go through
+      profilePromiseCache = null;
+      throw error;
     }
+  })();
 
-    logger.apiResponse("/user-profile/profile (GET)", { status: res.status, response: json });
-
-    if (!res.ok) {
-      logger.error(`Fetch profile failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.message || json.error?.message || `Failed to fetch profile (${res.status}: ${res.statusText})`);
-    }
-
-    return json;
-  } catch (error: any) {
-    logger.error("Fetch profile request failed", { error: error.message, url });
-    throw error;
-  }
+  lastCacheTime = now;
+  return profilePromiseCache;
 }
 
 export async function updateProfile(token: string, profileData: UpdateProfileData): Promise<UpdateProfileResponse> {
@@ -160,6 +195,7 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(profileData),
@@ -186,12 +222,54 @@ export async function updateProfile(token: string, profileData: UpdateProfileDat
         response: json,
         url
       });
-      throw new Error(json.message || json.error?.message || `Profile update failed (${res.status}: ${res.statusText})`);
+      throw new Error(json.message || json.error?.message || `Profile update failed (${res.status})`);
     }
 
-    return json;
+    return {
+      success: json.success !== undefined ? json.success : true,
+      message: json.message || "Profile updated successfully",
+      data: json.data !== undefined ? json.data : json
+    };
   } catch (error: any) {
     logger.error("Profile update request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function uploadAvatar(token: string, file: File): Promise<{ success: boolean; data?: any; message?: string }> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/avatar`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Accept': 'application/json'
+      },
+      body: formData,
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    if (!res.ok) {
+      throw new Error(json.message || json.error?.message || `Avatar upload failed (${res.status})`);
+    }
+
+    return {
+      success: json.success !== undefined ? json.success : true,
+      message: json.message || "Avatar uploaded successfully",
+      data: json.data !== undefined ? json.data : json
+    };
+  } catch (error: any) {
+    logger.error("Avatar upload request failed", { error: error.message, url });
     throw error;
   }
 }

@@ -31,10 +31,10 @@ const nextConfig = {
   },
   //comment utk dev purpose need to be reverted back
   async rewrites() {
-    const backendUrl = process.env.BACKEND_API_URL;
+    const backendUrl = process.env.BACKEND_URL;
 
     if (!backendUrl) {
-      console.warn('⚠️ WARNING: BACKEND_API_URL is not set. Proxy rewrites might fail.');
+      console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
     }
 
     return [

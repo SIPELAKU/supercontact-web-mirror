@@ -27,8 +27,8 @@ export {
 
 // User/Profile API
 export {
-    fetchProfile, updateProfile, uploadAvatar,
-    type User, type UserResponse, type ProfileData, type UpdateProfileData, type ProfileResponse, type UpdateProfileResponse
+    fetchProfile, updateProfile, uploadAvatar, deactivateAccount, changePassword, fetchRecentDevices,
+    type User, type UserResponse, type ProfileData, type UpdateProfileData, type ProfileResponse, type UpdateProfileResponse, type ChangePasswordData, type DeviceSession
 } from './users';
 
 // Notes API

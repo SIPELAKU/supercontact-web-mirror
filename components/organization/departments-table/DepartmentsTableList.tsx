@@ -70,7 +70,7 @@ export default function TableListDepartment({
           <TableCell>Branch</TableCell>
           <TableCell>Manager</TableCell>
           <TableCell>Manager ID</TableCell>
-          <TableCell>Member Count</TableCell>
+          <TableCell align="center">Member Count</TableCell>
           <TableCell>Action</TableCell>
         </TableRow>
       </TableHead>
@@ -113,21 +113,21 @@ export default function TableListDepartment({
             <TableCell>
               <span className="text-gray-500">{department.branch}</span>
             </TableCell>
-            <TableCell>
+            <TableCell align="center">
               {department.manager === null ? "-" : (
                 <div className="flex items-center gap-3">
                   <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
-                    N
+                    {department.manager.avatar_initial}
                   </Avatar>
                   <span className="font-medium">
-                    {department.manager.name}
+                    {department.manager.fullname}
                   </span>
                 </div>
               )}
             </TableCell>
             <TableCell>{department.manager_code}</TableCell>
 
-            <TableCell>
+            <TableCell align="center">
               {department.member_count}
             </TableCell>
 

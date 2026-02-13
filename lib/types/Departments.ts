@@ -4,11 +4,12 @@ export interface DepartmentsType {
     branch: string;
     manager: {
         id: string;
-        name: string;
+        fullname: string;
         email: string;
         position: string;
         employee_code: string;
         status: string;
+        avatar_initial: string;
     } | null;
     manager_name: string
     manager_id: string;

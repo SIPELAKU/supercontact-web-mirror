@@ -19,9 +19,9 @@ const CardStatUser = () => {
   );
   const users = usersResponse?.data?.manage_users || [];
 
-  const totalUsers = 0;
-  const activeUsers = users?.length ?? 0;
-  const pendingUsers = 0;
+  const totalUsers = users?.length ?? 0;
+  const activeUsers = users?.filter((user) => user.status === "Active").length ?? 0;
+  const pendingUsers = users?.filter((user) => user.status === "Pending").length ?? 0;
 
   const cardData: UserStatType[] = [
     {

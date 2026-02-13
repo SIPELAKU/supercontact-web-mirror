@@ -129,7 +129,7 @@ export interface MailServer {
   smtp_port: number;
   smtp_username: string;
   smtp_encryption: "None" | "SSL/TLS" | "TLS(STARTTLS)";
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Error";
   is_default: boolean;
   is_system_mail_server: boolean;
   priority?: number; // Optional as not in the provided example but was in my previous code

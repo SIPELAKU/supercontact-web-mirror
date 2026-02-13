@@ -123,7 +123,7 @@ deploy_staging:
     - npm i -g vercel
 
     # Pull konfigurasi Vercel project
-    - vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+    - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
 
     # Build menggunakan Vercel (agar environment variables dari Vercel ikut)
     - vercel build --token=$VERCEL_TOKEN

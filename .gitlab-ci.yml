@@ -90,7 +90,8 @@ build_nextjs:
   script:
     - echo "🔨 Building Next.js application..."
     - echo "   Tag     → $CI_COMMIT_TAG"
-    - echo "   Version → $(node -p \"require('./package.json').version\")"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
     - npm run build
     - echo "✅ Build successful!"
   rules:
@@ -116,7 +117,9 @@ deploy_staging:
     url: https://solvera-supercontact-staging.vercel.app
   script:
     - echo "🚀 Deploying to STAGING via Vercel..."
-    - echo "   Tag → $CI_COMMIT_TAG"
+    - echo "   Tag     → $CI_COMMIT_TAG"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
     - npm i -g vercel
 
     # Pull konfigurasi Vercel project
@@ -154,7 +157,9 @@ deploy_prod:
     url: https://solvera-supercontact.vercel.app
   script:
     - echo "🚀 Deploying to PRODUCTION via Vercel..."
-    - echo "   Tag → $CI_COMMIT_TAG"
+    - echo "   Tag     → $CI_COMMIT_TAG"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
     - npm i -g vercel
 
     # Pull konfigurasi Vercel project

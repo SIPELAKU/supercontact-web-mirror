@@ -19,6 +19,8 @@ import { useSearchParams } from "next/navigation";
 
 import { Card, CardHeader, Divider, Box, TablePagination } from "@mui/material";
 import ExportPopover from "./ExportPopover";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 
 export default function TicketManagementPage() {
     const searchParams = useSearchParams();
@@ -38,6 +40,7 @@ export default function TicketManagementPage() {
     }, [search, statusFilter, priorityFilter, agentFilter]);
 
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+    const componentRef = useRef<HTMLDivElement>(null);
 
     // Confirmation Hook
     const { showConfirmation } = useConfirmation();
@@ -93,6 +96,18 @@ export default function TicketManagementPage() {
         { id: "assigned_agent.fullname", label: "Assigned Agent" },
     ];
 
+    const printableColumns = [
+        { header: "Ticket ID", accessorKey: "ticket_code" },
+        { header: "Subject", accessorKey: "subject" },
+        { header: "Priority", accessorKey: "priority" },
+        { header: "Status", accessorKey: "status" },
+        {
+            header: "Assigned Agent",
+            accessorKey: "assigned_agent",
+            cell: (item: any) => item.assigned_agent?.fullname || "-"
+        },
+    ];
+
     const handleExportCSV = () => {
         if (!tickets || tickets.length === 0) return notify.error("Error", {
             description: "Ticket data is empty"
@@ -129,75 +144,10 @@ export default function TicketManagementPage() {
         }
     };
 
-    const handlePrint = () => {
-        const printContent = tickets;
-        console.log("printContent", printContent)
-        const printWindow = window.open("", "", "height=600,width=800");
-
-        if (printWindow) {
-            printWindow.document.write("<html><head><title>Print Ticket Management</title>");
-            printWindow.document.write(`
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
-          .sub-text { font-size: 14px; color: #666; }
-          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
-          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
-          .date { color: #888; font-size: 14px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; font-weight: bold; }
-          tr:nth-child(even) { background-color: #f9f9f9; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      `);
-            printWindow.document.write("</head><body>");
-            printWindow.document.write(`
-        <div class="header">
-          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
-        </div>
-        <div class="divider"></div>
-        <div class="page-info">
-          <h2 class="page-title">Ticket Management</h2>
-          <span class="date">${new Date().toLocaleDateString()}</span>
-        </div>
-      `);
-            printWindow.document.write("<table>");
-            printWindow.document.write(`
-        <thead>
-          <tr>
-            <th>Ticket ID</th>
-            <th>Subject</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Assigned Agent</th>
-          </tr>
-        </thead>
-        <tbody>
-      `);
-
-            printContent.forEach((item) => {
-                printWindow.document.write(`
-          <tr>
-            <td>${item.ticket_code || "-"}</td>
-            <td>${item.subject || "-"}</td>
-            <td>${item.priority || "-"}</td>
-            <td>${item.status || "-"}</td>
-            <td>${item.assigned_agent?.fullname || 0}</td>
-          </tr>
-        `);
-            });
-
-            printWindow.document.write("</tbody></table>");
-            printWindow.document.write("</body></html>");
-            printWindow.document.close();
-            printWindow.print();
-        }
-    };
+    const handlePrint = useReactToPrint({
+        contentRef: componentRef,
+        documentTitle: "Tickets",
+    });
 
     return (
         <div className="min-h-screen bg-[#ffffff] p-6">
@@ -312,6 +262,15 @@ export default function TicketManagementPage() {
                 onClose={() => setEditingTicket(null)}
                 ticket={editingTicket}
             />
+
+            <div style={{ display: "none" }}>
+                <PrintableTable
+                    ref={componentRef}
+                    title="Ticket Management"
+                    data={tickets}
+                    columns={printableColumns}
+                />
+            </div>
         </div>
     );
 }

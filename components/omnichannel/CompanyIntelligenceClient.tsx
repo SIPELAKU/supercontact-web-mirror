@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState } from "react";
+import { ChangeEvent, MouseEvent, Suspense, useMemo, useState, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@mui/material";
 import { Plus, Search, Upload } from "lucide-react";
@@ -21,6 +21,8 @@ import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import ExportPopover from "./ExportPopover";
 import { notify } from "@/lib/notifications";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 
 const INDUSTRY_OPTIONS: IndustryOption[] = [
   { label: "All Industries", value: "all" },
@@ -49,6 +51,7 @@ export default function CompanyIntelligenceClient({
 
   const [industry, setIndustry] = useState<Industry>("all");
   const [status, setStatus] = useState<CompanyStatus>("all");
+  const componentRef = useRef<HTMLDivElement>(null);
 
   // ===== SEARCH ===== //
   const searchParams = useSearchParams();
@@ -125,6 +128,15 @@ export default function CompanyIntelligenceClient({
     { id: "status", label: "Status" },
   ];
 
+  const printableColumns = [
+    { header: "Company Name", accessorKey: "name" },
+    { header: "Industry", accessorKey: "industry" },
+    { header: "Location", accessorKey: "location" },
+    { header: "Employees", accessorKey: "employees" },
+    { header: "Insight Score", accessorKey: "insightScore" },
+    { header: "Status", accessorKey: "status" },
+  ];
+
   const handleExportCSV = () => {
     if (!paginatedCompany || paginatedCompany.length === 0) return notify.error("Error", {
       description: "Company data is empty"
@@ -161,77 +173,10 @@ export default function CompanyIntelligenceClient({
     }
   };
 
-  const handlePrint = () => {
-    const printContent = paginatedCompany;
-    console.log("printContent", printContent)
-    const printWindow = window.open("", "", "height=600,width=800");
-
-    if (printWindow) {
-      printWindow.document.write("<html><head><title>Print Company Data Intelligence</title>");
-      printWindow.document.write(`
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
-            .sub-text { font-size: 14px; color: #666; }
-            .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
-            .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-            .page-title { font-size: 20px; font-weight: bold; margin: 0; }
-            .date { color: #888; font-size: 14px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
-            @media print {
-              body { -webkit-print-color-adjust: exact; }
-            }
-          </style>
-        `);
-      printWindow.document.write("</head><body>");
-      printWindow.document.write(`
-          <div class="header">
-            <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
-          </div>
-          <div class="divider"></div>
-          <div class="page-info">
-            <h2 class="page-title">Company Data Intelligence</h2>
-            <span class="date">${new Date().toLocaleDateString()}</span>
-          </div>
-        `);
-      printWindow.document.write("<table>");
-      printWindow.document.write(`
-          <thead>
-            <tr>
-              <th>Company Name</th>
-              <th>Industry</th>
-              <th>Location</th>
-              <th>Employees</th>
-              <th>Insight Score</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-        `);
-
-      printContent.forEach((item) => {
-        printWindow.document.write(`
-            <tr>
-              <td>${item.name || "-"}</td>
-              <td>${item.industry || "-"}</td>
-              <td>${item.location || "-"}</td>
-              <td>${item.employees || "-"}</td>
-              <td>${item.insightScore || 0}</td>
-              <td>${item.status || "-"}</td>
-            </tr>
-          `);
-      });
-
-      printWindow.document.write("</tbody></table>");
-      printWindow.document.write("</body></html>");
-      printWindow.document.close();
-      printWindow.print();
-    }
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Company Data Intelligence",
+  });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -306,6 +251,15 @@ export default function CompanyIntelligenceClient({
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </div>
+      </div>
+
+      <div style={{ display: "none" }}>
+        <PrintableTable
+          ref={componentRef}
+          title="Company Data Intelligence"
+          data={paginatedCompany}
+          columns={printableColumns}
+        />
       </div>
     </div>
   );

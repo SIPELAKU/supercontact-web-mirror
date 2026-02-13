@@ -7,6 +7,7 @@ import {
   useMemo,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, Divider } from "@mui/material";
@@ -28,9 +29,12 @@ import { DownloadIcon, Plus, Upload } from "lucide-react";
 import { AppInput } from "../ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import ExportPopover from "./ExportPopover";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 
 export default function UsersClient() {
   const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
+  const componentRef = useRef<HTMLDivElement>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
@@ -136,6 +140,13 @@ export default function UsersClient() {
     { id: "employee_code", label: "Employee ID" },
   ];
 
+  const printableColumns = [
+    { header: "User", accessorKey: "fullname" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Position", accessorKey: "position" },
+    { header: "Employee ID", accessorKey: "employee_code" },
+  ];
+
   const handleExportCSV = () => {
     const headers = columns.map((col) => col.label);
     const keys = columns.map((col) => col.id);
@@ -165,72 +176,10 @@ export default function UsersClient() {
     }
   };
 
-  const handlePrint = () => {
-    const printContent = filteredUsers;
-    const printWindow = window.open("", "", "height=600,width=800");
-
-    if (printWindow) {
-      printWindow.document.write("<html><head><title>Print Managed Users</title>");
-      printWindow.document.write(`
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
-          .sub-text { font-size: 14px; color: #666; }
-          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
-          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
-          .date { color: #888; font-size: 14px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; font-weight: bold; }
-          tr:nth-child(even) { background-color: #f9f9f9; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      `);
-      printWindow.document.write("</head><body>");
-      printWindow.document.write(`
-        <div class="header">
-          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
-        </div>
-        <div class="divider"></div>
-        <div class="page-info">
-          <h2 class="page-title">Managed Users</h2>
-          <span class="date">${new Date().toLocaleDateString()}</span>
-        </div>
-      `);
-      printWindow.document.write("<table>");
-      printWindow.document.write(`
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Email</th>
-            <th>Position</th>
-            <th>Employee ID</th>
-          </tr>
-        </thead>
-        <tbody>
-      `);
-
-      printContent.forEach((item) => {
-        printWindow.document.write(`
-          <tr>
-            <td>${item.fullname || "-"}</td>
-            <td>${item.email || "-"}</td>
-            <td>${item.position || "-"}</td>
-            <td>${item.employee_code || "-"}</td>
-          </tr>
-        `);
-      });
-
-      printWindow.document.write("</tbody></table>");
-      printWindow.document.write("</body></html>");
-      printWindow.document.close();
-      printWindow.print();
-    }
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Managed Users",
+  });
 
 
   return (
@@ -350,6 +299,15 @@ export default function UsersClient() {
           </div>
         </div>
       </Card>
+
+      <div style={{ display: "none" }}>
+        <PrintableTable
+          ref={componentRef}
+          title="Managed Users"
+          data={filteredUsers}
+          columns={printableColumns}
+        />
+      </div>
     </div>
   );
 }

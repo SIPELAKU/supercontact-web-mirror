@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useState, useEffect } from "react";
+import { ChangeEvent, MouseEvent, Suspense, useState, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CardHeader, Divider, Card } from "@mui/material";
 import useDepartments from "@/lib/hooks/useDepartments";
@@ -20,11 +20,14 @@ import { AppInput } from "@/components/ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { Upload } from "lucide-react";
 import ExportPopover from "./ExportPopover";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 
 export default function OrganizationClient() {
   const [selected, setSelected] = useState<string[]>([]);
   const [selectedDepartment, setSelectedDepartmnet] =
     useState<DepartmentsType | null>(null);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -104,6 +107,14 @@ export default function OrganizationClient() {
     { id: "member_count", label: "Member Count" },
   ];
 
+  const printableColumns = [
+    { header: "Department", accessorKey: "department" },
+    { header: "Branch", accessorKey: "branch" },
+    { header: "Manager", accessorKey: "manager_name" },
+    { header: "Manager ID", accessorKey: "manager_code" },
+    { header: "Member Count", accessorKey: "member_count" },
+  ];
+
   const handleExportCSV = () => {
     const headers = columns.map((col) => col.label);
     const keys = columns.map((col) => col.id);
@@ -135,75 +146,10 @@ export default function OrganizationClient() {
     }
   };
 
-  const handlePrint = () => {
-    const printContent = departments;
-    console.log("printContent", printContent)
-    const printWindow = window.open("", "", "height=600,width=800");
-
-    if (printWindow) {
-      printWindow.document.write("<html><head><title>Print Organization Structure</title>");
-      printWindow.document.write(`
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
-          .sub-text { font-size: 14px; color: #666; }
-          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
-          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
-          .date { color: #888; font-size: 14px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; font-weight: bold; }
-          tr:nth-child(even) { background-color: #f9f9f9; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      `);
-      printWindow.document.write("</head><body>");
-      printWindow.document.write(`
-        <div class="header">
-          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
-        </div>
-        <div class="divider"></div>
-        <div class="page-info">
-          <h2 class="page-title">Organization Structure</h2>
-          <span class="date">${new Date().toLocaleDateString()}</span>
-        </div>
-      `);
-      printWindow.document.write("<table>");
-      printWindow.document.write(`
-        <thead>
-          <tr>
-            <th>Department</th>
-            <th>Branch</th>
-            <th>Manager</th>
-            <th>Manager ID</th>
-            <th>Member Count</th>
-          </tr>
-        </thead>
-        <tbody>
-      `);
-
-      printContent.forEach((item) => {
-        printWindow.document.write(`
-          <tr>
-            <td>${item.department || "-"}</td>
-            <td>${item.branch || "-"}</td>
-            <td>${item.manager_name || "-"}</td>
-            <td>${item.manager_code || "-"}</td>
-            <td>${item.member_count || 0}</td>
-          </tr>
-        `);
-      });
-
-      printWindow.document.write("</tbody></table>");
-      printWindow.document.write("</body></html>");
-      printWindow.document.close();
-      printWindow.print();
-    }
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Organization Structure",
+  });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -305,6 +251,15 @@ export default function OrganizationClient() {
           />
         </div>
       </Card>
+
+      <div style={{ display: "none" }}>
+        <PrintableTable
+          ref={componentRef}
+          title="Organization Structure"
+          data={departments}
+          columns={printableColumns}
+        />
+      </div>
     </div>
   );
 }

@@ -27,6 +27,7 @@ import { AppInput } from '@/components/ui/app-input';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import EmailTabbedEditor from '../EmailTabbedEditor';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -152,19 +153,16 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           </Box>
 
           <Box>
-            <label htmlFor="email-content">Email Content (HTML)</label>
-            <TextField
-              label="Email Content (HTML)"
+            <EmailTabbedEditor
               value={htmlContent}
-              onChange={(e) => setHtmlContent(e.target.value)}
-              fullWidth
-              required
-              multiline
-              rows={10}
-              error={Boolean(error && !htmlContent.trim())}
-              helperText={error && !htmlContent.trim() ? "Content is required" : "You can use HTML tags"}
-              placeholder="<h1>Hello!</h1><p>Your email content here...</p>"
+              onChange={(html) => setHtmlContent(html)}
+              isLoading={updateMutation.isPending}
             />
+            {error && !htmlContent.trim() && (
+              <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                Content is required
+              </Typography>
+            )}
           </Box>
 
           <FormControl component="fieldset">

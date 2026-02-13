@@ -321,7 +321,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                 <label className="text-sm font-semibold text-gray-900">
                                     SKU
                                     <span className="text-gray-400 font-normal ml-2 text-xs">
-                                        (Format: {getSmartAbbreviation(formData.productName) || "HWG"}-{companyAcronym}-001)
+                                        (Example: {getSmartAbbreviation(formData.productName) || "HWG"}-{companyAcronym}-001)
                                     </span>
                                 </label>
 

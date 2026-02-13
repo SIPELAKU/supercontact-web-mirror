@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Box,
@@ -600,15 +600,6 @@ export default function ProfileUserSettingClient() {
                 }
                 label="I confirm my account deactivation"
               />
-              <AppButton
-                variantStyle="danger"
-                sx={{ mt: 2 }}
-                onClick={handleDeactivateAccount}
-                disabled={!confirmDeactivate || isDeactivating}
-                isLoading={isDeactivating}
-              >
-                Deactivate Account
-              </AppButton>
             </Card>
           </Stack>
         )}

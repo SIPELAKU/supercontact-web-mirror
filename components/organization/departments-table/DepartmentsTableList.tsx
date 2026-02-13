@@ -116,11 +116,14 @@ export default function TableListDepartment({
             <TableCell>
               {department.manager === null ? "-" : (
                 <div className="flex items-center gap-3">
-                  <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
-                    N
+                  <Avatar
+                    src={department.manager.avatar_url || undefined}
+                    sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}
+                  >
+                    {department.manager.avatar_initial}
                   </Avatar>
                   <span className="font-medium">
-                    {department.manager.name}
+                    {department.manager.fullname}
                   </span>
                 </div>
               )}

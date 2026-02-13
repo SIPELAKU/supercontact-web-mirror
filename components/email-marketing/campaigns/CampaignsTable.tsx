@@ -1,4 +1,3 @@
-// components/email-marketing/campaigns/CampaignsTable.tsx
 "use client";
 
 import { DeleteButton, EditButton, ViewButton } from '@/components/ui/app-action-buttons-table';
@@ -26,7 +25,7 @@ import {
 import { format } from 'date-fns';
 import { Eye, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 interface CampaignsTableProps {
   onAdd: () => void;
@@ -61,7 +60,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
 
   useEffect(() => {
     if (error) {
-      toast.error('Failed to fetch campaigns.');
+      notify.error('Failed to fetch campaigns.');
     }
   }, [error]);
 

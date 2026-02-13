@@ -17,18 +17,23 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { notify } from "@/lib/notifications";
-import { fetchProfile, updateProfile, UpdateProfileData, uploadAvatar } from "@/lib/api";
+import { fetchProfile, updateProfile, UpdateProfileData, uploadAvatar, deactivateAccount, changePassword, ChangePasswordData, fetchRecentDevices, DeviceSession } from "@/lib/api";
 import { handleError, getErrorMessage } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 
 export default function ProfileUserSettingClient() {
-  const { getToken } = useAuth();
+  const { getToken, reloadProfile, logout } = useAuth();
   const [tab, setTab] = useState("account");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [recentDevices, setRecentDevices] = useState<DeviceSession[]>([]);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
 
   const [profileData, setProfileData] = useState<UpdateProfileData>({
     fullname: "",
@@ -55,6 +60,28 @@ export default function ProfileUserSettingClient() {
   const [apiType, setApiType] = useState("");
   const [apiName, setApiName] = useState("");
 
+  const loadRecentDevices = async () => {
+    try {
+      setIsLoadingDevices(true);
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+      const response = await fetchRecentDevices(token);
+      if (response.success && response.data) {
+        setRecentDevices(response.data);
+      }
+    } catch (err) {
+      console.error("Failed to load recent devices:", err);
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "security") {
+      loadRecentDevices();
+    }
+  }, [tab, getToken]);
+
   // Load profile data on component mount
   useEffect(() => {
     const loadProfile = async () => {
@@ -67,6 +94,7 @@ export default function ProfileUserSettingClient() {
 
         if (response.success && response.data) {
           const profile = response.data;
+          setAvatar(profile.avatar || profile.avatar_url || null);
           setProfileData({
             fullname: profile.fullname || "",
             email: profile.email || "",
@@ -97,7 +125,7 @@ export default function ProfileUserSettingClient() {
     };
 
     loadProfile();
-  }, []);
+  }, [getToken]);
 
   const handleInputChange =
     (field: keyof UpdateProfileData) =>
@@ -140,6 +168,90 @@ export default function ProfileUserSettingClient() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (!confirmDeactivate) {
+      notify.error("Please confirm account deactivation first");
+      return;
+    }
+
+    const confirmed = window.confirm("Are you sure you want to deactivate your account? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      setIsDeactivating(true);
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+
+      const response = await deactivateAccount(token);
+
+      if (response.success) {
+        notify.success("Account deactivated successfully. You will be logged out.");
+        // Logout user after successful deactivation
+        setTimeout(() => {
+          logout();
+          window.location.href = "/login";
+        }, 2000);
+      } else {
+        notify.error("Failed to deactivate account");
+      }
+    } catch (err) {
+      const errorMessage = handleError(err, "Deactivate Account");
+      notify.error(errorMessage);
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      notify.error("Please fill in all password fields");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      notify.error("New password and confirm password do not match");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      notify.error("New password must be at least 8 characters long");
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+
+      const response = await changePassword(token, {
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+
+      if (response.success) {
+        notify.success("Password changed successfully!");
+        // Clear fields
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        notify.error(getErrorMessage(response, "Failed to change password"));
+      }
+    } catch (err) {
+      const errorMessage = handleError(err, "Change Password");
+      notify.error(errorMessage);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleResetPasswordFields = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleResetProfile = async () => {
@@ -212,7 +324,7 @@ export default function ProfileUserSettingClient() {
   }
 
   return (
-    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-12 space-y-6">
       <Stack spacing={3}>
         {/* HEADER */}
         <PageHeader
@@ -480,10 +592,21 @@ export default function ProfileUserSettingClient() {
                 Delete Account
               </Typography>
               <FormControlLabel
-                control={<Checkbox />}
+                control={
+                  <Checkbox
+                    checked={confirmDeactivate}
+                    onChange={(e) => setConfirmDeactivate(e.target.checked)}
+                  />
+                }
                 label="I confirm my account deactivation"
               />
-              <AppButton variantStyle="danger" sx={{ mt: 2 }}>
+              <AppButton
+                variantStyle="danger"
+                sx={{ mt: 2 }}
+                onClick={handleDeactivateAccount}
+                disabled={!confirmDeactivate || isDeactivating}
+                isLoading={isDeactivating}
+              >
                 Deactivate Account
               </AppButton>
             </Card>
@@ -544,16 +667,90 @@ export default function ProfileUserSettingClient() {
                   </ul>
                 </Box>
                 <Stack direction="row" spacing={2} mt={4}>
-                  <AppButton>Save Changes</AppButton>
-                  <AppButton variantStyle="outline" color="gray">
+                  <AppButton onClick={handleChangePassword} isLoading={isChangingPassword} disabled={isChangingPassword}>
+                    Save Changes
+                  </AppButton>
+                  <AppButton
+                    variantStyle="outline"
+                    color="gray"
+                    onClick={handleResetPasswordFields}
+                    disabled={isChangingPassword}
+                  >
                     Reset
                   </AppButton>
                 </Stack>
               </Stack>
             </Card>
 
+            {/* RECENT DEVICES */}
+            <Card sx={{ p: 4, overflow: 'auto' }}>
+              <Typography variant="h6" fontWeight={600} mb={3}>
+                Recent Devices
+              </Typography>
+
+              <table className="w-full text-sm text-left">
+                <thead className="text-[11px] font-bold uppercase text-slate-500 border-b">
+                  <tr>
+                    <th className="pb-4 font-semibold">Browser</th>
+                    <th className="pb-4 font-semibold">Device</th>
+                    <th className="pb-4 font-semibold">Location</th>
+                    <th className="pb-4 font-semibold">Recent Activity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {isLoadingDevices ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center">
+                        <CircularProgress size={24} />
+                      </td>
+                    </tr>
+                  ) : recentDevices.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-slate-400">
+                        No recent devices found
+                      </td>
+                    </tr>
+                  ) : (
+                    recentDevices.map((device) => (
+                      <tr key={device.id} className="group hover:bg-slate-50">
+                        <td className="py-4">
+                          <Stack direction="row" spacing={2} alignItems="center">
+                            <Box sx={{
+                              fontSize: 18,
+                              color: device.browser.toLowerCase().includes('chrome') ? '#EA4335' :
+                                device.browser.toLowerCase().includes('safari') ? '#00AEEF' :
+                                  device.browser.toLowerCase().includes('firefox') ? '#F29400' : '#64748B'
+                            }}>
+                              {device.browser.toLowerCase().includes('chrome') && '🌐'}
+                              {device.browser.toLowerCase().includes('safari') && '🧭'}
+                              {device.browser.toLowerCase().includes('firefox') && '🦊'}
+                              {!['chrome', 'safari', 'firefox'].some(b => device.browser.toLowerCase().includes(b)) && '🌍'}
+                            </Box>
+                            <Typography variant="body2" fontWeight={500} color="text.primary">
+                              {device.browser}
+                            </Typography>
+                          </Stack>
+                        </td>
+                        <td className="py-4 text-slate-600">{device.device}</td>
+                        <td className="py-4 text-slate-600">{device.location}</td>
+                        <td className="py-4 text-slate-600">
+                          {new Date(device.last_activity).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </Card>
+
             {/* TWO STEPS VERIFICATION */}
-            <Card sx={{ p: 4 }}>
+            {/* <Card sx={{ p: 4 }}>
               <Typography variant="h6" fontWeight={600} mb={3}>
                 Two-Steps Verification
               </Typography>
@@ -568,10 +765,10 @@ export default function ProfileUserSettingClient() {
               <Stack direction="row" spacing={2} mt={4}>
                 <AppButton>Enable Two-Factor Authentication</AppButton>
               </Stack>
-            </Card>
+            </Card> */}
 
             {/* API KEY */}
-            <Card sx={{ p: 4 }}>
+            {/* <Card sx={{ p: 4 }}>
               <Typography variant="h6" fontWeight={600} mb={3}>
                 Create an API key
               </Typography>
@@ -581,7 +778,6 @@ export default function ProfileUserSettingClient() {
                 spacing={4}
                 alignItems="center"
               >
-                {/* FORM */}
                 <Stack spacing={3} flex={1}>
                   <AppSelect
                     isBgWhite
@@ -608,7 +804,6 @@ export default function ProfileUserSettingClient() {
                   </AppButton>
                 </Stack>
 
-                {/* AVATAR */}
                 <Box
                   component="img"
                   src="/assets/avatar-user-setting.png"
@@ -619,10 +814,10 @@ export default function ProfileUserSettingClient() {
                   }}
                 />
               </Stack>
-            </Card>
+            </Card> */}
 
             {/* API KEY LIST */}
-            <Card sx={{ p: 4 }}>
+            {/* <Card sx={{ p: 4 }}>
               <Typography variant="h6" fontWeight={600} mb={2}>
                 API Key List & Access
               </Typography>
@@ -701,7 +896,7 @@ export default function ProfileUserSettingClient() {
                   ))}
                 </Stack>
               )}
-            </Card>
+            </Card> */}
           </Stack>
         )}
       </Stack>

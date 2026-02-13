@@ -9,8 +9,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import {
   UsersTableError,
-  UsersTableNotFound,
-  UsersTableSkeleton,
 } from "@/components/users";
 import { ManageUser } from "@/lib/types/manage-users";
 import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
@@ -26,7 +24,7 @@ interface TableListUsersProps {
     onSelectAll: (checked: boolean, data: ManageUser[]) => void;
     onOpenEdit: (user: ManageUser) => void;
     onOpenDetail: (user: ManageUser) => void;
-    onOpenDelete: () => void;
+    onOpenDelete: (user: ManageUser) => void;
   };
 }
 
@@ -149,7 +147,10 @@ export default function TableListUsers({
                 <div className="flex gap-2">
                   <ViewButton onClick={() => onOpenDetail(user)} />
                   <EditButton onClick={() => onOpenEdit(user)} />
-                  <DeleteButton onClick={onOpenDelete} />
+                  <DeleteButton onClick={() => {
+                    // console.log("user", user)
+                    onOpenDelete(user)
+                  }} />
                 </div>
               </TableCell>
             </TableRow>

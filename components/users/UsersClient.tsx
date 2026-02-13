@@ -192,7 +192,6 @@ export default function UsersClient() {
     documentTitle: "Managed Users",
   });
 
-
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
@@ -271,7 +270,10 @@ export default function UsersClient() {
                 setSelectedUser(user);
                 setOpenDetail(true);
               },
-              onOpenDelete: () => setOpenDelete(true),
+              onOpenDelete: (user) => {
+                setSelectedUser(user);
+                setOpenDelete(true);
+              },
             }}
           />
 

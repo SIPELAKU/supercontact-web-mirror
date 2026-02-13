@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import { Ticket } from "@/lib/types/Ticket";
+import { AppButton } from "@/components/ui/app-button";
 
 interface TicketFormProps {
     initialData?: Ticket | null;
@@ -172,6 +173,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     control={control}
                     render={({ field }) => (
                         <AppAutocomplete
+                            isBgWhite
                             options={agentOptions}
                             placeholder="Search and select agent"
                             value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
@@ -184,12 +186,12 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" type="button" onClick={onCancel} className="border-[#5479EE] text-[#5479EE] hover:bg-blue-50">
+                <AppButton variantStyle="outline" onClick={onCancel}>
                     Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading} className="bg-[#5479EE] hover:bg-[#4a6cd9] text-white">
+                </AppButton>
+                <AppButton type="submit" disabled={isLoading} variantStyle="primary">
                     {isLoading ? "Saving..." : initialData ? "Save Changes" : "Submit Ticket"}
-                </Button>
+                </AppButton>
             </div>
         </form>
     );

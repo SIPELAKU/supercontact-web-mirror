@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-02-13
+
+### Detail Versi 1.6.3
+
+#### 🖨️ Print Functionality Refactor
+
+- **Reusable Print Infrastructure:**
+  - Introduced `PrintableTable` component to layout print views consistently.
+  - Migrated from manual `window.open` + `document.write` to `react-to-print` for reliability.
+  - Fixed issues where zero values were incorrectly displayed as dashes.
+
+- **Module Updates:**
+  - Standardized print functionality across **Contacts**, **Support Tickets**, **Company Intelligence**, **Organization**, and **User Management** modules.
+
+#### 📁 Files Created
+
+- `components/ui/printable-table.tsx`
+
+#### 📁 Files Modified
+
+- `app/contact/page.tsx`
+- `app/support/tickets/page.tsx`
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/organization/OrganizationClient.tsx`
+- `components/users/UsersClient.tsx`
+
+---
+
 ## [1.6.2] - 2026-02-13
 
 ### Detail Versi 1.6.2

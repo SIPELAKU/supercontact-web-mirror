@@ -309,8 +309,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                 >
                     Cancel
                 </AppButton>
-                <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' disabled={createMutation.isPending}>
-                    {createMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save'}
+                <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' isLoading={createMutation.isPending}>
+                    Save
                 </AppButton>
             </DialogActions>
 

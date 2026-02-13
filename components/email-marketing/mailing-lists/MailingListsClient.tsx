@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
+
+import { Card, Typography } from '@mui/material';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 import MailingListsTable from '@/components/email-marketing/mailing-lists/MailingListsTable';
 import AddMailingListModal from '@/components/email-marketing/mailing-lists/modals/AddMailingListModal';
@@ -12,7 +12,7 @@ import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingList } from '@/lib/hooks/useMailingLists';
 import { MailingList } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
-import { DraftNotice } from '@/components/ui/draft-notice';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 export default function MailingListsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -54,10 +54,10 @@ export default function MailingListsClient() {
 
     try {
       await deleteMutation.mutateAsync(listToDelete.id);
-      toast.success(`Mailing list "${listToDelete.name}" deleted successfully.`);
+      notify.success(`Mailing list "${listToDelete.name}" deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete mailing list.');
+      notify.error(err.message || 'Failed to delete mailing list.');
     } finally {
       setConfirmOpen(false);
       setListToDelete(null);
@@ -79,7 +79,6 @@ export default function MailingListsClient() {
           <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
             Mailing Lists
           </Typography>
-          <DraftNotice type="partial" message="Mailing lists management is active. Audience analytics are coming soon!" />
         </div>
         <Typography variant="body2" color="text.secondary">
           Manage your mailing lists
@@ -104,25 +103,17 @@ export default function MailingListsClient() {
         mailingList={selectedList}
       />
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete mailing list "{listToDelete?.name}"? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete mailing list "${listToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 interface MailingListsTableProps {
   onAdd: () => void;
@@ -31,7 +31,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
   const lists = data?.data?.mailing_lists || [];
 
   if (error) {
-    toast.error('Failed to fetch mailing lists.');
+    notify.error('Failed to fetch mailing lists.');
   }
 
   return (

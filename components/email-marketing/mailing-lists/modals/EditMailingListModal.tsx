@@ -18,7 +18,7 @@ import {
   TextField
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 interface EditMailingListModalProps {
   open: boolean;
@@ -60,13 +60,13 @@ const EditMailingListModal = ({ open, onClose, onSuccess, mailingList }: EditMai
         data: { name: name.trim() }
       });
 
-      toast.success('Mailing list updated successfully.');
+      notify.success('Mailing list updated successfully.');
       onSuccess();
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update mailing list.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     }
   };
 

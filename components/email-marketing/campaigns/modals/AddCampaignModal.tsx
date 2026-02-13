@@ -26,9 +26,9 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import EmailTabbedEditor from '../EmailTabbedEditor';
+import { useState, useRef } from 'react';
+import { notify } from '@/lib/notifications';
+import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 
 interface AddCampaignModalProps {
   open: boolean;
@@ -37,6 +37,7 @@ interface AddCampaignModalProps {
 }
 
 const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) => {
+  const editorRef = useRef<EmailTabbedEditorRef>(null);
   const [subject, setSubject] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'subscriber'>('mailing_list');
@@ -81,6 +82,11 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   };
 
   const handleSubmit = async (action: 'send' | 'draft') => {
+    // Export content from Visual Builder before submission
+    if (editorRef.current) {
+      await editorRef.current.exportContent();
+    }
+
     if (!subject.trim()) {
       setError("Subject is required.");
       return;
@@ -110,13 +116,13 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
       });
 
-      toast.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
+      notify.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
       onSuccess();
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create campaign.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     }
   };
 
@@ -145,6 +151,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
 
           <Box>
             <EmailTabbedEditor
+              ref={editorRef}
               value={htmlContent}
               onChange={(html) => setHtmlContent(html)}
               isLoading={createMutation.isPending}
@@ -256,7 +263,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
           }}
           color="gray"
           variantStyle="outline"
-          disabled={createMutation.isPending}
+          isLoading={createMutation.isPending}
         >
           Cancel
         </AppButton>
@@ -264,16 +271,16 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
           <AppButton
             onClick={() => handleSubmit('draft')}
             variantStyle="outline"
-            disabled={createMutation.isPending}
+            isLoading={createMutation.isPending}
           >
-            {createMutation.isPending ? <CircularProgress size={24} /> : 'Save as Draft'}
+            Save as Draft
           </AppButton>
           <AppButton
             onClick={() => handleSubmit('send')}
             variantStyle="primary"
-            disabled={createMutation.isPending}
+            isLoading={createMutation.isPending}
           >
-            {createMutation.isPending ? <CircularProgress size={24} /> : 'Create & Send'}
+            Create & Send
           </AppButton>
         </Box>
       </DialogActions>

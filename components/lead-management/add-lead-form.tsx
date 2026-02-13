@@ -659,7 +659,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
 
                 <AppButton
                   type="submit"
-                  disabled={isSubmitting}
+                  isLoading={isSubmitting}
                   color="primary"
                   variantStyle="primary"
                 >

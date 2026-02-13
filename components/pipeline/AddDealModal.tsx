@@ -563,9 +563,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 type="submit"
                 variantStyle="primary"
                 color="primary"
-                disabled={isSubmitting}
+                isLoading={isSubmitting}
               >
-                {isSubmitting ? <Spinner /> : id ? "Update Deal" : "Save Deal"}
+                {id ? "Update Deal" : "Save Deal"}
               </AppButton>
             </div>
           </form>

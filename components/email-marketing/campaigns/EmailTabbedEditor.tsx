@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Box, Tabs, Tab, Typography, Stack } from "@mui/material";
 import { Edit3, Layout } from "lucide-react";
 import EmailEditor, { EditorRef } from "react-email-editor";
@@ -12,52 +12,111 @@ interface EmailTabbedEditorProps {
     isLoading?: boolean;
 }
 
-const EmailTabbedEditor: React.FC<EmailTabbedEditorProps> = ({
-    value,
-    onChange,
-    isLoading = false,
-}) => {
+export interface EmailTabbedEditorRef {
+    exportContent: () => Promise<void>;
+}
+
+
+const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProps>((
+    { value, onChange, isLoading = false },
+    ref
+) => {
     const [activeTab, setActiveTab] = useState(0);
-    const editorRef = useRef<EditorRef>(null);
+    const editorRef = useRef<any>(null);
     const contentEditableRef = useRef<HTMLDivElement>(null);
+    const [internalHtml, setInternalHtml] = useState(value);
 
-    // Sync value from props to contentEditable
+    // Sync internalHtml with value prop when value changes externally
     useEffect(() => {
-        if (contentEditableRef.current && contentEditableRef.current.innerHTML !== value) {
-            contentEditableRef.current.innerHTML = value;
+        if (value !== internalHtml) {
+            setInternalHtml(value);
+            if (contentEditableRef.current && contentEditableRef.current.innerHTML !== value) {
+                contentEditableRef.current.innerHTML = value;
+            }
         }
-    }, [activeTab]); // Only sync when switching tabs or initial load
+    }, [value]);
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    // Sync contentEditable when coming back to it
+    useEffect(() => {
+        if (activeTab === 0 && contentEditableRef.current && contentEditableRef.current.innerHTML !== internalHtml) {
+            contentEditableRef.current.innerHTML = internalHtml;
+        }
+    }, [activeTab]);
+
+    // Export content from Visual Builder
+    const exportVisualBuilderContent = (): Promise<void> => {
+        return new Promise((resolve) => {
+            // Check if the Visual Builder editor exists and is ready
+            if (editorRef.current?.editor) {
+                const unlayer = editorRef.current.editor;
+                console.log('[EmailTabbedEditor] Exporting from Visual Builder...');
+                try {
+                    unlayer.exportHtml((data: any) => {
+                        const { html } = data;
+                        console.log('[EmailTabbedEditor] Exported HTML length:', html?.length || 0);
+                        if (html) {
+                            setInternalHtml(html);
+                            onChange(html);
+                        }
+                        resolve();
+                    });
+                } catch (error) {
+                    console.error('[EmailTabbedEditor] Failed to export from Visual Builder:', error);
+                    resolve();
+                }
+            } else {
+                console.log('[EmailTabbedEditor] Visual Builder not initialized, using current HTML');
+                // If Visual Builder hasn't been used, just resolve
+                resolve();
+            }
+        });
+    };
+
+    // Expose exportContent method via ref
+    useImperativeHandle(ref, () => ({
+        exportContent: exportVisualBuilderContent,
+    }));
+
+    const handleTabChange = async (event: React.SyntheticEvent, newValue: number) => {
+        // Export content before switching tabs if coming from Visual Builder
+        if (activeTab === 1 && newValue !== 1) {
+            await exportVisualBuilderContent();
+        }
         setActiveTab(newValue);
     };
 
     const execCommand = (command: string, value: string = "") => {
         document.execCommand(command, false, value);
         if (contentEditableRef.current) {
-            onChange(contentEditableRef.current.innerHTML);
+            const newHtml = contentEditableRef.current.innerHTML;
+            setInternalHtml(newHtml);
+            onChange(newHtml);
         }
     };
 
     const handleContentChange = () => {
         if (contentEditableRef.current) {
-            onChange(contentEditableRef.current.innerHTML);
+            const newHtml = contentEditableRef.current.innerHTML;
+            setInternalHtml(newHtml);
+            onChange(newHtml);
         }
     };
 
-    const onEditorExport = () => {
-        const unlayer = editorRef.current?.editor;
-        unlayer?.exportHtml((data) => {
-            const { html } = data;
-            onChange(html);
-        });
-    };
+    const onEditorReady = (unlayer: any) => {
+        console.log('[EmailTabbedEditor] Visual Builder ready');
 
-    const onEditorReady = () => {
-        // If we have existing HTML, we try to load it. 
-        // Note: react-email-editor works best with its own JSON format, 
-        // but we can try to load HTML if needed, though it might not be perfect.
-        // For now, we'll just let the user build from scratch or existing JSON if we had it.
+        // Note: We cannot load HTML into the Visual Builder because it uses a design JSON format.
+        // The Visual Builder will start empty, which is the expected behavior.
+        // If we want to preserve designs, we would need to save/load the design JSON separately.
+
+        // Listen for design updates
+        unlayer.addEventListener("design:updated", () => {
+            unlayer.exportHtml((data: any) => {
+                const { html } = data;
+                setInternalHtml(html);
+                onChange(html);
+            });
+        });
     };
 
     return (
@@ -108,7 +167,6 @@ const EmailTabbedEditor: React.FC<EmailTabbedEditorProps> = ({
                         <EmailEditor
                             ref={editorRef}
                             onReady={onEditorReady}
-                            onLoad={onEditorReady}
                             minHeight="600px"
                         />
                     </Box>
@@ -116,6 +174,8 @@ const EmailTabbedEditor: React.FC<EmailTabbedEditorProps> = ({
             </Box>
         </Box>
     );
-};
+});
+
+EmailTabbedEditor.displayName = 'EmailTabbedEditor';
 
 export default EmailTabbedEditor;

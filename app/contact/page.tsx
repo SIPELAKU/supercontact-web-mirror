@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Trash2, Search, Upload, Download, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/modal/AddContact";
 import EditContactModal from "@/components/modal/EditContact";
@@ -15,6 +15,8 @@ import { Contact } from "@/lib/models/types";
 import Pagination from "@/components/ui/pagination";
 import DeleteMultipleContactModal from "@/components/modal/DeleteMultipleContact";
 import ImportContactModal from "@/components/modal/ImportContactModal";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { Avatar, Box, CircularProgress } from "@mui/material";
@@ -48,6 +50,7 @@ export default function ContactsPage() {
   const [openImport, setOpenImport] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(false);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   // Column definitions
   const allColumns = [
@@ -57,6 +60,15 @@ export default function ContactsPage() {
     { id: "position", label: "Position" },
     { id: "company", label: "Company" },
     { id: "action", label: "Action" },
+  ];
+
+  const printableColumns = [
+    { header: "Name", accessorKey: "name" },
+    { header: "Phone", accessorKey: "phone_number" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Position", accessorKey: "position" },
+    { header: "Company", accessorKey: "company" },
+    { header: "Address", accessorKey: "address" },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -250,76 +262,10 @@ export default function ContactsPage() {
     }
   };
 
-  const handlePrint = () => {
-    const printContent = filteredData;
-    const printWindow = window.open("", "", "height=600,width=800");
-
-    if (printWindow) {
-      printWindow.document.write("<html><head><title>Print Contacts</title>");
-      printWindow.document.write(`
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .logo-text { font-size: 24px; font-weight: bold; color: #5479EE; }
-          .sub-text { font-size: 14px; color: #666; }
-          .divider { border-bottom: 2px solid #eee; margin: 15px 0; }
-          .page-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-          .page-title { font-size: 20px; font-weight: bold; margin: 0; }
-          .date { color: #888; font-size: 14px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; font-weight: bold; }
-          tr:nth-child(even) { background-color: #f9f9f9; }
-          @media print {
-            body { -webkit-print-color-adjust: exact; }
-          }
-        </style>
-      `);
-      printWindow.document.write("</head><body>");
-      printWindow.document.write(`
-        <div class="header">
-          <div class="logo-text">SuperContact <span class="sub-text">(Smart Relationship Management)</span></div>
-        </div>
-        <div class="divider"></div>
-        <div class="page-info">
-          <h2 class="page-title">Contacts</h2>
-          <span class="date">${new Date().toLocaleDateString()}</span>
-        </div>
-      `);
-      printWindow.document.write("<table>");
-      printWindow.document.write(`
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Position</th>
-            <th>Company</th>
-            <th>Address</th>
-          </tr>
-        </thead>
-        <tbody>
-      `);
-
-      printContent.forEach((item) => {
-        printWindow.document.write(`
-          <tr>
-            <td>${item.name || "-"}</td>
-            <td>${item.phone_number || "-"}</td>
-            <td>${item.email || "-"}</td>
-            <td>${item.position || "-"}</td>
-            <td>${item.company || "-"}</td>
-            <td>${item.address || "-"}</td>
-          </tr>
-        `);
-      });
-
-      printWindow.document.write("</tbody></table>");
-      printWindow.document.write("</body></html>");
-      printWindow.document.close();
-      printWindow.print();
-    }
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Contacts",
+  });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -574,6 +520,15 @@ export default function ContactsPage() {
         onClose={() => setOpenImport(false)}
         onSuccess={loadDataAgain}
       />
+
+      <div style={{ display: "none" }}>
+        <PrintableTable
+          ref={componentRef}
+          title="Contacts"
+          data={filteredData}
+          columns={printableColumns}
+        />
+      </div>
     </div>
   );
 }

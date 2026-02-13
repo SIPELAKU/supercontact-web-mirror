@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.6.6] - 2026-02-13
+
+### Detail Versi 1.6.6
+
+#### 🛠️ Bug Fixes & UI Improvements
+
+- **Mail Servers:**
+  - Disabled the status change switch for system mail servers to prevent unauthorized configuration changes.
+- **Departments Table:**
+  - Fixed alignment styling issues to ensure visual consistency.
+
+#### 📁 Files Modified
+
+- `components/admin/mail-servers/MailServerClient.tsx`
+- `components/organization/departments-table/DepartmentsTableList.tsx`
+
+---
+
 ## [1.6.5] - 2026-02-13
 
 ### Detail Versi 1.6.5

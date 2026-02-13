@@ -3,7 +3,7 @@
 import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 import CampaignsTable from '@/components/email-marketing/campaigns/CampaignsTable';
 import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddCampaignModal';
@@ -44,7 +44,7 @@ export default function CampaignsClient() {
   };
 
   const handleView = (campaign: Campaign) => {
-    toast('View statistics coming soon!');
+    notify.info('View statistics coming soon!');
     // TODO: Implement view modal
   };
 
@@ -58,10 +58,10 @@ export default function CampaignsClient() {
 
     try {
       await deleteMutation.mutateAsync(campaignToDelete.id);
-      toast.success(`Campaign "${campaignToDelete.subject}" deleted successfully.`);
+      notify.success(`Campaign "${campaignToDelete.subject}" deleted successfully.`);
       forceRefetch();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete campaign.');
+      notify.error(err.message || 'Failed to delete campaign.');
     } finally {
       setConfirmOpen(false);
       setCampaignToDelete(null);

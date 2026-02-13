@@ -32,6 +32,8 @@ export interface ProfileData {
   fullname: string;
   email: string;
   avatar_initial: string;
+  avatar?: string;
+  avatar_url?: string;
   role: string | null;
   joined_date: string;
   company: string;
@@ -45,7 +47,6 @@ export interface ProfileData {
   state?: string;
   timezone?: string;
   zip_code?: string;
-  avatar_url?: string;
 }
 
 export interface ProfileResponse {
@@ -68,6 +69,7 @@ export interface UpdateProfileData {
   zip_code: string;
   phone?: string;
   skype?: string;
+  avatar?: string;
 }
 
 export interface UpdateProfileResponse {
@@ -75,6 +77,22 @@ export interface UpdateProfileResponse {
   message: string;
   data?: any;
   error?: string;
+}
+
+export interface ChangePasswordData {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface DeviceSession {
+  id: string;
+  browser: string;
+  device: string;
+  location: string;
+  last_activity: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================
@@ -274,6 +292,111 @@ export async function uploadAvatar(token: string, file: File): Promise<{ success
     };
   } catch (error: any) {
     logger.error("Avatar upload request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deactivateAccount(token: string): Promise<{ success: boolean; message: string }> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user-profile/deactivate`;
+  logger.info("Making DELETE request to deactivate account", { url });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Accept": "application/json",
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    if (!res.ok) {
+      throw new Error(json.message || `Account deactivation failed (${res.status})`);
+    }
+
+    return {
+      success: json.success !== undefined ? json.success : true,
+      message: json.message || "Account deactivated successfully",
+    };
+  } catch (error: any) {
+    logger.error("Account deactivation request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function changePassword(token: string, data: ChangePasswordData): Promise<{ success: boolean; message: string }> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/profile-security/profile/security/password`;
+  logger.info("Making PATCH request to change password", { url });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    if (!res.ok) {
+      throw new Error(json.message || `Password change failed (${res.status})`);
+    }
+
+    return {
+      success: json.success !== undefined ? json.success : true,
+      message: json.message || "Password changed successfully",
+    };
+  } catch (error: any) {
+    logger.error("Password change request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function fetchRecentDevices(token: string): Promise<{ success: boolean; data?: DeviceSession[]; message?: string }> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/profile-security/profile/security/devices`;
+  logger.info("Making GET request to fetch recent devices", { url });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Accept": "application/json",
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    if (!res.ok) {
+      throw new Error(json.message || `Failed to fetch recent devices (${res.status})`);
+    }
+
+    return {
+      success: json.success !== undefined ? json.success : true,
+      data: json.data || [],
+      message: json.message || "Recent devices fetched successfully",
+    };
+  } catch (error: any) {
+    logger.error("Fetch recent devices request failed", { error: error.message, url });
     throw error;
   }
 }

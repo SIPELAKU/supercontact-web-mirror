@@ -1,17 +1,20 @@
 "use client";
 
 import { cookieUtils } from '@/lib/utils/cookies';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { fetchProfile, ProfileData } from '@/lib/api';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
   userRole: string | null;
   userCompany: string | null;
+  userProfile: ProfileData | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
   getToken: () => Promise<string>;
+  reloadProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +24,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userCompany, setUserCompany] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const reloadProfile = useCallback(async () => {
+    try {
+      const storedToken = cookieUtils.getAuthToken();
+      if (storedToken) {
+        const response = await fetchProfile(storedToken);
+        if (response.success && response.data) {
+          setUserProfile(response.data);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load profile in AuthProvider:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const checkAuthStatus = () => {
@@ -36,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const company = typeof window !== 'undefined' ? localStorage.getItem('userCompany') : null;
         setUserRole(role);
         setUserCompany(company);
+
+        // Fetch profile
+        reloadProfile();
       }
       setLoading(false);
     };
@@ -68,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, reloadProfile]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -102,6 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserCompany(company);
       setIsAuthenticated(true);
 
+      await reloadProfile();
+
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -132,11 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUserRole(null);
     setUserCompany(null);
+    setUserProfile(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, login, logout, loading, getToken }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, userProfile, login, logout, loading, getToken, reloadProfile }}>
       {children}
     </AuthContext.Provider>
   );

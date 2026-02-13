@@ -10,6 +10,7 @@ import { notify } from "@/lib/notifications";
 import { RadioGroup, Radio, FormControlLabel } from "@mui/material";
 import { AppSelect } from "@/components/ui/app-select";
 import { Switch } from "@/components/ui/switch";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface AddMailServerModalProps {
     open: boolean;
@@ -95,7 +96,8 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
             onSuccess();
             onClose();
         } catch (error: any) {
-            notify.error("Error", { description: error.message || "Failed to add mail server." });
+            const message = handleError(error, "Add Mail Server");
+            notify.error("Error", { description: message });
         } finally {
             setIsLoading(false);
         }

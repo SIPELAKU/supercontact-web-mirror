@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { MailServer } from "@/lib/models/types";
 import { AppButton } from "@/components/ui/app-button";
 import { Loader2 } from "lucide-react";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface DeleteMailServerModalProps {
     open: boolean;
@@ -34,8 +35,8 @@ const DeleteMailServerModal: React.FC<DeleteMailServerModalProps> = ({
             onSuccess();
             onClose();
         } catch (err: any) {
-            console.log("err", err)
-            notify.error("Error", { description: err.message || "Failed to delete mail server" });
+            const message = handleError(err, "Delete Mail Server");
+            notify.error("Error", { description: message });
         } finally {
             setIsLoading(false);
         }

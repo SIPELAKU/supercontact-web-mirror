@@ -1,6 +1,7 @@
 "use client";
 
 import FilterPopover from '@/components/contact/filter-popover';
+import { handleError } from '@/lib/utils/errorHandler';
 import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
@@ -12,7 +13,7 @@ import { MailServer } from '@/lib/models/types';
 import { notify } from '@/lib/notifications';
 import { Checkbox, CircularProgress, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, Tooltip } from '@mui/material';
 import { AlertCircle, CheckCircle2, HelpCircle, Play, Plus, Search } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AddMailServerModal from './AddMailServerModal';
 import EditMailServerModal from './EditMailServerModal';
 import ConnectionStatusModal from './ConnectionStatusModal';
@@ -28,9 +29,17 @@ export const MailServerClient = () => {
     const debouncedSearch = useDebounce(searchTerm, 500);
 
     // Data fetching
-    const { data: response, isLoading, refetch } = useMailServers(page + 1, rowsPerPage, debouncedSearch);
+    const { data: response, isLoading, isError, error, refetch } = useMailServers(page + 1, rowsPerPage, debouncedSearch);
     const mailServers = response?.data?.mail_servers || [];
     const totalCount = response?.data?.total || 0;
+
+    // Handle fetch error
+    useEffect(() => {
+        if (isError && error) {
+            const message = handleError(error, "Fetch Mail Servers");
+            notify.error("Failed to load mail servers", { description: message });
+        }
+    }, [isError, error]);
 
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -118,7 +127,8 @@ export const MailServerClient = () => {
                 notify.success("Connection Successful", { description: res.data.message });
             }
         } catch (error: any) {
-            notify.error("Connection Failed", { description: error.message, duration: 10000 });
+            const message = handleError(error, "Test Connection");
+            notify.error("Connection Failed", { description: message, duration: 10000 });
         }
     };
 
@@ -276,7 +286,8 @@ export const MailServerClient = () => {
                                                             });
                                                             notify.success("Status Updated");
                                                         } catch (error: any) {
-                                                            notify.error("Update Failed", { description: error.message });
+                                                            const message = handleError(error, "Update Status");
+                                                            notify.error("Update Failed", { description: message });
                                                         }
                                                     }}
                                                 />

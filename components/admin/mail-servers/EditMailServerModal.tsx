@@ -10,6 +10,7 @@ import { notify } from "@/lib/notifications";
 import { RadioGroup, Radio, FormControlLabel } from "@mui/material";
 import { AppSelect } from "@/components/ui/app-select";
 import { Switch } from "@/components/ui/switch";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface EditMailServerModalProps {
     open: boolean;
@@ -110,7 +111,8 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
             onSuccess();
             onClose();
         } catch (error: any) {
-            notify.error("Error", { description: error.message || "Failed to update mail server." });
+            const message = handleError(error, "Update Mail Server");
+            notify.error("Error", { description: message });
         } finally {
             setIsLoading(false);
         }

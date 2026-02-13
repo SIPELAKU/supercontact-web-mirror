@@ -132,7 +132,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   return (
-    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="lg" fullWidth>
       <DialogTitle>Edit Campaign</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

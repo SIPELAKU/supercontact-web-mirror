@@ -123,7 +123,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   return (
-    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="lg" fullWidth>
       <DialogTitle>Create New Campaign</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

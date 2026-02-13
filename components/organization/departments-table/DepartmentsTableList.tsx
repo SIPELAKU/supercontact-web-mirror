@@ -10,7 +10,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import {
   DeparmentsTableError,
-  DepartementTableSkeleton,
   DepartmentsTableDataNotFound,
 } from "@/components/organization";
 
@@ -68,7 +67,7 @@ export default function TableListDepartment({
 
           <TableCell>Department</TableCell>
           <TableCell>Branch</TableCell>
-          <TableCell>Manager</TableCell>
+          <TableCell align="center">Manager</TableCell>
           <TableCell>Manager ID</TableCell>
           <TableCell align="center">Member Count</TableCell>
           <TableCell>Action</TableCell>
@@ -115,7 +114,7 @@ export default function TableListDepartment({
             </TableCell>
             <TableCell align="center">
               {department.manager === null ? "-" : (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   <Avatar
                     src={department.manager.avatar_url || undefined}
                     sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}

@@ -31,6 +31,8 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import ExportPopover from "./ExportPopover";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
+import { handleError } from "@/lib/utils/errorHandler";
+import { notify } from "@/lib/notifications";
 
 export default function UsersClient() {
   const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
@@ -80,6 +82,7 @@ export default function UsersClient() {
   const {
     data: usersResponse,
     isLoading,
+    isError,
     error,
   } = useManagedUsers(
     page + 1, // API usually expects 1-indexed page
@@ -88,6 +91,14 @@ export default function UsersClient() {
     tableFilter.position,
     tableFilter.status,
   );
+
+  // Handle fetch error
+  useEffect(() => {
+    if (isError && error) {
+      const message = handleError(error, "Fetch Managed Users");
+      notify.error("Failed to load users", { description: message });
+    }
+  }, [isError, error]);
 
   // Set total count when data changes
   useEffect(() => {

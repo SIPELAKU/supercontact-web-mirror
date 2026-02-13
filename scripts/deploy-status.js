@@ -286,8 +286,8 @@ async function deployProd() {
   console.log('\n⏳ Menjalankan deployment...\n');
 
   console.log('1️⃣  Checkout prod...');
-  run('git checkout prod', true);
-  run('git pull origin prod', true);
+  run('git checkout main', true);
+  run('git pull origin main', true);
 
   console.log('\n2️⃣  Merge staging ke prod...');
   const mergeResult = run('git merge staging 2>&1');

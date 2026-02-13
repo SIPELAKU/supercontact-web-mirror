@@ -122,8 +122,10 @@ deploy_staging:
     - echo "   Version → $VERSION"
     - npm i -g vercel
 
-    # Pull konfigurasi Vercel project
+    # Pull konfigurasi Vercel project (env vars staging)
     - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
+    # vercel build hanya baca .env.preview.local, jadi copy dari staging
+    - cp .vercel/.env.staging.local .vercel/.env.preview.local
 
     # Build menggunakan Vercel (agar environment variables dari Vercel ikut)
     - vercel build --token=$VERCEL_TOKEN

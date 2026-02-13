@@ -16,7 +16,7 @@ import {
   TextField
 } from '@mui/material';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { notify } from '@/lib/notifications';
 
 interface AddMailingListModalProps {
   open: boolean;
@@ -46,13 +46,13 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
 
     try {
       await createMutation.mutateAsync({ name: name.trim() });
-      toast.success('Mailing list created successfully.');
+      notify.success('Mailing list created successfully.');
       onSuccess();
       handleClose();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create mailing list.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     }
   };
 

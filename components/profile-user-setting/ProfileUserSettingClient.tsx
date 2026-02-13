@@ -608,7 +608,7 @@ export default function ProfileUserSettingClient() {
                 <AppButton
                   variantStyle="danger"
                   onClick={handleDeactivateAccount}
-                  loading={isDeactivating}
+                  isLoading={isDeactivating}
                 >
                   Deactivate Account
                 </AppButton>

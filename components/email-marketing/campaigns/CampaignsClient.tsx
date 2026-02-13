@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
+
+import { Card, Typography } from '@mui/material';
 import { useState } from 'react';
 import { notify } from '@/lib/notifications';
 
@@ -11,7 +11,7 @@ import EditCampaignModal from '@/components/email-marketing/campaigns/modals/Edi
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
-import { DraftNotice } from '@/components/ui/draft-notice';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 export default function CampaignsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -83,7 +83,6 @@ export default function CampaignsClient() {
           <Typography component="h1" variant="h5" sx={{ fontWeight: 600 }}>
             Campaign
           </Typography>
-          <DraftNotice type="partial" message="Campaign management is active. Analytics and detailed statistics are coming soon!" />
         </div>
         <Typography variant="body2" color="text.secondary">
           Manage your email marketing campaigns
@@ -109,25 +108,17 @@ export default function CampaignsClient() {
         campaign={selectedCampaign}
       />
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete campaign "{campaignToDelete?.subject}"? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setConfirmOpen(false)} color="secondary">Cancel</MuiButton>
-          <MuiButton onClick={handleConfirmDelete} color="error" variant="contained" disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </MuiButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete campaign "${campaignToDelete?.subject}"? This action cannot be undone.`}
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

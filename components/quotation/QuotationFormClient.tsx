@@ -450,18 +450,18 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                 variantStyle="outline"
                 color="primary"
                 onClick={() => handleSave("draft")}
-                disabled={isSubmitting}
+                isLoading={isSubmitting}
               >
-                {isSubmitting ? <Spinner /> : "Save As Draft"}
+                Save As Draft
               </AppButton>
 
               <AppButton
                 variantStyle="primary"
                 color="primary"
                 onClick={() => handleSave("publish")}
-                disabled={isSubmitting}
+                isLoading={isSubmitting}
               >
-                {isSubmitting ? <Spinner /> : "Publish"}
+                Publish
               </AppButton>
             </div>
           </div>

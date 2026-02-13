@@ -1,6 +1,7 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
+import { Plus } from "lucide-react";
 import RecentSignalsSkeleton from "./RecentSignalsSkeleton";
 
 type RecentSignal = {
@@ -14,6 +15,7 @@ type RecentSignal = {
 interface RecentSignalsProps {
   isLoading: boolean;
   RECENT_SIGNALS: RecentSignal[];
+  onAdd?: () => void;
 }
 
 const DOT_COLOR_MAP: Record<RecentSignal["dotColor"], string> = {
@@ -22,7 +24,7 @@ const DOT_COLOR_MAP: Record<RecentSignal["dotColor"], string> = {
   orange: "bg-orange-500",
 };
 
-export default function RecentSignals({ isLoading, RECENT_SIGNALS }: RecentSignalsProps) {
+export default function RecentSignals({ isLoading, RECENT_SIGNALS, onAdd }: RecentSignalsProps) {
   if (isLoading) return <RecentSignalsSkeleton />;
 
   return (
@@ -32,7 +34,16 @@ export default function RecentSignals({ isLoading, RECENT_SIGNALS }: RecentSigna
         <div className="flex items-center justify-between">
           <Typography className="text-base! font-semibold!">Recent Signals</Typography>
 
-          <button className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer">View All</button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onAdd}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5479EE15] text-[#5479EE] hover:bg-[#5479EE25] transition-colors cursor-pointer"
+              title="Add Signal"
+            >
+              <Plus size={18} />
+            </button>
+            <button className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer">View All</button>
+          </div>
         </div>
 
         <div className="mt-6 space-y-5">

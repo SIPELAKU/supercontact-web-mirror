@@ -1,6 +1,6 @@
 "use client";
 
-import { RecentActivityItem } from "@/lib/type/Company";
+import { RecentActivityItem } from "@/lib/types/Company";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";

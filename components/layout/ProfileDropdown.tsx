@@ -1,5 +1,4 @@
 'use client'
-import { fetchProfile } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import {
   Avatar,
@@ -12,48 +11,15 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { FileCheck, LogOut, Mail, SquareUserRound } from "lucide-react";
+import { LogOut, Mail, SquareUserRound } from "lucide-react";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [profileData, setProfileData] = useState<{
-    fullname: string;
-    email: string;
-    role?: string;
-  } | null>(null);
-  const { logout, getToken } = useAuth();
+  const { logout, userProfile, userRole } = useAuth();
 
   const open = Boolean(anchorEl);
-
-  // Load profile data
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const token = await getToken();
-        const response = await fetchProfile(token);
-        
-        if (response.success && response.data) {
-          setProfileData({
-            fullname: response.data.fullname || "User",
-            email: response.data.email || "user@example.com",
-            role: "Administrator" // You can add role to the API response later
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-        // Fallback to default values
-        setProfileData({
-          fullname: "User",
-          email: "user@example.com",
-          role: "Administrator"
-        });
-      }
-    };
-
-    loadProfile();
-  }, [getToken]);
 
   // Get initials from full name
   const getInitials = (name: string) => {
@@ -95,11 +61,11 @@ const ProfileDropdown = () => {
         }}
       >
         <Avatar
-          src="/assets/profile-icon.png"
+          src={userProfile?.avatar || userProfile?.avatar_url || userProfile?.avatar_initial || "/assets/profile-icon.png"}
           alt="profile"
           sx={{ width: 35, height: 35, bgcolor: "#5479EE", color: "#fff" }}
         >
-          {profileData ? getInitials(profileData.fullname) : "U"}
+          {userProfile ? getInitials(userProfile.fullname) : "U"}
         </Avatar>
       </IconButton>
 
@@ -126,23 +92,24 @@ const ProfileDropdown = () => {
         {/* USER HEADER */}
         <Box display="flex" alignItems="center" gap={2} mb={2}>
           <Avatar
+            src={userProfile?.avatar || userProfile?.avatar_url || undefined}
             sx={{ width: 48, height: 48, bgcolor: "#5479EE", color: "#fff" }}
           >
-            {profileData ? getInitials(profileData.fullname) : "U"}
+            {userProfile ? getInitials(userProfile.fullname) : "U"}
           </Avatar>
 
           <Box>
             <Typography fontWeight={700}>
-              {profileData ? truncateName(profileData.fullname) : "Loading..."}
+              {userProfile ? truncateName(userProfile.fullname) : "Loading..."}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {profileData?.role || "User"}
+              {userProfile?.role || userRole || "User"}
             </Typography>
 
             <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
               <Mail size={16} />
               <Typography variant="body2">
-                {profileData?.email || "loading..."}
+                {userProfile?.email || "loading..."}
               </Typography>
             </Stack>
           </Box>
@@ -226,45 +193,6 @@ const ProfileDropdown = () => {
               <Typography fontWeight={600}>My Inbox</Typography>
               <Typography variant="body2" color="text.secondary">
                 Messages & Emails
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Item 3 */}
-          <Box
-            component={Link}
-            href="/tasks"
-            onClick={handleClose}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              p: 1.5,
-              borderRadius: 2,
-              textDecoration: "none",
-              color: "inherit",
-              "&:hover": { background: "#f5f7fc" },
-            }}
-          >
-            <Paper
-              elevation={0}
-              sx={{
-                width: 42,
-                height: 42,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: "#e7e9fc",
-                borderRadius: 2,
-              }}
-            >
-              <FileCheck size={22} color="#4c5cff" />
-            </Paper>
-
-            <Box>
-              <Typography fontWeight={600}>My Tasks</Typography>
-              <Typography variant="body2" color="text.secondary">
-                To-do & Daily Tasks
               </Typography>
             </Box>
           </Box>

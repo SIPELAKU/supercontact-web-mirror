@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useLeads } from "@/lib/hooks/useLeads";
 // MUI
-import { TableSkeleton } from "@/components/ui-mui/table-skeleton";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Lead } from "@/lib/models/types";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -15,185 +15,151 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
 
-// TanStack Table
-import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from "@tanstack/react-table";
 import LeadDetailModal from "../lead-detail-modal";
 import LeadFilters from "./LeadFilters";
+import { leadColumns, LeadColumn } from "./columns";
+import { Spinner } from "@/components/ui/spinner";
+import { Box } from "@mui/material";
 
-interface DataTableProps {
-  columns: ColumnDef<Lead>[];
-}
+type SortOrder = 'asc' | 'desc';
 
-export function DataTable({ columns }: DataTableProps) {
-  const { data: leadsResponse, isLoading, error } = useLeads();
-  const [filteredData, setFilteredData] = useState<Lead[]>([]);
+export function DataTable({ initialData }: { initialData?: Lead[] }) {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [{ pageIndex, pageSize }, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 10,
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  // Reset page when data changes (e.g., from external filters)
+  useEffect(() => {
+    setPageIndex(0);
+  }, [initialData]);
+
+  // Use initialData as the source of truth if provided
+  const data = initialData || [];
+  const totalCount = data.length;
+
+  // Handle local sorting
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortBy) return 0;
+    const isAsc = sortOrder === 'asc';
+
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortBy) {
+      case 'lead_name':
+        aValue = a.contact.name;
+        bValue = b.contact.name;
+        break;
+      case 'lead_status':
+        aValue = a.lead_status;
+        bValue = b.lead_status;
+        break;
+      case 'lead_source':
+        aValue = a.lead_source;
+        bValue = b.lead_source;
+        break;
+      case 'user':
+        aValue = a.user.fullname;
+        bValue = b.user.fullname;
+        break;
+      case 'last_contacted':
+        aValue = a.contact.last_contacted?.created_at || '';
+        bValue = b.contact.last_contacted?.created_at || '';
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return isAsc ? -1 : 1;
+    if (aValue > bValue) return isAsc ? 1 : -1;
+    return 0;
   });
 
-  const data = leadsResponse?.data?.leads || [];
-  const totalCount = leadsResponse?.data?.total || 0;
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const handleSort = (columnKey: string) => {
+    const isAsc = sortBy === columnKey && sortOrder === 'asc';
+    setSortOrder(isAsc ? 'desc' : 'asc');
+    setSortBy(columnKey);
+  };
 
-  console.log('DataTable render - data length:', data.length, 'isLoading:', isLoading, 'filteredData length:', filteredData.length);
-
-  // Memoize the setFilteredData function to prevent unnecessary re-renders
-  const handleSetFilteredData = useCallback((leads: Lead[]) => {
-    console.log('handleSetFilteredData called with leads:', leads.length, 'items');
-    setFilteredData(leads);
-  }, []);
-
-  // Initial effect to set filtered data when data is first loaded
-  useEffect(() => {
-    if (data.length > 0 && filteredData.length === 0) {
-      setFilteredData(data);
-    }
-  }, [data, filteredData.length]);
-
-  // Update filtered data when leads data changes
-  useEffect(() => {
-    if (data.length > 0) {
-      setFilteredData(data);
-    }
-  }, [data]);
-
-
-
-  const table = useReactTable({
-    data: filteredData,
-    columns,
-    state: { pagination: { pageIndex, pageSize } },
-    onPaginationChange: setPagination,
-    manualPagination: true,
-    pageCount: totalPages,
-
-    enableSorting: true,
-    getSortedRowModel: getSortedRowModel(),
-
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  // Show loading skeleton while data is being fetched
-  if (isLoading) {
-    return (
-      <Card
-        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-        sx={{
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        <CardHeader title="Filters" />
-        {/* Don't render LeadFilters during loading to prevent empty array filtering */}
-        <div className="p-4 bg-gray-50 text-gray-500 text-center">
-          Loading filters...
-        </div>
-        <Divider />
-        <TableSkeleton 
-          columns={columns.map(() => ({ width: undefined }))} 
-          rows={pageSize}
-        />
-      </Card>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <Card
-        className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-        sx={{
-          borderRadius: "16px",
-          overflow: "hidden",
-        }}
-      >
-        <CardHeader title="Error" />
-        <div className="p-6 text-center text-red-600">
-          Failed to load leads: {error.message}
-        </div>
-      </Card>
-    );
-  }
+  // Local pagination for the filtered data
+  const paginatedData = sortedData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
   return (
-    <Card
-      className="mt-4 rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
-      sx={{
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}
-    >
-      <CardHeader title="Filters" />
-      <LeadFilters setFilteredLeads={handleSetFilteredData} leads={data} />
-      <Divider />
-      <div className="overflow-hidden rounded-none!">
-        <Table>
-          <TableHead>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
+    <div className="w-full">
+      <div className="p-0">
+        <div className="mx-6 mb-6 overflow-hidden border border-gray-200 rounded-xl">
+          <Table>
+            <TableHead>
+              <TableRow className="bg-[#EEF2FD]!">
+                {leadColumns.map((column, index) => (
                   <TableCell
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
+                    key={column.key}
                     sx={{
-                      cursor: header.column.getCanSort()
-                        ? "pointer"
-                        : "default",
+                      pl: index === 0 ? 3 : undefined,
+                      pr: index === leadColumns.length - 1 ? 3 : undefined
                     }}
                   >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
+                    {column.sortable ? (
+                      <TableSortLabel
+                        active={sortBy === column.key}
+                        direction={sortBy === column.key ? sortOrder : 'asc'}
+                        onClick={() => handleSort(column.key)}
+                      >
+                        <span className="text-[#6B7280]">{column.label}</span>
+                      </TableSortLabel>
+                    ) : (
+                      <span className="text-[#6B7280]">{column.label}</span>
                     )}
-
-                    {/* Sorting icons */}
-                    {{
-                      asc: " 🔼",
-                      desc: " 🔽",
-                    }[header.column.getIsSorted() as string] ?? ""}
                   </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHead>
+            </TableHead>
 
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow 
-                key={row.id}
-                onClick={() => {
-                  setSelectedLead(row.original);
-                  setIsDetailModalOpen(true);
-                }}
-                className="cursor-pointer hover:bg-gray-50"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            <TableBody>
+              {paginatedData.map((lead) => (
+                <TableRow
+                  key={lead.id}
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setIsDetailModalOpen(true);
+                  }}
+                  className="cursor-pointer hover:bg-gray-50"
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: '#f9fafb',
+                    },
+                    cursor: 'pointer',
+                  }}
+                >
+                  {leadColumns.map((column, index) => (
+                    <TableCell
+                      key={column.key}
+                      sx={{
+                        pl: index === 0 ? 3 : undefined,
+                        pr: index === leadColumns.length - 1 ? 3 : undefined
+                      }}
+                    >
+                      {column.render(lead)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+
+              {paginatedData.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={leadColumns.length} align="center">
+                    No data available
                   </TableCell>
-                ))}
-              </TableRow>
-            ))}
-
-            {filteredData.length === 0 && !isLoading && (
-              <TableRow>
-                <TableCell colSpan={columns.length} align="center">
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <TablePagination
@@ -201,21 +167,13 @@ export function DataTable({ columns }: DataTableProps) {
         count={totalCount}
         rowsPerPage={pageSize}
         page={pageIndex}
-        onPageChange={(_, page) =>
-          setPagination((prev) => ({ ...prev, pageIndex: page }))
-        }
-        onRowsPerPageChange={(e) =>
-          setPagination({
-            pageIndex: 0,
-            pageSize: Number(e.target.value),
-          })
-        }
-        rowsPerPageOptions={[5, 10, 20, 50]}
-        slotProps={{
-          select: {
-            inputProps: { 'aria-label': 'rows per page' }
-          }
+        onPageChange={(_, page) => setPageIndex(page)}
+        onRowsPerPageChange={(e) => {
+          setPageSize(Number(e.target.value));
+          setPageIndex(0);
         }}
+        rowsPerPageOptions={[5, 10, 20, 50]}
+        sx={{ borderTop: '1px solid #e5e7eb' }}
       />
 
       {/* Lead Detail Modal */}
@@ -224,6 +182,6 @@ export function DataTable({ columns }: DataTableProps) {
         onOpenChange={setIsDetailModalOpen}
         lead={selectedLead}
       />
-    </Card>
+    </div>
   );
 }

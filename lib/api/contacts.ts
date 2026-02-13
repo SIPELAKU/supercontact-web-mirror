@@ -1,0 +1,137 @@
+// lib/api/contacts.ts
+// Contacts API functions
+
+import { fetchWithTimeout } from "./api-client";
+
+// ============================================
+// Types
+// ============================================
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  job_title: string | null;
+  address: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    contacts: Contact[];
+  };
+  error: string | null;
+}
+
+// ============================================
+// Functions
+// ============================================
+
+export async function fetchContacts(
+  token: string,
+  params?: { search?: string; page?: number; limit?: number }
+): Promise<ContactResponse> {
+  const queryParams = new URLSearchParams();
+
+  if (params?.search) {
+    queryParams.append('search', params.search);
+  }
+  if (params?.page) {
+    queryParams.append('page', params.page.toString());
+  }
+  if (params?.limit) {
+    queryParams.append('limit', params.limit.toString());
+  }
+
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/contacts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+  const res = await fetchWithTimeout(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+  console.log("Contacts API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to load contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
+  return json;
+}
+
+export async function deleteMultipleContacts(token: string, contactIds: string[]): Promise<ContactResponse> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ contact_ids: contactIds }),
+  });
+
+  const json = await res.json();
+  console.log("Delete multiple contacts API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to delete multiple contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
+  return json;
+}
+
+export async function deleteContact(token: string, contactId: string): Promise<any> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts/${contactId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ id: contactId }),
+  });
+
+  const json = await res.json();
+  console.log("Delete contact API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to delete contact";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
+  return json;
+}

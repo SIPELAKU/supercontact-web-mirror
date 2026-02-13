@@ -1,9 +1,10 @@
-import { Card, CardContent } from "@/components/ui-mui/card"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui-mui/avatar"
-import { Calendar } from "lucide-react"
-import { DealCardProps } from "@/lib/type/Pipeline"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
 import { formatRupiah } from "@/lib/helper/currency"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
+import { DealCardProps } from "@/lib/types/Pipeline"
+import { Calendar } from "lucide-react"
+import React from "react"
 
 export const dealStages = [
   { label: "Prospect", bgColor: "bg-[#26C6F9]/16", textColor: "text-[#26C6F9]" },
@@ -14,7 +15,7 @@ export const dealStages = [
   { label: "Closed - Lost", bgColor: "bg-[#FF4D49]/16", textColor: "text-[#FF4D49]" },
 ] as const
 
-export function DealCard({id, deal_name, company, amount, expected_close_date, wonDate, avatar, lostDate, stageName }: DealCardProps) {
+function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product }: DealCardProps) {
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
   const getStageColor = (stageName?: string) => {
     if (!stageName) {
@@ -32,9 +33,9 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
   }
   const stageColor = getStageColor(stageName)
   return (
-    <Card 
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"  
-      onClick={()=>{
+    <Card
+      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"
+      onClick={() => {
         setEditId(id)
         setStage(stageName)
         setIsModalOpen(true)
@@ -42,10 +43,12 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
       <CardContent className="p-4 space-y-4">
 
         <div className="space-y-1.5">
-          <div className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-semibold ${stageColor.bg} ${stageColor.text}`}>
-            {deal_name}
+          <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${stageColor.bg} ${stageColor.text}`}>
+            {deal_name || 'No Name'}
           </div>
-          <p className="text-sm text-gray-500">{company.name}</p>
+          <div>
+            <p className="text-xs text-gray-500 line-clamp-1">{company.name}</p>
+          </div>
         </div>
 
         <p className="text-xl font-bold text-gray-900">{formatRupiah(amount)}</p>
@@ -65,9 +68,9 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
           )}
 
           <Avatar className="h-7 w-7 border">
-            <AvatarImage src={avatar || "/placeholder.svg"} alt={company.id} />
-            <AvatarFallback className="bg-gray-300 text-gray-700 text-xs">
-              {company.name.charAt(0)}
+            {avatar && <AvatarImage src={avatar} alt={deal_name} />}
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+              {avatar_initial || company.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
         </div>
@@ -76,3 +79,5 @@ export function DealCard({id, deal_name, company, amount, expected_close_date, w
     </Card>
   )
 }
+
+export const DealCard = React.memo(DealCardComponent)

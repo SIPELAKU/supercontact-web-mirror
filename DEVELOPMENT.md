@@ -245,3 +245,5 @@ The project includes GitHub Actions for:
 - GitLab mirroring
 
 Check `.github/workflows/` for pipeline configurations.
+
+#smoke test

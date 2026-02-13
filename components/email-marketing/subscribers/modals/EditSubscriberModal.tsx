@@ -1,0 +1,256 @@
+// components/email-marketing/subscribers/modals/EditSubscriberModal.tsx
+"use client";
+
+import { AppButton } from '@/components/ui/app-button';
+import { AppInput } from '@/components/ui/app-input';
+import { AppTextarea } from '@/components/ui/app-textarea';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
+import { useUpdateSubscriber } from '@/lib/hooks/useSubscribers';
+import { notify } from '@/lib/notifications';
+import { Subscriber } from '@/lib/types/email-marketing';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+
+interface EditSubscriberModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  subscriberData: Subscriber;
+}
+
+const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditSubscriberModalProps) => {
+  const updateMutation = useUpdateSubscriber();
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [position, setPosition] = useState('');
+  const [company, setCompany] = useState('');
+  const [address, setAddress] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open && subscriberData) {
+      setEmail(subscriberData.email || '');
+      setName(subscriberData.name || '');
+      setPhoneNumber(subscriberData.phone_number || '');
+      setPosition(subscriberData.position || '');
+      setCompany(subscriberData.company || '');
+      setAddress(subscriberData.address || '');
+      setError('');
+    }
+  }, [open, subscriberData]);
+
+  const handleClose = () => {
+    setEmail('');
+    setName('');
+    setPhoneNumber('');
+    setPosition('');
+    setCompany('');
+    setAddress('');
+    setError('');
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!subscriberData) return;
+
+    // Validate required fields
+    if (!email.trim()) {
+      setError("Email is required.");
+      return;
+    }
+    if (!name.trim()) {
+      setError("Name is required.");
+      return;
+    }
+    if (!phoneNumber.trim()) {
+      setError("Phone number is required.");
+      return;
+    }
+    if (phoneNumber.length < 10) {
+      setError("Phone number must be at least 10 characters.");
+      return;
+    }
+    if (!position.trim()) {
+      setError("Position is required.");
+      return;
+    }
+
+    setError('');
+    try {
+      await updateMutation.mutateAsync({
+        subscriberId: subscriberData.id,
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+          phone_number: phoneNumber.trim(),
+          position: position.trim(),
+          company: company.trim(),
+          address: address.trim()
+        }
+      });
+
+      notify.success('Subscriber updated successfully.');
+      onSuccess();
+      handleClose();
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to update subscriber.';
+      setError(errorMessage);
+      notify.error(errorMessage);
+    }
+  };
+
+  if (open && !subscriberData) {
+    return (
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Subscriber</DialogTitle>
+        <DialogContent dividers><Alert severity="warning">Subscriber data not found.</Alert></DialogContent>
+        <DialogActions><Button onClick={handleClose}>Close</Button></DialogActions>
+      </Dialog>
+    );
+  }
+
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  return (
+    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
+      <DialogTitle>Edit Subscriber</DialogTitle>
+      <DialogContent dividers>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <Stack spacing={3} sx={{ mt: 1 }}>
+          <Box>
+            <label>Email</label>
+            <AppInput
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              required
+              disabled
+              isBgWhite
+              error={Boolean(error && !email.trim())}
+              helperText="Email cannot be changed"
+            />
+          </Box>
+          <Box>
+            <label>Name</label>
+            <AppInput
+              value={name}
+              isBgWhite
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !name.trim())}
+              helperText={error && !name.trim() ? "Name is required" : ""}
+            />
+          </Box>
+          <Box>
+            <label>Phone Number</label>
+            <AppInput
+              type="text"
+              inputMode='numeric'
+              value={phoneNumber}
+              isBgWhite
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                if (val.length <= 15) {
+                  setPhoneNumber(val);
+                }
+              }}
+              fullWidth
+              required
+              error={Boolean(error && (!phoneNumber.trim() || phoneNumber.length < 10))}
+              helperText={
+                error && !phoneNumber.trim()
+                  ? "Phone number is required"
+                  : error && phoneNumber.length < 10
+                    ? "Phone number must be at least 10 characters"
+                    : ""
+              }
+            />
+          </Box>
+          <Box>
+            <label>Position</label>
+            <AppInput
+              value={position}
+              isBgWhite
+              onChange={(e) => setPosition(e.target.value)}
+              fullWidth
+              required
+              error={Boolean(error && !position.trim())}
+              helperText={error && !position.trim() ? "Position is required" : ""}
+            />
+          </Box>
+          <Box>
+            <label>Company</label>
+            <AppInput
+              value={company}
+              isBgWhite
+              onChange={(e) => setCompany(e.target.value)}
+              fullWidth
+            />
+          </Box>
+          <Box>
+            <label>Address</label>
+            <AppTextarea
+              value={address}
+              isBgWhite
+              onChange={(e) => setAddress(e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+            />
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: '16px 24px' }}>
+        <AppButton
+          variantStyle='outline'
+          onClick={() => {
+            setEmail('');
+            setName('');
+            setPhoneNumber('');
+            setPosition('');
+            setCompany('');
+            setAddress('');
+            setError('');
+            onClose();
+          }}
+          color="gray"
+          disabled={updateMutation.isPending}
+        >
+          Cancel
+        </AppButton>
+        <AppButton onClick={handleSubmit} variantStyle="primary" color='primary' disabled={updateMutation.isPending}>
+          {updateMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
+        </AppButton>
+      </DialogActions>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current record."
+        confirmText="Discard record"
+        cancelText="Cancel"
+        variant="danger"
+      />
+    </Dialog>
+  );
+};
+
+export default EditSubscriberModal;

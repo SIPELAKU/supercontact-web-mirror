@@ -53,6 +53,7 @@ type requestBody = {
     date_from?: string;
     date_to?: string;
     quotation_status?: string;
+    status?: string;
 };
 
 export interface QuotationItem {
@@ -140,13 +141,22 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
     statusFilter: "all",
     dateRangeFilter: "all",
 
-    setStatusFilter: (v) => set({ statusFilter: v }),
+    setStatusFilter: (v) => set((state) => ({
+        statusFilter: v,
+        pagination: { ...state.pagination, page: 1 }
+    })),
 
-    setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
-    
+    setDateRangeFilter: (v) => set((state) => ({
+        dateRangeFilter: v,
+        pagination: { ...state.pagination, page: 1 }
+    })),
+
     setEditId: (v) => set({ id: v }),
 
-    setSearchQuery: (v) => set({ searchQuery: v }),
+    setSearchQuery: (v) => set((state) => ({
+        searchQuery: v ?? "",
+        pagination: { ...state.pagination, page: 1 }
+    })),
 
     fetchQuotations: async (params) => {
         try {
@@ -159,20 +169,33 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 limit: params?.limit ?? pagination.limit,
             };
 
-            if (params?.dateRange && params.dateRange !== "all") {
-                const range = getDateRange(params.dateRange);
+            const dateRange = params?.dateRange ?? get().dateRangeFilter;
+            if (dateRange && dateRange !== "all") {
+                const range = getDateRange(dateRange);
                 if (range) {
                     query.date_from = String(range.start);
                     query.date_to = String(range.end);
                 }
             }
 
-            if (params?.status && params.status.trim() !== "all") {
-                query.quotation_status = params.status;
+            const status = params?.status ?? get().statusFilter;
+            if (status && status.trim() !== "all") {
+                query.status = status;
+                query.quotation_status = status;
+                // Add lowercase versions as some APIs are case-sensitive
+                (query as any).status_lower = status.toLowerCase();
+                (query as any).filter = status;
+                (query as any).quotation_status_lower = status.toLowerCase();
             }
 
-            if (params?.search && params.search.trim() !== "") {
-                query.search = params.search;
+            const search = params?.search ?? get().searchQuery;
+            if (search && search.trim() !== "") {
+                query.search = search;
+                // Add common aliases for search
+                (query as any).q = search;
+                (query as any).search_query = search;
+                (query as any).keyword = search;
+                (query as any).name = search;
             }
 
             const res = await api.get("/quotations", {
@@ -200,14 +223,12 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
     },
 
     setPage: (page) => {
-        const { fetchQuotations, pagination } = get();
+        const { pagination } = get();
         set({ pagination: { ...pagination, page } });
-        fetchQuotations({ page });
     },
 
     setLimit: (limit) => {
-        const { fetchQuotations, pagination } = get();
+        const { pagination } = get();
         set({ pagination: { ...pagination, limit, page: 1 } });
-        fetchQuotations({ page: 1, limit });
     },
 }));

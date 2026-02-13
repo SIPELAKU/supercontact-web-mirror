@@ -1,6 +1,5 @@
 "use client";
 
-import { UsersType } from "../../../lib/type/Users";
 import { Avatar, Checkbox, IconButton } from "@mui/material";
 import { Trash2 } from "lucide-react";
 import Table from "@mui/material/Table";
@@ -13,17 +12,31 @@ import {
   UsersTableNotFound,
   UsersTableSkeleton,
 } from "@/components/users";
+import { UsersType } from "@/lib/types/Users";
+
+interface FormattedMember {
+  id: string;
+  fullName: string;
+  email: string;
+  position: string;
+  status: string;
+  avatar_initial: string;
+  id_employee: string;
+  department_id: string;
+}
 
 interface TableListUsersProps {
-  data: UsersType[];
-  selected: number[];
+  data: FormattedMember[];
+  selected: (string | number)[];
   isLoading?: boolean;
   error?: string | null;
 
   actions: {
-    onSelectOne: (id: number) => void;
-    onSelectAll: (checked: boolean, data: UsersType[]) => void;
+    onSelectOne: (id: string | number) => void;
+    onSelectAll: (checked: boolean, data: FormattedMember[]) => void;
     onOpenDelete: () => void;
+    onDepartmentId: (id: string) => void;
+    onMemberId: (id: string) => void;
   };
 }
 
@@ -32,28 +45,26 @@ export default function TableListMembers({
   selected,
   isLoading,
   error,
-  actions
+  actions,
 }: TableListUsersProps) {
-
-
-  const { onSelectOne, onSelectAll, onOpenDelete } = actions;
-
+  const { onSelectOne, onSelectAll, onOpenDelete, onDepartmentId, onMemberId } =
+    actions;
 
   const isAllChecked = data.length > 0 && selected.length === data.length;
   const isSomeChecked = selected.length > 0 && !isAllChecked;
 
   if (isLoading) {
-      return <UsersTableSkeleton />;
-    }
-  
-    if (error) {
-      return <UsersTableError message="Failed to load users data." />;
-    }
-  
-    if (data.length === 0) {
-      return <UsersTableNotFound />;
-    }
-  
+    return <UsersTableSkeleton />;
+  }
+
+  if (error) {
+    return <UsersTableError message="Failed to load users data." />;
+  }
+
+  if (data.length === 0) {
+    return <UsersTableNotFound />;
+  }
+
   return (
     <Table className="overflow-hidden rounded-lg border border-gray-200">
       <TableHead>
@@ -68,7 +79,7 @@ export default function TableListMembers({
 
           <TableCell>User</TableCell>
           <TableCell>Email</TableCell>
-          <TableCell>Role</TableCell>
+          <TableCell>Position</TableCell>
           <TableCell>ID</TableCell>
           <TableCell>Status</TableCell>
           <TableCell>Action</TableCell>
@@ -98,7 +109,7 @@ export default function TableListMembers({
             </TableCell>
 
             <TableCell>{user.email}</TableCell>
-            <TableCell className="capitalize">{user.role}</TableCell>
+            <TableCell className="capitalize">{user.position}</TableCell>
             <TableCell>{user.id_employee}</TableCell>
 
             <TableCell>
@@ -115,7 +126,14 @@ export default function TableListMembers({
 
             <TableCell>
               <div className="flex gap-2">
-                <IconButton size="small" onClick={onOpenDelete}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    onOpenDelete();
+                    onDepartmentId(user.department_id);
+                    onMemberId(user.id);
+                  }}
+                >
                   <Trash2 size={18} className="text-red-500" />
                 </IconButton>
               </div>

@@ -1,115 +1,51 @@
 "use client";
 
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
-import React, { useEffect, useRef } from "react";
-import { createRoot, Root } from "react-dom/client";
+import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
+import { useAuth } from "@/lib/context/AuthContext";
+import { Loader2 } from "lucide-react";
+import router from "next/router";
+import { AppInput } from "../ui/app-input";
+import { AppButton } from "../ui/app-button";
+import { notify } from "@/lib/notifications";
 
-const MySwal = withReactContent(Swal);
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface InputProps {
   label: string;
   placeholder: string;
-  value: string;
+  value: string | null;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isRequired: boolean;
+  error?: string;
 }
 
-const InputField: React.FC<InputProps> = ({ label, value, onChange, placeholder }) => {
+const InputField: React.FC<InputProps> = ({
+  label,
+  value,
+  onChange,
+  placeholder,
+  isRequired,
+  error,
+}) => {
   return (
     <div className="flex flex-col w-full gap-2">
-      <label className="font-medium text-gray-700">{label}</label>
-      <input
+      <label className="font-medium text-gray-700">
+        {label}
+
+        {isRequired && <span className="text-red-500">*</span>}
+      </label>
+      <AppInput
+        required={isRequired}
         type="text"
-        value={value}
+        value={value ?? ""}
         onChange={onChange}
         placeholder={placeholder}
-        className="
-          mt-1 px-4 py-3 border border-gray-300 rounded-lg 
-          placeholder-gray-400 text-md font-medium
-          focus:outline-none focus:ring-2 focus:ring-purple-400
-        "
+        isBgWhite
+        className={error ? "border-red-500" : ""}
       />
-    </div>
-  );
-};
-
-interface ModalContentProps {
-  onClose: () => void;
-  onSubmit: (data: ContactReq) => void;
-}
-
-const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
-  const [local, setLocal] = React.useState({
-    name: "",
-    phone: "",
-    email: "",
-    company: "",
-    job_title: "",
-    address: "",
-  });
-
-  return (
-    <div className="flex flex-col w-full p-6 text-start">
-      <h2 className="text-2xl font-semibold text-[#6739EC]">Add New Contact</h2>
-      <p className="text-gray-600 text-md mt-1">
-        Fill in the details below to add a new contact to your CRM.
-      </p>
-
-      <div className="mt-6 flex flex-col gap-4">
-        <InputField
-          label="Name"
-          value={local.name}
-          onChange={(e) => setLocal((s) => ({ ...s, name: e.target.value }))}
-          placeholder="Enter name"
-        />
-
-        <InputField
-          label="Phone Number"
-          value={local.phone}
-          onChange={(e) => setLocal((s) => ({ ...s, phone: e.target.value }))}
-          placeholder="Enter phone number"
-        />
-
-        <InputField
-          label="Email"
-          value={local.email}
-          onChange={(e) => setLocal((s) => ({ ...s, email: e.target.value }))}
-          placeholder="Enter email"
-        />
-
-        <InputField
-          label="Company"
-          value={local.company}
-          onChange={(e) => setLocal((s) => ({ ...s, company: e.target.value }))}
-          placeholder="Enter company"
-        />
-        <InputField
-          label="Job Tittle"
-          value={local.job_title}
-          onChange={(e) => setLocal((s) => ({ ...s, job_title: e.target.value }))}
-          placeholder="Enter job tittle"
-        />
-        <InputField
-          label="Address"
-          value={local.address}
-          onChange={(e) => setLocal((s) => ({ ...s, address: e.target.value }))}
-          placeholder="Enter address"
-        />
-      </div>
-
-      <div className="flex justify-end gap-3 mt-8 font-medium">
-        <button onClick={onClose} className="px-5 py-4 rounded-lg bg-gray-200 text-gray-700">
-          Cancel
-        </button>
-
-        <button
-          onClick={() => onSubmit(local)}
-          className="px-6 py-4 rounded-lg bg-[#6739EC] text-white"
-        >
-          Save Contact
-        </button>
-      </div>
+      {error && <span className="text-red-500 text-sm">{error}</span>}
     </div>
   );
 };
@@ -120,103 +56,329 @@ interface AddContactModalProps {
   onSuccess: () => void;
 }
 
-const AddContactModal: React.FC<AddContactModalProps> = ({ open, onClose, onSuccess }) => {
-  const reactRootRef = useRef<Root | null>(null);
-  const handleSubmit = async (data: ContactReq) => {
-  try {
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        job_title: data.job_title,
-        company: data.company,
-        address: data.address,
-      }),
+const fieldLabels: Record<string, string> = {
+  name: "Name",
+  phone_number: "Phone Number",
+  email: "Email",
+  company: "Company",
+  position: "Position",
+  address: "Address",
+};
+
+const AddContactModal: React.FC<AddContactModalProps> = ({
+  open,
+  onClose,
+  onSuccess,
+}) => {
+  const [isLoadiNg, setIsLoading] = useState(false);
+  const { getToken } = useAuth();
+  const [local, setLocal] = useState<ContactReq>({
+    name: "",
+    phone_number: "",
+    email: "",
+    company: "",
+    position: "",
+    address: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  const handleClose = () => {
+    onClose();
+    setLocal({
+      name: "",
+      phone_number: "",
+      email: "",
+      company: "",
+      position: "",
+      address: "",
     });
+    setErrors({});
+  };
 
-    const text = await res.text();
+  // Selalu reset form saat modal terbuka
+  useEffect(() => {
+    if (open) {
+      setLocal({
+        name: "",
+        phone_number: "",
+        email: "",
+        company: "",
+        position: "",
+        address: "",
+      });
+      setErrors({});
+    }
+  }, [open]);
 
-    let result: any = {};
-    try {
-      result = JSON.parse(text);
-    } catch {
-      result = {};
+  const validateFields = (data: ContactReq) => {
+    const newErrors: Record<string, string> = {};
+
+    // Name validation
+    if (!data.name) {
+      newErrors.name = "is required";
+    } else if (data.name.length < 3) {
+      newErrors.name = "must be at least 3 characters";
     }
 
-    if (!res.ok) {
-      const message =
-        result?.error?.message ?? "Failed to add contact";
+    // Phone validation
+    const phoneRegex = /^[0-9]+$/;
+    if (!data.phone_number) {
+      newErrors.phone_number = "is required";
+    } else {
+      if (!phoneRegex.test(data.phone_number)) {
+        newErrors.phone_number = "must contain only numbers";
+      } else if (
+        data.phone_number.length < 10 ||
+        data.phone_number.length > 15
+      ) {
+        newErrors.phone_number = "must be between 10 and 15 characters";
+      }
+    }
 
-      const details =
-        result?.error?.details?.errors
-          ?.map((e: any) => `• ${e.loc.join(".")}: ${e.msg}`)
-          .join("<br/>");
+    // Email validation
+    if (!data.email) {
+      newErrors.email = "is required";
+    }
 
-      MySwal.fire({
-        icon: "error",
-        title: message,
-        html: details || message,
+    // Position validation
+    if (!data.position) {
+      newErrors.position = "is required";
+    } else if (data.position.length < 3) {
+      newErrors.position = "must be at least 3 characters";
+    }
+
+    // Optional fields validation
+    // Company validation
+    if (!data.company) {
+      newErrors.company = "is required";
+    } else if (data.company.length < 3) {
+      newErrors.company = "must be at least 3 characters";
+    }
+
+    if (data.address && data.address.length < 6) {
+      newErrors.address = "must be at least 6 characters";
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    setErrors({});
+    const token = await getToken();
+    if (!token) {
+      notify.error("Token not found", {
+        description: "Please log in again",
       });
+      router.push("/login");
+      return;
+    }
+    // Validasi data
+    const validationErrors = validateFields(local);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsLoading(false);
       return;
     }
 
-    onSuccess();
-    onClose();
-    MySwal.close();
+    const payload: ContactReq = {
+      ...local,
+      company: local.company?.trim() === "" ? null : local.company,
+      address: local.address?.trim() === "" ? null : local.address,
+    };
 
-    MySwal.fire({
-      icon: "success",
-      title: "Contact added!",
-      timer: 1200,
-      showConfirmButton: false,
-    });
-  } catch (err) {
-    MySwal.fire({
-      icon: "error",
-      title: "Network error",
-      text: "Please try again later",
-    });
-  }
-};
+    try {
+      const token = await getToken();
+      if (!token) {
+        notify.error("Authentication required", {
+          description: "Please log in again",
+        });
+        return;
+      }
 
+      const res = await fetch("/api/proxy/contacts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-  useEffect(() => {
-    if (!open) return;
+      const text = await res.text();
+      let result: any = {};
+      try {
+        result = JSON.parse(text);
+      } catch {
+        result = {};
+      }
 
-    MySwal.fire({
-      html: `<div id="react-swal-container"></div>`,
-      showConfirmButton: false,
-      allowOutsideClick: true,
-      width: "600px",
-      padding: 0,
+      if (!res.ok) {
+        const message = result?.error?.message ?? "Failed to add contact";
+        const details = result?.error?.details
+          ?.map((e: any) => {
+            const label = fieldLabels[e.field] || e.field;
+            return `• ${label}: ${e.message}`;
+          })
+          .join("\n");
 
-      didOpen: () => {
-        const container = document.getElementById("react-swal-container");
-        if (container) {
-          reactRootRef.current = createRoot(container);
-          reactRootRef.current.render(<ModalContent onClose={() => { MySwal.close(); onClose(); }} onSubmit={handleSubmit} />);
-        }
-      },
+        notify.error("Error", {
+          description: details || message,
+        });
+        setIsLoading(false);
+        return;
+      }
 
-      didClose: ()=>{
-        onClose()
-      },
-      
-      willClose: () => {
-        if (reactRootRef.current) {
-          reactRootRef.current.unmount();
-          reactRootRef.current = null;
-        }
-      },
-    });
-  }, [open]);
+      onSuccess();
+      onClose();
 
-  return null;
+      notify.success("Contact added!", {
+        description: "Contact has been added successfully",
+      });
+    } catch (err) {
+      const message = handleError(err, "Adding contact")
+      notify.error("Error", {
+        description: message,
+      });
+    }
+    setIsLoading(false);
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        onClick={() => setShowCloseConfirmation(true)}
+      >
+        <div
+          className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
+            <p className="text-gray-600 text-md mt-1">
+              Fill in the details below to add a new contact to your CRM.
+            </p>
+
+            <div className="mt-6 flex flex-col md:flex-row gap-4">
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <InputField
+                  isRequired
+                  label="Name"
+                  value={local.name}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, name: e.target.value }))
+                  }
+                  placeholder="Enter name"
+                  error={errors.name}
+                />
+
+                <InputField
+                  isRequired
+                  label="Email"
+                  value={local.email}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, email: e.target.value }))
+                  }
+                  placeholder="Enter email"
+                  error={errors.email}
+                />
+
+                <InputField
+                  isRequired={true}
+                  label="Company"
+                  value={local.company}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, company: e.target.value }))
+                  }
+                  placeholder="Enter company"
+                  error={errors.company}
+                />
+              </div>
+
+              <div className="w-full md:w-1/2 flex flex-col gap-4">
+                <InputField
+                  isRequired
+                  label="Phone Number"
+                  value={local.phone_number}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9]*$/.test(val)) {
+                      setLocal((s) => ({ ...s, phone_number: val }));
+
+                      let error = "";
+                      if (val.length < 10) {
+                        error = "must be between 10 and 15 characters";
+                      } else if (val.length > 15) {
+                        error = "must be between 10 and 15 characters";
+                        return setLocal((s) => ({ ...s, phone_number: val.slice(0, 15) }));
+                      }
+
+                      setErrors((prev) => ({ ...prev, phone_number: error }));
+                    }
+                  }}
+                  placeholder="Enter phone number"
+                  error={errors.phone_number}
+                />
+
+                <InputField
+                  isRequired
+                  label="Position"
+                  value={local.position}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, position: e.target.value }))
+                  }
+                  placeholder="Enter position"
+                  error={errors.position}
+                />
+                <InputField
+                  isRequired={false}
+                  label="Address"
+                  value={local.address}
+                  onChange={(e) =>
+                    setLocal((s) => ({ ...s, address: e.target.value }))
+                  }
+                  placeholder="Enter address"
+                  error={errors.address}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-8 font-medium">
+              <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                Cancel
+              </AppButton>
+
+              <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
+                {isLoadiNg ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  "Save Contact"
+                )}
+              </AppButton>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmationPopup
+        isOpen={showCloseConfirmation}
+        onClose={() => setShowCloseConfirmation(false)}
+        onConfirm={() => {
+          setShowCloseConfirmation(false);
+          handleClose();
+        }}
+        title="Are you sure?"
+        description="This will discard your current filled data."
+        confirmText="Discard"
+        cancelText="Cancel"
+        variant="danger"
+      />
+    </>
+  );
 };
 
 export default AddContactModal;

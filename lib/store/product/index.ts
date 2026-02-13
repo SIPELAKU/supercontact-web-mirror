@@ -83,7 +83,7 @@ export const useGetProductStore = create<GetState>((set, get) => ({
   searchQuery: "",
   pagination: {
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 1,
   },
@@ -102,8 +102,9 @@ export const useGetProductStore = create<GetState>((set, get) => ({
         limit: params?.limit ?? pagination.limit,
       };
 
-      if (params?.search && params.search.trim() !== "") {
-        query.search = params.search;
+      const search = params?.search ?? get().searchQuery;
+      if (search && search.trim() !== "") {
+        query.search = search;
       }
 
       const res = await api.get("/products", {
@@ -156,20 +157,20 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
       return { success: false, error: "Unexpected response" };
     } catch (error) {
-      const axiosErr = error as AxiosError<ProductValidationResponse>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+      const axiosErr = error as AxiosError<any>;
+      if (axiosErr.response?.data?.error) {
+        const errorData = axiosErr.response.data.error;
         return {
           success: false,
-          error: axiosErr.response.data.error,
-          validation: axiosErr.response.data.details,
+          error: typeof errorData === 'object' ? errorData.message : errorData,
+          validation: errorData.details,
         };
       }
       return {
         success: false,
         error:
-          axiosErr.response?.data?.error ??
           axiosErr.message ??
-          "Failed to post pipeline",
+          "Failed to post product",
       };
     } finally {
       set({ loading: false });
@@ -194,20 +195,20 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
     } catch (error) {
 
-      const axiosErr = error as AxiosError<ProductValidationResponse>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+      const axiosErr = error as AxiosError<any>;
+      if (axiosErr.response?.data?.error) {
+        const errorData = axiosErr.response.data.error;
         return {
           success: false,
-          error: axiosErr.response.data.error,
-          validation: axiosErr.response.data.details,
+          error: typeof errorData === 'object' ? errorData.message : errorData,
+          validation: errorData.details,
         };
       }
       return {
         success: false,
         error:
-          axiosErr.response?.data?.error ??
           axiosErr.message ??
-          "Failed to post pipeline",
+          "Failed to update product",
       };
     } finally {
       set({ loading: false });
@@ -232,20 +233,20 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
     } catch (error) {
 
-      const axiosErr = error as AxiosError<ProductValidationResponse>;
-      if (axiosErr.response?.status === 422 && axiosErr.response.data) {
+      const axiosErr = error as AxiosError<any>;
+      if (axiosErr.response?.data?.error) {
+        const errorData = axiosErr.response.data.error;
         return {
           success: false,
-          error: axiosErr.response.data.error,
-          validation: axiosErr.response.data.details,
+          error: typeof errorData === 'object' ? errorData.message : errorData,
+          validation: errorData.details,
         };
       }
       return {
         success: false,
         error:
-          axiosErr.response?.data?.error ??
           axiosErr.message ??
-          "Failed to deletes pipeline",
+          "Failed to delete product",
       };
     } finally {
       set({ loading: false });

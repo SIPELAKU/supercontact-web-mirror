@@ -22,6 +22,7 @@ interface Props {
   className?: string;
   isSearch?: boolean;
   disabled?: boolean;
+  error?: boolean;
 }
 
 const radiusFromClass = (className?: string) => {
@@ -53,6 +54,7 @@ export default function CustomDealStageSelect({
   className,
   isSearch = false,
   disabled = false,
+  error,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
@@ -75,7 +77,7 @@ export default function CustomDealStageSelect({
     if (found) {
       setSelectedStage(found);
     }
-  }, [value]);
+  }, [value, data]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -98,16 +100,14 @@ export default function CustomDealStageSelect({
   }, [debounced]);
 
   const filteredStages = useMemo(() => {
-    if (!isSearch) return data;
-
-    if (!searchText.trim()) {
-      return selectedStage ? [selectedStage] : [];
+    if (!isSearch || !searchText.trim()) {
+      return data;
     }
 
     return data.filter((s) =>
       s.label.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [searchText, data, isSearch, selectedStage]);
+  }, [searchText, data, isSearch]);
 
   return (
     <div ref={rootRef} className={cn("relative w-full", className)}>
@@ -116,10 +116,10 @@ export default function CustomDealStageSelect({
         disabled={disabled}
         onClick={() => !disabled && setOpen(!open)}
         className={cn(
-          "w-full h-11 px-3 flex items-center justify-between border shadow-sm",
-          disabled
+          "w-full h-[48px] px-3 flex items-center justify-between border",
+          error ? "border-red-500" : (disabled
             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "bg-white border-gray-300 hover:border-gray-400"
+            : "bg-white border-gray-300 hover:border-gray-400")
         )}
         style={{ borderRadius: radius }}
       >
@@ -185,7 +185,7 @@ export default function CustomDealStageSelect({
               >
                 <span
                   className={cn(
-                    "px-3 py-1 rounded-full",
+                    stage.bgColor && "px-3 py-1 rounded-full",
                     stage.bgColor,
                     stage.textColor
                   )}

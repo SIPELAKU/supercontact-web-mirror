@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import PageHeader from '@/components/ui-mui/page-header'
+import PageHeader from '@/components/ui/page-header'
 
 
 export default function ProductHeader() {

@@ -1,7 +1,6 @@
 "use client";
 
-import { IconButton } from "@mui/material";
-import { Trash2 } from "lucide-react";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
@@ -10,7 +9,13 @@ const DeleteRolesPermissionsModal = dynamic(
   { ssr: false },
 );
 
-export default function DeleteRolesPermissionsButton() {
+export default function DeleteRolesPermissionsButton({
+  roleId,
+  roleName,
+}: {
+  roleId: string;
+  roleName: string;
+}) {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleOpen = () => {
@@ -18,11 +23,13 @@ export default function DeleteRolesPermissionsButton() {
   };
   return (
     <>
-      <IconButton onClick={handleOpen}>
-        <Trash2 className="h-5 w-4 text-red-500" />
-      </IconButton>
+      <DeleteButton onClick={handleOpen} disabled={roleName === "Staff" || roleName === "Manager" || roleName === "Admin"} customTitle={roleName === "Staff" || roleName === "Manager" || roleName === "Admin" ? "default role" : "Edit Permissions"} />
 
-      <DeleteRolesPermissionsModal open={open} setOpen={setOpen} />
+      <DeleteRolesPermissionsModal
+        open={open}
+        setOpen={setOpen}
+        roleId={roleId}
+      />
     </>
   );
 }

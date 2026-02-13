@@ -116,7 +116,23 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Global font override */
+  input,
+  textarea,
+  select,
+  button,
+  .MuiTypography-root,
+  .MuiInputBase-root,
+  .MuiInputBase-input,
+  .MuiSelect-select,
+  .MuiButton-root,
+  .MuiMenuItem-root,
+  .MuiFormLabel-root {
+    font-family: var(--font-poppins) !important;
   }
 }

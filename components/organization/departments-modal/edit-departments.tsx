@@ -16,6 +16,7 @@ import { Poppins } from "next/font/google";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/lib/utils/errorHandler";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -70,9 +71,10 @@ export default function EditDepartmentsDialog({
       });
       handleClose();
     } catch (error) {
-      console.error("Failed to update department:", error);
-      notify.error("Failed to update department", {
-        description: "Please try again",
+      const message = handleError(error, "Updating department")
+      notify.error("Error", {
+        description: message,
+        duration: 20000,
       });
     }
   };

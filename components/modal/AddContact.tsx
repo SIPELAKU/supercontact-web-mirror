@@ -10,6 +10,7 @@ import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
 
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface InputProps {
   label: string;
@@ -236,8 +237,9 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         description: "Contact has been added successfully",
       });
     } catch (err) {
-      notify.error("Network error", {
-        description: "Please try again later",
+      const message = handleError(err, "Adding contact")
+      notify.error("Error", {
+        description: message,
       });
     }
     setIsLoading(false);

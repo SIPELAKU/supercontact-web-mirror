@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface InputProps {
   label: string;
@@ -207,8 +208,9 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
 
       notify.success("Contact updated!");
     } catch (error) {
-      notify.error("Network error", {
-        description: "Please try again later",
+      const message = handleError(error, "Updating contact");
+      notify.error("Error", {
+        description: message,
       });
     }
   };

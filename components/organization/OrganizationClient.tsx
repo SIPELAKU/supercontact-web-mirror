@@ -22,6 +22,8 @@ import { Upload } from "lucide-react";
 import ExportPopover from "./ExportPopover";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
+import { handleError } from "@/lib/utils/errorHandler";
+import { notify } from "@/lib/notifications";
 
 export default function OrganizationClient() {
   const [selected, setSelected] = useState<string[]>([]);
@@ -68,12 +70,22 @@ export default function OrganizationClient() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
   // ===== FETCH DATA ===== //
-  const { departments, total, isLoading, error } = useDepartments(
+  const { departments, total, isLoading, error, isError } = useDepartments(
     page,
     rowsPerPage,
     searchQuery,
     tableFilter,
   );
+
+  useEffect(() => {
+    if (isError && error) {
+      const message = handleError(error, "Fetching departments")
+      notify.error("Error", {
+        description: message
+      })
+    }
+  }, [isError, error])
+
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,

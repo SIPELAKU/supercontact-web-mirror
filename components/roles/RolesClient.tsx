@@ -19,6 +19,8 @@ import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import { AppInput } from "../ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
+import { handleError } from "@/lib/utils/errorHandler";
+import { notify } from "@/lib/notifications";
 
 export default function RolesClient() {
   // ===== SEARCH ===== //
@@ -55,11 +57,20 @@ export default function RolesClient() {
 
   const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
 
-  const { roles, isLoading, isError } = useRoles(
+  const { roles, isLoading, isError, error } = useRoles(
     page + 1,
     rowsPerPage,
     searchQuery,
   );
+
+  // Error handling
+  useEffect(() => {
+    if (isError && error) {
+      const message = handleError(error, "Fetch Roles & Permissions")
+      notify.error("Failed to load roles & permissions", { description: message });
+    }
+  }, [isError, error])
+
 
   // Set total count when data changes
   useEffect(() => {

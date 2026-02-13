@@ -5,7 +5,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
@@ -28,16 +28,18 @@ import {
   PERMISSIONS,
   formatPermissionLabel,
 } from "@/lib/constants/permissions";
+import { handleError } from "@/lib/utils/errorHandler";
 
 export default function AddRoleDialog({ open, setOpen }: AddRoleProps) {
   const handleClose = () => setOpen(false);
   const { token } = useAuth();
   const router = useRouter();
-  const { addRole, isLoading: isFetching, isAdding } = useRoles();
+  const { addRole, isLoading: isFetching, isAdding, isError, error } = useRoles(1, 100, "");
 
   const [roleName, setRoleName] = useState<string>("");
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -59,8 +61,9 @@ export default function AddRoleDialog({ open, setOpen }: AddRoleProps) {
       });
       handleClose();
     } catch (error) {
+      const message = handleError(error, "Add Role");
       notify.error("Error", {
-        description: "Failed to add role",
+        description: message,
       });
       console.error(error);
     } finally {

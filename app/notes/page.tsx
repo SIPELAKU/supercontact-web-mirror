@@ -16,6 +16,8 @@ import { AppButton } from "@/components/ui/app-button";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import PageHeader from "@/components/ui/page-header";
 import { Stack } from "@mui/material";
+import { handleError } from "@/lib/utils/errorHandler";
+import { notify } from "@/lib/notifications";
 
 export default function NotesPage() {
   const { getToken } = useAuth();
@@ -50,7 +52,10 @@ export default function NotesPage() {
           : [];
       setDataNote(notes);
     } catch (error) {
-      console.error("Error loading notes:", error);
+      const message = handleError(error, "Loading notes")
+      notify.error("Error", {
+        description: message,
+      });
       setDataNote([]);
     }
   };

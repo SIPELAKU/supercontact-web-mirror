@@ -15,6 +15,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import { enGB } from "date-fns/locale";
 import { Poppins } from "next/font/google";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/lib/utils/errorHandler";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -213,7 +214,10 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         notify.error("Failed to save notes");
       }
     } catch (error) {
-      notify.error("Failed to save notes");
+      const message = handleError(error, "Adding note")
+      notify.error("Error", {
+        description: message,
+      });
     } finally {
       setIsSubmitting(false);
     }

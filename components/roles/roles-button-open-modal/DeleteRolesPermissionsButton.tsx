@@ -11,8 +11,10 @@ const DeleteRolesPermissionsModal = dynamic(
 
 export default function DeleteRolesPermissionsButton({
   roleId,
+  roleName,
 }: {
   roleId: string;
+  roleName: string;
 }) {
   const [open, setOpen] = useState<boolean>(false);
 
@@ -21,7 +23,7 @@ export default function DeleteRolesPermissionsButton({
   };
   return (
     <>
-      <DeleteButton onClick={handleOpen} />
+      <DeleteButton onClick={handleOpen} disabled={roleName === "Staff" || roleName === "Manager" || roleName === "Admin"} customTitle={roleName === "Staff" || roleName === "Manager" || roleName === "Admin" ? "default role" : "Edit Permissions"} />
 
       <DeleteRolesPermissionsModal
         open={open}

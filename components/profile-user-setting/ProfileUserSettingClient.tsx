@@ -21,6 +21,7 @@ import { fetchProfile, updateProfile, UpdateProfileData, uploadAvatar, deactivat
 import { handleError, getErrorMessage } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function ProfileUserSettingClient() {
   const { getToken, reloadProfile, logout } = useAuth();
@@ -34,6 +35,7 @@ export default function ProfileUserSettingClient() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [recentDevices, setRecentDevices] = useState<DeviceSession[]>([]);
   const [isLoadingDevices, setIsLoadingDevices] = useState(false);
+  const [isConfirmDeactivateOpen, setIsConfirmDeactivateOpen] = useState(false);
 
   const [profileData, setProfileData] = useState<UpdateProfileData>({
     fullname: "",
@@ -170,15 +172,15 @@ export default function ProfileUserSettingClient() {
     }
   };
 
-  const handleDeactivateAccount = async () => {
+  const handleDeactivateAccount = () => {
     if (!confirmDeactivate) {
       notify.error("Please confirm account deactivation first");
       return;
     }
+    setIsConfirmDeactivateOpen(true);
+  };
 
-    const confirmed = window.confirm("Are you sure you want to deactivate your account? This action cannot be undone.");
-    if (!confirmed) return;
-
+  const confirmDeactivationAction = async () => {
     try {
       setIsDeactivating(true);
       const token = await getToken();
@@ -188,6 +190,7 @@ export default function ProfileUserSettingClient() {
 
       if (response.success) {
         notify.success("Account deactivated successfully. You will be logged out.");
+        setIsConfirmDeactivateOpen(false);
         // Logout user after successful deactivation
         setTimeout(() => {
           logout();
@@ -198,7 +201,7 @@ export default function ProfileUserSettingClient() {
       }
     } catch (err) {
       const errorMessage = handleError(err, "Deactivate Account");
-      notify.error(errorMessage);
+      notify.error("Deactivation failed", { description: errorMessage });
     } finally {
       setIsDeactivating(false);
     }
@@ -242,7 +245,7 @@ export default function ProfileUserSettingClient() {
       }
     } catch (err) {
       const errorMessage = handleError(err, "Change Password");
-      notify.error(errorMessage);
+      notify.error("Password change failed", { description: errorMessage });
     } finally {
       setIsChangingPassword(false);
     }
@@ -600,6 +603,16 @@ export default function ProfileUserSettingClient() {
                 }
                 label="I confirm my account deactivation"
               />
+
+              <Box mt={2}>
+                <AppButton
+                  variantStyle="danger"
+                  onClick={handleDeactivateAccount}
+                  loading={isDeactivating}
+                >
+                  Deactivate Account
+                </AppButton>
+              </Box>
             </Card>
           </Stack>
         )}
@@ -891,6 +904,17 @@ export default function ProfileUserSettingClient() {
           </Stack>
         )}
       </Stack>
+
+      <ConfirmationPopup
+        isOpen={isConfirmDeactivateOpen}
+        onClose={() => setIsConfirmDeactivateOpen(false)}
+        onConfirm={confirmDeactivationAction}
+        title="Deactivate Account"
+        description="Are you sure you want to deactivate your account? This action cannot be undone."
+        confirmText="Deactivate"
+        variant="danger"
+        isLoading={isDeactivating}
+      />
     </div>
   );
 }

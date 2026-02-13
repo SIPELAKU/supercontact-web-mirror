@@ -14,6 +14,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import { enGB } from "date-fns/locale";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface ModalContentProps {
   onClose: () => void;
@@ -267,7 +268,10 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
         notify.error("Failed to update notes");
       }
     } catch (error) {
-      notify.error("Server error. Please try again later.");
+      const message = handleError(error, "Updating note")
+      notify.error("Error", {
+        description: message,
+      });
     } finally {
       setIsSubmitting(false);
     }

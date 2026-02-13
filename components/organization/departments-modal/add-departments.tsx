@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 import { useRouter } from "next/navigation";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -74,18 +75,10 @@ export default function AddDepartmentDialog({
       });
       handleClose();
     } catch (error: any) {
-      console.log("addError", addError)
-      console.log("addIsError", addIsError)
-      console.error("Failed to add department:", error);
+      const message = handleError(error, "Adding department")
 
-      const backendMessage =
-        error?.response?.data?.error?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        "Something went wrong";
-
-      notify.error("Failed to add department", {
-        description: backendMessage,
+      notify.error("Error", {
+        description: message,
         duration: 20000,
       });
     }

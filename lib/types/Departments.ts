@@ -6,6 +6,9 @@ export interface DepartmentsType {
         id: string;
         fullname: string;
         email: string;
+        position: string;
+        employee_code: string;
+        status: string;
         avatar_initial: string;
         avatar_url: string | null;
     } | null;

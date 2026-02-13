@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { AppButton } from "@/components/ui/app-button";
-import { AlertCircle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, Loader2, XCircle } from "lucide-react";
 import { useMailServerConnectionLog } from "@/lib/hooks/useMailServers";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -46,8 +46,10 @@ const ConnectionStatusModal: React.FC<ConnectionStatusModalProps> = ({
                         <Loader2 className="animate-spin text-gray-500" size={28} />
                     ) : log?.is_success ? (
                         <CheckCircle2 className="text-green-500" size={28} />
-                    ) : (
+                    ) : log?.is_success === false ? (
                         <AlertCircle className="text-red-500" size={28} />
+                    ) : (
+                        <HelpCircle className="text-gray-500" size={28} />
                     )}
                     <h2 className="text-xl font-semibold text-gray-900">
                         Connection Status: {serverName}
@@ -75,7 +77,7 @@ const ConnectionStatusModal: React.FC<ConnectionStatusModalProps> = ({
                                 Tested at: {format(new Date(log.created_at), "dd MMMM yyyy HH:mm:ss", { locale: idLocale })}
                             </p>
 
-                            <div className={`p-4 rounded-lg font-mono text-xs md:text-sm whitespace-pre-wrap break-all overflow-auto border ${log.is_success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"
+                            <div className={`p-4 rounded-lg font-mono text-xs md:text-sm whitespace-pre-wrap break-words overflow-auto border ${log.is_success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"
                                 }`}>
                                 {log.message || (log.is_success ? "Connection successful." : "Connection failed.")}
                                 {log.error_code && (
@@ -87,7 +89,7 @@ const ConnectionStatusModal: React.FC<ConnectionStatusModalProps> = ({
                 </div>
 
                 <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
-                    <AppButton onClick={onClose} variantStyle="soft" color="gray">
+                    <AppButton onClick={onClose} variantStyle="outline" color="gray">
                         Close
                     </AppButton>
                 </div>

@@ -18,6 +18,7 @@ import useRoles from "@/lib/hooks/useRoles";
 import { ManageUser } from "@/lib/types/manage-users";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 type EditUserDialogProps = {
   open: boolean;
@@ -100,8 +101,9 @@ export default function EditUserDialog({
     } catch (error: any) {
       console.log("error", error);
       console.error("Failed to edit user:", error);
+      const message = handleError(error, "Edit Managed User");
       notify.error("Failed to edit user: ", {
-        description: error.message || "Failed to edit user",
+        description: message,
       });
     }
   };

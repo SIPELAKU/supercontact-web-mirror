@@ -468,8 +468,8 @@ export default function ContactsPage() {
                         }}
                       >
                         <div className="flex gap-3 text-gray-600">
-                          <EditButton onClick={() => handleEdit(item)} />
-                          <DeleteButton onClick={() => handleDelete(item)} />
+                          <EditButton onClick={(e) => { e.stopPropagation(); handleEdit(item) }} />
+                          <DeleteButton onClick={(e) => { e.stopPropagation(); handleDelete(item) }} />
                         </div>
                       </TableCell>
                     )}

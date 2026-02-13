@@ -165,7 +165,7 @@ export default function RolesTable({
                   roleName={role?.role_name}
                   assignedPermissions={role?.permission_names}
                 />
-                <DeleteRolesPermissionsButton roleId={role?.id} />
+                <DeleteRolesPermissionsButton roleId={role?.id} roleName={role?.role_name} />
               </div>
             </TableCell>
           </TableRow>

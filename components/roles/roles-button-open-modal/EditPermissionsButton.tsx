@@ -33,7 +33,7 @@ export default function EditPermissionsButton({
   return (
     <>
       {/* Button */}
-      <EditButton onClick={handleOpen} />
+      <EditButton onClick={handleOpen} disabled={roleName === "Staff" || roleName === "Manager" || roleName === "Admin"} customTitle={roleName === "Staff" || roleName === "Manager" || roleName === "Admin" ? "default role" : "Edit Permissions"} />
 
       {/* Dialog */}
       <EditPermissionsDialog

@@ -17,6 +17,7 @@ import useRoles from "@/lib/hooks/useRoles";
 import useDepartments from "@/lib/hooks/useDepartments";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 type AddUserDialogProps = {
   open: boolean;
@@ -102,8 +103,9 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
       handleClose();
     } catch (error: any) {
       console.error("Failed to create user:", error);
+      const message = handleError(error, "Create Managed User");
       notify.error("Failed to create user: ", {
-        description: error.message || "Failed to create user",
+        description: message,
       });
     }
   };

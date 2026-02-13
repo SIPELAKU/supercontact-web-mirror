@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-02-13
+
+### Detail Versi 1.6.5
+
+#### 🛡️ Global Error Handling & Stability
+
+- **Unified Error Handling:**
+  - Integrated `handleError` utility across **Roles**, **Departments**, **Contacts**, and **Notes** modules.
+  - Replaced generic error messages with specific feedback from the backend, ensuring users understand why an action failed (e.g., validation errors, duplication).
+
+#### 👥 Role & Contact Management
+
+- **Role Protection:**
+  - Disabled **Edit** and **Delete** permissions for default system roles (**Admin**, **Manager**, **Staff**) to prevent accidental system lockouts.
+  - Visual feedback added to disabled buttons with custom tooltips.
+- **Data Safety:**
+  - Implemented `ConfirmationPopup` for **Add Contact** and **Import Contact** modals.
+  - Prevents accidental loss of filled data when closing the modal or clicking cancel.
+
+#### 📁 Files Modified
+
+- `components/roles/RolesClient.tsx`
+- `components/roles/roles-modal/AddRoleModal.tsx`
+- `components/roles/roles-table/RolesTable.tsx`
+- `components/organization/OrganizationClient.tsx`
+- `components/modal/AddContact.tsx`
+- `components/modal/EditContact.tsx`
+- `components/modal/ImportContactModal.tsx`
+- `app/notes/page.tsx`
+
+---
+
 ## [1.6.4] - 2026-02-13
 
 ### Detail Versi 1.6.4

@@ -21,7 +21,9 @@ export default function AddRoleButton() {
         Add Role
       </AppButton>
 
-      <AddRoleModal open={open} setOpen={setOpen} />
+      {open && (
+        <AddRoleModal open={open} setOpen={setOpen} />
+      )}
     </>
   );
 }

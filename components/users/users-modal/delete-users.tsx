@@ -4,6 +4,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useDeleteManagedUser } from "@/lib/hooks/useManagedUser";
 import { notify } from "@/lib/notifications";
+import { handleError } from "@/lib/utils/errorHandler";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -51,8 +52,9 @@ export default function DeleteUserDialog({
     } catch (error: any) {
       console.log("error", error);
       console.error("Failed to delete user:", error);
-      notify.error("Failed to edit user: ", {
-        description: error.message || "Failed to edit user",
+      const message = handleError(error, "Delete Managed User");
+      notify.error("Failed to delete user: ", {
+        description: message,
       });
     }
   };

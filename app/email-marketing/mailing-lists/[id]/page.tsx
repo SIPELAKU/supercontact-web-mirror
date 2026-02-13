@@ -32,9 +32,9 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { ArrowLeft, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
+import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
 
 const MailingListDetailPage = () => {
     const params = useParams();
@@ -77,10 +77,10 @@ const MailingListDetailPage = () => {
                 subscriberId: subscriberToDelete.id
             });
 
-            toast.success('Subscriber removed from list successfully');
+            notify.success('Subscriber removed from list successfully');
             setSubscriberToDelete(null);
         } catch (err: any) {
-            toast.error(err.message || 'Failed to remove subscriber');
+            notify.error(err.message || 'Failed to remove subscriber');
         }
     };
 
@@ -354,7 +354,7 @@ const MailingListDetailPage = () => {
                                                         <Tooltip title="View Statistics">
                                                             <IconButton
                                                                 size="small"
-                                                                onClick={() => toast('View statistics feature coming soon!')}
+                                                                onClick={() => notify.info('View statistics feature coming soon!')}
                                                             >
                                                                 <Eye size={18} />
                                                             </IconButton>

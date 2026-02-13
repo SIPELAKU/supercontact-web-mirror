@@ -10,6 +10,7 @@ export interface DepartmentsType {
         employee_code: string;
         status: string;
         avatar_initial: string;
+        avatar_url: string | null;
     } | null;
     manager_name: string
     manager_id: string;

@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-02-13
+
+### Detail Versi 1.6.4
+
+#### 🔒 Profile Security & Account Management
+
+- **Recent Devices Section:**
+  - Integrated `/profile-security/profile/security/devices` endpoint to display active session information.
+  - Added a responsive table showing Browser (with dynamic icons), Device, Location, and Recent Activity.
+- **Account Deactivation Flow:**
+  - Added a confirmation checkbox requirement to the account deactivation process for safety.
+  - Standardized the "Deactivate Account" button styling in the "Delete Account" card.
+
+#### 🏢 Organization Structure Enhancements
+
+- **Manager Information:**
+  - Updated `DepartmentsType` to include full manager profile data (`fullname`, `avatar_url`, `avatar_initial`).
+  - Enhanced the Organization Structure table to display manager avatars and full names for better visual identification.
+- **Search Optimization:**
+  - Updated search functionality to prioritize Manager Name and ID, improving administrative efficiency.
+
+#### 🎨 UI/UX & Technical Fixes
+
+- **Spacing Refinement:**
+  - Added consistent bottom padding to the Profile Settings container to improve page rhythm and prevent content overlap with footer elements.
+- **Build Stability:**
+  - Resolved "Unexpected token `div`" JSX syntax errors in `ProfileClient.tsx` and `ProfileUserSettingClient.tsx` by correcting return statements and React imports.
+
+#### 📁 Files Modified
+
+- `CHANGELOG.md`
+- `components/organization/departments-table/DepartmentsTableList.tsx`
+- `components/organization/OrganizationClient.tsx`
+- `components/profile/ProfileClient.tsx`
+- `components/profile-user-setting/ProfileUserSettingClient.tsx`
+- `lib/types/Departments.ts`
+
+---
+
 ## [1.6.3] - 2026-02-13
 
 ### Detail Versi 1.6.3

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Avatar,
@@ -169,41 +169,37 @@ export default function ProfileClient() {
               <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
                 ABOUT
               </Typography>
-              <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Person sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Full Name:</Typography>
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Person sx={{ color: 'text.secondary', fontSize: 20 }} />
                   </Box>
-                  <Typography variant="body2">{profile?.fullname || "-"}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Full Name:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.fullname || "-"}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <CheckCircle sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Status:</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CheckCircle sx={{ color: 'text.secondary', fontSize: 20 }} />
                   </Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Status:</Typography>
                   <Typography variant="body2" fontWeight={600} color="success.main">Active</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Star sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Role:</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Star sx={{ color: 'text.secondary', fontSize: 20 }} />
                   </Box>
-                  <Typography variant="body2" fontWeight={600}>{profile?.role || "User"}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Role:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.role || "User"}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box component="span" sx={{ fontSize: 20 }}>🏳️</Box>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Country:</Typography>
-                  </Box>
-                  <Typography variant="body2">{profile?.country || "-"}</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏳️</Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Country:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.country || "-"}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box component="span" sx={{ fontSize: 20 }}>🌐</Box>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Language:</Typography>
-                  </Box>
-                  <Typography variant="body2">{profile?.language || "English"}</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌐</Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Language:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.language || "English"}</Typography>
                 </Stack>
               </Stack>
             </Grid>
@@ -213,27 +209,25 @@ export default function ProfileClient() {
               <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>
                 CONTACTS
               </Typography>
-              <Stack spacing={2}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Phone sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Contact:</Typography>
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Phone sx={{ color: 'text.secondary', fontSize: 20 }} />
                   </Box>
-                  <Typography variant="body2">{profile?.phone || "-"}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Contact:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.phone || "-"}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Email sx={{ color: 'text.secondary', fontSize: 20 }} />
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Email:</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Email sx={{ color: 'text.secondary', fontSize: 20 }} />
                   </Box>
-                  <Typography variant="body2">{profile?.email || "-"}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Email:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.email || "-"}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Box component="span" sx={{ fontSize: 20 }}>💬</Box>
-                  <Box>
-                    <Typography variant="body2" fontWeight={600}>Skype:</Typography>
-                  </Box>
-                  <Typography variant="body2">{profile?.skype || "-"}</Typography>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 32 }}>
+                  <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💬</Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ minWidth: 100 }}>Skype:</Typography>
+                  <Typography variant="body2" color="text.secondary">{profile?.skype || "-"}</Typography>
                 </Stack>
               </Stack>
             </Grid>

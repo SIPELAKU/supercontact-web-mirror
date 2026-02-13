@@ -194,7 +194,7 @@ export default function OrganizationClient() {
               <div>
                 <Suspense>
                   <AppInput
-                    placeholder="Search Department"
+                    placeholder="Search Manager Name or ID"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     isBgWhite

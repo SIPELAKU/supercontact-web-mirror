@@ -277,6 +277,7 @@ export const MailServerClient = () => {
                                                 <CircularProgress size={20} />
                                             ) : (
                                                 <Switch
+                                                    disabled={item.is_system_mail_server}
                                                     checked={item.status === 'Active'}
                                                     onCheckedChange={async (checked) => {
                                                         try {

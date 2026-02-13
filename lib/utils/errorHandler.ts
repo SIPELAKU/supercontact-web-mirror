@@ -22,6 +22,30 @@ export function getErrorMessage(error: any, fallbackMessage: string = "An error 
 
   // If it's an object with a message property
   if (error && typeof error === 'object') {
+    // 0. Priority: Check for explicit detail/details in error.data or error.response.data
+    if (error.data && typeof error.data === 'object') {
+      if (error.data.detail) return error.data.detail;
+      const dataDetails = formatDetails(error.data.details);
+      if (dataDetails) return dataDetails;
+      if (error.data.error && typeof error.data.error === 'object') {
+        const nestedDetails = formatDetails(error.data.error.details);
+        if (nestedDetails) return nestedDetails;
+        if (error.data.error.message) return error.data.error.message;
+        if (error.data.error.detail) return error.data.error.detail;
+      }
+    }
+
+    if (error.response && error.response.data && typeof error.response.data === 'object') {
+      const rd = error.response.data;
+      if (rd.detail) return rd.detail;
+      const respDetails = formatDetails(rd.details);
+      if (respDetails) return respDetails;
+      if (rd.error && typeof rd.error === 'object') {
+        if (rd.error.detail) return rd.error.detail;
+        if (rd.error.message) return rd.error.message;
+      }
+    }
+
     // 1. Check for nested error structure: { error: { message: "...", details: [...] } }
     if (error.error && typeof error.error === 'object') {
       const details = formatDetails(error.error.details);
@@ -29,39 +53,22 @@ export function getErrorMessage(error: any, fallbackMessage: string = "An error 
       if (error.error.message && typeof error.error.message === 'string') {
         return error.error.message;
       }
-    }
-
-    // 2. Check for nested data error structure: { data: { error: { message: "...", details: [...] } } }
-    if (error.data && error.data.error && typeof error.data.error === 'object') {
-      const apiError = error.data.error;
-      const details = formatDetails(apiError.details);
-      if (details) return details;
-      if (apiError.message && typeof apiError.message === 'string') {
-        return apiError.message;
+      if (error.error.detail && typeof error.error.detail === 'string') {
+        return error.error.detail;
       }
     }
 
-    // 3. Check for API response errors (Axios/Fetch style): { response: { data: { error: { details: [...] } } } }
-    if (error.response && error.response.data) {
-      const respData = error.response.data;
-      if (typeof respData === 'string') return respData;
-
-      if (respData.error && typeof respData.error === 'object') {
-        const details = formatDetails(respData.error.details);
-        if (details) return details;
-        if (respData.error.message) return respData.error.message;
-      }
-
-      if (respData.message) return respData.message;
-    }
-
-    // 4. Handle top-level details or message
+    // 4. Handle top-level details, detail, or message
     const topLevelDetails = formatDetails(error.details);
     if (topLevelDetails) return topLevelDetails;
 
+    if (error.detail && typeof error.detail === 'string') {
+      return error.detail;
+    }
+
     if (error.message && typeof error.message === 'string') {
       // Avoid returning generic "Object object" or empty messages
-      if (error.message !== "[object Object]") {
+      if (error.message !== "[object Object]" && !error.message.includes("failed (")) {
         return error.message;
       }
     }

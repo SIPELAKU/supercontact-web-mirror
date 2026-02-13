@@ -353,12 +353,14 @@ export async function changePassword(token: string, data: ChangePasswordData): P
     }
 
     if (!res.ok) {
-      throw new Error(json.message || `Password change failed (${res.status})`);
+      const error: any = new Error(json.detail || json.message || `Password change failed (${res.status})`);
+      error.data = json;
+      throw error;
     }
 
     return {
       success: json.success !== undefined ? json.success : true,
-      message: json.message || "Password changed successfully",
+      message: json.message || json.detail || "Password changed successfully",
     };
   } catch (error: any) {
     logger.error("Password change request failed", { error: error.message, url });

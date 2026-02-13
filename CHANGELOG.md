@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integrated `/profile-security/profile/security/devices` endpoint to display active session information.
   - Added a responsive table showing Browser (with dynamic icons), Device, Location, and Recent Activity.
 - **Account Deactivation Flow:**
-  - Refined the "Delete Account" card by removing the redundant deactivation button, streamlining the confirmation-only process.
+  - Added a confirmation checkbox requirement to the account deactivation process for safety.
+  - Standardized the "Deactivate Account" button styling in the "Delete Account" card.
 
 #### 🏢 Organization Structure Enhancements
 

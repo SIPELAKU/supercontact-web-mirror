@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.7] - 2026-02-13
+
+### Detail Versi 1.6.7
+
+#### 🛠️ Bug Fixes & UI Improvements
+
+- **Managed Users:**
+  - Fixed can't delete user
+- **Tickets Management:**
+  - Fixed style input add ticket, change page header & fix error id ticket showing on modal delete.
+
+#### 📁 Files Modified
+
+- `components/users/UsersClient.tsx`
+- `components/users/users-table.tsx`
+- `components/support/tickets/TicketsClient.tsx`
+- `app/support/tickets/page.tsx`
+
+---
+
 ## [1.6.6] - 2026-02-13
 
 ### Detail Versi 1.6.6

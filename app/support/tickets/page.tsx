@@ -21,6 +21,7 @@ import { Card, CardHeader, Divider, Box, TablePagination } from "@mui/material";
 import ExportPopover from "./ExportPopover";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
+import PageHeader from "@/components/ui/page-header";
 
 export default function TicketManagementPage() {
     const searchParams = useSearchParams();
@@ -60,7 +61,7 @@ export default function TicketManagementPage() {
         showConfirmation({
             type: "delete",
             title: "Delete Ticket",
-            message: `Are you sure you want to delete ticket #${ticket.id}? This action cannot be undone.`,
+            message: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -152,8 +153,9 @@ export default function TicketManagementPage() {
     return (
         <div className="min-h-screen bg-[#ffffff] p-6">
             <div className="max-w-[1600px] mx-auto space-y-6">
-                <BannerDashboard
+                <PageHeader
                     title="Ticket Management"
+                    breadcrumbs={[{ label: "Support" }, { label: "Ticket" }]}
                 />
 
                 <Card className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">

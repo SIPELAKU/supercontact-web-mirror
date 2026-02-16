@@ -39,7 +39,7 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
   const [local, setLocal] = useState<NoteData>({
     title: "",
     content: "",
-    reminder_date: "",
+    reminder_date: formatDate(new Date(), "yyyy-MM-dd"),
     reminder_time: new Date().toISOString(),
   });
 
@@ -211,7 +211,11 @@ const AddNoteModal: React.FC<AddNoteModalProps> = ({
         onSuccess();
         onClose();
       } else {
-        notify.error("Failed to save notes");
+        const errorData = await res.json();
+        const message = handleError(errorData, "Adding note")
+        notify.error("Error", {
+          description: message,
+        });
       }
     } catch (error) {
       const message = handleError(error, "Adding note")

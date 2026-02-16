@@ -16,7 +16,7 @@ export function getErrorMessage(error: any, fallbackMessage: string = "An error 
   const formatDetails = (details: any[]) => {
     if (!Array.isArray(details) || details.length === 0) return null;
     return details
-      .map((d: any) => `${d.field ? `${d.field}: ` : ''}${d.message}`)
+      .map((d: any) => `${d.field ? `${d.field.replace(/_/g, ' ')}: ` : ''}${d.message}`)
       .join('\n');
   };
 

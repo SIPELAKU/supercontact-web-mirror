@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL;
+const AUTH_COOKIE_NAME = 'access_token';
 
 export async function GET(
   request: NextRequest,
@@ -66,6 +67,18 @@ async function proxyRequest(
         headers[key] = value;
       }
     });
+
+    // Fallback: if Authorization header is not sent by client,
+    // use access_token cookie so authenticated proxy calls still work.
+    const hasAuthorizationHeader = Object.keys(headers).some(
+      (key) => key.toLowerCase() === 'authorization'
+    );
+    if (!hasAuthorizationHeader) {
+      const tokenFromCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+      if (tokenFromCookie) {
+        headers.Authorization = `Bearer ${tokenFromCookie}`;
+      }
+    }
 
     // Get body for POST/PUT/PATCH/DELETE requests
     let body = undefined;

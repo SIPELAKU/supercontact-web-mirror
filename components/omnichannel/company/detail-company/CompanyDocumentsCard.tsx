@@ -6,27 +6,19 @@ import Typography from "@mui/material/Typography";
 import { FileCheck, Pencil, Eye } from "lucide-react";
 
 interface DocumentItem {
+    id?: string;
     title: string;
     filename: string;
 }
 
 interface CompanyDocumentsCardProps {
+    documents?: DocumentItem[];
+    isLoading?: boolean;
     onEdit?: () => void;
     onView?: (doc: DocumentItem) => void;
 }
 
-export default function CompanyDocumentsCard({ onEdit, onView }: CompanyDocumentsCardProps) {
-    const documents: DocumentItem[] = [
-        {
-            title: "NIB (Nomor Induk Berusaha)",
-            filename: "interview_result_137.pdf",
-        },
-        {
-            title: "NPWP (Nomor Pokok Wajib Pajak)",
-            filename: "Hasil_Wawancara_Sales (16).pdf",
-        },
-    ];
-
+export default function CompanyDocumentsCard({ documents = [], isLoading, onEdit, onView }: CompanyDocumentsCardProps) {
     return (
         <Card className="rounded-2xl! shadow-lg!">
             <CardContent className="p-6!">
@@ -40,27 +32,33 @@ export default function CompanyDocumentsCard({ onEdit, onView }: CompanyDocument
                     </button>
                 </div>
 
-                <div className="space-y-4">
-                    {documents.map((doc, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#10B98115] text-[#10B981]">
-                                    <FileCheck size={24} />
+                {isLoading ? (
+                    <Typography className="text-sm! text-slate-500!">Loading documents...</Typography>
+                ) : documents.length === 0 ? (
+                    <Typography className="text-sm! text-slate-500!">No documents uploaded yet</Typography>
+                ) : (
+                    <div className="space-y-4">
+                        {documents.map((doc, index) => (
+                            <div key={doc.id || index} className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#10B98115] text-[#10B981]">
+                                        <FileCheck size={24} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <Typography className="text-[14px]! font-semibold! text-slate-800! truncate">{doc.title}</Typography>
+                                        <Typography className="text-[12px]! text-slate-500! truncate">{doc.filename}</Typography>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <Typography className="text-[14px]! font-semibold! text-slate-800! truncate">{doc.title}</Typography>
-                                    <Typography className="text-[12px]! text-slate-500! truncate">{doc.filename}</Typography>
-                                </div>
+                                <button
+                                    onClick={() => onView?.(doc)}
+                                    className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer shrink-0 ml-4"
+                                >
+                                    <Eye size={20} />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => onView?.(doc)}
-                                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer shrink-0 ml-4"
-                            >
-                                <Eye size={20} />
-                            </button>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

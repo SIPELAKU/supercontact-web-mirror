@@ -4,6 +4,7 @@ import {
   CompanyProfileKeyPerson,
   CompanyProfileOrganizationStructure,
   CompanyProfileStatsItem,
+  CompanyDocument,
 } from "@/lib/types/company-profile";
 
 function asObject(value: unknown): Record<string, any> {
@@ -225,4 +226,75 @@ export async function fetchCompanyProfileOrganizationStructure(
     token
   );
   return mapOrganizationPayload(payload);
+}
+
+export async function uploadCompanyDocument(token: string, file: File): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  // Create FormData and append the file
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/documents/import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // Don't set Content-Type - browser will set it with boundary for FormData
+    },
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok || json?.success === false) {
+    const message = json?.error?.message || json?.message || 'Failed to upload document';
+    throw new Error(message);
+  }
+}
+
+export async function fetchCompanyDocuments(token: string): Promise<CompanyDocument[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const payload = await authorizedGet(`${baseUrl}/internal/company-profile/documents`, token);
+
+  // Handle the actual response structure: { items: [...] }
+  const documents = Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  return documents.map((doc: any) => ({
+    id: String(doc.id || ''),
+    title: String(doc.title || doc.name || doc.file_name || 'Untitled Document'),
+    filename: String(doc.file_name || doc.filename || ''),
+    uploadedAt: doc.created_at || doc.uploaded_at || new Date().toISOString(),
+    fileUrl: doc.file_url,
+  }));
+}
+
+export async function deleteCompanyDocument(token: string, documentId: string): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/documents/${documentId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok || json?.success === false) {
+    const message = json?.error?.message || json?.message || 'Failed to delete document';
+    throw new Error(message);
+  }
 }

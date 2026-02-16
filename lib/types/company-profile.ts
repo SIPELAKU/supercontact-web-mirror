@@ -37,3 +37,11 @@ export interface CompanyProfileKeyPerson {
 export interface CompanyProfileOrganizationStructure {
   departmentsCount: number;
 }
+
+export interface CompanyDocument {
+  id: string;
+  title: string;
+  filename: string;
+  uploadedAt: string;
+  fileUrl?: string;
+}

@@ -13,6 +13,7 @@ import { Modal, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
+import { handleError } from "@/lib/utils/errorHandler";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -164,11 +165,17 @@ export default function AddTaskModal({
         setSearchTerm("");
         setSelectedUser(null);
       } else {
-        notify.error("Failed to create task");
+        const errorData = await res.json();
+        const message = handleError(errorData, "Adding task")
+        notify.error("Error", {
+          description: message,
+        });
       }
     } catch (error) {
-      console.error("Error creating task:", error);
-      notify.error("Something went wrong");
+      const message = handleError(error, "Adding task")
+      notify.error("Error", {
+        description: message,
+      });
     } finally {
       setLoading(false);
     }

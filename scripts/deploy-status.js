@@ -71,7 +71,7 @@ function showStatus() {
 
   console.log('\n📊  Status Per Branch');
   sep();
-  for (const [icon, branch] of [['🔧', 'dev'], ['🧪', 'staging'], ['🟢', 'prod']]) {
+  for (const [icon, branch] of [['🔧', 'dev'], ['🧪', 'staging'], ['🟢', 'main']]) {
     console.log(`${icon}  ${branch.padEnd(10)} → Tag terbaru: ${getLatestTagOnBranch(branch)}`);
   }
   sep();
@@ -270,9 +270,9 @@ async function deployProd() {
 
   console.log('');
   console.log('📋 Langkah yang akan dijalankan:');
-  console.log(`   1. git checkout prod && git pull`);
+  console.log(`   1. git checkout main && git pull`);
   console.log(`   2. git merge staging`);
-  console.log(`   3. git push origin prod`);
+  console.log(`   3. git push origin main`);
   console.log(`   4. git tag -a ${releaseTag} -m "${message}"`);
   console.log(`   5. git push origin ${releaseTag}`);
   console.log('');
@@ -285,11 +285,11 @@ async function deployProd() {
 
   console.log('\n⏳ Menjalankan deployment...\n');
 
-  console.log('1️⃣  Checkout prod...');
+  console.log('1️⃣  Checkout main...');
   run('git checkout main', true);
   run('git pull origin main', true);
 
-  console.log('\n2️⃣  Merge staging ke prod...');
+  console.log('\n2️⃣  Merge staging ke main...');
   const mergeResult = run('git merge staging 2>&1');
   if (mergeResult.includes('CONFLICT')) {
     console.log('\n❌ MERGE CONFLICT! Selesaikan conflict dulu.');
@@ -298,8 +298,8 @@ async function deployProd() {
   }
   console.log(`   ${mergeResult || 'Already up to date.'}`);
 
-  console.log('\n3️⃣  Push prod...');
-  run('git push origin prod', true);
+  console.log('\n3️⃣  Push main...');
+  run('git push origin main', true);
 
   console.log(`\n4️⃣  Membuat tag ${releaseTag}...`);
   run(`git tag -a ${releaseTag} -m "${message}"`);
@@ -311,7 +311,7 @@ async function deployProd() {
   console.log('\n6️⃣  Backmerge ke dev...');
   run('git checkout dev', true);
   run('git pull origin dev', true);
-  run('git merge prod', true);
+  run('git merge main', true);
   run('git push origin dev', true);
 
   console.log('');
@@ -489,7 +489,7 @@ async function showMenu() {
   sep();
   console.log('  1. 📊  Cek status deployment');
   console.log('  2. 🧪  Deploy ke STAGING  (dev → staging + tag RC)');
-  console.log('  3. 🟢  Deploy ke PRODUCTION  (staging → prod + tag rilis)');
+  console.log('  3. 🟢  Deploy ke PRODUCTION  (staging → main + tag rilis)');
   console.log('  4. 🏷️   Lihat semua tag');
   console.log('  5. 🗑️   Hapus tag');
   console.log('  6. ❌  Keluar');

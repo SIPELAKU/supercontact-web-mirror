@@ -6,7 +6,7 @@
 #
 #   ❌ Push ke dev         → TIDAK jalan (Vercel auto-deploy)
 #   ❌ Push ke staging     → TIDAK jalan
-#   ❌ Push ke main        → TIDAK jalan
+#   ❌ Push ke prod/main   → TIDAK jalan
 #   ❌ Buka MR             → TIDAK jalan
 #   ✅ Buat tag v1.5.0-rc.1 → JALAN → deploy ke STAGING
 #   ✅ Buat tag v1.5.0      → JALAN → deploy ke PRODUCTION
@@ -22,7 +22,7 @@
 #               → GitLab CI jalan → deploy via Vercel CLI
 #               URL: solvera-supercontact-staging.vercel.app
 #
-#   [prod]    → Lead merge staging→main, lalu buat tag rilis:
+#   [prod]    → Lead merge staging→prod, lalu buat tag rilis:
 #               git tag -a v1.5.0 -m "Release v1.5.0"
 #               git push origin v1.5.0
 #               → GitLab CI jalan → deploy via Vercel CLI
@@ -30,9 +30,10 @@
 #
 # PREREQUISITE (setup satu kali):
 #
-#   1. Vercel → Settings → General → Ignored Build Step:
-#      if [[ "$VERCEL_GIT_COMMIT_REF" =~ ^(main|master|staging|prod)$ ]]; then exit 0; else exit 1; fi
-#      (Agar Vercel SKIP auto-deploy untuk staging & main/prod,
+#   1. Vercel → Settings → Git → Ignored Build Step:
+#      Pilih "Custom", masukkan:
+#      if [[ "$VERCEL_GIT_COMMIT_REF" == "staging" || "$VERCEL_GIT_COMMIT_REF" == "main" || "$VERCEL_GIT_COMMIT_REF" == "prod" ]]; then echo "Skip"; exit 0; fi; exit 1
+#      (Agar Vercel SKIP auto-deploy untuk staging & prod,
 #       tapi TETAP auto-deploy untuk dev & branch fitur)
 #
 #   2. GitLab → Settings → CI/CD → Variables:
@@ -40,23 +41,23 @@
 #      - VERCEL_ORG_ID     → File .vercel/project.json → orgId
 #      - VERCEL_PROJECT_ID → File .vercel/project.json → projectId
 #
-# BACKUP:
-#   File asli disimpan di .gitlab-ci.yml.bak
-#   Jika ada error, rename .bak kembali ke .gitlab-ci.yml
-#
 # ============================================================
 
 # ---- Workflow: Kapan pipeline dibuat? ----
+# Tanpa ini, GitLab akan membuat pipeline untuk SETIAP push,
+# meskipun tidak ada job yang match. Ini menyebabkan error
+# "user not verified" di branch feature/*.
+#
 # Pipeline HANYA dibuat untuk:
 #   1. Tag versi (v1.5.0, v1.5.0-rc.1) → deployment normal
-#   2. Push ke staging/main             → hotfix urgent (oleh Lead)
+#   2. Push ke staging/main/prod        → hotfix urgent (oleh Lead)
 #
 # Push ke dev, feature/*, bugfix/* → TIDAK ada pipeline
 workflow:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\.\d+)?$/'
       when: always
-    - if: '$CI_COMMIT_BRANCH =~ /^(staging|main|master)$/'
+    - if: '$CI_COMMIT_BRANCH =~ /^(staging|main|master|prod)$/'
       when: always
     - when: never
 
@@ -64,13 +65,17 @@ workflow:
 
 image: node:20-alpine
 
-# Caching untuk vercel CLI agar tidak install ulang setiap run
 cache:
-  key: vercel-cli
+  key:
+    files:
+      - package-lock.json
   paths:
-    - /usr/local/lib/node_modules/vercel/
+    - node_modules/
+    - .next/cache/
 
 stages:
+  - install
+  - build
   - deploy
 
 variables:
@@ -78,20 +83,53 @@ variables:
   NODE_OPTIONS: "--max-old-space-size=4096"
 
 # ============================================================
-# Deploy to STAGING (Vercel Preview)
+# Stage: Install Dependencies
+# ============================================================
+install_dependencies:
+  stage: install
+  script:
+    - echo "📦 Installing dependencies..."
+    - npm ci --prefer-offline
+    - npm i -g vercel
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-rc\.\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+# ============================================================
+# Stage: Build Verification
+# ============================================================
+build_nextjs:
+  stage: build
+  needs: ["install_dependencies"]
+  script:
+    - echo "🔨 Building Next.js application..."
+    - echo "   Tag     → $CI_COMMIT_TAG"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
+    - npm run build
+    - echo "✅ Build successful!"
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-rc\.\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+  artifacts:
+    paths:
+      - .next/
+    expire_in: 1 hour
+
+# ============================================================
+# Stage: Deploy to STAGING (Vercel Preview)
 # ============================================================
 #
 # Dipicu oleh tag RC: v1.5.0-rc.1, v1.5.0-rc.2, dst.
 # Deploy ke: solvera-supercontact-staging.vercel.app
-#
-# Vercel CLI akan:
-#   1. Pull env vars staging dari Vercel
-#   2. Build Next.js (dengan env vars yang benar)
-#   3. Deploy sebagai preview
-#   4. Alias ke domain staging
 # ============================================================
 deploy_staging:
   stage: deploy
+  needs: ["build_nextjs"]
   environment:
     name: staging
     url: https://solvera-supercontact-staging.vercel.app
@@ -100,17 +138,14 @@ deploy_staging:
     - echo "   Tag     → $CI_COMMIT_TAG"
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
-
-    # Install Vercel CLI
     - npm i -g vercel
 
     # Pull konfigurasi Vercel project (env vars staging)
     - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
-
     # vercel build hanya baca .env.preview.local, jadi copy dari staging
     - cp .vercel/.env.staging.local .vercel/.env.preview.local
 
-    # Build menggunakan Vercel (env variables dari Vercel ikut)
+    # Build menggunakan Vercel (agar environment variables dari Vercel ikut)
     - vercel build --token=$VERCEL_TOKEN
 
     # Deploy sebagai preview (staging)
@@ -128,35 +163,29 @@ deploy_staging:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-rc\.\d+$/'
 
 # ============================================================
-# Deploy to PRODUCTION (Vercel Production)
+# Stage: Deploy to PRODUCTION (Vercel Production)
 # ============================================================
 #
 # Dipicu oleh tag rilis: v1.5.0, v2.0.0, dst.
 # Deploy ke: solvera-supercontact.vercel.app
-#
-# Vercel CLI akan:
-#   1. Pull env vars production dari Vercel
-#   2. Build Next.js (dengan env vars production)
-#   3. Deploy ke production
 # ============================================================
 deploy_prod:
   stage: deploy
+  needs: ["build_nextjs"]
   environment:
     name: production
     url: https://solvera-supercontact.vercel.app
   script:
-    - echo "🟢 Deploying to PRODUCTION via Vercel..."
+    - echo "🚀 Deploying to PRODUCTION via Vercel..."
     - echo "   Tag     → $CI_COMMIT_TAG"
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
-
-    # Install Vercel CLI
     - npm i -g vercel
 
     # Pull konfigurasi Vercel project
     - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
-    # Build menggunakan Vercel (env variables dari Vercel ikut)
+    # Build menggunakan Vercel (agar environment variables dari Vercel ikut)
     - vercel build --prod --token=$VERCEL_TOKEN
 
     # Deploy ke production

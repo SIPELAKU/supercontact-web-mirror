@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+﻿/** @type {import('next').NextConfig} */
 const nextConfig = {
   // 1. Bypass Error ESLint
   eslint: {
@@ -26,21 +26,6 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
-      },
-    ];
-  },
-  //comment utk dev purpose need to be reverted back
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_URL;
-
-    if (!backendUrl) {
-      return [];
-    }
-
-    return [
-      {
-        source: '/api/proxy/:path*',
-        destination: `${backendUrl}/:path*`,
       },
     ];
   },

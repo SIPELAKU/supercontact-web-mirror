@@ -29,6 +29,7 @@ export interface ManageUserResponse {
 }
 
 export interface CreateManagedUserData {
+  fullname?: string;
   email: string;
   department_id: string;
   user_level: string;

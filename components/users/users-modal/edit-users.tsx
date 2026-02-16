@@ -32,6 +32,7 @@ export default function EditUserDialog({
   user,
 }: EditUserDialogProps) {
   // Form State
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [departmentName, setDepartmentName] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
@@ -60,6 +61,7 @@ export default function EditUserDialog({
   // Populate form with user data
   useEffect(() => {
     if (user) {
+      setFullName(user.fullname || "");
       setEmail(user.email);
       setStatus(
         user.status.charAt(0).toUpperCase() + user.status.slice(1) || "Active",
@@ -88,6 +90,7 @@ export default function EditUserDialog({
       const response = await updateManagedUser({
         id: String(user.id),
         data: {
+          fullname: fullName.trim(),
           email: email,
           department_id: departmentUuid,
           user_level: level,
@@ -186,6 +189,20 @@ export default function EditUserDialog({
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
+            {/* Full Name */}
+            <div className="relative">
+              <div className="py-1">
+                <label className="text-sm font-medium">Full Name</label>
+              </div>
+              <AppInput
+                placeholder="Enter full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                isBgWhite
+                autoComplete="off"
+              />
+            </div>
+
             {/* Department */}
             <div>
               <div className="py-1">
@@ -210,7 +227,9 @@ export default function EditUserDialog({
                 isBgWhite
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
             {/* Branch */}
             <div className="relative">
               <label className="text-sm font-medium">Branch</label>
@@ -262,7 +281,9 @@ export default function EditUserDialog({
                 isBgWhite
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* Role / Role Access */}
             <div>
               <div className="py-1">
@@ -276,9 +297,7 @@ export default function EditUserDialog({
                 isBgWhite
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* Position */}
             <div>
               <div className="py-1">
@@ -295,24 +314,6 @@ export default function EditUserDialog({
                 placeholder="Select position"
                 value={position}
                 onChange={(e) => setPosition(e.target.value as string)}
-                isBgWhite
-              />
-            </div>
-
-            {/* Status */}
-            <div>
-              <div className="py-1">
-                <label className="text-sm font-medium">Status</label>
-              </div>
-              <AppSelect
-                options={[
-                  { value: "Active", label: "Active" },
-                  { value: "Inactive", label: "Inactive" },
-                  { value: "Pending", label: "Pending" },
-                ]}
-                placeholder="Select status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as string)}
                 isBgWhite
               />
             </div>

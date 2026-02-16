@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchUsers, UserResponse } from "../api";
+import { fetchUsers, UserResponse } from "../api/users";
 import { useAuth } from "../context/AuthContext";
 
 export function useUsers(

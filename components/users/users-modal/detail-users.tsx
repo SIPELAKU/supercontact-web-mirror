@@ -11,7 +11,6 @@ import {
   DialogContent,
 } from "@mui/material";
 import type { ManageUser } from "@/lib/types/manage-users";
-import { X } from "lucide-react";
 
 type StatusType = ManageUser["status"];
 
@@ -34,8 +33,6 @@ export default function DetailUserDialog({
     setUserData(user);
   }, [user]);
 
-  console.log("userData", userData);
-
   if (!userData) return <Typography>Loading...</Typography>;
 
   const badge: Record<Exclude<StatusType, "">, JSX.Element> = {
@@ -55,6 +52,14 @@ export default function DetailUserDialog({
       </span>
     ),
   };
+
+  const statusKey = (userData.status || "Active").toLowerCase();
+  const statusBadge =
+    statusKey === "active"
+      ? badge.Active
+      : statusKey === "pending"
+        ? badge.Pending
+        : badge.Inactive;
 
   return (
     <Dialog
@@ -140,7 +145,7 @@ export default function DetailUserDialog({
               Department
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              Customer Support
+              {userData.department?.department_name || "-"}
             </Typography>
           </Grid>
 
@@ -149,7 +154,7 @@ export default function DetailUserDialog({
               Branch
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              Headquarters
+              {userData.department?.branch || "-"}
             </Typography>
           </Grid>
 
@@ -158,7 +163,7 @@ export default function DetailUserDialog({
               Level
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              Staff
+              {userData.level || "-"}
             </Typography>
           </Grid>
 
@@ -167,7 +172,7 @@ export default function DetailUserDialog({
               Position
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              Support Agent
+              {userData.position || "-"}
             </Typography>
           </Grid>
 
@@ -175,9 +180,7 @@ export default function DetailUserDialog({
             <Typography className="mb-1 text-sm font-medium text-[#94a3b8]">
               Status
             </Typography>
-            <div className="mt-1">
-              {userData.status ? badge[userData.status] : badge["active"]}
-            </div>
+            <div className="mt-1">{statusBadge}</div>
           </Grid>
 
           <Grid item xs={12} sm={4}>
@@ -185,7 +188,7 @@ export default function DetailUserDialog({
               Role Access
             </Typography>
             <Typography className="font-semibold text-[#334155]">
-              {userData.position || "Support"}
+              {userData.role?.role_name || "-"}
             </Typography>
           </Grid>
 

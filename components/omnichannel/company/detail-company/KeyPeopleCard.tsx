@@ -1,6 +1,5 @@
 "use client";
 
-import { KEY_PEOPLE_LIST } from "@/lib/data/company-key-people";
 import Avatar from "@mui/material/Avatar";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -22,7 +21,7 @@ interface KeyPeopleCardProps {
 
 export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeopleCardProps) {
   const router = useRouter();
-  const peopleList = people && people.length > 0 ? people : '';
+  const peopleList = Array.isArray(people) ? people : [];
 
   if (isLoading) {
     return <CompanyKeyPeopleCardSkeleton />;

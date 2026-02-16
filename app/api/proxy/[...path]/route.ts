@@ -90,12 +90,34 @@ async function proxyRequest(
       }
     }
 
-    // Make request to backend
-    const response = await fetch(url, {
+    // Make request to backend.
+    // Handle redirects manually so Authorization can be preserved on redirected URLs.
+    let response = await fetch(url, {
       method,
       headers,
       body,
+      redirect: 'manual',
     });
+
+    let redirectCount = 0;
+    while (
+      [301, 302, 307, 308].includes(response.status) &&
+      redirectCount < 3
+    ) {
+      const location = response.headers.get('location');
+      if (!location) break;
+
+      const redirectedUrl = new URL(location, url).toString();
+      console.log(`[Proxy] Redirect ${response.status} -> ${redirectedUrl}`);
+
+      response = await fetch(redirectedUrl, {
+        method,
+        headers,
+        body,
+        redirect: 'manual',
+      });
+      redirectCount += 1;
+    }
 
     // Get response data
     const data = await response.text();

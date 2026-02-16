@@ -22,7 +22,7 @@ interface KeyPeopleCardProps {
 
 export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeopleCardProps) {
   const router = useRouter();
-  const peopleList = people && people.length > 0 ? people : KEY_PEOPLE_LIST;
+  const peopleList = people && people.length > 0 ? people : '';
 
   if (isLoading) {
     return <CompanyKeyPeopleCardSkeleton />;

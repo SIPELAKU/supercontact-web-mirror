@@ -93,7 +93,7 @@ function mapCompanyProfilePayload(payload: unknown): CompanyProfileData {
   return {
     name: firstString(overview.name, company.name, raw.name, raw.company_name) || "Company Profile",
     description:
-      firstString(company.description, raw.description) ||
+      firstString(overview.about, company.description, raw.description) ||
       "Company profile information is not available.",
     tags: stringArray(company.tags).length ? stringArray(company.tags) : stringArray(raw.tags),
     founded:

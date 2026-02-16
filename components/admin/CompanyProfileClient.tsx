@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AiIntelligenceSummary, CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
+import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
 import PageHeader from "@/components/ui/page-header";
 import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box } from "@mui/material";
@@ -126,11 +126,6 @@ export default function CompanyProfileClient() {
           { label: "Dashboard", href: "/" },
           { label: "Company Profile" }
         ]}
-      />
-
-      <AiIntelligenceSummary
-        description={company.aiSummary.description}
-        tags={company.aiSummary.tags}
       />
 
       <div className="mt-[63px] grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">

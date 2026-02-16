@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Mapped `manage_user_id`, `full_name`, `manage_user_position`, and `department_branch` into UI model.
 - **Result:**
   - Company Profile and Key People pages now render real backend fields consistently.
+- **UI Cleanup:**
+  - Removed the "AI Intelligence Summary" section from the admin Company Profile page.
+- **About Field Mapping:**
+  - Updated description fallback order to use `overview.about` first, then fallback to legacy fields/default message.
 
 #### 📁 Files Modified
 

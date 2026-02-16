@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiIntelligenceSummary, CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
 import PageHeader from "@/components/ui/page-header";
 import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
@@ -8,9 +8,21 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, B
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { FileText, X } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
+import {
+  fetchCompanyProfile,
+  fetchCompanyProfileKeyPeople,
+  fetchCompanyProfileOrganizationStructure,
+} from "@/lib/api/company-profile";
+import type { CompanyProfileData, CompanyProfileKeyPerson } from "@/lib/types/company-profile";
 
 export default function CompanyProfileClient() {
+  const { getToken } = useAuth();
   const [isLoading, setIsloading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const [profile, setProfile] = useState<CompanyProfileData | null>(null);
+  const [keyPeople, setKeyPeople] = useState<CompanyProfileKeyPerson[]>([]);
+  const [departmentsCount, setDepartmentsCount] = useState<number>(0);
 
   // Data states
   const [signals, setSignals] = useState(RECENT_SIGNALS);
@@ -24,21 +36,66 @@ export default function CompanyProfileClient() {
   // Form states
   const [newSignal, setNewSignal] = useState({ title: "", description: "", timePosted: "Just now" });
 
-  // Solvera company data
-  const solveraCompany = {
-    name: "Solvera",
-    description: "Solvera is a leading technology company specializing in innovative software solutions and digital transformation services. We help businesses streamline their operations and achieve their digital goals through cutting-edge technology and expert consulting.",
-    tags: ["Technology", "Software Development", "Digital Transformation", "Consulting", "Innovation"],
-    founded: "2015",
-    headquarters: "Jakarta, Indonesia",
-    employees: "150-200",
-    status: "Active" as const
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const solveraAiSummary = {
-    description: "Solvera is a dynamic technology company focused on delivering comprehensive software solutions and digital transformation services. With a strong presence in the Indonesian market, the company has established itself as a trusted partner for businesses seeking to modernize their operations and embrace digital innovation.",
-    tags: ["Tech Leader", "Digital Innovation", "Growth Stage", "B2B Focus"]
-  };
+    const loadCompanyProfile = async () => {
+      setIsloading(true);
+      setError("");
+      try {
+        const token = await getToken();
+        const [profileData, keyPeopleData, organizationData] = await Promise.all([
+          fetchCompanyProfile(token),
+          fetchCompanyProfileKeyPeople(token, 1, 12),
+          fetchCompanyProfileOrganizationStructure(token),
+        ]);
+
+        if (!isMounted) return;
+        setProfile(profileData);
+        setKeyPeople(keyPeopleData);
+        setDepartmentsCount(organizationData.departmentsCount);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err?.message || "Failed to load company profile");
+      } finally {
+        if (isMounted) setIsloading(false);
+      }
+    };
+
+    loadCompanyProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [getToken]);
+
+  const company = useMemo(() => {
+    if (profile) return profile;
+    return {
+      name: "Company Profile",
+      description: "Company profile information is not available.",
+      tags: [] as string[],
+      founded: "-",
+      headquarters: "-",
+      employees: "-",
+      status: "-",
+      aiSummary: {
+        description: "AI summary is not available.",
+        tags: [] as string[],
+      },
+      stats: [],
+    };
+  }, [profile]);
+
+  const keyPeopleList = useMemo(
+    () =>
+      keyPeople.map((person) => ({
+        id: person.id,
+        name: person.name,
+        title: person.title || "-",
+        avatarUrl: person.avatarUrl,
+      })),
+    [keyPeople]
+  );
 
   const handleViewPdf = (doc: { title: string; filename: string }) => {
     setSelectedDoc(doc);
@@ -64,7 +121,7 @@ export default function CompanyProfileClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
-        title="Solvera"
+        title={company.name}
         breadcrumbs={[
           { label: "Dashboard", href: "/" },
           { label: "Company Profile" }
@@ -72,25 +129,25 @@ export default function CompanyProfileClient() {
       />
 
       <AiIntelligenceSummary
-        description={solveraAiSummary.description}
-        tags={solveraAiSummary.tags}
+        description={company.aiSummary.description}
+        tags={company.aiSummary.tags}
       />
 
       <div className="mt-[63px] grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">
-        <CompanyDetailStats />
+        <CompanyDetailStats stats={company.stats} />
       </div>
 
       <div className="grid grid-cols-12 gap-6 mt-[63px]">
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
           <CompanyAbout
             isLoading={isLoading}
-            companyName={solveraCompany.name}
-            description={solveraCompany.description}
-            tags={solveraCompany.tags}
-            yearsFounded={solveraCompany.founded}
-            headquarters={solveraCompany.headquarters}
-            employees={solveraCompany.employees}
-            status={solveraCompany.status}
+            companyName={company.name}
+            description={company.description}
+            tags={company.tags}
+            yearsFounded={company.founded}
+            headquarters={company.headquarters}
+            employees={company.employees}
+            status={company.status}
           />
           <RecentSignals
             isLoading={isLoading}
@@ -104,10 +161,21 @@ export default function CompanyProfileClient() {
         </div>
 
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
-          <OrganizationStructureCard />
-          <CompanyKeyPeopleCard isLoading={isLoading} />
+          <OrganizationStructureCard
+            departmentsCount={departmentsCount}
+            viewAllHref="/organization"
+          />
+          <CompanyKeyPeopleCard
+            isLoading={isLoading}
+            people={keyPeopleList}
+            viewAllHref="/admin/company-profile/key-people"
+          />
         </div>
       </div>
+
+      {error && (
+        <Typography className="text-sm! text-red-500!">{error}</Typography>
+      )}
 
       {/* --- ADD SIGNAL MODAL --- */}
       <Dialog open={isAddSignalOpen} onClose={() => setAddSignalOpen(false)} maxWidth="sm" fullWidth>

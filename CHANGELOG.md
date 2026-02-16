@@ -40,6 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Admin Menu:**
   - Hid `Company Profile` menu item by commenting it out (not deleted), so it can be re-enabled easily.
 
+#### 🏢 Company Profile Backend Integration
+
+- **Company Profile (Admin):**
+  - Integrated backend GET endpoints:
+    - `/internal/company-profile`
+    - `/internal/company-profile/key-people?page=1&limit=12`
+    - `/internal/company-profile/organization-structure`
+  - Added dynamic mapping for company overview, AI summary, key people list, and organization structure count.
+  - Added new API and type modules for company profile domain.
+- **Key People Navigation:**
+  - Updated "View All Employees" from the company profile card to open admin company profile key-people route.
+  - Added new page: `/admin/company-profile/key-people` with backend-powered key-people list and breadcrumb context under Company Profile.
+
 #### 📚 Documentation Sync
 
 - **README consistency fixes:**
@@ -56,6 +69,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/users/users-modal/detail-users.tsx`
 - `components/layout/Sidebar.tsx`
 - `lib/types/manage-users.ts`
+- `components/admin/CompanyProfileClient.tsx`
+- `components/omnichannel/company/detail-company/CompanyDetailStats.tsx`
+- `components/omnichannel/company/detail-company/KeyPeopleCard.tsx`
+- `components/omnichannel/company/detail-company/OrganizationStructureCard.tsx`
+- `app/admin/company-profile/key-people/page.tsx`
+- `lib/api/company-profile.ts`
+- `lib/types/company-profile.ts`
 - `README.md`
 
 ## [Release to Staging 2026-02-13]

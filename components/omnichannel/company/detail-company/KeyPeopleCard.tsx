@@ -11,10 +11,18 @@ import { CompanyKeyPeopleCardSkeleton } from "../..";
 
 interface KeyPeopleCardProps {
   isLoading: boolean;
+  people?: Array<{
+    id: string;
+    name: string;
+    title: string;
+    avatarUrl?: string;
+  }>;
+  viewAllHref?: string;
 }
 
-export default function KeyPeopleCard({ isLoading }: KeyPeopleCardProps) {
+export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeopleCardProps) {
   const router = useRouter();
+  const peopleList = people && people.length > 0 ? people : KEY_PEOPLE_LIST;
 
   if (isLoading) {
     return <CompanyKeyPeopleCardSkeleton />;
@@ -32,7 +40,7 @@ export default function KeyPeopleCard({ isLoading }: KeyPeopleCardProps) {
 
         {/* List */}
         <div className="px-5 py-3">
-          {KEY_PEOPLE_LIST.map((person, index) => (
+          {peopleList.map((person, index) => (
             <div key={person.id}>
               <div className="flex items-center gap-3 py-3">
                 <Avatar src={person.avatarUrl} alt={person.name} className="h-9 w-9" />
@@ -42,7 +50,7 @@ export default function KeyPeopleCard({ isLoading }: KeyPeopleCardProps) {
                 </div>
               </div>
 
-              {index !== KEY_PEOPLE_LIST.length - 1 && <Divider />}
+              {index !== peopleList.length - 1 && <Divider />}
             </div>
           ))}
         </div>
@@ -51,7 +59,10 @@ export default function KeyPeopleCard({ isLoading }: KeyPeopleCardProps) {
 
         {/* Footer */}
         <div className="p-5 text-center">
-          <button onClick={() => router.push("/omnichannel/company-intelligence/key-people/1")} className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline">
+          <button
+            onClick={() => router.push(viewAllHref || "/omnichannel/company-intelligence/key-people/1")}
+            className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline"
+          >
             View All Employees
           </button>
         </div>

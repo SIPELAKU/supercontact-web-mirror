@@ -176,11 +176,11 @@ const menuData: MenuSection[] = [
   {
     title: "ADMIN",
     items: [
-      {
+      /* {
         name: "Company Profile",
         icon: Building2,
         path: "/admin/company-profile",
-      },
+      }, */
       {
         name: "User Control",
         icon: User,

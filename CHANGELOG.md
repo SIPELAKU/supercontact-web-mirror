@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.11] - 2026-02-16
+
+### Detail Versi 1.6.11
+
+#### 🛠️ Error Handling & UX Improvements
+
+- **Global Error Handling:**
+  - Implemented `handleError` across **Notes** and **Tasks** modules to provide consistent and user-friendly error messages from backend responses.
+  - Enhanced `getErrorMessage` utility to properly format field names by replacing underscores with spaces (e.g., `reminder_date` -> `reminder date`).
+
+- **Note Management:**
+  - **Default Reminder Date:** The "Add Note" modal now automatically pre-fills the reminder date with the current date, improving user convenience.
+
+#### 📁 Files Modified
+
+- `lib/utils/errorHandler.ts`
+- `components/modal/AddNote.tsx`
+- `components/modal/AddTaskModal.tsx`
+- `components/modal/EditNote.tsx`
+- `app/contact/detail/[id]/page.tsx`
+
 ## [1.6.10] - 2026-02-17
 
 ### Detail Versi 1.6.10

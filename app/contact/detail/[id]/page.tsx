@@ -11,6 +11,7 @@ import DeleteContactModal from "@/components/modal/DeleteContact";
 import { useAuth } from "@/lib/context/AuthContext";
 import { AppButton } from "@/components/ui/app-button";
 import { Box, Divider, Tab, Tabs } from "@mui/material";
+import { handleError } from "@/lib/utils/errorHandler";
 
 // Mock data for tags since API wasn't provided for it
 const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
@@ -146,9 +147,18 @@ export default function ContactDetailPage() {
         reloadData();
         setisloadingCreateNote(false);
         notify.success("Note added!");
+      } else {
+        const errorData = await res.json();
+        const message = handleError(errorData, "Adding note")
+        notify.error("Error", {
+          description: message,
+        });
       }
     } catch (error) {
-      console.error("Error saving note:", error);
+      const message = handleError(error, "Adding note")
+      notify.error("Error", {
+        description: message,
+      });
       setisloadingCreateNote(false);
     }
   };

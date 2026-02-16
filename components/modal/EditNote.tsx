@@ -265,7 +265,11 @@ const EditNoteModal: React.FC<EditNoteModalProps> = ({
         onSuccess();
         onClose();
       } else {
-        notify.error("Failed to update notes");
+        const errorData = await res.json();
+        const message = handleError(errorData, "Updating note")
+        notify.error("Error", {
+          description: message,
+        });
       }
     } catch (error) {
       const message = handleError(error, "Updating note")

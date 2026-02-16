@@ -26,6 +26,7 @@ type AddUserDialogProps = {
 
 export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   // Form State
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [departmentName, setDepartmentName] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
@@ -57,6 +58,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   };
 
   const resetForm = () => {
+    setFullName("");
     setEmail("");
     setDepartmentName("");
     setDepartmentUuid("");
@@ -70,6 +72,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const missingFields = [];
+    if (!fullName.trim()) missingFields.push("Full Name");
     if (!email) missingFields.push("Email");
     if (!departmentName) missingFields.push("Department");
     if (!branchName) missingFields.push("Branch");
@@ -92,6 +95,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
     try {
       await createManagedUser({
+        fullname: fullName.trim(),
         email: email,
         department_id: departmentUuid,
         user_level: level,
@@ -195,6 +199,20 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
+              {/* Full Name */}
+              <div className="relative">
+                <div className="py-1">
+                  <label className="text-sm font-medium">Full Name</label>
+                </div>
+                <AppInput
+                  placeholder="Enter full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  isBgWhite
+                  autoComplete="off"
+                />
+              </div>
+
               {/* Department */}
               <div>
                 <div className="py-1">
@@ -220,6 +238,9 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 />
               </div>
 
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
               {/* Branch */}
               <div className="relative">
                 <label className="text-sm font-medium">Branch</label>
@@ -272,6 +293,9 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 />
               </div>
 
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {/* Role / Role Access */}
               <div>
                 <div className="py-1">
@@ -285,9 +309,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   isBgWhite
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {/* Position */}
               <div>
                 <div className="py-1">
@@ -309,7 +330,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
               </div>
 
               {/* Status */}
-              <div>
+              {/* <div>
                 <div className="py-1">
                   <label className="text-sm font-medium">Status</label>
                 </div>
@@ -324,7 +345,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   onChange={(e) => setStatus(e.target.value as string)}
                   isBgWhite
                 />
-              </div>
+              </div> */}
             </div>
           </DialogContent>
 

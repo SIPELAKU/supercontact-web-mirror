@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.9] - 2026-02-16
+
+### Detail Versi 1.6.9
+
+#### 🏢 Company Profile API Response Alignment
+
+- **Company Profile (Admin):**
+  - Adjusted backend response mapping to match actual payload structure from `/internal/company-profile`:
+    - `overview` (`name`, `headquarters`, `founded_year`, `status`)
+    - `metrics` array (`total_employees`, `active_employees`, `departments_count`)
+    - `key_people` list
+    - `departments` list for organization summary
+- **Key People API:**
+  - Updated mapper to support `/internal/company-profile/key-people` response shape (`items` list).
+  - Mapped `manage_user_id`, `full_name`, `manage_user_position`, and `department_branch` into UI model.
+- **Result:**
+  - Company Profile and Key People pages now render real backend fields consistently.
+
+#### 📁 Files Modified
+
+- `lib/api/company-profile.ts`
+- `components/admin/CompanyProfileClient.tsx`
+- `app/admin/company-profile/key-people/page.tsx`
+
 ## [1.6.8] - 2026-02-16
 
 ### Detail Versi 1.6.8

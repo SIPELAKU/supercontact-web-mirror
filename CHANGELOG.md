@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.8] - 2026-02-16
+
+### Detail Versi 1.6.8
+
+#### 🛠️ Proxy Auth & Redirect Handling
+
+- **API Proxy (`/api/proxy/[...path]`):**
+  - Added bearer token fallback from `access_token` cookie when `Authorization` header is missing.
+  - Added manual redirect handling (`301/302/307/308`) to preserve auth headers across upstream redirects.
+  - Improved proxy behavior for chat-related endpoints that previously returned `401` after redirect hops.
+
+#### 👥 User Management Modal Improvements
+
+- **Add User Modal:**
+  - Added `Full Name` field and validation.
+  - Updated field layout to match requested pairings:
+    - Full Name + Department
+    - Branch + Level
+    - Role Access + Position
+  - Included `fullname` in create payload.
+- **Edit User Modal:**
+  - Aligned form layout with Add User modal.
+  - Added editable `Full Name` field and payload mapping.
+  - Removed visible `Status` field from form UI to keep consistency with Add User flow.
+- **User Detail (Eye) Modal:**
+  - Replaced hardcoded values with API-backed data:
+    - department, branch, level, position, role access.
+  - Fixed Role Access mapping to use `role.role_name`.
+  - Improved status badge mapping for case variations (`Active/active`, etc.).
+
+#### 🎨 Sidebar Navigation Update
+
+- **Admin Menu:**
+  - Hid `Company Profile` menu item by commenting it out (not deleted), so it can be re-enabled easily.
+
+#### 📚 Documentation Sync
+
+- **README consistency fixes:**
+  - Synced script list with `package.json` (`type-check`, `release`, `tag:delete`, etc.).
+  - Updated framework version to match actual dependency (`Next.js 14.2.5`).
+  - Added `BACKEND_URL` to required environment variables.
+  - Updated lint troubleshooting command to `npx eslint . --fix`.
+
+#### 📁 Files Modified
+
+- `app/api/proxy/[...path]/route.ts`
+- `components/users/users-modal/add-users.tsx`
+- `components/users/users-modal/edit-users.tsx`
+- `components/users/users-modal/detail-users.tsx`
+- `components/layout/Sidebar.tsx`
+- `lib/types/manage-users.ts`
+- `README.md`
+
 ## [Release to Staging 2026-02-13]
 
 ---

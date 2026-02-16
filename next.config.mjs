@@ -34,7 +34,8 @@ const nextConfig = {
     const backendUrl = process.env.BACKEND_URL;
 
     if (!backendUrl) {
-      console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
+      return []
+      // console.warn('⚠️ WARNING: BACKEND_URL is not set. Proxy rewrites might fail.');
     }
 
     return [

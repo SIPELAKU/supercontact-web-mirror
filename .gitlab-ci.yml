@@ -43,6 +43,24 @@
 #
 # ============================================================
 
+# ---- Workflow: Kapan pipeline dibuat? ----
+# Tanpa ini, GitLab akan membuat pipeline untuk SETIAP push,
+# meskipun tidak ada job yang match. Ini menyebabkan error
+# "user not verified" di branch feature/*.
+#
+# Pipeline HANYA dibuat untuk:
+#   1. Tag versi (v1.5.0, v1.5.0-rc.1) → deployment normal
+#   2. Push ke staging/main/prod        → hotfix urgent (oleh Lead)
+#
+# Push ke dev, feature/*, bugfix/* → TIDAK ada pipeline
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\.\d+)?$/'
+      when: always
+    - if: '$CI_COMMIT_BRANCH =~ /^(staging|main|master|prod)$/'
+      when: always
+    - when: never
+
 # ---- Konfigurasi Global ----
 
 image: node:20-alpine

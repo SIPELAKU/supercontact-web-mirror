@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, CompanyDocumentsCard } from "@/components/omnichannel";
+import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
 import PageHeader from "@/components/ui/page-header";
+import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
@@ -28,10 +29,17 @@ export default function CompanyProfileClient() {
   const [keyPeople, setKeyPeople] = useState<CompanyProfileKeyPerson[]>([]);
   const [departmentsCount, setDepartmentsCount] = useState<number>(0);
 
+  // Data states
+  const [signals, setSignals] = useState(RECENT_SIGNALS);
+
   // Modal states
+  const [isAddSignalOpen, setAddSignalOpen] = useState(false);
   const [isEditDocsOpen, setEditDocsOpen] = useState(false);
   const [isViewPdfOpen, setViewPdfOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<CompanyDocument | null>(null);
+
+  // Form states
+  const [newSignal, setNewSignal] = useState({ title: "", description: "", timePosted: "Just now" });
 
   // File upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -127,6 +135,22 @@ export default function CompanyProfileClient() {
   const handleViewPdf = (doc: CompanyDocument) => {
     setSelectedDoc(doc);
     setViewPdfOpen(true);
+  };
+
+  const handleAddSignal = () => {
+    if (!newSignal.title || !newSignal.description) return;
+
+    const signalToAdd = {
+      id: Date.now(),
+      title: newSignal.title,
+      description: newSignal.description,
+      timePosted: newSignal.timePosted,
+      dotColor: "green" as const
+    };
+
+    setSignals([signalToAdd, ...signals]);
+    setNewSignal({ title: "", description: "", timePosted: "Just now" });
+    setAddSignalOpen(false);
   };
 
 
@@ -238,6 +262,11 @@ export default function CompanyProfileClient() {
             employees={company.employees}
             status={company.status}
           />
+          <RecentSignals
+            isLoading={isLoading}
+            RECENT_SIGNALS={signals}
+            onAdd={() => setAddSignalOpen(true)}
+          />
           <CompanyDocumentsCard
             documents={documents}
             isLoading={isLoadingDocuments}
@@ -264,6 +293,51 @@ export default function CompanyProfileClient() {
       )}
 
 
+      {/* --- ADD SIGNAL MODAL --- */}
+      <Dialog open={isAddSignalOpen} onClose={() => setAddSignalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>Add Recent Signal</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SIGNAL TITLE</Typography>
+              <AppInput
+                fullWidth
+                placeholder="e.g. New Office Opened"
+                isBgWhite
+                value={newSignal.title}
+                onChange={(e) => setNewSignal({ ...newSignal, title: e.target.value })}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>DESCRIPTION</Typography>
+              <AppInput
+                fullWidth
+                multiline
+                rows={3}
+                height="auto"
+                placeholder="Provide details about the signal..."
+                isBgWhite
+                value={newSignal.description}
+                onChange={(e) => setNewSignal({ ...newSignal, description: e.target.value })}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TIME POSTED</Typography>
+              <AppInput
+                fullWidth
+                placeholder="e.g. Just now, 2 hours ago"
+                isBgWhite
+                value={newSignal.timePosted}
+                onChange={(e) => setNewSignal({ ...newSignal, timePosted: e.target.value })}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <AppButton variantStyle="outline" color="gray" onClick={() => setAddSignalOpen(false)}>Cancel</AppButton>
+          <AppButton onClick={handleAddSignal}>Add Signal</AppButton>
+        </DialogActions>
+      </Dialog>
       {/* --- EDIT DOCUMENTS MODAL --- */}
       <Dialog open={isEditDocsOpen} onClose={() => setEditDocsOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Company Documents</DialogTitle>

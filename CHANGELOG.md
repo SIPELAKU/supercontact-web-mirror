@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.12] - 2026-02-18
+
+### Detail Versi 1.6.12
+
+#### 🚀 Navigation & Component Restoration
+
+- **Sidebar Integration:**
+  - Restored **Omnichannel** (Unified Inbox) and **Data Intelligence** (Target Customer, Company, Individual) sections to the primary sidebar.
+- **Company Profile Enhancements:**
+  - Restored the **Recent Signals** section with its timeline view and "Add Signal" capabilities.
+  - Implemented a robust **Company Document Management** system:
+    - **PDF Upload:** New interface for uploading PDF documents (up to 10MB).
+    - **Document Listing:** Dynamic fetching and display of company documents from the backend API.
+    - **PDF Preview:** Integrated iframe-based PDF viewer with fallback states and "Open in New Tab" option.
+    - **Standardized Deletion:** Integrated `ConfirmationPopup` for secure document removal.
+
+#### 🔧 Infrastructure & Bug Fixes
+
+- **WebSocket Connectivity:**
+  - Implemented dynamic WebSocket URL resolution logic in the **Unified Inbox** to automatically derive protocol and host from `NEXT_PUBLIC_API_URL` when `NEXT_PUBLIC_WS_URL` is missing, resolving connection issues in production/Vercel environments.
+- **Inbox UI Cleanup:**
+  - Removed unused states and orphaned handlers to maintain a clean and performant codebase.
+
+#### 📁 Files Modified
+
+- `components/layout/Sidebar.tsx`
+- `components/admin/CompanyProfileClient.tsx`
+- `components/inbox/InboxClient.tsx`
+- `lib/api/company-profile.ts`
+- `lib/types/company-profile.ts`
+- `components/omnichannel/company/detail-company/CompanyDocumentsCard.tsx`
+
 ## [1.6.11] - 2026-02-16
 
 ### Detail Versi 1.6.11

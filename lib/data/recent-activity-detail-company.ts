@@ -1,4 +1,4 @@
-import { RecentActivityItem } from "../type/Company";
+import { RecentActivityItem } from "../types/Company";
 
 export const RECENT_ACTIVITY_DETAIL_COMPANY: RecentActivityItem[] = [
   {

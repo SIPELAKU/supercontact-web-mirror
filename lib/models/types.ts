@@ -4,7 +4,7 @@ export interface Lead {
   id: string;
   lead_name: string;
   lead_status: LeadStatus;
-  lead_source: string;
+  lead_source: LeadSource;
   created_at: string;
   assigned_to: string;
   contact: Contact;

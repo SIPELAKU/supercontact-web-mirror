@@ -30,6 +30,7 @@ import InputSearch from "@/components/ui/input-search";
 import PageHeader from "@/components/ui/page-header";
 import Pagination from "@/components/ui/pagination";
 import { ExportButton, TableFilterUsers } from "@/components/users";
+import { UserTableFilter } from "@/components/users/users-table/TabelFilterUsers";
 import { UsersType } from "@/lib/types/Users";
 import { AppInput } from "@/components/ui/app-input";
 import { useDebounce } from "@/lib/hooks/useDebounce";
@@ -37,10 +38,7 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 export default function DetailDepartments() {
   const { id } = useParams() as { id: string };
 
-  const [tableFilter, setTableFilter] = useState<{
-    position?: UsersType["position"];
-    status?: UsersType["status"];
-  }>({});
+  const [tableFilter, setTableFilter] = useState<UserTableFilter>({});
 
   // Reset pagination + update search
   const searchParams = useSearchParams();

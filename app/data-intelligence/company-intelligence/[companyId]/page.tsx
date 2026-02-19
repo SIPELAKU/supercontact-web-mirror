@@ -11,6 +11,8 @@ import {
 } from "@/components/omnichannel";
 import RecentActivityCompany from "@/components/omnichannel/company/detail-company/RecentActivityDetailCompany";
 import PageHeader from "@/components/ui/page-header";
+import { AISummaryType, KeyPersonListItem, RecentActivityItem } from "../../../../lib/types/Company";
+import { CompanySignal } from "../../../../lib/types/company-profile";
 import { aiSummary } from "@/lib/data/ai-summary";
 import { company } from "@/lib/data/detail-company";
 import { RECENT_ACTIVITY_DETAIL_COMPANY } from "@/lib/data/recent-activity-detail-company";

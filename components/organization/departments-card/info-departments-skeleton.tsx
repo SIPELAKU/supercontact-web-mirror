@@ -19,13 +19,13 @@ export default function DepartmentInfoSkeleton() {
       <CardContent sx={{ padding: 0 }}>
         <Grid container spacing={4}>
           {/* Department */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={100} />
             <Skeleton variant="text" width={160} />
           </Grid>
 
           {/* Manager */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={100} />
             <Grid container alignItems="center" spacing={2} sx={{ mt: 0.5 }}>
               <Grid>
@@ -38,25 +38,25 @@ export default function DepartmentInfoSkeleton() {
           </Grid>
 
           {/* Manager ID */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={100} />
             <Skeleton variant="text" width={140} />
           </Grid>
 
           {/* Branch */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={100} />
             <Skeleton variant="text" width={140} />
           </Grid>
 
           {/* Member Count */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={120} />
             <Skeleton variant="text" width={80} />
           </Grid>
 
           {/* Create Date */}
-          <Grid size={{ xs:12 , sm:4 }}>
+          <Grid item xs={12} sm={4}>
             <Skeleton variant="text" width={120} />
             <Skeleton variant="text" width={140} />
           </Grid>

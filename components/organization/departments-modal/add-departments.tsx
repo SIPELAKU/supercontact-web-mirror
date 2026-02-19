@@ -202,9 +202,14 @@ export default function AddDepartmentDialog({
                 <AppAutocomplete
                   options={managerOptions}
                   placeholder="Search for a Manager"
-                  value={formData.manager_id}
-                  onChange={(value) => setFormData({ ...formData, manager_id: value })}
-                  onSearchChange={setManagerName}
+                  value={managerOptions.find(opt => opt.value === formData.manager_id) || null}
+                  onChange={(_, newValue) => {
+                    setFormData({
+                      ...formData,
+                      manager_id: newValue && typeof newValue !== 'string' ? (newValue as any).value : ""
+                    });
+                  }}
+                  onInputChange={(_, value) => setManagerName(value)}
                   isBgWhite
                 />
                 <Typography variant="caption" className="text-gray-500 block mt-1">
@@ -222,7 +227,7 @@ export default function AddDepartmentDialog({
                 setFormData({
                   department: "",
                   branch: "",
-                  // manager_name: "",
+                  manager_id: "",
                 });
                 handleClose();
               }}

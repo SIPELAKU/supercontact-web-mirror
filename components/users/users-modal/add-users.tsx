@@ -173,12 +173,38 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
 
   return (
     <>
-      <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={() => setShowCloseConfirmation(true)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 1,
+            boxShadow: 3,
+          },
+        }}
+      >
         <form onSubmit={handleSubmit}>
-          <DialogTitle>Add User</DialogTitle>
+          <DialogTitle>
+            <span className="text-2xl font-bold text-[#5479EE]">Add User</span>
+          </DialogTitle>
+
+          <div className="px-6 pb-3">
+            <Typography
+              component="p"
+              variant="body2"
+              className="text-md mt-0 font-semibold text-gray-600"
+            >
+              Fill in the details below to create a new user account
+            </Typography>
+          </div>
+
+          <Divider />
+
           <DialogContent className="space-y-6 pt-6 overflow-visible">
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
-
               {/* Email */}
               <div className="relative">
                 <div className="py-1">
@@ -314,6 +340,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   isBgWhite
                 />
               </div>
+
               {/* Position */}
               <div>
                 <div className="py-1">
@@ -321,7 +348,9 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 </div>
                 <AppSelect
                   options={positionOptions}
-                  placeholder={departmentName ? "Select position" : "Select department first"}
+                  placeholder={
+                    departmentName ? "Select position" : "Select department first"
+                  }
                   value={position}
                   onChange={(e) => setPosition(e.target.value as string)}
                   isBgWhite

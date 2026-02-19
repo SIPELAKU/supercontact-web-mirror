@@ -11,13 +11,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { LogOut, Mail, SquareUserRound } from "lucide-react";
+import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { logout, userProfile, userRole } = useAuth();
+  const { logout, userProfile, userRole, userCompany, userSubscription } = useAuth();
 
   const open = Boolean(anchorEl);
 
@@ -81,35 +81,63 @@ const ProfileDropdown = () => {
         slotProps={{
           paper: {
             sx: {
-              width: 280,
+              width: 320,
               borderRadius: 3,
-              p: 2,
-              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              p: 2.5,
+              boxShadow: "0 4px 25px rgba(0,0,0,0.12)",
             },
           },
         }}
       >
         {/* USER HEADER */}
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Box display="flex" alignItems="flex-start" gap={2} mb={2.5}>
           <Avatar
             src={userProfile?.avatar || userProfile?.avatar_url || undefined}
-            sx={{ width: 48, height: 48, bgcolor: "#5479EE", color: "#fff" }}
+            sx={{ width: 56, height: 56, bgcolor: "#5479EE", color: "#fff", flexShrink: 0 }}
           >
             {userProfile ? getInitials(userProfile.fullname) : "U"}
           </Avatar>
 
-          <Box>
-            <Typography fontWeight={700}>
-              {userProfile ? truncateName(userProfile.fullname) : "Loading..."}
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography fontWeight={700} variant="h6" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+              {userProfile ? truncateName(userProfile.fullname, 20) : "Loading..."}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {userProfile?.role || userRole || "User"}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+              <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, fontWeight: 500 }}>
+                {userProfile?.role || userRole || "User"}
+              </Typography>
+              {userSubscription && (
+                <Box
+                  sx={{
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: 1,
+                    bgcolor: userSubscription.toLowerCase() === 'trial' ? 'warning.light' : 'success.light',
+                    color: userSubscription.toLowerCase() === 'trial' ? 'warning.dark' : 'success.dark',
+                    fontSize: '0.625rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    lineHeight: 1
+                  }}
+                >
+                  {userSubscription}
+                </Box>
+              )}
+            </Stack>
 
-            <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
-              <Mail size={16} />
-              <Typography variant="body2">
+            <Stack direction="row" alignItems="center" spacing={1.5} mt={0.75}>
+              <Mail size={16} className="text-gray-500" />
+              <Typography variant="body2" sx={{ color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {userProfile?.email || "loading..."}
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" alignItems="center" spacing={1.5} mt={0.75}>
+              <Building2 size={16} className="text-gray-500" />
+              <Typography variant="body2" sx={{ color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                {userProfile?.company || userCompany || "No Company"}
               </Typography>
             </Stack>
           </Box>

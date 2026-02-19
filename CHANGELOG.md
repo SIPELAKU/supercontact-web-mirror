@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.14] - 2026-02-19
+
+### Detail Versi 1.6.14
+
+#### 👥 User Management & Modal Standardization
+
+- **Modal Synchronization**: Aligned "Add User" and "Edit User" modals for a consistent look and feel (size, header styling, and grid layout).
+- **Field Pairings**: Implemented logical side-by-side field arrangements (Email | Full Name, Employee ID | Department, Branch | Level, Role Access | Position).
+- **Edit User Enhancements**:
+  - Added "Employee ID" field.
+  - Implemented dynamic "Position" selection based on the selected Department.
+- **Stability**: Added defensive null checks for department and role data to resolve `Cannot read properties of null (reading 'department_name')` errors.
+
+#### 📇 Contact Management Refinements
+
+- **Simplified Requirements**: Modified "Add Contact" and "Edit Contact" flows to make only the **Name** field required.
+- **Optional Fields**: Email, Phone Number, Company, and Position are now optional, providing more flexibility during data entry.
+- **UI Clean Up**: Removed required asterisks from all non-name fields.
+
+#### 🔐 Authentication & Profile UI
+
+- **User Context Persistence**: Updated `AuthContext` to track and persist `userCompany` and `userSubscription` status in local storage.
+- **Profile Dropdown Enhancements**:
+  - Added **Company Name** display to the dropdown header.
+  - Added a styled **Subscription Badge** (e.g., TRIAL, ACTIVE) next to the user's role.
+  - Increased dropdown width (320px) and refined padding (2.5) for improved readability and a more premium feel.
+  - Implemented ellipsis truncation for long email and company strings.
+
+#### 📁 Files Modified
+
+- `components/users/users-modal/add-users.tsx`
+- `components/users/users-modal/edit-users.tsx`
+- `components/modal/AddContact.tsx`
+- `components/modal/EditContact.tsx`
+- `components/layout/ProfileDropdown.tsx`
+- `lib/context/AuthContext.tsx`
+- `lib/api/users.ts`
+
 ## [1.6.13] - 2026-02-19
 
 ### Detail Versi 1.6.13

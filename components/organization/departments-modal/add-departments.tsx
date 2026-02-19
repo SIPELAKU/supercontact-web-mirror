@@ -10,9 +10,12 @@ import Typography from "@mui/material/Typography";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import useDepartments from "@/lib/hooks/useDepartments";
 import { Poppins } from "next/font/google";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useUsers } from "@/lib/hooks/useUsers";
+import { useMemo } from "react";
 import { notify } from "@/lib/notifications";
 import { useRouter } from "next/navigation";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -39,9 +42,19 @@ export default function AddDepartmentDialog({
   const [formData, setFormData] = useState({
     department: "",
     branch: "",
-    // manager_name: "",
+    manager_id: "",
   });
+  const [managerName, setManagerName] = useState("");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
+
+  const managerOptions = useMemo(() => {
+    return (usersData?.data?.users || []).map((user) => ({
+      value: user.id,
+      label: `${user.fullname} (${user.email})`,
+    }));
+  }, [usersData]);
 
   const handleClose = () => {
     setIsPopupOpen(true)
@@ -63,7 +76,17 @@ export default function AddDepartmentDialog({
         router.push("/login");
         return;
       }
-      await addDepartment(formData);
+
+      if (!formData.manager_id) {
+        notify.error("Please select a manager");
+        return;
+      }
+
+      await addDepartment({
+        department: formData.department,
+        branch: formData.branch,
+        manager_id: formData.manager_id
+      });
       notify.success("Department added successfully", {
         description: "The department has been added successfully",
       });
@@ -71,8 +94,9 @@ export default function AddDepartmentDialog({
       setFormData({
         department: "",
         branch: "",
-        // manager_name: "",
+        manager_id: "",
       });
+      setManagerName("");
       handleClose();
     } catch (error: any) {
       const message = handleError(error, "Adding department")
@@ -87,7 +111,7 @@ export default function AddDepartmentDialog({
   const departmentOptions = [
     { value: "Marketing", label: "Marketing" },
     { value: "Sales", label: "Sales" },
-    { value: "Finance", label: "Finance" },
+    { value: "Customer Support", label: "Customer Support" },
     { value: "Human Resources", label: "Human Resources" },
   ];
 
@@ -100,9 +124,9 @@ export default function AddDepartmentDialog({
           setFormData({
             department: "",
             branch: "",
-            // manager_name: "",
+            manager_id: "",
           });
-          // handleClose();
+          setManagerName("");
         }}
         fullWidth
         maxWidth="sm"
@@ -167,18 +191,31 @@ export default function AddDepartmentDialog({
                   isBgWhite
                 />
               </div>
+
               {/* Manager */}
-              {/* <AppInput
-              label="Manager"
-              placeholder="Search for a Manager"
-              value={formData.manager_name}
-              onChange={(e) =>
-              setFormData({ ...formData, manager_name: e.target.value })
-              }
-              startIcon={<Search size={18} className="text-gray-500" />}
-              helperText="Assign an existing manager. Their manager ID will be linked automatically"
-              isBgWhite
-            /> */}
+              <div className="space-y-2">
+                <h2
+                  className={`text-sm font-semibold mb-1 text-[#262B43]/90 ${poppins.className}`}
+                >
+                  Manager
+                </h2>
+                <AppAutocomplete
+                  options={managerOptions}
+                  placeholder="Search for a Manager"
+                  value={managerOptions.find(opt => opt.value === formData.manager_id) || null}
+                  onChange={(_, newValue) => {
+                    setFormData({
+                      ...formData,
+                      manager_id: newValue && typeof newValue !== 'string' ? (newValue as any).value : ""
+                    });
+                  }}
+                  onInputChange={(_, value) => setManagerName(value)}
+                  isBgWhite
+                />
+                <Typography variant="caption" className="text-gray-500 block mt-1">
+                  Assign an existing manager. Their manager ID will be linked automatically
+                </Typography>
+              </div>
             </div>
           </DialogContent>
 
@@ -190,7 +227,7 @@ export default function AddDepartmentDialog({
                 setFormData({
                   department: "",
                   branch: "",
-                  // manager_name: "",
+                  manager_id: "",
                 });
                 handleClose();
               }}

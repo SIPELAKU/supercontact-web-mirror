@@ -1,4 +1,4 @@
-import { KeyPersonListItem } from "../type/Company";
+import { KeyPersonListItem } from "../types/Company";
 
 export const KEY_PEOPLE_LIST: KeyPersonListItem[] = [
   {

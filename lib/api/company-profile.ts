@@ -5,6 +5,8 @@ import {
   CompanyProfileOrganizationStructure,
   CompanyProfileStatsItem,
   CompanyDocument,
+  CompanySignal,
+  CompanySignalPayload,
 } from "@/lib/types/company-profile";
 
 function asObject(value: unknown): Record<string, any> {
@@ -293,8 +295,54 @@ export async function deleteCompanyDocument(token: string, documentId: string): 
     throw new Error('UNAUTHORIZED');
   }
 
+
   if (!res.ok || json?.success === false) {
     const message = json?.error?.message || json?.message || 'Failed to delete document';
+    throw new Error(message);
+  }
+}
+
+export async function fetchRecentSignals(token: string): Promise<CompanySignal[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const payload = await authorizedGet(`${baseUrl}/internal/company-profile/recent-signals`, token);
+
+  const signals = Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray(payload)
+      ? payload
+      : [];
+
+  return signals.map((signal: any) => ({
+    id: String(signal.id),
+    signal_title: String(signal.signal_title || signal.title || ''),
+    description: String(signal.description || ''),
+    time_posted: String(signal.time_posted || signal.created_at || ''),
+    created_at: String(signal.created_at || ''),
+    // Default dot color logic (green for now as per requirement)
+    dotColor: "green"
+  }));
+}
+
+export async function addRecentSignal(token: string, data: CompanySignalPayload): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/recent-signals`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok || json?.success === false) {
+    const message = json?.error?.message || json?.message || 'Failed to add signal';
     throw new Error(message);
   }
 }

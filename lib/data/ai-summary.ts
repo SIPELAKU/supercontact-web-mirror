@@ -1,4 +1,4 @@
-import { AISummaryType } from "../type/Company";
+import { AISummaryType } from "../types/Company";
 
 export const aiSummary: AISummaryType = {
   description:

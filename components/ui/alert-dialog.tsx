@@ -3,10 +3,11 @@
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-    Dialog,
-    DialogActions,
-    DialogContentText,
-    DialogTitle
+  Dialog,
+  DialogActions,
+  DialogActionsProps,
+  DialogContentText,
+  DialogTitle
 } from "@mui/material";
 import React, { useState } from "react";
 
@@ -129,7 +130,7 @@ export function AlertDialogHeader({
 export function AlertDialogFooter({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: DialogActionsProps) {
   return (
     <DialogActions
       className={cn(

@@ -3,28 +3,23 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { Plus } from "lucide-react";
 import RecentSignalsSkeleton from "./RecentSignalsSkeleton";
-
-type RecentSignal = {
-  id: number;
-  title: string;
-  description: string;
-  timePosted: string;
-  dotColor: "green" | "blue" | "orange";
-};
+import { CompanySignal } from "@/lib/types/company-profile";
+import { formatDistanceToNow } from "date-fns";
 
 interface RecentSignalsProps {
   isLoading: boolean;
-  RECENT_SIGNALS: RecentSignal[];
+  RECENT_SIGNALS: CompanySignal[];
   onAdd?: () => void;
+  onViewAll?: () => void;
 }
 
-const DOT_COLOR_MAP: Record<RecentSignal["dotColor"], string> = {
+const DOT_COLOR_MAP: Record<string, string> = {
   green: "bg-green-500",
   blue: "bg-blue-500",
   orange: "bg-orange-500",
 };
 
-export default function RecentSignals({ isLoading, RECENT_SIGNALS, onAdd }: RecentSignalsProps) {
+export default function RecentSignals({ isLoading, RECENT_SIGNALS, onAdd, onViewAll }: RecentSignalsProps) {
   if (isLoading) return <RecentSignalsSkeleton />;
 
   return (
@@ -42,27 +37,40 @@ export default function RecentSignals({ isLoading, RECENT_SIGNALS, onAdd }: Rece
             >
               <Plus size={18} />
             </button>
-            <button className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer">View All</button>
+            <button
+              onClick={onViewAll}
+              className="text-xs font-medium text-[#5479EE] hover:underline cursor-pointer"
+            >
+              View All
+            </button>
           </div>
         </div>
 
         <div className="mt-6 space-y-5">
-          {RECENT_SIGNALS.map((item, index) => (
+          {RECENT_SIGNALS.slice(0, 5).map((item, index) => (
             <div key={item.id} className="flex items-start justify-between gap-4">
               <div className="flex gap-3">
                 <div className="relative mt-1">
-                  <span className={`block h-2.5 w-2.5 rounded-full ${DOT_COLOR_MAP[item.dotColor]}`} />
+                  <span className={`block h-2.5 w-2.5 rounded-full ${DOT_COLOR_MAP[item.dotColor || 'green']}`} />
 
-                  {index !== RECENT_SIGNALS.length - 1 && <span className="absolute left-1/2 top-3 h-10 w-0.5 -translate-x-1/2 bg-slate-200" />}
+                  {index !== RECENT_SIGNALS.slice(0, 5).length - 1 && <span className="absolute left-1/2 top-3 h-10 w-0.5 -translate-x-1/2 bg-slate-200" />}
                 </div>
 
                 <div className="space-y-1">
-                  <Typography className="text-sm! font-semibold!">{item.title}</Typography>
+                  <Typography className="text-sm! font-semibold!">{item.signal_title}</Typography>
                   <Typography className="text-xs! text-slate-600!">{item.description}</Typography>
                 </div>
               </div>
 
-              <Typography className="whitespace-nowrap text-[10px]! text-slate-400!">{item.timePosted}</Typography>
+              <Typography className="whitespace-nowrap text-[10px]! text-slate-400!">
+                {(() => {
+                  try {
+                    return formatDistanceToNow(new Date(item.time_posted), { addSuffix: true });
+                  } catch (e) {
+                    return item.time_posted;
+                  }
+                })()}
+              </Typography>
             </div>
           ))}
         </div>

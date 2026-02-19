@@ -5,17 +5,13 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { FileCheck, Pencil, Eye } from "lucide-react";
 
-interface DocumentItem {
-    id?: string;
-    title: string;
-    filename: string;
-}
+import { CompanyDocument } from "@/lib/types/company-profile";
 
 interface CompanyDocumentsCardProps {
-    documents?: DocumentItem[];
+    documents?: CompanyDocument[];
     isLoading?: boolean;
     onEdit?: () => void;
-    onView?: (doc: DocumentItem) => void;
+    onView?: (doc: CompanyDocument) => void;
 }
 
 export default function CompanyDocumentsCard({ documents = [], isLoading, onEdit, onView }: CompanyDocumentsCardProps) {

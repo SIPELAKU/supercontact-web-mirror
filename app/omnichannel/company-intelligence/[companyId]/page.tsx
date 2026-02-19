@@ -8,6 +8,8 @@ import { company } from "@/lib/data/detail-company";
 import { RECENT_ACTIVITY_DETAIL_COMPANY } from "@/lib/data/recent-activity-detail-company";
 import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
 import { useState } from "react";
+import { AISummaryType, KeyPersonListItem, RecentActivityItem } from "../../../../lib/types/Company";
+import { CompanySignal } from "../../../../lib/types/company-profile";
 
 export default function DetailCompanyPage() {
   const [isLoading, setIsloading] = useState<boolean>(false);

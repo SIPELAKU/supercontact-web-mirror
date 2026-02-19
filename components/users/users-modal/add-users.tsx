@@ -24,15 +24,23 @@ type AddUserDialogProps = {
   setOpen: (open: boolean) => void;
 };
 
+const DEPARTMENT_POSITIONS: Record<string, string[]> = {
+  "Marketing": ["Brand Manager", "Content writer", "Performance Marketing", "Marketing Coordinator", "SEO specialist"],
+  "Sales": ["Sales Manager", "Business Development", "Sales Executive", "Account Manager"],
+  "Customer Support": ["CS Manager", "CS Representative"],
+  "Human Resources": ["HR Manager", "HR Generalist"]
+};
+
 export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   // Form State
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [departmentName, setDepartmentName] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
   const [branchName, setBranchName] = useState("");
   const [level, setLevel] = useState("Staff");
-  const [position, setPosition] = useState("Support Agent");
+  const [position, setPosition] = useState("");
   const [status, setStatus] = useState("Active");
   const [roleId, setRoleId] = useState("");
 
@@ -60,11 +68,12 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
   const resetForm = () => {
     setFullName("");
     setEmail("");
+    setEmployeeId("");
     setDepartmentName("");
     setDepartmentUuid("");
     setBranchName("");
     setLevel("Staff");
-    setPosition("Support Agent");
+    setPosition("");
     setStatus("Active");
     setRoleId("");
   };
@@ -77,6 +86,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
     if (!departmentName) missingFields.push("Department");
     if (!branchName) missingFields.push("Branch");
     if (!roleId) missingFields.push("Role Access");
+    if (!position) missingFields.push("Position");
 
     if (missingFields.length > 0) {
       notify.error(
@@ -97,6 +107,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
       await createManagedUser({
         fullname: fullName.trim(),
         email: email,
+        employee_code: employeeId,
         department_id: departmentUuid,
         user_level: level,
         position: position,
@@ -113,8 +124,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
       });
     }
   };
-
-
 
   // Filter branches based on input and selected department
   const branches = useMemo(() => {
@@ -151,54 +160,41 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
     resetForm();
   }
 
+  // Calculate position options based on department
+  const positionOptions = useMemo(() => {
+    if (!departmentName || !DEPARTMENT_POSITIONS[departmentName]) {
+      return [];
+    }
+    return DEPARTMENT_POSITIONS[departmentName].map(pos => ({
+      value: pos,
+      label: pos,
+    }));
+  }, [departmentName]);
+
   return (
     <>
-      <Dialog
-        open={open}
-        onClose={() => setShowCloseConfirmation(true)}
-        fullWidth
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 1,
-            boxShadow: 3,
-          },
-        }}
-      >
-        <DialogTitle>
-          <span className="text-2xl font-bold text-[#5479EE]">Add User</span>
-        </DialogTitle>
-
-        <div className="px-6 pb-3">
-          <Typography
-            component="p"
-            variant="body2"
-            className="text-md mt-0 font-semibold text-gray-600"
-          >
-            Fill in the details below to create a new user account
-          </Typography>
-        </div>
-
-        <Divider />
-
+      <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit}>
+          <DialogTitle>Add User</DialogTitle>
           <DialogContent className="space-y-6 pt-6 overflow-visible">
-            {/* Email */}
-            <div className="relative">
-              <label className="text-sm font-medium">Email</label>
-              <AppInput
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                }}
-                isBgWhite
-                autoComplete="off"
-              />
-            </div>
-
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
+
+              {/* Email */}
+              <div className="relative">
+                <div className="py-1">
+                  <label className="text-sm font-medium">Email</label>
+                </div>
+                <AppInput
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
+                  isBgWhite
+                  autoComplete="off"
+                />
+              </div>
+
               {/* Full Name */}
               <div className="relative">
                 <div className="py-1">
@@ -208,6 +204,20 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   placeholder="Enter full name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  isBgWhite
+                  autoComplete="off"
+                />
+              </div>
+
+              {/* Employee ID */}
+              <div className="relative">
+                <div className="py-1">
+                  <label className="text-sm font-medium">Employee ID</label>
+                </div>
+                <AppInput
+                  placeholder="Enter employee ID"
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
                   isBgWhite
                   autoComplete="off"
                 />
@@ -223,24 +233,22 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                     { value: "", label: "Select department" },
                     { value: "Marketing", label: "Marketing" },
                     { value: "Sales", label: "Sales" },
-                    { value: "Engineering", label: "Engineering" },
                     { value: "Human Resources", label: "Human Resources" },
                     { value: "Customer Support", label: "Customer Support" },
                   ]}
                   placeholder="Select department"
                   value={departmentName}
                   onChange={(e) => {
-                    setDepartmentName(e.target.value as string);
+                    const newDept = e.target.value as string;
+                    setDepartmentName(newDept);
                     setBranchName("");
                     setDepartmentUuid("");
+                    setPosition(""); // Reset position when department changes
                   }}
                   isBgWhite
                 />
               </div>
 
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
               {/* Branch */}
               <div className="relative">
                 <label className="text-sm font-medium">Branch</label>
@@ -293,9 +301,6 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 />
               </div>
 
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               {/* Role / Role Access */}
               <div>
                 <div className="py-1">
@@ -315,41 +320,18 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                   <label className="text-sm font-medium">Position</label>
                 </div>
                 <AppSelect
-                  options={[
-                    { value: "Support Agent", label: "Support Agent" },
-                    { value: "Frontend Engineer", label: "Frontend Engineer" },
-                    { value: "HR Generalist", label: "HR Generalist" },
-                    { value: "Content Specialist", label: "Content Specialist" },
-                    { value: "Sales Development", label: "Sales Development" },
-                  ]}
-                  placeholder="Select position"
+                  options={positionOptions}
+                  placeholder={departmentName ? "Select position" : "Select department first"}
                   value={position}
                   onChange={(e) => setPosition(e.target.value as string)}
                   isBgWhite
+                  disabled={!departmentName}
                 />
               </div>
-
-              {/* Status */}
-              {/* <div>
-                <div className="py-1">
-                  <label className="text-sm font-medium">Status</label>
-                </div>
-                <AppSelect
-                  options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
-                    { value: "Pending", label: "Pending" },
-                  ]}
-                  placeholder="Select status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as string)}
-                  isBgWhite
-                />
-              </div> */}
             </div>
           </DialogContent>
 
-          <DialogActions className="flex justify-end gap-3 px-2 pb-4">
+          <DialogActions className="flex justify-end gap-3 px-6 pb-4">
             <AppButton variantStyle="outline" onClick={() => confirmClose()}>
               Cancel
             </AppButton>

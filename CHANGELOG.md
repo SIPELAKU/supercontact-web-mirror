@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.13] - 2026-02-19
+
+### Detail Versi 1.6.13
+
+#### 🎯 "My Target Companies" & CRM Integration Refactor
+
+- **"My Target Companies" Page Refactor:**
+  - Renamed page title to "My Target Companies".
+  - Implemented **Tab Navigation**: Added switcher for "Dashboard List" vs "Industry Leaders".
+  - **Refactored Filters**: Moved filters (Industry, Location, Search, Export) to a single row and removed input labels for a cleaner, modern look.
+  - **Table Updates**:
+    - Removed "Insight Score" column to match design.
+    - Added "Action" column with a delete button (placeholder functionality).
+  - UI Clean Up: Removed boxed "Core Criteria" layout.
+
+- **"Save to CRM" UX Enhancement:**
+  - Replaced native `alert()` popups with premium `notify` toast notifications (`success` and `error`) across:
+    - `Data Intelligence > Industry Leaders > Results Page`
+    - `Data Intelligence > Industry Leaders > Profile Page`
+
+#### 📁 Files Modified
+
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/omnichannel/company/company-table/CompanyTable.tsx`
+- `app/data-intelligence/industry-leaders/results/page.tsx`
+- `app/data-intelligence/industry-leaders/profile/[id]/page.tsx`
+- `app/(auth)/login/page.tsx`
+
+#### 🔗 API Integration
+
+- **"My Target Companies" List:**
+  - Integrated `getMyTargetCompanies` API endpoint (`/company-intelligence/my-target-companies`) to fetch dynamic company lists.
+  - Updated `CompanyStats` to display real-time summary metrics from the API response.
+
+#### 📁 Files Modified (API)
+
+- `lib/api/company-intelligence.ts`
+- `lib/types/company-intelligence.ts`
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/omnichannel/company/CompanyStats.tsx`
+
+#### ✨ Features
+
+- Added delete functionality to "My Target Companies" table with confirmation modal.
+- Removed "ESTIMASI HASIL" count from Industry Leaders filter summary card.
+- Removed "Export" button from "My Target Companies" page.
+- Enabled row click navigation to company profile from "My Target Companies" list.
+- Updated company profile to fetch details from target list when accessed via "My Target Companies".
+- Added bulk delete functionality to "My Target Companies" list.
+- Fixed issue where selected items remained checked after deletion.
+- Updated "Department" dropdown options in "Add User" modal.
+- Added "Employee ID" field to "Add User" modal.
+- Refactored "Add User" modal to display all fields in a unified side-by-side grid layout.
+- Fixed vertical alignment issue between Email and Full Name fields in "Add User" modal.
+- Implemented dynamic "Position" dropdown options in "Add User" modal based on the selected "Department".
+- Updated "Select Position" filter in User List with specific job titles (Brand Manager, Content Writer, etc.).
+- Replaced "Finance" with "Customer Support" in Organization filters and "Add Department" modal.
+
+#### 🐛 Bug Fixes
+
+- Fixed `Cannot read properties of undefined (reading 'length')` error by adding defensive checks for API response data in `CompanyIntelligenceClient` and `CompanyTable`.
+- Fixed `TypeError` in `getDynamicChipStyle` by handling undefined labels and adding fallback values for industry and financial status in `CompanyTable`.
+
 ## [1.6.12] - 2026-02-18
 
 ### Detail Versi 1.6.12

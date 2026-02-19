@@ -1,4 +1,4 @@
-import { DetailCompanyType } from "../type/Company";
+import { DetailCompanyType } from "../types/Company";
 
 export const company: DetailCompanyType = {
   name: "Acme Inc.",

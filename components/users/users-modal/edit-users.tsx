@@ -20,6 +20,14 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 
+const DEPARTMENT_POSITIONS: Record<string, string[]> = {
+  "Marketing": ["Brand Manager", "Content writer", "Performance Marketing", "Marketing Coordinator", "SEO specialist"],
+  "Sales": ["Sales Manager", "Business Development", "Sales Executive", "Account Manager"],
+  "Customer Support": ["CS Manager", "CS Representative"],
+  "Human Resources": ["HR Manager", "HR Generalist"],
+};
+
+
 type EditUserDialogProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -34,11 +42,12 @@ export default function EditUserDialog({
   // Form State
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [departmentName, setDepartmentName] = useState("");
   const [departmentUuid, setDepartmentUuid] = useState("");
   const [branchName, setBranchName] = useState("");
   const [level, setLevel] = useState("Staff");
-  const [position, setPosition] = useState("Support Agent");
+  const [position, setPosition] = useState("");
   const [status, setStatus] = useState("Active");
   const [roleId, setRoleId] = useState("");
 
@@ -62,16 +71,19 @@ export default function EditUserDialog({
   useEffect(() => {
     if (user) {
       setFullName(user.fullname || "");
-      setEmail(user.email);
-      setStatus(
-        user.status.charAt(0).toUpperCase() + user.status.slice(1) || "Active",
-      );
-      setPosition(user.position);
-      setDepartmentName(user.department.department_name);
-      setBranchName(user.department.branch);
-      setDepartmentUuid(user.department.id);
-      setRoleId(user.role.id);
-      setLevel(user.level);
+      setEmail(user.email || "");
+      setEmployeeId(user.employee_code || "");
+      if (user.status) {
+        setStatus(
+          user.status.charAt(0).toUpperCase() + user.status.slice(1) || "Active",
+        );
+      }
+      setPosition(user.position || "");
+      setDepartmentName(user.department?.department_name || "");
+      setBranchName(user.department?.branch || "");
+      setDepartmentUuid(user.department?.id || "");
+      setRoleId(user.role?.id || "");
+      setLevel(user.level || "Staff");
     }
   }, [user]);
 
@@ -92,6 +104,7 @@ export default function EditUserDialog({
         data: {
           fullname: fullName.trim(),
           email: email,
+          employee_code: employeeId,
           department_id: departmentUuid,
           user_level: level,
           position: position,
@@ -142,6 +155,17 @@ export default function EditUserDialog({
     }));
   }, [rolesData]);
 
+  // Calculate position options based on department
+  const positionOptions = useMemo(() => {
+    if (!departmentName || !DEPARTMENT_POSITIONS[departmentName]) {
+      return [];
+    }
+    return DEPARTMENT_POSITIONS[departmentName].map(pos => ({
+      value: pos,
+      label: pos,
+    }));
+  }, [departmentName]);
+
   return (
     <Dialog
       open={open}
@@ -174,21 +198,23 @@ export default function EditUserDialog({
 
       <form onSubmit={handleSubmit}>
         <DialogContent className="space-y-6 pt-6 overflow-visible">
-          {/* Email (Read Only or Informational) */}
-          <div className="relative">
-            <label className="text-sm font-medium">Email</label>
-            <AppInput
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-              isBgWhite
-              autoComplete="off"
-            />
-          </div>
-
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
+            {/* Email */}
+            <div className="relative">
+              <div className="py-1">
+                <label className="text-sm font-medium">Email</label>
+              </div>
+              <AppInput
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+                isBgWhite
+                autoComplete="off"
+              />
+            </div>
+
             {/* Full Name */}
             <div className="relative">
               <div className="py-1">
@@ -198,6 +224,20 @@ export default function EditUserDialog({
                 placeholder="Enter full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                isBgWhite
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Employee ID */}
+            <div className="relative">
+              <div className="py-1">
+                <label className="text-sm font-medium">Employee ID</label>
+              </div>
+              <AppInput
+                placeholder="Enter employee ID"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
                 isBgWhite
                 autoComplete="off"
               />
@@ -223,13 +263,12 @@ export default function EditUserDialog({
                   setDepartmentName(e.target.value as string);
                   setBranchName("");
                   setDepartmentUuid("");
+                  setPosition(""); // Reset position when department changes
                 }}
                 isBgWhite
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 overflow-visible">
             {/* Branch */}
             <div className="relative">
               <label className="text-sm font-medium">Branch</label>
@@ -281,9 +320,7 @@ export default function EditUserDialog({
                 isBgWhite
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* Role / Role Access */}
             <div>
               <div className="py-1">
@@ -304,17 +341,14 @@ export default function EditUserDialog({
                 <label className="text-sm font-medium">Position</label>
               </div>
               <AppSelect
-                options={[
-                  { value: "Support Agent", label: "Support Agent" },
-                  { value: "Frontend Engineer", label: "Frontend Engineer" },
-                  { value: "HR Generalist", label: "HR Generalist" },
-                  { value: "Content Specialist", label: "Content Specialist" },
-                  { value: "Sales Development", label: "Sales Development" },
-                ]}
-                placeholder="Select position"
+                options={positionOptions}
+                placeholder={
+                  departmentName ? "Select position" : "Select department first"
+                }
                 value={position}
                 onChange={(e) => setPosition(e.target.value as string)}
                 isBgWhite
+                disabled={!departmentName}
               />
             </div>
           </div>

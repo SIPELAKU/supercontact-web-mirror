@@ -121,11 +121,9 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       newErrors.name = "must be at least 3 characters";
     }
 
-    // Phone validation
-    const phoneRegex = /^[0-9]+$/;
-    if (!data.phone_number) {
-      newErrors.phone_number = "is required";
-    } else {
+    // Optional fields validation
+    if (data.phone_number) {
+      const phoneRegex = /^[0-9]+$/;
       if (!phoneRegex.test(data.phone_number)) {
         newErrors.phone_number = "must contain only numbers";
       } else if (
@@ -136,23 +134,11 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       }
     }
 
-    // Email validation
-    if (!data.email) {
-      newErrors.email = "is required";
-    }
-
-    // Position validation
-    if (!data.position) {
-      newErrors.position = "is required";
-    } else if (data.position.length < 3) {
+    if (data.position && data.position.length < 3) {
       newErrors.position = "must be at least 3 characters";
     }
 
-    // Optional fields validation
-    // Company validation
-    if (!data.company) {
-      newErrors.company = "is required";
-    } else if (data.company.length < 3) {
+    if (data.company && data.company.length < 3) {
       newErrors.company = "must be at least 3 characters";
     }
 
@@ -277,8 +263,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 />
 
                 <InputField
-                  isRequired
                   label="Email"
+                  isRequired={false}
                   value={local.email}
                   onChange={(e) =>
                     setLocal((s) => ({ ...s, email: e.target.value }))
@@ -288,7 +274,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 />
 
                 <InputField
-                  isRequired={true}
+                  isRequired={false}
                   label="Company"
                   value={local.company}
                   onChange={(e) =>
@@ -301,7 +287,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
               <div className="w-full md:w-1/2 flex flex-col gap-4">
                 <InputField
-                  isRequired
+                  isRequired={false}
                   label="Phone Number"
                   value={local.phone_number}
                   onChange={(e) => {
@@ -325,7 +311,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 />
 
                 <InputField
-                  isRequired
+                  isRequired={false}
                   label="Position"
                   value={local.position}
                   onChange={(e) =>

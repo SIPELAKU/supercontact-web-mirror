@@ -89,3 +89,29 @@ export interface MyTargetCompaniesResponse {
     summary: MyTargetCompaniesSummary;
     data: CompanyIntelligenceItem[];
 }
+
+export interface IndustryLeader {
+    rank: number;
+    company_id: string;
+    name: string;
+    revenue: number;
+    employee_count: number;
+    employee_range: string;
+    market_position: string;
+    description: string;
+    location: string;
+    enriched: boolean;
+}
+
+export interface IndustryLeadersGroup {
+    industry: string;
+    leaders: IndustryLeader[];
+}
+
+export interface IndustryLeadersResponse {
+    success: boolean;
+    data: {
+        data: IndustryLeadersGroup[];
+    };
+    error: string | null;
+}

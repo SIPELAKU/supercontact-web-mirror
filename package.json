@@ -20,7 +20,8 @@
     "deploy:prod-tags": "node scripts/deploy-status.js prod-tags",
     "deploy:all-tags": "node scripts/deploy-status.js tags",
     "tag:list": "git tag -l -n9 --sort=-v:refname",
-    "tag:delete": "git tag -d"
+    "tag:delete": "git tag -d",
+    "postinstall": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

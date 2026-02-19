@@ -27,6 +27,7 @@ import { getMyTargetCompanies, deleteTargetCompany } from "@/lib/api/company-int
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { CompanyIntelligenceItem, MyTargetCompaniesSummary } from "@/lib/types/company-intelligence";
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
+import IndustryLeadersContent from "./IndustryLeadersContent";
 
 interface CompanyIntelligenceClientProps {
   breadcrumbs?: { label: string; href?: string }[];
@@ -45,6 +46,7 @@ export default function CompanyIntelligenceClient({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState<MyTargetCompaniesSummary | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "leaders">("dashboard");
 
   // Filter States
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
@@ -230,112 +232,129 @@ export default function CompanyIntelligenceClient({
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <div className="flex gap-8">
-          <div className="pb-4 border-b-2 border-blue-600 px-1">
-            <span className="text-blue-600 font-medium cursor-pointer">
+          <div
+            className={`pb-4 px-1 cursor-pointer ${activeTab === "dashboard" ? "border-b-2 border-blue-600" : ""
+              }`}
+            onClick={() => setActiveTab("dashboard")}
+          >
+            <span
+              className={`${activeTab === "dashboard" ? "text-blue-600" : "text-gray-500"
+                } font-medium`}
+            >
               Dashboard List
             </span>
           </div>
           <div
-            className="pb-4 px-1 cursor-pointer"
-            onClick={() => router.push("/data-intelligence/industry-leaders")}
+            className={`pb-4 px-1 cursor-pointer ${activeTab === "leaders" ? "border-b-2 border-blue-600" : ""
+              }`}
+            onClick={() => setActiveTab("leaders")}
           >
-            <span className="text-gray-500 font-medium hover:text-gray-700">
+            <span
+              className={`${activeTab === "leaders" ? "text-blue-600" : "text-gray-500"
+                } font-medium hover:text-gray-700`}
+            >
               Industry Leaders
             </span>
           </div>
         </div>
       </div>
 
-      {/* Stats Card */}
-      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">
-        <CompanyStats summary={summary} />
-      </div>
-
-      <div className="mt-6 overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100 p-6">
-        {/* Filters Row */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
-          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-            {/* Industry AppAutocomplete */}
-            <div className="w-full md:w-[200px]">
-              <AppAutocomplete
-                multiple
-                options={INDUSTRY_OPTIONS}
-                value={selectedIndustries}
-                onChange={(event, newValue) => {
-                  setSelectedIndustries(newValue);
-                }}
-                placeholder="Industry"
-                size="small"
-                isBgWhite
-              />
-            </div>
-
-            {/* Location AppAutocomplete */}
-            <div className="w-full md:w-[200px]">
-              <AppAutocomplete
-                multiple
-                options={LOCATION_OPTIONS}
-                value={selectedLocations}
-                onChange={(event, newValue) => {
-                  setSelectedLocations(newValue);
-                }}
-                placeholder="Location"
-                size="small"
-                isBgWhite
-              />
-            </div>
-
-            {/* Search Input */}
-            <div className="w-full md:w-[300px]">
-              <Suspense>
-                <AppInput
-                  placeholder="Search Company"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  isBgWhite
-                  startIcon={null}
-                />
-              </Suspense>
-            </div>
+      {activeTab === "dashboard" ? (
+        <>
+          {/* Stats Card */}
+          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">
+            <CompanyStats summary={summary} />
           </div>
 
-          {selectedIds.length > 0 && (
-            <div className="flex w-full md:w-auto justify-end">
-              <AppButton
-                onClick={handleBulkDelete}
-                variantStyle="danger"
-              >
-                Delete ({selectedIds.length})
-              </AppButton>
+          <div className="mt-6 overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100 p-6">
+            {/* Filters Row */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                {/* Industry AppAutocomplete */}
+                <div className="w-full md:w-[200px]">
+                  <AppAutocomplete
+                    multiple
+                    options={INDUSTRY_OPTIONS}
+                    value={selectedIndustries}
+                    onChange={(event, newValue) => {
+                      setSelectedIndustries(newValue);
+                    }}
+                    placeholder="Industry"
+                    size="small"
+                    isBgWhite
+                  />
+                </div>
+
+                {/* Location AppAutocomplete */}
+                <div className="w-full md:w-[200px]">
+                  <AppAutocomplete
+                    multiple
+                    options={LOCATION_OPTIONS}
+                    value={selectedLocations}
+                    onChange={(event, newValue) => {
+                      setSelectedLocations(newValue);
+                    }}
+                    placeholder="Location"
+                    size="small"
+                    isBgWhite
+                  />
+                </div>
+
+                {/* Search Input */}
+                <div className="w-full md:w-[300px]">
+                  <Suspense>
+                    <AppInput
+                      placeholder="Search Company"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      isBgWhite
+                      startIcon={null}
+                    />
+                  </Suspense>
+                </div>
+              </div>
+
+              {selectedIds.length > 0 && (
+                <div className="flex w-full md:w-auto justify-end">
+                  <AppButton
+                    onClick={handleBulkDelete}
+                    variantStyle="danger"
+                  >
+                    Delete ({selectedIds.length})
+                  </AppButton>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Table */}
-        <CompanyTable
-          company={companies}
-          isLoading={isLoading}
-          error={error}
-          showAction={true}
-          showInsightScore={false}
-          onDelete={handleDelete}
-          onRowClick={(id) => router.push(`/data-intelligence/industry-leaders/profile/${id}?type=target`)}
-          selectedIds={selectedIds}
-          onSelectOne={handleSelectOne}
-          onSelectAll={handleSelectAll}
-        />
+            {/* Table */}
+            <CompanyTable
+              company={companies}
+              isLoading={isLoading}
+              error={error}
+              showAction={true}
+              showInsightScore={false}
+              onDelete={handleDelete}
+              onRowClick={(id) => router.push(`/data-intelligence/industry-leaders/profile/${id}?type=target`)}
+              selectedIds={selectedIds}
+              onSelectOne={handleSelectOne}
+              onSelectAll={handleSelectAll}
+            />
 
-        {/* Pagination - Aligned to match mockup */}
-        <div className="flex w-full justify-end mt-4">
-          <Pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            count={totalCount}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </div>
-      </div>
+            {/* Pagination - Aligned to match mockup */}
+            <div className="flex w-full justify-end mt-4">
+              <Pagination
+                page={page}
+                rowsPerPage={rowsPerPage}
+                count={totalCount}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <IndustryLeadersContent />
+      )}
 
       <div style={{ display: "none" }}>
         {/* PrintableTable removed */}

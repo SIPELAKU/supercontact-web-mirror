@@ -199,3 +199,38 @@ export async function getMyTargetCompany(
 
     return json?.data;
 }
+
+export async function fetchIndustryLeaders(
+    token: string,
+    industry?: string
+): Promise<import("@/lib/types/company-intelligence").IndustryLeadersGroup[]> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const query = new URLSearchParams();
+    if (industry) query.append("industry", industry);
+
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/industry-leaders?${query.toString()}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to fetch industry leaders";
+        throw new Error(message);
+    }
+
+    // Based on user response example, the data is in json.data.data
+    return json?.data?.data || [];
+}

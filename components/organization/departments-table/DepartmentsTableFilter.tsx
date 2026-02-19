@@ -24,7 +24,7 @@ const TableFilterDepartment = ({ filter, onChange }: Props) => {
     { value: "", label: "All Department" },
     { value: "Marketing", label: "Marketing" },
     { value: "Sales", label: "Sales" },
-    { value: "Finance", label: "Finance" },
+    { value: "Customer Support", label: "Customer Support" },
     { value: "Human Resources", label: "Human Resources" },
   ];
 

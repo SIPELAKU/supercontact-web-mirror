@@ -320,7 +320,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               >
                 <option value="">Select Industry</option>
                 <option value="Healthcare">Healthcare</option>
-                <option value="Finance">Finance</option>
+                <option value="Customer Support">Customer Support</option>
                 <option value="Logistics">Logistics</option>
                 <option value="Manufacturing">Manufacturing</option>
                 <option value="SaaS">SaaS</option>

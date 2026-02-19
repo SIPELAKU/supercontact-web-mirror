@@ -19,11 +19,19 @@ type Props = {
 const TableFilterUsers = ({ filter, onChange }: Props) => {
   const positionOptions = [
     { value: "", label: "All Position" },
-    { value: "Support Agent", label: "Support Agent" },
-    { value: "Frontend Engineer", label: "Frontend Engineer" },
+    { value: "Brand Manager", label: "Brand Manager" },
+    { value: "Content writer", label: "Content writer" },
+    { value: "Performance Marketing", label: "Performance Marketing" },
+    { value: "Marketing Coordinator", label: "Marketing Coordinator" },
+    { value: "SEO specialist", label: "SEO specialist" },
+    { value: "Sales Manager", label: "Sales Manager" },
+    { value: "Business Development", label: "Business Development" },
+    { value: "Sales Executive", label: "Sales Executive" },
+    { value: "Account Manager", label: "Account Manager" },
+    { value: "CS Manager", label: "CS Manager" },
+    { value: "CS Representative", label: "CS Representative" },
+    { value: "HR Manager", label: "HR Manager" },
     { value: "HR Generalist", label: "HR Generalist" },
-    { value: "Content Specialist", label: "Content Specialist" },
-    { value: "Sales Development", label: "Sales Development" },
   ];
 
   const statusOptions = [

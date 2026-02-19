@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
 import PageHeader from "@/components/ui/page-header";
-import { RECENT_SIGNALS } from "@/lib/data/recent-signals";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box } from "@mui/material";
+
+import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box, IconButton } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { FileText, X, Upload } from "lucide-react";
@@ -18,8 +18,20 @@ import {
   uploadCompanyDocument,
   fetchCompanyDocuments,
   deleteCompanyDocument,
+  fetchRecentSignals,
+  addRecentSignal,
 } from "@/lib/api/company-profile";
-import type { CompanyProfileData, CompanyProfileKeyPerson, CompanyDocument } from "@/lib/types/company-profile";
+import type { CompanyProfileData, CompanyProfileKeyPerson, CompanyDocument, CompanySignal } from "@/lib/types/company-profile";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
+import { formatDistanceToNow } from "date-fns";
+
+const DOT_COLOR_MAP: Record<string, string> = {
+  green: "bg-green-500",
+  blue: "bg-blue-500",
+  orange: "bg-orange-500",
+};
 
 export default function CompanyProfileClient() {
   const { getToken } = useAuth();
@@ -30,16 +42,23 @@ export default function CompanyProfileClient() {
   const [departmentsCount, setDepartmentsCount] = useState<number>(0);
 
   // Data states
-  const [signals, setSignals] = useState(RECENT_SIGNALS);
+  // Data states
+  const [signals, setSignals] = useState<CompanySignal[]>([]);
+  const [isSignalsLoading, setIsSignalsLoading] = useState(true);
 
   // Modal states
   const [isAddSignalOpen, setAddSignalOpen] = useState(false);
+  const [isViewAllSignalsOpen, setViewAllSignalsOpen] = useState(false);
   const [isEditDocsOpen, setEditDocsOpen] = useState(false);
   const [isViewPdfOpen, setViewPdfOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<CompanyDocument | null>(null);
 
   // Form states
-  const [newSignal, setNewSignal] = useState({ title: "", description: "", timePosted: "Just now" });
+  const [newSignal, setNewSignal] = useState<{ title: string; description: string; timePosted: Date | null }>({
+    title: "",
+    description: "",
+    timePosted: new Date(),
+  });
 
   // File upload states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -61,16 +80,19 @@ export default function CompanyProfileClient() {
       setError("");
       try {
         const token = await getToken();
-        const [profileData, keyPeopleData, organizationData] = await Promise.all([
+        const [profileData, keyPeopleData, organizationData, signalsData] = await Promise.all([
           fetchCompanyProfile(token),
           fetchCompanyProfileKeyPeople(token, 1, 12),
           fetchCompanyProfileOrganizationStructure(token),
+          fetchRecentSignals(token),
         ]);
 
         if (!isMounted) return;
         setProfile(profileData);
         setKeyPeople(keyPeopleData);
         setDepartmentsCount(organizationData.departmentsCount);
+        setSignals(signalsData);
+        setIsSignalsLoading(false);
       } catch (err: any) {
         if (!isMounted) return;
         setError(err?.message || "Failed to load company profile");
@@ -137,20 +159,27 @@ export default function CompanyProfileClient() {
     setViewPdfOpen(true);
   };
 
-  const handleAddSignal = () => {
+  const handleAddSignal = async () => {
     if (!newSignal.title || !newSignal.description) return;
 
-    const signalToAdd = {
-      id: Date.now(),
-      title: newSignal.title,
-      description: newSignal.description,
-      timePosted: newSignal.timePosted,
-      dotColor: "green" as const
-    };
+    try {
+      const token = await getToken();
+      await addRecentSignal(token, {
+        signal_title: newSignal.title,
+        description: newSignal.description,
+        time_posted: newSignal.timePosted ? newSignal.timePosted.toISOString() : new Date().toISOString(),
+      });
 
-    setSignals([signalToAdd, ...signals]);
-    setNewSignal({ title: "", description: "", timePosted: "Just now" });
-    setAddSignalOpen(false);
+      notify.success("Signal added successfully");
+      setNewSignal({ title: "", description: "", timePosted: new Date() });
+      setAddSignalOpen(false);
+
+      // Refresh signals
+      const updatedSignals = await fetchRecentSignals(token);
+      setSignals(updatedSignals);
+    } catch (err: any) {
+      notify.error(err.message || "Failed to add signal");
+    }
   };
 
 
@@ -263,9 +292,10 @@ export default function CompanyProfileClient() {
             status={company.status}
           />
           <RecentSignals
-            isLoading={isLoading}
+            isLoading={isSignalsLoading}
             RECENT_SIGNALS={signals}
             onAdd={() => setAddSignalOpen(true)}
+            onViewAll={() => setViewAllSignalsOpen(true)}
           />
           <CompanyDocumentsCard
             documents={documents}
@@ -323,13 +353,23 @@ export default function CompanyProfileClient() {
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 1, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TIME POSTED</Typography>
-              <AppInput
-                fullWidth
-                placeholder="e.g. Just now, 2 hours ago"
-                isBgWhite
-                value={newSignal.timePosted}
-                onChange={(e) => setNewSignal({ ...newSignal, timePosted: e.target.value })}
-              />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  value={newSignal.timePosted}
+                  onChange={(newValue: Date | null) => setNewSignal({ ...newSignal, timePosted: newValue })}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        backgroundColor: 'white',
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '8px',
+                        }
+                      }
+                    }
+                  }}
+                />
+              </LocalizationProvider>
             </Box>
           </Stack>
         </DialogContent>
@@ -484,6 +524,49 @@ export default function CompanyProfileClient() {
         variant="danger"
         isLoading={isDeleting}
       />
+      {/* --- VIEW ALL SIGNALS MODAL --- */}
+      <Dialog open={isViewAllSignalsOpen} onClose={() => setViewAllSignalsOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" fontWeight={600}>All Recent Signals</Typography>
+          <IconButton onClick={() => setViewAllSignalsOpen(false)}>
+            <X size={20} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <div className="space-y-6">
+            {signals.map((item, index) => (
+              <div key={item.id} className="flex items-start justify-between gap-4">
+                <div className="flex gap-3">
+                  <div className="relative mt-1">
+                    <span className={`block h-2.5 w-2.5 rounded-full ${DOT_COLOR_MAP[item.dotColor || 'green']}`} />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Typography className="text-sm! font-semibold! text-slate-900!">{item.signal_title}</Typography>
+                    <Typography className="text-xs! text-slate-600!">{item.description}</Typography>
+                  </div>
+                </div>
+
+                <Typography className="whitespace-nowrap text-[12px]! text-slate-500!">
+                  {(() => {
+                    try {
+                      return formatDistanceToNow(new Date(item.time_posted), { addSuffix: true });
+                    } catch (e) {
+                      return item.time_posted;
+                    }
+                  })()}
+                </Typography>
+              </div>
+            ))}
+            {signals.length === 0 && (
+              <Typography className="text-center text-slate-500 py-8">No signals found.</Typography>
+            )}
+          </div>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <AppButton onClick={() => setViewAllSignalsOpen(false)}>Close</AppButton>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

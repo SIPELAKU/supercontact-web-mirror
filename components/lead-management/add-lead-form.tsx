@@ -470,7 +470,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     options={[
                       { value: "", label: "Select Industry" },
                       { value: "Healthcare", label: "Healthcare" },
-                      { value: "Finance", label: "Finance" },
+                      { value: "Customer Support", label: "Customer Support" },
                       { value: "Logistics", label: "Logistics" },
                       { value: "Manufacturing", label: "Manufacturing" },
                       { value: "SaaS", label: "SaaS" },

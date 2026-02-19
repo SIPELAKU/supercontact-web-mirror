@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Autocomplete, AutocompleteProps, Box, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteProps, Box, TextField, Typography } from "@mui/material";
 import { ChevronDown } from "lucide-react";
 import { styled } from "@mui/material/styles";
 
@@ -84,6 +84,7 @@ export type AppAutocompleteProps<
     required?: boolean;
 };
 
+// --- Component ---
 export function AppAutocomplete<
     T,
     Multiple extends boolean | undefined,
@@ -100,31 +101,47 @@ export function AppAutocomplete<
         height,
         width,
         required,
+        className,
+        sx,
+        fullWidth = true,
         ...autocompleteProps
     } = props;
 
     return (
-        <Autocomplete
-            popupIcon={<ChevronDown size={18} className="text-gray-500" />}
-            {...autocompleteProps}
-            renderInput={(params) => (
-                <StyledTextField
-                    {...params}
-                    placeholder={placeholder}
-                    error={error}
-                    helperText={helperText}
-                    isBgWhite={isBgWhite}
-                    rounded={rounded}
-                    height={height}
-                    width={width}
-                    required={required}
-                    fullWidth
-                    InputLabelProps={{
-                        ...params.InputLabelProps,
-                        shrink: true,
-                    }}
-                />
+        <Box
+            className={className}
+            sx={{ width: fullWidth ? "100%" : "auto", ...sx }}
+        >
+            {label && (
+                <Typography
+                    variant="body2"
+                    sx={{ mb: 1, fontWeight: 500, color: "text.secondary" }}
+                >
+                    {label}
+                </Typography>
             )}
-        />
+            <Autocomplete
+                popupIcon={<ChevronDown size={18} className="text-gray-500" />}
+                {...autocompleteProps}
+                renderInput={(params) => (
+                    <StyledTextField
+                        {...params}
+                        placeholder={placeholder}
+                        error={error}
+                        helperText={helperText}
+                        isBgWhite={isBgWhite}
+                        rounded={rounded}
+                        height={height}
+                        width={width}
+                        required={required}
+                        fullWidth
+                        InputLabelProps={{
+                            ...params.InputLabelProps,
+                            shrink: true, // Keep this to ensure placeholder/value doesn't overlap if we switch back, but effectively label is outside now
+                        }}
+                    />
+                )}
+            />
+        </Box>
     );
 }

@@ -1,17 +1,34 @@
 import CompanyStatsCard from "@/components/ui/company-stats-card";
+import { MyTargetCompaniesSummary } from "@/lib/types/company-intelligence";
 
-const data = [
-  { title: "Total Companies", value: "12,408", subtitle: "All Companies" },
-  { title: "New This Week", value: "4,125", subtitle: "Added this week" },
-  {
-    title: "High insight score",
-    value: "3,205",
-    subtitle: "High score components",
-  },
-  { title: "Active connections", value: "89%", subtitle: "Active connections" },
-];
+interface CompanyStatsProps {
+  summary?: MyTargetCompaniesSummary;
+}
 
-export default function CompanyStats() {
+export default function CompanyStats({ summary }: CompanyStatsProps) {
+  const data = [
+    {
+      title: "Total Companies",
+      value: summary?.total_companies.toLocaleString() || "0",
+      subtitle: "All Companies"
+    },
+    {
+      title: "New This Week",
+      value: summary?.new_this_week.toLocaleString() || "0",
+      subtitle: "Added this week"
+    },
+    {
+      title: "Active Recent",
+      value: summary?.active_recent.toLocaleString() || "0",
+      subtitle: "Active in last 30 days",
+    },
+    {
+      title: "Active Connections",
+      value: summary ? `${summary.active_percentage}%` : "0%",
+      subtitle: "Active connections"
+    },
+  ];
+
   return (
     <>
       {data.map((item, index) => (

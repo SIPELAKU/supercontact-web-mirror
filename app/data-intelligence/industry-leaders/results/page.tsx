@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, Plus, Search } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
@@ -10,15 +10,27 @@ import CompanyResultCard from "@/components/data-intelligence/CompanyResultCard"
 import {
     FilterCriteria,
     DEFAULT_FILTER_CRITERIA,
+    IndustryLeaderCompany,
+    FinancialStatus,
 } from "@/lib/types/IndustryLeader";
-import { industryLeadersCompanies } from "@/lib/data/industry-leaders-companies";
+import { searchCompanyIntelligence, saveCompanyToCrm } from "@/lib/api/company-intelligence";
+import { notify } from "@/lib/notifications";
+import { useAuth } from "@/lib/context/AuthContext";
+import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 
 export default function IndustryLeadersResultsPage() {
     const router = useRouter();
+    const { getToken } = useAuth();
     const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>(
         DEFAULT_FILTER_CRITERIA
     );
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+    const [companies, setCompanies] = useState<IndustryLeaderCompany[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [totalCount, setTotalCount] = useState(0);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     // Load filter criteria from sessionStorage
     useEffect(() => {
@@ -26,74 +38,87 @@ export default function IndustryLeadersResultsPage() {
         if (savedFilter) {
             setFilterCriteria(JSON.parse(savedFilter));
         }
+        setIsInitialized(true);
     }, []);
 
-    // Filter companies based on criteria and search
-    const filteredCompanies = useMemo(() => {
-        return industryLeadersCompanies.filter((company) => {
-            // Search filter
-            const matchesSearch =
-                searchQuery === "" ||
-                company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                company.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                company.industries.some((industry) =>
-                    industry.toLowerCase().includes(searchQuery.toLowerCase())
-                );
+    // Debounce search query
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 500);
 
-            // Industry filter
-            const matchesIndustry =
-                filterCriteria.industries.length === 0 ||
-                filterCriteria.industries.some((industry) =>
-                    company.industries.some(
-                        (companyIndustry) =>
-                            companyIndustry.toLowerCase() === industry.toLowerCase()
-                    )
-                );
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchQuery]);
 
-            // Location filter
-            const matchesLocation =
-                filterCriteria.locations.length === 0 ||
-                filterCriteria.locations.some(
-                    (location) =>
-                        company.location.toLowerCase().includes(location.toLowerCase()) ||
-                        location.toLowerCase().includes(company.location.toLowerCase())
-                );
+    const fetchCompanies = useCallback(async () => {
+        if (!isInitialized) return;
 
-            // Employee range filter
-            const matchesEmployees =
-                company.employees >= filterCriteria.employeeRange.min &&
-                company.employees <= filterCriteria.employeeRange.max;
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getToken();
+            const payload = {
+                industries: filterCriteria.industries,
+                locations: filterCriteria.locations,
+                employee_min: filterCriteria.employeeRange.min,
+                employee_max: filterCriteria.employeeRange.max,
+                financial_status: filterCriteria.financialStatuses,
+                limit: 100, // Fetch up to 100 for now, or implement pagination
+                q: debouncedSearchQuery,
+            };
 
-            // Financial status filter
-            const matchesFinancialStatus =
-                filterCriteria.financialStatuses.length === 0 ||
-                filterCriteria.financialStatuses.includes(company.financialStatus);
+            const response = await searchCompanyIntelligence(token, payload);
 
-            return (
-                matchesSearch &&
-                matchesIndustry &&
-                matchesLocation &&
-                matchesEmployees &&
-                matchesFinancialStatus
-            );
-        });
-    }, [filterCriteria, searchQuery]);
+            // Map API response to UI model
+            const mappedCompanies: IndustryLeaderCompany[] = response.results.map((item: CompanyIntelligenceItem) => ({
+                id: item.id || "unknown-id",
+                name: item.name || "Unknown Company",
+                location: item.location,
+                employees: item.employee_count,
+                revenue: item.revenue || "N/A",
+                financialStatus: item.financial_status as FinancialStatus,
+                industries: [item.industry], // API returns single string, UI expects array
+                source: item.source,
+                matchPercentage: item.match_score,
+                description: item.description,
+                website: item.domain || undefined,
+            }));
+
+            setCompanies(mappedCompanies);
+            setTotalCount(response.total);
+        } catch (err: any) {
+            console.error("Failed to fetch industry leaders:", err);
+            setError("Failed to load companies. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [filterCriteria, debouncedSearchQuery, getToken, isInitialized]);
+
+    // Fetch on filter change or search
+    useEffect(() => {
+        fetchCompanies();
+    }, [fetchCompanies]);
 
     const handleViewProfile = (id: string) => {
         // Navigate to industry leaders profile page
         router.push(`/data-intelligence/industry-leaders/profile/${id}`);
     };
 
-    const handleSaveToCRM = (id: string) => {
-        // TODO: Implement save to CRM functionality
-        console.log("Save to CRM:", id);
-        alert(`Company ${id} saved to CRM (mock action)`);
+    const handleSaveToCRM = async (id: string) => {
+        try {
+            const token = await getToken();
+            await saveCompanyToCrm(token, id);
+            notify.success("Company saved to CRM successfully!");
+        } catch (err: any) {
+            console.error("Failed to save to CRM:", err);
+            notify.error(err.message || "Failed to save company to CRM");
+        }
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-            {/* Header with gradient background */}
-            {/* Header */}
             <PageHeader
                 title="Search Results"
                 breadcrumbs={[
@@ -105,13 +130,13 @@ export default function IndustryLeadersResultsPage() {
 
             {/* Back Button */}
             <div className="mb-6">
-                <button
+                <AppButton
+                    variantStyle="outline"
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    startIcon={<ArrowLeft size={18} />}
                 >
-                    <ArrowLeft size={18} />
                     Back
-                </button>
+                </AppButton>
             </div>
 
             {/* Results Container */}
@@ -126,19 +151,12 @@ export default function IndustryLeadersResultsPage() {
                             <p className="mt-1 text-sm text-gray-600">
                                 Ditemukan{" "}
                                 <span className="font-semibold text-gray-900">
-                                    {filteredCompanies.length} Perusahaan
+                                    {totalCount} Perusahaan
                                 </span>{" "}
                                 yang cocok
                             </p>
                         </div>
                         <div className="flex gap-3">
-                            <AppButton
-                                variantStyle="outline"
-                                color="gray"
-                                startIcon={<Upload size={18} />}
-                            >
-                                Export
-                            </AppButton>
                             <AppButton variantStyle="primary" startIcon={<Plus size={18} />}>
                                 Add Company
                             </AppButton>
@@ -159,7 +177,11 @@ export default function IndustryLeadersResultsPage() {
 
                 {/* Results List */}
                 <div className="p-6">
-                    {filteredCompanies.length === 0 ? (
+                    {isLoading ? (
+                        <div className="py-12 text-center text-gray-500">Loading companies...</div>
+                    ) : error ? (
+                        <div className="py-12 text-center text-red-500">{error}</div>
+                    ) : companies.length === 0 ? (
                         <div className="py-12 text-center">
                             <p className="text-lg text-gray-500">
                                 No companies found matching your criteria
@@ -170,7 +192,7 @@ export default function IndustryLeadersResultsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {filteredCompanies.map((company) => (
+                            {companies.map((company) => (
                                 <CompanyResultCard
                                     key={company.id}
                                     company={company}

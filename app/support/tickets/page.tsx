@@ -164,27 +164,27 @@ export default function TicketManagementPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <AppSelect
                                 options={[
-                                    { label: "Select Status", value: "Select Status" },
+                                    { label: "All Status", value: "" },
                                     { label: "Open", value: "Open" },
                                     { label: "In Progress", value: "In Progress" },
                                     { label: "Closed", value: "Closed" },
                                 ]}
                                 placeholder="Select Status"
-                                value={statusFilter}
+                                value={statusFilter === "Select Status" ? "" : statusFilter}
                                 isBgWhite={true}
-                                onChange={(e) => setStatusFilter(e.target.value as string)}
+                                onChange={(e) => setStatusFilter(e.target.value as string || "Select Status")}
                             />
                             <AppSelect
                                 options={[
-                                    { label: "Select Priority", value: "Select Priority" },
+                                    { label: "All Priority", value: "" },
                                     { label: "High", value: "High" },
                                     { label: "Medium", value: "Medium" },
                                     { label: "Low", value: "Low" },
                                 ]}
                                 placeholder="Select Priority"
-                                value={priorityFilter}
+                                value={priorityFilter === "Select Priority" ? "" : priorityFilter}
                                 isBgWhite={true}
-                                onChange={(e) => setPriorityFilter(e.target.value as string)}
+                                onChange={(e) => setPriorityFilter(e.target.value as string || "Select Priority")}
                             />
                             <AppAutocomplete
                                 options={agentOptions}

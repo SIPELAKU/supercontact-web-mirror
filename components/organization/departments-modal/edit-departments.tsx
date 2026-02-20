@@ -45,24 +45,24 @@ export default function EditDepartmentsDialog({
   const [formData, setFormData] = useState({
     department: department.department,
     branch: department.branch,
-    manager_id: department.manager_id || "",
+    // manager_id: department.manager_id || "",
   });
-  const [managerName, setManagerName] = useState("");
+  // const [managerName, setManagerName] = useState("");
 
-  const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
+  // const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
 
-  const managerOptions = useMemo(() => {
-    return (usersData?.data?.users || []).map((user) => ({
-      value: user.id,
-      label: `${user.fullname} (${user.email})`,
-    }));
-  }, [usersData]);
+  // const managerOptions = useMemo(() => {
+  //   return (usersData?.data?.users || []).map((user) => ({
+  //     value: user.id,
+  //     label: `${user.fullname} (${user.email})`,
+  //   }));
+  // }, [usersData]);
 
   useEffect(() => {
     setFormData({
       department: department.department,
       branch: department.branch,
-      manager_id: department.manager_id || "",
+      // manager_id: department.manager_id || "",
     });
   }, [department]);
 
@@ -107,9 +107,9 @@ export default function EditDepartmentsDialog({
         setFormData({
           department: department.department,
           branch: department.branch,
-          manager_id: department.manager_id || "",
+          // manager_id: department.manager_id || "",
         });
-        setManagerName("");
+        // setManagerName("");
         handleClose();
       }}
       fullWidth
@@ -177,7 +177,7 @@ export default function EditDepartmentsDialog({
             </div>
 
             {/* Manager */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <h2
                 className={`text-sm font-semibold mb-1 text-[#262B43]/90 ${poppins.className}`}
               >
@@ -199,7 +199,7 @@ export default function EditDepartmentsDialog({
               <Typography variant="caption" className="text-gray-500 block mt-1">
                 Assign an existing manager. Their manager ID will be linked automatically
               </Typography>
-            </div>
+            </div> */}
           </div>
         </DialogContent>
 
@@ -211,7 +211,7 @@ export default function EditDepartmentsDialog({
               setFormData({
                 department: department.department,
                 branch: department.branch,
-                manager_id: department.manager_id || "",
+                // manager_id: department.manager_id || "",
               });
               handleClose();
             }}

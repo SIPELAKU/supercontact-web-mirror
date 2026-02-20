@@ -13,6 +13,7 @@ import { Poppins } from "next/font/google";
 import { CircularProgress } from "@mui/material";
 
 import { notify } from "@/lib/notifications";
+import { handleError } from "@/lib/utils/errorHandler";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -41,22 +42,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        // Redirect to home page after successful login
-        router.push("/");
-      } else {
-        notify.error("Invalid email or password. Please try again.");
-      }
+      await login(email, password);
+      // Redirect to home page after successful login
+      router.push("/");
     } catch (err: any) {
       console.error("Login error:", err);
-      const errorMessage =
-        err?.message ||
-        err?.error ||
-        (typeof err === "string"
-          ? err
-          : "An error occurred. Please try again.");
-      notify.error(errorMessage);
+      const message = handleError(err, "Login")
+      notify.error("Error", {
+        description: message,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }

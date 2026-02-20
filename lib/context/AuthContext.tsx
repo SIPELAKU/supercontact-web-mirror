@@ -96,47 +96,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, reloadProfile]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Call actual login API
+    // Call actual login API
+    const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    const json = await loginRes.json();
 
-      const json = await loginRes.json();
-
-      if (!loginRes.ok || !json.success) {
-        console.error('Login failed:', json);
-        return false;
-      }
-      console.log('login result', json)
-      const accessToken = json.data.access_token;
-      const role = json.data.user?.role;
-      const company = json.data.user?.company;
-      const subscription = json.data.user?.subscription_status;
-
-      cookieUtils.setAuthToken(accessToken);
-
-      // Store extra info in localStorage
-      if (role && typeof window !== 'undefined') localStorage.setItem('userRole', role);
-      if (company && typeof window !== 'undefined') localStorage.setItem('userCompany', company);
-      if (subscription && typeof window !== 'undefined') localStorage.setItem('userSubscription', subscription);
-
-      setToken(accessToken);
-      setUserRole(role);
-      setUserCompany(company);
-      setUserSubscription(subscription);
-      setIsAuthenticated(true);
-
-      await reloadProfile();
-
-      return true;
-    } catch (error) {
-      console.error('Login failed:', error);
-      return false;
+    if (!loginRes.ok || !json.success) {
+      console.error('Login failed:', json);
+      // Throw the error response so the caller can handle it
+      throw json;
     }
+
+    console.log('login result', json)
+    const accessToken = json.data.access_token;
+    const role = json.data.user?.role;
+    const company = json.data.user?.company;
+    const subscription = json.data.user?.subscription_status;
+
+    cookieUtils.setAuthToken(accessToken);
+
+    // Store extra info in localStorage
+    if (role && typeof window !== 'undefined') localStorage.setItem('userRole', role);
+    if (company && typeof window !== 'undefined') localStorage.setItem('userCompany', company);
+    if (subscription && typeof window !== 'undefined') localStorage.setItem('userSubscription', subscription);
+
+    setToken(accessToken);
+    setUserRole(role);
+    setUserCompany(company);
+    setUserSubscription(subscription);
+    setIsAuthenticated(true);
+
+    await reloadProfile();
+
+    return true;
   };
 
   const getToken = async (): Promise<string> => {

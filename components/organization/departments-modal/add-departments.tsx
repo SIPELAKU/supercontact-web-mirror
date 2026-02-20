@@ -42,19 +42,19 @@ export default function AddDepartmentDialog({
   const [formData, setFormData] = useState({
     department: "",
     branch: "",
-    manager_id: "",
+    // manager_id: "",
   });
-  const [managerName, setManagerName] = useState("");
+  // const [managerName, setManagerName] = useState("");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
+  // const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
 
-  const managerOptions = useMemo(() => {
-    return (usersData?.data?.users || []).map((user) => ({
-      value: user.id,
-      label: `${user.fullname} (${user.email})`,
-    }));
-  }, [usersData]);
+  // const managerOptions = useMemo(() => {
+  //   return (usersData?.data?.users || []).map((user) => ({
+  //     value: user.id,
+  //     label: `${user.fullname} (${user.email})`,
+  //   }));
+  // }, [usersData]);
 
   const handleClose = () => {
     setIsPopupOpen(true)
@@ -77,15 +77,15 @@ export default function AddDepartmentDialog({
         return;
       }
 
-      if (!formData.manager_id) {
-        notify.error("Please select a manager");
-        return;
-      }
+      // if (!formData.manager_id) {
+      //   notify.error("Please select a manager");
+      //   return;
+      // }
 
       await addDepartment({
         department: formData.department,
         branch: formData.branch,
-        manager_id: formData.manager_id
+        // manager_id: formData.manager_id
       });
       notify.success("Department added successfully", {
         description: "The department has been added successfully",
@@ -94,9 +94,9 @@ export default function AddDepartmentDialog({
       setFormData({
         department: "",
         branch: "",
-        manager_id: "",
+        // manager_id: "",
       });
-      setManagerName("");
+      // setManagerName("");
       handleClose();
     } catch (error: any) {
       const message = handleError(error, "Adding department")
@@ -124,9 +124,9 @@ export default function AddDepartmentDialog({
           setFormData({
             department: "",
             branch: "",
-            manager_id: "",
+            // manager_id: "",
           });
-          setManagerName("");
+          // setManagerName("");
         }}
         fullWidth
         maxWidth="sm"
@@ -193,7 +193,7 @@ export default function AddDepartmentDialog({
               </div>
 
               {/* Manager */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <h2
                   className={`text-sm font-semibold mb-1 text-[#262B43]/90 ${poppins.className}`}
                 >
@@ -215,7 +215,7 @@ export default function AddDepartmentDialog({
                 <Typography variant="caption" className="text-gray-500 block mt-1">
                   Assign an existing manager. Their manager ID will be linked automatically
                 </Typography>
-              </div>
+              </div> */}
             </div>
           </DialogContent>
 
@@ -227,7 +227,7 @@ export default function AddDepartmentDialog({
                 setFormData({
                   department: "",
                   branch: "",
-                  manager_id: "",
+                  // manager_id: "",
                 });
                 handleClose();
               }}

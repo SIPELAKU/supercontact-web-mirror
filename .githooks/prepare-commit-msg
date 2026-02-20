@@ -1,0 +1,50 @@
+#!/bin/sh
+# ============================================================
+# Auto [skip ci] untuk branch non-deployment
+# ============================================================
+#
+# Hook ini otomatis menambahkan [skip ci] ke commit message
+# jika branch BUKAN staging/main/master/prod.
+#
+# Ini mencegah GitLab pipeline jalan (dan error) di branch
+# dev, feature/*, bugfix/*, dll.
+#
+# Setup (sekali per developer):
+#   git config core.hooksPath .githooks
+#
+# Atau otomatis via: npm install (postinstall script)
+# ============================================================
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Skip jika ini merge commit, amend, atau squash
+# (biar tidak double-append [skip ci])
+if [ "$COMMIT_SOURCE" = "merge" ] || [ "$COMMIT_SOURCE" = "squash" ]; then
+  exit 0
+fi
+
+# Ambil nama branch saat ini
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+# Kalau tidak bisa detect branch (detached HEAD, tag, dll), skip
+if [ -z "$BRANCH" ]; then
+  exit 0
+fi
+
+# Daftar branch yang BOLEH menjalankan CI
+# (jangan tambah [skip ci] untuk branch ini)
+case "$BRANCH" in
+  staging|main|master|prod)
+    exit 0
+    ;;
+esac
+
+# Cek apakah commit message sudah ada [skip ci] atau [ci skip]
+if grep -qi "\[skip ci\]\|\[ci skip\]" "$COMMIT_MSG_FILE"; then
+  exit 0
+fi
+
+# Tambahkan [skip ci] di akhir baris pertama commit message
+sed -i.bak "1s/$/ [skip ci]/" "$COMMIT_MSG_FILE"
+rm -f "${COMMIT_MSG_FILE}.bak"

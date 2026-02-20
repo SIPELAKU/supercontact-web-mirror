@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.15] - 2026-02-20
+## [1.6.16] - 2026-02-20
 
-### Detail Versi 1.6.15
+### Detail Versi 1.6.16
 
 #### 🎯 Data Intelligence & Company Management
 
@@ -61,6 +61,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/modal/AddContact.tsx`
 - `components/lead-management/add-lead-form.tsx`
 - `next.config.mjs`
+
+## [1.6.15] - 2026-02-20
+
+### Detail Versi 1.6.15
+
+#### 🔐 Authentication
+
+- **Login Feedback**: Optimized error handling in `LoginPage` to display specific backend error messages and increased the notification duration to 5 seconds for better readability.
+
+#### 🏢 Organization
+
+- **Department Management**: Temporarily removed the `manager_id` requirement and selection field from both "Add Department" and "Edit Department" modals.
+
+#### 📁 Files Modified
+
+- `app/(auth)/login/page.tsx`
+- `components/organization/departments-modal/add-departments.tsx`
+- `components/organization/departments-modal/edit-departments.tsx`
+- `lib/api/departments.ts`
+- `package.json`
 
 ## [1.6.14] - 2026-02-19
 

@@ -2,7 +2,7 @@
 
 import { ChangeEvent, MouseEvent, Suspense, useMemo, useState, useRef, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button, Slider, Box, Typography } from "@mui/material";
+import { Button, Slider, Box, Typography, Menu, MenuItem } from "@mui/material";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { Plus, Search, Upload } from "lucide-react";
 import { CompanyStats, CompanyTable } from "@/components/omnichannel";
@@ -18,10 +18,9 @@ import {
 } from "@/lib/types/Company";
 import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
-// import ExportPopover from "./ExportPopover";
 import { notify } from "@/lib/notifications";
-// import { useReactToPrint } from "react-to-print";
-// import { PrintableTable } from "@/components/ui/printable-table";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getMyTargetCompanies, deleteTargetCompany } from "@/lib/api/company-intelligence";
 import { useConfirmation } from "@/components/ui/confirm-modal";
@@ -124,7 +123,54 @@ export default function CompanyIntelligenceClient({
     { header: "Financial Status", accessorKey: "financial_status" },
   ];
 
-  /* Export and Print handlers removed */
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
+  const exportMenuOpen = Boolean(exportAnchorEl);
+
+  const handleExportClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setExportAnchorEl(event.currentTarget);
+  };
+
+  const handleExportClose = () => {
+    setExportAnchorEl(null);
+  };
+
+  const handleExportCSV = () => {
+    const headers = printableColumns.map(col => col.header);
+    const keys = printableColumns.map(col => col.accessorKey);
+
+    const csvContent = [
+      headers.join(","),
+      ...companies.map((item) =>
+        keys
+          .map((key) => {
+            const val = (item as any)[key] || "";
+            return `"${String(val).replace(/"/g, '""')}"`;
+          })
+          .join(","),
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "target_companies_export.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    handleExportClose();
+  };
+
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "My Target Companies",
+    onAfterPrint: handleExportClose,
+  });
 
   const handleChangePage = (
     event: MouseEvent<HTMLButtonElement> | null,
@@ -139,9 +185,6 @@ export default function CompanyIntelligenceClient({
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
-  // Selection State
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const handleSelectOne = (id: string) => {
     setSelectedIds((prev) =>
@@ -314,16 +357,53 @@ export default function CompanyIntelligenceClient({
                 </div>
               </div>
 
-              {selectedIds.length > 0 && (
-                <div className="flex w-full md:w-auto justify-end">
+              <div className="flex gap-3 w-full md:w-auto justify-end">
+                <Button
+                  variant="outlined"
+                  startIcon={<Upload size={18} />}
+                  onClick={handleExportClick}
+                  className="border-[#D0D5DD] capitalize! text-[#344054]"
+                  sx={{
+                    paddingX: '16px',
+                    paddingY: '8px',
+                    borderRadius: '8px',
+                    borderColor: '#D0D5DD',
+                    color: '#344054',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#5479EE',
+                      backgroundColor: 'rgba(84,121,238,0.05)'
+                    }
+                  }}
+                >
+                  Export
+                </Button>
+                <Menu
+                  anchorEl={exportAnchorEl}
+                  open={exportMenuOpen}
+                  onClose={handleExportClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  <MenuItem onClick={handleExportCSV}>Export to CSV</MenuItem>
+                  <MenuItem onClick={handlePrint}>Print</MenuItem>
+                </Menu>
+                
+                {selectedIds.length > 0 && (
                   <AppButton
                     onClick={handleBulkDelete}
                     variantStyle="danger"
                   >
                     Delete ({selectedIds.length})
                   </AppButton>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Table */}
@@ -357,7 +437,12 @@ export default function CompanyIntelligenceClient({
       )}
 
       <div style={{ display: "none" }}>
-        {/* PrintableTable removed */}
+        <PrintableTable
+          ref={componentRef}
+          title="My Target Companies"
+          columns={printableColumns}
+          data={companies}
+        />
       </div>
     </div>
   );

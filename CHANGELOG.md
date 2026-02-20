@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.15] - 2026-02-20
+
+### Detail Versi 1.6.15
+
+#### 🎯 Data Intelligence & Company Management
+
+- **Industry Leaders Search Caching**: Implemented client-side caching for industry leaders search results
+  - Results are cached in sessionStorage after first search
+  - Cache is cleared when clicking "Temukan Perusahaan" button for fresh search
+  - Client-side filtering for instant search within cached results
+- **Company Intelligence Profile**: Fixed key people and subsidiaries display
+  - Now handles both raw_data and root-level data structures
+  - Properly displays key people after saving company to CRM
+- **Company Table Email Display**: Updated to show email addresses instead of "N/A"
+  - Priority: email → domain → ticker → dash
+- **Export Functionality**: Added export button to My Target Companies page
+  - Export to CSV feature
+  - Print functionality
+  - Styled to match Manage Users page design
+
+#### 📧 Email Marketing - Subscribers
+
+- **Simplified Requirements**: Modified subscriber forms to require only Name and Email
+  - Phone Number, Position, Company, and Address are now optional
+  - Applied to both Add Subscriber and Edit Subscriber modals
+  - Improved data flexibility for subscriber management
+
+#### 🎨 UI/UX Improvements
+
+- **Modal Backdrop Fix**: Fixed full-height backdrop for Add Contact modal
+  - Ensures backdrop covers entire viewport on all screen sizes (1920x1080+)
+  - Prevents body scroll when modal is open
+- **Lead Management Enhancement**: Improved contact selection in Add New Leads
+  - Name autocomplete now displays both contact name and company name
+  - Format: "Contact Name - Company Name"
+  - Prevents confusion when multiple contacts have the same name
+  - Two-line dropdown display for better readability
+
+#### 🔧 Configuration
+
+- **Font Optimization**: Disabled Next.js font optimization to skip Google Fonts fetching
+  - Resolves SSL certificate errors in corporate networks
+  - Prevents build delays from font download failures
+
+#### 📁 Files Modified
+
+- `app/data-intelligence/industry-leaders/results/page.tsx`
+- `app/data-intelligence/industry-leaders/page.tsx`
+- `app/data-intelligence/industry-leaders/profile/[id]/page.tsx`
+- `components/omnichannel/company/company-table/CompanyTable.tsx`
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/email-marketing/subscribers/modals/AddSubscriberModal.tsx`
+- `components/email-marketing/subscribers/modals/EditSubscriberModal.tsx`
+- `components/modal/AddContact.tsx`
+- `components/lead-management/add-lead-form.tsx`
+- `next.config.mjs`
+
 ## [1.6.14] - 2026-02-19
 
 ### Detail Versi 1.6.14

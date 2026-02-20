@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, Plus, Search } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
@@ -18,6 +18,9 @@ import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 
+const CACHE_KEY = "industryLeadersResults";
+const CACHE_TIMESTAMP_KEY = "industryLeadersResultsTimestamp";
+
 export default function IndustryLeadersResultsPage() {
     const router = useRouter();
     const { getToken } = useAuth();
@@ -25,35 +28,61 @@ export default function IndustryLeadersResultsPage() {
         DEFAULT_FILTER_CRITERIA
     );
     const [searchQuery, setSearchQuery] = useState("");
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-    const [companies, setCompanies] = useState<IndustryLeaderCompany[]>([]);
+    const [allCompanies, setAllCompanies] = useState<IndustryLeaderCompany[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [usedCache, setUsedCache] = useState(false);
 
-    // Load filter criteria from sessionStorage
+    // Load filter criteria and cached results from sessionStorage
     useEffect(() => {
         const savedFilter = sessionStorage.getItem("industryLeadersFilter");
         if (savedFilter) {
             setFilterCriteria(JSON.parse(savedFilter));
         }
+
+        // Try to load cached results
+        const cachedResults = sessionStorage.getItem(CACHE_KEY);
+        const cachedTimestamp = sessionStorage.getItem(CACHE_TIMESTAMP_KEY);
+        
+        if (cachedResults && cachedTimestamp) {
+            try {
+                const parsed = JSON.parse(cachedResults);
+                setAllCompanies(parsed.companies);
+                setTotalCount(parsed.totalCount);
+                setUsedCache(true);
+                setIsLoading(false);
+            } catch (err) {
+                console.error("Failed to parse cached results:", err);
+            }
+        }
+        
         setIsInitialized(true);
     }, []);
 
-    // Debounce search query
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearchQuery(searchQuery);
-        }, 500);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchQuery]);
+    // Filter companies based on search query (client-side filtering)
+    const companies = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return allCompanies;
+        }
+        
+        const query = searchQuery.toLowerCase();
+        return allCompanies.filter(company => 
+            company.name.toLowerCase().includes(query) ||
+            company.location.toLowerCase().includes(query) ||
+            company.industries.some(industry => industry.toLowerCase().includes(query)) ||
+            company.description?.toLowerCase().includes(query)
+        );
+    }, [allCompanies, searchQuery]);
 
     const fetchCompanies = useCallback(async () => {
         if (!isInitialized) return;
+
+        // Skip fetch if we already have cached data
+        if (usedCache) {
+            return;
+        }
 
         setIsLoading(true);
         setError(null);
@@ -65,8 +94,8 @@ export default function IndustryLeadersResultsPage() {
                 employee_min: filterCriteria.employeeRange.min,
                 employee_max: filterCriteria.employeeRange.max,
                 financial_status: filterCriteria.financialStatuses,
-                limit: 100, // Fetch up to 100 for now, or implement pagination
-                q: debouncedSearchQuery,
+                limit: 100,
+                q: "", // No search query for initial fetch
             };
 
             const response = await searchCompanyIntelligence(token, payload);
@@ -79,22 +108,31 @@ export default function IndustryLeadersResultsPage() {
                 employees: item.employee_count,
                 revenue: item.revenue || "N/A",
                 financialStatus: item.financial_status as FinancialStatus,
-                industries: [item.industry], // API returns single string, UI expects array
+                industries: [item.industry],
                 source: item.source,
                 matchPercentage: item.match_score,
                 description: item.description,
                 website: item.domain || undefined,
             }));
 
-            setCompanies(mappedCompanies);
+            setAllCompanies(mappedCompanies);
             setTotalCount(response.total);
+
+            // Cache the results
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+                companies: mappedCompanies,
+                totalCount: response.total
+            }));
+            sessionStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+            
+            setUsedCache(false);
         } catch (err: any) {
             console.error("Failed to fetch industry leaders:", err);
             setError("Failed to load companies. Please try again.");
         } finally {
             setIsLoading(false);
         }
-    }, [filterCriteria, debouncedSearchQuery, getToken, isInitialized]);
+    }, [filterCriteria, getToken, isInitialized, usedCache]);
 
     // Fetch on filter change or search
     useEffect(() => {
@@ -151,9 +189,9 @@ export default function IndustryLeadersResultsPage() {
                             <p className="mt-1 text-sm text-gray-600">
                                 Ditemukan{" "}
                                 <span className="font-semibold text-gray-900">
-                                    {totalCount} Perusahaan
+                                    {companies.length} Perusahaan
                                 </span>{" "}
-                                yang cocok
+                                {searchQuery && `dari ${totalCount} total`}
                             </p>
                         </div>
                         <div className="flex gap-3">

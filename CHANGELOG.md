@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.19] - 2026-02-20
+
+### Detail Versi 1.6.19
+
+#### 📇 Contact Management
+
+- **Import Validation**: Enhanced Excel/CSV import validation
+  - Name field is now required for all imported contacts
+  - Rows without names are automatically skipped with warning notification
+  - Shows count of skipped rows due to missing name field
+  - Improved error messages for better user feedback
+
+#### 🎨 Navigation
+
+- **Sidebar Update**: Hidden Omnichannel section from sidebar navigation
+  - Omnichannel and Unified Inbox menu items temporarily hidden
+
+## [1.6.18] - 2026-02-20
+
+### Detail Versi 1.6.18
+
+#### 🎨 UI Components
+
+- **AppAutocomplete Consistency**: Fixed height inconsistency between AppSelect and AppAutocomplete components
+  - Changed from minHeight to fixed height of 40px to match AppSelect
+  - Standardized border radius to 8px
+  - Standardized font size to 14px and line height to 20px
+  - Matched padding and border styles for consistent appearance
+  - Fixes filter height mismatch in Support Tickets and other pages
+
+#### 📇 Contact Management
+
+- **Import Validation**: Enhanced Excel/CSV import validation
+  - Name field is now required for all imported contacts
+  - Rows without names are automatically skipped with warning notification
+  - Shows count of skipped rows due to missing name field
+  - Improved error messages for better user feedback
+
+#### 🎨 Navigation
+
+- **Sidebar Update**: Hidden Omnichannel section from sidebar navigation
+  - Omnichannel and Unified Inbox menu items temporarily hidden
+
+#### 🔧 Build & Deployment
+
+- **Postinstall Script**: Updated to handle environments without git
+  - Added `|| true` to git config command to prevent CI/CD failures
+  - Allows builds to proceed in Docker containers without git installed
+
 ## [1.6.17] - 2026-02-20
 
 ### Detail Versi 1.6.17

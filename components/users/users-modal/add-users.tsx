@@ -317,6 +317,7 @@ export default function AddUserDialog({ open, setOpen }: AddUserDialogProps) {
                 </div>
                 <AppSelect
                   options={[
+                    { value: "Admin", label: "Admin" },
                     { value: "Manager", label: "Manager" },
                     { value: "Staff", label: "Staff" },
                   ]}

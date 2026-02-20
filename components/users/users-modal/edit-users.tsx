@@ -311,6 +311,7 @@ export default function EditUserDialog({
               </div>
               <AppSelect
                 options={[
+                  { value: "Admin", label: "Admin" },
                   { value: "Manager", label: "Manager" },
                   { value: "Staff", label: "Staff" },
                 ]}

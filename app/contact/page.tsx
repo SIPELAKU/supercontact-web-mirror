@@ -300,7 +300,7 @@ export default function ContactsPage() {
               />
             </div>
           </div>
-          <div className="flex flex-col flex-wrap md:flex-row gap-3">
+          <div className="flex flex-row flex-nowrap gap-3 shrink-0">
             {selectedContacts.length > 0 && (
               <AppButton
                 onClick={() => setOpenDeleteMultiple(true)}
@@ -348,7 +348,7 @@ export default function ContactsPage() {
                 {isColumnVisible("phone") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Phone</TableCell>}
                 {isColumnVisible("position") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>}
                 {isColumnVisible("company") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>}
-                {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Action</TableCell>}
+                {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 6 }}>Action</TableCell>}
               </TableRow>
             </TableHead>
 
@@ -464,7 +464,7 @@ export default function ContactsPage() {
                       <TableCell
                         sx={{
                           py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                          pr: 3
+                          pr: 6
                         }}
                       >
                         <div className="flex gap-3 text-gray-600">

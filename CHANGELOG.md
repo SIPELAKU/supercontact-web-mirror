@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.20] - 2026-02-20
+
+### Detail Versi 1.6.20
+
+#### 🎫 Support Tickets
+
+- **Filter Improvements**: Enhanced filter dropdowns
+  - Fixed placeholder text color to match other pages (gray instead of black)
+  - Added "All Status" and "All Priority" options to clear filters
+  - Consistent styling across all filter components
+
+#### 📇 Contact Management
+
+- **Table Layout**: Improved action column spacing
+  - Increased right padding on Action column for better icon spacing
+  - Trash and edit icons now have more breathing room from table edge
+
 ## [1.6.19] - 2026-02-20
 
 ### Detail Versi 1.6.19

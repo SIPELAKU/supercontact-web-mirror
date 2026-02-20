@@ -133,13 +133,13 @@ const menuData: MenuSection[] = [
           { name: "Mailing List", path: "/email-marketing/mailing-lists" },
         ],
       },
-      {
-        name: "Omnichannel",
-        icon: OmnichannelIcon,
-        children: [
-          { name: "Unified Inbox", path: "/omnichannel" },
-        ],
-      },
+      // {
+      //   name: "Omnichannel",
+      //   icon: OmnichannelIcon,
+      //   children: [
+      //     { name: "Unified Inbox", path: "/omnichannel" },
+      //   ],
+      // },
       {
         name: "Data Intelligence",
         icon: DataIntelligenceIcon,

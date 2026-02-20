@@ -1,6 +1,6 @@
 {
   "name": "sales-management",
-  "version": "1.6.17",
+  "version": "1.6.18",
   "private": true,
   "scripts": {
     "dev": "next dev --port=3000",
@@ -21,7 +21,7 @@
     "deploy:all-tags": "node scripts/deploy-status.js tags",
     "tag:list": "git tag -l -n9 --sort=-v:refname",
     "tag:delete": "git tag -d",
-    "postinstall": "git config core.hooksPath .githooks"
+    "postinstall": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

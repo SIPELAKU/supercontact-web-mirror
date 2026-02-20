@@ -24,11 +24,11 @@ const StyledTextField = styled(TextField, {
 
         "& .MuiOutlinedInput-root": {
             backgroundColor: isBgWhite ? "white" : INPUT_BG,
-            borderRadius: rounded ? rounded : "6px",
-            fontSize: "16px",
+            borderRadius: rounded ? rounded : "8px",
+            fontSize: "14px",
             fontWeight: 400,
-            lineHeight: "24px",
-            minHeight: height ? height : "40px", // Use minHeight for Autocomplete as it can grow
+            lineHeight: "20px",
+            height: height ? height : "40px",
             width: width ? width : "100%",
 
             "& fieldset": {
@@ -41,18 +41,18 @@ const StyledTextField = styled(TextField, {
 
             "&.Mui-focused fieldset": {
                 borderColor: FOCUS_COLOR,
-                borderWidth: "1px",
+                borderWidth: "1.5px",
             },
 
             "&.Mui-error fieldset": {
                 borderColor: theme.palette.error.main,
             },
 
-            // Adjust padding for Autocomplete tags
+            // Adjust padding for Autocomplete to match AppSelect
             "& .MuiAutocomplete-input": {
-                padding: "4px 4px !important",
+                padding: "10px 14px !important",
             },
-            padding: "6px",
+            padding: "0px",
         },
 
         "& .MuiFormHelperText-root": {

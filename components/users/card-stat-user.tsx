@@ -17,15 +17,15 @@ const CardStatUser = () => {
     "",
     "",
   );
-  const users = usersResponse?.data?.manage_users || [];
+  const stats = usersResponse?.data?.stats;
 
-  const totalUsers = users?.length ?? 0;
-  const activeUsers = users?.filter((user) => user.status === "Active").length ?? 0;
-  const pendingUsers = users?.filter((user) => user.status === "Pending").length ?? 0;
+  const totalUsers = stats?.total ?? 0;
+  const activeUsers = stats?.active ?? 0;
+  const pendingUsers = stats?.pending ?? 0;
 
   const cardData: UserStatType[] = [
     {
-      title: "Session",
+      title: "Total Users",
       stats: totalUsers.toLocaleString(),
       avatarIcon: Users,
       avatarColor: "#5479EE",

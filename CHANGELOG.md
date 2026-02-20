@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.17] - 2026-02-20
+
+### Detail Versi 1.6.17
+
+#### 👥 User Management
+
+- **Admin Level Option**: Added "Admin" as a level option in Add User and Edit User modals
+  - Level dropdown now includes: Admin, Manager, Staff
+- **Total Users Display**: Updated Manage Users statistics card
+  - Changed "Session" label to "Total Users"
+  - Now uses API stats data (`data.stats.total`, `data.stats.active`, `data.stats.pending`)
+  - More efficient and accurate user count display
+
 ## [1.6.16] - 2026-02-20
 
 ### Detail Versi 1.6.16

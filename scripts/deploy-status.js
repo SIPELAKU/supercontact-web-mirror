@@ -166,7 +166,7 @@ async function deployStaging() {
   console.log('');
   console.log('📋 Langkah yang akan dijalankan:');
   console.log(`   1. git checkout staging && git pull`);
-  console.log(`   2. git merge dev`);
+  console.log(`   2. git merge --no-ff dev`);
   console.log(`   3. git push origin staging`);
   console.log(`   4. git tag -a ${tag} -m "${fullMessage}"`);
   console.log(`   5. git push origin ${tag}`);
@@ -186,8 +186,8 @@ async function deployStaging() {
   run('git pull origin staging', true);
 
   // Step 2: merge dev
-  console.log('\n2️⃣  Merge dev ke staging...');
-  const mergeResult = run('git merge dev 2>&1');
+  console.log('\n2️⃣  Merge dev ke staging (--no-ff)...');
+  const mergeResult = run('git merge --no-ff dev 2>&1');
   if (mergeResult.includes('CONFLICT')) {
     console.log('\n❌ MERGE CONFLICT! Selesaikan conflict dulu, lalu jalankan ulang.');
     console.log('   Untuk membatalkan: git merge --abort');
@@ -271,7 +271,7 @@ async function deployProd() {
   console.log('');
   console.log('📋 Langkah yang akan dijalankan:');
   console.log(`   1. git checkout main && git pull`);
-  console.log(`   2. git merge staging`);
+  console.log(`   2. git merge --no-ff staging`);
   console.log(`   3. git push origin main`);
   console.log(`   4. git tag -a ${releaseTag} -m "${message}"`);
   console.log(`   5. git push origin ${releaseTag}`);
@@ -289,8 +289,8 @@ async function deployProd() {
   run('git checkout main', true);
   run('git pull origin main', true);
 
-  console.log('\n2️⃣  Merge staging ke main...');
-  const mergeResult = run('git merge staging 2>&1');
+  console.log('\n2️⃣  Merge staging ke main (--no-ff)...');
+  const mergeResult = run('git merge --no-ff staging 2>&1');
   if (mergeResult.includes('CONFLICT')) {
     console.log('\n❌ MERGE CONFLICT! Selesaikan conflict dulu.');
     console.log('   Untuk membatalkan: git merge --abort');

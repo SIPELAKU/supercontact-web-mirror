@@ -149,7 +149,7 @@ const menuData: MenuSection[] = [
             path: "/data-intelligence/industry-leaders",
           },
           { name: "Company", path: "/data-intelligence/company-intelligence" },
-          { name: "Individual", path: "/data-intelligence/individual" },
+          // { name: "Individual", path: "/data-intelligence/individual" },
         ],
       },
       {

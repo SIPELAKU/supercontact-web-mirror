@@ -73,18 +73,6 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
       setError("Name is required.");
       return;
     }
-    if (!phoneNumber.trim()) {
-      setError("Phone number is required.");
-      return;
-    }
-    if (phoneNumber.length < 10) {
-      setError("Phone number must be at least 10 characters.");
-      return;
-    }
-    if (!position.trim()) {
-      setError("Position is required.");
-      return;
-    }
 
     setError('');
     try {
@@ -93,10 +81,10 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
         data: {
           name: name.trim(),
           email: email.trim(),
-          phone_number: phoneNumber.trim(),
-          position: position.trim(),
-          company: company.trim(),
-          address: address.trim()
+          phone_number: phoneNumber.trim() || undefined,
+          position: position.trim() || undefined,
+          company: company.trim() || undefined,
+          address: address.trim() || undefined
         }
       });
 
@@ -168,15 +156,6 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
                 }
               }}
               fullWidth
-              required
-              error={Boolean(error && (!phoneNumber.trim() || phoneNumber.length < 10))}
-              helperText={
-                error && !phoneNumber.trim()
-                  ? "Phone number is required"
-                  : error && phoneNumber.length < 10
-                    ? "Phone number must be at least 10 characters"
-                    : ""
-              }
             />
           </Box>
           <Box>
@@ -186,9 +165,6 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
               isBgWhite
               onChange={(e) => setPosition(e.target.value)}
               fullWidth
-              required
-              error={Boolean(error && !position.trim())}
-              helperText={error && !position.trim() ? "Position is required" : ""}
             />
           </Box>
           <Box>

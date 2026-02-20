@@ -107,9 +107,10 @@ export default function CompanyProfilePage() {
         .toUpperCase();
 
     // Parse raw_data for additional details if available
+    // Handle both structures: key_people in raw_data OR directly in company object
     const rawData = company.raw_data || {};
-    const keyPeople = rawData.key_people || [];
-    const subsidiaries = rawData.subsidiaries || [];
+    const keyPeople = (company as any).key_people || rawData.key_people || [];
+    const subsidiaries = (company as any).subsidiaries || rawData.subsidiaries || [];
 
     // Helper for financial status color
     const getStatusColor = (status: string) => {

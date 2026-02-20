@@ -154,7 +154,7 @@ export default function CompanyTable({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-semibold">{item.name}</span>
-                    <span className="text-xs text-gray-500">{item.ticker || item.domain || 'N/A'}</span>
+                    <span className="text-xs text-gray-500">{(item as any).email || item.domain || item.ticker || '-'}</span>
                   </div>
                 </div>
               </TableCell>

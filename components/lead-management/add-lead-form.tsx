@@ -363,7 +363,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     options={contacts}
                     getOptionLabel={(option) => {
                       if (typeof option === 'string') return option;
-                      return option.name;
+                      return `${option.name}${option.company ? ` - ${option.company}` : ''}`;
                     }}
                     value={contacts.find(c => c.id === selectedContactId) || form.name}
                     onChange={(event, newValue) => {
@@ -378,6 +378,16 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     }}
                     loading={isLoadingContacts}
                     onInputChange={handleContactSearchChange}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">{option.name}</span>
+                          {option.company && (
+                            <span className="text-sm text-gray-500">{option.company}</span>
+                          )}
+                        </div>
+                      </li>
+                    )}
                     renderInput={(params) => (
                       <TextField
                         {...params}

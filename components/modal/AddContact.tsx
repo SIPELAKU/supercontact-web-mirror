@@ -83,6 +83,18 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
   const handleClose = () => {
     onClose();
     setLocal({
@@ -236,7 +248,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        className="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        style={{ height: '100vh', width: '100vw' }}
         onClick={() => setShowCloseConfirmation(true)}
       >
         <div

@@ -103,11 +103,9 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       newErrors.name = "must be at least 3 characters";
     }
 
-    // Phone validation
-    const phoneRegex = /^[0-9]+$/;
-    if (!data.phone_number) {
-      newErrors.phone_number = "is required";
-    } else {
+    // Optional fields validation
+    if (data.phone_number) {
+      const phoneRegex = /^[0-9]+$/;
       if (!phoneRegex.test(data.phone_number)) {
         newErrors.phone_number = "must contain only numbers";
       } else if (
@@ -118,19 +116,10 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       }
     }
 
-    // Email validation
-    if (!data.email) {
-      newErrors.email = "is required";
-    }
-
-    // Position validation
-    if (!data.position) {
-      newErrors.position = "is required";
-    } else if (data.position.length < 3) {
+    if (data.position && data.position.length < 3) {
       newErrors.position = "must be at least 3 characters";
     }
 
-    // Optional fields validation
     if (data.company && data.company.length < 3) {
       newErrors.company = "must be at least 3 characters";
     }
@@ -246,8 +235,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
                   error={errors.name}
                 />
                 <InputField
-                  isRequired
                   label="Email"
+                  isRequired={false}
                   value={local.email}
                   onChange={(e) =>
                     setLocal((s) => ({ ...s, email: e.target.value }))
@@ -268,8 +257,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
 
               <div className="w-full md:w-1/2 flex flex-col gap-4">
                 <InputField
-                  isRequired
                   label="Phone Number"
+                  isRequired={false}
                   value={local.phone_number}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -294,8 +283,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
                   error={errors.phone_number}
                 />
                 <InputField
-                  isRequired
                   label="Position"
+                  isRequired={false}
                   value={local.position}
                   onChange={(e) =>
                     setLocal((s) => ({ ...s, position: e.target.value }))

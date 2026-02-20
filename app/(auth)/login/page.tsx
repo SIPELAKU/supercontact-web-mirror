@@ -12,6 +12,9 @@ import { FcGoogle } from "react-icons/fc";
 import { Poppins } from "next/font/google";
 import { CircularProgress } from "@mui/material";
 
+import { notify } from "@/lib/notifications";
+import { handleError } from "@/lib/utils/errorHandler";
+
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -22,8 +25,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,40 +33,25 @@ export default function LoginPage() {
     // Check if user came from email verification
     const verified = searchParams.get("verified");
     if (verified === "true") {
-      setSuccessMessage("Email verified successfully! You can now log in.");
-
-      // Auto-dismiss success message after 5 seconds
-      const timer = setTimeout(() => {
-        setSuccessMessage("");
-      }, 5000);
-
-      // Cleanup timer on component unmount
-      return () => clearTimeout(timer);
+      notify.success("Email verified successfully! You can now log in.");
     }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        // Redirect to home page after successful login
-        router.push("/");
-      } else {
-        setError("Invalid email or password. Please try again.");
-      }
+      await login(email, password);
+      // Redirect to home page after successful login
+      router.push("/");
     } catch (err: any) {
       console.error("Login error:", err);
-      const errorMessage =
-        err?.message ||
-        err?.error ||
-        (typeof err === "string"
-          ? err
-          : "An error occurred. Please try again.");
-      setError(errorMessage);
+      const message = handleError(err, "Login")
+      notify.error("Error", {
+        description: message,
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -115,36 +101,6 @@ export default function LoginPage() {
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm flex items-center justify-between">
-              <span>{successMessage}</span>
-              <button
-                onClick={() => setSuccessMessage("")}
-                className="ml-2 text-green-400 hover:text-green-600 focus:outline-none"
-                aria-label="Dismiss message"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">

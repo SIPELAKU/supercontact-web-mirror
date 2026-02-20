@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Autocomplete, AutocompleteProps, Box, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteProps, Box, TextField, Typography } from "@mui/material";
 import { ChevronDown } from "lucide-react";
 import { styled } from "@mui/material/styles";
 
@@ -24,11 +24,11 @@ const StyledTextField = styled(TextField, {
 
         "& .MuiOutlinedInput-root": {
             backgroundColor: isBgWhite ? "white" : INPUT_BG,
-            borderRadius: rounded ? rounded : "6px",
-            fontSize: "16px",
+            borderRadius: rounded ? rounded : "8px",
+            fontSize: "14px",
             fontWeight: 400,
-            lineHeight: "24px",
-            minHeight: height ? height : "40px", // Use minHeight for Autocomplete as it can grow
+            lineHeight: "20px",
+            height: height ? height : "40px",
             width: width ? width : "100%",
 
             "& fieldset": {
@@ -41,18 +41,18 @@ const StyledTextField = styled(TextField, {
 
             "&.Mui-focused fieldset": {
                 borderColor: FOCUS_COLOR,
-                borderWidth: "1px",
+                borderWidth: "1.5px",
             },
 
             "&.Mui-error fieldset": {
                 borderColor: theme.palette.error.main,
             },
 
-            // Adjust padding for Autocomplete tags
+            // Adjust padding for Autocomplete to match AppSelect
             "& .MuiAutocomplete-input": {
-                padding: "4px 4px !important",
+                padding: "10px 14px !important",
             },
-            padding: "6px",
+            padding: "0px",
         },
 
         "& .MuiFormHelperText-root": {
@@ -84,6 +84,7 @@ export type AppAutocompleteProps<
     required?: boolean;
 };
 
+// --- Component ---
 export function AppAutocomplete<
     T,
     Multiple extends boolean | undefined,
@@ -100,31 +101,47 @@ export function AppAutocomplete<
         height,
         width,
         required,
+        className,
+        sx,
+        fullWidth = true,
         ...autocompleteProps
     } = props;
 
     return (
-        <Autocomplete
-            popupIcon={<ChevronDown size={18} className="text-gray-500" />}
-            {...autocompleteProps}
-            renderInput={(params) => (
-                <StyledTextField
-                    {...params}
-                    placeholder={placeholder}
-                    error={error}
-                    helperText={helperText}
-                    isBgWhite={isBgWhite}
-                    rounded={rounded}
-                    height={height}
-                    width={width}
-                    required={required}
-                    fullWidth
-                    InputLabelProps={{
-                        ...params.InputLabelProps,
-                        shrink: true,
-                    }}
-                />
+        <Box
+            className={className}
+            sx={{ width: fullWidth ? "100%" : "auto", ...sx }}
+        >
+            {label && (
+                <Typography
+                    variant="body2"
+                    sx={{ mb: 1, fontWeight: 500, color: "text.secondary" }}
+                >
+                    {label}
+                </Typography>
             )}
-        />
+            <Autocomplete
+                popupIcon={<ChevronDown size={18} className="text-gray-500" />}
+                {...autocompleteProps}
+                renderInput={(params) => (
+                    <StyledTextField
+                        {...params}
+                        placeholder={placeholder}
+                        error={error}
+                        helperText={helperText}
+                        isBgWhite={isBgWhite}
+                        rounded={rounded}
+                        height={height}
+                        width={width}
+                        required={required}
+                        fullWidth
+                        InputLabelProps={{
+                            ...params.InputLabelProps,
+                            shrink: true, // Keep this to ensure placeholder/value doesn't overlap if we switch back, but effectively label is outside now
+                        }}
+                    />
+                )}
+            />
+        </Box>
     );
 }

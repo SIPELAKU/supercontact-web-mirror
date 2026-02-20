@@ -10,7 +10,10 @@ import Typography from "@mui/material/Typography";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import useDepartments from "@/lib/hooks/useDepartments";
+import { useUsers } from "@/lib/hooks/useUsers";
+import { useMemo } from "react";
 import type { DepartmentsType } from "@/lib/types/Departments";
 import { Poppins } from "next/font/google";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -42,14 +45,24 @@ export default function EditDepartmentsDialog({
   const [formData, setFormData] = useState({
     department: department.department,
     branch: department.branch,
-    // manager_name: department.manager_name,
+    // manager_id: department.manager_id || "",
   });
+  // const [managerName, setManagerName] = useState("");
+
+  // const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, managerName);
+
+  // const managerOptions = useMemo(() => {
+  //   return (usersData?.data?.users || []).map((user) => ({
+  //     value: user.id,
+  //     label: `${user.fullname} (${user.email})`,
+  //   }));
+  // }, [usersData]);
 
   useEffect(() => {
     setFormData({
       department: department.department,
       branch: department.branch,
-      // manager_name: department.manager_name,
+      // manager_id: department.manager_id || "",
     });
   }, [department]);
 
@@ -84,7 +97,6 @@ export default function EditDepartmentsDialog({
     { value: "Engineering", label: "Engineering" },
     { value: "Marketing", label: "Marketing" },
     { value: "Sales", label: "Sales" },
-    { value: "Finance", label: "Finance" },
     { value: "Customer Support", label: "Customer Support" },
   ];
 
@@ -95,8 +107,9 @@ export default function EditDepartmentsDialog({
         setFormData({
           department: department.department,
           branch: department.branch,
-          // manager_name: department.manager_name,
+          // manager_id: department.manager_id || "",
         });
+        // setManagerName("");
         handleClose();
       }}
       fullWidth
@@ -170,16 +183,22 @@ export default function EditDepartmentsDialog({
               >
                 Manager
               </h2>
-              <AppInput
+              <AppAutocomplete
+                options={managerOptions}
                 placeholder="Search for a Manager"
-                value={formData.manager_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, manager_name: e.target.value })
-                }
-                startIcon={<Search size={18} className="text-gray-500" />}
-                helperText="Assign an existing manager. Their manager ID will be linked automatically"
+                value={managerOptions.find(opt => opt.value === formData.manager_id) || null}
+                onChange={(_, newValue) => {
+                  setFormData({
+                    ...formData,
+                    manager_id: newValue && typeof newValue !== 'string' ? (newValue as any).value : ""
+                  });
+                }}
+                onInputChange={(_, value) => setManagerName(value)}
                 isBgWhite
               />
+              <Typography variant="caption" className="text-gray-500 block mt-1">
+                Assign an existing manager. Their manager ID will be linked automatically
+              </Typography>
             </div> */}
           </div>
         </DialogContent>
@@ -192,7 +211,7 @@ export default function EditDepartmentsDialog({
               setFormData({
                 department: department.department,
                 branch: department.branch,
-                // manager_name: department.manager_name,
+                // manager_id: department.manager_id || "",
               });
               handleClose();
             }}

@@ -5,6 +5,295 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.20] - 2026-02-20
+
+### Detail Versi 1.6.20
+
+#### 🎫 Support Tickets
+
+- **Filter Improvements**: Enhanced filter dropdowns
+  - Fixed placeholder text color to match other pages (gray instead of black)
+  - Added "All Status" and "All Priority" options to clear filters
+  - Consistent styling across all filter components
+
+#### 📇 Contact Management
+
+- **Table Layout**: Improved action column spacing
+  - Increased right padding on Action column for better icon spacing
+  - Trash and edit icons now have more breathing room from table edge
+
+## [1.6.19] - 2026-02-20
+
+### Detail Versi 1.6.19
+
+#### 📇 Contact Management
+
+- **Import Validation**: Enhanced Excel/CSV import validation
+  - Name field is now required for all imported contacts
+  - Rows without names are automatically skipped with warning notification
+  - Shows count of skipped rows due to missing name field
+  - Improved error messages for better user feedback
+
+#### 🎨 Navigation
+
+- **Sidebar Update**: Hidden Omnichannel section from sidebar navigation
+  - Omnichannel and Unified Inbox menu items temporarily hidden
+
+## [1.6.18] - 2026-02-20
+
+### Detail Versi 1.6.18
+
+#### 🎨 UI Components
+
+- **AppAutocomplete Consistency**: Fixed height inconsistency between AppSelect and AppAutocomplete components
+  - Changed from minHeight to fixed height of 40px to match AppSelect
+  - Standardized border radius to 8px
+  - Standardized font size to 14px and line height to 20px
+  - Matched padding and border styles for consistent appearance
+  - Fixes filter height mismatch in Support Tickets and other pages
+
+#### 📇 Contact Management
+
+- **Import Validation**: Enhanced Excel/CSV import validation
+  - Name field is now required for all imported contacts
+  - Rows without names are automatically skipped with warning notification
+  - Shows count of skipped rows due to missing name field
+  - Improved error messages for better user feedback
+
+#### 🎨 Navigation
+
+- **Sidebar Update**: Hidden Omnichannel section from sidebar navigation
+  - Omnichannel and Unified Inbox menu items temporarily hidden
+
+#### 🔧 Build & Deployment
+
+- **Postinstall Script**: Updated to handle environments without git
+  - Added `|| true` to git config command to prevent CI/CD failures
+  - Allows builds to proceed in Docker containers without git installed
+
+## [1.6.17] - 2026-02-20
+
+### Detail Versi 1.6.17
+
+#### 👥 User Management
+
+- **Admin Level Option**: Added "Admin" as a level option in Add User and Edit User modals
+  - Level dropdown now includes: Admin, Manager, Staff
+- **Total Users Display**: Updated Manage Users statistics card
+  - Changed "Session" label to "Total Users"
+  - Now uses API stats data (`data.stats.total`, `data.stats.active`, `data.stats.pending`)
+  - More efficient and accurate user count display
+
+## [1.6.16] - 2026-02-20
+
+### Detail Versi 1.6.16
+
+#### 🎯 Data Intelligence & Company Management
+
+- **Industry Leaders Search Caching**: Implemented client-side caching for industry leaders search results
+  - Results are cached in sessionStorage after first search
+  - Cache is cleared when clicking "Temukan Perusahaan" button for fresh search
+  - Client-side filtering for instant search within cached results
+- **Company Intelligence Profile**: Fixed key people and subsidiaries display
+  - Now handles both raw_data and root-level data structures
+  - Properly displays key people after saving company to CRM
+- **Company Table Email Display**: Updated to show email addresses instead of "N/A"
+  - Priority: email → domain → ticker → dash
+- **Export Functionality**: Added export button to My Target Companies page
+  - Export to CSV feature
+  - Print functionality
+  - Styled to match Manage Users page design
+
+#### 📧 Email Marketing - Subscribers
+
+- **Simplified Requirements**: Modified subscriber forms to require only Name and Email
+  - Phone Number, Position, Company, and Address are now optional
+  - Applied to both Add Subscriber and Edit Subscriber modals
+  - Improved data flexibility for subscriber management
+
+#### 🎨 UI/UX Improvements
+
+- **Modal Backdrop Fix**: Fixed full-height backdrop for Add Contact modal
+  - Ensures backdrop covers entire viewport on all screen sizes (1920x1080+)
+  - Prevents body scroll when modal is open
+- **Lead Management Enhancement**: Improved contact selection in Add New Leads
+  - Name autocomplete now displays both contact name and company name
+  - Format: "Contact Name - Company Name"
+  - Prevents confusion when multiple contacts have the same name
+  - Two-line dropdown display for better readability
+
+#### 🔧 Configuration
+
+- **Font Optimization**: Disabled Next.js font optimization to skip Google Fonts fetching
+  - Resolves SSL certificate errors in corporate networks
+  - Prevents build delays from font download failures
+
+#### 📁 Files Modified
+
+- `app/data-intelligence/industry-leaders/results/page.tsx`
+- `app/data-intelligence/industry-leaders/page.tsx`
+- `app/data-intelligence/industry-leaders/profile/[id]/page.tsx`
+- `components/omnichannel/company/company-table/CompanyTable.tsx`
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/email-marketing/subscribers/modals/AddSubscriberModal.tsx`
+- `components/email-marketing/subscribers/modals/EditSubscriberModal.tsx`
+- `components/modal/AddContact.tsx`
+- `components/lead-management/add-lead-form.tsx`
+- `next.config.mjs`
+
+## [1.6.15] - 2026-02-20
+
+### Detail Versi 1.6.15
+
+#### 🔐 Authentication
+
+- **Login Feedback**: Optimized error handling in `LoginPage` to display specific backend error messages and increased the notification duration to 5 seconds for better readability.
+
+#### 🏢 Organization
+
+- **Department Management**: Temporarily removed the `manager_id` requirement and selection field from both "Add Department" and "Edit Department" modals.
+
+#### 📁 Files Modified
+
+- `app/(auth)/login/page.tsx`
+- `components/organization/departments-modal/add-departments.tsx`
+- `components/organization/departments-modal/edit-departments.tsx`
+- `lib/api/departments.ts`
+- `package.json`
+
+## [1.6.14] - 2026-02-19
+
+### Detail Versi 1.6.14
+
+#### 👥 User Management & Modal Standardization
+
+- **Modal Synchronization**: Aligned "Add User" and "Edit User" modals for a consistent look and feel (size, header styling, and grid layout).
+- **Field Pairings**: Implemented logical side-by-side field arrangements (Email | Full Name, Employee ID | Department, Branch | Level, Role Access | Position).
+- **Edit User Enhancements**:
+  - Added "Employee ID" field.
+  - Implemented dynamic "Position" selection based on the selected Department.
+- **Stability**: Added defensive null checks for department and role data to resolve `Cannot read properties of null (reading 'department_name')` errors.
+
+#### 📇 Contact Management Refinements
+
+- **Simplified Requirements**: Modified "Add Contact" and "Edit Contact" flows to make only the **Name** field required.
+- **Optional Fields**: Email, Phone Number, Company, and Position are now optional, providing more flexibility during data entry.
+- **UI Clean Up**: Removed required asterisks from all non-name fields.
+
+#### 🔐 Authentication & Profile UI
+
+- **User Context Persistence**: Updated `AuthContext` to track and persist `userCompany` and `userSubscription` status in local storage.
+- **Profile Dropdown Enhancements**:
+  - Added **Company Name** display to the dropdown header.
+  - Added a styled **Subscription Badge** (e.g., TRIAL, ACTIVE) next to the user's role.
+  - Increased dropdown width (320px) and refined padding (2.5) for improved readability and a more premium feel.
+  - Implemented ellipsis truncation for long email and company strings.
+
+#### 📁 Files Modified
+
+- `components/users/users-modal/add-users.tsx`
+- `components/users/users-modal/edit-users.tsx`
+- `components/modal/AddContact.tsx`
+- `components/modal/EditContact.tsx`
+- `components/layout/ProfileDropdown.tsx`
+- `lib/context/AuthContext.tsx`
+- `lib/api/users.ts`
+
+## [1.6.13] - 2026-02-19
+
+### Detail Versi 1.6.13
+
+#### 🎯 "My Target Companies" & CRM Integration Refactor
+
+- **"My Target Companies" Page Refactor:**
+  - Renamed page title to "My Target Companies".
+  - Implemented **Tab Navigation**: Added switcher for "Dashboard List" vs "Industry Leaders".
+  - **Refactored Filters**: Moved filters (Industry, Location, Search, Export) to a single row and removed input labels for a cleaner, modern look.
+  - **Table Updates**:
+    - Removed "Insight Score" column to match design.
+    - Added "Action" column with a delete button (placeholder functionality).
+  - UI Clean Up: Removed boxed "Core Criteria" layout.
+
+- **"Save to CRM" UX Enhancement:**
+  - Replaced native `alert()` popups with premium `notify` toast notifications (`success` and `error`) across:
+    - `Data Intelligence > Industry Leaders > Results Page`
+    - `Data Intelligence > Industry Leaders > Profile Page`
+
+#### 📁 Files Modified
+
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/omnichannel/company/company-table/CompanyTable.tsx`
+- `app/data-intelligence/industry-leaders/results/page.tsx`
+- `app/data-intelligence/industry-leaders/profile/[id]/page.tsx`
+- `app/(auth)/login/page.tsx`
+
+#### 🔗 API Integration
+
+- **"My Target Companies" List:**
+  - Integrated `getMyTargetCompanies` API endpoint (`/company-intelligence/my-target-companies`) to fetch dynamic company lists.
+  - Updated `CompanyStats` to display real-time summary metrics from the API response.
+
+#### 📁 Files Modified (API)
+
+- `lib/api/company-intelligence.ts`
+- `lib/types/company-intelligence.ts`
+- `components/omnichannel/CompanyIntelligenceClient.tsx`
+- `components/omnichannel/company/CompanyStats.tsx`
+
+#### ✨ Features
+
+- Added delete functionality to "My Target Companies" table with confirmation modal.
+- Removed "ESTIMASI HASIL" count from Industry Leaders filter summary card.
+- Removed "Export" button from "My Target Companies" page.
+- Enabled row click navigation to company profile from "My Target Companies" list.
+- Updated company profile to fetch details from target list when accessed via "My Target Companies".
+- Added bulk delete functionality to "My Target Companies" list.
+- Fixed issue where selected items remained checked after deletion.
+- Updated "Department" dropdown options in "Add User" modal.
+- Added "Employee ID" field to "Add User" modal.
+- Refactored "Add User" modal to display all fields in a unified side-by-side grid layout.
+- Fixed vertical alignment issue between Email and Full Name fields in "Add User" modal.
+- Implemented dynamic "Position" dropdown options in "Add User" modal based on the selected "Department".
+- Updated "Select Position" filter in User List with specific job titles (Brand Manager, Content Writer, etc.).
+- Replaced "Finance" with "Customer Support" in Organization filters and "Add Department" modal.
+
+#### 🐛 Bug Fixes
+
+- Fixed `Cannot read properties of undefined (reading 'length')` error by adding defensive checks for API response data in `CompanyIntelligenceClient` and `CompanyTable`.
+- Fixed `TypeError` in `getDynamicChipStyle` by handling undefined labels and adding fallback values for industry and financial status in `CompanyTable`.
+
+## [1.6.12] - 2026-02-18
+
+### Detail Versi 1.6.12
+
+#### 🚀 Navigation & Component Restoration
+
+- **Sidebar Integration:**
+  - Restored **Omnichannel** (Unified Inbox) and **Data Intelligence** (Target Customer, Company, Individual) sections to the primary sidebar.
+- **Company Profile Enhancements:**
+  - Restored the **Recent Signals** section with its timeline view and "Add Signal" capabilities.
+  - Implemented a robust **Company Document Management** system:
+    - **PDF Upload:** New interface for uploading PDF documents (up to 10MB).
+    - **Document Listing:** Dynamic fetching and display of company documents from the backend API.
+    - **PDF Preview:** Integrated iframe-based PDF viewer with fallback states and "Open in New Tab" option.
+    - **Standardized Deletion:** Integrated `ConfirmationPopup` for secure document removal.
+
+#### 🔧 Infrastructure & Bug Fixes
+
+- **WebSocket Connectivity:**
+  - Implemented dynamic WebSocket URL resolution logic in the **Unified Inbox** to automatically derive protocol and host from `NEXT_PUBLIC_API_URL` when `NEXT_PUBLIC_WS_URL` is missing, resolving connection issues in production/Vercel environments.
+- **Inbox UI Cleanup:**
+  - Removed unused states and orphaned handlers to maintain a clean and performant codebase.
+
+#### 📁 Files Modified
+
+- `components/layout/Sidebar.tsx`
+- `components/admin/CompanyProfileClient.tsx`
+- `components/inbox/InboxClient.tsx`
+- `lib/api/company-profile.ts`
+- `lib/types/company-profile.ts`
+- `components/omnichannel/company/detail-company/CompanyDocumentsCard.tsx`
+
 ## [1.6.11] - 2026-02-16
 
 ### Detail Versi 1.6.11

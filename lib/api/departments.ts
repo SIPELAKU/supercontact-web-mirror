@@ -4,7 +4,7 @@ import { fetchWithTimeout } from "./api-client";
 export interface CreateDepartmentData {
   department: string;
   branch: string;
-  manager_id: string;
+  // manager_id: string;
 }
 
 export interface UpdateDepartmentData extends Partial<CreateDepartmentData> { }

@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { notify } from "../notifications";
 import { useRouter } from "next/navigation";
 
-const useRoles = (page: number, limit: number, search?: string,) => {
+const useRoles = (page: number = 1, limit: number = 10, search?: string) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();

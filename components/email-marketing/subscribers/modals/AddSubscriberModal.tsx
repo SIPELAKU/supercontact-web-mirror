@@ -115,14 +115,6 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     setError("Name is required.");
                     return;
                 }
-                if (!phoneNumber.trim()) {
-                    setError("Phone number is required.");
-                    return;
-                }
-                if (!position.trim()) {
-                    setError("Position is required.");
-                    return;
-                }
 
                 await createMutation.mutateAsync({
                     target: target,
@@ -130,10 +122,10 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     new_contact: {
                         name: name.trim(),
                         email: email.trim(),
-                        phone_number: phoneNumber.trim(),
-                        position: position.trim(),
-                        company: company.trim(),
-                        address: address.trim()
+                        phone_number: phoneNumber.trim() || undefined,
+                        position: position.trim() || undefined,
+                        company: company.trim() || undefined,
+                        address: address.trim() || undefined
                     },
                     mailing_list_ids: listIdsToSend
                 });
@@ -213,30 +205,24 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 />
                             </Box>
                             <Box>
-                                <label htmlFor="phoneNumber">Phone Number <span style={{ color: 'red' }}>*</span> </label>
+                                <label htmlFor="phoneNumber">Phone Number</label>
                                 <AppInput
                                     isBgWhite
                                     type="tel"
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(e.target.value)}
                                     fullWidth
-                                    required
-                                    error={Boolean(error && !phoneNumber.trim())}
-                                    helperText={error && !phoneNumber.trim() ? "Phone number is required" : ""}
                                 />
                             </Box>
 
                             <Box>
-                                <label htmlFor="position">Position <span style={{ color: 'red' }}>*</span> </label>
+                                <label htmlFor="position">Position</label>
                                 <AppInput
                                     isBgWhite
                                     type="text"
                                     value={position}
                                     onChange={(e) => setPosition(e.target.value)}
                                     fullWidth
-                                    required
-                                    error={Boolean(error && !position.trim())}
-                                    helperText={error && !position.trim() ? "Position is required" : ""}
                                 />
                             </Box>
                             <Box>

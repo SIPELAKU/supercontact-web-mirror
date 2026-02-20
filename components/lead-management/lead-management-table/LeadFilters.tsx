@@ -34,12 +34,12 @@ export default function LeadFilters({
       {/* Select Status */}
       <div className="flex-1 min-w-0">
         <AppSelect
-          value={status}
-          onChange={(e: any) => setStatus(e.target.value as string)}
+          value={status === "All" ? "" : status}
+          onChange={(e: any) => setStatus(e.target.value as string || "All")}
           placeholder="Select Status"
           isBgWhite={true}
           options={[
-            { label: "All Status", value: "All" },
+            { label: "All Status", value: "" },
             { label: "New", value: "New" },
             { label: "Contacted", value: "Contacted" },
             { label: "Qualified", value: "Qualified" },
@@ -52,12 +52,12 @@ export default function LeadFilters({
       {/* Select Source */}
       <div className="flex-1 min-w-0">
         <AppSelect
-          value={source}
-          onChange={(e: any) => setSource(e.target.value as string)}
+          value={source === "All" ? "" : source}
+          onChange={(e: any) => setSource(e.target.value as string || "All")}
           placeholder="Select Source"
           isBgWhite={true}
           options={[
-            { label: "All", value: "All" },
+            { label: "All", value: "" },
             { label: "Web Form", value: "Web Form" },
             { label: "WhatsApp", value: "WhatsApp" },
             { label: "Manual Entry", value: "Manual Entry" },
@@ -69,12 +69,12 @@ export default function LeadFilters({
       {/* Select Assigned To */}
       <div className="flex-1 min-w-0">
         <AppSelect
-          value={assignedto}
-          onChange={(e: any) => setAssignedto(e.target.value as string)}
+          value={assignedto === "All" ? "" : assignedto}
+          onChange={(e: any) => setAssignedto(e.target.value as string || "All")}
           placeholder="Select Assigned To"
           isBgWhite={true}
           options={[
-            { label: "All", value: "All" },
+            { label: "All", value: "" },
             ...assignedToOptions.map((user) => ({
               label: user,
               value: user,

@@ -128,13 +128,19 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         return contact as ContactReq;
       });
 
-      // Filter out empty rows (must have at least name or email or phone)
-      const validContacts = contacts.filter(
-        (c) => c.name || c.email || c.phone_number,
-      );
+      // Filter out empty rows (must have name)
+      const validContacts = contacts.filter((c) => c.name && c.name.trim());
 
       if (validContacts.length === 0) {
-        throw new Error("No valid contacts found in file");
+        throw new Error("No valid contacts found. Name field is required for all contacts.");
+      }
+
+      // Check if any contacts were filtered out
+      const filteredCount = contacts.length - validContacts.length;
+      if (filteredCount > 0) {
+        notify.warning(
+          `${filteredCount} row(s) skipped due to missing name field`
+        );
       }
 
       await uploadContacts(validContacts);

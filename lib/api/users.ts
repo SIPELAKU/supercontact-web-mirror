@@ -37,6 +37,7 @@ export interface ProfileData {
   role: string | null;
   joined_date: string;
   company: string;
+  subscription_status: string;
   country: string;
   language: string;
   phone?: string;

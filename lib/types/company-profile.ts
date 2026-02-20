@@ -45,3 +45,19 @@ export interface CompanyDocument {
   uploadedAt: string;
   fileUrl?: string;
 }
+
+export interface CompanySignal {
+  id: string;
+  signal_title: string;
+  description: string;
+  time_posted: string;
+  created_at: string;
+  // UI helper for dot color which is not in API response
+  dotColor?: "green" | "blue" | "orange";
+}
+
+export interface CompanySignalPayload {
+  signal_title: string;
+  description: string;
+  time_posted: string;
+}

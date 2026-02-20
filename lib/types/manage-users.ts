@@ -31,6 +31,7 @@ export interface ManageUserResponse {
 export interface CreateManagedUserData {
   fullname?: string;
   email: string;
+  employee_code?: string;
   department_id: string;
   user_level: string;
   position: string;
@@ -38,4 +39,4 @@ export interface CreateManagedUserData {
   status: string;
 }
 
-export interface UpdateManagedUserData extends Partial<CreateManagedUserData> {}
+export interface UpdateManagedUserData extends Partial<CreateManagedUserData> { }

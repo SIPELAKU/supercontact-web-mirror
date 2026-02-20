@@ -62,6 +62,10 @@ export default function IndustryLeadersPage() {
     }, [filterCriteria]);
 
     const handleViewResults = () => {
+        // Clear cached results when performing a new search
+        sessionStorage.removeItem("industryLeadersResults");
+        sessionStorage.removeItem("industryLeadersResultsTimestamp");
+        
         // Store filter criteria in sessionStorage
         sessionStorage.setItem("industryLeadersFilter", JSON.stringify(filterCriteria));
         router.push("/data-intelligence/industry-leaders/results");

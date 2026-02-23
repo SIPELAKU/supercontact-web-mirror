@@ -1,0 +1,218 @@
+import React from 'react';
+import Slider from 'react-slick';
+import { Box, Container, Typography, Card, Rating, Stack } from '@mui/material';
+import { styled } from '@mui/material/styles';
+
+// Import CSS slick-carousel
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+import { strings } from '@/lib/utils/strings';
+
+const CustomSliderWrapper = styled(Box)(({ theme }) => ({
+    padding: "80px 0", // Increased padding to prevent clipping of scaled cards
+    "& .slick-list": {
+        overflow: "visible",
+    },
+    // Efek kartu pudar (opacity rendah) dan ukuran lebih kecil saat tidak fokus
+    "& .slick-slide": {
+        transition: "all 0.5s ease-in-out",
+        opacity: 0.2, // Sangat pudar sesuai desain
+        transform: "scale(0.85)",
+    },
+    // Efek kartu fokus di tengah (terang dan besar)
+    "& .slick-center": {
+        opacity: 1,
+        transform: "scale(1.1)", // Lebih besar dari kartu lainnya
+        "& .MuiCard-root": {
+            boxShadow: "0px 25px 50px rgba(0,0,0,0.08)",
+            border: "none",
+        }
+    },
+    // Indicator Lonjong (Custom Dots)
+    "& .slick-dots": {
+        bottom: "-80px", // Increased distance from cards
+        "& li": {
+            margin: "0 4px",
+            transition: "all 0.3s ease",
+            "& button": {
+                width: "12px",
+                height: "12px",
+                background: "#E5E7EB",
+                borderRadius: "50%",
+                "&:before": { display: "none" }
+            },
+            "&.slick-active": {
+                width: "45px", // Lebar saat aktif (lonjong)
+                "& button": {
+                    width: "45px",
+                    borderRadius: "10px",
+                    background: "#9CA3AF",
+                }
+            }
+        }
+    }
+}));
+
+const data = [
+    { id: 1, company: "Levi's", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Levis-logo-quer.svg/1920px-Levis-logo-quer.svg.png", name: "Tommy Haffman", role: "Founder of Levis", text: "Materio is awesome, and I particularly enjoy knowing that if I get stuck on something." },
+    { id: 2, company: "Airbnb", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_Bélo.svg/2560px-Airbnb_Logo_Bélo.svg.png", name: "Eugenia Moore", role: "CTO of Airbnb", text: "This template is superior in so many ways. The code, the design, the regular updates, the support.. It's the whole package. Excellent Work." },
+    { id: 3, company: "Continental", logo: "/assets/continental.png", name: "Sara Smith", role: "Founder of Continental", text: "All the requirements for developers have been taken into consideration, so I'm able to build any interface I want." },
+    { id: 4, company: "Eckerd", logo: "/assets/eckerd.png", name: "John Doe", role: "CEO of Eckerd", text: "I've never used a template as flexible as Vuexy. It's the best dashboard strategy I've ever seen." },
+    { id: 5, company: "Dribbble", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Dribbble-logo.gif?20141017124952", name: "Alex Jones", role: "Design Lead", text: "Amazing quality and attention to detail. Highly recommended for any professional project." },
+];
+
+const TrustedBy = () => {
+    const settings = {
+        dots: true,
+        infinite: true,
+        centerMode: true,
+        centerPadding: "0px",
+        slidesToShow: 3,
+        speed: 600,
+        autoplay: true,
+        responsive: [
+            {
+                breakpoint: 1024,
+                settings: {
+                    slidesToShow: 2,
+                    centerMode: true,
+                    centerPadding: "40px",
+                }
+            },
+            {
+                breakpoint: 768,
+                settings: {
+                    slidesToShow: 1,
+                    centerMode: true,
+                    centerPadding: "50px",
+                }
+            },
+            {
+                breakpoint: 480,
+                settings: {
+                    slidesToShow: 1,
+                    centerMode: true,
+                    centerPadding: "30px",
+                }
+            }
+        ]
+    };
+
+    return (
+        <Box sx={{ bgcolor: "#F7F7F9", py: { xs: 6, md: 10 } }} overflow="hidden">
+            <Container maxWidth="lg">
+
+                {/* Header Section */}
+                <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 4 } }}>
+                    <Typography variant="h4" sx={{
+                        fontWeight: 800,
+                        color: "rgba(38, 43, 67, 0.9)",
+                        mb: 2,
+                        fontSize: { xs: '1.75rem', md: '24px' }
+                    }}>
+                        {strings.trusted_by_title}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "rgba(38, 43, 67, 0.9)", maxWidth: "700px", mx: "auto", px: 2, fontSize: { xs: '1rem', md: '16px' } }}>
+                        {strings.trusted_by_subtitle}
+                    </Typography>
+                </Box>
+
+                {/* Carousel Section */}
+                <CustomSliderWrapper>
+                    <Slider {...settings}>
+                        {data.map((item) => (
+                            <Box key={item.id} sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+                                <Card sx={{
+                                    p: { xs: 3, md: 4 }, // Reduced padding to fit 294px height
+                                    borderRadius: 5,
+                                    textAlign: 'center',
+                                    width: { xs: '100%', md: '360px' },
+                                    height: { xs: 'auto', md: '294px' },
+                                    minHeight: { xs: 320, md: 'unset' },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '1px solid #F1F5F9',
+                                    boxShadow: 'none',
+                                    mx: 'auto'
+                                }}>
+                                    <Box
+                                        component="img"
+                                        src={item.logo}
+                                        sx={{
+                                            height: { xs: 30, md: 38 }, // Slightly smaller logo
+                                            mb: 2, // Reduced margin
+                                            objectFit: 'contain'
+                                        }}
+                                    />
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            color: "#475569",
+                                            fontWeight: 400,
+                                            mb: 2, // Reduced margin
+                                            lineHeight: 1.5, // Tighter line height
+                                            fontSize: { xs: '0.95rem', md: '15px' }, // Slightly smaller font
+                                            px: { xs: 1, md: 1 }
+                                        }}
+                                    >
+                                        "{item.text}"
+                                    </Typography>
+                                    <Rating value={5} readOnly size="small" sx={{ mb: 2, color: "#FBBF24" }} />
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontWeight: 700,
+                                            color: "#334155",
+                                            fontSize: '15px', // Slightly smaller name
+                                            mb: 0.2
+                                        }}
+                                    >
+                                        {item.name}
+                                    </Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            color: "#94A3B8",
+                                            fontSize: '13px' // Slightly smaller role
+                                        }}
+                                    >
+                                        {item.role}
+                                    </Typography>
+                                </Card>
+                            </Box>
+                        ))}
+                    </Slider>
+                </CustomSliderWrapper>
+
+                {/* Brand Logos Footer */}
+                <Stack
+                    direction="row"
+                    justifyContent="center"
+                    alignItems="center"
+                    spacing={8}
+                    sx={{ mt: 10, flexWrap: "wrap", gap: 6 }}
+                >
+                    {data.map((brand) => (
+                        <Box
+                            key={brand.id}
+                            component="img"
+                            src={brand.logo}
+                            sx={{
+                                height: 25,
+                                filter: 'grayscale(1)',
+                                opacity: 0.6,
+                                transition: '0.3s',
+                                '&:hover': { opacity: 1, filter: 'grayscale(0)' }
+                            }}
+                        />
+                    ))}
+                </Stack>
+
+            </Container>
+        </Box>
+    );
+};
+
+export default TrustedBy;

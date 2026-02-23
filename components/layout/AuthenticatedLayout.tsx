@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import WhatsAppFloatingButton from './WhatsAppFloatingButton';
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -13,11 +14,14 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const router = useRouter();
 
   // Check if current route is an auth route (should be accessible without authentication)
-  const isAuthRoute = pathname?.startsWith('/login') || 
-                     pathname?.startsWith('/register') || 
-                     pathname?.startsWith('/forgot-password') ||
-                     pathname?.startsWith('/new-password') ||
-                     pathname?.startsWith('/email-verification');
+  const isAuthRoute = pathname === '/' ||
+    pathname === '/company' ||
+    pathname === '/price' ||
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/register') ||
+    pathname?.startsWith('/forgot-password') ||
+    pathname?.startsWith('/new-password') ||
+    pathname?.startsWith('/email-verification');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {
@@ -45,7 +49,12 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
 
   // If on auth routes, don't show sidebar/topbar
   if (isAuthRoute) {
-    return <main className="min-h-screen">{children}</main>;
+    return (
+      <main className="min-h-screen">
+        {children}
+        <WhatsAppFloatingButton />
+      </main>
+    );
   }
 
   return (

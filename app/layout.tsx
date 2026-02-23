@@ -8,6 +8,7 @@ import { MuiLocalizationProvider } from "@/components/providers/MuiLocalizationP
 import "./globals.css";
 import { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { LanguageProvider } from "@/lib/context/LanguageContext";
 
 // SEO Metadata
 export const metadata: Metadata = {
@@ -77,7 +78,9 @@ export default function RootLayout({
           <ConfirmationProvider>
             <AuthProvider>
               <ReactQueryProvider>
-                <AuthenticatedLayout>{children}</AuthenticatedLayout>
+                <LanguageProvider>
+                  <AuthenticatedLayout>{children}</AuthenticatedLayout>
+                </LanguageProvider>
               </ReactQueryProvider>
             </AuthProvider>
           </ConfirmationProvider>

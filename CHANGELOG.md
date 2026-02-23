@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.7.0] - 2026-02-23
+
+### Detail Versi 1.7.0
+
+#### Added
+
+- **Landing Page Refactor**: Completely redesigned the landing page with high-quality assets and responsive sections.
+- **New Components**:
+  - **Hero**: Interactive slider with localized content.
+  - **Productivity**: Feature highlights with animations.
+  - **Company**: New section for vision, mission, and story.
+  - **Pricing**: Interactive pricing plan comparison.
+  - **FAQ**: Categorized frequently asked questions.
+  - **Footer**: Redesigned site footer with localized links.
+  - **WhatsAppFloatingButton**: Quick access to customer support.
+- **Localization**: Full support for Indonesian and English languages.
+  - **LanguageContext**: for global state management.
+  - **lib/utils/strings.ts**: for centralized translation strings.
+- **Dependencies**:
+  - **framer-motion**: for smooth UI animations.
+  - **react-slick & slick-carousel**: for interactive sliders.
+  - **react-localization**: for efficient string management.
+
+#### Changed
+
+- **Navbar**: Optimized for responsiveness. Added a mobile side drawer and interactive desktop dropdowns for "Product" and "Solution" menus.
+- **Middleware**: Updated route protection to allow public access to landing, company, and price pages.
+- **SEO**: Updated `RootLayout` with comprehensive meta tags, open graph support, and Poppins font integration.
+- **Authentication Flow**: Updated redirection logic to handle new landing page routes.
+- **Assets**:
+  - Added multiple UI illustrations, logos, and icons for the new landing page sections.
+
 ## [1.6.21] - 2026-02-23
 
 ### Detail Versi 1.6.21

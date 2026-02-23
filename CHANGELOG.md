@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Real-time conversation management with message history
   - Conversation list with unread count, last message preview, and timestamps
   - Custom time formatting utility to avoid external dependencies
+  - **Real-time Updates**: Automatic polling for new messages and conversations
+    - Inbox polls every 10 seconds for new conversations
+    - Conversation view polls every 5 seconds for new messages
+    - Supports webhook-based message delivery from WhatsApp/Email
 
 - **Account Management**: 
   - Connect WhatsApp accounts via Twilio integration (phone number, account SID, auth token)
@@ -45,10 +49,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - React Query hooks for data fetching with proper cache invalidation
   - TypeScript type definitions for all data structures
   - Error handling with user-friendly notifications
+  - Fixed API response parsing to handle nested data structures
 
 - **Navigation**:
   - Omnichannel menu restored in sidebar with Unified Inbox submenu
   - Accessible from main navigation under Apps section
+
+- **Bug Fixes**:
+  - Fixed TypeScript errors in AccountList component (button props, modal imports)
+  - Fixed ConversationView to handle both API field name variations (contact_name vs external_contact_name)
+  - Fixed inbox data parsing to extract conversations from nested response structure
+  - Added automatic refetch when navigating back to inbox from conversation
 
 #### 🎨 Navigation
 
@@ -59,6 +70,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/modal/AddContact.tsx`
 - `components/modal/EditContact.tsx`
 - `components/layout/Sidebar.tsx`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/api/omnichannel.ts`
+- `lib/types/omnichannel.ts`
+- `components/omnichannel/AccountList.tsx`
+- `components/omnichannel/ConversationView.tsx`
+- `components/omnichannel/InboxList.tsx`
 
 #### 📁 Files Created (Omnichannel)
 

@@ -253,7 +253,6 @@ export default function EditUserDialog({
                   { value: "", label: "Select department" },
                   { value: "Marketing", label: "Marketing" },
                   { value: "Sales", label: "Sales" },
-                  { value: "Engineering", label: "Engineering" },
                   { value: "Human Resources", label: "Human Resources" },
                   { value: "Customer Support", label: "Customer Support" },
                 ]}

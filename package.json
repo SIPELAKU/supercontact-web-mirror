@@ -1,9 +1,9 @@
 {
   "name": "sales-management",
-  "version": "1.6.20",
+  "version": "1.6.21",
   "private": true,
   "scripts": {
-    "dev": "next dev --port=3000",
+    "dev": "next dev --port=3100",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

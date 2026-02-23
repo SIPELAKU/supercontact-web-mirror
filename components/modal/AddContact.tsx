@@ -135,14 +135,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
     // Optional fields validation
     if (data.phone_number) {
-      const phoneRegex = /^[0-9]+$/;
+      // Allow numbers and symbols, but not letters
+      const phoneRegex = /^[^a-zA-Z]+$/;
       if (!phoneRegex.test(data.phone_number)) {
-        newErrors.phone_number = "must contain only numbers";
-      } else if (
-        data.phone_number.length < 10 ||
-        data.phone_number.length > 15
-      ) {
-        newErrors.phone_number = "must be between 10 and 15 characters";
+        newErrors.phone_number = "cannot contain letters";
       }
     }
 
@@ -305,18 +301,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   value={local.phone_number}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (/^[0-9]*$/.test(val)) {
+                    // Allow numbers and symbols, but not letters
+                    if (/^[^a-zA-Z]*$/.test(val)) {
                       setLocal((s) => ({ ...s, phone_number: val }));
-
-                      let error = "";
-                      if (val.length < 10) {
-                        error = "must be between 10 and 15 characters";
-                      } else if (val.length > 15) {
-                        error = "must be between 10 and 15 characters";
-                        return setLocal((s) => ({ ...s, phone_number: val.slice(0, 15) }));
-                      }
-
-                      setErrors((prev) => ({ ...prev, phone_number: error }));
+                      setErrors((prev) => ({ ...prev, phone_number: "" }));
                     }
                   }}
                   placeholder="Enter phone number"

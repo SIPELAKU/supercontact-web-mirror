@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.21] - 2026-02-23
+
+### Detail Versi 1.6.21
+
+#### 📇 Contact Management
+
+- **Phone Number Validation**: Removed format restrictions for phone number field
+  - Removed minimum/maximum character length validation (10-15 characters)
+  - Now accepts numbers and symbols (e.g., +, -, (, ), spaces, dots)
+  - Still prevents letters/words from being entered
+  - Supports international phone formats like +1-234-567-8900, (123) 456-7890, etc.
+  - Applied to both Add Contact and Edit Contact modals
+
+#### 💬 Omnichannel Communication System
+
+- **Unified Inbox**: Implemented complete omnichannel communication platform
+  - Multi-channel support for WhatsApp and Email in a single interface
+  - Real-time conversation management with message history
+  - Conversation list with unread count, last message preview, and timestamps
+  - Custom time formatting utility to avoid external dependencies
+  - **Real-time Updates**: Automatic polling for new messages and conversations
+    - Inbox polls every 10 seconds for new conversations
+    - Conversation view polls every 5 seconds for new messages
+    - Supports webhook-based message delivery from WhatsApp/Email
+
+- **Account Management**: 
+  - Connect WhatsApp accounts via Twilio integration (phone number, account SID, auth token)
+  - Connect Email accounts with Gmail IMAP/SMTP support (email, app password, display name)
+  - Account list with delete functionality and confirmation modal
+  - Settings page with tabbed interface for managing multiple accounts
+
+- **Conversation Features**:
+  - Message list with sent/received differentiation and timestamps
+  - Message input with text and file upload support
+  - Auto-scroll to latest messages
+  - Mark conversations as read automatically
+  - Delete conversation functionality
+  - New conversation modal with dynamic fields based on channel type
+
+- **API Integration**:
+  - Complete API client with endpoints for accounts, inbox, conversations, and messages
+  - React Query hooks for data fetching with proper cache invalidation
+  - TypeScript type definitions for all data structures
+  - Error handling with user-friendly notifications
+  - Fixed API response parsing to handle nested data structures
+
+- **Navigation**:
+  - Omnichannel menu restored in sidebar with Unified Inbox submenu
+  - Accessible from main navigation under Apps section
+
+- **Bug Fixes**:
+  - Fixed TypeScript errors in AccountList component (button props, modal imports)
+  - Fixed ConversationView to handle both API field name variations (contact_name vs external_contact_name)
+  - Fixed inbox data parsing to extract conversations from nested response structure
+  - Added automatic refetch when navigating back to inbox from conversation
+
+#### 🎨 Navigation
+
+- **Sidebar Cleanup**: Removed unused Power icon import from Sidebar component
+
+#### 📁 Files Modified
+
+- `components/modal/AddContact.tsx`
+- `components/modal/EditContact.tsx`
+- `components/layout/Sidebar.tsx`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/api/omnichannel.ts`
+- `lib/types/omnichannel.ts`
+- `components/omnichannel/AccountList.tsx`
+- `components/omnichannel/ConversationView.tsx`
+- `components/omnichannel/InboxList.tsx`
+
+#### 📁 Files Created (Omnichannel)
+
+- `lib/api/omnichannel.ts`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/types/omnichannel.ts`
+- `components/omnichannel/ConnectWhatsAppForm.tsx`
+- `components/omnichannel/ConnectEmailForm.tsx`
+- `components/omnichannel/AccountList.tsx`
+- `components/omnichannel/InboxList.tsx`
+- `components/omnichannel/NewConversationModal.tsx`
+- `components/omnichannel/MessageList.tsx`
+- `components/omnichannel/MessageInput.tsx`
+- `components/omnichannel/ConversationView.tsx`
+- `app/omnichannel/page.tsx`
+- `app/omnichannel/settings/page.tsx`
+- `app/omnichannel/conversations/[id]/page.tsx`
+
 ## [1.6.20] - 2026-02-20
 
 ### Detail Versi 1.6.20

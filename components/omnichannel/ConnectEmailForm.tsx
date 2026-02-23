@@ -15,7 +15,7 @@ interface ConnectEmailFormProps {
 
 const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExistingEmail }) => {
   const [formData, setFormData] = useState({
-    email_address: "",
+    email: "",
     app_password: "",
     display_name: "",
   });
@@ -37,21 +37,21 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
     }
 
     // Validation
-    if (!formData.email_address || !formData.app_password || !formData.display_name) {
+    if (!formData.email || !formData.app_password || !formData.display_name) {
       notify.warning("Validation Error", { description: "Please fill in all required fields." });
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email_address)) {
+    if (!emailRegex.test(formData.email)) {
       notify.warning("Validation Error", { description: "Please enter a valid email address." });
       return;
     }
 
     try {
       await connectEmailMutation.mutateAsync({
-        email_address: formData.email_address,
+        email: formData.email,
         app_password: formData.app_password,
         display_name: formData.display_name,
         imap_host: 'imap.gmail.com',
@@ -64,7 +64,7 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
       
       // Reset form
       setFormData({
-        email_address: "",
+        email: "",
         app_password: "",
         display_name: "",
       });
@@ -95,8 +95,8 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
             fullWidth
             isBgWhite
             type="email"
-            value={formData.email_address}
-            onChange={(e) => handleChange("email_address", e.target.value)}
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
             placeholder="your.email@gmail.com"
             disabled={connectEmailMutation.isPending || hasExistingEmail}
           />

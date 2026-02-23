@@ -174,6 +174,10 @@ export async function fetchInbox(token: string, channelType?: string, status?: s
 
   // Handle different response structures
   const data = json.data || json;
+  // Check if data has a conversations property
+  if (data.conversations && Array.isArray(data.conversations)) {
+    return data.conversations;
+  }
   return Array.isArray(data) ? data : [];
 }
 

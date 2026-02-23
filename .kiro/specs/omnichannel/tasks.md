@@ -36,7 +36,7 @@
   - Reset form on success
 
 - [x] 2.3 Create ConnectEmailForm component
-  - Build form with email_address, app_password, display_name fields
+  - Build form with email, app_password, display_name fields
   - Add link to Google App Password setup page
   - Check for existing email account and disable form if limit reached
   - Add form validation for required fields

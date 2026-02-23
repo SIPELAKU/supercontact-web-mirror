@@ -21,15 +21,17 @@ export interface Conversation {
   id: string;
   account_id: string;
   channel_type: 'whatsapp' | 'email';
-  contact_name: string;
-  contact_identifier: string;
+  contact_name?: string;
+  contact_identifier?: string;
+  external_contact_name?: string;
+  external_contact_identifier?: string;
   subject?: string;
   status: 'open' | 'closed' | 'archived';
   unread_count: number;
-  last_message_preview: string;
-  last_message_at: string;
+  last_message_preview?: string;
+  last_message_at?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface Message {
@@ -37,11 +39,15 @@ export interface Message {
   conversation_id: string;
   direction: 'inbound' | 'outbound';
   content: string;
+  content_type?: string;
   media_url?: string;
   media_type?: string;
+  sender_identifier?: string;
+  external_message_id?: string;
   status: 'sent' | 'delivered' | 'read' | 'failed';
   sent_at: string;
   created_at: string;
+  attachments?: any[];
 }
 
 export interface ConversationWithMessages extends Conversation {
@@ -56,7 +62,7 @@ export interface ConnectWhatsAppRequest {
 }
 
 export interface ConnectEmailRequest {
-  email_address: string;
+  email: string;
   app_password: string;
   display_name: string;
   imap_host: 'imap.gmail.com';

@@ -6,7 +6,7 @@ import { Loader2, Trash2, Mail, MessageCircle, CheckCircle, XCircle } from "luci
 import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface AccountListProps {
   channelType?: 'whatsapp' | 'email';
@@ -109,8 +109,8 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
 
               <AppButton
                 variantStyle="outline"
-                color="red"
-                size="sm"
+                color="danger"
+                size="small"
                 onClick={() => handleDeleteClick(account.id, account.display_name)}
                 disabled={deleteAccountMutation.isPending}
               >
@@ -121,15 +121,15 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
         ))}
       </div>
 
-      <ConfirmModal
-        open={deleteConfirm.open}
+      <ConfirmationPopup
+        isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, accountId: null, accountName: "" })}
         onConfirm={handleDeleteConfirm}
         title="Delete Account"
         description={`Are you sure you want to delete "${deleteConfirm.accountName}"? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
-        isLoading={deleteAccountMutation.isPending}
+        variant="danger"
       />
     </>
   );

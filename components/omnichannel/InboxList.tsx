@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useInbox } from "@/lib/hooks/useOmnichannel";
 import { Loader2, Mail, MessageCircle } from "lucide-react";
@@ -12,7 +12,12 @@ interface InboxListProps {
 
 const InboxList: React.FC<InboxListProps> = ({ channelType, status }) => {
   const router = useRouter();
-  const { data: conversations, isLoading, error } = useInbox(channelType, status);
+  const { data: conversations, isLoading, error, refetch } = useInbox(channelType, status);
+
+  // Refetch conversations when component mounts or filters change
+  useEffect(() => {
+    refetch();
+  }, [channelType, status, refetch]);
 
   const handleConversationClick = (conversationId: string) => {
     router.push(`/omnichannel/conversations/${conversationId}`);
@@ -81,7 +86,9 @@ const InboxList: React.FC<InboxListProps> = ({ channelType, status }) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-1">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{conversation.contact_name}</h3>
+                  <h3 className="font-semibold text-gray-900 truncate">
+                    {conversation.contact_name || conversation.external_contact_name || 'Unknown Contact'}
+                  </h3>
                   {conversation.subject && (
                     <p className="text-sm text-gray-600 truncate">{conversation.subject}</p>
                   )}
@@ -101,7 +108,7 @@ const InboxList: React.FC<InboxListProps> = ({ channelType, status }) => {
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="capitalize">{conversation.channel_type}</span>
                 <span>•</span>
-                <span>{formatTimeAgo(conversation.last_message_at)}</span>
+                <span>{conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : 'Just now'}</span>
                 <span>•</span>
                 <span className="capitalize">{conversation.status}</span>
               </div>

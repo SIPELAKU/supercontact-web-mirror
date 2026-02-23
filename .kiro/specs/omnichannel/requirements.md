@@ -38,7 +38,7 @@ The Omnichannel Communication System enables users to connect and manage multipl
 
 #### Acceptance Criteria
 
-1. WHEN a user submits email connection details, THE System SHALL validate that email_address, app_password, and display_name are provided
+1. WHEN a user submits email connection details, THE System SHALL validate that email, app_password, and display_name are provided
 2. WHEN valid email credentials are submitted, THE System SHALL create a new email account connection via POST /omnichannels/accounts/email with hardcoded IMAP/SMTP settings (imap_host: imap.gmail.com, imap_port: 993, smtp_host: smtp.gmail.com, smtp_port: 587)
 3. WHEN email account creation succeeds, THE System SHALL return the account details including id, channel_type, channel_identifier, display_name, and is_active
 4. WHEN a company already has one email account connected, THE System SHALL prevent additional email account connections and return an error

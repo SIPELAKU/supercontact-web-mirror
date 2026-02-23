@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useConversation, useMarkAsRead, useDeleteConversation } from "@/lib/hooks/useOmnichannel";
 import { ArrowLeft, Trash2, CheckCheck, Mail, MessageCircle, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import { notify } from "@/lib/notifications";
@@ -79,7 +79,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
             <AppButton
               variantStyle="outline"
               color="gray"
-              size="sm"
+              size="small"
               onClick={() => router.push('/omnichannel')}
             >
               <ArrowLeft size={16} />
@@ -95,8 +95,12 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
               </div>
 
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">{conversation.contact_name}</h1>
-                <p className="text-sm text-gray-600">{conversation.contact_identifier}</p>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {conversation.contact_name || conversation.external_contact_name || 'Unknown Contact'}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {conversation.contact_identifier || conversation.external_contact_identifier || 'N/A'}
+                </p>
                 {conversation.subject && (
                   <p className="text-sm text-gray-500 italic">{conversation.subject}</p>
                 )}
@@ -109,7 +113,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
               <AppButton
                 variantStyle="outline"
                 color="gray"
-                size="sm"
+                size="small"
                 onClick={handleMarkAsRead}
                 disabled={markAsReadMutation.isPending}
               >
@@ -120,8 +124,8 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
 
             <AppButton
               variantStyle="outline"
-              color="red"
-              size="sm"
+              color="danger"
+              size="small"
               onClick={() => setDeleteConfirm(true)}
               disabled={deleteConversationMutation.isPending}
             >
@@ -144,15 +148,15 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
       </div>
 
       {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        open={deleteConfirm}
+      <ConfirmationPopup
+        isOpen={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDeleteConversation}
         title="Delete Conversation"
         description="Are you sure you want to delete this conversation? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
-        isLoading={deleteConversationMutation.isPending}
+        variant="danger"
       />
     </div>
   );

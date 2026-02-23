@@ -102,7 +102,7 @@ interface ConnectEmailFormProps {
 ```
 
 **State:**
-- email_address: string
+- email: string
 - app_password: string
 - display_name: string
 - isSubmitting: boolean
@@ -360,7 +360,7 @@ interface ConnectWhatsAppRequest {
 
 // Email Connection
 interface ConnectEmailRequest {
-  email_address: string;
+  email: string;
   app_password: string;
   display_name: string;
   imap_host: 'imap.gmail.com';

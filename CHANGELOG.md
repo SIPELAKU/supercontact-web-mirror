@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.6] - 2026-02-24
+
+### Detail Versi 1.7.6
+
+#### 🏗️ Contact Module Architecture & Modularity
+
+- **Sub-component Extraction**: Refactored `ContactClient.tsx` by extracting the toolbar and table logic into standalone components (`ContactToolbar.tsx` and `ContactTable.tsx`) to improve maintainability and readability.
+- **Modal Organization**: Centralized all contact-related modals into a dedicated `components/contact/modal/` directory.
+- **Naming Consistency**: Standardized modal filenames by appending the `Modal` suffix (e.g., `AddContactModal.tsx`, `EditContactModal.tsx`).
+- **Dependency Resolution**: Updated all import references in the main contact page and detail page.
+- **Import Fixes**: Resolved broken relative imports in the moved modal components by implementing absolute path aliases.
+
+#### 📁 Files Modified
+
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactTable.tsx` [NEW]
+- `components/contact/ContactToolbar.tsx` [NEW]
+- `components/contact/modal/AddContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/AddTaskModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteMultipleContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/EditContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/ImportContactModal.tsx` [MOVED/RENAMED]
+
+
 ## [1.7.5] - 2026-02-24
 
 ### Detail Versi 1.7.5

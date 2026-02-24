@@ -47,12 +47,15 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     );
   }
 
+  // Only show WhatsApp button on specific routes
+  const showWhatsAppButton = pathname === '/' || pathname === '/company' || pathname === '/price';
+
   // If on auth routes, don't show sidebar/topbar
   if (isAuthRoute) {
     return (
       <main className="min-h-screen">
         {children}
-        <WhatsAppFloatingButton />
+        {showWhatsAppButton && <WhatsAppFloatingButton />}
       </main>
     );
   }

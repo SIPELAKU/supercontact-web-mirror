@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ContactReq } from "@/lib/models/types";
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
+import { Contact, ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2 } from "lucide-react";
-import router from "next/router";
-import { AppInput } from "../ui/app-input";
-import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
-
+import { useRouter } from "next/navigation";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 
@@ -17,7 +16,7 @@ interface InputProps {
   placeholder: string;
   value: string | null;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  isRequired: boolean;
+  isRequired?: boolean;
   error?: string;
 }
 
@@ -28,49 +27,41 @@ const InputField: React.FC<InputProps> = ({
   placeholder,
   isRequired,
   error,
-}) => {
-  return (
-    <div className="flex flex-col w-full gap-2">
-      <label className="font-medium text-gray-700">
-        {label}
+}) => (
+  <div className="flex flex-col w-full gap-2">
+    <label className="font-medium text-gray-700">
+      {label}
+      {isRequired && <span className="text-red-500">*</span>}
+    </label>
+    <AppInput
+      required={isRequired}
+      type="text"
+      value={value ?? ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      isBgWhite
+      className={error ? "border-red-500" : ""}
+    />
+    {error && <span className="text-red-500 text-sm">{error}</span>}
+  </div>
+);
 
-        {isRequired && <span className="text-red-500">*</span>}
-      </label>
-      <AppInput
-        required={isRequired}
-        type="text"
-        value={value ?? ""}
-        onChange={onChange}
-        placeholder={placeholder}
-        isBgWhite
-        className={error ? "border-red-500" : ""}
-      />
-      {error && <span className="text-red-500 text-sm">{error}</span>}
-    </div>
-  );
-};
-
-interface AddContactModalProps {
+interface EditContactModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onDelete: () => void;
+  initialData: Contact | null;
 }
 
-const fieldLabels: Record<string, string> = {
-  name: "Name",
-  phone_number: "Phone Number",
-  email: "Email",
-  company: "Company",
-  position: "Position",
-  address: "Address",
-};
-
-const AddContactModal: React.FC<AddContactModalProps> = ({
+const EditContactModal: React.FC<EditContactModalProps> = ({
   open,
   onClose,
   onSuccess,
+  onDelete,
+  initialData,
 }) => {
-  const [isLoadiNg, setIsLoading] = useState(false);
+  const router = useRouter();
   const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
@@ -81,47 +72,33 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     address: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
-  // Prevent body scroll when modal is open
+  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [open]);
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleClose = () => {
     onClose();
-    setLocal({
-      name: "",
-      phone_number: "",
-      email: "",
-      company: "",
-      position: "",
-      address: "",
-    });
     setErrors({});
   };
 
-  // Selalu reset form saat modal terbuka
   useEffect(() => {
-    if (open) {
+    if (initialData) {
       setLocal({
-        name: "",
-        phone_number: "",
-        email: "",
-        company: "",
-        position: "",
-        address: "",
+        name: initialData.name ?? "",
+        phone_number: initialData.phone_number ?? "",
+        email: initialData.email ?? "",
+        company: initialData.company ?? "",
+        position: initialData.position ?? "",
+        address: initialData.address ?? "",
       });
       setErrors({});
     }
-  }, [open]);
+  }, [initialData]);
 
   const validateFields = (data: ContactReq) => {
     const newErrors: Record<string, string> = {};
@@ -158,21 +135,22 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    setIsLoading(true);
     setErrors({});
     const token = await getToken();
     if (!token) {
       notify.error("Token not found", {
-        description: "Please log in again",
+        description: "Please login again",
       });
       router.push("/login");
       return;
     }
-    // Validasi data
+    if (!initialData) return;
+
+    // Validate data
     const validationErrors = validateFields(local);
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      setIsLoading(false);
       return;
     }
 
@@ -184,20 +162,17 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
     try {
       const token = await getToken();
-      if (!token) {
-        notify.error("Authentication required", {
-          description: "Please log in again",
-        });
-        return;
-      }
 
-      const res = await fetch("/api/proxy/contacts", {
-        method: "POST",
+      const res = await fetch(`/api/proxy/contacts/${initialData.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          id: initialData.id,
+          ...payload,
+        }),
       });
 
       const text = await res.text();
@@ -209,53 +184,49 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       }
 
       if (!res.ok) {
-        const message = result?.error?.message ?? "Failed to add contact";
-        const details = result?.error?.details
-          ?.map((e: any) => {
-            const label = fieldLabels[e.field] || e.field;
-            return `• ${label}: ${e.message}`;
-          })
-          .join("\n");
+        const message = result?.error?.message ?? "Failed to update contact";
+        const details = result?.error?.details?.errors
+          ?.map((e: any) => `• ${e.loc.join(".")}: ${e.msg}`)
+          .join("<br/>");
 
         notify.error("Error", {
           description: details || message,
         });
-        setIsLoading(false);
         return;
       }
 
       onSuccess();
       onClose();
 
-      notify.success("Contact added!", {
-        description: "Contact has been added successfully",
-      });
-    } catch (err) {
-      const message = handleError(err, "Adding contact")
+      notify.success("Contact updated!");
+    } catch (error) {
+      const message = handleError(error, "Updating contact");
       notify.error("Error", {
         description: message,
       });
     }
-    setIsLoading(false);
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
-      <div
-        className="fixed top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-        style={{ height: '100vh', width: '100vw' }}
-        onClick={() => setShowCloseConfirmation(true)}
-      >
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+        {/* Backdrop */}
         <div
-          className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+          className="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
+          onClick={() => setShowCloseConfirmation(true)}
+        />
+
+        {/* Modal Content */}
+        <div
+          className="relative bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
+            <h2 className="text-2xl font-bold text-primary">Edit Contact</h2>
             <p className="text-gray-600 text-md mt-1">
-              Fill in the details below to add a new contact to your CRM.
+              Update contact information
             </p>
 
             <div className="mt-6 flex flex-col md:flex-row gap-4">
@@ -270,7 +241,6 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   placeholder="Enter name"
                   error={errors.name}
                 />
-
                 <InputField
                   label="Email"
                   isRequired={false}
@@ -281,9 +251,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   placeholder="Enter email"
                   error={errors.email}
                 />
-
                 <InputField
-                  isRequired={false}
                   label="Company"
                   value={local.company}
                   onChange={(e) =>
@@ -296,8 +264,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
 
               <div className="w-full md:w-1/2 flex flex-col gap-4">
                 <InputField
-                  isRequired={false}
                   label="Phone Number"
+                  isRequired={false}
                   value={local.phone_number}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -310,10 +278,9 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   placeholder="Enter phone number"
                   error={errors.phone_number}
                 />
-
                 <InputField
-                  isRequired={false}
                   label="Position"
+                  isRequired={false}
                   value={local.position}
                   onChange={(e) =>
                     setLocal((s) => ({ ...s, position: e.target.value }))
@@ -322,7 +289,6 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                   error={errors.position}
                 />
                 <InputField
-                  isRequired={false}
                   label="Address"
                   value={local.address}
                   onChange={(e) =>
@@ -335,16 +301,15 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
-              <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
-                Cancel
+              <AppButton onClick={onDelete} variantStyle="danger" color="danger">
+                Delete
               </AppButton>
-
-              <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
-                {isLoadiNg ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "Save Contact"
-                )}
+              <AppButton
+                onClick={handleSubmit}
+                variantStyle="primary"
+                color="primary"
+              >
+                Update Contact
               </AppButton>
             </div>
           </div>
@@ -359,13 +324,14 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
           handleClose();
         }}
         title="Are you sure?"
-        description="This will discard your current filled data."
-        confirmText="Discard"
+        description="This will discard your current record."
+        confirmText="Discard record"
         cancelText="Cancel"
         variant="danger"
       />
-    </>
+    </>,
+    document.body
   );
 };
 
-export default AddContactModal;
+export default EditContactModal;

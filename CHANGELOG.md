@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
 ## [1.7.7] - 2026-02-24
 
 ### Detail Versi 1.7.7
@@ -23,6 +24,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app/email-marketing/mailing-lists/[id]/page.tsx`
 - `components/email-marketing/campaigns/CampaignsClient.tsx`
 - `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+
+## [1.7.6] - 2026-02-24
+
+### Detail Versi 1.7.6
+
+#### 🏗️ Contact Module Architecture & Modularity
+
+- **Sub-component Extraction**: Refactored `ContactClient.tsx` by extracting the toolbar and table logic into standalone components (`ContactToolbar.tsx` and `ContactTable.tsx`) to improve maintainability and readability.
+- **Modal Organization**: Centralized all contact-related modals into a dedicated `components/contact/modal/` directory.
+- **Naming Consistency**: Standardized modal filenames by appending the `Modal` suffix (e.g., `AddContactModal.tsx`, `EditContactModal.tsx`).
+- **Dependency Resolution**: Updated all import references in the main contact page and detail page.
+- **Import Fixes**: Resolved broken relative imports in the moved modal components by implementing absolute path aliases.
+
+#### 📁 Files Modified
+
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactTable.tsx` [NEW]
+- `components/contact/ContactToolbar.tsx` [NEW]
+- `components/contact/modal/AddContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/AddTaskModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteMultipleContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/EditContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/ImportContactModal.tsx` [MOVED/RENAMED]
+
+
+## [1.7.5] - 2026-02-24
+
+### Detail Versi 1.7.5
+
+#### 🏗️ Contact Module Refactoring & UI Fixes
+
+- **Architectural Cleanup**: Relocated all contact-related components from a generic `modal` folder to a dedicated `components/contact/` directory for better project structure.
+- **New Contact Management**:
+  - Introduced `ContactClient.tsx` to centralize contact list logic, searching, filtering, and bulk actions.
+  - Refactored `app/contact/page.tsx` to utilize the new modular `ContactClient`.
+- **Modal Overlay Standard**: Standardized modal overlays across contact management components to ensure full-screen coverage.
+- **UI Consistency Fixes**:
+  - Implemented **React Portals** for `ImportContactModal`, `EditContact`, and `DeleteContact` to fix backdrop truncation issues.
+  - Standardized all contact modals to use a clean opaque backdrop without blur for optimal performance and design consistency.
+  - Set universal `z-index: 9999` for all contact-related overlays.
+
+#### 📁 Files Modified
+
+- `app/contact/page.tsx`
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx` [NEW]
+- `components/contact/AddContact.tsx` [RENAMED]
+- `components/contact/AddTaskModal.tsx` [RENAMED]
+- `components/contact/DeleteContact.tsx` [RENAMED]
+- `components/contact/DeleteMultipleContact.tsx` [RENAMED]
+- `components/contact/DetailContact.tsx` [RENAMED]
+- `components/contact/EditContact.tsx` [RENAMED]
+- `components/contact/ImportContactModal.tsx` [RENAMED]
+
+## [1.7.4] - 2026-02-24
+
+### Detail Versi 1.7.4
+
+#### ✨ Landing Page Enhancements & Global Setup
+
+- **Global Constants**: Introduced `lib/constants/constants.tsx` to centralize business contact information (`NO_WA`, `EMAIL`).
+- **WhatsApp Integration**:
+  - **Conditional Rendering**: The WhatsApp floating button in `AuthenticatedLayout` is now restricted to landing routes (`/`, `/price`, `/company`) only.
+  - **Dynamic Messaging**: Standardized WhatsApp redirect links in `Hero` and `PricingCards` to use the global `NO_WA` constant and include context-specific messages (e.g., product/plan name).
+- **CTA & Forms**:
+  - **Validation**: Added field validation to the CTA form; the submit button is now disabled until Name, Email, and Message are filled.
+  - **Email Integration**: Updated the `mailto` link in the CTA component to use the new global `EMAIL` constant.
+- **UI/UX Improvements**:
+  - **Pricing Cards**: Refined price display logic for better readability.
+  - **Company Hero**: Updated the "Hubungi Kami" button to link directly to the official Solvera contact page.
+
+#### 📁 Files Modified
+
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/company/CompanyHero.tsx`
+- `components/home/Hero.tsx`
+- `components/price/PricingCards.tsx`
+- `components/layout/CTA.tsx`
+- `lib/constants/constants.tsx` [NEW]
+
+## [1.7.3] - 2026-02-24
+
+### Detail Versi 1.7.3
+
+#### 🏗️ Refactoring & Performance
+
+- **Inbox Component Refactor**: Major architectural improvement of the Inbox system.
+  - Split the massive `InboxClient.tsx` into clean, modular sub-components: `ChatSidebar`, `ChatHeader`, `MessageList`, `MessageItem`, `ChatInput`, `ContactList`, and `ChatModals`.
+  - Extracted shared logic and state management into a dedicated `useChat` custom hook.
+  - Improved code readability and maintainability by separating concerns.
+- **UI/UX Improvements**:
+  - **Auto-scroll**: Implemented automatic scrolling to the latest message on initial load and when receiving new messages.
+  - **Selected Messages**: Improved selection logic and visual feedback in chat.
+- **Bug Fixes & Optimizations**:
+  - **Infinite Fetch Fix**: Resolved multiple infinite network fetching loops in the chat and notifications systems.
+  - **API Fetch Optimization**: Reduced redundant `count` API calls by 66% through stabilization of the `AuthContext` and `getToken` function.
+  - **Memoization**: Applied `useMemo` and `useCallback` to core providers and hooks to prevent cascading re-renders.
+
+#### 📁 Files Modified
+
+- `components/inbox/InboxClient.tsx`
+- `components/inbox/MessageList.tsx`
+- `components/inbox/MessageItem.tsx`
+- `components/inbox/ChatSidebar.tsx`
+- `components/inbox/ChatHeader.tsx`
+- `components/inbox/ChatInput.tsx`
+- `components/inbox/ContactList.tsx`
+- `components/inbox/ChatModals.tsx`
+- `lib/hooks/useChat.ts`
+- `lib/context/AuthContext.tsx`
+- `components/layout/Topbar.tsx`
 
 ## [1.7.2] - 2026-02-24
 

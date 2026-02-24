@@ -13,6 +13,7 @@ import {
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import SendIcon from '@mui/icons-material/Send';
+import { EMAIL } from '@/lib/constants/constants';
 
 const CTA = () => {
     useLanguage();
@@ -37,7 +38,7 @@ const CTA = () => {
         );
 
         // Destination email is empty for now as requested
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
     };
 
     return (
@@ -200,6 +201,7 @@ const CTA = () => {
                                     <Button
                                         variant="contained"
                                         color="primary"
+                                        disabled={!formData.fullName || !formData.email || !formData.message}
                                         size="large"
                                         endIcon={<SendIcon />}
                                         onClick={handleSubmit}

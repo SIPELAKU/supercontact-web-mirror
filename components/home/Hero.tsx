@@ -17,6 +17,7 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { NO_WA } from '@/lib/constants/constants';
 
 const Hero = () => {
     useLanguage();
@@ -71,7 +72,7 @@ const Hero = () => {
                                 startIcon={<WhatsAppIcon />}
                                 onClick={() => {
                                     const message = encodeURIComponent("Halo, saya tertarik dengan product supersales");
-                                    window.open(`https://wa.me/?text=${message}`, '_blank');
+                                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                                 }}
                                 sx={{
                                     backgroundColor: 'white',

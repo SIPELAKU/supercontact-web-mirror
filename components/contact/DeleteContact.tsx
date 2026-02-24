@@ -2,7 +2,8 @@
 
 import { notify } from "@/lib/notifications";
 import { useDeleteContact } from "@/lib/hooks/useContacts";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { Contact } from "@/lib/models/types";
 import { AppButton } from "../ui/app-button";
 
@@ -20,6 +21,12 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
   initialData,
 }) => {
   const deleteContactMutation = useDeleteContact();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleSubmit = async () => {
     if (!initialData) return;
@@ -36,15 +43,19 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-      onClick={onClose}
-    >
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+        className="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <div
+        className="relative bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 z-10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 text-start">
@@ -71,7 +82,8 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

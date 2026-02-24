@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.5] - 2026-02-24
+
+### Detail Versi 1.7.5
+
+#### 🏗️ Contact Module Refactoring & UI Fixes
+
+- **Architectural Cleanup**: Relocated all contact-related components from a generic `modal` folder to a dedicated `components/contact/` directory for better project structure.
+- **New Contact Management**:
+  - Introduced `ContactClient.tsx` to centralize contact list logic, searching, filtering, and bulk actions.
+  - Refactored `app/contact/page.tsx` to utilize the new modular `ContactClient`.
+- **Modal Overlay Standard**: Standardized modal overlays across contact management components to ensure full-screen coverage.
+- **UI Consistency Fixes**:
+  - Implemented **React Portals** for `ImportContactModal`, `EditContact`, and `DeleteContact` to fix backdrop truncation issues.
+  - Standardized all contact modals to use a clean opaque backdrop without blur for optimal performance and design consistency.
+  - Set universal `z-index: 9999` for all contact-related overlays.
+
+#### 📁 Files Modified
+
+- `app/contact/page.tsx`
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx` [NEW]
+- `components/contact/AddContact.tsx` [RENAMED]
+- `components/contact/AddTaskModal.tsx` [RENAMED]
+- `components/contact/DeleteContact.tsx` [RENAMED]
+- `components/contact/DeleteMultipleContact.tsx` [RENAMED]
+- `components/contact/DetailContact.tsx` [RENAMED]
+- `components/contact/EditContact.tsx` [RENAMED]
+- `components/contact/ImportContactModal.tsx` [RENAMED]
 
 ## [1.7.4] - 2026-02-24
 

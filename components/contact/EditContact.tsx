@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import { Contact, ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
@@ -73,6 +74,12 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleClose = () => {
     onClose();
@@ -200,16 +207,20 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-        onClick={() => setShowCloseConfirmation(true)}
-      >
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+        {/* Backdrop */}
         <div
-          className="bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+          className="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
+          onClick={() => setShowCloseConfirmation(true)}
+        />
+
+        {/* Modal Content */}
+        <div
+          className="relative bg-white rounded-xl shadow-xl w-full max-w-[888px] max-h-[90vh] overflow-y-auto flex flex-col animate-in zoom-in-95 duration-200 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
@@ -318,7 +329,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
         cancelText="Cancel"
         variant="danger"
       />
-    </>
+    </>,
+    document.body
   );
 };
 

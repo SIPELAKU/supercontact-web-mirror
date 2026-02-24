@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Detail Versi 1.7.7
 
-#### ✉️ Email Marketing & Campaigns
+  #### ✉️ Email Marketing & Campaigns
+  
+  - **Visual Builder State Preservation**: Fixed an issue where the Unlayer visual builder would lose its drag-and-drop design state after saving as a draft. The rich design JSON is now seamlessly embedded and hydrated from within the `html_content` payload.
+  - **Simple Editor Saving**: Fixed a race condition where saving a campaign from the Simple Editor tab would sometimes overwrite the content with an empty visual builder state.
+  - **Editor Default State**: Campaigns now always open in the "Editor Sederhana" (Simple Editor) tab by default. This ensures the Visual Builder's iframe fully mounts in the background before use, preventing empty canvas loads.
 
 - **Campaign Editor Type**: Added support for `editor_type` tracking in `POST` and `PUT` payloads to differentiate between Simple Editor and Visual Builder.
 - **Campaign Statistics**: Added a new popup view to visualize delivery statistics (Delivered, Opened, Clicked, Bounced) on the Campaigns table.

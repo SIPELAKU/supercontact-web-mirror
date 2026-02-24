@@ -90,8 +90,12 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
 
   const handleSubmit = async (action: 'send' | 'draft') => {
     // Export content from Visual Builder before submission
+    let finalHtmlContent = htmlContent;
     if (editorRef.current) {
-      await editorRef.current.exportContent();
+      const result = await editorRef.current.exportContent();
+      if (result && result.html) {
+        finalHtmlContent = result.html;
+      }
     }
 
     const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
@@ -104,7 +108,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       setError("Subject is required.");
       return;
     }
-    if (!htmlContent.trim()) {
+    if (!finalHtmlContent.trim()) {
       setError("Email content is required.");
       return;
     }
@@ -124,7 +128,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         recipient_source: recipientSource,
         editor_type: currentEditorType,
         subject: subject.trim(),
-        html_content: htmlContent.trim(),
+        html_content: finalHtmlContent.trim(),
         action,
         mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
         contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,

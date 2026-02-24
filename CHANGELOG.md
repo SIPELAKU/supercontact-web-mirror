@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.7.1] - 2026-02-24
+
+### Detail Versi 1.7.1
+
+#### 🎨 UI/UX Improvements
+
+- **Analytics Dashboard Cards**: Fixed an issue where the `CardStatistik` component's height was uneven and large numbers (like Average Deal Size) would wrap poorly or get cut off. Fixed applying `height: 100%`, `white-space: nowrap`, responsive font scaling, and text truncation (`text-overflow: ellipsis`) so cards align perfectly in grid view and big numbers always fit nicely.
+
+#### 📁 Files Modified
+
+- `components/ui/card-stat.tsx`
+- `package.json`
+
 ## [1.7.0] - 2026-02-23
 
 ### Detail Versi 1.7.0

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.7.2] - 2026-02-24
+
+### Detail Versi 1.7.2
+
+#### ✨ New Features & Improvements
+
+- **Omnichannel Chat**: Added in-app image attachments preview with Next.js `Image`. Clicking on a chat image now seamlessly opens a full-screen lightbox modal instead of opening in a new tab. 
+- **Next Config**: Whitelisted `vercel-storage.com` in `next.config.mjs` to support Next image optimization for message attachments.
+
+#### 📁 Files Modified
+
+- `components/omnichannel/MessageList.tsx`
+- `next.config.mjs`
+- `package.json`
+- `package-lock.json`
+
 ## [1.7.1] - 2026-02-24
 
 ### Detail Versi 1.7.1

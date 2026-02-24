@@ -1,34 +1,19 @@
 "use client"
 
-import { Trash2, Search, Download, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import AddContactModal from "@/components/contact/AddContact";
-import EditContactModal from "@/components/contact/EditContact";
-import DeleteContactModal from "@/components/contact/DeleteContact";
-import ColumnVisibilityPopover from "@/components/contact/column-visibility-popover";
-import FilterPopover from "@/components/contact/filter-popover";
-import DensityPopover, { Density } from "@/components/contact/density-popover";
-import ExportPopover from "@/components/contact/export-popover";
+import AddContactModal from "@/components/contact/modal/AddContactModal";
+import EditContactModal from "@/components/contact/modal/EditContactModal";
+import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
+import { Density } from "@/components/contact/density-popover";
 import { Contact } from "@/lib/models/types";
-import Pagination from "@/components/ui/pagination";
-import DeleteMultipleContactModal from "@/components/contact/DeleteMultipleContact";
-import ImportContactModal from "@/components/contact/ImportContactModal";
+import DeleteMultipleContactModal from "@/components/contact/modal/DeleteMultipleContactModal";
+import ImportContactModal from "@/components/contact/modal/ImportContactModal";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
-import { AppButton } from "@/components/ui/app-button";
-import { AppInput } from "@/components/ui/app-input";
-import { Box, CircularProgress } from "@mui/material";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    Checkbox
-} from "@mui/material";
 import PageHeader from "@/components/ui/page-header";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
+import { ContactToolbar } from "./ContactToolbar";
+import { ContactTable } from "./ContactTable";
 
 export const ContactClient = () => {
     const [openAdd, setOpenAdd] = useState(false);
@@ -178,8 +163,6 @@ export const ContactClient = () => {
         }
     };
 
-    const isColumnVisible = (id: string) => visibleColumns.includes(id);
-
     // Client-side filtering logic
     const filteredData = dataContact.filter((item) => {
         if (filters.length === 0) return true;
@@ -272,217 +255,41 @@ export const ContactClient = () => {
             />
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
-                <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 pt-5">
-                    <div className="flex flex-wrap gap-2">
-                        <ColumnVisibilityPopover
-                            columns={allColumns}
-                            visibleColumns={visibleColumns}
-                            onChange={setVisibleColumns}
-                        />
-                        <FilterPopover
-                            columns={allColumns.filter(
-                                (c) => c.id !== "selection" && c.id !== "action",
-                            )}
-                            onApply={setFilters}
-                        />
-                        <DensityPopover density={density} onChange={setDensity} />
-                        <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
-                        <div className="flex items-center relative w-full md:w-64">
-                            <AppInput
-                                startIcon={<Search size={16} />}
-                                placeholder="Search"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                isBgWhite
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-row flex-nowrap gap-3 shrink-0">
-                        {selectedContacts.length > 0 && (
-                            <AppButton
-                                onClick={() => setOpenDeleteMultiple(true)}
-                                variantStyle="danger"
-                                startIcon={<Trash2 size={16} />}
-                            >
-                                Delete
-                            </AppButton>
-                        )}
-                        <AppButton
-                            onClick={() => setOpenImport(true)}
-                            variantStyle="primary"
-                            startIcon={<Download size={16} />}
-                        >
-                            Import
-                        </AppButton>
-                        <AppButton
-                            onClick={() => setOpenAdd(true)}
-                            variantStyle="primary"
-                            startIcon={<Plus size={16} />}
-                        >
-                            Add Contact
-                        </AppButton>
-                    </div>
-                </section>
+                <ContactToolbar
+                    allColumns={allColumns}
+                    visibleColumns={visibleColumns}
+                    setVisibleColumns={setVisibleColumns}
+                    setFilters={setFilters}
+                    density={density}
+                    setDensity={setDensity}
+                    handleExportCSV={handleExportCSV}
+                    handlePrint={handlePrint}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    selectedContacts={selectedContacts}
+                    onOpenAdd={() => setOpenAdd(true)}
+                    onOpenImport={() => setOpenImport(true)}
+                    onOpenDeleteMultiple={() => setOpenDeleteMultiple(true)}
+                />
 
-                <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-                    <Table sx={{ minWidth: 900 }}>
-                        <TableHead>
-                            <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-                                {isColumnVisible("selection") && (
-                                    <TableCell align="center" sx={{ py: 2, pl: 3, maxWidth: 50, width: 30 }}>
-                                        <Checkbox
-                                            checked={
-                                                selected.length === filteredData?.length &&
-                                                filteredData.length > 0
-                                            }
-                                            onChange={handleSelectAll}
-                                            color="primary"
-                                            sx={{ p: 0 }}
-                                        />
-                                    </TableCell>
-                                )}
-                                {isColumnVisible("name") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Name</TableCell>}
-                                {isColumnVisible("phone") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Phone</TableCell>}
-                                {isColumnVisible("position") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>}
-                                {isColumnVisible("company") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>}
-                                {isColumnVisible("action") && <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 6 }}>Action</TableCell>}
-                            </TableRow>
-                        </TableHead>
-
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={allColumns.length} sx={{ p: 0 }}>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                height: 120,
-                                            }}
-                                        >
-                                            <CircularProgress size={30} />
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ) : filteredData.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={allColumns.length} sx={{ p: 0 }}>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                height: 120,
-                                            }}
-                                        >
-                                            <p className="text-gray-500">No contacts found</p>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                filteredData?.map((item, i) => (
-                                    <TableRow
-                                        key={i}
-                                        hover
-                                        onClick={() => handleDetail(item)}
-                                        sx={{
-                                            '&:hover': { bgcolor: '#f9fafb' },
-                                            '& td': { borderBottom: '1px solid #f3f4f6' },
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        {isColumnVisible("selection") && (
-                                            <TableCell
-                                                align="right"
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                                                    pl: 3
-                                                }}
-                                            >
-                                                <Checkbox
-                                                    checked={selected.includes(i)}
-                                                    onChange={() => handleSelectRow(i)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    color="primary"
-                                                    sx={{ p: 0 }}
-                                                />
-                                            </TableCell>
-                                        )}
-
-                                        {isColumnVisible("name") && (
-                                            <TableCell
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-[#5479EE] shrink-0"></div>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-semibold text-gray-900">{item.name}</span>
-                                                        <span className="text-gray-500 text-sm">{item.email}</span>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                        )}
-
-                                        {isColumnVisible("phone") && (
-                                            <TableCell
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                                                    color: 'text.primary'
-                                                }}
-                                            >
-                                                {item.phone_number || "-"}
-                                            </TableCell>
-                                        )}
-                                        {isColumnVisible("position") && (
-                                            <TableCell
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                                                    color: 'text.primary'
-                                                }}
-                                            >
-                                                {item.position || "-"}
-                                            </TableCell>
-                                        )}
-                                        {isColumnVisible("company") && (
-                                            <TableCell
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                                                    color: 'text.primary'
-                                                }}
-                                            >
-                                                {item.company || "-"}
-                                            </TableCell>
-                                        )}
-
-                                        {isColumnVisible("action") && (
-                                            <TableCell
-                                                sx={{
-                                                    py: density === "compact" ? 1 : density === "comfortable" ? 2.5 : 2,
-                                                    pr: 6
-                                                }}
-                                            >
-                                                <div className="flex gap-3 text-gray-600">
-                                                    <EditButton onClick={(e) => { e.stopPropagation(); handleEdit(item) }} />
-                                                    <DeleteButton onClick={(e) => { e.stopPropagation(); handleDelete(item) }} />
-                                                </div>
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                )))}
-                        </TableBody>
-                    </Table>
-
-                    <Pagination
-                        page={page}
-                        rowsPerPage={rowsPerPage}
-                        count={totalCount}
-                        onPageChange={handleChangePage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                    />
-                </div>
+                <ContactTable
+                    loading={loading}
+                    filteredData={filteredData}
+                    density={density}
+                    visibleColumns={visibleColumns}
+                    selected={selected}
+                    handleSelectAll={handleSelectAll}
+                    handleSelectRow={handleSelectRow}
+                    handleEdit={handleEdit}
+                    handleDelete={handleDelete}
+                    handleDetail={handleDetail}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    totalCount={totalCount}
+                    handleChangePage={handleChangePage}
+                    handleChangeRowsPerPage={handleChangeRowsPerPage}
+                    allColumnsCount={allColumns.length}
+                />
             </div>
 
             <AddContactModal

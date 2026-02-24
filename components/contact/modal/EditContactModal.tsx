@@ -6,8 +6,8 @@ import { Contact, ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 import { useRouter } from "next/navigation";
-import { AppInput } from "../ui/app-input";
-import { AppButton } from "../ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 

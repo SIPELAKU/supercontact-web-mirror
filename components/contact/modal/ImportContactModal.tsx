@@ -7,7 +7,7 @@ import { Loader2, Upload, FileSpreadsheet, X, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { ContactReq } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
-import { AppButton } from "../ui/app-button";
+import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface ImportContactModalProps {

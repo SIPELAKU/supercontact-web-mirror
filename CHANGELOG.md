@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.7.3] - 2026-02-24
+
+### Detail Versi 1.7.3
+
+#### 🏗️ Refactoring & Performance
+
+- **Inbox Component Refactor**: Major architectural improvement of the Inbox system.
+  - Split the massive `InboxClient.tsx` into clean, modular sub-components: `ChatSidebar`, `ChatHeader`, `MessageList`, `MessageItem`, `ChatInput`, `ContactList`, and `ChatModals`.
+  - Extracted shared logic and state management into a dedicated `useChat` custom hook.
+  - Improved code readability and maintainability by separating concerns.
+- **UI/UX Improvements**:
+  - **Auto-scroll**: Implemented automatic scrolling to the latest message on initial load and when receiving new messages.
+  - **Selected Messages**: Improved selection logic and visual feedback in chat.
+- **Bug Fixes & Optimizations**:
+  - **Infinite Fetch Fix**: Resolved multiple infinite network fetching loops in the chat and notifications systems.
+  - **API Fetch Optimization**: Reduced redundant `count` API calls by 66% through stabilization of the `AuthContext` and `getToken` function.
+  - **Memoization**: Applied `useMemo` and `useCallback` to core providers and hooks to prevent cascading re-renders.
+
+#### 📁 Files Modified
+
+- `components/inbox/InboxClient.tsx`
+- `components/inbox/MessageList.tsx`
+- `components/inbox/MessageItem.tsx`
+- `components/inbox/ChatSidebar.tsx`
+- `components/inbox/ChatHeader.tsx`
+- `components/inbox/ChatInput.tsx`
+- `components/inbox/ContactList.tsx`
+- `components/inbox/ChatModals.tsx`
+- `lib/hooks/useChat.ts`
+- `lib/context/AuthContext.tsx`
+- `components/layout/Topbar.tsx`
+
 ## [1.7.2] - 2026-02-24
 
 ### Detail Versi 1.7.2

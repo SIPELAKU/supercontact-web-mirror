@@ -3,10 +3,12 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
+import { AppSelect } from '@/components/ui/app-select';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
+import { useMailServers } from '@/lib/hooks/useMailServers';
 import {
   Alert,
   Box,
@@ -43,13 +45,17 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'subscriber'>('mailing_list');
   const [selectedMailingLists, setSelectedMailingLists] = useState<string[]>([]);
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
+  const [selectedMailServer, setSelectedMailServer] = useState<string>('');
   const [error, setError] = useState('');
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
   const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
+  const { data: mailServersData, isLoading: isLoadingMailServers } = useMailServers(1, 100);
+
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || []; // API returns contacts field
+  const mailServers = mailServersData?.data?.mail_servers || [];
 
   // Debug log to see what we're getting
   console.log('Subscribers data:', subscribersData);
@@ -61,6 +67,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setRecipientSource('mailing_list');
     setSelectedMailingLists([]);
     setSelectedSubscribers([]);
+    setSelectedMailServer('');
     setError('');
     onClose();
   };
@@ -87,6 +94,12 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       await editorRef.current.exportContent();
     }
 
+    const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
+
+    if (!selectedMailServer) {
+      setError("Please select a Mail Server.");
+      return;
+    }
     if (!subject.trim()) {
       setError("Subject is required.");
       return;
@@ -109,11 +122,13 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     try {
       await createMutation.mutateAsync({
         recipient_source: recipientSource,
+        editor_type: currentEditorType,
         subject: subject.trim(),
         html_content: htmlContent.trim(),
         action,
         mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
         contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
+        mail_server_id: selectedMailServer,
       });
 
       notify.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
@@ -135,7 +150,23 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Box>
-            <label htmlFor="email-subject">Email Subject</label>
+            <AppSelect
+              label="Mail Server *"
+              placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select Mail Server"}
+              value={selectedMailServer}
+              onChange={(e) => setSelectedMailServer(e.target.value as string)}
+              options={mailServers.map(server => ({
+                value: server.id,
+                label: server.name
+              }))}
+              isBgWhite
+              error={Boolean(error && !selectedMailServer)}
+              helperText={error && !selectedMailServer ? "Mail server is required" : ""}
+            />
+          </Box>
+
+          <Box>
+            <label htmlFor="email-subject">Email Subject *</label>
             <AppInput
               isBgWhite
               placeholder='Enter email subject'

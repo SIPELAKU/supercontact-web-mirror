@@ -10,18 +10,20 @@ interface EmailTabbedEditorProps {
     value: string;
     onChange: (html: string) => void;
     isLoading?: boolean;
+    defaultEditorType?: 'simple_editor' | 'visual_builder';
 }
 
 export interface EmailTabbedEditorRef {
     exportContent: () => Promise<void>;
+    getEditorType: () => 'simple_editor' | 'visual_builder';
 }
 
 
 const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProps>((
-    { value, onChange, isLoading = false },
+    { value, onChange, isLoading = false, defaultEditorType = 'simple_editor' },
     ref
 ) => {
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState(defaultEditorType === 'visual_builder' ? 1 : 0);
     const editorRef = useRef<any>(null);
     const contentEditableRef = useRef<HTMLDivElement>(null);
     const [internalHtml, setInternalHtml] = useState(value);
@@ -75,6 +77,7 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
     // Expose exportContent method via ref
     useImperativeHandle(ref, () => ({
         exportContent: exportVisualBuilderContent,
+        getEditorType: () => activeTab === 1 ? 'visual_builder' : 'simple_editor',
     }));
 
     const handleTabChange = async (event: React.SyntheticEvent, newValue: number) => {

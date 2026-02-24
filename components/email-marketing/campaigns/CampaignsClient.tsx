@@ -8,6 +8,7 @@ import { notify } from '@/lib/notifications';
 import CampaignsTable from '@/components/email-marketing/campaigns/CampaignsTable';
 import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddCampaignModal';
 import EditCampaignModal from '@/components/email-marketing/campaigns/modals/EditCampaignModal';
+import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteCampaign } from '@/lib/hooks/useCampaigns';
 import { Campaign } from '@/lib/types/email-marketing';
@@ -16,6 +17,7 @@ import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 export default function CampaignsClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -30,6 +32,7 @@ export default function CampaignsClient() {
   const handleCloseModals = () => {
     setAddModalOpen(false);
     setEditModalOpen(false);
+    setViewModalOpen(false);
     setSelectedCampaign(null);
   };
 
@@ -44,8 +47,8 @@ export default function CampaignsClient() {
   };
 
   const handleView = (campaign: Campaign) => {
-    notify.info('View statistics coming soon!');
-    // TODO: Implement view modal
+    setSelectedCampaign(campaign);
+    setViewModalOpen(true);
   };
 
   const handleDeleteRequest = (campaign: Campaign) => {
@@ -105,6 +108,12 @@ export default function CampaignsClient() {
         open={isEditModalOpen}
         onClose={handleCloseModals}
         onSuccess={handleSuccess}
+        campaign={selectedCampaign}
+      />
+
+      <ViewCampaignStatsModal
+        open={isViewModalOpen}
+        onClose={handleCloseModals}
         campaign={selectedCampaign}
       />
 

@@ -136,6 +136,10 @@ export interface Campaign {
   status: string;
   total_target: number;
   recipient_source: string;
+  mailing_list_ids?: string[];
+  contact_ids?: string[];
+  editor_type?: 'simple_editor' | 'visual_builder';
+  mail_server_id?: string;
   sent_at: string | null;
   stats: {
     delivered: number;
@@ -171,20 +175,24 @@ export interface CampaignDetailResponse {
 
 export interface CreateCampaignData {
   recipient_source: 'mailing_list' | 'subscriber';
+  editor_type: 'simple_editor' | 'visual_builder';
   subject: string;
   html_content: string;
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
+  mail_server_id: string;
 }
 
 export interface UpdateCampaignData {
   recipient_source: 'mailing_list' | 'subscriber';
+  editor_type: 'simple_editor' | 'visual_builder';
   subject: string;
   html_content: string;
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
+  mail_server_id: string;
 }
 
 export interface Contact {

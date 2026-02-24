@@ -12,7 +12,7 @@ import { notify } from "@/lib/notifications";
 import { Modal, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
-import { ConfirmationPopup } from "../ui/confirmation-popup";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 
 interface AddTaskModalProps {

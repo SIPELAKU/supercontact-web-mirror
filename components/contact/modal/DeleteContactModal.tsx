@@ -5,7 +5,7 @@ import { useDeleteContact } from "@/lib/hooks/useContacts";
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Contact } from "@/lib/models/types";
-import { AppButton } from "../ui/app-button";
+import { AppButton } from "@/components/ui/app-button";
 
 interface DeleteContactModalProps {
   open: boolean;

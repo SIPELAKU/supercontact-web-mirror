@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.7.4] - 2026-02-24
+
+### Detail Versi 1.7.4
+
+#### ✨ Landing Page Enhancements & Global Setup
+
+- **Global Constants**: Introduced `lib/constants/constants.tsx` to centralize business contact information (`NO_WA`, `EMAIL`).
+- **WhatsApp Integration**:
+  - **Conditional Rendering**: The WhatsApp floating button in `AuthenticatedLayout` is now restricted to landing routes (`/`, `/price`, `/company`) only.
+  - **Dynamic Messaging**: Standardized WhatsApp redirect links in `Hero` and `PricingCards` to use the global `NO_WA` constant and include context-specific messages (e.g., product/plan name).
+- **CTA & Forms**:
+  - **Validation**: Added field validation to the CTA form; the submit button is now disabled until Name, Email, and Message are filled.
+  - **Email Integration**: Updated the `mailto` link in the CTA component to use the new global `EMAIL` constant.
+- **UI/UX Improvements**:
+  - **Pricing Cards**: Refined price display logic for better readability.
+  - **Company Hero**: Updated the "Hubungi Kami" button to link directly to the official Solvera contact page.
+
+#### 📁 Files Modified
+
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/company/CompanyHero.tsx`
+- `components/home/Hero.tsx`
+- `components/price/PricingCards.tsx`
+- `components/layout/CTA.tsx`
+- `lib/constants/constants.tsx` [NEW]
+
 ## [1.7.3] - 2026-02-24
 
 ### Detail Versi 1.7.3

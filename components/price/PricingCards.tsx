@@ -3,6 +3,7 @@ import { Box, Typography, Button, Paper, Grid, Chip, List, ListItem, ListItemIco
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { strings } from '@/lib/utils/strings';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { NO_WA } from '@/lib/constants/constants';
 
 const PlanCard = ({
     title,
@@ -80,9 +81,9 @@ const PlanCard = ({
                         </Typography>
                         <Typography variant="h3" sx={{ fontWeight: 700, color: '#5570F1' }}>
                             {price.replace("Rp ", "").replace("Rp. ", "").replace("k", "")}
-                            <Typography component="span" variant="h3" sx={{ fontWeight: 700, textTransform: 'none' }}>
+                            {/* <Typography component="span" variant="h3" sx={{ fontWeight: 700, textTransform: 'none' }}>
                                 {price.toLowerCase().includes('k') ? 'k' : ''}
-                            </Typography>
+                            </Typography> */}
                         </Typography>
                         {date && (
                             <Typography variant="body2" sx={{ alignSelf: 'flex-end', mb: 1, ml: 0.5, color: '#64748B' }}>
@@ -114,6 +115,10 @@ const PlanCard = ({
                 variant="contained"
                 size="large"
                 fullWidth
+                onClick={() => {
+                    const message = encodeURIComponent(`Halo, saya tertarik dengan product ${title}`);
+                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
+                }}
                 startIcon={<WhatsAppIcon />}
                 sx={{
                     borderRadius: '12px',

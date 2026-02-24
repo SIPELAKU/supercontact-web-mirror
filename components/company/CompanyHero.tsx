@@ -47,6 +47,8 @@ const CompanyHero = () => {
                     {strings.company_hero_desc}
                 </Typography>
                 <Button
+                    href="https://solvera.id/hubungi-kami"
+                    target="_blank"
                     variant="contained"
                     size="large"
                     sx={{

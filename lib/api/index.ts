@@ -43,7 +43,7 @@ export {
     // Campaigns
     fetchCampaigns, fetchMailingListDetail,
     // Mailing Lists
-    fetchMailingLists,
+    fetchMailingLists, fetchMailingListCampaigns,
     // Subscribers
     fetchSubscribers, updateCampaign, updateMailingList, updateSubscriber,
     type UpdateSubscriberData

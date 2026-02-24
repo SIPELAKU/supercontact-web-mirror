@@ -4,8 +4,9 @@
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteMailingListSubscriber, useMailingListDetail } from '@/lib/hooks/useMailingLists';
+import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
+import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import {
     Box,
     Chip,
@@ -55,13 +56,18 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1);
+
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
+    const [isViewModalOpen, setViewModalOpen] = useState(false);
+    const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
 
     const mailingList = mailingListData?.data;
     const subscribers = mailingList?.subscribers?.contacts || [];
-    const campaigns: Campaign[] = []; // Campaigns will be implemented later
+    const campaigns: Campaign[] = campaignsData?.data?.campaigns || [];
+    const totalCampaigns = campaignsData?.data?.total || 0;
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
@@ -114,10 +120,8 @@ const MailingListDetailPage = () => {
         subscriberPage * subscriberRowsPerPage + subscriberRowsPerPage
     );
 
-    const paginatedCampaigns = filteredCampaigns.slice(
-        campaignPage * campaignRowsPerPage,
-        campaignPage * campaignRowsPerPage + campaignRowsPerPage
-    );
+    // Campaigns are paginated on server
+    const paginatedCampaigns = filteredCampaigns;
 
     if (isLoading) {
         return (
@@ -318,7 +322,13 @@ const MailingListDetailPage = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {paginatedCampaigns.length === 0 ? (
+                                    {isLoadingCampaigns || isFetchingCampaigns ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                                                <CircularProgress size={30} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : paginatedCampaigns.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                                                 <Typography variant="body2" color="text.secondary">
@@ -354,7 +364,10 @@ const MailingListDetailPage = () => {
                                                         <Tooltip title="View Statistics">
                                                             <IconButton
                                                                 size="small"
-                                                                onClick={() => notify.info('View statistics feature coming soon!')}
+                                                                onClick={() => {
+                                                                    setSelectedCampaign(campaign);
+                                                                    setViewModalOpen(true);
+                                                                }}
                                                             >
                                                                 <Eye size={18} />
                                                             </IconButton>
@@ -369,7 +382,7 @@ const MailingListDetailPage = () => {
                             <TablePagination
                                 rowsPerPageOptions={[5, 10, 25, 50]}
                                 component="div"
-                                count={filteredCampaigns.length}
+                                count={totalCampaigns}
                                 rowsPerPage={campaignRowsPerPage}
                                 page={campaignPage}
                                 onPageChange={(_e, newPage) => setCampaignPage(newPage)}
@@ -414,6 +427,15 @@ const MailingListDetailPage = () => {
                     </AppButton>
                 </DialogActions>
             </Dialog>
+
+            <ViewCampaignStatsModal
+                open={isViewModalOpen}
+                onClose={() => {
+                    setViewModalOpen(false);
+                    setSelectedCampaign(null);
+                }}
+                campaign={selectedCampaign}
+            />
         </Box>
     );
 };

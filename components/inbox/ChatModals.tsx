@@ -194,7 +194,7 @@ export default function ChatModals({
 
             {/* Image Preview Modal */}
             {previewImage && (
-                <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-200">
+                <div className="fixed inset-0 z-100 bg-white flex flex-col animate-in fade-in duration-200">
                     <div className="flex items-center justify-between p-4 px-6 border-b border-gray-100">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold overflow-hidden">

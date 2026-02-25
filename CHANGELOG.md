@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Subscription & Billing
 
+- **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
 - **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
 - **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
 - **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.

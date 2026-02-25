@@ -28,8 +28,12 @@ const StyledTextField = styled(TextField, {
             fontSize: "14px",
             fontWeight: 400,
             lineHeight: "20px",
-            height: height ? height : "40px",
+            minHeight: height ? height : "40px",
             width: width ? width : "100%",
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: "9px", // Space for tags
+            paddingRight: "30px", // Space for popup icon
 
             "& fieldset": {
                 borderColor: BORDER_COLOR,
@@ -50,9 +54,8 @@ const StyledTextField = styled(TextField, {
 
             // Adjust padding for Autocomplete to match AppSelect
             "& .MuiAutocomplete-input": {
-                padding: "10px 14px !important",
+                padding: "4px 5px !important",
             },
-            padding: "0px",
         },
 
         "& .MuiFormHelperText-root": {

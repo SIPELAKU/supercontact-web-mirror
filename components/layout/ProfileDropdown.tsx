@@ -11,13 +11,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
+import { LogOut, Mail, SquareUserRound, Building2, CreditCard } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { logout, userProfile, userRole, userCompany, userSubscription } = useAuth();
+  const { logout, userProfile, userRole, userCompany, userPlanName } = useAuth();
 
   const open = Boolean(anchorEl);
 
@@ -106,14 +106,14 @@ const ProfileDropdown = () => {
               <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, fontWeight: 500 }}>
                 {userProfile?.role || userRole || "User"}
               </Typography>
-              {userSubscription && (
+              {userPlanName && (
                 <Box
                   sx={{
                     px: 1,
                     py: 0.2,
                     borderRadius: 1,
-                    bgcolor: userSubscription.toLowerCase() === 'trial' ? 'warning.light' : 'success.light',
-                    color: userSubscription.toLowerCase() === 'trial' ? 'warning.dark' : 'success.dark',
+                    bgcolor: userPlanName.toLowerCase() === 'trial' ? 'warning.light' : 'success.light',
+                    color: userPlanName.toLowerCase() === 'trial' ? 'warning.dark' : 'success.dark',
                     fontSize: '0.625rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
@@ -122,7 +122,7 @@ const ProfileDropdown = () => {
                     lineHeight: 1
                   }}
                 >
-                  {userSubscription}
+                  {userPlanName}
                 </Box>
               )}
             </Stack>
@@ -221,6 +221,44 @@ const ProfileDropdown = () => {
               <Typography fontWeight={600}>My Inbox</Typography>
               <Typography variant="body2" color="text.secondary">
                 Messages & Emails
+              </Typography>
+            </Box>
+          </Box>
+          {/* Item 3 */}
+          <Box
+            component={Link}
+            href="/subscription"
+            onClick={handleClose}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              p: 1.5,
+              borderRadius: 2,
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": { background: "#f5f7fc" },
+            }}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                width: 42,
+                height: 42,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "#e7e9fc",
+                borderRadius: 2,
+              }}
+            >
+              <CreditCard size={22} color="#4c5cff" />
+            </Paper>
+
+            <Box>
+              <Typography fontWeight={600}>My Subscription</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Manage plan & payment
               </Typography>
             </Box>
           </Box>

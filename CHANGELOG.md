@@ -5,7 +5,86 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2026-02-25
 
+### Detail Versi 1.8.4
+
+#### 🎯 Individual Intelligence - Bulk Selection
+
+- **Select All Feature**: Added a "Select All" button in selection mode for bulk selection/deselection of individuals in the grid.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+
+## [1.8.3] - 2026-02-26
+
+### Detail Versi 1.8.3
+
+#### Subscription & Billing
+
+- **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
+- **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
+- **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
+- **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
+
+#### 📇 Contact Management
+
+- **Edit Contact Action**: Changed the primary destructive action in the Edit Contact modal from "Delete" to "Cancel" for safer UX. Clicking Cancel now immediately dismisses the modal without requiring secondary confirmation.
+- **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
+- **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/EditContactModal.tsx`
+- `components/contact/ContactClient.tsx`
+
+## [1.8.1] - 2026-02-25
+
+### Detail Versi 1.8.1
+
+#### Subscription & Billing
+
+- **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
+- **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
+- **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
+
+#### 📇 Contact Management
+
+- **Edit Contact Action**: Changed the primary destructive action in the Edit Contact modal from "Delete" to "Cancel" for safer UX. Clicking Cancel now immediately dismisses the modal without requiring secondary confirmation.
+- **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
+- **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/EditContactModal.tsx`
+- `components/contact/ContactClient.tsx`
+
+## [1.8.0] - 2026-02-25
+
+### Detail Versi 1.8.0
+
+#### 🎯 Data Intelligence - Individual Profiles
+
+- **Real API Integration**: Successfully wired the Individual Intelligence page to the `/api/v1/company-intelligence/individual` endpoint, replacing all dummy data with real-time backend results.
+- **Server-side Capabilities**: Implemented server-side pagination, text-based search, and multi-select filters for Industry and Location.
+- **Save to CRM**: Added bulk "Save to CRM" functionality using the `/api/v1/company-intelligence/individual/save-to-contact` endpoint. Users can now select multiple key people across different companies and save them directly to their CRM in a single action.
+- **Improved Data Display**: Refactored `IndividualCard` to elegantly handle the `key_people` array, displaying primary person details and indicating total person counts per company.
+- **Industry Hierarchy**: Updated industry badges with responsive font scaling for better readability on smaller screens.
+
+#### ⚡ Performance & Stability
+
+- **Redundant Call Fix**: Resolved an issue where the API was being called three times on page load by stabilizing authentication and search debouncer dependencies.
+- **Memoized Auth**: Wrapped `getToken` in `useCallback` within `AuthContext` to prevent cascading re-renders in consumer components.
+
+####  Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+- `components/intelligence-individual/IndividualCard.tsx`
+- `lib/api/company-intelligence.ts`
+- `lib/types/individual-intelligence.ts`
+- `lib/context/AuthContext.tsx`
+- `app/data-intelligence/individual/page.tsx`
 
 ## [1.7.8] - 2026-02-25
 

@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
 ## [1.8.2] - 2026-02-26
 
-### Detail Versi 1.8.2
+### Detail Versi 1.8.3
 
 #### Subscription & Billing
 
@@ -45,22 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/contact/modal/EditContactModal.tsx`
 - `components/contact/ContactClient.tsx`
-
-## [1.8.2] - 2026-02-25
-
-### Detail Versi 1.8.2
-
-#### 🎯 Individual Intelligence - Person Refinement
-
-- **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
-- **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
-- **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
-- **Data Integrity**: Verified the flattening logic to ensure 100% visibility of key people returned by the backend.
-
-#### 📁 Files Modified
-
-- `components/intelligence-individual/IndividualClient.tsx`
-- `components/intelligence-individual/IndividualCard.tsx`
 
 ## [1.8.1] - 2026-02-25
 

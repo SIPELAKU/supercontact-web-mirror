@@ -137,10 +137,10 @@ export default function SubscriptionClient() {
                                 </Box>
                             </Stack>
                         </Paper>
-                    </Grid>
+                    </Grid >
 
                     {/* Available Upgrade Plans */}
-                    <Grid item xs={12} md={7}>
+                    < Grid item xs={12} md={7} >
                         <Grid container spacing={3}>
                             {plans.map((plan) => {
                                 const isCurrent = plan.id === activePlanId || plan.code === currentPlan?.toLowerCase();
@@ -236,9 +236,10 @@ export default function SubscriptionClient() {
                                 );
                             })}
                         </Grid>
-                    </Grid>
-                </Grid>
-            )}
-        </div>
+                    </Grid >
+                </Grid >
+            )
+            }
+        </div >
     );
 }

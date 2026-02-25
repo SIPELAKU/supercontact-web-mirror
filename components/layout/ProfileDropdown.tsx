@@ -224,6 +224,44 @@ const ProfileDropdown = () => {
               </Typography>
             </Box>
           </Box>
+          {/* Item 3 */}
+          <Box
+            component={Link}
+            href="/subscription"
+            onClick={handleClose}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              p: 1.5,
+              borderRadius: 2,
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": { background: "#f5f7fc" },
+            }}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                width: 42,
+                height: 42,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "#e7e9fc",
+                borderRadius: 2,
+              }}
+            >
+              <CreditCard size={22} color="#4c5cff" />
+            </Paper>
+
+            <Box>
+              <Typography fontWeight={600}>My Subscription</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Manage plan & payment
+              </Typography>
+            </Box>
+          </Box>
         </Stack>
 
         {/* LOGOUT BUTTON */}

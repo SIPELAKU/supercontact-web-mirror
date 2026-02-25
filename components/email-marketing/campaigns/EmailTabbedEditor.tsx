@@ -10,15 +10,17 @@ interface EmailTabbedEditorProps {
     value: string;
     onChange: (html: string) => void;
     isLoading?: boolean;
+    defaultEditorType?: 'simple_editor' | 'visual_builder';
 }
 
 export interface EmailTabbedEditorRef {
-    exportContent: () => Promise<void>;
+    exportContent: () => Promise<{ html: string; design?: any }>;
+    getEditorType: () => 'simple_editor' | 'visual_builder';
 }
 
 
 const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProps>((
-    { value, onChange, isLoading = false },
+    { value, onChange, isLoading = false, defaultEditorType = 'simple_editor' },
     ref
 ) => {
     const [activeTab, setActiveTab] = useState(0);
@@ -44,43 +46,53 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
     }, [activeTab]);
 
     // Export content from Visual Builder
-    const exportVisualBuilderContent = (): Promise<void> => {
+    const exportContent = (): Promise<{ html: string; design?: any }> => {
         return new Promise((resolve) => {
-            // Check if the Visual Builder editor exists and is ready
-            if (editorRef.current?.editor) {
+            if (activeTab === 0) {
+                // If Simple Editor is active, just return curruent HTML.
+                // It does not have design JSON.
+                resolve({ html: contentEditableRef.current?.innerHTML || internalHtml });
+            } else if (editorRef.current?.editor) {
                 const unlayer = editorRef.current.editor;
                 console.log('[EmailTabbedEditor] Exporting from Visual Builder...');
-                try {
-                    unlayer.exportHtml((data: any) => {
-                        const { html } = data;
-                        console.log('[EmailTabbedEditor] Exported HTML length:', html?.length || 0);
-                        if (html) {
-                            setInternalHtml(html);
-                            onChange(html);
+
+                // First export the design so we can embed it
+                unlayer.exportHtml((data: any) => {
+                    const { html, design } = data;
+
+                    if (html && design) {
+                        try {
+                            const designBase64 = typeof window !== 'undefined' ? btoa(unescape(encodeURIComponent(JSON.stringify(design)))) : '';
+                            const htmlWithDesign = `${html}\n<!-- UNLAYER_DESIGN_JSON: ${designBase64} -->`;
+
+                            setInternalHtml(htmlWithDesign);
+                            onChange(htmlWithDesign);
+                            resolve({ html: htmlWithDesign, design });
+                        } catch (e) {
+                            console.error('Failed to stringify design', e);
+                            resolve({ html });
                         }
-                        resolve();
-                    });
-                } catch (error) {
-                    console.error('[EmailTabbedEditor] Failed to export from Visual Builder:', error);
-                    resolve();
-                }
+                    } else {
+                        resolve({ html: html || '' });
+                    }
+                });
             } else {
                 console.log('[EmailTabbedEditor] Visual Builder not initialized, using current HTML');
-                // If Visual Builder hasn't been used, just resolve
-                resolve();
+                resolve({ html: internalHtml });
             }
         });
     };
 
     // Expose exportContent method via ref
     useImperativeHandle(ref, () => ({
-        exportContent: exportVisualBuilderContent,
+        exportContent,
+        getEditorType: () => activeTab === 1 ? 'visual_builder' : 'simple_editor',
     }));
 
     const handleTabChange = async (event: React.SyntheticEvent, newValue: number) => {
         // Export content before switching tabs if coming from Visual Builder
         if (activeTab === 1 && newValue !== 1) {
-            await exportVisualBuilderContent();
+            await exportContent();
         }
         setActiveTab(newValue);
     };
@@ -102,19 +114,50 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
         }
     };
 
-    const onEditorReady = (unlayer: any) => {
+    const loadDesignIfPresent = (unlayer: any, htmlString: string) => {
+        const designMatch = htmlString.match(/<!-- UNLAYER_DESIGN_JSON: (.*?) -->/);
+        if (designMatch && designMatch[1]) {
+            try {
+                const designStr = typeof window !== 'undefined' ? decodeURIComponent(escape(atob(designMatch[1]))) : '{}';
+                const designObj = JSON.parse(designStr);
+
+                unlayer.loadDesign(designObj);
+                console.log('[EmailTabbedEditor] Loaded existing design successfully.');
+                return true;
+            } catch (error) {
+                console.error('[EmailTabbedEditor] Failed to load design from HTML:', error);
+            }
+        }
+        return false;
+    }
+
+    const onReady = (unlayer: any) => {
         console.log('[EmailTabbedEditor] Visual Builder ready');
 
-        // Note: We cannot load HTML into the Visual Builder because it uses a design JSON format.
-        // The Visual Builder will start empty, which is the expected behavior.
-        // If we want to preserve designs, we would need to save/load the design JSON separately.
+        // Immediately try to load design
+        const loaded = loadDesignIfPresent(unlayer, internalHtml);
+
+        // If it wasn't there yet, check again after a short delay to account for React state propagation
+        if (!loaded) {
+            setTimeout(() => {
+                const retryHtml = contentEditableRef.current?.innerHTML || internalHtml;
+                loadDesignIfPresent(unlayer, retryHtml);
+            }, 500);
+        }
 
         // Listen for design updates
         unlayer.addEventListener("design:updated", () => {
             unlayer.exportHtml((data: any) => {
-                const { html } = data;
-                setInternalHtml(html);
-                onChange(html);
+                const { html, design } = data;
+                try {
+                    const designBase64 = typeof window !== 'undefined' ? btoa(unescape(encodeURIComponent(JSON.stringify(design)))) : '';
+                    const htmlWithDesign = `${html}\n<!-- UNLAYER_DESIGN_JSON: ${designBase64} -->`;
+                    setInternalHtml(htmlWithDesign);
+                    onChange(htmlWithDesign);
+                } catch (e) {
+                    setInternalHtml(html);
+                    onChange(html);
+                }
             });
         });
     };
@@ -166,7 +209,7 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                     <Box sx={{ height: "600px" }}>
                         <EmailEditor
                             ref={editorRef}
-                            onReady={onEditorReady}
+                            onReady={onReady}
                             minHeight="600px"
                         />
                     </Box>

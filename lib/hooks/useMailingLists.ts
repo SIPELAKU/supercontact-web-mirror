@@ -1,16 +1,17 @@
 import {
-    createMailingList,
-    deleteMailingList,
-    deleteMailingListSubscriber,
-    fetchMailingListDetail,
-    fetchMailingLists,
-    updateMailingList
+  createMailingList,
+  deleteMailingList,
+  deleteMailingListSubscriber,
+  fetchMailingListCampaigns,
+  fetchMailingListDetail,
+  fetchMailingLists,
+  updateMailingList
 } from '@/lib/api';
 import type {
-    CreateMailingListData,
-    MailingListDetailResponse,
-    MailingListsResponse,
-    UpdateMailingListData
+  CreateMailingListData,
+  MailingListDetailResponse,
+  MailingListsResponse,
+  UpdateMailingListData
 } from '@/lib/types/email-marketing';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
@@ -35,6 +36,18 @@ export function useMailingListDetail(mailingListId: string) {
       return fetchMailingListDetail(token, mailingListId);
     },
     enabled: !!mailingListId,
+  });
+}
+
+export function useMailingListCampaigns(mailingListId: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
+  return useQuery({
+    queryKey: ['mailing-list-campaigns', mailingListId, page, limit],
+    queryFn: () => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchMailingListCampaigns(token, mailingListId, page, limit);
+    },
+    enabled: !!mailingListId && enabled,
   });
 }
 

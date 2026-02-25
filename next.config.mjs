@@ -14,6 +14,14 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com', // fallback wildcard
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
 
   // 4. Custom headers for CORS (if needed)

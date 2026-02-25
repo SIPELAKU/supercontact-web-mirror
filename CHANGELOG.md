@@ -5,6 +5,216 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
+## [1.7.8] - 2026-02-25
+
+### Detail Versi 1.7.8
+
+#### ✉️ Email Marketing & Campaigns
+
+- **Campaign Stats Preview**: Added a live HTML preview of the campaign message directly alongside the delivery statistics in the "Campaign Statistics" modal for immediate visual review of drafted and sent campaigns.
+- **Visual Builder State Preservation**: Fixed an issue where the Unlayer visual builder would lose its drag-and-drop design state after saving as a draft. The rich design JSON is now seamlessly embedded and hydrated from within the `html_content` payload.
+- **Simple Editor Saving**: Fixed a race condition where saving a campaign from the Simple Editor tab would sometimes overwrite the content with an empty visual builder state.
+- **Editor Default State**: Campaigns now always open in the "Editor Sederhana" (Simple Editor) tab by default. This ensures the Visual Builder's iframe fully mounts in the background before use, preventing empty canvas loads.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/campaigns/EmailTabbedEditor.tsx`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+
+## [1.7.7] - 2026-02-24
+
+### Detail Versi 1.7.7
+
+- **Campaign Editor Type**: Added support for `editor_type` tracking in `POST` and `PUT` payloads to differentiate between Simple Editor and Visual Builder.
+- **Campaign Statistics**: Added a new popup view to visualize delivery statistics (Delivered, Opened, Clicked, Bounced) on the Campaigns table.
+- **Mailing List Campaigns**: Implemented a new "Campaign Terkirim" tab fetching real data from `GET /mailing-lists/{mailing_list_id}/campaigns` replacing dummy states on the mailing list details page.
+
+#### 📁 Files Modified
+
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/hooks/useMailingLists.ts`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/email-marketing/campaigns/CampaignsClient.tsx`
+- `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+
+## [1.7.6] - 2026-02-24
+
+### Detail Versi 1.7.6
+
+#### 🏗️ Contact Module Architecture & Modularity
+
+- **Sub-component Extraction**: Refactored `ContactClient.tsx` by extracting the toolbar and table logic into standalone components (`ContactToolbar.tsx` and `ContactTable.tsx`) to improve maintainability and readability.
+- **Modal Organization**: Centralized all contact-related modals into a dedicated `components/contact/modal/` directory.
+- **Naming Consistency**: Standardized modal filenames by appending the `Modal` suffix (e.g., `AddContactModal.tsx`, `EditContactModal.tsx`).
+- **Dependency Resolution**: Updated all import references in the main contact page and detail page.
+- **Import Fixes**: Resolved broken relative imports in the moved modal components by implementing absolute path aliases.
+
+#### 📁 Files Modified
+
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactTable.tsx` [NEW]
+- `components/contact/ContactToolbar.tsx` [NEW]
+- `components/contact/modal/AddContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/AddTaskModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/DeleteMultipleContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/EditContactModal.tsx` [MOVED/RENAMED]
+- `components/contact/modal/ImportContactModal.tsx` [MOVED/RENAMED]
+
+
+## [1.7.5] - 2026-02-24
+
+### Detail Versi 1.7.5
+
+#### 🏗️ Contact Module Refactoring & UI Fixes
+
+- **Architectural Cleanup**: Relocated all contact-related components from a generic `modal` folder to a dedicated `components/contact/` directory for better project structure.
+- **New Contact Management**:
+  - Introduced `ContactClient.tsx` to centralize contact list logic, searching, filtering, and bulk actions.
+  - Refactored `app/contact/page.tsx` to utilize the new modular `ContactClient`.
+- **Modal Overlay Standard**: Standardized modal overlays across contact management components to ensure full-screen coverage.
+- **UI Consistency Fixes**:
+  - Implemented **React Portals** for `ImportContactModal`, `EditContact`, and `DeleteContact` to fix backdrop truncation issues.
+  - Standardized all contact modals to use a clean opaque backdrop without blur for optimal performance and design consistency.
+  - Set universal `z-index: 9999` for all contact-related overlays.
+
+#### 📁 Files Modified
+
+- `app/contact/page.tsx`
+- `app/contact/detail/[id]/page.tsx`
+- `components/contact/ContactClient.tsx` [NEW]
+- `components/contact/AddContact.tsx` [RENAMED]
+- `components/contact/AddTaskModal.tsx` [RENAMED]
+- `components/contact/DeleteContact.tsx` [RENAMED]
+- `components/contact/DeleteMultipleContact.tsx` [RENAMED]
+- `components/contact/DetailContact.tsx` [RENAMED]
+- `components/contact/EditContact.tsx` [RENAMED]
+- `components/contact/ImportContactModal.tsx` [RENAMED]
+
+## [1.7.4] - 2026-02-24
+
+### Detail Versi 1.7.4
+
+#### ✨ Landing Page Enhancements & Global Setup
+
+- **Global Constants**: Introduced `lib/constants/constants.tsx` to centralize business contact information (`NO_WA`, `EMAIL`).
+- **WhatsApp Integration**:
+  - **Conditional Rendering**: The WhatsApp floating button in `AuthenticatedLayout` is now restricted to landing routes (`/`, `/price`, `/company`) only.
+  - **Dynamic Messaging**: Standardized WhatsApp redirect links in `Hero` and `PricingCards` to use the global `NO_WA` constant and include context-specific messages (e.g., product/plan name).
+- **CTA & Forms**:
+  - **Validation**: Added field validation to the CTA form; the submit button is now disabled until Name, Email, and Message are filled.
+  - **Email Integration**: Updated the `mailto` link in the CTA component to use the new global `EMAIL` constant.
+- **UI/UX Improvements**:
+  - **Pricing Cards**: Refined price display logic for better readability.
+  - **Company Hero**: Updated the "Hubungi Kami" button to link directly to the official Solvera contact page.
+
+#### 📁 Files Modified
+
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/company/CompanyHero.tsx`
+- `components/home/Hero.tsx`
+- `components/price/PricingCards.tsx`
+- `components/layout/CTA.tsx`
+- `lib/constants/constants.tsx` [NEW]
+
+## [1.7.3] - 2026-02-24
+
+### Detail Versi 1.7.3
+
+#### 🏗️ Refactoring & Performance
+
+- **Inbox Component Refactor**: Major architectural improvement of the Inbox system.
+  - Split the massive `InboxClient.tsx` into clean, modular sub-components: `ChatSidebar`, `ChatHeader`, `MessageList`, `MessageItem`, `ChatInput`, `ContactList`, and `ChatModals`.
+  - Extracted shared logic and state management into a dedicated `useChat` custom hook.
+  - Improved code readability and maintainability by separating concerns.
+- **UI/UX Improvements**:
+  - **Auto-scroll**: Implemented automatic scrolling to the latest message on initial load and when receiving new messages.
+  - **Selected Messages**: Improved selection logic and visual feedback in chat.
+- **Bug Fixes & Optimizations**:
+  - **Infinite Fetch Fix**: Resolved multiple infinite network fetching loops in the chat and notifications systems.
+  - **API Fetch Optimization**: Reduced redundant `count` API calls by 66% through stabilization of the `AuthContext` and `getToken` function.
+  - **Memoization**: Applied `useMemo` and `useCallback` to core providers and hooks to prevent cascading re-renders.
+
+#### 📁 Files Modified
+
+- `components/inbox/InboxClient.tsx`
+- `components/inbox/MessageList.tsx`
+- `components/inbox/MessageItem.tsx`
+- `components/inbox/ChatSidebar.tsx`
+- `components/inbox/ChatHeader.tsx`
+- `components/inbox/ChatInput.tsx`
+- `components/inbox/ContactList.tsx`
+- `components/inbox/ChatModals.tsx`
+- `lib/hooks/useChat.ts`
+- `lib/context/AuthContext.tsx`
+- `components/layout/Topbar.tsx`
+
+## [1.7.2] - 2026-02-24
+
+### Detail Versi 1.7.2
+
+#### ✨ New Features & Improvements
+
+- **Omnichannel Chat**: Added in-app image attachments preview with Next.js `Image`. Clicking on a chat image now seamlessly opens a full-screen lightbox modal instead of opening in a new tab. 
+- **Next Config**: Whitelisted `vercel-storage.com` in `next.config.mjs` to support Next image optimization for message attachments.
+
+#### 📁 Files Modified
+
+- `components/omnichannel/MessageList.tsx`
+- `next.config.mjs`
+- `package.json`
+- `package-lock.json`
+
+## [1.7.1] - 2026-02-24
+
+### Detail Versi 1.7.1
+
+#### 🎨 UI/UX Improvements
+
+- **Analytics Dashboard Cards**: Fixed an issue where the `CardStatistik` component's height was uneven and large numbers (like Average Deal Size) would wrap poorly or get cut off. Fixed applying `height: 100%`, `white-space: nowrap`, responsive font scaling, and text truncation (`text-overflow: ellipsis`) so cards align perfectly in grid view and big numbers always fit nicely.
+
+#### 📁 Files Modified
+
+- `components/ui/card-stat.tsx`
+- `package.json`
+
+## [1.7.0] - 2026-02-23
+
+### Detail Versi 1.7.0
+
+#### Added
+
+- **Landing Page Refactor**: Completely redesigned the landing page with high-quality assets and responsive sections.
+- **New Components**:
+  - **Hero**: Interactive slider with localized content.
+  - **Productivity**: Feature highlights with animations.
+  - **Company**: New section for vision, mission, and story.
+  - **Pricing**: Interactive pricing plan comparison.
+  - **FAQ**: Categorized frequently asked questions.
+  - **Footer**: Redesigned site footer with localized links.
+  - **WhatsAppFloatingButton**: Quick access to customer support.
+- **Localization**: Full support for Indonesian and English languages.
+  - **LanguageContext**: for global state management.
+  - **lib/utils/strings.ts**: for centralized translation strings.
+- **Dependencies**:
+  - **framer-motion**: for smooth UI animations.
+  - **react-slick & slick-carousel**: for interactive sliders.
+  - **react-localization**: for efficient string management.
+
+#### Changed
+
+- **Navbar**: Optimized for responsiveness. Added a mobile side drawer and interactive desktop dropdowns for "Product" and "Solution" menus.
+- **Middleware**: Updated route protection to allow public access to landing, company, and price pages.
+- **SEO**: Updated `RootLayout` with comprehensive meta tags, open graph support, and Poppins font integration.
+- **Authentication Flow**: Updated redirection logic to handle new landing page routes.
+- **Assets**:
+  - Added multiple UI illustrations, logos, and icons for the new landing page sections.
+
 ## [1.6.21] - 2026-02-23
 
 ### Detail Versi 1.6.21

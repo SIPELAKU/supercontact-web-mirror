@@ -107,6 +107,14 @@ export const IndividualClient = () => {
         setIsSelectionEnabled(false);
     };
 
+    const handleSelectAll = () => {
+        if (selectedIds.length === allPeople.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(allPeople.map(item => item.person.id));
+        }
+    };
+
     const handleSaveContacts = async () => {
         setIsSaving(true);
         try {
@@ -206,6 +214,13 @@ export const IndividualClient = () => {
                                 className="px-6!"
                             >
                                 Cancel
+                            </AppButton>
+                            <AppButton
+                                variantStyle="outline"
+                                onClick={handleSelectAll}
+                                className="px-6!"
+                            >
+                                {selectedIds.length === allPeople.length && allPeople.length > 0 ? 'Deselect All' : 'Select All'}
                             </AppButton>
                             <AppButton
                                 onClick={handleSaveContacts}

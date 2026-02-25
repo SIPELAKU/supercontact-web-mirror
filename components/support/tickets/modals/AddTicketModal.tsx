@@ -42,7 +42,7 @@ export function AddTicketModal({ isOpen, onClose }: AddTicketModalProps) {
                     <div className="mt-6">
                         <TicketForm
                             onSubmit={handleSubmit}
-                            onCancel={() => setShowCloseConfirmation(true)}
+                            onCancel={handleClose}
                             isLoading={createMutation.isPending}
                         />
                     </div>

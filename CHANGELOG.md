@@ -165,7 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/intelligence-individual/IndividualClient.tsx`
 - `components/intelligence-individual/IndividualCard.tsx`
 
-
 - **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
 
 #### Subscription & Billing

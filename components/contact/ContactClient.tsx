@@ -302,10 +302,6 @@ export const ContactClient = () => {
                 initialData={selectedItem}
                 onClose={() => setOpenEdit(false)}
                 onSuccess={loadDataAgain}
-                onDelete={() => {
-                    setOpenEdit(false);
-                    setOpenDelete(true);
-                }}
             />
             <DeleteContactModal
                 open={openDelete}

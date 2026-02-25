@@ -50,7 +50,6 @@ interface EditContactModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  onDelete: () => void;
   initialData: Contact | null;
 }
 
@@ -58,7 +57,6 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   open,
   onClose,
   onSuccess,
-  onDelete,
   initialData,
 }) => {
   const router = useRouter();
@@ -301,8 +299,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
-              <AppButton onClick={onDelete} variantStyle="danger" color="danger">
-                Delete
+              <AppButton onClick={handleClose} variantStyle="outline" color="primary">
+                Cancel
               </AppButton>
               <AppButton
                 onClick={handleSubmit}

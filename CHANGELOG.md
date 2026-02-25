@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.5] - 2026-02-25
+
+### Detail Versi 1.8.5
+
+#### Subscription & Billing
+- **Midtrans Billing Integration**: Implemented API endpoints for fetching billing plans (`GET /billings/plans`), fetching current billing status (`GET /billings/current`), and initiating plan checkouts (`POST /billings/checkout`) inside `lib/api/billings.ts`.
+- **Dynamic Subscription UI**: Replaced static pricing tiers with real billing plans fetched from the backend. The active plan and cycle end date are now dynamically displayed. The "Upgrade" action will trigger the `checkoutBillingPlan` endpoint and redirect users to the Midtrans snap page.
+- **Menu Relocation**: Moved the "My Subscription" / "Subscription / Billing" navigation link from the top-right profile dropdown menu to the main left `Sidebar` under the **ADMIN** section for better visibility.
+
 ## [1.8.4] - 2026-02-25
 
 ### Detail Versi 1.8.4
@@ -16,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 📁 Files Modified
 
 - `components/intelligence-individual/IndividualClient.tsx`
+
 
 ## [1.8.3] - 2026-02-26
 
@@ -45,6 +55,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/contact/modal/EditContactModal.tsx`
 - `components/contact/ContactClient.tsx`
+
+## [1.8.2] - 2026-02-25
+
+### Detail Versi 1.8.2
+
+#### 🎯 Individual Intelligence - Person Refinement
+
+- **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
+- **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
+- **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
+- **Data Integrity**: Verified the flattening logic to ensure 100% visibility of key people returned by the backend.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+- `components/intelligence-individual/IndividualCard.tsx`
+
 
 ## [1.8.1] - 2026-02-25
 

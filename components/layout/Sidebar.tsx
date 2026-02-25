@@ -7,6 +7,7 @@ import {
   Building2,
   ChevronDown,
   Contact,
+  CreditCard,
   FileText,
   HelpCircle,
   Home,
@@ -188,6 +189,11 @@ const menuData: MenuSection[] = [
           { name: "Roles & Permissions", path: "/roles" },
           { name: "Organization Structure", path: "/organization" },
         ],
+      },
+      {
+        name: "Billing",
+        icon: CreditCard,
+        path: "/subscription",
       },
       {
         name: "Mail Servers",

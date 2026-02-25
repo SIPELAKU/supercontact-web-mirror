@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.4] - 2026-02-25
+
+### Detail Versi 1.8.4
+
+#### 🎯 Individual Intelligence - Bulk Selection
+
+- **Select All Feature**: Added a "Select All" button in selection mode for bulk selection/deselection of individuals in the grid.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+
 ## [1.8.3] - 2026-02-26
 
 ### Detail Versi 1.8.3

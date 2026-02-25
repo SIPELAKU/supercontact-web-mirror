@@ -21,8 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### ⚡ Performance & Stability
 
-- **Redundant Call Fix**: Resolved an issue where the API was being called three times on page load by stabilizing authentication and search debouncer dependencies.
 - **Memoized Auth**: Wrapped `getToken` in `useCallback` within `AuthContext` to prevent cascading re-renders in consumer components.
+
+#### 📇 Contact Management
+
+- **Edit Contact Action**: Changed the primary destructive action in the Edit Contact modal from "Delete" to "Cancel" for safer UX. Clicking Cancel now immediately dismisses the modal without requiring secondary confirmation.
 - **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
 - **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
 

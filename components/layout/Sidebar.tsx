@@ -7,6 +7,7 @@ import {
   Building2,
   ChevronDown,
   Contact,
+  CreditCard,
   FileText,
   HelpCircle,
   Home,
@@ -148,7 +149,7 @@ const menuData: MenuSection[] = [
             path: "/data-intelligence/industry-leaders",
           },
           { name: "Company", path: "/data-intelligence/company-intelligence" },
-          // { name: "Individual", path: "/data-intelligence/individual" },
+          { name: "Individual", path: "/data-intelligence/individual" },
         ],
       },
       {
@@ -188,6 +189,11 @@ const menuData: MenuSection[] = [
           { name: "Roles & Permissions", path: "/roles" },
           { name: "Organization Structure", path: "/organization" },
         ],
+      },
+      {
+        name: "Billing",
+        icon: CreditCard,
+        path: "/subscription",
       },
       {
         name: "Mail Servers",
@@ -300,7 +306,7 @@ export default function Sidebar() {
                           )}
                           title={isCollapsed ? item.name : undefined}
                         >
-                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <Icon className="w-5 h-5 shrink-0" />
                           {!isCollapsed && <span>{item.name}</span>}
                         </Link>
                       );
@@ -320,7 +326,7 @@ export default function Sidebar() {
                           )}
                           title={isCollapsed ? item.name : undefined}
                         >
-                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <Icon className="w-5 h-5 shrink-0" />
                           {!isCollapsed && (
                             <>
                               <span className="flex-1 text-left">

@@ -11,13 +11,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
+import { LogOut, Mail, SquareUserRound, Building2, CreditCard } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
 const ProfileDropdown = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { logout, userProfile, userRole, userCompany, userSubscription } = useAuth();
+  const { logout, userProfile, userRole, userCompany, userPlanName } = useAuth();
 
   const open = Boolean(anchorEl);
 
@@ -106,14 +106,14 @@ const ProfileDropdown = () => {
               <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0, fontWeight: 500 }}>
                 {userProfile?.role || userRole || "User"}
               </Typography>
-              {userSubscription && (
+              {userPlanName && (
                 <Box
                   sx={{
                     px: 1,
                     py: 0.2,
                     borderRadius: 1,
-                    bgcolor: userSubscription.toLowerCase() === 'trial' ? 'warning.light' : 'success.light',
-                    color: userSubscription.toLowerCase() === 'trial' ? 'warning.dark' : 'success.dark',
+                    bgcolor: userPlanName.toLowerCase() === 'trial' ? 'warning.light' : 'success.light',
+                    color: userPlanName.toLowerCase() === 'trial' ? 'warning.dark' : 'success.dark',
                     fontSize: '0.625rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
@@ -122,7 +122,7 @@ const ProfileDropdown = () => {
                     lineHeight: 1
                   }}
                 >
-                  {userSubscription}
+                  {userPlanName}
                 </Box>
               )}
             </Stack>

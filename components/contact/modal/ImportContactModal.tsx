@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, X, Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { ContactReq } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
-import { AppButton } from "../ui/app-button";
+import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface ImportContactModalProps {
@@ -25,7 +26,13 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleClose = () => {
     setFile(null);
@@ -120,6 +127,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
               "company",
               "position",
               "address",
+              "is_subscriber"
             ].includes(normalizedKey)
           ) {
             contact[normalizedKey] = String(row[key] || "").trim();
@@ -197,19 +205,23 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowCloseConfirmation(true);
-        }}
-      >
+      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+        {/* Backdrop */}
         <div
-          className="bg-white rounded-xl shadow-xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-200 cursor-default"
+          className="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowCloseConfirmation(true);
+          }}
+        />
+
+        {/* Modal Content */}
+        <div
+          className="relative bg-white rounded-xl shadow-xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-200 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
@@ -321,7 +333,8 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         cancelText="Cancel"
         variant="danger"
       />
-    </>
+    </>,
+    document.body
   );
 };
 

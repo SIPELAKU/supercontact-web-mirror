@@ -5,8 +5,8 @@ import { ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2 } from "lucide-react";
 import router from "next/router";
-import { AppInput } from "../ui/app-input";
-import { AppButton } from "../ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";

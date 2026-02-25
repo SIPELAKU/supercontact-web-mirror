@@ -37,12 +37,13 @@ const CardStatistik = (props: UserStatType) => {
     <Card
       sx={{
         width: "100%",
+        height: "100%",
         borderRadius: "12px",
         boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
       }}
     >
-      <CardContent className="flex justify-between items-start">
-        <div className="flex flex-col gap-2">
+      <CardContent className="flex justify-between items-start h-full">
+        <div className="flex flex-col gap-2 flex-1 min-w-0 pr-2">
           <Typography
             variant="body2"
             sx={{ color: "text.secondary", fontWeight: 500 }}
@@ -51,13 +52,21 @@ const CardStatistik = (props: UserStatType) => {
           </Typography>
 
           <Typography
-            variant="h4"
-            sx={{ fontWeight: 600, color: "text.primary", mb: 0.5 }}
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: "text.primary",
+              mb: 0.5,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              fontSize: { xs: "1.25rem", sm: "1.1rem", md: "1.2rem", lg: "1.1rem", xl: "1.25rem" },
+            }}
           >
             {isLoading ? <CircularProgress size={20} /> : stats}
           </Typography>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Typography
               variant="body2"
               sx={{
@@ -65,7 +74,11 @@ const CardStatistik = (props: UserStatType) => {
                 color: trend === "negative" ? "error.main" : "success.main",
               }}
             >
-              {isLoading ? <CircularProgress size={20} /> : `(${trend === "negative" ? "-" : "+"}${trendNumber})`}
+              {isLoading ? (
+                <CircularProgress size={20} />
+              ) : (
+                `(${trend === "negative" ? "-" : "+"}${trendNumber})`
+              )}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {subtitle}
@@ -80,6 +93,7 @@ const CardStatistik = (props: UserStatType) => {
             backgroundColor: avatarBgColor,
             color: avatarColor,
             borderRadius: "12px",
+            flexShrink: 0,
           }}
         >
           <Icon size={24} />

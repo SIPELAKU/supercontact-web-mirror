@@ -49,6 +49,20 @@ export const IndividualClient = () => {
         return () => clearTimeout(handler);
     }, [searchQuery, debouncedSearchQuery]);
 
+    const allPeople = useMemo(() => {
+        return individuals.flatMap(company =>
+            company.key_people.map(person => ({
+                company: {
+                    crm_company_id: company.crm_company_id,
+                    company_name: company.company_name,
+                    industry: company.industry,
+                    description: company.description
+                },
+                person
+            }))
+        );
+    }, [individuals]);
+
     const fetchIndividuals = useCallback(async () => {
         setIsLoading(true);
         setError("");
@@ -98,15 +112,14 @@ export const IndividualClient = () => {
         try {
             const token = await getToken();
 
-            // Gather selected people data from the individuals list
-            const selectedPeople = individuals
-                .filter(item => selectedIds.includes(item.company_intelligence_id))
-                .flatMap(item => item.key_people.map(person => ({
-                    crm_company_id: item.crm_company_id,
-                    person_id: person.id,
-                    name: person.name,
-                    role: person.role
-                })));
+            const selectedPeople = allPeople
+                .filter(item => selectedIds.includes(item.person.id))
+                .map(item => ({
+                    crm_company_id: item.company.crm_company_id,
+                    person_id: item.person.id,
+                    name: item.person.name,
+                    role: item.person.role
+                }));
 
             if (selectedPeople.length === 0) {
                 notify.warning("No people selected");
@@ -227,13 +240,14 @@ export const IndividualClient = () => {
                 <div className="flex items-center justify-center min-h-[400px] gap-4">
                     <CircularProgress size={30} />
                 </div>
-            ) : individuals.length > 0 ? (
+            ) : allPeople.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {individuals.map((item) => (
+                    {allPeople.map((item) => (
                         <IndividualCard
-                            key={item.company_intelligence_id}
-                            item={item}
-                            selected={selectedIds.includes(item.company_intelligence_id)}
+                            key={item.person.id}
+                            person={item.person}
+                            company={item.company}
+                            selected={selectedIds.includes(item.person.id)}
                             onToggleSelect={handleToggleSelect}
                             isSelectionEnabled={isSelectionEnabled}
                         />
@@ -251,7 +265,7 @@ export const IndividualClient = () => {
                 <TablePagination
                     rowsPerPageOptions={[5, 10, 25, 50]}
                     component="div"
-                    count={totalCount}
+                    count={totalCount} // This count is still based on companies from API
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}

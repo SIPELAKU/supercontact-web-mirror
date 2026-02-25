@@ -135,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  const getToken = async (): Promise<string> => {
+  const getToken = useCallback(async (): Promise<string> => {
     if (token) {
       return token;
     }
@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     throw new Error("No valid token found");
-  };
+  }, [token]);
 
   const logout = () => {
     cookieUtils.removeAuthToken();

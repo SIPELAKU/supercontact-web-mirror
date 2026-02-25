@@ -234,3 +234,72 @@ export async function fetchIndustryLeaders(
     // Based on user response example, the data is in json.data.data
     return json?.data?.data || [];
 }
+
+export async function getIndividualIntelligence(
+    token: string,
+    params: import("@/lib/types/individual-intelligence").IndividualIntelligenceParams
+): Promise<import("@/lib/types/individual-intelligence").IndividualIntelligenceResponse['data']> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const query = new URLSearchParams();
+
+    if (params.industry) query.append("industry", params.industry);
+    if (params.location) query.append("location", params.location);
+    if (params.search) query.append("search", params.search);
+    if (params.page) query.append("page", params.page.toString());
+    if (params.limit) query.append("limit", params.limit.toString());
+
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/individual?${query.toString()}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to fetch individual intelligence";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function saveContactsToCrm(
+    token: string,
+    payload: import("@/lib/types/individual-intelligence").SaveContactsPayload
+): Promise<import("@/lib/types/individual-intelligence").SaveContactsResponse['data']> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/individual/save-to-contact`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to save contacts to CRM";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}

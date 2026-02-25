@@ -189,10 +189,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Select All Feature**: Added a "Select All" button in selection mode for bulk selection/deselection of individuals in the grid.
 
-#### 📁 Files Modified
-
-- `components/intelligence-individual/IndividualClient.tsx`
-
 ## [1.8.1] - 2026-02-25
 
 ### Detail Versi 1.8.1

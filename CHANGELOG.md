@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.6] - 2026-02-25
+
+### Detail Versi 1.8.6
+
+#### 🎫 Support Tickets
+- **Modal Confirmation Fixes**: Adjusted the behavior of the confirmation popup in the Add Ticket and Edit Ticket modals. Clicking the "Cancel" button now immediately closes the modal without a prompt, while clicking on the backdrop (shadow area) or pressing Escape retains the confirmation popup to prevent accidental data loss.
+
+#### 📁 Files Modified
+- `components/support/tickets/modals/AddTicketModal.tsx`
+- `components/support/tickets/modals/EditTicketModal.tsx`
+
 ## [1.8.5] - 2026-02-25
 
 ### Detail Versi 1.8.5

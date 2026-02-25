@@ -9,7 +9,8 @@ interface AuthContextType {
   token: string | null;
   userRole: string | null;
   userCompany: string | null;
-  userSubscription: string | null;
+  userPlanName: string | null;
+  userPlanExpiresAt: string | null;
   userProfile: ProfileData | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -25,7 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userCompany, setUserCompany] = useState<string | null>(null);
-  const [userSubscription, setUserSubscription] = useState<string | null>(null);
+  const [userPlanName, setUserPlanName] = useState<string | null>(null);
+  const [userPlanExpiresAt, setUserPlanExpiresAt] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,10 +56,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Load role, company, and subscription from localStorage
         const role = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
         const company = typeof window !== 'undefined' ? localStorage.getItem('userCompany') : null;
-        const subscription = typeof window !== 'undefined' ? localStorage.getItem('userSubscription') : null;
+        const planName = typeof window !== 'undefined' ? localStorage.getItem('userPlanName') : null;
+        const planExpiresAt = typeof window !== 'undefined' ? localStorage.getItem('userPlanExpiresAt') : null;
         setUserRole(role);
         setUserCompany(company);
-        setUserSubscription(subscription);
+        setUserPlanName(planName);
+        setUserPlanExpiresAt(planExpiresAt);
 
         // Fetch profile
         reloadProfile();
@@ -115,19 +119,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const accessToken = json.data.access_token;
     const role = json.data.user?.role;
     const company = json.data.user?.company;
-    const subscription = json.data.user?.subscription_status;
+    const plan_name = json.data.user?.plan_name;
+    const plan_expires_at = json.data.user?.plan_expires_at;
 
     cookieUtils.setAuthToken(accessToken);
 
     // Store extra info in localStorage
     if (role && typeof window !== 'undefined') localStorage.setItem('userRole', role);
     if (company && typeof window !== 'undefined') localStorage.setItem('userCompany', company);
-    if (subscription && typeof window !== 'undefined') localStorage.setItem('userSubscription', subscription);
+    if (plan_name && typeof window !== 'undefined') localStorage.setItem('userPlanName', plan_name);
+    if (plan_expires_at && typeof window !== 'undefined') localStorage.setItem('userPlanExpiresAt', plan_expires_at);
 
     setToken(accessToken);
     setUserRole(role);
     setUserCompany(company);
-    setUserSubscription(subscription);
+    setUserPlanName(plan_name);
+    setUserPlanExpiresAt(plan_expires_at);
     setIsAuthenticated(true);
 
     await reloadProfile();
@@ -154,18 +161,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('userRole');
       localStorage.removeItem('userCompany');
-      localStorage.removeItem('userSubscription');
+      localStorage.removeItem('userPlanName');
+      localStorage.removeItem('userPlanExpiresAt');
     }
     setToken(null);
     setUserRole(null);
     setUserCompany(null);
-    setUserSubscription(null);
+    setUserPlanName(null);
+    setUserPlanExpiresAt(null);
     setUserProfile(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, userSubscription, userProfile, login, logout, loading, getToken, reloadProfile }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, userPlanName, userPlanExpiresAt, userProfile, login, logout, loading, getToken, reloadProfile }}>
       {children}
     </AuthContext.Provider>
   );

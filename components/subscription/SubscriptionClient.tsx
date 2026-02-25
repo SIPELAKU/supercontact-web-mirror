@@ -38,10 +38,10 @@ const pricingTiers = [
 ];
 
 export default function SubscriptionClient() {
-    const { userSubscription, userProfile } = useAuth();
+    const { userPlanName, userPlanExpiresAt, userProfile } = useAuth();
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const currentPlan = userSubscription || "Free Tier";
+    const currentPlan = userPlanName || "Free Tier";
     const isTrial = currentPlan.toLowerCase() === "trial";
 
     const handleUpgrade = (tierName: string) => {
@@ -59,7 +59,7 @@ export default function SubscriptionClient() {
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-12 space-y-8">
             <PageHeader
                 title="My Subscription"
-                subtitle="Manage your billing, plans, and active subscriptions."
+                description="Manage your billing, plans, and active subscriptions."
                 breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Subscription" }]}
             />
 
@@ -102,10 +102,10 @@ export default function SubscriptionClient() {
                             {/* Future Midtrans Active Billing Info Box */}
                             <Box sx={{ p: 2.5, bgcolor: '#F9FAFB', borderRadius: 2, border: '1px solid #F3F4F6' }}>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    Next Billing Date
+                                    Cycle Ends At
                                 </Typography>
                                 <Typography variant="body1" fontWeight={600} sx={{ mb: 2 }}>
-                                    {isTrial ? "Trial ends soon" : "Not applicable"}
+                                    {userPlanExpiresAt ? new Date(userPlanExpiresAt).toLocaleDateString() : (isTrial ? "Trial ends soon" : "Not applicable")}
                                 </Typography>
 
                                 <AppButton

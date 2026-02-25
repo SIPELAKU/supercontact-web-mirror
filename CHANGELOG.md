@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [1.8.0] - 2026-02-25
+
+### Detail Versi 1.8.0
+
+#### 🎯 Data Intelligence - Individual Profiles
+
+- **Real API Integration**: Successfully wired the Individual Intelligence page to the `/api/v1/company-intelligence/individual` endpoint, replacing all dummy data with real-time backend results.
+- **Server-side Capabilities**: Implemented server-side pagination, text-based search, and multi-select filters for Industry and Location.
+- **Save to CRM**: Added bulk "Save to CRM" functionality using the `/api/v1/company-intelligence/individual/save-to-contact` endpoint. Users can now select multiple key people across different companies and save them directly to their CRM in a single action.
+- **Improved Data Display**: Refactored `IndividualCard` to elegantly handle the `key_people` array, displaying primary person details and indicating total person counts per company.
+- **Industry Hierarchy**: Updated industry badges with responsive font scaling for better readability on smaller screens.
+
+#### ⚡ Performance & Stability
+
+- **Redundant Call Fix**: Resolved an issue where the API was being called three times on page load by stabilizing authentication and search debouncer dependencies.
+- **Memoized Auth**: Wrapped `getToken` in `useCallback` within `AuthContext` to prevent cascading re-renders in consumer components.
+- **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
+- **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+- `components/intelligence-individual/IndividualCard.tsx`
+- `lib/api/company-intelligence.ts`
+- `lib/types/individual-intelligence.ts`
+- `lib/context/AuthContext.tsx`
+- `app/data-intelligence/individual/page.tsx`
+
 ## [1.7.8] - 2026-02-25
 
 ### Detail Versi 1.7.8

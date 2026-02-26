@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.11] - 2026-02-26
+
+### Detail Versi 1.8.11
+
+#### 🎨 Landing Page & UI Responsiveness
+
+- **TrustedBy Section**: Overhauled the brand logos footer layout for mobile devices using a 2-column Grid. Ensured the last item centers dynamically if the total count is odd. Applied distinct custom sizing for targeted logos (Eckerd and Dribbble).
+- **CTA & FAQ Components**: Refined vertical padding (`py`, `pb`) specifically for mobile viewports to ensure consistent and balanced spacing.
+- **Footer Updates**: Improved the newsletter subscription form layout to be full-width and stacked vertically on small screens for better accessibility.
+- **Company & Pricing**: Cleaned up redundant bottom margins on the CTA wrapper within the Company page and adjusted mobile vertical padding in the PricingTrial section.
+
+#### 📁 Files Modified
+
+- `components/layout/TrustedBy.tsx`
+- `components/layout/CTA.tsx`
+- `components/layout/FAQ.tsx`
+- `components/layout/Footer.tsx`
+- `components/company/CompanyClient.tsx`
+- `components/price/PricingTrial.tsx`
+
 ## [1.8.10] - 2026-02-26
 
 ### Detail Versi 1.8.10

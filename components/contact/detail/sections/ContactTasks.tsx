@@ -1,7 +1,7 @@
 import { Task } from "@/lib/models/types";
 import { AppButton } from "@/components/ui/app-button";
 import { Divider } from "@mui/material";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, MoreHorizontal } from "lucide-react";
 
 interface ContactTasksProps {
     tasks: Task[];
@@ -27,19 +27,30 @@ export const ContactTasks = ({ tasks, onAddTask }: ContactTasksProps) => {
                     <div key={task.id} className="relative flex gap-4 pb-10 last:pb-0">
                         {/* Status Icon */}
                         <div className="shrink-0 z-10 bg-white">
-                            {task.status === "done" ? (
-                                <div className="w-7 h-7 rounded-full bg-[#6739EC] text-white flex items-center justify-center">
-                                    <CheckCircle2 className="w-5 h-5" />
-                                </div>
-                            ) : (
-                                <div className="relative">
-                                    <Circle className="w-7 h-7 text-[#6739EC] stroke-[2.5]" />
-                                    {/* Connecting Line */}
-                                    {index !== tasks.length - 1 && (
-                                        <div className="absolute left-[13px] top-9 bottom-6 w-[2px] h-[40px] bg-[#CFD7E7]" />
-                                    )}
-                                </div>
-                            )}
+                            <div className="relative">
+                                {task.status === "done" ? (
+                                    <div className="w-7 h-7 rounded-full bg-[#5479EE] text-white flex items-center justify-center relative z-10">
+                                        <CheckCircle2 className="w-5 h-5" />
+                                    </div>
+                                ) : task.status === "in_progress" ? (
+                                    <div className="relative w-7 h-7 flex items-center justify-center text-[#5479EE] z-10 bg-white">
+                                        <Circle className="absolute inset-0 w-7 h-7 stroke-[2.5]" />
+                                        <MoreHorizontal className="w-4 h-4 stroke-3" />
+                                    </div>
+                                ) : task.status === "todo" ? (
+                                    <div className="relative z-10 bg-white">
+                                        <Circle className="w-7 h-7 text-[#5479EE] stroke-[2.5]" />
+                                    </div>
+                                ) : (
+                                    <div className="relative z-10 bg-white">
+                                        <Circle className="w-7 h-7 text-[#5479EE] stroke-[2.5]" />
+                                    </div>
+                                )}
+                                {/* Connecting Line */}
+                                {index !== tasks.length - 1 && (
+                                    <div className="absolute left-[13px] top-9 bottom-6 w-[2px] h-[75px] bg-[#CFD7E7]" />
+                                )}
+                            </div>
                         </div>
 
                         {/* Content */}
@@ -57,6 +68,16 @@ export const ContactTasks = ({ tasks, onAddTask }: ContactTasksProps) => {
                                         {task.description ||
                                             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."}
                                     </p>
+                                )}
+                                {task.priority && (
+                                    <div className="mt-1">
+                                        <span className={`px-2.5 py-0.5 text-sm font-medium rounded-full ${task.priority.toLowerCase() === 'high' ? 'bg-[#FFEBEB] text-[#FF5252]' :
+                                            task.priority.toLowerCase() === 'medium' ? 'bg-[#FFF4E5] text-[#FFB020]' :
+                                                'bg-[#EAF9E6] text-[#71D860]'
+                                            }`}>
+                                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1).toLowerCase()}
+                                        </span>
+                                    </div>
                                 )}
                             </div>
 

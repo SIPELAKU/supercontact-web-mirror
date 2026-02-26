@@ -49,8 +49,8 @@ export interface Contact {
       task_name: string,
       description: string,
       due_date: string,
-      priority: string,
-      status: string,
+      priority: "Low" | "Medium" | "High",
+      status: "todo" | "in_progress" | "done" | "archived",
       created_at: string,
       updated_at: string
     }
@@ -62,11 +62,11 @@ export interface Task {
   assign_to: string;
   task_name: string;
   due_date: string;
-  priority: string;
+  priority: "Low" | "Medium" | "High";
   user_fullname: string;
   created_at: string;
   assigned_to?: string;
-  status?: string;
+  status?: "todo" | "in_progress" | "done" | "archived";
   description?: string;
   updated_at: string;
 }

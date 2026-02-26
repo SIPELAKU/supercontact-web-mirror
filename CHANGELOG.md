@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.9] - 2026-02-26
+
+### Detail Versi 1.8.9
+
+#### 📇 Contact Detail Page
+
+- **Enhanced Loading & Empty States**: Upgraded the loading state to use a centered `CircularProgress` indicator and redesigned the empty state (contact not found) with a styled, descriptive container to improve user experience.
+
+#### 📁 Files Modified
+
+- `components/contact/detail/ContactDetailClient.tsx`
+
 ## [1.8.8] - 2026-02-26
 
 ### Detail Versi 1.8.8
@@ -83,8 +95,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.8.3] - 2026-02-26
 
-## [1.8.3] - 2026-02-26
-
 ### Detail Versi 1.8.3
 
 #### Subscription & Billing
@@ -148,63 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 📁 Files Modified
 
 - `components/intelligence-individual/IndividualClient.tsx`
-
-## [1.8.3] - 2026-02-26
-
-### Detail Versi 1.8.3
-
-#### Subscription & Billing
-
-- **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
-- **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
-- **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
-- **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
-
-#### 📇 Contact Management
-
-- **Edit Contact Action**: Changed the primary destructive action in the Edit Contact modal from "Delete" to "Cancel" for safer UX. Clicking Cancel now immediately dismisses the modal without requiring secondary confirmation.
-- **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
-- **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
-
-#### 📁 Files Modified
-
-- `components/contact/modal/EditContactModal.tsx`
-- `components/contact/ContactClient.tsx`
-
-## [1.8.2] - 2026-02-25
-
-### Detail Versi 1.8.2
-
-#### 🎯 Individual Intelligence - Person Refinement
-
-- **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
-- **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
-- **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
-- **Data Integrity**: Verified the flattening logic to ensure 100% visibility of key people returned by the backend.
-
-#### 📁 Files Modified
-
-- `components/intelligence-individual/IndividualClient.tsx`
-- `components/intelligence-individual/IndividualCard.tsx`
-
-
-- **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
-- **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
-- **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
-- **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
-
-#### 📇 Contact Management
-
-- **Edit Contact Action**: Changed the primary destructive action in the Edit Contact modal from "Delete" to "Cancel" for safer UX. Clicking Cancel now immediately dismisses the modal without requiring secondary confirmation.
-- **Search Debouncing**: Implemented a 500ms debounce guard on the search input to optimize network utilization.
-- **Loading & Error Feedback**: Integrated `CircularProgress` and `notify` alert systems to provide clear status updates during data fetching and saving operations.
-
-#### 📁 Files Modified
-
-- `components/intelligence-individual/IndividualClient.tsx`
-- `components/intelligence-individual/IndividualCard.tsx`
-- `components/contact/modal/EditContactModal.tsx`
-- `components/contact/ContactClient.tsx`
 
 ## [1.8.1] - 2026-02-25
 

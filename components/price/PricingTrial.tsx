@@ -9,7 +9,7 @@ const PricingTrial = () => {
         <Box sx={{
             bgcolor: '#EEF2FF',
             minHeight: { xs: 'auto', md: '238px' },
-            py: { xs: 8, md: 0 },
+            py: { xs: 10, md: 0 },
             borderRadius: { xs: 0, md: '24px' },
             position: 'relative',
             display: 'flex',

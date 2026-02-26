@@ -45,7 +45,7 @@ const Footer = () => {
                             <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)', mb: 4, maxWidth: 350, lineHeight: 1.6 }}>
                                 {strings.footer_desc}
                             </Typography>
-                            <Box component="form" sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                            <Box component="form" sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, width: { xs: '100%', md: 'auto' }, gap: 1.5, alignItems: 'center' }}>
                                 <TextField
                                     label={strings.footer_newsletter_label}
                                     variant="outlined"
@@ -53,7 +53,7 @@ const Footer = () => {
                                     size="small"
                                     fullWidth
                                     sx={{
-                                        maxWidth: 240,
+                                        maxWidth: { xs: '100%', md: 240 },
                                         '& .MuiOutlinedInput-root': {
                                             color: 'white',
                                             '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
@@ -71,6 +71,7 @@ const Footer = () => {
                                         fontWeight: 600,
                                         px: 3,
                                         py: 1.1,
+                                        width: { xs: '100%', md: 'auto' },
                                         borderRadius: '8px',
                                         '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' },
                                         textTransform: 'none',

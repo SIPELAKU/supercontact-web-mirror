@@ -31,7 +31,7 @@ export const CompanyClient = () => {
                     <CompanyHelp />
                 </Box> */}
 
-                <Box sx={{ mb: 10, pt: 10, bgcolor: '#F5F5F5' }}>
+                <Box sx={{ pt: 10, bgcolor: '#F5F5F5' }}>
                     <CTA />
                 </Box>
             </Box>

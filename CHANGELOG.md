@@ -123,9 +123,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
-## [1.8.2] - 2026-02-26
-
-### Detail Versi 1.8.2
 
 #### Subscription & Billing
 

@@ -10,7 +10,7 @@ import AddTaskModal from "@/components/contact/modal/AddTaskModal";
 import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
 import { useAuth } from "@/lib/context/AuthContext";
 import { AppButton } from "@/components/ui/app-button";
-import { Box, Divider } from "@mui/material";
+import { Box, CircularProgress, Divider } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
 
 import { ContactHeader } from "./sections/ContactHeader";
@@ -124,11 +124,20 @@ export const ContactDetailClient = () => {
     };
 
     if (loading && !contact) {
-        return <div className="p-8">Loading...</div>;
+        return (
+            <div className="flex items-center justify-center h-screen gap-4">
+                <CircularProgress size={30} />
+            </div>
+        );
     }
 
     if (!contact) {
-        return <div className="p-8">Contact not found</div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-screen border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <p className="text-gray-500 font-medium">No contact found.</p>
+                <p className="text-sm text-gray-400 mt-1">Try again with valid ID.</p>
+            </div>
+        );
     }
 
     return (

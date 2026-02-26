@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, Search, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import InputSearch from "@/components/ui/input-search";
@@ -216,13 +216,14 @@ export default function TicketManagementPage() {
                                     searchParams={searchParams}
                                 />
                             </div>
-                            <Button
-                                className="bg-[#5479EE] hover:bg-[#4a6cd9] text-white gap-2"
+                            <AppButton
+                                variantStyle="primary"
+                                className="gap-2"
                                 onClick={() => setIsAddModalOpen(true)}
                             >
                                 <Plus className="w-4 h-4" />
                                 Add Ticket
-                            </Button>
+                            </AppButton>
                         </div>
                     </Box>
 

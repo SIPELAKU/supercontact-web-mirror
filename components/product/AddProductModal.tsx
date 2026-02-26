@@ -1,7 +1,7 @@
 "use client";
 
 import CustomSelectStage from "@/components/pipeline/SelectDealStage";
-import { Button } from "@/components/ui/button";
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { fetchProfile } from "@/lib/api/users";

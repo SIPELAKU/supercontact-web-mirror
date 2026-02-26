@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.7] - 2026-02-26
+
+### Detail Versi 1.8.7
+
+#### 📇 Contact Detail Page
+
+- **Modular Contact Detail**: Refactored `ContactDetailClient.tsx` into smaller, manageable sections (`ContactHeader`, `ContactInfo`, `ContactTags`, `ContactNotes`, and `ContactTasks`) for improved code readability and maintainability.
+- **State Management**: Moved local states specific to certain sections (e.g., note input state, active tabs) into their respective component modules.
+- **UI Tweaks**: Updated the "Back" button styling on the Contact Detail page to use an `outline` variant with the `primary` theme color.
+- **Code Clean Up**: Fixed Tailwind class naming convention warnings (`break-words` updated to `wrap-break-word`).
+
+#### 📁 Files Modified
+
+- `components/contact/detail/ContactDetailClient.tsx`
+- `components/contact/detail/sections/ContactHeader.tsx` [NEW]
+- `components/contact/detail/sections/ContactInfo.tsx` [NEW]
+- `components/contact/detail/sections/ContactTags.tsx` [NEW]
+- `components/contact/detail/sections/ContactNotes.tsx` [NEW]
+- `components/contact/detail/sections/ContactTasks.tsx` [NEW]
+
 ## [1.8.6] - 2026-02-25
 
 ### Detail Versi 1.8.6

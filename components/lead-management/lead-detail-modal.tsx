@@ -1,7 +1,7 @@
 "use client";
 
 import CustomDealStageSelect from "@/components/pipeline/SelectDealStage";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import {
   Dialog,
   DialogContent,
@@ -447,9 +447,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button
+            <AppButton
               type="button"
-              variant="outline"
+              variantStyle="outline"
               onClick={() => onOpenChange(false)}
               className="
                 px-8 h-11 rounded-xl
@@ -457,20 +457,20 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               "
             >
               Close
-            </Button>
+            </AppButton>
 
-            <Button
+            <AppButton
               type="submit"
-              disabled={isSubmitting}
+              variantStyle="primary"
+              isLoading={isSubmitting}
               className="
                 px-8 h-11 rounded-xl
                 bg-[#5479EE] hover:bg-[#3f58ce] 
                 text-white
-                disabled:opacity-50 disabled:cursor-not-allowed
               "
             >
               {isSubmitting ? "Updating..." : "Update Lead"}
-            </Button>
+            </AppButton>
           </div>
         </form>
       </DialogContent>

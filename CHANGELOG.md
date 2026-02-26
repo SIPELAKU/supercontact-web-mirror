@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.8] - 2026-02-26
+
+### Detail Versi 1.8.8
+
+#### 🧹 UI Component Cleanup & Refactoring
+
+- **Component Standardization**: Replaced all usages of `Button` from `@/components/ui/button` with the more robust `AppButton` across the entire codebase to ensure UI consistency.
+- **Removal of Unused Components**: Deleted unused UI components including `button`, `accordion`, `alert-dialog`, `alert`, `app-timepicker`, `aspect-ratio`, `custom-icon`, `native-select`, `progress`, `sheet`, and `use-mobile` to simplify the project structure and reduce bundle size.
+
+#### 📁 Files Modified
+
+- `components/ui/accordion.tsx` [DELETE]
+- `components/ui/alert-dialog.tsx` [DELETE]
+- `components/ui/alert.tsx` [DELETE]
+- `components/ui/app-timepicker.tsx` [DELETE]
+- `components/ui/aspect-ratio.tsx` [DELETE]
+- `components/ui/button.tsx` [DELETE]
+- `components/ui/custom-icon.tsx` [DELETE]
+- `components/ui/native-select.tsx` [DELETE]
+- `components/ui/progress.tsx` [DELETE]
+- `components/ui/sheet.tsx` [DELETE]
+- `components/ui/use-mobile.tsx` [DELETE]
+- 14 other files modified to replace Button with AppButton.
+
 ## [1.8.7] - 2026-02-26
 
 ### Detail Versi 1.8.7

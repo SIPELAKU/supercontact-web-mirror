@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.12] - 2026-02-26
+
+### Detail Versi 1.8.12
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **WhatsApp Floating Button**: Fixed an issue where the WhatsApp floating button would briefly appear during the loading screen immediately after a successful login. The button is now strictly hidden for authenticated users to prevent this flash before redirection.
+
+#### 📁 Files Modified
+
+- `components/layout/AuthenticatedLayout.tsx`
+
 ## [1.8.11] - 2026-02-26
 
 ### Detail Versi 1.8.11

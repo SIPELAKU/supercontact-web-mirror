@@ -17,6 +17,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/contact/detail/ContactDetailClient.tsx`
 
+## [1.8.8] - 2026-02-26
+
+### Detail Versi 1.8.8
+
+#### 🧹 UI Component Cleanup & Refactoring
+
+- **Component Standardization**: Replaced all usages of `Button` from `@/components/ui/button` with the more robust `AppButton` across the entire codebase to ensure UI consistency.
+- **Removal of Unused Components**: Deleted unused UI components including `button`, `accordion`, `alert-dialog`, `alert`, `app-timepicker`, `aspect-ratio`, `custom-icon`, `native-select`, `progress`, `sheet`, and `use-mobile` to simplify the project structure and reduce bundle size.
+
+#### 📁 Files Modified
+
+- `components/ui/accordion.tsx` [DELETE]
+- `components/ui/alert-dialog.tsx` [DELETE]
+- `components/ui/alert.tsx` [DELETE]
+- `components/ui/app-timepicker.tsx` [DELETE]
+- `components/ui/aspect-ratio.tsx` [DELETE]
+- `components/ui/button.tsx` [DELETE]
+- `components/ui/custom-icon.tsx` [DELETE]
+- `components/ui/native-select.tsx` [DELETE]
+- `components/ui/progress.tsx` [DELETE]
+- `components/ui/sheet.tsx` [DELETE]
+- `components/ui/use-mobile.tsx` [DELETE]
+- 14 other files modified to replace Button with AppButton.
+
 ## [1.8.7] - 2026-02-26
 
 ### Detail Versi 1.8.7
@@ -109,6 +133,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
+
+#### Subscription & Billing
+
 - **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
 - **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
 - **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
@@ -123,6 +150,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/contact/modal/EditContactModal.tsx`
 - `components/contact/ContactClient.tsx`
+
+#### 🎯 Individual Intelligence - Bulk Selection
+
+- **Select All Feature**: Added a "Select All" button in selection mode for bulk selection/deselection of individuals in the grid.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
 
 ## [1.8.1] - 2026-02-25
 

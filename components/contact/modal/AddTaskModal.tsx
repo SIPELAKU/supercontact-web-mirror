@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import { DateCalendar, StaticTimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
@@ -355,20 +355,21 @@ export default function AddTaskModal({
           <div
             className={`flex gap-3 justify-end ${selectedUser ? "mt-0" : "mt-2"} pt-4 border-t border-gray-100`}
           >
-            <Button
-              variant="outline"
+            <AppButton
+              variantStyle="outline"
               onClick={onClose}
               className="text-blue-600 border-blue-200 hover:bg-blue-50"
             >
               Cancel
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
               onClick={handleSubmit}
-              disabled={loading}
+              isLoading={loading}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {loading ? "Saving..." : "Save Task"}
-            </Button>
+            </AppButton>
           </div>
         </Box>
       </Modal>

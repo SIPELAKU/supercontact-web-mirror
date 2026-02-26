@@ -2,7 +2,7 @@
 
 import { AppAlert } from "@/components/ui/app-alert";
 import { notify } from "@/lib/notifications";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 
 export default function AlertsTestPage() {
   return (
@@ -22,7 +22,8 @@ export default function AlertsTestPage() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Trigger Toasts</h2>
         <div className="flex flex-wrap gap-4">
-          <Button
+          <AppButton
+            variantStyle="danger"
             className="bg-[#F34E4E] hover:bg-[#D43F3F]"
             onClick={() =>
               notify.error("Failed", {
@@ -31,8 +32,9 @@ export default function AlertsTestPage() {
             }
           >
             Show Error
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
+            variantStyle="primary"
             className="bg-[#FFB02E] hover:bg-[#E69B26]"
             onClick={() =>
               notify.warning("Warning", {
@@ -41,8 +43,9 @@ export default function AlertsTestPage() {
             }
           >
             Show Warning
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
+            variantStyle="primary"
             className="bg-[#3AC7FF] hover:bg-[#2EB0E6]"
             onClick={() =>
               notify.info("Info", {
@@ -51,8 +54,9 @@ export default function AlertsTestPage() {
             }
           >
             Show Info
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
+            variantStyle="primary"
             className="bg-[#7BDD3E] hover:bg-[#68C52E]"
             onClick={() =>
               notify.success("Success", {
@@ -61,7 +65,7 @@ export default function AlertsTestPage() {
             }
           >
             Show Success
-          </Button>
+          </AppButton>
         </div>
       </section>
     </div>

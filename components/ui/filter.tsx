@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import { ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 
@@ -72,9 +72,9 @@ export function FilterBar({ filters = [], width = "200px" }: FilterBarProps) {
         return (
           <DropdownMenu key={index}>
             <DropdownMenuTrigger>
-              <Button
-                variant="outline"
-                onClick={(e) => handleOpen(index, e)}
+              <AppButton
+                variantStyle="outline"
+                onClick={(e) => handleOpen(index, e as any)}
                 className="
                   bg-white
                   border border-gray-300
@@ -91,7 +91,7 @@ export function FilterBar({ filters = [], width = "200px" }: FilterBarProps) {
                   {filter.value === "all" ? filter.label : filter.options.find(opt => opt.value === filter.value)?.label}
                 </span>
                 <ChevronDown className="ml-2 h-4 w-4 text-gray-500" />
-              </Button>
+              </AppButton>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent

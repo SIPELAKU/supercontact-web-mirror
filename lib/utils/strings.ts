@@ -31,6 +31,13 @@ class SimpleLocalizedStrings {
         return this.data[this.currentLanguage]?.[key] || this.data['en']?.[key] || key;
     }
 
+    // Format string with placeholders like {0}, {1}, etc.
+    formatString(str: string, ...values: any[]): string {
+        return str.replace(/{(\d+)}/g, (match, index) => {
+            return typeof values[index] !== 'undefined' ? String(values[index]) : match;
+        });
+    }
+
     // Allow direct property access
     [key: string]: any;
 }

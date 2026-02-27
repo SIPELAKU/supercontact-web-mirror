@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.13] - 2026-02-27
+
+### Detail Versi 1.8.13
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **Hamburger Button on Topbar**: Fixed an issue where the hamburger button on Topbar was showing double on all screen sizes. Now it is showing only one hamburger button on all screen sizes.
+
+#### 📁 Files Modified
+
+- `components/layout/Topbar.tsx`
+
 ## [1.8.12] - 2026-02-26
 
 ### Detail Versi 1.8.12

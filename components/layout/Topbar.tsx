@@ -38,21 +38,25 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-white px-6 h-[52px]">
       <div className="flex items-center gap-3">
-        <AppButton
-          variantStyle="text"
-          className="h-9 w-9 min-w-0 p-0 lg:hidden text-gray-700 hover:bg-gray-100"
-          onClick={() => toggleMobile()}
-        >
-          <Menu className="h-6 w-6 text-gray-700" />
-        </AppButton>
+        <div className="lg:hidden">
+          <AppButton
+            variantStyle="text"
+            className="h-9 w-9 min-w-0 p-0 text-gray-700 hover:bg-gray-100"
+            onClick={() => toggleMobile()}
+          >
+            <Menu className="h-6 w-6 text-gray-700" />
+          </AppButton>
+        </div>
 
-        <AppButton
-          variantStyle="text"
-          className="h-9 w-9 min-w-0 p-0 hidden lg:flex text-gray-700 hover:bg-gray-100"
-          onClick={() => toggleDesktop()}
-        >
-          <Menu className="h-6 w-6 text-gray-700" />
-        </AppButton>
+        <div className="hidden lg:block">
+          <AppButton
+            variantStyle="text"
+            className="h-9 w-9 min-w-0 p-0 text-gray-700 hover:bg-gray-100"
+            onClick={() => toggleDesktop()}
+          >
+            <Menu className="h-6 w-6 text-gray-700" />
+          </AppButton>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

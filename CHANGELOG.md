@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.14] - 2026-02-27
+
+### Detail Versi 1.8.14
+
+#### ✉️ Email Marketing - Bulk Import Subscribers
+
+- **Import Subscribers Modal**: Added bulk import functionality for subscribers via Excel/CSV files
+  - Drag-and-drop file upload with .xlsx and .csv support
+  - Auto-mapping of columns (Name, Email, Phone Number)
+  - Validation for required fields (Name and Email)
+  - Support for both subscriber page and mailing list page imports
+  - Uses `/subscribers/bulk` API endpoint with `target` parameter
+
+- **Subscribers Page**: Added Import button next to Add Subscriber button
+- **Mailing List Detail Page**: Added Import button to bulk add subscribers to specific mailing list
+
+#### 📁 Files Created
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+
 ## [1.8.13] - 2026-02-27
 
 ### Detail Versi 1.8.13

@@ -2,6 +2,7 @@
 "use client";
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
+import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
@@ -32,7 +33,7 @@ import {
     Typography
 } from '@mui/material';
 import { format } from 'date-fns';
-import { ArrowLeft, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
+import { ArrowLeft, Eye, Filter, Search, Trash2, Upload, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -60,6 +61,7 @@ const MailingListDetailPage = () => {
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
@@ -225,17 +227,30 @@ const MailingListDetailPage = () => {
                         />
                     </Box>
                     {activeTab === 0 && (
-                        <AppButton
-                            variantStyle="primary"
-                            startIcon={<UserPlus size={18} />}
-                            onClick={() => setShowAddSubscriberModal(true)}
-                            sx={{
-                                height: '42px',
-                                px: 3,
-                            }}
-                        >
-                            Tambah Subscriber
-                        </AppButton>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <AppButton
+                                variantStyle="outline"
+                                startIcon={<Upload size={18} />}
+                                onClick={() => setShowImportModal(true)}
+                                sx={{
+                                    height: '42px',
+                                    px: 3,
+                                }}
+                            >
+                                Import
+                            </AppButton>
+                            <AppButton
+                                variantStyle="primary"
+                                startIcon={<UserPlus size={18} />}
+                                onClick={() => setShowAddSubscriberModal(true)}
+                                sx={{
+                                    height: '42px',
+                                    px: 3,
+                                }}
+                            >
+                                Tambah Subscriber
+                            </AppButton>
+                        </Box>
                     )}
                 </Box>
 
@@ -405,6 +420,16 @@ const MailingListDetailPage = () => {
                 }}
                 defaultListId={listId}
                 target="mailing_list"
+            />
+
+            {/* Import Subscriber Modal */}
+            <ImportSubscriberModal
+                open={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                onSuccess={() => {
+                    setShowImportModal(false);
+                }}
+                mailingListIds={[listId]}
             />
 
             {/* Delete Confirmation Dialog */}

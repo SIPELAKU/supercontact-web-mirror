@@ -8,6 +8,7 @@ import { notify } from '@/lib/notifications';
 import SubscribersTable from '@/components/email-marketing/subscribers/SubscribersTable';
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
+import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteSubscriber } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
@@ -16,6 +17,7 @@ import { AppButton } from '@/components/ui/app-button';
 export default function SubscribersClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState<Subscriber | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -27,9 +29,11 @@ export default function SubscribersClient() {
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
+  const handleOpenImportModal = () => setImportModalOpen(true);
   const handleCloseModals = () => {
     setAddModalOpen(false);
     setEditModalOpen(false);
+    setImportModalOpen(false);
     setSelectedSubscriber(null);
   };
 
@@ -94,12 +98,14 @@ export default function SubscribersClient() {
           onAdd={handleOpenAddModal}
           onEdit={handleOpenEditModal}
           onDeleteRequest={handleDeleteRequest}
+          onImport={handleOpenImportModal}
           refreshTrigger={refreshTrigger}
           isDeleting={deleteMutation.isPending}
         />
       </Card>
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
+      <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
       {selectedSubscriber && (
         <EditSubscriberModal
           open={isEditModalOpen}

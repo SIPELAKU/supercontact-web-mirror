@@ -24,18 +24,19 @@ import {
   TextField,
   Tooltip
 } from '@mui/material';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
   onAdd: () => void;
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (subscribers: Subscriber[]) => void;
+  onImport: () => void;
   refreshTrigger: number;
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting, refreshTrigger }: SubscribersTableProps) => {
   const { data, isLoading, error, refetch } = useSubscribers();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -148,6 +149,14 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshT
               Delete ({selected.length})
             </AppButton>
           )}
+          <AppButton
+            variantStyle="outline"
+            color="primary"
+            startIcon={<Upload className="w-4 h-4" />}
+            onClick={onImport}
+          >
+            Import
+          </AppButton>
           <AppButton
             variantStyle="primary"
             color="primary"

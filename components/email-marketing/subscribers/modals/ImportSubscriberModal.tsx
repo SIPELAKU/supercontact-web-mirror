@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight } from "lucide-react";
+import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
@@ -17,8 +17,9 @@ interface ImportSubscriberModalProps {
 
 interface SubscriberData {
   name: string;
-  email: string;
+  email?: string;
   phone_number?: string;
+  [key: string]: string | undefined;
 }
 
 interface ColumnMapping {
@@ -26,7 +27,13 @@ interface ColumnMapping {
   apiField: string | null;
 }
 
-const API_FIELDS = [
+interface ApiField {
+  value: string | null;
+  label: string;
+  isCustom?: boolean;
+}
+
+const DEFAULT_API_FIELDS: ApiField[] = [
   { value: null, label: "-- Skip this column --" },
   { value: "name", label: "Name (required)" },
   { value: "email", label: "Email" },
@@ -48,18 +55,24 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   
   // Column mapping state
   const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
-  const [excelColumns, setExcelColumns] = useState<string[]>([]);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [rawData, setRawData] = useState<any[]>([]);
   const [previewData, setPreviewData] = useState<SubscriberData[]>([]);
+  
+  // Custom fields state
+  const [apiFields, setApiFields] = useState<ApiField[]>(DEFAULT_API_FIELDS);
+  const [showAddField, setShowAddField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState("");
 
   const handleClose = () => {
     setFile(null);
     setStep("upload");
-    setExcelColumns([]);
     setColumnMappings([]);
     setRawData([]);
     setPreviewData([]);
+    setApiFields(DEFAULT_API_FIELDS);
+    setShowAddField(false);
+    setNewFieldName("");
     onClose();
   };
 
@@ -112,8 +125,8 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     const h = header.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
     
     if ((h.includes("name") || h.includes("nama")) && !h.includes("email") && !h.includes("last") && !h.includes("first")) return "name";
-    if (h === "firstname" || h === "first" || h === "namadepan") return null; // Will need combining
-    if (h === "lastname" || h === "last" || h === "namabelakang") return null; // Will need combining
+    if (h === "firstname" || h === "first" || h === "namadepan") return null;
+    if (h === "lastname" || h === "last" || h === "namabelakang") return null;
     if (h.includes("phone") || h.includes("telepon") || h.includes("hp") || h.includes("nomor") || h.includes("telp") || h.includes("handphone")) return "phone_number";
     if (h.includes("email") || h.includes("mail") || h.includes("surel")) return "email";
     
@@ -135,12 +148,9 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
         throw new Error("File is empty");
       }
 
-      // Get column headers
       const columns = Object.keys(jsonData[0]);
-      setExcelColumns(columns);
       setRawData(jsonData);
 
-      // Create initial mappings with suggestions
       const initialMappings: ColumnMapping[] = columns.map((col) => ({
         excelColumn: col,
         apiField: suggestMapping(col),
@@ -162,15 +172,42 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     );
   };
 
+  const addCustomField = () => {
+    if (!newFieldName.trim()) return;
+    
+    // Convert to snake_case for API field value
+    const fieldValue = newFieldName.trim().toLowerCase().replace(/\s+/g, "_");
+    
+    // Check if field already exists
+    if (apiFields.some(f => f.value === fieldValue)) {
+      notify.error("This field already exists");
+      return;
+    }
+    
+    setApiFields(prev => [
+      ...prev,
+      { value: fieldValue, label: newFieldName.trim(), isCustom: true }
+    ]);
+    setNewFieldName("");
+    setShowAddField(false);
+  };
+
+  const removeCustomField = (fieldValue: string) => {
+    setApiFields(prev => prev.filter(f => f.value !== fieldValue));
+    // Also remove any mappings using this field
+    setColumnMappings(prev => 
+      prev.map(m => m.apiField === fieldValue ? { ...m, apiField: null } : m)
+    );
+  };
+
   const generatePreview = () => {
     const mapped: SubscriberData[] = rawData.map((row) => {
-      const subscriber: any = { name: "", email: "", phone_number: "" };
+      const subscriber: SubscriberData = { name: "" };
       
       columnMappings.forEach((mapping) => {
         if (mapping.apiField && row[mapping.excelColumn] !== undefined) {
           const value = String(row[mapping.excelColumn] || "").trim();
           if (mapping.apiField === "name") {
-            // Append to name (allows combining multiple columns)
             subscriber.name = subscriber.name ? `${subscriber.name} ${value}` : value;
           } else {
             subscriber[mapping.apiField] = value;
@@ -178,7 +215,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
         }
       });
       
-      return subscriber as SubscriberData;
+      return subscriber;
     });
 
     setPreviewData(mapped);
@@ -186,6 +223,15 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   };
 
   const hasNameMapping = columnMappings.some((m) => m.apiField === "name");
+  
+  // Get all mapped fields for preview table headers
+  const getMappedFields = (): string[] => {
+    const fields = new Set<string>();
+    columnMappings.forEach(m => {
+      if (m.apiField) fields.add(m.apiField);
+    });
+    return Array.from(fields);
+  };
 
   const uploadSubscribers = async () => {
     const validSubscribers = previewData.filter((s) => s.name && s.name.trim());
@@ -208,7 +254,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
         payload.mailing_list_ids = mailingListIds;
       }
 
-      const res = await fetch("/api/proxy/api/v1/subscribers/bulk", {
+      const res = await fetch("/api/proxy/subscribers/bulk", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -357,6 +403,59 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
             {/* Step 2: Column Mapping */}
             {step === "mapping" && (
               <>
+                {/* Custom fields section */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Available Fields</span>
+                    <button
+                      onClick={() => setShowAddField(true)}
+                      className="text-sm text-[#5479EE] hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-4 h-4" /> Add Custom Field
+                    </button>
+                  </div>
+                  
+                  {showAddField && (
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={newFieldName}
+                        onChange={(e) => setNewFieldName(e.target.value)}
+                        placeholder="Enter field name (e.g., Company, Address)"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none"
+                        onKeyDown={(e) => e.key === "Enter" && addCustomField()}
+                      />
+                      <button
+                        onClick={addCustomField}
+                        className="px-3 py-2 bg-[#5479EE] text-white rounded-lg text-sm hover:bg-[#4368d9]"
+                      >
+                        Add
+                      </button>
+                      <button
+                        onClick={() => { setShowAddField(false); setNewFieldName(""); }}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Show custom fields as tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {apiFields.filter(f => f.isCustom).map(field => (
+                      <span key={field.value} className="inline-flex items-center gap-1 px-2 py-1 bg-[#5479EE]/10 text-[#5479EE] rounded text-xs">
+                        {field.label}
+                        <button onClick={() => removeCustomField(field.value!)} className="hover:text-red-500">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                    {apiFields.filter(f => f.isCustom).length === 0 && (
+                      <span className="text-xs text-gray-400">No custom fields added yet</span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex-1 overflow-auto border rounded-lg">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 sticky top-0">
@@ -376,9 +475,9 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                               onChange={(e) => updateMapping(mapping.excelColumn, e.target.value || null)}
                               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none"
                             >
-                              {API_FIELDS.map((field) => (
+                              {apiFields.map((field) => (
                                 <option key={field.label} value={field.value || ""}>
-                                  {field.label}
+                                  {field.label}{field.isCustom ? " (custom)" : ""}
                                 </option>
                               ))}
                             </select>
@@ -393,7 +492,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                 </div>
 
                 <p className="text-sm text-gray-500 mt-3">
-                  Tip: You can map multiple columns to "Name" to combine them (e.g., first_name + last_name).
+                  Tip: You can map multiple columns to "Name" to combine them. Add custom fields for additional data.
                 </p>
 
                 {!hasNameMapping && (
@@ -430,9 +529,11 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     <thead className="bg-gray-50 sticky top-0">
                       <tr>
                         <th className="text-left p-3 font-medium text-gray-700">#</th>
-                        <th className="text-left p-3 font-medium text-gray-700">Name</th>
-                        <th className="text-left p-3 font-medium text-gray-700">Email</th>
-                        <th className="text-left p-3 font-medium text-gray-700">Phone</th>
+                        {getMappedFields().map(field => (
+                          <th key={field} className="text-left p-3 font-medium text-gray-700 capitalize">
+                            {field.replace(/_/g, " ")}
+                          </th>
+                        ))}
                         <th className="text-left p-3 font-medium text-gray-700">Status</th>
                       </tr>
                     </thead>
@@ -442,9 +543,11 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="p-3 text-gray-500">{idx + 1}</td>
-                            <td className="p-3 text-gray-900">{row.name || "-"}</td>
-                            <td className="p-3 text-gray-500">{row.email || "-"}</td>
-                            <td className="p-3 text-gray-500">{row.phone_number || "-"}</td>
+                            {getMappedFields().map(field => (
+                              <td key={field} className="p-3 text-gray-900 truncate max-w-[120px]">
+                                {row[field] || "-"}
+                              </td>
+                            ))}
                             <td className="p-3">
                               {isValid ? (
                                 <span className="text-green-600 text-xs bg-green-50 px-2 py-1 rounded">Valid</span>
@@ -461,7 +564,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
                 <div className="mt-3 text-sm text-gray-500">
                   Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
-                  {previewData.filter((r) => r.name?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim()).length} will be skipped.
+                  {" "}{previewData.filter((r) => r.name?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim()).length} will be skipped.
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6 font-medium">

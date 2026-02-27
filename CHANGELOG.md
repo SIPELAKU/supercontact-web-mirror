@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.15] - 2026-02-27
+
+### Detail Versi 1.8.15
+
+#### ✉️ Enhanced Bulk Import with Custom Column Mapping
+
+- **Import Subscribers Modal**: Enhanced with 3-step wizard and custom column mapping
+  - Step 1: Upload Excel/CSV file with drag-and-drop
+  - Step 2: Map columns with customizable field mapping UI
+  - Step 3: Preview data before importing
+  - Add custom fields dynamically (e.g., Gender, Company)
+  - Combine multiple columns into Name field (first_name + last_name)
+  - Fixed endpoint to `/api/proxy/subscribers/bulk`
+
+- **Import Contact Modal**: Added same 3-step wizard with custom column mapping
+  - Default fields: Name, Email, Phone Number, Position, Company, Address
+  - Support for custom fields creation
+  - Payload format: `{ "contacts": [...] }`
+  - Uses `/api/proxy/contacts/bulk` endpoint
+
+#### 🐛 Bug Fixes
+
+- **Google Fonts**: Removed all Poppins font imports to fix build timeout issues on restricted networks
+- **Localization**: Created custom LocalizedStrings implementation to replace react-localization dependency
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+- `app/(auth)/forgot-password/verify-otp/page.tsx`
+- `lib/utils/strings.ts`
+
 ## [1.8.14] - 2026-02-27
 
 ### Detail Versi 1.8.14

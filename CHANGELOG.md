@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.17] - 2026-02-28
+
+### Detail Versi 1.8.17
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **AppButton Loading Spinner**: Fixed the `isLoading` prop to actually render a `CircularProgress` spinner. Previously it only disabled the button without visual feedback.
+- **Page Loading Indicator**: Added a global `loading.tsx` at the app root level to display a centered spinner during all page transitions.
+- **Import Email Required**: Made email a required field in both Import Subscriber and Import Contact modals. Rows missing email are now marked invalid and skipped during import.
+- **Import Button Styling**: Standardized all Import buttons (Contact, Subscriber, Mailing List) to use `outline` variant with a downward arrow (`Download`) icon instead of `Upload` for correct semantics.
+- **Add Deal Modal Cancel Button**: Removed the confirmation popup when clicking the Cancel button in the Add Deal modal. Backdrop click still triggers confirmation.
+
+#### 📁 Files Created
+
+- `app/loading.tsx`
+
+#### 📁 Files Modified
+
+- `components/ui/app-button.tsx`
+- `components/quotation/QuotationTable.tsx`
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/ContactToolbar.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/pipeline/AddDealModal.tsx`
+
 ## [1.8.16] - 2026-02-28
 
 ### Detail Versi 1.8.16

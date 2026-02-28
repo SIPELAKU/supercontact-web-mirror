@@ -24,7 +24,7 @@ import {
   TextField,
   Tooltip
 } from '@mui/material';
-import { Pencil, Plus, Search, Trash2, Upload } from 'lucide-react';
+import { Download, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
@@ -152,7 +152,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
           <AppButton
             variantStyle="outline"
             color="primary"
-            startIcon={<Upload className="w-4 h-4" />}
+            startIcon={<Download className="w-4 h-4" />}
             onClick={onImport}
           >
             Import

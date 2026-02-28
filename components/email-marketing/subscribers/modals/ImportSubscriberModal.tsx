@@ -36,7 +36,7 @@ interface ApiField {
 const DEFAULT_API_FIELDS: ApiField[] = [
   { value: null, label: "-- Skip this column --" },
   { value: "name", label: "Name (required)" },
-  { value: "email", label: "Email" },
+  { value: "email", label: "Email (required)" },
   { value: "phone_number", label: "Phone Number" },
 ];
 
@@ -223,6 +223,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   };
 
   const hasNameMapping = columnMappings.some((m) => m.apiField === "name");
+  const hasEmailMapping = columnMappings.some((m) => m.apiField === "email");
 
   // Get all mapped fields for preview table headers
   const getMappedFields = (): string[] => {
@@ -234,10 +235,10 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   };
 
   const uploadSubscribers = async () => {
-    const validSubscribers = previewData.filter((s) => s.name && s.name.trim());
+    const validSubscribers = previewData.filter((s) => s.name && s.name.trim() && s.email && s.email.trim());
 
     if (validSubscribers.length === 0) {
-      notify.error("No valid subscribers found. Name field is required.");
+      notify.error("No valid subscribers found. Name and Email fields are required.");
       return;
     }
 
@@ -286,7 +287,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
       const skipped = previewData.length - validSubscribers.length;
       if (skipped > 0) {
-        notify.warning(`${skipped} row(s) skipped due to missing name`);
+        notify.warning(`${skipped} row(s) skipped due to missing name or email`);
       }
       notify.success(`Successfully imported ${validSubscribers.length} subscribers`);
       handleClose();
@@ -495,9 +496,9 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                   Tip: You can map multiple columns to "Name" to combine them. Add custom fields for additional data.
                 </p>
 
-                {!hasNameMapping && (
+                {(!hasNameMapping || !hasEmailMapping) && (
                   <p className="text-sm text-red-500 mt-2">
-                    Please map at least one column to "Name" (required field).
+                    Please map at least one column to "Name" and "Email" (required fields).
                   </p>
                 )}
 
@@ -511,7 +512,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={generatePreview} disabled={!hasNameMapping} variantStyle="primary" color="primary">
+                    <AppButton onClick={generatePreview} disabled={!hasNameMapping || !hasEmailMapping} variantStyle="primary" color="primary">
                       <div className="flex items-center gap-2">
                         Preview <ArrowRight className="w-4 h-4" />
                       </div>
@@ -539,7 +540,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     </thead>
                     <tbody>
                       {previewData.slice(0, 50).map((row, idx) => {
-                        const isValid = row.name && row.name.trim();
+                        const isValid = row.name && row.name.trim() && row.email && row.email.trim();
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="p-3 text-gray-500">{idx + 1}</td>
@@ -552,7 +553,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                               {isValid ? (
                                 <span className="text-green-600 text-xs bg-green-50 px-2 py-1 rounded">Valid</span>
                               ) : (
-                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">Missing name</span>
+                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">{!row.name?.trim() ? "Missing name" : "Missing email"}</span>
                               )}
                             </td>
                           </tr>
@@ -564,7 +565,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
                 <div className="mt-3 text-sm text-gray-500">
                   Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
-                  {" "}{previewData.filter((r) => r.name?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim()).length} will be skipped.
+                  {" "}{previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim() || !r.email?.trim()).length} will be skipped.
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6 font-medium">
@@ -577,14 +578,14 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={uploadSubscribers} disabled={isLoading || previewData.filter((r) => r.name?.trim()).length === 0} variantStyle="primary" color="primary">
+                    <AppButton onClick={uploadSubscribers} disabled={isLoading || previewData.filter((r) => r.name?.trim() && r.email?.trim()).length === 0} variantStyle="primary" color="primary">
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="animate-spin w-5 h-5" />
                           Importing...
                         </div>
                       ) : (
-                        `Import ${previewData.filter((r) => r.name?.trim()).length} Subscribers`
+                        `Import ${previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} Subscribers`
                       )}
                     </AppButton>
                   </div>

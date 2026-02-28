@@ -140,7 +140,7 @@ export default function QuotationTable() {
                     />
                 </div>
 
-                <Link href={"/sales/quotation/add"}>
+                <Link href="/sales/quotation/add">
                     <AppButton
                         variantStyle="primary"
                         color="primary"

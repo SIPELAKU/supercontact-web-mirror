@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🐛 Bug Fixes & UI Polish
 
 - **Import Modals (Subscriber & Contact)**: Removed the confirmation popup when clicking the "Cancel" button in Import Subscriber and Import Contact modals. Clicking Cancel now immediately closes the modal. The confirmation popup is still shown when clicking on the backdrop (background overlay) to prevent accidental data loss.
+- **Add Contact Modal**: Removed the confirmation popup from the Cancel button. Backdrop click still triggers confirmation.
 
 #### 📁 Files Modified
 
 - `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
 - `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/modal/AddContactModal.tsx`
 
 ## [1.8.15] - 2026-02-27
 

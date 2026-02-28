@@ -391,7 +391,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                 </div>
 
                 <div className="flex justify-end gap-3 mt-8 font-medium">
-                  <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                  <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                     Cancel
                   </AppButton>
                   <AppButton onClick={parseFile} disabled={isLoading || !file} variantStyle="primary" color="primary">
@@ -517,7 +517,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     </div>
                   </AppButton>
                   <div className="flex gap-3">
-                    <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                    <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
                     <AppButton onClick={generatePreview} disabled={!hasNameMapping} variantStyle="primary" color="primary">
@@ -583,7 +583,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     </div>
                   </AppButton>
                   <div className="flex gap-3">
-                    <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                    <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
                     <AppButton onClick={uploadContacts} disabled={isLoading || previewData.filter((r) => r.name?.trim()).length === 0} variantStyle="primary" color="primary">

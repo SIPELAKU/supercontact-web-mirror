@@ -52,13 +52,13 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   // Column mapping state
   const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [rawData, setRawData] = useState<any[]>([]);
   const [previewData, setPreviewData] = useState<SubscriberData[]>([]);
-  
+
   // Custom fields state
   const [apiFields, setApiFields] = useState<ApiField[]>(DEFAULT_API_FIELDS);
   const [showAddField, setShowAddField] = useState(false);
@@ -123,13 +123,13 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
   const suggestMapping = (header: string): string | null => {
     const h = header.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    
+
     if ((h.includes("name") || h.includes("nama")) && !h.includes("email") && !h.includes("last") && !h.includes("first")) return "name";
     if (h === "firstname" || h === "first" || h === "namadepan") return null;
     if (h === "lastname" || h === "last" || h === "namabelakang") return null;
     if (h.includes("phone") || h.includes("telepon") || h.includes("hp") || h.includes("nomor") || h.includes("telp") || h.includes("handphone")) return "phone_number";
     if (h.includes("email") || h.includes("mail") || h.includes("surel")) return "email";
-    
+
     return null;
   };
 
@@ -174,16 +174,16 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
   const addCustomField = () => {
     if (!newFieldName.trim()) return;
-    
+
     // Convert to snake_case for API field value
     const fieldValue = newFieldName.trim().toLowerCase().replace(/\s+/g, "_");
-    
+
     // Check if field already exists
     if (apiFields.some(f => f.value === fieldValue)) {
       notify.error("This field already exists");
       return;
     }
-    
+
     setApiFields(prev => [
       ...prev,
       { value: fieldValue, label: newFieldName.trim(), isCustom: true }
@@ -195,7 +195,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   const removeCustomField = (fieldValue: string) => {
     setApiFields(prev => prev.filter(f => f.value !== fieldValue));
     // Also remove any mappings using this field
-    setColumnMappings(prev => 
+    setColumnMappings(prev =>
       prev.map(m => m.apiField === fieldValue ? { ...m, apiField: null } : m)
     );
   };
@@ -203,7 +203,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   const generatePreview = () => {
     const mapped: SubscriberData[] = rawData.map((row) => {
       const subscriber: SubscriberData = { name: "" };
-      
+
       columnMappings.forEach((mapping) => {
         if (mapping.apiField && row[mapping.excelColumn] !== undefined) {
           const value = String(row[mapping.excelColumn] || "").trim();
@@ -214,7 +214,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
           }
         }
       });
-      
+
       return subscriber;
     });
 
@@ -223,7 +223,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   };
 
   const hasNameMapping = columnMappings.some((m) => m.apiField === "name");
-  
+
   // Get all mapped fields for preview table headers
   const getMappedFields = (): string[] => {
     const fields = new Set<string>();
@@ -243,7 +243,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
     setIsLoading(true);
     const token = await getToken();
-    
+
     try {
       const payload: any = {
         new_contacts: validSubscribers,
@@ -280,7 +280,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
           } else if (resJson?.error?.message) {
             errorMessage = resJson.error.message;
           }
-        } catch {}
+        } catch { }
         throw new Error(errorMessage || "Failed to upload subscribers");
       }
 
@@ -381,7 +381,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                 </div>
 
                 <div className="flex justify-end gap-3 mt-8 font-medium">
-                  <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                  <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                     Cancel
                   </AppButton>
                   <AppButton onClick={parseFile} disabled={isLoading || !file} variantStyle="primary" color="primary">
@@ -414,7 +414,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                       <Plus className="w-4 h-4" /> Add Custom Field
                     </button>
                   </div>
-                  
+
                   {showAddField && (
                     <div className="flex gap-2 mb-2">
                       <input
@@ -439,7 +439,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                       </button>
                     </div>
                   )}
-                  
+
                   {/* Show custom fields as tags */}
                   <div className="flex flex-wrap gap-2">
                     {apiFields.filter(f => f.isCustom).map(field => (
@@ -508,7 +508,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     </div>
                   </AppButton>
                   <div className="flex gap-3">
-                    <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                    <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
                     <AppButton onClick={generatePreview} disabled={!hasNameMapping} variantStyle="primary" color="primary">
@@ -574,7 +574,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     </div>
                   </AppButton>
                   <div className="flex gap-3">
-                    <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+                    <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
                     <AppButton onClick={uploadSubscribers} disabled={isLoading || previewData.filter((r) => r.name?.trim()).length === 0} variantStyle="primary" color="primary">

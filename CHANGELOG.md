@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.16] - 2026-02-28
+
+### Detail Versi 1.8.16
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **Import Modals (Subscriber & Contact)**: Removed the confirmation popup when clicking the "Cancel" button in Import Subscriber and Import Contact modals. Clicking Cancel now immediately closes the modal. The confirmation popup is still shown when clicking on the backdrop (background overlay) to prevent accidental data loss.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+
 ## [1.8.15] - 2026-02-27
 
 ### Detail Versi 1.8.15

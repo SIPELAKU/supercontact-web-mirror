@@ -33,7 +33,7 @@ import {
     Typography
 } from '@mui/material';
 import { format } from 'date-fns';
-import { ArrowLeft, Eye, Filter, Search, Trash2, Upload, UserPlus } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -230,7 +230,7 @@ const MailingListDetailPage = () => {
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <AppButton
                                 variantStyle="outline"
-                                startIcon={<Upload size={18} />}
+                                startIcon={<Download size={18} />}
                                 onClick={() => setShowImportModal(true)}
                                 sx={{
                                     height: '42px',

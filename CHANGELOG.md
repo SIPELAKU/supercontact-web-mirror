@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.18] - 2026-02-28
+
+### Detail Versi 1.8.18
+
+#### 🐛 Bug Fixes
+
+- **Checkout Redirect Fix**: Fixed "Checkout Failed - Invalid checkout response received" error when upgrading subscription plan. The backend migrated from Midtrans to Xendit, returning `payment_redirect_url` instead of `midtrans_redirect_url`. Updated the checkout handler and `CheckoutResponseData` type to match the new API response.
+
+#### 📁 Files Modified
+
+- `components/subscription/SubscriptionClient.tsx`
+- `lib/api/billings.ts`
+
 ## [1.8.17] - 2026-02-28
 
 ### Detail Versi 1.8.17

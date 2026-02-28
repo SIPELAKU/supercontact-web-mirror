@@ -53,9 +53,9 @@ export default function SubscriptionClient() {
 
         try {
             const res = await checkoutBillingPlan(token, { plan_id: planId });
-            if (res.success && res.data.midtrans_redirect_url) {
-                // Open Midtrans payment window/redirect in a new tab
-                window.open(res.data.midtrans_redirect_url, '_blank');
+            if (res.success && res.data.payment_redirect_url) {
+                // Open payment window/redirect in a new tab
+                window.open(res.data.payment_redirect_url, '_blank');
             } else {
                 notify.error("Checkout Failed", { description: "Invalid checkout response received." });
             }

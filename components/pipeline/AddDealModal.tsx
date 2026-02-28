@@ -554,7 +554,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 type="button"
                 variantStyle="outline"
                 color="gray"
-                onClick={handleClose}
+                onClick={handleConfirmClose}
               >
                 Cancel
               </AppButton>

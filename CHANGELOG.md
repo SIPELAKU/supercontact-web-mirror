@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.19] - 2026-03-01
+
+### Detail Versi 1.8.19
+
+#### 🐛 Bug Fixes
+
+- **Individual Intelligence Pagination**: Fixed pagination showing more cards than the "per page" setting. The API paginates by companies (each with multiple key people), so setting "10 per page" could display 20-30+ cards. Switched to client-side pagination: all companies are fetched at once, key people are flattened, and the flattened list is paginated locally so "10 per page" now shows exactly 10 people cards.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+
 ## [1.8.18] - 2026-02-28
 
 ### Detail Versi 1.8.18

@@ -7,6 +7,7 @@ import { AppInput } from '@/components/ui/app-input';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import { notify } from '@/lib/notifications';
 import { Subscriber } from '@/lib/types/email-marketing';
+import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 import {
   Box,
   Button,
@@ -24,7 +25,7 @@ import {
   TextField,
   Tooltip
 } from '@mui/material';
-import { Download, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Download, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
@@ -42,6 +43,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
+  const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
@@ -233,6 +235,13 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
                     <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => setPreviewSubscriber(row)}
+                          sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                        >
+                          <Eye size={18} />
+                        </IconButton>
                         <EditButton onClick={() => onEdit(row)} />
                         <DeleteButton onClick={() => onDeleteRequest([row])} />
                       </Box>
@@ -254,6 +263,11 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>
+
+      <SubscriberPreviewPopup
+        subscriber={previewSubscriber}
+        onClose={() => setPreviewSubscriber(null)}
+      />
     </div>
   );
 };

@@ -38,9 +38,11 @@ export const ContactClient = () => {
     const allColumns = [
         { id: "selection", label: "Checkbox selection" },
         { id: "name", label: "Name" },
+        { id: "email", label: "Email" },
         { id: "phone", label: "Phone" },
         { id: "position", label: "Position" },
         { id: "company", label: "Company" },
+        { id: "address", label: "Address" },
         { id: "action", label: "Action" },
     ];
 
@@ -173,9 +175,11 @@ export const ContactClient = () => {
             let itemValue = "";
             // Map column IDs to item properties
             if (filter.columnId === "name") itemValue = item.name;
+            else if (filter.columnId === "email") itemValue = item.email;
             else if (filter.columnId === "phone") itemValue = item.phone_number;
             else if (filter.columnId === "position") itemValue = item.position;
             else if (filter.columnId === "company") itemValue = item.company;
+            else if (filter.columnId === "address") itemValue = item.address;
             else return true; // unsupported column for filter
 
             itemValue = (itemValue || "").toString().toLowerCase();

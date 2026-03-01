@@ -39,7 +39,7 @@ interface ApiField {
 const DEFAULT_API_FIELDS: ApiField[] = [
   { value: null, label: "-- Skip this column --" },
   { value: "name", label: "Name (required)" },
-  { value: "email", label: "Email (required)" },
+  { value: "email", label: "Email" },
   { value: "phone_number", label: "Phone Number" },
   { value: "position", label: "Position" },
   { value: "company", label: "Company" },
@@ -243,10 +243,10 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   };
 
   const uploadContacts = async () => {
-    const validContacts = previewData.filter((c) => c.name && c.name.trim() && c.email && c.email.trim());
+    const validContacts = previewData.filter((c) => c.name && c.name.trim());
 
     if (validContacts.length === 0) {
-      notify.error("No valid contacts found. Name and Email fields are required.");
+      notify.error("No valid contacts found. Name field is required.");
       return;
     }
 
@@ -286,7 +286,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
       const skipped = previewData.length - validContacts.length;
       if (skipped > 0) {
-        notify.warning(`${skipped} row(s) skipped due to missing name or email`);
+        notify.warning(`${skipped} row(s) skipped due to missing name`);
       }
       notify.success(`Successfully imported ${validContacts.length} contacts`);
       handleClose();
@@ -505,9 +505,9 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                   Tip: You can map multiple columns to "Name" to combine them. Add custom fields for additional data.
                 </p>
 
-                {(!hasNameMapping || !hasEmailMapping) && (
+                {!hasNameMapping && (
                   <p className="text-sm text-red-500 mt-2">
-                    Please map at least one column to "Name" and "Email" (required fields).
+                    Please map at least one column to "Name" (required field).
                   </p>
                 )}
 
@@ -521,7 +521,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={generatePreview} disabled={!hasNameMapping || !hasEmailMapping} variantStyle="primary" color="primary">
+                    <AppButton onClick={generatePreview} disabled={!hasNameMapping} variantStyle="primary" color="primary">
                       <div className="flex items-center gap-2">
                         Preview <ArrowRight className="w-4 h-4" />
                       </div>
@@ -549,7 +549,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     </thead>
                     <tbody>
                       {previewData.slice(0, 50).map((row, idx) => {
-                        const isValid = row.name && row.name.trim() && row.email && row.email.trim();
+                        const isValid = row.name && row.name.trim();
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="p-3 text-gray-500">{idx + 1}</td>
@@ -562,7 +562,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                               {isValid ? (
                                 <span className="text-green-600 text-xs bg-green-50 px-2 py-1 rounded">Valid</span>
                               ) : (
-                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">{!row.name?.trim() ? "Missing name" : "Missing email"}</span>
+                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">Missing name</span>
                               )}
                             </td>
                           </tr>
@@ -574,7 +574,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
                 <div className="mt-3 text-sm text-gray-500">
                   Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
-                  {" "}{previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim() || !r.email?.trim()).length} will be skipped.
+                  {" "}{previewData.filter((r) => r.name?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim()).length} will be skipped.
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6 font-medium">

@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.21] - 2026-03-01
+
+### Detail Versi 1.8.21
+
+#### 🐛 Bug Fixes
+
+- **Preview Popup - View Full Details**: Fixed "View Full Details" button not navigating to the contact detail page. The popup now closes before triggering navigation.
+- **Edit Contact Modal - Custom Fields**: The edit modal now loads and displays existing custom fields (e.g. "occupation"). Users can edit values, delete fields, and add new custom fields. Custom fields are included in the PUT payload.
+
+#### ✨ Enhancements
+
+- **Contact Detail - Custom Fields**: The contact detail page now displays custom fields (like "Occupation") below the Address row, matching the same style as other contact info rows.
+
+#### 📁 Files Modified
+
+- `components/contact/ContactTable.tsx`
+- `components/contact/modal/EditContactModal.tsx`
+- `components/contact/detail/sections/ContactInfo.tsx`
+- `lib/models/types.ts`
+
+## [1.8.20] - 2026-03-01
+
+### Detail Versi 1.8.20
+
+#### 🐛 Bug Fixes
+
+- **Contact Import - Name Only Required**: For contact import, only the Name field is now required (previously both Name and Email were required). Email remains required for subscriber imports only.
+
+#### ✨ Enhancements
+
+- **Contact Table - New Columns**: Added separate Email and Address columns to the contact table, toggleable via column visibility settings.
+- **Contact Table - Preview Popup**: Added an eye icon (👁) button in each row's action column. Clicking it opens a preview popup showing the full contact details including email, phone, company, position, address, subscription status, custom fields, and creation date. The popup also has "View Full Details" and "Edit" action buttons.
+- **Contact Table - Avatars**: Updated the name column avatar to show the contact's initial letter instead of a plain blue circle.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `lib/models/types.ts`
+
 ## [1.8.19] - 2026-03-01
 
 ### Detail Versi 1.8.19

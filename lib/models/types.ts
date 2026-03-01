@@ -24,6 +24,7 @@ export interface Contact {
   company: string,
   address: string,
   is_subscribed: boolean,
+  custom_fields?: Record<string, string>,
   created_at: string,
   updated_at: string,
   last_contacted?: {
@@ -120,6 +121,7 @@ export interface ContactReq {
   company: string | null;
   position: string;
   address: string | null;
+  custom_fields?: Record<string, string>;
 }
 
 export interface MailServer {

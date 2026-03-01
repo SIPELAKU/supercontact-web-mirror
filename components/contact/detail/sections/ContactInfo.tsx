@@ -45,6 +45,23 @@ export const ContactInfo = ({ contact }: ContactInfoProps) => {
                         {contact.address || "-"}
                     </span>
                 </div>
+
+                {/* Custom Fields */}
+                {contact.custom_fields && Object.keys(contact.custom_fields).length > 0 && (
+                    <>
+                        {Object.entries(contact.custom_fields).map(([key, value]) => (
+                            <div key={key}>
+                                <Divider />
+                                <div className="grid grid-cols-4 gap-2 text-sm mt-4">
+                                    <span className="text-gray-500 col-span-1 capitalize">{key.replace(/_/g, " ")}</span>
+                                    <span className="col-span-3 font-medium text-start break-all">
+                                        {value || "-"}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </>
+                )}
             </div>
         </div>
     );

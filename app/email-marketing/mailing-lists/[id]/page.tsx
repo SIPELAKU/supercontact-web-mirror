@@ -3,6 +3,7 @@
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
+import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
 import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
@@ -65,6 +66,7 @@ const MailingListDetailPage = () => {
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
+    const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
 
     const mailingList = mailingListData?.data;
     const subscribers = mailingList?.subscribers?.contacts || [];
@@ -290,15 +292,26 @@ const MailingListDetailPage = () => {
                                                 <TableCell sx={{ py: 2 }}>{subscriber.name || '-'}</TableCell>
                                                 <TableCell sx={{ py: 2 }}>{subscriber.company || '-'}</TableCell>
                                                 <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => setSubscriberToDelete(subscriber)}
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                                                        <Tooltip title="Preview">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => setPreviewSubscriber(subscriber)}
+                                                                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                                                            >
+                                                                <Eye size={18} />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => setSubscriberToDelete(subscriber)}
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Box>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -460,6 +473,11 @@ const MailingListDetailPage = () => {
                     setSelectedCampaign(null);
                 }}
                 campaign={selectedCampaign}
+            />
+
+            <SubscriberPreviewPopup
+                subscriber={previewSubscriber}
+                onClose={() => setPreviewSubscriber(null)}
             />
         </Box>
     );

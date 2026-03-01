@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.22] - 2026-03-01
+
+### Detail Versi 1.8.22
+
+#### ✨ Enhancements
+
+- **Subscriber Preview Popup**: Added an eye icon (👁) button to subscriber table rows on both the All Subscribers page and the Mailing List Subscriber tab. Clicking the icon opens a preview popup showing full subscriber details: email, phone, company, position, address, creation date, subscription status, and custom fields.
+- **Subscriber Custom Fields (Preview)**: Custom fields (e.g. "occupation") are displayed in the preview popup under an "Additional Info" section in a 2-column grid.
+- **Subscriber Custom Fields (Edit)**: The Edit Subscriber modal now loads and displays custom fields. Users can edit values, delete fields, and add new custom fields.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/SubscriberPreviewPopup.tsx` [NEW]
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/email-marketing/subscribers/modals/EditSubscriberModal.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `lib/types/email-marketing.ts`
+
 ## [1.8.21] - 2026-03-01
 
 ### Detail Versi 1.8.21

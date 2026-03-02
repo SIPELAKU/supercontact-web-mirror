@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.23] - 2026-03-02
+
+### Detail Versi 1.8.23
+
+#### ✨ Data Intelligence & Optimization
+
+- **Server-Side Pagination & Search**: Shifted subscriber lists from front-end pagination to highly efficient backend server-side pagination.
+  - **All Subscribers**: Updated the table to dynamically fetch chunked pages and pass search queries directly to the backend.
+  - **Mailing List Details**: The subscriber table within a specific mailing list now uses server-side pagination, ensuring fast load times even for mailing lists with thousands of contacts.
+  - **Debounced Search**: Input searches are now throttled by 500ms to prevent spamming the API with requests while typing.
+
+#### 📁 Files Modified
+
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/hooks/useMailingLists.ts`
+- `lib/hooks/useSubscribers.ts`
+
 ## [1.8.22] - 2026-03-01
 
 ### Detail Versi 1.8.22

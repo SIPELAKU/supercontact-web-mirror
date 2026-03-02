@@ -14,8 +14,15 @@ import { fetchWithTimeout } from "../api-client";
 // Functions
 // ============================================
 
-export async function fetchMailingLists(token: string, page: number = 1, limit: number = 10): Promise<MailingListsResponse> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists?page=${page}&limit=${limit}`;
+export async function fetchMailingLists(token: string, page: number = 1, limit: number = 10, search?: string): Promise<MailingListsResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists?${queryParams.toString()}`;
 
   logger.info("Making GET request to fetch mailing lists", { url, page, limit });
 
@@ -112,10 +119,17 @@ export async function fetchMailingListCampaigns(token: string, mailingListId: st
   }
 }
 
-export async function fetchMailingListDetail(token: string, mailingListId: string): Promise<MailingListDetailResponse> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}`;
+export async function fetchMailingListDetail(token: string, mailingListId: string, page: number = 1, limit: number = 10, search?: string): Promise<MailingListDetailResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}?${queryParams.toString()}`;
 
-  logger.info("Making GET request to fetch mailing list detail", { url, mailingListId });
+  logger.info("Making GET request to fetch mailing list detail", { url, mailingListId, page, limit });
 
   try {
     const res = await fetchWithTimeout(url, {

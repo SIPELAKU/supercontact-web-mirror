@@ -129,7 +129,7 @@ export default function SubscriptionClient() {
                                         variantStyle="primary"
                                         className="w-full"
                                         onClick={() => activePlanId ? handleUpgrade(activePlanId) : notify.info("No active plan", { description: "You don't have an active billed plan to manage." })}
-                                        disabled={!activePlanId || isProcessingId === activePlanId}
+                                        disabled={!activePlanId || isProcessingId === activePlanId || isTrial}
                                     >
                                         <CreditCard size={18} className="mr-2" />
                                         {isProcessingId === activePlanId ? "Processing..." : "Manage Payment Method"}
@@ -145,6 +145,11 @@ export default function SubscriptionClient() {
                             {plans.map((plan) => {
                                 const isCurrent = plan.id === activePlanId || plan.code === currentPlan?.toLowerCase();
                                 const isPopular = plan.code === 'standard' || plan.code === 'professional'; // Fallback logic for popular mark
+                                const isTrialPlan = plan.code?.toLowerCase() === 'trial' || plan.name?.toLowerCase().includes('trial');
+
+                                if (isTrialPlan && !isTrial) {
+                                    return null;
+                                }
 
                                 return (
                                     <Grid item xs={12} sm={6} key={plan.id}>
@@ -226,7 +231,7 @@ export default function SubscriptionClient() {
                                                     variantStyle={isCurrent ? "outline" : (isPopular ? "primary" : "outline")}
                                                     className="w-full"
                                                     onClick={() => handleUpgrade(plan.id)}
-                                                    disabled={isCurrent || isProcessingId === plan.id}
+                                                    disabled={isCurrent || isProcessingId === plan.id || isTrialPlan}
                                                 >
                                                     {isProcessingId === plan.id ? "Processing..." : (isCurrent ? "Current Plan" : `Upgrade to ${plan.name}`)}
                                                 </AppButton>

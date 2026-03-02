@@ -48,8 +48,8 @@ export interface CheckoutResponseData {
     payment_transaction_id: string;
     order_id: string;
     status: string;
-    midtrans_token: string;
-    midtrans_redirect_url: string;
+    payment_token: string;
+    payment_redirect_url: string;
 }
 
 export interface CheckoutResponse {

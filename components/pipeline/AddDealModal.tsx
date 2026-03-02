@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+
 import {
   Dialog,
   DialogContent
@@ -554,7 +554,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 type="button"
                 variantStyle="outline"
                 color="gray"
-                onClick={handleClose}
+                onClick={handleConfirmClose}
               >
                 Cancel
               </AppButton>

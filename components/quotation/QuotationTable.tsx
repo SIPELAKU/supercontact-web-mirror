@@ -1,7 +1,7 @@
 "use client"
 
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
-import { Button } from "@/components/ui/button"
+
 import { FilterBar } from "@/components/ui/filter"
 import { useEffect, useMemo, useState } from "react"
 import { formatRupiah } from "@/lib/helper/currency"
@@ -140,7 +140,7 @@ export default function QuotationTable() {
                     />
                 </div>
 
-                <Link href={"/sales/quotation/add"}>
+                <Link href="/sales/quotation/add">
                     <AppButton
                         variantStyle="primary"
                         color="primary"

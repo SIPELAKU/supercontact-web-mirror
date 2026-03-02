@@ -42,7 +42,7 @@ const CTA = () => {
     };
 
     return (
-        <Box sx={{ py: 10, backgroundColor: '#F7F7F9' }}>
+        <Box sx={{ py: { xs: 0, md: 10 }, pb: { xs: 10 }, backgroundColor: '#F7F7F9' }}>
             <Container>
                 <Box sx={{ textAlign: 'center', mb: 6, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: { xs: '100%', md: '70%' } }}>
                     {/* Vector Element */}
@@ -56,7 +56,8 @@ const CTA = () => {
                             opacity: 0.8,
                             mr: 2, // Spacing between vector and text
                             transform: 'translateY(-50%)', // Fine tune alignment
-                            mt: 1
+                            mt: 1,
+                            display: { xs: 'none', md: 'block' }
                         }}
                     />
                     <Box>

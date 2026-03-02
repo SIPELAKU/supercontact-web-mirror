@@ -49,7 +49,7 @@ const FAQ = () => {
     ];
 
     return (
-        <Box sx={{ py: 10, bgcolor: '#F7F7F9', overflow: 'hidden', position: 'relative' }}>
+        <Box sx={{ py: { xs: 0, md: 10 }, pb: { xs: 10 }, bgcolor: '#F7F7F9', overflow: 'hidden', position: 'relative' }}>
             {/* Polygon Background */}
             <Box
                 component="img"

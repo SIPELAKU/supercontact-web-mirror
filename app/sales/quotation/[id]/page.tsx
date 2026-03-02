@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { fetchQuotationById } from "@/lib/api/quotations";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import PageHeader from "@/components/ui/page-header";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -70,10 +70,10 @@ export default function QuotationDetailPage() {
                 </Card>
                 <div className="mt-4">
                     <Link href="/sales/quotation">
-                        <Button variant="outline" className="gap-2">
+                        <AppButton variantStyle="outline" className="gap-2">
                             <ArrowLeft className="h-4 w-4" />
                             Back to Quotations
-                        </Button>
+                        </AppButton>
                     </Link>
                 </div>
             </div>

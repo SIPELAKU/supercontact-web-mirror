@@ -5,6 +5,315 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.22] - 2026-03-01
+
+### Detail Versi 1.8.22
+
+#### ✨ Enhancements
+
+- **Subscriber Preview Popup**: Added an eye icon (👁) button to subscriber table rows on both the All Subscribers page and the Mailing List Subscriber tab. Clicking the icon opens a preview popup showing full subscriber details: email, phone, company, position, address, creation date, subscription status, and custom fields.
+- **Subscriber Custom Fields (Preview)**: Custom fields (e.g. "occupation") are displayed in the preview popup under an "Additional Info" section in a 2-column grid.
+- **Subscriber Custom Fields (Edit)**: The Edit Subscriber modal now loads and displays custom fields. Users can edit values, delete fields, and add new custom fields.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/SubscriberPreviewPopup.tsx` [NEW]
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/email-marketing/subscribers/modals/EditSubscriberModal.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `lib/types/email-marketing.ts`
+
+## [1.8.21] - 2026-03-01
+
+### Detail Versi 1.8.21
+
+#### 🐛 Bug Fixes
+
+- **Preview Popup - View Full Details**: Fixed "View Full Details" button not navigating to the contact detail page. The popup now closes before triggering navigation.
+- **Edit Contact Modal - Custom Fields**: The edit modal now loads and displays existing custom fields (e.g. "occupation"). Users can edit values, delete fields, and add new custom fields. Custom fields are included in the PUT payload.
+
+#### ✨ Enhancements
+
+- **Contact Detail - Custom Fields**: The contact detail page now displays custom fields (like "Occupation") below the Address row, matching the same style as other contact info rows.
+
+#### 📁 Files Modified
+
+- `components/contact/ContactTable.tsx`
+- `components/contact/modal/EditContactModal.tsx`
+- `components/contact/detail/sections/ContactInfo.tsx`
+- `lib/models/types.ts`
+
+## [1.8.20] - 2026-03-01
+
+### Detail Versi 1.8.20
+
+#### 🐛 Bug Fixes
+
+- **Contact Import - Name Only Required**: For contact import, only the Name field is now required (previously both Name and Email were required). Email remains required for subscriber imports only.
+
+#### ✨ Enhancements
+
+- **Contact Table - New Columns**: Added separate Email and Address columns to the contact table, toggleable via column visibility settings.
+- **Contact Table - Preview Popup**: Added an eye icon (👁) button in each row's action column. Clicking it opens a preview popup showing the full contact details including email, phone, company, position, address, subscription status, custom fields, and creation date. The popup also has "View Full Details" and "Edit" action buttons.
+- **Contact Table - Avatars**: Updated the name column avatar to show the contact's initial letter instead of a plain blue circle.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `lib/models/types.ts`
+
+## [1.8.19] - 2026-03-01
+
+### Detail Versi 1.8.19
+
+#### 🐛 Bug Fixes
+
+- **Individual Intelligence Pagination**: Fixed pagination showing more cards than the "per page" setting. The API paginates by companies (each with multiple key people), so setting "10 per page" could display 20-30+ cards. Switched to client-side pagination: all companies are fetched at once, key people are flattened, and the flattened list is paginated locally so "10 per page" now shows exactly 10 people cards.
+
+#### 📁 Files Modified
+
+- `components/intelligence-individual/IndividualClient.tsx`
+
+## [1.8.18] - 2026-02-28
+
+### Detail Versi 1.8.18
+
+#### 🐛 Bug Fixes
+
+- **Checkout Redirect Fix**: Fixed "Checkout Failed - Invalid checkout response received" error when upgrading subscription plan. The backend migrated from Midtrans to Xendit, returning `payment_redirect_url` instead of `midtrans_redirect_url`. Updated the checkout handler and `CheckoutResponseData` type to match the new API response.
+
+#### 📁 Files Modified
+
+- `components/subscription/SubscriptionClient.tsx`
+- `lib/api/billings.ts`
+
+## [1.8.17] - 2026-02-28
+
+### Detail Versi 1.8.17
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **AppButton Loading Spinner**: Fixed the `isLoading` prop to actually render a `CircularProgress` spinner. Previously it only disabled the button without visual feedback.
+- **Page Loading Indicator**: Added a global `loading.tsx` at the app root level to display a centered spinner during all page transitions.
+- **Import Email Required**: Made email a required field in both Import Subscriber and Import Contact modals. Rows missing email are now marked invalid and skipped during import.
+- **Import Button Styling**: Standardized all Import buttons (Contact, Subscriber, Mailing List) to use `outline` variant with a downward arrow (`Download`) icon instead of `Upload` for correct semantics.
+- **Add Deal Modal Cancel Button**: Removed the confirmation popup when clicking the Cancel button in the Add Deal modal. Backdrop click still triggers confirmation.
+
+#### 📁 Files Created
+
+- `app/loading.tsx`
+
+#### 📁 Files Modified
+
+- `components/ui/app-button.tsx`
+- `components/quotation/QuotationTable.tsx`
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/ContactToolbar.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/pipeline/AddDealModal.tsx`
+
+## [1.8.16] - 2026-02-28
+
+### Detail Versi 1.8.16
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **Import Modals (Subscriber & Contact)**: Removed the confirmation popup when clicking the "Cancel" button in Import Subscriber and Import Contact modals. Clicking Cancel now immediately closes the modal. The confirmation popup is still shown when clicking on the backdrop (background overlay) to prevent accidental data loss.
+- **Add Contact Modal**: Removed the confirmation popup from the Cancel button. Backdrop click still triggers confirmation.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+- `components/contact/modal/AddContactModal.tsx`
+
+## [1.8.15] - 2026-02-27
+
+### Detail Versi 1.8.15
+
+#### ✉️ Enhanced Bulk Import with Custom Column Mapping
+
+- **Import Subscribers Modal**: Enhanced with 3-step wizard and custom column mapping
+  - Step 1: Upload Excel/CSV file with drag-and-drop
+  - Step 2: Map columns with customizable field mapping UI
+  - Step 3: Preview data before importing
+  - Add custom fields dynamically (e.g., Gender, Company)
+  - Combine multiple columns into Name field (first_name + last_name)
+  - Fixed endpoint to `/api/proxy/subscribers/bulk`
+
+- **Import Contact Modal**: Added same 3-step wizard with custom column mapping
+  - Default fields: Name, Email, Phone Number, Position, Company, Address
+  - Support for custom fields creation
+  - Payload format: `{ "contacts": [...] }`
+  - Uses `/api/proxy/contacts/bulk` endpoint
+
+#### 🐛 Bug Fixes
+
+- **Google Fonts**: Removed all Poppins font imports to fix build timeout issues on restricted networks
+- **Localization**: Created custom LocalizedStrings implementation to replace react-localization dependency
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+- `components/contact/modal/ImportContactModal.tsx`
+- `app/(auth)/forgot-password/verify-otp/page.tsx`
+- `lib/utils/strings.ts`
+
+## [1.8.14] - 2026-02-27
+
+### Detail Versi 1.8.14
+
+#### ✉️ Email Marketing - Bulk Import Subscribers
+
+- **Import Subscribers Modal**: Added bulk import functionality for subscribers via Excel/CSV files
+  - Drag-and-drop file upload with .xlsx and .csv support
+  - Auto-mapping of columns (Name, Email, Phone Number)
+  - Validation for required fields (Name and Email)
+  - Support for both subscriber page and mailing list page imports
+  - Uses `/subscribers/bulk` API endpoint with `target` parameter
+
+- **Subscribers Page**: Added Import button next to Add Subscriber button
+- **Mailing List Detail Page**: Added Import button to bulk add subscribers to specific mailing list
+
+#### 📁 Files Created
+
+- `components/email-marketing/subscribers/modals/ImportSubscriberModal.tsx`
+
+#### 📁 Files Modified
+
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+
+## [1.8.13] - 2026-02-27
+
+### Detail Versi 1.8.13
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **Hamburger Button on Topbar**: Fixed an issue where the hamburger button on Topbar was showing double on all screen sizes. Now it is showing only one hamburger button on all screen sizes.
+
+#### 📁 Files Modified
+
+- `components/layout/Topbar.tsx`
+
+## [1.8.12] - 2026-02-26
+
+### Detail Versi 1.8.12
+
+#### 🐛 Bug Fixes & UI Polish
+
+- **WhatsApp Floating Button**: Fixed an issue where the WhatsApp floating button would briefly appear during the loading screen immediately after a successful login. The button is now strictly hidden for authenticated users to prevent this flash before redirection.
+
+#### 📁 Files Modified
+
+- `components/layout/AuthenticatedLayout.tsx`
+
+## [1.8.11] - 2026-02-26
+
+### Detail Versi 1.8.11
+
+#### 🎨 Landing Page & UI Responsiveness
+
+- **TrustedBy Section**: Overhauled the brand logos footer layout for mobile devices using a 2-column Grid. Ensured the last item centers dynamically if the total count is odd. Applied distinct custom sizing for targeted logos (Eckerd and Dribbble).
+- **CTA & FAQ Components**: Refined vertical padding (`py`, `pb`) specifically for mobile viewports to ensure consistent and balanced spacing.
+- **Footer Updates**: Improved the newsletter subscription form layout to be full-width and stacked vertically on small screens for better accessibility.
+- **Company & Pricing**: Cleaned up redundant bottom margins on the CTA wrapper within the Company page and adjusted mobile vertical padding in the PricingTrial section.
+
+#### 📁 Files Modified
+
+- `components/layout/TrustedBy.tsx`
+- `components/layout/CTA.tsx`
+- `components/layout/FAQ.tsx`
+- `components/layout/Footer.tsx`
+- `components/company/CompanyClient.tsx`
+- `components/price/PricingTrial.tsx`
+
+## [1.8.10] - 2026-02-26
+
+### Detail Versi 1.8.10
+
+#### 📇 Contact Tasks
+
+- **Status & Priority Badges**: Updated the `Task` interface to use strict union types for `priority` and `status`. Added color-coded priority badges (High: Red, Medium: Orange, Low: Green) below task descriptions for better visual hierarchy.
+- **Task Status Icons**: Added UI support for the "in_progress" task status in the Contact Detail page, displaying a primary blue (`#5479EE`) circle icon with three dots (`MoreHorizontal`). Adjusted the status timeline line spacing.
+
+#### 📁 Files Modified
+
+- `components/contact/detail/sections/ContactTasks.tsx`
+- `lib/models/types.ts`
+
+## [1.8.9] - 2026-02-26
+
+### Detail Versi 1.8.9
+
+#### 📇 Contact Detail Page
+
+- **Enhanced Loading & Empty States**: Upgraded the loading state to use a centered `CircularProgress` indicator and redesigned the empty state (contact not found) with a styled, descriptive container to improve user experience.
+
+#### 📁 Files Modified
+
+- `components/contact/detail/ContactDetailClient.tsx`
+
+## [1.8.8] - 2026-02-26
+
+### Detail Versi 1.8.8
+
+#### 🧹 UI Component Cleanup & Refactoring
+
+- **Component Standardization**: Replaced all usages of `Button` from `@/components/ui/button` with the more robust `AppButton` across the entire codebase to ensure UI consistency.
+- **Removal of Unused Components**: Deleted unused UI components including `button`, `accordion`, `alert-dialog`, `alert`, `app-timepicker`, `aspect-ratio`, `custom-icon`, `native-select`, `progress`, `sheet`, and `use-mobile` to simplify the project structure and reduce bundle size.
+
+#### 📁 Files Modified
+
+- `components/ui/accordion.tsx` [DELETE]
+- `components/ui/alert-dialog.tsx` [DELETE]
+- `components/ui/alert.tsx` [DELETE]
+- `components/ui/app-timepicker.tsx` [DELETE]
+- `components/ui/aspect-ratio.tsx` [DELETE]
+- `components/ui/button.tsx` [DELETE]
+- `components/ui/custom-icon.tsx` [DELETE]
+- `components/ui/native-select.tsx` [DELETE]
+- `components/ui/progress.tsx` [DELETE]
+- `components/ui/sheet.tsx` [DELETE]
+- `components/ui/use-mobile.tsx` [DELETE]
+- 14 other files modified to replace Button with AppButton.
+
+## [1.8.7] - 2026-02-26
+
+### Detail Versi 1.8.7
+
+#### 📇 Contact Detail Page
+
+- **Modular Contact Detail**: Refactored `ContactDetailClient.tsx` into smaller, manageable sections (`ContactHeader`, `ContactInfo`, `ContactTags`, `ContactNotes`, and `ContactTasks`) for improved code readability and maintainability.
+- **State Management**: Moved local states specific to certain sections (e.g., note input state, active tabs) into their respective component modules.
+- **UI Tweaks**: Updated the "Back" button styling on the Contact Detail page to use an `outline` variant with the `primary` theme color.
+- **Code Clean Up**: Fixed Tailwind class naming convention warnings (`break-words` updated to `wrap-break-word`).
+
+#### 📁 Files Modified
+
+- `components/contact/detail/ContactDetailClient.tsx`
+- `components/contact/detail/sections/ContactHeader.tsx` [NEW]
+- `components/contact/detail/sections/ContactInfo.tsx` [NEW]
+- `components/contact/detail/sections/ContactTags.tsx` [NEW]
+- `components/contact/detail/sections/ContactNotes.tsx` [NEW]
+- `components/contact/detail/sections/ContactTasks.tsx` [NEW]
+
+## [1.8.6] - 2026-02-25
+
+### Detail Versi 1.8.6
+
+#### 🎫 Support Tickets
+- **Modal Confirmation Fixes**: Adjusted the behavior of the confirmation popup in the Add Ticket and Edit Ticket modals. Clicking the "Cancel" button now immediately closes the modal without a prompt, while clicking on the backdrop (shadow area) or pressing Escape retains the confirmation popup to prevent accidental data loss.
+
+#### 📁 Files Modified
+- `components/support/tickets/modals/AddTicketModal.tsx`
+- `components/support/tickets/modals/EditTicketModal.tsx`
+
 ## [1.8.5] - 2026-02-25
 
 ### Detail Versi 1.8.5
@@ -64,8 +373,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/intelligence-individual/IndividualClient.tsx`
 - `components/intelligence-individual/IndividualCard.tsx`
 
-
 - **Payload Key Migration**: Standardized the login payload to use `plan_name` (formerly `subscription_status`) and began capturing `plan_expires_at` systematically.
+
+#### Subscription & Billing
+
 - **My Subscription Page**: Created a newly dedicated `/subscription` page summarizing the user's active billing plan and account owner details.
 - **Midtrans Prep**: Built up the upgrade and payment management layout explicitly designed with placeholders for upcoming Midtrans payment gateway integrations.
 - **Profile Navigation**: Added a direct quick-link to the new Subscription management page within the top-right user profile dropdown menu, marked with a `CreditCard` icon.
@@ -80,6 +391,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/contact/modal/EditContactModal.tsx`
 - `components/contact/ContactClient.tsx`
+
+#### 🎯 Individual Intelligence - Bulk Selection
+
+- **Select All Feature**: Added a "Select All" button in selection mode for bulk selection/deselection of individuals in the grid.
 
 ## [1.8.1] - 2026-02-25
 

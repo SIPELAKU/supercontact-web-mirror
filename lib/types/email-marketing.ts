@@ -10,6 +10,7 @@ export interface Subscriber {
   company: string;
   address: string;
   is_subscribed: boolean;
+  custom_fields?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }

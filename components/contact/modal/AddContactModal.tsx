@@ -335,7 +335,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
-              <AppButton onClick={() => setShowCloseConfirmation(true)} variantStyle="outline" color="primary">
+              <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                 Cancel
               </AppButton>
 

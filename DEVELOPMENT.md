@@ -9,14 +9,14 @@ This project uses TypeScript path mapping for cleaner imports. All imports shoul
 ✅ **Use these patterns:**
 ```typescript
 import { useAuth } from "@/lib/context/AuthContext";
-import { Button } from "@/components/ui/button";
+import { AppButton } from "@/components/ui/app-button";
 import { fetchUsers } from "@/lib/api";
 ```
 
 ❌ **Avoid these patterns:**
 ```typescript
 import { useAuth } from "../../../lib/context/AuthContext";
-import { Button } from "../../components/ui/button";
+import { AppButton } from "../../components/ui/app-button";
 import { fetchUsers } from "../lib/api";
 ```
 

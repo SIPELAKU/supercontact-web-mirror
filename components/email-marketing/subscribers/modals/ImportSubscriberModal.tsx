@@ -1,27 +1,24 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import ReactDOM from "react-dom";
+import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Upload, FileSpreadsheet, Download, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
-interface ImportContactModalProps {
+interface ImportSubscriberModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  mailingListIds?: string[];
 }
 
-interface ContactData {
+interface SubscriberData {
   name: string;
   email?: string;
   phone_number?: string;
-  position?: string;
-  company?: string;
-  address?: string;
   [key: string]: string | undefined;
 }
 
@@ -39,41 +36,33 @@ interface ApiField {
 const DEFAULT_API_FIELDS: ApiField[] = [
   { value: null, label: "-- Skip this column --" },
   { value: "name", label: "Name (required)" },
-  { value: "email", label: "Email" },
+  { value: "email", label: "Email (required)" },
   { value: "phone_number", label: "Phone Number" },
-  { value: "position", label: "Position" },
-  { value: "company", label: "Company" },
-  { value: "address", label: "Address" },
 ];
 
-const ImportContactModal: React.FC<ImportContactModalProps> = ({
+const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   open,
   onClose,
   onSuccess,
+  mailingListIds,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { getToken } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Column mapping state
   const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [rawData, setRawData] = useState<any[]>([]);
-  const [previewData, setPreviewData] = useState<ContactData[]>([]);
+  const [previewData, setPreviewData] = useState<SubscriberData[]>([]);
 
   // Custom fields state
   const [apiFields, setApiFields] = useState<ApiField[]>(DEFAULT_API_FIELDS);
   const [showAddField, setShowAddField] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
-
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
 
   const handleClose = () => {
     setFile(null);
@@ -135,12 +124,11 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   const suggestMapping = (header: string): string | null => {
     const h = header.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    if ((h.includes("name") || h.includes("nama")) && !h.includes("email") && !h.includes("last") && !h.includes("first") && !h.includes("company")) return "name";
-    if (h.includes("phone") || h.includes("telepon") || h.includes("hp") || h.includes("nomor") || h.includes("telp")) return "phone_number";
+    if ((h.includes("name") || h.includes("nama")) && !h.includes("email") && !h.includes("last") && !h.includes("first")) return "name";
+    if (h === "firstname" || h === "first" || h === "namadepan") return null;
+    if (h === "lastname" || h === "last" || h === "namabelakang") return null;
+    if (h.includes("phone") || h.includes("telepon") || h.includes("hp") || h.includes("nomor") || h.includes("telp") || h.includes("handphone")) return "phone_number";
     if (h.includes("email") || h.includes("mail") || h.includes("surel")) return "email";
-    if (h.includes("position") || h.includes("jabatan") || h.includes("title")) return "position";
-    if (h.includes("company") || h.includes("perusahaan") || h.includes("organization")) return "company";
-    if (h.includes("address") || h.includes("alamat")) return "address";
 
     return null;
   };
@@ -187,8 +175,10 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   const addCustomField = () => {
     if (!newFieldName.trim()) return;
 
+    // Convert to snake_case for API field value
     const fieldValue = newFieldName.trim().toLowerCase().replace(/\s+/g, "_");
 
+    // Check if field already exists
     if (apiFields.some(f => f.value === fieldValue)) {
       notify.error("This field already exists");
       return;
@@ -204,27 +194,28 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
   const removeCustomField = (fieldValue: string) => {
     setApiFields(prev => prev.filter(f => f.value !== fieldValue));
+    // Also remove any mappings using this field
     setColumnMappings(prev =>
       prev.map(m => m.apiField === fieldValue ? { ...m, apiField: null } : m)
     );
   };
 
   const generatePreview = () => {
-    const mapped: ContactData[] = rawData.map((row) => {
-      const contact: ContactData = { name: "" };
+    const mapped: SubscriberData[] = rawData.map((row) => {
+      const subscriber: SubscriberData = { name: "" };
 
       columnMappings.forEach((mapping) => {
         if (mapping.apiField && row[mapping.excelColumn] !== undefined) {
           const value = String(row[mapping.excelColumn] || "").trim();
           if (mapping.apiField === "name") {
-            contact.name = contact.name ? `${contact.name} ${value}` : value;
+            subscriber.name = subscriber.name ? `${subscriber.name} ${value}` : value;
           } else {
-            contact[mapping.apiField] = value;
+            subscriber[mapping.apiField] = value;
           }
         }
       });
 
-      return contact;
+      return subscriber;
     });
 
     setPreviewData(mapped);
@@ -234,6 +225,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
   const hasNameMapping = columnMappings.some((m) => m.apiField === "name");
   const hasEmailMapping = columnMappings.some((m) => m.apiField === "email");
 
+  // Get all mapped fields for preview table headers
   const getMappedFields = (): string[] => {
     const fields = new Set<string>();
     columnMappings.forEach(m => {
@@ -242,11 +234,11 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
     return Array.from(fields);
   };
 
-  const uploadContacts = async () => {
-    const validContacts = previewData.filter((c) => c.name && c.name.trim());
+  const uploadSubscribers = async () => {
+    const validSubscribers = previewData.filter((s) => s.name && s.name.trim() && s.email && s.email.trim());
 
-    if (validContacts.length === 0) {
-      notify.error("No valid contacts found. Name field is required.");
+    if (validSubscribers.length === 0) {
+      notify.error("No valid subscribers found. Name and Email fields are required.");
       return;
     }
 
@@ -254,13 +246,22 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
     const token = await getToken();
 
     try {
-      const res = await fetch("/api/proxy/contacts/bulk", {
+      const payload: any = {
+        new_contacts: validSubscribers,
+        target: mailingListIds && mailingListIds.length > 0 ? "mailing_list" : "subscriber",
+      };
+
+      if (mailingListIds && mailingListIds.length > 0) {
+        payload.mailing_list_ids = mailingListIds;
+      }
+
+      const res = await fetch("/api/proxy/subscribers/bulk", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ contacts: validContacts }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -281,18 +282,18 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
             errorMessage = resJson.error.message;
           }
         } catch { }
-        throw new Error(errorMessage || "Failed to upload contacts");
+        throw new Error(errorMessage || "Failed to upload subscribers");
       }
 
-      const skipped = previewData.length - validContacts.length;
+      const skipped = previewData.length - validSubscribers.length;
       if (skipped > 0) {
-        notify.warning(`${skipped} row(s) skipped due to missing name`);
+        notify.warning(`${skipped} row(s) skipped due to missing name or email`);
       }
-      notify.success(`Successfully imported ${validContacts.length} contacts`);
+      notify.success(`Successfully imported ${validSubscribers.length} subscribers`);
       handleClose();
       onSuccess();
     } catch (error: any) {
-      notify.error("Failed to upload contacts to server.", {
+      notify.error("Failed to upload subscribers to server.", {
         description: error.message,
         duration: 10000,
       });
@@ -301,28 +302,27 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
     }
   };
 
-  if (!open || !mounted) return null;
+  if (!open) return null;
 
-  return ReactDOM.createPortal(
+  return (
     <>
-      <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        style={{ minHeight: '100vh', minWidth: '100vw' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowCloseConfirmation(true);
+        }}
+      >
         <div
-          className="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowCloseConfirmation(true);
-          }}
-        />
-
-        <div
-          className="relative bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col animate-in zoom-in-95 duration-200 z-10 max-h-[90vh] overflow-hidden"
+          className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col animate-in zoom-in-95 duration-200 cursor-default max-h-[90vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6 flex flex-col h-full overflow-hidden">
-            <h2 className="text-2xl font-bold text-[#5479EE]">Import Contact</h2>
+            <h2 className="text-2xl font-bold text-[#5479EE]">Import Subscribers</h2>
             <p className="text-gray-600 text-md mt-1 mb-4">
-              {step === "upload" && "Upload an Excel or CSV file to import contacts in bulk."}
-              {step === "mapping" && "Map your file columns to contact fields."}
+              {step === "upload" && "Upload an Excel or CSV file to import subscribers in bulk."}
+              {step === "mapping" && "Map your file columns to subscriber fields."}
               {step === "preview" && "Review the data before importing."}
             </p>
 
@@ -381,16 +381,6 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                  <a
-                    href="/documents/template_contacts.xlsx"
-                    download
-                    className="text-sm text-[#5479EE] hover:underline flex items-center gap-1"
-                  >
-                    <Download className="w-4 h-4" /> Download Template
-                  </a>
-                </div>
-
                 <div className="flex justify-end gap-3 mt-8 font-medium">
                   <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                     Cancel
@@ -432,7 +422,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                         type="text"
                         value={newFieldName}
                         onChange={(e) => setNewFieldName(e.target.value)}
-                        placeholder="Enter field name (e.g., Department, Notes)"
+                        placeholder="Enter field name (e.g., Company, Address)"
                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none"
                         onKeyDown={(e) => e.key === "Enter" && addCustomField()}
                       />
@@ -451,6 +441,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     </div>
                   )}
 
+                  {/* Show custom fields as tags */}
                   <div className="flex flex-wrap gap-2">
                     {apiFields.filter(f => f.isCustom).map(field => (
                       <span key={field.value} className="inline-flex items-center gap-1 px-2 py-1 bg-[#5479EE]/10 text-[#5479EE] rounded text-xs">
@@ -505,9 +496,9 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                   Tip: You can map multiple columns to "Name" to combine them. Add custom fields for additional data.
                 </p>
 
-                {!hasNameMapping && (
+                {(!hasNameMapping || !hasEmailMapping) && (
                   <p className="text-sm text-red-500 mt-2">
-                    Please map at least one column to "Name" (required field).
+                    Please map at least one column to "Name" and "Email" (required fields).
                   </p>
                 )}
 
@@ -521,7 +512,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={generatePreview} disabled={!hasNameMapping} variantStyle="primary" color="primary">
+                    <AppButton onClick={generatePreview} disabled={!hasNameMapping || !hasEmailMapping} variantStyle="primary" color="primary">
                       <div className="flex items-center gap-2">
                         Preview <ArrowRight className="w-4 h-4" />
                       </div>
@@ -549,7 +540,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     </thead>
                     <tbody>
                       {previewData.slice(0, 50).map((row, idx) => {
-                        const isValid = row.name && row.name.trim();
+                        const isValid = row.name && row.name.trim() && row.email && row.email.trim();
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="p-3 text-gray-500">{idx + 1}</td>
@@ -562,7 +553,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                               {isValid ? (
                                 <span className="text-green-600 text-xs bg-green-50 px-2 py-1 rounded">Valid</span>
                               ) : (
-                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">Missing name</span>
+                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">{!row.name?.trim() ? "Missing name" : "Missing email"}</span>
                               )}
                             </td>
                           </tr>
@@ -574,7 +565,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
                 <div className="mt-3 text-sm text-gray-500">
                   Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
-                  {" "}{previewData.filter((r) => r.name?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim()).length} will be skipped.
+                  {" "}{previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim() || !r.email?.trim()).length} will be skipped.
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6 font-medium">
@@ -587,14 +578,14 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={uploadContacts} disabled={isLoading || previewData.filter((r) => r.name?.trim() && r.email?.trim()).length === 0} variantStyle="primary" color="primary">
+                    <AppButton onClick={uploadSubscribers} disabled={isLoading || previewData.filter((r) => r.name?.trim() && r.email?.trim()).length === 0} variantStyle="primary" color="primary">
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="animate-spin w-5 h-5" />
                           Importing...
                         </div>
                       ) : (
-                        `Import ${previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} Contacts`
+                        `Import ${previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} Subscribers`
                       )}
                     </AppButton>
                   </div>
@@ -618,9 +609,8 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         cancelText="Cancel"
         variant="danger"
       />
-    </>,
-    document.body
+    </>
   );
 };
 
-export default ImportContactModal;
+export default ImportSubscriberModal;

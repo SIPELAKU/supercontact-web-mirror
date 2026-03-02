@@ -2,6 +2,7 @@
 
 import React from "react";
 import Button, { ButtonProps } from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import { styled, alpha } from "@mui/material/styles";
 
 // --- Colors Constants ---
@@ -181,7 +182,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
       disabled={disabled || isLoading}
       {...props}
     >
-      {children}
+      {isLoading ? <CircularProgress size={20} color="inherit" /> : children}
     </StyledButton>
   );
 };

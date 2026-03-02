@@ -141,7 +141,7 @@ const TrustedBy = () => {
                                         component="img"
                                         src={item.logo}
                                         sx={{
-                                            height: { xs: 30, md: 38 }, // Slightly smaller logo
+                                            height: (item.id === 4 || item.id === 5) ? { xs: 45, md: 55 } : { xs: 30, md: 38 }, // Slightly smaller logo
                                             mb: 2, // Reduced margin
                                             objectFit: 'contain'
                                         }}
@@ -187,28 +187,39 @@ const TrustedBy = () => {
                 </CustomSliderWrapper>
 
                 {/* Brand Logos Footer */}
-                <Stack
-                    direction="row"
-                    justifyContent="center"
-                    alignItems="center"
-                    spacing={8}
-                    sx={{ mt: 10, flexWrap: "wrap", gap: 6 }}
+                <Box
+                    sx={{
+                        mt: 10,
+                        display: { xs: 'grid', sm: 'flex' },
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'none' },
+                        gap: { xs: 4, sm: 6 },
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        justifyItems: 'center', // Agar di dalam Grid xs itemnya ke tengah
+                        flexWrap: 'wrap'
+                    }}
                 >
-                    {data.map((brand) => (
-                        <Box
-                            key={brand.id}
-                            component="img"
-                            src={brand.logo}
-                            sx={{
-                                height: 25,
-                                filter: 'grayscale(1)',
-                                opacity: 0.6,
-                                transition: '0.3s',
-                                '&:hover': { opacity: 1, filter: 'grayscale(0)' }
-                            }}
-                        />
-                    ))}
-                </Stack>
+                    {data.map((brand, index) => {
+                        const isLastOddItem = data.length % 2 !== 0 && index === data.length - 1;
+
+                        return (
+                            <Box
+                                key={brand.id}
+                                component="img"
+                                src={brand.logo}
+                                sx={{
+                                    height: brand.id === 4 ? 60 : brand.id === 5 ? 45 : 25,
+                                    filter: 'grayscale(1)',
+                                    opacity: 0.6,
+                                    transition: '0.3s',
+                                    '&:hover': { opacity: 1, filter: 'grayscale(0)' },
+                                    gridColumn: { xs: isLastOddItem ? 'span 2' : 'auto', sm: 'auto' }, // Membawa ke tengah kalau ganjil
+                                    justifySelf: { xs: isLastOddItem ? 'center' : 'auto', sm: 'auto' }
+                                }}
+                            />
+                        );
+                    })}
+                </Box>
 
             </Container>
         </Box>

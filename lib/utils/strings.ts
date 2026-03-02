@@ -1,6 +1,62 @@
-import LocalizedStrings from 'react-localization';
+// Simple localization utility - no external dependencies
 
-export const strings = new LocalizedStrings({
+type Language = 'en' | 'id';
+
+interface LocalizedStringsType {
+    [key: string]: string;
+}
+
+interface StringsData {
+    en: LocalizedStringsType;
+    id: LocalizedStringsType;
+}
+
+class SimpleLocalizedStrings {
+    private data: StringsData;
+    private currentLanguage: Language = 'id';
+
+    constructor(data: StringsData) {
+        this.data = data;
+    }
+
+    setLanguage(lang: Language) {
+        this.currentLanguage = lang;
+    }
+
+    getLanguage(): Language {
+        return this.currentLanguage;
+    }
+
+    getString(key: string): string {
+        return this.data[this.currentLanguage]?.[key] || this.data['en']?.[key] || key;
+    }
+
+    // Format string with placeholders like {0}, {1}, etc.
+    formatString(str: string, ...values: any[]): string {
+        return str.replace(/{(\d+)}/g, (match, index) => {
+            return typeof values[index] !== 'undefined' ? String(values[index]) : match;
+        });
+    }
+
+    // Allow direct property access
+    [key: string]: any;
+}
+
+// Create proxy to allow direct property access like strings.home
+function createLocalizedStrings(data: StringsData): SimpleLocalizedStrings & LocalizedStringsType {
+    const instance = new SimpleLocalizedStrings(data);
+    
+    return new Proxy(instance, {
+        get(target, prop: string) {
+            if (prop in target) {
+                return (target as any)[prop];
+            }
+            return target.getString(prop);
+        }
+    }) as SimpleLocalizedStrings & LocalizedStringsType;
+}
+
+export const strings = createLocalizedStrings({
     en: {
         home: "Home",
         product: "Product",
@@ -295,7 +351,6 @@ export const strings = new LocalizedStrings({
         footer_templates: "Templates",
         footer_integrations: "Integrations",
         footer_copyright: "© {year}, SuperContact",
-
     },
     id: {
         home: "Beranda",
@@ -512,8 +567,6 @@ export const strings = new LocalizedStrings({
         input_message: "Pesan",
         send_inquiry: "Kirim Pertanyaan",
 
-
-
         // Product Menu
         product_menu_crm: "Aplikasi CRM",
         product_menu_omnichannel: "Aplikasi Omnichannel",
@@ -592,7 +645,5 @@ export const strings = new LocalizedStrings({
         footer_templates: "Templat",
         footer_integrations: "Integrasi",
         footer_copyright: "© {year}, SuperContact",
-
     }
 });
-

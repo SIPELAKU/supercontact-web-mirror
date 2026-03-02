@@ -17,8 +17,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Stack
 } from '@mui/material';
+import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface EditSubscriberModalProps {
@@ -36,6 +38,8 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
   const [position, setPosition] = useState('');
   const [company, setCompany] = useState('');
   const [address, setAddress] = useState('');
+  const [customFields, setCustomFields] = useState<Record<string, string>>({});
+  const [newFieldKey, setNewFieldKey] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -46,6 +50,8 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
       setPosition(subscriberData.position || '');
       setCompany(subscriberData.company || '');
       setAddress(subscriberData.address || '');
+      setCustomFields(subscriberData.custom_fields ?? {});
+      setNewFieldKey('');
       setError('');
     }
   }, [open, subscriberData]);
@@ -57,6 +63,8 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
     setPosition('');
     setCompany('');
     setAddress('');
+    setCustomFields({});
+    setNewFieldKey('');
     setError('');
     onClose();
   };
@@ -84,7 +92,8 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
           phone_number: phoneNumber.trim() || undefined,
           position: position.trim() || undefined,
           company: company.trim() || undefined,
-          address: address.trim() || undefined
+          address: address.trim() || undefined,
+          custom_fields: Object.keys(customFields).length > 0 ? customFields : undefined,
         }
       });
 
@@ -187,6 +196,69 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
               rows={2}
             />
           </Box>
+
+          {/* Custom Fields */}
+          {Object.keys(customFields).length > 0 && (
+            <Box>
+              <label className="font-semibold text-gray-700">Custom Fields</label>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                {Object.entries(customFields).map(([key, value]) => (
+                  <Box key={key} sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <label className="text-sm text-gray-600 capitalize">{key.replace(/_/g, ' ')}</label>
+                      <AppInput
+                        value={value}
+                        isBgWhite
+                        onChange={(e) => setCustomFields(prev => ({ ...prev, [key]: e.target.value }))}
+                        fullWidth
+                        placeholder={`Enter ${key.replace(/_/g, ' ')}`}
+                      />
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const updated = { ...customFields };
+                        delete updated[key];
+                        setCustomFields(updated);
+                      }}
+                      sx={{ color: '#EF4444', mb: 0.5 }}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {/* Add Custom Field */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+            <Box sx={{ flex: 1 }}>
+              <label className="text-sm text-gray-600">Add Custom Field</label>
+              <AppInput
+                value={newFieldKey}
+                isBgWhite
+                onChange={(e) => setNewFieldKey(e.target.value)}
+                fullWidth
+                placeholder="Field name (e.g. occupation)"
+              />
+            </Box>
+            <AppButton
+              variantStyle="outline"
+              color="primary"
+              onClick={() => {
+                const key = newFieldKey.trim().toLowerCase().replace(/\s+/g, '_');
+                if (key && !customFields[key]) {
+                  setCustomFields(prev => ({ ...prev, [key]: '' }));
+                  setNewFieldKey('');
+                }
+              }}
+              disabled={!newFieldKey.trim()}
+              sx={{ minWidth: 'auto', px: 2 }}
+            >
+              <Plus size={16} className="mr-1" /> Add
+            </AppButton>
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
@@ -199,6 +271,8 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
             setPosition('');
             setCompany('');
             setAddress('');
+            setCustomFields({});
+            setNewFieldKey('');
             setError('');
             onClose();
           }}

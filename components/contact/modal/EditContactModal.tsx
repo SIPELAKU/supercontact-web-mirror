@@ -10,6 +10,8 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
+import { Plus, Trash2 } from "lucide-react";
+import { IconButton } from "@mui/material";
 
 interface InputProps {
   label: string;
@@ -69,6 +71,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     position: "",
     address: "",
   });
+  const [customFields, setCustomFields] = useState<Record<string, string>>({});
+  const [newFieldKey, setNewFieldKey] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
@@ -94,6 +98,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
         position: initialData.position ?? "",
         address: initialData.address ?? "",
       });
+      setCustomFields(initialData.custom_fields ?? {});
       setErrors({});
     }
   }, [initialData]);
@@ -156,6 +161,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       ...local,
       company: local.company?.trim() === "" ? null : local.company,
       address: local.address?.trim() === "" ? null : local.address,
+      custom_fields: Object.keys(customFields).length > 0 ? customFields : undefined,
     };
 
     try {
@@ -296,6 +302,68 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
                   error={errors.address}
                 />
               </div>
+            </div>
+
+            {/* Custom Fields */}
+            {Object.keys(customFields).length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-700 mb-3">Custom Fields</h3>
+                <div className="flex flex-col gap-3">
+                  {Object.entries(customFields).map(([key, value]) => (
+                    <div key={key} className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className="font-medium text-gray-700 capitalize text-sm">{key.replace(/_/g, " ")}</label>
+                        <AppInput
+                          type="text"
+                          value={value}
+                          onChange={(e) => setCustomFields(prev => ({ ...prev, [key]: e.target.value }))}
+                          placeholder={`Enter ${key.replace(/_/g, " ")}`}
+                          isBgWhite
+                        />
+                      </div>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const updated = { ...customFields };
+                          delete updated[key];
+                          setCustomFields(updated);
+                        }}
+                        sx={{ color: '#EF4444', mb: 0.5 }}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add Custom Field */}
+            <div className="mt-4 flex items-end gap-3">
+              <div className="flex-1">
+                <label className="font-medium text-gray-700 text-sm">Add Custom Field</label>
+                <AppInput
+                  type="text"
+                  value={newFieldKey}
+                  onChange={(e) => setNewFieldKey(e.target.value)}
+                  placeholder="Field name (e.g. occupation)"
+                  isBgWhite
+                />
+              </div>
+              <AppButton
+                variantStyle="outline"
+                color="primary"
+                onClick={() => {
+                  const key = newFieldKey.trim().toLowerCase().replace(/\s+/g, "_");
+                  if (key && !customFields[key]) {
+                    setCustomFields(prev => ({ ...prev, [key]: "" }));
+                    setNewFieldKey("");
+                  }
+                }}
+                disabled={!newFieldKey.trim()}
+              >
+                <Plus size={16} className="mr-1" /> Add
+              </AppButton>
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">

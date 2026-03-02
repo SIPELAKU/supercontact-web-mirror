@@ -7,6 +7,7 @@ import { AppInput } from '@/components/ui/app-input';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import { notify } from '@/lib/notifications';
 import { Subscriber } from '@/lib/types/email-marketing';
+import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 import {
   Box,
   Button,
@@ -24,23 +25,25 @@ import {
   TextField,
   Tooltip
 } from '@mui/material';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Download, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
   onAdd: () => void;
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (subscribers: Subscriber[]) => void;
+  onImport: () => void;
   refreshTrigger: number;
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting, refreshTrigger }: SubscribersTableProps) => {
   const { data, isLoading, error, refetch } = useSubscribers();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState<string[]>([]);
+  const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
@@ -149,6 +152,14 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshT
             </AppButton>
           )}
           <AppButton
+            variantStyle="outline"
+            color="primary"
+            startIcon={<Download className="w-4 h-4" />}
+            onClick={onImport}
+          >
+            Import
+          </AppButton>
+          <AppButton
             variantStyle="primary"
             color="primary"
             startIcon={<Plus className="w-4 h-4" />}
@@ -224,6 +235,13 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshT
                     <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
                       <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <IconButton
+                          size="small"
+                          onClick={() => setPreviewSubscriber(row)}
+                          sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                        >
+                          <Eye size={18} />
+                        </IconButton>
                         <EditButton onClick={() => onEdit(row)} />
                         <DeleteButton onClick={() => onDeleteRequest([row])} />
                       </Box>
@@ -245,6 +263,11 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, isDeleting, refreshT
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </div>
+
+      <SubscriberPreviewPopup
+        subscriber={previewSubscriber}
+        onClose={() => setPreviewSubscriber(null)}
+      />
     </div>
   );
 };

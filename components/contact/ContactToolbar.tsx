@@ -78,7 +78,8 @@ export const ContactToolbar = ({
                 )}
                 <AppButton
                     onClick={onOpenImport}
-                    variantStyle="primary"
+                    variantStyle="outline"
+                    color="primary"
                     startIcon={<Download size={16} />}
                 >
                     Import

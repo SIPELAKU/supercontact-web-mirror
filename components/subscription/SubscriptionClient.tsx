@@ -53,9 +53,9 @@ export default function SubscriptionClient() {
 
         try {
             const res = await checkoutBillingPlan(token, { plan_id: planId });
-            if (res.success && res.data.midtrans_redirect_url) {
-                // Open Midtrans payment window/redirect in a new tab
-                window.open(res.data.midtrans_redirect_url, '_blank');
+            if (res.success && res.data.payment_redirect_url) {
+                // Open payment window/redirect in a new tab
+                window.open(res.data.payment_redirect_url, '_blank');
             } else {
                 notify.error("Checkout Failed", { description: "Invalid checkout response received." });
             }
@@ -137,10 +137,10 @@ export default function SubscriptionClient() {
                                 </Box>
                             </Stack>
                         </Paper>
-                    </Grid>
+                    </Grid >
 
                     {/* Available Upgrade Plans */}
-                    <Grid item xs={12} md={7}>
+                    < Grid item xs={12} md={7} >
                         <Grid container spacing={3}>
                             {plans.map((plan) => {
                                 const isCurrent = plan.id === activePlanId || plan.code === currentPlan?.toLowerCase();
@@ -236,9 +236,10 @@ export default function SubscriptionClient() {
                                 );
                             })}
                         </Grid>
-                    </Grid>
-                </Grid>
-            )}
-        </div>
+                    </Grid >
+                </Grid >
+            )
+            }
+        </div >
     );
 }

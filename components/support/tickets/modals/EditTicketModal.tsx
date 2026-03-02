@@ -46,7 +46,7 @@ export function EditTicketModal({ isOpen, onClose, ticket }: EditTicketModalProp
                         <TicketForm
                             initialData={ticket}
                             onSubmit={handleSubmit}
-                            onCancel={() => setShowCloseConfirmation(true)}
+                            onCancel={handleClose}
                             isLoading={updateMutation.isPending}
                         />
                     )}

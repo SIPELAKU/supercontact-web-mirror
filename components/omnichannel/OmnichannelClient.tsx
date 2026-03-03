@@ -31,7 +31,8 @@ import {
     useSendMessage,
     useDeleteConversation,
     useAccounts,
-    useCreateConversation
+    useCreateConversation,
+    useMarkAsRead
 } from "@/lib/hooks/useOmnichannel";
 import { Contact, ContactReq } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
@@ -80,6 +81,7 @@ export default function OmnichannelClient() {
     // Mutations
     const sendMessageMutation = useSendMessage();
     const deleteConversationMutation = useDeleteConversation();
+    const markAsReadMutation = useMarkAsRead();
 
     // New Contact Form State
     const [newContact, setNewContact] = useState<ContactReq>({
@@ -154,6 +156,10 @@ export default function OmnichannelClient() {
 
         if (existingConv) {
             setActiveConversationId(existingConv.id);
+            // Mark as read if there are unread messages
+            if (existingConv.unread_count > 0) {
+                markAsReadMutation.mutate(existingConv.id);
+            }
         } else {
             setActiveConversationId(null);
         }

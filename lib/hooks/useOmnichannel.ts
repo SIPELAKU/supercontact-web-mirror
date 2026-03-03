@@ -108,8 +108,8 @@ export function useInbox(channelType?: string, status?: string) {
       if (!token) throw new Error('No authentication token');
       return fetchInbox(token, channelType, status);
     },
-    staleTime: 1000 * 10, 
-    refetchInterval: 10000, 
+    staleTime: 1000 * 10,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
     enabled: !!token,
   });
@@ -139,8 +139,8 @@ export function useConversation(conversationId: string) {
       if (!token) throw new Error('No authentication token');
       return fetchConversation(token, conversationId);
     },
-    staleTime: 1000 * 5, 
-    refetchInterval: 5000, 
+    staleTime: 1000 * 5,
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
     enabled: !!token && !!conversationId,
   });

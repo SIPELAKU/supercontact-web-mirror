@@ -19,6 +19,7 @@ import {
     Paperclip,
     Send
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { AppButton } from "@/components/ui/app-button";
@@ -95,13 +96,48 @@ export default function OmnichannelClient() {
     const filteredContacts = useMemo(() => {
         if (!contactsData?.data?.contacts) return [];
         const search = searchTerm.toLowerCase();
-        return contactsData.data.contacts.filter((c: any) =>
+
+        // Initial filter by search term
+        let filtered = contactsData.data.contacts.filter((c: any) =>
             (c.name && c.name.toLowerCase().includes(search)) ||
             (c.email && c.email.toLowerCase().includes(search)) ||
-            (c.phone && c.phone.includes(searchTerm)) ||
-            (c.phone_number && c.phone_number.includes(searchTerm))
+            (c.phone && c.phone.toLowerCase().includes(search)) ||
+            (c.phone_number && c.phone_number.toLowerCase().includes(search))
         );
-    }, [contactsData, searchTerm]);
+
+        // Sort by inbox order if inboxData exists
+        if (inboxData && Array.isArray(inboxData)) {
+            const inbox = inboxData as any[];
+            const conversationMap = new Map();
+
+            // Map contact_id to its index in inboxData for quick sorting
+            inbox.forEach((conv, index) => {
+                if (conv.contact_id) {
+                    // Only store the first occurrence (most recent) if a contact has multiple convs
+                    if (!conversationMap.has(conv.contact_id)) {
+                        conversationMap.set(conv.contact_id, index);
+                    }
+                }
+            });
+
+            filtered = [...filtered].sort((a: any, b: any) => {
+                const indexA = conversationMap.has(a.id) ? conversationMap.get(a.id) : 999999;
+                const indexB = conversationMap.has(b.id) ? conversationMap.get(b.id) : 999999;
+
+                // If both are in inbox, sort by inbox index
+                // If only one is in inbox, it comes first
+                // If neither are in inbox, maintain original order (or could sort by name)
+                if (indexA !== indexB) {
+                    return indexA - indexB;
+                }
+
+                // Secondary sort: alphabet by name for contacts not in inbox
+                return (a.name || "").localeCompare(b.name || "");
+            });
+        }
+
+        return filtered;
+    }, [contactsData, searchTerm, inboxData]);
 
     // Handle contact selection
     const handleSelectContact = (contact: any) => {
@@ -348,28 +384,57 @@ export default function OmnichannelClient() {
                             </div>
                         ) : filteredContacts.length > 0 ? (
                             <div className="divide-y divide-gray-50">
-                                {filteredContacts.map((contact) => (
-                                    <div
-                                        key={contact.id}
-                                        onClick={() => handleSelectContact(contact)}
-                                        className={cn(
-                                            "p-4 cursor-pointer transition-all hover:bg-gray-200 group flex items-start gap-3",
-                                            selectedContact?.id === contact.id ? "bg-blue-50/50" : ""
-                                        )}
-                                    >
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 shrink-0 text-sm">
-                                            {contact.name ? contact.name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() : "?"}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-gray-900 truncate text-sm">{contact.name}</h4>
+                                {filteredContacts.map((contact: any) => {
+                                    // Find conversation for this contact to show unread count and time
+                                    const contactIdentifier = contact.phone || contact.phone_number || contact.email;
+                                    const conv = (inboxData as any)?.find((c: any) =>
+                                        c.contact_id === contact.id ||
+                                        c.external_contact_identifier === contactIdentifier
+                                    );
+
+                                    return (
+                                        <div
+                                            key={contact.id}
+                                            onClick={() => handleSelectContact(contact)}
+                                            className={cn(
+                                                "p-4 cursor-pointer transition-all hover:bg-gray-200 group flex items-start gap-3 border-b border-gray-50",
+                                                selectedContact?.id === contact.id ? "bg-blue-50/50" : ""
+                                            )}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 shrink-0 text-sm">
+                                                {contact.name ? contact.name.split(' ').filter(Boolean).map((n: any[]) => n[0]).join('').slice(0, 2).toUpperCase() : "?"}
                                             </div>
-                                            <p className="text-xs text-gray-500 truncate mt-0.5">
-                                                {(contact as any).phone || (contact as any).phone_number || contact.email || "No contact info"}
-                                            </p>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <h4 className="font-bold text-gray-900 truncate text-sm">{contact.name}</h4>
+                                                    {conv && conv.last_message_at && (
+                                                        <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
+                                                            {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })
+                                                                .replace('about ', '')
+                                                                .replace('less than a minute', 'now')
+                                                                .replace('minute', 'm')
+                                                                .replace('minutes', 'm')
+                                                                .replace('hour', 'h')
+                                                                .replace('hours', 'h')
+                                                                .replace('day', 'd')
+                                                                .replace('days', 'd')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex justify-between items-center mt-0.5">
+                                                    <p className="text-xs text-gray-500 truncate flex-1">
+                                                        {(contact as any).phone || (contact as any).phone_number || contact.email || "No contact info"}
+                                                    </p>
+                                                    {conv && (conv.unread_count > 0) && (
+                                                        <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white shadow-sm">
+                                                            {conv.unread_count > 99 ? '99+' : conv.unread_count}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-16 px-6 text-center">

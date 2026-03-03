@@ -390,33 +390,35 @@ export default function OmnichannelClient() {
                                             </span>
                                         </h3>
                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                            <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-100">
-                                                <button
-                                                    onClick={() => setChatMode("whatsapp")}
-                                                    className={cn(
-                                                        "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
-                                                        chatMode === "whatsapp" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
-                                                    )}
-                                                >
-                                                    <MessageCircle className="w-3 h-3" />
-                                                    WhatsApp
-                                                </button>
-                                                <button
-                                                    onClick={() => setChatMode("email")}
-                                                    className={cn(
-                                                        "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
-                                                        chatMode === "email" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
-                                                    )}
-                                                >
-                                                    <Mail className="w-3 h-3" />
-                                                    Email
-                                                </button>
-                                            </div>
-                                            {chatMode === "whatsapp" ? (
-                                                <span className="text-xs text-gray-400 ml-2">WhatsApp: {(selectedContact as any).phone || (selectedContact as any).phone_number || "-"}</span>
-                                            ) : (
-                                                <span className="text-xs text-gray-400 ml-2">Email: {selectedContact.email || "-"}</span>
+                                            {(activeConversationId || isChannelSelected) && (
+                                                <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-100">
+                                                    <button
+                                                        onClick={() => setChatMode("whatsapp")}
+                                                        className={cn(
+                                                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
+                                                            chatMode === "whatsapp" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
+                                                        )}
+                                                    >
+                                                        <MessageCircle className="w-3 h-3" />
+                                                        WhatsApp
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setChatMode("email")}
+                                                        className={cn(
+                                                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
+                                                            chatMode === "email" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
+                                                        )}
+                                                    >
+                                                        <Mail className="w-3 h-3" />
+                                                        Email
+                                                    </button>
+                                                </div>
                                             )}
+                                            <div className="flex items-center gap-3 ml-2">
+                                                <span className="text-xs text-gray-400">Phone: {(selectedContact as any).phone || (selectedContact as any).phone_number || "-"}</span>
+                                                <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                <span className="text-xs text-gray-400">Email: {selectedContact.email || "-"}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -445,16 +447,16 @@ export default function OmnichannelClient() {
                                 {!activeConversationId ? (
                                     <div className="flex-1 flex flex-col items-center justify-center bg-[#F8F9FC]">
                                         <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-                                            <MessageCircle className="w-8 h-8 text-gray-100" />
+                                            <MessageCircle className="w-8 h-8 text-gray-400" />
                                         </div>
                                         <p className="text-sm font-semibold text-gray-500 mb-8">No messages in this conversation yet</p>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
                                             <button
                                                 onClick={() => { setChatMode("whatsapp"); setIsChannelSelected(true); }}
-                                                className="p-6 bg-[#EEF2FF] rounded-2xl border-2 border-transparent hover:border-primary/20 transition-all group text-center flex flex-col items-center"
+                                                className="p-6 bg-[#F0FDF4] rounded-2xl cursor-pointer border-2 border-transparent hover:border-green-200 transition-all group text-center flex flex-col items-center"
                                             >
-                                                <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-blue-200 group-hover:scale-110 transition-transform">
+                                                <div className="w-12 h-12 bg-[#25D366] text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-green-200 group-hover:scale-110 transition-transform">
                                                     <MessageCircle className="w-6 h-6" />
                                                 </div>
                                                 <h4 className="font-bold text-gray-900 mb-1">Start WhatsApp Conversation</h4>
@@ -463,9 +465,9 @@ export default function OmnichannelClient() {
 
                                             <button
                                                 onClick={() => { setChatMode("email"); setIsChannelSelected(true); }}
-                                                className="p-6 bg-[#F3F4F6] rounded-2xl border-2 border-transparent hover:border-gray-300 transition-all group text-center flex flex-col items-center"
+                                                className="p-6 bg-[#FFF5F7] rounded-2xl cursor-pointer border-2 border-transparent hover:border-pink-200 transition-all group text-center flex flex-col items-center"
                                             >
-                                                <div className="w-12 h-12 bg-gray-700 text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-gray-200 group-hover:scale-110 transition-transform">
+                                                <div className="w-12 h-12 bg-[#E91E63] text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-pink-200 group-hover:scale-110 transition-transform">
                                                     <Mail className="w-6 h-6" />
                                                 </div>
                                                 <h4 className="font-bold text-gray-900 mb-1">Start Email Conversation</h4>

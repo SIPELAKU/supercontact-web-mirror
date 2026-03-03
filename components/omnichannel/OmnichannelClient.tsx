@@ -15,11 +15,13 @@ import {
     Briefcase,
     Building,
     Loader2,
-    Trash
+    Trash,
+    Paperclip,
+    Send
 } from "lucide-react";
 import { AppInput } from "@/components/ui/app-input";
-import { AppButton } from "@/components/ui/app-button";
 import { AppTextarea } from "@/components/ui/app-textarea";
+import { AppButton } from "@/components/ui/app-button";
 import { cn } from "@/lib/utils";
 import { useAllContacts } from "@/lib/hooks/useContacts";
 import {
@@ -49,6 +51,20 @@ export default function OmnichannelClient() {
     const [emailBody, setEmailBody] = useState("");
     const [inputText, setInputText] = useState("");
     const [isChannelSelected, setIsChannelSelected] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Handle file trigger
+    const handleFileTrigger = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            console.log("Selected file:", file.name);
+            // Implement file upload logic here if needed
+        }
+    };
 
     // Contacts and Inbox data
     const { data: contactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useAllContacts();
@@ -516,28 +532,59 @@ export default function OmnichannelClient() {
                                 <div className="p-4 bg-white border-t border-gray-100">
                                     {/* Input logic based on chatMode */}
                                     {chatMode === "whatsapp" ? (
-                                        <form onSubmit={handleSendMessage} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-end gap-2 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-                                            <textarea
-                                                placeholder="Type a message..."
-                                                value={inputText}
-                                                onChange={(e) => setInputText(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        handleSendMessage();
-                                                    }
-                                                }}
-                                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none py-2 min-h-[40px] max-h-32 text-gray-700"
-                                                rows={1}
-                                            ></textarea>
+                                        <div className="flex items-center gap-2 p-2">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                            />
                                             <button
-                                                type="submit"
-                                                disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
-                                                className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                type="button"
+                                                onClick={handleFileTrigger}
+                                                className="p-2 text-gray-400 hover:text-primary cursor-pointer transition-all shrink-0"
                                             >
-                                                {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+                                                <Paperclip className="w-5 h-5" />
                                             </button>
-                                        </form>
+
+                                            <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-2">
+                                                <div className="flex-1 relative group rounded-[28px] border border-gray-300">
+                                                    <AppTextarea
+                                                        placeholder="Type a message..."
+                                                        value={inputText}
+                                                        isBgWhite
+                                                        rounded="28px"
+                                                        onChange={(e) => setInputText(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                                e.preventDefault();
+                                                                handleSendMessage();
+                                                            }
+                                                        }}
+                                                        className="w-full bg-transparent focus:bg-white transition-all shadow-none"
+                                                        sx={{
+                                                            "& .MuiOutlinedInput-root": {
+                                                                minHeight: "44px",
+                                                                padding: "8px 16px",
+                                                                "& fieldset": { border: "none" }
+                                                            }
+                                                        }}
+                                                        rows={1}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
+                                                    className="w-11 h-11 bg-transparent text-green-500 hover:text-white border border-green-500 rounded-full flex items-center justify-center hover:bg-green-500/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                                                >
+                                                    {(sendMessageMutation.isPending || createConversationMutation.isPending) ? (
+                                                        <CircularProgress />
+                                                    ) : (
+                                                        <Send className="w-5 h-5" />
+                                                    )}
+                                                </button>
+                                            </form>
+                                        </div>
                                     ) : (
                                         <div className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                                             <div className="p-2 space-y-2">
@@ -561,12 +608,12 @@ export default function OmnichannelClient() {
                                                     />
                                                 </div>
                                             </div>
-                                            <textarea
+                                            <AppTextarea
                                                 placeholder="Write an email reply..."
                                                 value={emailBody}
                                                 onChange={(e) => setEmailBody(e.target.value)}
                                                 className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none p-4 min-h-[120px] text-gray-700"
-                                            ></textarea>
+                                            />
                                             <div className="p-2 flex justify-end">
                                                 <button
                                                     onClick={() => handleSendMessage()}

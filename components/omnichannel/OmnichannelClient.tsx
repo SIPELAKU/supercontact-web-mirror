@@ -48,6 +48,7 @@ export default function OmnichannelClient() {
     const [emailSubject, setEmailSubject] = useState("");
     const [emailBody, setEmailBody] = useState("");
     const [inputText, setInputText] = useState("");
+    const [isChannelSelected, setIsChannelSelected] = useState(false);
 
     // Contacts and Inbox data
     const { data: contactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useAllContacts();
@@ -89,6 +90,7 @@ export default function OmnichannelClient() {
     // Handle contact selection
     const handleSelectContact = (contact: any) => {
         setSelectedContact(contact);
+        setIsChannelSelected(false);
         const contactIdentifier = contact.phone || contact.phone_number || contact.email;
 
         // Find if there's an existing conversation for this contact
@@ -213,7 +215,7 @@ export default function OmnichannelClient() {
                     { label: "Omnichannel" },
                 ]}
             />
-            <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white">
+            <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white gap-3">
                 {/* Column 1: Contacts sidebar */}
                 <div className="w-80 border border-gray-200 shadow-lg rounded-2xl flex flex-col shrink-0">
                     <div className="p-4 border-b border-gray-100 flex flex-col gap-2">
@@ -373,11 +375,11 @@ export default function OmnichannelClient() {
                 </div>
 
                 {/* Column 2: Chat Area */}
-                <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FC]">
+                <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FC] border border-gray-200 shadow-lg rounded-2xl">
                     {selectedContact ? (
                         <>
                             {/* Chat Header */}
-                            <div className="h-[72px] px-6 border-b border-gray-100 bg-white flex items-center justify-between shrink-0">
+                            <div className="h-[72px] px-6 border-b border-gray-100 rounded-2xl bg-white flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="hidden sm:block">
                                         <h3 className="font-bold text-gray-900 truncate flex items-center gap-2 text-base">
@@ -449,7 +451,7 @@ export default function OmnichannelClient() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
                                             <button
-                                                onClick={() => setChatMode("whatsapp")}
+                                                onClick={() => { setChatMode("whatsapp"); setIsChannelSelected(true); }}
                                                 className="p-6 bg-[#EEF2FF] rounded-2xl border-2 border-transparent hover:border-primary/20 transition-all group text-center flex flex-col items-center"
                                             >
                                                 <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-blue-200 group-hover:scale-110 transition-transform">
@@ -460,7 +462,7 @@ export default function OmnichannelClient() {
                                             </button>
 
                                             <button
-                                                onClick={() => setChatMode("email")}
+                                                onClick={() => { setChatMode("email"); setIsChannelSelected(true); }}
                                                 className="p-6 bg-[#F3F4F6] rounded-2xl border-2 border-transparent hover:border-gray-300 transition-all group text-center flex flex-col items-center"
                                             >
                                                 <div className="w-12 h-12 bg-gray-700 text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-gray-200 group-hover:scale-110 transition-transform">
@@ -508,76 +510,78 @@ export default function OmnichannelClient() {
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-4 bg-white border-t border-gray-100">
-                                {/* Input logic based on chatMode */}
-                                {chatMode === "whatsapp" ? (
-                                    <form onSubmit={handleSendMessage} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-end gap-2 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-                                        <textarea
-                                            placeholder="Type a message..."
-                                            value={inputText}
-                                            onChange={(e) => setInputText(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleSendMessage();
-                                                }
-                                            }}
-                                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none py-2 min-h-[40px] max-h-32 text-gray-700"
-                                            rows={1}
-                                        ></textarea>
-                                        <button
-                                            type="submit"
-                                            disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
-                                            className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-                                        </button>
-                                    </form>
-                                ) : (
-                                    <div className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-                                        <div className="p-2 space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">To</span>
-                                                <input
-                                                    type="text"
-                                                    className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-600"
-                                                    defaultValue={selectedContact.email || ""}
-                                                    readOnly
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">Subject</span>
-                                                <input
-                                                    type="text"
-                                                    value={emailSubject}
-                                                    onChange={(e) => setEmailSubject(e.target.value)}
-                                                    className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 font-semibold text-gray-700"
-                                                    placeholder="Enter subject..."
-                                                />
-                                            </div>
-                                        </div>
-                                        <textarea
-                                            placeholder="Write an email reply..."
-                                            value={emailBody}
-                                            onChange={(e) => setEmailBody(e.target.value)}
-                                            className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none p-4 min-h-[120px] text-gray-700"
-                                        ></textarea>
-                                        <div className="p-2 flex justify-end">
+                            {(activeConversationId || isChannelSelected) && (
+                                <div className="p-4 bg-white border-t border-gray-100">
+                                    {/* Input logic based on chatMode */}
+                                    {chatMode === "whatsapp" ? (
+                                        <form onSubmit={handleSendMessage} className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-end gap-2 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                                            <textarea
+                                                placeholder="Type a message..."
+                                                value={inputText}
+                                                onChange={(e) => setInputText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSendMessage();
+                                                    }
+                                                }}
+                                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm resize-none py-2 min-h-[40px] max-h-32 text-gray-700"
+                                                rows={1}
+                                            ></textarea>
                                             <button
-                                                onClick={() => handleSendMessage()}
-                                                disabled={!emailBody.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
-                                                className="px-6 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50"
+                                                type="submit"
+                                                disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
+                                                className="p-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
-                                                Send Email
+                                                {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
                                             </button>
+                                        </form>
+                                    ) : (
+                                        <div className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                                            <div className="p-2 space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">To</span>
+                                                    <input
+                                                        type="text"
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-600"
+                                                        defaultValue={selectedContact.email || ""}
+                                                        readOnly
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">Subject</span>
+                                                    <input
+                                                        type="text"
+                                                        value={emailSubject}
+                                                        onChange={(e) => setEmailSubject(e.target.value)}
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 font-semibold text-gray-700"
+                                                        placeholder="Enter subject..."
+                                                    />
+                                                </div>
+                                            </div>
+                                            <textarea
+                                                placeholder="Write an email reply..."
+                                                value={emailBody}
+                                                onChange={(e) => setEmailBody(e.target.value)}
+                                                className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none p-4 min-h-[120px] text-gray-700"
+                                            ></textarea>
+                                            <div className="p-2 flex justify-end">
+                                                <button
+                                                    onClick={() => handleSendMessage()}
+                                                    disabled={!emailBody.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
+                                                    className="px-6 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50"
+                                                >
+                                                    {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+                                                    Send Email
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest font-medium">
-                                    Sending via {chatMode === "whatsapp" ? "WhatsApp Business API" : "SMTP Relay"}
-                                </p>
-                            </div>
+                                    )}
+                                    <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest font-medium">
+                                        Sending via {chatMode === "whatsapp" ? "WhatsApp Business API" : "SMTP Relay"}
+                                    </p>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-center p-10 animate-in fade-in duration-500">

@@ -71,7 +71,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
                   }`}
               >
                 {/* Message Content */}
-                <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                <p className="text-sm whitespace-pre-wrap wrap-break-word">{message.content}</p>
 
                 {/* Media Attachment */}
                 {message.media_url && (

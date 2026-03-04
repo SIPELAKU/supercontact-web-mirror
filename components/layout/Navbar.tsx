@@ -116,7 +116,7 @@ const Navbar = () => {
         {/* Desktop Logo */}
         <Box sx={{ display: { xs: 'none', md: 'block', }, cursor: 'pointer' }} onClick={() => router.push('/')}>
           <Image
-            src="/assets/logo-supercontact.png"
+            src="/assets/sc-logo-primary.png"
             alt="Logo Desktop"
             width={150}
             height={150}
@@ -247,7 +247,7 @@ const Navbar = () => {
           {/* Mobile Logo Center */}
           <Box sx={{ cursor: 'pointer' }} onClick={() => router.push('/')}>
             <Image
-              src="/assets/logo-supercontact.png"
+              src="/assets/sc-logo-primary.png"
               alt="Logo Mobile"
               width={150}
               height={150}

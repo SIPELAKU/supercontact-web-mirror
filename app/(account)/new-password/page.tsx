@@ -128,7 +128,7 @@ export default function NewPassword() {
       <div className="bg-white w-full max-w-[540px] h-screen flex flex-col">
         <div className="mb-16 mt-[50px] flex justify-center">
           <Image
-            src="/assets/logo-supercontact.png"
+            src="/assets/sc-logo-primary.png"
             alt="Supercontact Logo"
             width={158}
             height={38}

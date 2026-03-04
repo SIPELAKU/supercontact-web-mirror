@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.25] - 2026-03-04
+
+### Detail Versi 1.8.25
+
+#### 🏗️ Navigation & UI Polish
+
+- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
+- **WhatsApp Localization**: Implemented multi-language support for all WhatsApp interest messages across `Hero`, `WhatsAppFloatingButton`, and `PricingCards`.
+- **FAQ Refinement**: Cleaned up the `FAQ` component to strictly use localized strings, ensuring consistent branding and translations.
+
+#### 📁 Files Modified
+
+- `components/layout/FAQ.tsx`
+- `components/layout/WhatsAppFloatingButton.tsx`
+- `components/home/Hero.tsx`
+- `components/home/ProductMenu.tsx`
+- `components/home/SolutionMenu.tsx`
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
 ## [1.8.24] - 2026-03-04
 
 ### Detail Versi 1.8.24
@@ -26,10 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Password**: Unified the password reset page styling with the new card design and fixed zoom responsiveness.
 - **Zoom Optimization**: Resolved layout shifts and misalignment issues when the browser is zoomed (125%-200%) by migrating from fixed margins to dynamic flexbox centering.
 
-#### 🏗️ Navigation & UI Polish
-
-- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
-
 #### 📁 Files Modified
 
 - `app/layout.tsx`
@@ -41,8 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/layout/Navbar.tsx`
 - `components/layout/Footer.tsx`
 - `components/layout/Sidebar.tsx`
-- `components/layout/FAQ.tsx`
-- `components/home/Hero.tsx`
 - `components/ui/printable-table.tsx`
 - `lib/utils/strings.ts`
 - `lib/utils/email-templates.ts`

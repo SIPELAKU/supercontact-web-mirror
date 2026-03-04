@@ -96,36 +96,28 @@ export const strings = createLocalizedStrings({
         // Plan Cards
         plan_month: "/month",
 
-        // Plan 1: CRM Penjualan
-        plan_1_title: "CRM Sales",
-        plan_1_desc: "For All Types of Business. Solution for Business with medium scale and small number of telesales activities.",
-        plan_1_price: "299K",
-        plan_1_feat_1: "100 responses a month",
-        plan_1_feat_2: "Unlimited forms and surveys",
-        plan_1_feat_3: "Unlimited fields",
-        plan_1_feat_4: "Basic form creation tools",
-        plan_1_feat_5: "Up to 2 subdomains",
+        // Plan 1: Free Trial
+        plan_1_title: "Free Trial",
+        plan_1_desc: "Try SmartSales for free with limited features.",
+        plan_1_price: "Free",
+        plan_1_feat_1: "Up to 100 contacts (hard limit)",
+        plan_1_feat_2: "1–2 users per account",
+        plan_1_feat_3: "Basic CRM features",
+        plan_1_feat_4: "No Data Intelligence access",
+        plan_1_feat_5: "No payment & billing system",
 
-        // Plan 2: Professional
-        plan_2_title: "Professional",
-        plan_2_desc: "For All Types of Business. Solution for Business with medium scale and medium number of telesales activities.",
-        plan_2_price: "599K",
-        plan_2_tag: "Popular",
-        plan_2_feat_1: "Unlimited responses",
-        plan_2_feat_2: "Unlimited forms and surveys",
-        plan_2_feat_3: "Instagram profile page",
-        plan_2_feat_4: "Google Docs integration",
-        plan_2_feat_5: "Custom \"Thank you\" page",
-
-        // Plan 3: Enterprise
-        plan_3_title: "Enterprise",
-        plan_3_desc: "For All Types of Business. Solution for Business with large scale and large number of telesales activities.",
-        plan_3_price: "Consult Price",
-        plan_3_feat_1: "PayPal payments",
-        plan_3_feat_2: "Logic Jumps",
-        plan_3_feat_3: "File upload with 5GB storage",
-        plan_3_feat_4: "Custom domain support",
-        plan_3_feat_5: "Stripe integration",
+        // Plan 2: Enterprise
+        plan_2_title: "Exclusive",
+        plan_2_desc: "Unlock full power with a customized CRM solution",
+        plan_2_price: "Contact Us",
+        plan_2_tag: "Recommended",
+        plan_2_feat_1: "Unlimited contacts & users",
+        plan_2_feat_2: "Full Data Intelligence access",
+        plan_2_feat_3: "Custom workflows & automation",
+        plan_2_feat_4: "Payment & billing integration",
+        plan_2_feat_5: "Dedicated support & onboarding",
+        plan_2_date: "/ per contract",
+        plan_1_note: "Note:\nQuota will be freed when data is deleted",
 
         // Trial CTA
         trial_title: "Still not convinced? Start with a 14-day FREE trial!",
@@ -392,36 +384,27 @@ export const strings = createLocalizedStrings({
         // Plan Cards
         plan_month: "/bulan",
 
-        // Plan 1: CRM Penjualan
-        plan_1_title: "CRM Penjualan",
-        plan_1_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala menengah dan jumlah aktivitas telesales sedikit.",
-        plan_1_price: "299K",
-        plan_1_feat_1: "100 responses a month",
-        plan_1_feat_2: "Unlimited forms and surveys",
-        plan_1_feat_3: "Unlimited fields",
-        plan_1_feat_4: "Basic form creation tools",
-        plan_1_feat_5: "Up to 2 subdomains",
+        // Plan 1: Free Trial
+        plan_1_title: "Free Trial",
+        plan_1_desc: "Mulai gunakan SmartSales secara gratis dengan batasan penggunaan.",
+        plan_1_price: "0",
+        plan_1_feat_1: "Hingga 100 kontak (batas maksimum)",
+        plan_1_feat_2: "1–2 pengguna per akun",
+        plan_1_feat_3: "Fitur CRM dasar",
+        plan_1_feat_4: "Tanpa akses Data Intelligence",
+        plan_1_feat_5: "Tanpa sistem pembayaran & billing",
 
-        // Plan 2: Professional
-        plan_2_title: "Professional",
-        plan_2_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala menengah dan jumlah aktivitas telesales menengah",
-        plan_2_price: "599K",
-        plan_2_tag: "Populer",
-        plan_2_feat_1: "Unlimited responses",
-        plan_2_feat_2: "Unlimited forms and surveys",
-        plan_2_feat_3: "Instagram profile page",
-        plan_2_feat_4: "Google Docs integration",
-        plan_2_feat_5: "Custom \"Thank you\" page",
-
-        // Plan 3: Enterprise
-        plan_3_title: "Enterprise",
-        plan_3_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala besar dan jumlah aktivitas telesales yang besar",
-        plan_3_price: "Konsultasi Harga",
-        plan_3_feat_1: "PayPal payments",
-        plan_3_feat_2: "Logic Jumps",
-        plan_3_feat_3: "File upload with 5GB storage",
-        plan_3_feat_4: "Custom domain support",
-        plan_3_feat_5: "Stripe integration",
+        // Plan 2: Enterprise
+        plan_2_title: "Exclusive",
+        plan_2_desc: "Maksimalkan potensi bisnis Anda dengan solusi CRM yang dapat dikustomisasi.",
+        plan_2_price: "Hubungi Kami",
+        plan_2_feat_1: "Kontak & pengguna tanpa batas",
+        plan_2_feat_2: "Akses penuh ke Data Intelligence",
+        plan_2_feat_3: "Workflow & automasi kustom",
+        plan_2_feat_4: "Integrasi pembayaran & billing",
+        plan_2_feat_5: "Dukungan & onboarding khusus",
+        plan_2_date: "/ sesuai kontrak",
+        plan_1_note: "Catatan:\nKuota akan bertambah kembali setelah data dihapus",
 
         // Trial CTA
         trial_title: "Masih belum yakin? Mulai dengan uji coba GRATIS 14 hari!",

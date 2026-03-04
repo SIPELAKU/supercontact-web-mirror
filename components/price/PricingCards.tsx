@@ -13,7 +13,9 @@ const PlanCard = ({
     features,
     isPopular = false,
     buttonText = strings.whatsapp_sales_button,
-    tag
+    tag,
+    note,
+    struckFeaturesIndex
 }: {
     title: string,
     desc: string,
@@ -22,14 +24,18 @@ const PlanCard = ({
     features: string[],
     isPopular?: boolean,
     buttonText?: string,
-    tag?: string
+    tag?: string,
+    note?: string,
+    struckFeaturesIndex?: number[]
 }) => {
     const theme = useTheme();
+    const isContactPrice = price === strings.plan_2_price;
 
     return (
         <Paper
             elevation={0} // Clean look from image
             sx={{
+                bgcolor: isContactPrice ? "#5479EE" : "#FFFFFF",
                 p: 4,
                 height: '100%',
                 display: 'flex',
@@ -53,40 +59,81 @@ const PlanCard = ({
                         top: 16,
                         right: 16,
                         fontWeight: 600,
-                        backgroundColor: '#E0E7FF',
-                        color: '#5570F1',
+                        backgroundColor: '#25D366',
+                        color: '#FFFFFF',
                         fontSize: '0.75rem'
                     }}
                 />
             )}
 
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: isContactPrice ? "#FFFFFF" : '#334155', mb: 1 }}>
                     {title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6, px: 2 }}>
+                <Typography variant="body2" sx={{ color: isContactPrice ? "#FFFFFF" : '#64748B', lineHeight: 1.6, px: 2 }}>
                     {desc}
                 </Typography>
             </Box>
 
-            <Box sx={{ mb: 4, textAlign: 'center' }}>
-                {price === strings.plan_3_price ? (
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#5570F1' }}>
-                        {price}
+            <Box sx={{ mb: 4, textAlign: 'center', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isContactPrice ? (
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 700,
+                            color: '#FFFFFF',
+                            lineHeight: 1.1,
+                            fontSize: '2.1rem',
+                            textAlign: 'left',
+                            width: 'fit-content',
+                            mx: 'auto',
+                        }}
+                    >
+                        {price.split(' ')[0]}
+                        <br />
+                        <span style={{ marginLeft: '21px' }}>
+                            {price.split(' ')[1]}
+                        </span>
+                        {date && (
+                            <Typography
+                                component="span"
+                                sx={{
+                                    fontWeight: 500,
+                                    color: '#FFFFFF',
+                                    fontSize: '0.9rem',
+                                    ml: 0.5,
+                                    verticalAlign: 'baseline'
+                                }}
+                            >
+                                {date}
+                            </Typography>
+                        )}
                     </Typography>
                 ) : (
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748B', mt: 1, mr: 0.5 }}>
                             Rp.
                         </Typography>
-                        <Typography variant="h3" sx={{ fontWeight: 700, color: '#5570F1' }}>
+                        <Typography
+                            variant="h3"
+                            sx={{
+                                fontWeight: 700,
+                                color: '#5479EE'
+                            }}
+                        >
                             {price.replace("Rp ", "").replace("Rp. ", "").replace("k", "")}
-                            {/* <Typography component="span" variant="h3" sx={{ fontWeight: 700, textTransform: 'none' }}>
-                                {price.toLowerCase().includes('k') ? 'k' : ''}
-                            </Typography> */}
                         </Typography>
                         {date && (
-                            <Typography variant="body2" sx={{ alignSelf: 'flex-end', mb: 1, ml: 0.5, color: '#64748B' }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    alignSelf: 'flex-end',
+                                    mb: 0.5,
+                                    ml: 0.1,
+                                    color: '#64748B',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
                                 {date}
                             </Typography>
                         )}
@@ -95,46 +142,73 @@ const PlanCard = ({
             </Box>
 
             <List sx={{ mb: 4, flexGrow: 1, px: 2 }}>
-                {features.map((feature, index) => (
-                    <ListItem key={index} disableGutters sx={{ py: 0.75, alignItems: 'flex-start' }}>
-                        <ListItemIcon sx={{ minWidth: 28, mt: 0.5 }}>
-                            <RadioButtonUncheckedIcon sx={{ fontSize: '1rem', color: '#94A3B8' }} />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={feature}
-                            primaryTypographyProps={{
-                                variant: 'body2',
-                                sx: { color: '#475569', fontWeight: 500, lineHeight: 1.4 }
-                            }}
-                        />
-                    </ListItem>
-                ))}
+                {features.map((feature, index) => {
+                    const isStruck = struckFeaturesIndex?.includes(index);
+                    return (
+                        <ListItem key={index} disableGutters sx={{ py: 0.75, alignItems: 'flex-start' }}>
+                            <ListItemIcon sx={{ minWidth: 28, mt: 0.5 }}>
+                                <RadioButtonUncheckedIcon sx={{ fontSize: '1rem', color: isContactPrice ? "#FFFF" : isStruck ? '#CBD5E1' : '#94A3B8' }} />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary={feature}
+                                primaryTypographyProps={{
+                                    variant: 'body2',
+                                    sx: {
+                                        color: isContactPrice ? "#FFFF" : isStruck ? '#94A3B8' : '#475569',
+                                        fontWeight: 500,
+                                        lineHeight: 1.4,
+                                        textDecoration: isStruck ? 'line-through' : 'none'
+                                    }
+                                }}
+                            />
+                        </ListItem>
+                    );
+                })}
             </List>
 
-            <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                onClick={() => {
-                    const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, title));
-                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
-                }}
-                startIcon={<WhatsAppIcon />}
-                sx={{
-                    borderRadius: '12px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    py: 1.5,
-                    boxShadow: 'none',
-                    bgcolor: '#5570F1',
-                    '&:hover': {
-                        bgcolor: '#445ed9',
-                        boxShadow: 'none'
-                    }
-                }}
-            >
-                {buttonText}
-            </Button>
+            <Box sx={{ mt: 'auto' }}>
+                <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    onClick={() => {
+                        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, title));
+                        window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
+                    }}
+                    startIcon={<WhatsAppIcon />}
+                    sx={{
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        py: 1.5,
+                        boxShadow: 'none',
+                        bgcolor: "#25D366",
+                        '&:hover': {
+                            bgcolor: "#128C7E",
+                            boxShadow: 'none'
+                        }
+                    }}
+                >
+                    {buttonText}
+                </Button>
+
+                {/* <Box sx={{ height: 60, display: 'flex', flexDirection: 'column', justifyContent: 'center', mt: 1 }}>
+                    {note && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: '#64748B',
+                                textAlign: 'center',
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-line'
+                            }}
+                        >
+                            {note}
+                        </Typography>
+                    )}
+                </Box> */}
+            </Box>
         </Paper>
     );
 };
@@ -150,6 +224,8 @@ const PricingCards = () => {
                         desc={strings.plan_1_desc}
                         price={strings.plan_1_price}
                         date={strings.plan_month}
+                        note={strings.plan_1_note}
+                        struckFeaturesIndex={[3, 4]}
                         features={[
                             strings.plan_1_feat_1,
                             strings.plan_1_feat_2,
@@ -166,7 +242,7 @@ const PricingCards = () => {
                         title={strings.plan_2_title}
                         desc={strings.plan_2_desc}
                         price={strings.plan_2_price}
-                        date={strings.plan_month}
+                        date={strings.plan_2_date}
                         isPopular={true}
                         tag={strings.plan_2_tag}
                         features={[
@@ -175,22 +251,6 @@ const PricingCards = () => {
                             strings.plan_2_feat_3,
                             strings.plan_2_feat_4,
                             strings.plan_2_feat_5,
-                        ]}
-                    />
-                </Grid>
-
-                {/* Plan 3 */}
-                <Grid item xs={12} md={4}>
-                    <PlanCard
-                        title={strings.plan_3_title}
-                        desc={strings.plan_3_desc}
-                        price={strings.plan_3_price}
-                        features={[
-                            strings.plan_3_feat_1,
-                            strings.plan_3_feat_2,
-                            strings.plan_3_feat_3,
-                            strings.plan_3_feat_4,
-                            strings.plan_3_feat_5,
                         ]}
                     />
                 </Grid>

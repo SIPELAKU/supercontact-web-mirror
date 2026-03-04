@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.28] - 2026-03-04
+
+### Detail Versi 1.8.28
+
+#### 🎨 Pricing UI Redesign & Brand Alignment
+
+- **Exclusive Card Overhaul**: Completely redesigned the "Exclusive" (formerly Enterprise) pricing card with a high-contrast primary blue background (`#5479EE`) and white text for a premium look.
+- **Multi-line Price Layout**: Refactored the "Hubungi Kami" / "Contact Us" text into a two-line layout with increased font size (2.1rem) and integrated the contract duration text directly after the second line for better spatial efficiency.
+- **WhatsApp Themed CTA**: Updated all pricing card action buttons to use the WhatsApp green theme (`#25D366`) with darker hover states for a more actionable UI.
+- **Recommended Badge**: Replaced the "Popular" tag with a "Recommended" badge using a bold green background to align with the new CTA styling.
+- **Feature Visuals**: Applied strikethrough decorations to features 4 & 5 on the Free Trial card to clearly communicate plan limitations.
+- **Improved Contrast**: Adjusted feature icons and list text colors to maintain high accessibility on both light and dark card backgrounds.
+
+#### 🌐 Localization & Copy Updates
+
+- **Plan Renaming**: Globally updated the second pricing tier name from "Enterprise" to "Exclusive" in both English and Indonesian locales.
+- **Contractual Strings**: Standardized the contract duration text for the Exclusive plan to " / sesuai kontrak" (ID) and "/ per contract" (EN).
+- **Tag Updates**: Updated localized plan tags to "Recommended" across all languages.
+
+#### 📁 Files Modified
+
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
 ## [1.8.27] - 2026-03-04
 
 ### Detail Versi 1.8.27
@@ -50,7 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🐛 Bug Fixes
 
 - **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
-
 
 #### 📁 Files Modified
 

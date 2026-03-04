@@ -71,7 +71,7 @@ const Hero = () => {
                                 size="large"
                                 startIcon={<WhatsAppIcon />}
                                 onClick={() => {
-                                    const message = encodeURIComponent("Halo, saya tertarik dengan product supersales");
+                                    const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
                                     window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                                 }}
                                 sx={{

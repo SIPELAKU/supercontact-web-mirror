@@ -191,6 +191,7 @@ export const strings = createLocalizedStrings({
         hero_card_best_seller: "Best seller of the month",
         hero_card_target: "of target",
         hero_card_view_sales: "View Sales",
+        wa_interest_msg: "Hi, I'm interested in the product {0}",
 
         // Web Login / Auth
         web_welcome_title: "Welcome to SmartSales!",
@@ -485,6 +486,7 @@ export const strings = createLocalizedStrings({
         hero_card_best_seller: "Penjual terbaik bulan ini",
         hero_card_target: "dari target",
         hero_card_view_sales: "Lihat Penjualan",
+        wa_interest_msg: "Halo, saya tertarik dengan product {0}",
 
         // Web Login / Auth
         web_welcome_title: "Selamat Datang di SmartSales!",

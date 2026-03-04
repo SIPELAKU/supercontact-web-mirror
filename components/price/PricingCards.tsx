@@ -116,7 +116,7 @@ const PlanCard = ({
                 size="large"
                 fullWidth
                 onClick={() => {
-                    const message = encodeURIComponent(`Halo, saya tertarik dengan product ${title}`);
+                    const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, title));
                     window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                 }}
                 startIcon={<WhatsAppIcon />}

@@ -51,12 +51,29 @@ const getStatusChip = (status: string) => {
 };
 
 const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger }: CampaignsTableProps) => {
-  const { data, isLoading, error, refetch } = useCampaigns();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
+
+  const { data, isLoading, error, refetch } = useCampaigns(page + 1, rowsPerPage, debouncedSearch);
 
   const rows = useMemo(() => data?.data?.campaigns || [], [data?.data?.campaigns]);
+  const totalRows = data?.data?.total || 0;
 
   useEffect(() => {
     if (error) {
@@ -69,23 +86,6 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
 
-  // Filter rows based on search query
-  const filteredRows = useMemo(() => {
-    if (searchQuery.trim() === '') {
-      return rows;
-    }
-    const query = searchQuery.toLowerCase();
-    return rows.filter(row =>
-      row.subject.toLowerCase().includes(query) ||
-      row.status.toLowerCase().includes(query) ||
-      row.user_fullname.toLowerCase().includes(query)
-    );
-  }, [searchQuery, rows]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery]);
-
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -94,8 +94,6 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
-  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <div>
@@ -150,7 +148,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
                   <CircularProgress size={30} />
                 </TableCell>
               </TableRow>
-            ) : paginatedRows.length === 0 ? (
+            ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                   <span className="text-gray-500">
@@ -159,7 +157,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedRows.map((row) => {
+              rows.map((row: Campaign) => {
                 const canEditOrDelete = row.status.toLowerCase() === 'draft' || row.status.toLowerCase() === 'in_queue' || row.status.toLowerCase() === 'queued';
                 return (
                   <TableRow
@@ -195,7 +193,7 @@ const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={filteredRows.length}
+          count={totalRows}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

@@ -155,6 +155,10 @@ export interface Campaign {
 export interface CampaignsResponse {
   success: boolean;
   data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
     campaigns: Campaign[];
   };
   error?: {

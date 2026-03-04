@@ -49,17 +49,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/price/PricingCards.tsx`
 - `lib/utils/strings.ts`
 
-## [1.8.25] - 2026-03-04
+## [1.8.27] - 2026-03-04
 
-### Detail Versi 1.8.25
+### Detail Versi 1.8.27
 
 #### 🐛 Bug Fixes
 
 - **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
 
+#### ✨ Enhancements
+
+- **Campaigns Table Pagination**: Successfully migrated the Campaigns module from client-side array slicing to full backend server-side pagination and debounced textual searching.
+  - Implemented dynamic argument passing for `page`, `limit` and `search` inside `useCampaigns` hook.
+  - Mapped URLSearchParams directly within `lib/api/email-marketing/campaigns.ts`.
+  - Re-mapped the Data Table payload schema and correctly extracted `data.total` for accurate dynamic pagination markers, greatly improving listing performance on heavy databases.
+
 #### 📁 Files Modified
 
 - `components/contact/modal/ImportContactModal.tsx`
+- `components/email-marketing/campaigns/CampaignsTable.tsx`
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/hooks/useCampaigns.ts`
+- `lib/types/email-marketing.ts`
 
 ## [1.8.24] - 2026-03-04
 

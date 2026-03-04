@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Password**: Unified the password reset page styling with the new card design and fixed zoom responsiveness.
 - **Zoom Optimization**: Resolved layout shifts and misalignment issues when the browser is zoomed (125%-200%) by migrating from fixed margins to dynamic flexbox centering.
 
+#### 🏗️ Navigation & UI Polish
+
+- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
+
 #### 📁 Files Modified
 
 - `app/layout.tsx`

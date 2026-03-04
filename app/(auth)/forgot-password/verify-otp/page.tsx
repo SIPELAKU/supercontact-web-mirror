@@ -120,21 +120,21 @@ export default function ForgotPasswordVerifyOTPPage() {
     <div
       className={`min-h-screen flex items-center justify-center bg-[#F5F6FA] px-4 ${poppins.className}`}
     >
-      <div className="bg-white w-full max-w-[440px] h-screen flex flex-col">
+      <div className="bg-white w-full max-w-[450px] rounded-[20px] shadow-lg flex flex-col p-8 md:p-10 my-8">
         {/* Logo */}
-        <div className="flex justify-center mb-16 mt-[50px]">
+        <div className="flex justify-center mb-8">
           <Image
-            src="/assets/sc-logo.png"
-            alt="SuperContact Logo"
-            width={158}
-            height={38}
+            src="/assets/sc-logo-primary.svg"
+            alt="SmartSales Logo"
+            width={180}
+            height={45}
             className="object-contain"
             priority
           />
         </div>
 
-        {/* Main Card */}
-        <div className="p-10 space-y-8 mt-[150px]">
+        {/* Main Card Content */}
+        <div className="space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-[32px] font-bold text-gray-900 leading-tight">

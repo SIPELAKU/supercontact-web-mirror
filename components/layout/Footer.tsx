@@ -35,11 +35,10 @@ const Footer = () => {
                         <Grid item xs={12} md={5}>
                             <Box sx={{ mb: 4 }}>
                                 <Image
-                                    src="/assets/logo-supercontact.png"
-                                    alt="SuperContact Logo"
+                                    src="/assets/sc-logo-light.svg"
+                                    alt="SmartSales Logo"
                                     width={150}
                                     height={40}
-                                    style={{ filter: 'brightness(0) invert(1)' }}
                                 />
                             </Box>
                             <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)', mb: 4, maxWidth: 350, lineHeight: 1.6 }}>
@@ -82,7 +81,7 @@ const Footer = () => {
                             </Box>
                         </Grid>
 
-                        {/* Navigation Links - Supersales */}
+                        {/* Navigation Links - SmartSales */}
                         <Grid item xs={6} md={2.3}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
                                 {strings.footer_col_sales}
@@ -94,7 +93,7 @@ const Footer = () => {
                                     <Box sx={{ bgcolor: 'white', color: '#062141', px: 1, py: 0.2, borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>{strings.footer_new_badge}</Box>
                                 </Box>
                                 <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
-                                <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.supercontact_web}</Link>
+                                <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>SmartSales Web</Link>
                             </Box>
                         </Grid>
 

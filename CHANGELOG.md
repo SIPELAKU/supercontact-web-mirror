@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.24] - 2026-03-04
+
+### Detail Versi 1.8.24
+
+#### 🎨 Global Branding & UI Consistency
+
+- **SmartSales Rebranding**: Finalized the revert of project-wide branding from "SuperContact" back to "SmartSales".
+  - **Sidebar**: Switched to high-quality SVG primary logo and added `logo3d.png` for collapsed state.
+  - **Email Templates**: Rebranded all HTML and Text email templates, including subject lines.
+  - **Site-wide Branding**: Updated logo and brand name in `Navbar`, `Footer`, `Hero` analytics, `EmailVerification`, and `PrintableTable`.
+  - **Metadata**: Updated root `layout.tsx` title, description, and OpenGraph tags.
+  - **Strings**: Refined localized string constants in `lib/utils/strings.ts`.
+
+#### 🔐 Authentication Flow & Layout
+
+- **Login Page**: Added a "Kembali ke Beranda" (Back to Home) button with icon and hover effects for better navigation.
+- **Forgot Password**: Refactored the layout to use a centered card design with shadow and rounded corners.
+- **OTP Verification**: Aligned layout with the centered card design to match the password recovery flow.
+- **New Password**: Unified the password reset page styling with the new card design and fixed zoom responsiveness.
+- **Zoom Optimization**: Resolved layout shifts and misalignment issues when the browser is zoomed (125%-200%) by migrating from fixed margins to dynamic flexbox centering.
+
+#### 🏗️ Navigation & UI Polish
+
+- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
+
+#### 📁 Files Modified
+
+- `app/layout.tsx`
+- `app/(auth)/login/page.tsx`
+- `app/(auth)/forgot-password/page.tsx`
+- `app/(auth)/forgot-password/verify-otp/page.tsx`
+- `app/(account)/new-password/page.tsx`
+- `app/(account)/email-verification/page.tsx`
+- `components/layout/Navbar.tsx`
+- `components/layout/Footer.tsx`
+- `components/layout/Sidebar.tsx`
+- `components/layout/FAQ.tsx`
+- `components/home/Hero.tsx`
+- `components/ui/printable-table.tsx`
+- `lib/utils/strings.ts`
+- `lib/utils/email-templates.ts`
+
 ## [1.8.23] - 2026-03-02
 
 ### Detail Versi 1.8.23

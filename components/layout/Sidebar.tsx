@@ -256,8 +256,8 @@ export default function Sidebar() {
           >
             {!isCollapsed ? (
               <Image
-                src="/assets/sc-logo.png"
-                alt="SuperContact Logo"
+                src="/assets/sc-logo-primary.svg"
+                alt="SmartSales Logo"
                 width={180}
                 height={60}
                 className="object-contain"
@@ -265,8 +265,8 @@ export default function Sidebar() {
               />
             ) : (
               <Image
-                src="/assets/sc-logo.png"
-                alt="SuperContact Logo"
+                src="/assets/logo3d.png"
+                alt="SmartSales Logo"
                 width={40}
                 height={40}
                 className="object-contain"

@@ -51,7 +51,7 @@ function TabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-                <Box sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ p: 2, height: '100%' }}>
                     {children}
                 </Box>
             )}
@@ -60,7 +60,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const MenuItem = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
-    <Box sx={{ display: 'flex', gap: 2, mb: 1, p: 1, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' }, cursor: 'pointer' }}>
+    <Box sx={{ display: 'flex', gap: 2, mb: 0.5, p: 0.75, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' }, cursor: 'pointer' }}>
         <Box sx={{ color: 'text.secondary', mt: 0.5 }}>
             {React.cloneElement(icon as React.ReactElement<any>, { fontSize: 'large' })}
         </Box>
@@ -137,7 +137,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 display: 'flex',
                 width: '100%',
                 maxWidth: '1300px',
-                minHeight: '400px',
+                minHeight: '280px',
                 bgcolor: 'background.paper',
                 borderRadius: '24px',
                 overflow: 'hidden',
@@ -146,7 +146,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 borderColor: 'divider',
             }}
         >
-            <Box sx={{ width: '280px', p: 3 }}>
+            <Box sx={{ width: '280px', p: 2 }}>
                 <Tabs
                     orientation="vertical"
                     variant="scrollable"
@@ -161,9 +161,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             textTransform: 'none',
                             textAlign: 'left',
                             px: 3,
-                            py: 1.5,
-                            mb: 1,
-                            minHeight: '48px',
+                            py: 1,
+                            mb: 0.5,
+                            minHeight: '44px',
                             fontSize: '0.95rem',
                             fontWeight: 600,
                             borderRadius: '99px',
@@ -199,7 +199,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 </Tabs>
             </Box>
 
-            <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 2, borderRadius: '16px', p: 1 }}>
+            <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 1.5, borderRadius: '16px', p: 0.5 }}>
                 <TabPanel value={value} index={0}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>

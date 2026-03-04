@@ -106,7 +106,7 @@ const Hero = () => {
                         <Box
                             component="img"
                             src="/assets/banner-design.png"
-                            alt="Supercontact Analytics"
+                            alt="SmartSales Analytics"
                             sx={{
                                 width: { xs: '100%', md: '500px', lg: '715.23px' },
                                 maxWidth: 'none',

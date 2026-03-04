@@ -35,11 +35,10 @@ const Footer = () => {
                         <Grid item xs={12} md={5}>
                             <Box sx={{ mb: 4 }}>
                                 <Image
-                                    src="/assets/sc-logo-primary.png"
+                                    src="/assets/sc-logo-light.svg"
                                     alt="SmartSales Logo"
                                     width={150}
                                     height={40}
-                                    style={{ filter: 'brightness(0) invert(1)' }}
                                 />
                             </Box>
                             <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.7)', mb: 4, maxWidth: 350, lineHeight: 1.6 }}>

@@ -222,7 +222,7 @@ export const strings = createLocalizedStrings({
 
         // Productivity Section
         productivity_title: "One Application For All Your Productivity Needs",
-        productivity_subtitle: "SmartSales integrates CRM, Call Center, and Deal management into one omnichannel platform. One application for interaction, Management, and growth.",
+        productivity_subtitle: "SmartSales integrates CRM, Omnichannel, and Deal management into one omnichannel platform. One application for interaction, Management, and growth.",
         prod_omnichannel: "Omnichannel Management",
         prod_omnichannel_desc: "Centralize all channels so that customers will easily understand and fall in love with.",
         prod_campaign: "Campaign Marketing",
@@ -232,9 +232,9 @@ export const strings = createLocalizedStrings({
         prod_deal: "Deal Management",
         prod_deal_desc: "Just change the status and see your deal closed with success.",
         prod_ticketing: "Ticketing",
-        prod_ticketing_desc: "A simple-to-follow flow with lots of references and code examples.",
+        prod_ticketing_desc: "A simple-to-follow flow with lots of references.",
         prod_cs: "Customer Service",
-        prod_cs_desc: "An easy-to-follow doc with lots of references and code examples.",
+        prod_cs_desc: "An easy-to-follow doc with lots of references.",
 
         // Trusted By Section
         trusted_by_title: "Trusted By 1000+ Businesses in Indonesia",
@@ -252,8 +252,8 @@ export const strings = createLocalizedStrings({
         // FAQ Section
         faq_section_title: "Frequently Asked Questions",
         faq_section_subtitle: "Browse through these FAQs to find answers to commonly asked questions.",
-        faq_q1_text: "What is call center?",
-        faq_a1_text: "A call center is a centralized department to which phone calls from current and potential customers are directed.",
+        faq_q1_text: "What is Omnichannel?",
+        faq_a1_text: "Omnichannel is an integration of different communication channels to provide a consistent customer experience.",
         faq_q2_text: "How does the SmartSales application work?",
         faq_a2_text: "SmartSales integrates various communication channels into a single platform for efficient management.",
         faq_q3_text: "Who can use the SmartSales application?",
@@ -338,7 +338,7 @@ export const strings = createLocalizedStrings({
         sol_role_ops_desc: "Automate operational processes.",
 
         // Footer Section
-        footer_desc: "Identify callers, filter unwanted calls, and enjoy a safer, smarter way to connect with SmartSales.",
+        footer_desc: "Manage leads, monitor customer interactions, and boost sales in a smarter, faster, and more integrated way with SmartSales.",
         footer_newsletter_label: "Subscribe to newsletter",
         footer_newsletter_placeholder: "Your email",
         footer_subscribe_btn: "Subscribe",
@@ -516,7 +516,7 @@ export const strings = createLocalizedStrings({
 
         // Productivity Section
         productivity_title: "Satu Aplikasi Untuk Semua Kebutuhan Produktivitas Anda",
-        productivity_subtitle: "SmartSales mengintegrasikan CRM, Call Center, dan Deal yang mendukung produktivitas bisnis Anda. Hasilkan interaksi dan konversi fitur untuk mendukung kinerja Anda dan perusahaan.",
+        productivity_subtitle: "SmartSales mengintegrasikan CRM, Omnichannel, dan Deal yang mendukung produktivitas bisnis Anda. Hasilkan interaksi dan konversi fitur untuk mendukung kinerja Anda dan perusahaan.",
         prod_omnichannel: "Manajemen Omnichannel",
         prod_omnichannel_desc: "Sentralisasi semua channel agar pelanggan dengan mudah mengerti dan jatuh cinta.",
         prod_campaign: "Campaign Marketing",
@@ -526,9 +526,9 @@ export const strings = createLocalizedStrings({
         prod_deal: "Manajemen deal",
         prod_deal_desc: "Hanya ubah status dan lihat deal Anda closed with success.",
         prod_ticketing: "Ticketing",
-        prod_ticketing_desc: "Alur simple-to-follow dengan banyak referensi dan contoh kode.",
+        prod_ticketing_desc: "Alur simple-to-follow dengan banyak referensi.",
         prod_cs: "Customer Service",
-        prod_cs_desc: "Dokumen easy-to-follow dengan banyak referensi dan contoh kode.",
+        prod_cs_desc: "Dokumen easy-to-follow dengan banyak referensi.",
 
         // Trusted By Section
         trusted_by_title: "Dipercaya Oleh 1000+ Bisnis di Indonesia",
@@ -546,8 +546,8 @@ export const strings = createLocalizedStrings({
         // FAQ Section
         faq_section_title: "Pertanyaan yang Sering Ditanyakan",
         faq_section_subtitle: "Telusuri FAQ ini untuk menemukan jawaban atas pertanyaan yang sering diajukan.",
-        faq_q1_text: "Apa itu call center?",
-        faq_a1_text: "Call center adalah departemen terpusat tempat panggilan telepon dari pelanggan saat ini dan potensial diarahkan.",
+        faq_q1_text: "Apa itu Omnichannel?",
+        faq_a1_text: "Omnichannel adalah integrasi antara saluran komunikasi yang berbeda untuk memberikan pengalaman yang konsisten kepada pelanggan.",
         faq_q2_text: "Bagaimana cara aplikasi SmartSales bekerja?",
         faq_a2_text: "SmartSales mengintegrasikan berbagai saluran komunikasi ke dalam satu platform untuk pengelolaan yang efisien.",
         faq_q3_text: "Siapa saja yang bisa menggunakan aplikasi SmartSales?",
@@ -632,7 +632,7 @@ export const strings = createLocalizedStrings({
         sol_role_ops_desc: "Otomatiskan proses operasional",
 
         // Footer Section
-        footer_desc: "Identifikasi penelepon, filter panggilan yang tidak diinginkan, dan nikmati cara yang lebih aman dan cerdas untuk terhubung dengan SmartSales.",
+        footer_desc: "Kelola prospek, pantau interaksi pelanggan, dan tingkatkan penjualan dengan cara yang lebih cerdas, cepat, dan terintegrasi bersama SmartSales.",
         footer_newsletter_label: "Berlangganan buletin",
         footer_newsletter_placeholder: "Email Anda",
         footer_subscribe_btn: "Berlangganan",

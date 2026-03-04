@@ -13,14 +13,14 @@ interface PasswordResetEmailData {
  */
 export function generatePasswordResetEmailHTML(data: PasswordResetEmailData): string {
   const { userEmail, resetLink, expirationTime = '1 hour' } = data;
-  
+
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Reset Your Password - SuperContact</title>
+      <title>Reset Your Password - SmartSales</title>
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -72,14 +72,14 @@ export function generatePasswordResetEmailHTML(data: PasswordResetEmailData): st
     </head>
     <body>
       <div class="header">
-        <div class="logo">SuperContact</div>
+        <div class="logo">SmartSales</div>
         <p>Sales Management Platform</p>
       </div>
       
       <div class="content">
         <h2>Reset Your Password</h2>
         <p>Hello,</p>
-        <p>We received a request to reset the password for your SuperContact account associated with <strong>${userEmail}</strong>.</p>
+        <p>We received a request to reset the password for your SmartSales account associated with <strong>${userEmail}</strong>.</p>
         <p>Click the button below to reset your password:</p>
         
         <div style="text-align: center;">
@@ -95,8 +95,8 @@ export function generatePasswordResetEmailHTML(data: PasswordResetEmailData): st
       </div>
       
       <div class="footer">
-        <p>This email was sent by SuperContact. If you have any questions, please contact our support team.</p>
-        <p>&copy; ${new Date().getFullYear()} SuperContact. All rights reserved.</p>
+        <p>This email was sent by SmartSales. If you have any questions, please contact our support team.</p>
+        <p>&copy; ${new Date().getFullYear()} SmartSales. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -108,13 +108,13 @@ export function generatePasswordResetEmailHTML(data: PasswordResetEmailData): st
  */
 export function generatePasswordResetEmailText(data: PasswordResetEmailData): string {
   const { userEmail, resetLink, expirationTime = '1 hour' } = data;
-  
+
   return `
-SuperContact - Reset Your Password
+SmartSales - Reset Your Password
 
 Hello,
 
-We received a request to reset the password for your SuperContact account associated with ${userEmail}.
+We received a request to reset the password for your SmartSales account associated with ${userEmail}.
 
 Please click the following link to reset your password:
 ${resetLink}
@@ -123,7 +123,7 @@ IMPORTANT: This link will expire in ${expirationTime}. If you didn't request thi
 
 If you have any questions, please contact our support team.
 
-© ${new Date().getFullYear()} SuperContact. All rights reserved.
+© ${new Date().getFullYear()} SmartSales. All rights reserved.
   `.trim();
 }
 
@@ -131,7 +131,7 @@ If you have any questions, please contact our support team.
  * Email subject lines
  */
 export const EMAIL_SUBJECTS = {
-  PASSWORD_RESET: 'Reset Your SuperContact Password',
-  PASSWORD_RESET_SUCCESS: 'Your SuperContact Password Has Been Reset',
-  ACCOUNT_VERIFICATION: 'Verify Your SuperContact Account',
+  PASSWORD_RESET: 'Reset Your SmartSales Password',
+  PASSWORD_RESET_SUCCESS: 'Your SmartSales Password Has Been Reset',
+  ACCOUNT_VERIFICATION: 'Verify Your SmartSales Account',
 } as const;

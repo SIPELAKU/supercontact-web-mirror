@@ -113,8 +113,8 @@ export default function EmailVerification() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Image
-            src="/assets/sc-logo-primary.png"
-            alt="Supercontact Logo"
+            src="/assets/sc-logo-primary.svg"
+            alt="SmartSales Logo"
             width={200}
             height={80}
             className="mx-auto"

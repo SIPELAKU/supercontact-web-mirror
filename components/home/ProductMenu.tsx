@@ -108,7 +108,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                     </Stack>
                 </Box>
                 {/* WhatsApp Section */}
-                <Box>
+                {/* <Box>
                     <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, mb: 1, display: 'block' }}>
                         {strings.product_menu_wa}
                     </Typography>
@@ -117,7 +117,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         <MenuItem icon={<CampaignIcon />} title={strings.pm_wa_ads} desc={strings.pm_wa_ads_desc} />
                         <MenuItem icon={<RocketLaunchIcon />} title={strings.pm_wa_blast} desc={strings.pm_wa_blast_desc} />
                     </Stack>
-                </Box>
+                </Box> */}
             </Box>
         );
     }
@@ -226,7 +226,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         </Grid>
                     </Grid>
                 </TabPanel>
-                <TabPanel value={value} index={2}>
+                {/* <TabPanel value={value} index={2}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>
                             <MenuItem icon={<WhatsAppIcon />} title={strings.pm_wa_api} desc={strings.pm_wa_api_desc} />
@@ -238,7 +238,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                             <MenuItem icon={<RocketLaunchIcon />} title={strings.pm_wa_blast} desc={strings.pm_wa_blast_desc} />
                         </Grid>
                     </Grid>
-                </TabPanel>
+                </TabPanel> */}
             </Box>
         </Paper>
     );

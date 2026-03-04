@@ -82,7 +82,7 @@ const Navbar = () => {
     { label: strings.product, path: '#' },
     { label: strings.price, path: '/price' },
     { label: strings.solution, path: '#' },
-    { label: strings.company, path: '/company' }
+    // { label: strings.company, path: '/company' }
   ];
 
   const isActive = (path: string) => pathname === path;
@@ -116,7 +116,7 @@ const Navbar = () => {
         {/* Desktop Logo */}
         <Box sx={{ display: { xs: 'none', md: 'block', }, cursor: 'pointer' }} onClick={() => router.push('/')}>
           <Image
-            src="/assets/sc-logo-primary.png"
+            src="/assets/sc-logo-primary.svg"
             alt="Logo Desktop"
             width={150}
             height={150}
@@ -247,7 +247,7 @@ const Navbar = () => {
           {/* Mobile Logo Center */}
           <Box sx={{ cursor: 'pointer' }} onClick={() => router.push('/')}>
             <Image
-              src="/assets/sc-logo-primary.png"
+              src="/assets/sc-logo-primary.svg"
               alt="Logo Mobile"
               width={150}
               height={150}

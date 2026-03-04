@@ -124,36 +124,37 @@ export default function NewPassword() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center w-full md:w-1/3 bg-[#F5F6FA]">
-      <div className="bg-white w-full max-w-[540px] h-screen flex flex-col">
-        <div className="mb-16 mt-[50px] flex justify-center">
+    <main className={`min-h-screen flex items-center justify-center bg-[#F5F6FA] px-4 ${poppins.className}`}>
+      <div className="bg-white w-full max-w-[450px] rounded-[20px] shadow-lg flex flex-col p-8 md:p-10 my-8">
+        <div className="flex justify-center mb-8">
           <Image
-            src="/assets/sc-logo-primary.png"
-            alt="Supercontact Logo"
-            width={158}
-            height={38}
+            src="/assets/sc-logo-primary.svg"
+            alt="SmartSales Logo"
+            width={180}
+            height={45}
+            className="object-contain"
+            priority
           />
         </div>
-        <section className="flex flex-col h-full justify-center py-10 bg-white">
-          <h1
-            className={`text-[32px] font-bold text-gray-900 leading-tight text-center ${poppins.className}`}
-          >
-            Reset Your Password
-          </h1>
+        <section className="space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl md:text-[32px] font-bold text-gray-900 leading-tight">
+              Reset Your Password
+            </h1>
+            <p className="text-[#6B7280] text-sm leading-relaxed mt-2">
+              Create a new strong password for your account.
+            </p>
+          </div>
 
-          <span className="text-md text-gray-500 mt-2 text-center">
-            Create a new strong password for your account.
-          </span>
-
-          <div className="px-8 md:px-15">
+          <div className="space-y-6">
             {error && (
-              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm text-center">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="mt-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm">
+              <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm text-center">
                 {success}
               </div>
             )}
@@ -161,7 +162,7 @@ export default function NewPassword() {
 
           <form
             onSubmit={handleSubmit}
-            className="mt-6 space-y-8 px-8 md:px-15"
+            className="mt-6 space-y-6"
           >
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -200,7 +201,7 @@ export default function NewPassword() {
             >
               {isLoading ? "Saving..." : "Save new password & login"}
             </AppButton>
-            <div className="w-full px-[15px] border-b border-gray-300 text-black py-3 flex items-center justify-center gap-2 hover:bg-gray-50"></div>
+            <div className="pt-4 border-t border-gray-100"></div>
           </form>
         </section>
       </div>

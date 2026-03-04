@@ -7,7 +7,7 @@ import { strings } from '@/lib/utils/strings';
 
 const WhatsAppFloatingButton = () => {
     const handleWhatsAppClick = () => {
-        const message = encodeURIComponent("Halo, saya tertarik dengan product supersales");
+        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
         window.open(`https://wa.me/?text=${message}`, '_blank');
     };
 

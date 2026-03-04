@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Poppins } from "next/font/google";
 import { CircularProgress } from "@mui/material";
+import { ArrowLeft } from "lucide-react";
 
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -64,7 +65,7 @@ export default function LoginPage() {
         <div className="p-10">
           <Image
             src="/assets/logo3d.png"
-            alt="Supercontact Logo"
+            alt="SmartSales Logo"
             width={400}
             height={400}
           />
@@ -72,12 +73,22 @@ export default function LoginPage() {
       </section>
 
       {/* Right Section */}
-      <section className="flex flex-col md:col-span-2 justify-center px-6 md:px-10 lg:px-20 py-8 md:py-10 bg-white">
-        <div className="flex flex-col items-center md:items-center text-center md:text-center">
+      <section className="flex flex-col md:col-span-2 justify-center px-6 md:px-10 lg:px-20 py-8 md:py-10 bg-white relative">
+        <div className="absolute top-8 left-6 md:left-10 lg:left-20">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors group"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            Kembali ke Beranda
+          </Link>
+        </div>
+
+        <div className="flex flex-col items-center md:items-center text-center md:text-center mt-8 md:mt-0">
           <div className="md:hidden mb-6">
             <Image
               src="/assets/logo3d.png"
-              alt="Supercontact Logo"
+              alt="SmartSales Logo"
               width={80}
               height={80}
               className="mx-auto"
@@ -93,8 +104,8 @@ export default function LoginPage() {
           <h2
             className={`text-2xl md:text-[32px] font-bold mt-1 ${poppins.className}`}
           >
-            <span className="text-[#5479EE]">Super</span>
-            <span className="text-[#5BC557]">Contact</span>
+            <span className="text-[#5479EE]">Smart</span>
+            <span className="text-[#5BC557]">Sales</span>
           </h2>
 
           <p className="mt-2 text-sm text-gray-500">Login to your account</p>

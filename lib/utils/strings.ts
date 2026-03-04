@@ -45,7 +45,7 @@ class SimpleLocalizedStrings {
 // Create proxy to allow direct property access like strings.home
 function createLocalizedStrings(data: StringsData): SimpleLocalizedStrings & LocalizedStringsType {
     const instance = new SimpleLocalizedStrings(data);
-    
+
     return new Proxy(instance, {
         get(target, prop: string) {
             if (prop in target) {
@@ -70,19 +70,19 @@ export const strings = createLocalizedStrings({
         dark_mode: "Dark Mode",
         light_mode: "Light Mode",
         // Features Page
-        features_subtitle: "Discover the power of Supercontact with our cutting-edge features and tools.",
+        features_subtitle: "Discover the power of SmartSales with our cutting-edge features and tools.",
         safety_title: "Safety",
         safety_desc: "Your safety is our priority. We analyze thousands of calls daily to detect potential fraud and spam callers. Our main goal is to keep you safe by blocking malicious numbers.",
         caller_id_title: "Caller ID",
         caller_id_desc: "You have the right to know who is contacting you! With the Caller ID feature, you can immediately identify unknown callers not in your contacts.",
         multi_platform_title: "Multi-Platform",
-        multi_platform_desc: "Supercontact is compatible with personal computers and mobile phones. Visit web.supercontact.com to learn more.\n\nVisit web.supercontact.com to search.",
+        multi_platform_desc: "SmartSales is compatible with personal computers and mobile phones. Visit web.SmartSales.com to learn more.\n\nVisit web.SmartSales.com to search.",
         sms_protection_title: "SMS Spam Protection",
         sms_protection_desc: "Do you want to know who is calling you when your phone is busy or turned off? Did you know that you can also listen to voicemail messages left by callers? Open the app now, configure call forwarding settings, and start taking advantage of the features we offer you.",
         privacy_title: "Data Privacy & Security",
-        privacy_desc: "Protecting the privacy of our users is paramount to Supercontact; we uphold the highest level of technical and operational compliance measures under GDPR benchmarks. That's why we've developed a dedicated Privacy Management Center so you have full control over your profile and privacy preferences, where you can easily manage visibility settings, change tags and profile appearances, delete or remove your contact profile listings, and much more.",
+        privacy_desc: "Protecting the privacy of our users is paramount to SmartSales; we uphold the highest level of technical and operational compliance measures under GDPR benchmarks. That's why we've developed a dedicated Privacy Management Center so you have full control over your profile and privacy preferences, where you can easily manage visibility settings, change tags and profile appearances, delete or remove your contact profile listings, and much more.",
         chat_title: "Chat",
-        chat_desc: "Use Supercontact Chat for an incredible chat experience! With Supercontact Chat feature, you can chat with enhanced privacy.",
+        chat_desc: "Use SmartSales Chat for an incredible chat experience! With SmartSales Chat feature, you can chat with enhanced privacy.",
 
         // Feature: Price Page
         price_title: "Pricing Plans",
@@ -96,36 +96,28 @@ export const strings = createLocalizedStrings({
         // Plan Cards
         plan_month: "/month",
 
-        // Plan 1: CRM Penjualan
-        plan_1_title: "CRM Sales",
-        plan_1_desc: "For All Types of Business. Solution for Business with medium scale and small number of telesales activities.",
-        plan_1_price: "299K",
-        plan_1_feat_1: "100 responses a month",
-        plan_1_feat_2: "Unlimited forms and surveys",
-        plan_1_feat_3: "Unlimited fields",
-        plan_1_feat_4: "Basic form creation tools",
-        plan_1_feat_5: "Up to 2 subdomains",
+        // Plan 1: Free Trial
+        plan_1_title: "Free Trial",
+        plan_1_desc: "Try SmartSales for free with limited features.",
+        plan_1_price: "Free",
+        plan_1_feat_1: "Up to 100 contacts (hard limit)",
+        plan_1_feat_2: "1–2 users per account",
+        plan_1_feat_3: "Basic CRM features",
+        plan_1_feat_4: "No Data Intelligence access",
+        plan_1_feat_5: "No payment & billing system",
 
-        // Plan 2: Professional
-        plan_2_title: "Professional",
-        plan_2_desc: "For All Types of Business. Solution for Business with medium scale and medium number of telesales activities.",
-        plan_2_price: "599K",
-        plan_2_tag: "Popular",
-        plan_2_feat_1: "Unlimited responses",
-        plan_2_feat_2: "Unlimited forms and surveys",
-        plan_2_feat_3: "Instagram profile page",
-        plan_2_feat_4: "Google Docs integration",
-        plan_2_feat_5: "Custom \"Thank you\" page",
-
-        // Plan 3: Enterprise
-        plan_3_title: "Enterprise",
-        plan_3_desc: "For All Types of Business. Solution for Business with large scale and large number of telesales activities.",
-        plan_3_price: "Consult Price",
-        plan_3_feat_1: "PayPal payments",
-        plan_3_feat_2: "Logic Jumps",
-        plan_3_feat_3: "File upload with 5GB storage",
-        plan_3_feat_4: "Custom domain support",
-        plan_3_feat_5: "Stripe integration",
+        // Plan 2: Enterprise
+        plan_2_title: "Exclusive",
+        plan_2_desc: "Unlock full power with a customized CRM solution",
+        plan_2_price: "Contact Us",
+        plan_2_tag: "Recommended",
+        plan_2_feat_1: "Unlimited contacts & users",
+        plan_2_feat_2: "Full Data Intelligence access",
+        plan_2_feat_3: "Custom workflows & automation",
+        plan_2_feat_4: "Payment & billing integration",
+        plan_2_feat_5: "Dedicated support & onboarding",
+        plan_2_date: "/ per contract",
+        plan_1_note: "Note:\nQuota will be freed when data is deleted",
 
         // Trial CTA
         trial_title: "Still not convinced? Start with a 14-day FREE trial!",
@@ -149,7 +141,7 @@ export const strings = createLocalizedStrings({
         faq_a6: "A Verified Business Profile allows businesses to display their authentic identity to callers.",
 
         // Business Page
-        business_title: "Supercontact for Business",
+        business_title: "SmartSales for Business",
         business_subtitle: "Excel in competition with verification services and business profiles to take your business a step further.",
         start_now_button: "Start Now",
 
@@ -183,7 +175,7 @@ export const strings = createLocalizedStrings({
 
         // Hero Section
         hero_title: "CRM, Chat & Call Center App to boost sales and business service",
-        hero_subtitle: "Supersales integrates full-funnel customer journey through omnichannel and CRM in one platform for maximum interaction, easy management, and rapid growth.",
+        hero_subtitle: "SmartSales integrates full-funnel customer journey through omnichannel and CRM in one platform for maximum interaction, easy management, and rapid growth.",
         whatsapp_sales_button: "Whatsapp Sales",
         hero_card_total_sales: "Total Sales",
         hero_card_last_6_months: "Last Six Months",
@@ -191,9 +183,10 @@ export const strings = createLocalizedStrings({
         hero_card_best_seller: "Best seller of the month",
         hero_card_target: "of target",
         hero_card_view_sales: "View Sales",
+        wa_interest_msg: "Hi, I'm interested in the product {0}",
 
         // Web Login / Auth
-        web_welcome_title: "Welcome to SuperContact!",
+        web_welcome_title: "Welcome to SmartSales!",
         web_welcome_subtitle: "Please sign-in to your account and start the adventure",
         email_placeholder: "Email",
         password_placeholder: "Password",
@@ -222,7 +215,7 @@ export const strings = createLocalizedStrings({
 
         // Productivity Section
         productivity_title: "One Application For All Your Productivity Needs",
-        productivity_subtitle: "Supercontact integrates CRM, Call Center, and Deal management into one omnichannel platform. One application for interaction, Management, and growth.",
+        productivity_subtitle: "SmartSales integrates CRM, Omnichannel, and Deal management into one omnichannel platform. One application for interaction, Management, and growth.",
         prod_omnichannel: "Omnichannel Management",
         prod_omnichannel_desc: "Centralize all channels so that customers will easily understand and fall in love with.",
         prod_campaign: "Campaign Marketing",
@@ -232,13 +225,13 @@ export const strings = createLocalizedStrings({
         prod_deal: "Deal Management",
         prod_deal_desc: "Just change the status and see your deal closed with success.",
         prod_ticketing: "Ticketing",
-        prod_ticketing_desc: "A simple-to-follow flow with lots of references and code examples.",
+        prod_ticketing_desc: "A simple-to-follow flow with lots of references.",
         prod_cs: "Customer Service",
-        prod_cs_desc: "An easy-to-follow doc with lots of references and code examples.",
+        prod_cs_desc: "An easy-to-follow doc with lots of references.",
 
         // Trusted By Section
         trusted_by_title: "Trusted By 1000+ Businesses in Indonesia",
-        trusted_by_subtitle: "How Supersales helps business engineering to find profit, efficiency, and continuous growth.",
+        trusted_by_subtitle: "How SmartSales helps business engineering to find profit, efficiency, and continuous growth.",
         testimonial_1_text: "Handle a consistent and open customer experience to get loyal customers.",
         testimonial_1_author: "Sarah Johnson",
         testimonial_1_role: "Founder of Levi's",
@@ -252,13 +245,13 @@ export const strings = createLocalizedStrings({
         // FAQ Section
         faq_section_title: "Frequently Asked Questions",
         faq_section_subtitle: "Browse through these FAQs to find answers to commonly asked questions.",
-        faq_q1_text: "What is call center?",
-        faq_a1_text: "A call center is a centralized department to which phone calls from current and potential customers are directed.",
-        faq_q2_text: "How does the Supercontact application work?",
-        faq_a2_text: "Supercontact integrates various communication channels into a single platform for efficient management.",
-        faq_q3_text: "Who can use the Supercontact application?",
-        faq_a3_text: "Businesses of all sizes, from startups to large enterprises, can use Supercontact.",
-        faq_q4_text: "Does Supersales guarantee security?",
+        faq_q1_text: "What is Omnichannel?",
+        faq_a1_text: "Omnichannel is an integration of different communication channels to provide a consistent customer experience.",
+        faq_q2_text: "How does the SmartSales application work?",
+        faq_a2_text: "SmartSales integrates various communication channels into a single platform for efficient management.",
+        faq_q3_text: "Who can use the SmartSales application?",
+        faq_a3_text: "Businesses of all sizes, from startups to large enterprises, can use SmartSales.",
+        faq_q4_text: "Does SmartSales guarantee security?",
         faq_a4_text: "Yes, we prioritize data security and comply with industry standards.",
 
         // CTA Section / Work Together
@@ -338,11 +331,11 @@ export const strings = createLocalizedStrings({
         sol_role_ops_desc: "Automate operational processes.",
 
         // Footer Section
-        footer_desc: "Identify callers, filter unwanted calls, and enjoy a safer, smarter way to connect with Supercontact.",
+        footer_desc: "Manage leads, monitor customer interactions, and boost sales in a smarter, faster, and more integrated way with SmartSales.",
         footer_newsletter_label: "Subscribe to newsletter",
         footer_newsletter_placeholder: "Your email",
         footer_subscribe_btn: "Subscribe",
-        footer_col_sales: "Supersales",
+        footer_col_sales: "SmartSales",
         footer_col_help: "Need Help?",
         footer_col_download: "Download our app",
         footer_new_badge: "New",
@@ -350,14 +343,14 @@ export const strings = createLocalizedStrings({
         footer_guides: "Setup Guides",
         footer_templates: "Templates",
         footer_integrations: "Integrations",
-        footer_copyright: "© {year}, SuperContact",
+        footer_copyright: "© 2026, SmartSales",
     },
     id: {
         home: "Beranda",
         product: "Produk",
         price: "Harga",
         solution: "Solusi",
-        supercontact_web: "Supercontact web",
+        SmartSales_web: "SmartSales web",
         login: "Masuk",
         sign_in: "Masuk",
         try_now: "Coba Sekarang",
@@ -365,19 +358,19 @@ export const strings = createLocalizedStrings({
         dark_mode: "Mode Gelap",
         light_mode: "Mode Terang",
         // Halaman Fitur
-        features_subtitle: "Temukan kehebatan Supercontact dengan fitur dan alat canggih kami.",
+        features_subtitle: "Temukan kehebatan SmartSales dengan fitur dan alat canggih kami.",
         safety_title: "Keamanan",
         safety_desc: "Keamanan Anda adalah prioritas kami. Kami menganalisis ribuan panggilan setiap hari untuk mendeteksi potensi penipuan dan penelepon spam. Tujuan utama kami adalah menjaga keamanan Anda dengan memblokir nomor berbahaya.",
         caller_id_title: "ID Penelepon",
         caller_id_desc: "Anda berhak tahu siapa yang menghubungi Anda! Dengan fitur ID Penelepon, Anda dapat segera mengidentifikasi penelepon tak dikenal yang tidak ada di kontak Anda.",
         multi_platform_title: "Multi-Platform",
-        multi_platform_desc: "Supercontact kompatibel dengan komputer pribadi dan ponsel. Kunjungi web.supercontact.com untuk mempelajari lebih lanjut.\n\nKunjungi web.supercontact.com untuk mencari.",
+        multi_platform_desc: "SmartSales kompatibel dengan komputer pribadi dan ponsel. Kunjungi web.SmartSales.com untuk mempelajari lebih lanjut.\n\nKunjungi web.SmartSales.com untuk mencari.",
         sms_protection_title: "Perlindungan Spam SMS",
         sms_protection_desc: "Ingin tahu siapa yang menelepon Anda saat ponsel sibuk atau mati? Tahukah Anda bahwa Anda juga dapat mendengarkan pesan suara yang ditinggalkan penelepon? Buka aplikasinya sekarang, atur pengaturan penerusan panggilan, dan mulai manfaatkan fitur yang kami tawarkan.",
         privacy_title: "Privasi & Keamanan Data",
-        privacy_desc: "Melindungi privasi pengguna kami adalah hal terpenting bagi Supercontact; kami menjunjung tinggi tingkat kepatuhan teknis dan operasional tertinggi di bawah tolok ukur GDPR. Itulah sebabnya kami mengembangkan Pusat Manajemen Privasi khusus agar Anda memiliki kendali penuh atas profil dan preferensi privasi Anda, di mana Anda dapat dengan mudah mengelola pengaturan visibilitas, mengubah tag dan tampilan profil, menghapus atau menghilangkan daftar profil kontak Anda, dan banyak lagi.",
+        privacy_desc: "Melindungi privasi pengguna kami adalah hal terpenting bagi SmartSales; kami menjunjung tinggi tingkat kepatuhan teknis dan operasional tertinggi di bawah tolok ukur GDPR. Itulah sebabnya kami mengembangkan Pusat Manajemen Privasi khusus agar Anda memiliki kendali penuh atas profil dan preferensi privasi Anda, di mana Anda dapat dengan mudah mengelola pengaturan visibilitas, mengubah tag dan tampilan profil, menghapus atau menghilangkan daftar profil kontak Anda, dan banyak lagi.",
         chat_title: "Obrolan",
-        chat_desc: "Gunakan Obrolan Supercontact untuk pengalaman mengobrol yang luar biasa! Dengan fitur Obrolan Supercontact, Anda dapat mengobrol dengan privasi yang lebih baik.",
+        chat_desc: "Gunakan Obrolan SmartSales untuk pengalaman mengobrol yang luar biasa! Dengan fitur Obrolan SmartSales, Anda dapat mengobrol dengan privasi yang lebih baik.",
 
         // Feature: Price Page
         price_title: "Paket Harga",
@@ -391,36 +384,27 @@ export const strings = createLocalizedStrings({
         // Plan Cards
         plan_month: "/bulan",
 
-        // Plan 1: CRM Penjualan
-        plan_1_title: "CRM Penjualan",
-        plan_1_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala menengah dan jumlah aktivitas telesales sedikit.",
-        plan_1_price: "299K",
-        plan_1_feat_1: "100 responses a month",
-        plan_1_feat_2: "Unlimited forms and surveys",
-        plan_1_feat_3: "Unlimited fields",
-        plan_1_feat_4: "Basic form creation tools",
-        plan_1_feat_5: "Up to 2 subdomains",
+        // Plan 1: Free Trial
+        plan_1_title: "Free Trial",
+        plan_1_desc: "Mulai gunakan SmartSales secara gratis dengan batasan penggunaan.",
+        plan_1_price: "0",
+        plan_1_feat_1: "Hingga 100 kontak (batas maksimum)",
+        plan_1_feat_2: "1–2 pengguna per akun",
+        plan_1_feat_3: "Fitur CRM dasar",
+        plan_1_feat_4: "Tanpa akses Data Intelligence",
+        plan_1_feat_5: "Tanpa sistem pembayaran & billing",
 
-        // Plan 2: Professional
-        plan_2_title: "Professional",
-        plan_2_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala menengah dan jumlah aktivitas telesales menengah",
-        plan_2_price: "599K",
-        plan_2_tag: "Populer",
-        plan_2_feat_1: "Unlimited responses",
-        plan_2_feat_2: "Unlimited forms and surveys",
-        plan_2_feat_3: "Instagram profile page",
-        plan_2_feat_4: "Google Docs integration",
-        plan_2_feat_5: "Custom \"Thank you\" page",
-
-        // Plan 3: Enterprise
-        plan_3_title: "Enterprise",
-        plan_3_desc: "Untuk Semua Jenis Usaha. Solusi untuk Bisnis dengan skala besar dan jumlah aktivitas telesales yang besar",
-        plan_3_price: "Konsultasi Harga",
-        plan_3_feat_1: "PayPal payments",
-        plan_3_feat_2: "Logic Jumps",
-        plan_3_feat_3: "File upload with 5GB storage",
-        plan_3_feat_4: "Custom domain support",
-        plan_3_feat_5: "Stripe integration",
+        // Plan 2: Enterprise
+        plan_2_title: "Exclusive",
+        plan_2_desc: "Maksimalkan potensi bisnis Anda dengan solusi CRM yang dapat dikustomisasi.",
+        plan_2_price: "Hubungi Kami",
+        plan_2_feat_1: "Kontak & pengguna tanpa batas",
+        plan_2_feat_2: "Akses penuh ke Data Intelligence",
+        plan_2_feat_3: "Workflow & automasi kustom",
+        plan_2_feat_4: "Integrasi pembayaran & billing",
+        plan_2_feat_5: "Dukungan & onboarding khusus",
+        plan_2_date: "/ sesuai kontrak",
+        plan_1_note: "Catatan:\nKuota akan bertambah kembali setelah data dihapus",
 
         // Trial CTA
         trial_title: "Masih belum yakin? Mulai dengan uji coba GRATIS 14 hari!",
@@ -444,7 +428,7 @@ export const strings = createLocalizedStrings({
         faq_a6: "Profil Bisnis Terverifikasi memungkinkan bisnis untuk menampilkan identitas asli mereka kepada penelpon.",
 
         // Halaman Bisnis
-        business_title: "Supercontact for Business",
+        business_title: "SmartSales for Business",
         business_subtitle: "Unggul dalam persaingan dengan layanan verifikasi dan profil bisnis serta buat bisnis Anda selangkah lebih maju.",
         start_now_button: "Start Now",
 
@@ -477,7 +461,7 @@ export const strings = createLocalizedStrings({
 
         // Hero Section
         hero_title: "Aplikasi CRM, Chat & Call Center untuk tingkatkan penjualan dan pelayanan bisnis",
-        hero_subtitle: "Supersales mengintegrasikan full-funnel customer journey melalui omnichannel dan CRM dalam satu platform untuk interaksi maksimal, pengelolaan mudah, dan pertumbuhan cepat.",
+        hero_subtitle: "SmartSales mengintegrasikan full-funnel customer journey melalui omnichannel dan CRM dalam satu platform untuk interaksi maksimal, pengelolaan mudah, dan pertumbuhan cepat.",
         whatsapp_sales_button: "Whatsapp Sales",
         hero_card_total_sales: "Total Penjualan",
         hero_card_last_6_months: "Enam Bulan Terakhir",
@@ -485,9 +469,10 @@ export const strings = createLocalizedStrings({
         hero_card_best_seller: "Penjual terbaik bulan ini",
         hero_card_target: "dari target",
         hero_card_view_sales: "Lihat Penjualan",
+        wa_interest_msg: "Halo, saya tertarik dengan product {0}",
 
         // Web Login / Auth
-        web_welcome_title: "Selamat Datang di SuperContact!",
+        web_welcome_title: "Selamat Datang di SmartSales!",
         web_welcome_subtitle: "Silakan masuk ke akun Anda dan mulai petualangan",
         email_placeholder: "Email",
         password_placeholder: "Kata Sandi",
@@ -516,7 +501,7 @@ export const strings = createLocalizedStrings({
 
         // Productivity Section
         productivity_title: "Satu Aplikasi Untuk Semua Kebutuhan Produktivitas Anda",
-        productivity_subtitle: "Supersales mengintegrasikan CRM, Call Center, dan Deal yang mendukung produktivitas bisnis Anda. Hasilkan interaksi dan konversi fitur untuk mendukung kinerja Anda dan perusahaan.",
+        productivity_subtitle: "SmartSales mengintegrasikan CRM, Omnichannel, dan Deal yang mendukung produktivitas bisnis Anda. Hasilkan interaksi dan konversi fitur untuk mendukung kinerja Anda dan perusahaan.",
         prod_omnichannel: "Manajemen Omnichannel",
         prod_omnichannel_desc: "Sentralisasi semua channel agar pelanggan dengan mudah mengerti dan jatuh cinta.",
         prod_campaign: "Campaign Marketing",
@@ -526,13 +511,13 @@ export const strings = createLocalizedStrings({
         prod_deal: "Manajemen deal",
         prod_deal_desc: "Hanya ubah status dan lihat deal Anda closed with success.",
         prod_ticketing: "Ticketing",
-        prod_ticketing_desc: "Alur simple-to-follow dengan banyak referensi dan contoh kode.",
+        prod_ticketing_desc: "Alur simple-to-follow dengan banyak referensi.",
         prod_cs: "Customer Service",
-        prod_cs_desc: "Dokumen easy-to-follow dengan banyak referensi dan contoh kode.",
+        prod_cs_desc: "Dokumen easy-to-follow dengan banyak referensi.",
 
         // Trusted By Section
         trusted_by_title: "Dipercaya Oleh 1000+ Bisnis di Indonesia",
-        trusted_by_subtitle: "Bagaimana Supersales membantu bisnis teknik untuk menemukan profit, efisiensi waktu, dan kekuatan batasan",
+        trusted_by_subtitle: "Bagaimana SmartSales membantu bisnis teknik untuk menemukan profit, efisiensi waktu, dan kekuatan batasan",
         testimonial_1_text: "Menangani pengalaman pelanggan yang konsisten dan terbuka untuk mendapatkan pelanggan setia.",
         testimonial_1_author: "Sarah Johnson",
         testimonial_1_role: "Pendiri Levi's",
@@ -546,13 +531,13 @@ export const strings = createLocalizedStrings({
         // FAQ Section
         faq_section_title: "Pertanyaan yang Sering Ditanyakan",
         faq_section_subtitle: "Telusuri FAQ ini untuk menemukan jawaban atas pertanyaan yang sering diajukan.",
-        faq_q1_text: "Apa itu call center?",
-        faq_a1_text: "Call center adalah departemen terpusat tempat panggilan telepon dari pelanggan saat ini dan potensial diarahkan.",
-        faq_q2_text: "Bagaimana cara aplikasi Supercontact bekerja?",
-        faq_a2_text: "Supercontact mengintegrasikan berbagai saluran komunikasi ke dalam satu platform untuk pengelolaan yang efisien.",
-        faq_q3_text: "Siapa saja yang bisa menggunakan aplikasi Supercontact?",
-        faq_a3_text: "Bisnis dari semua ukuran, dari startup hingga perusahaan besar, dapat menggunakan Supercontact.",
-        faq_q4_text: "Apakah Supersales terjamin keamanannya?",
+        faq_q1_text: "Apa itu Omnichannel?",
+        faq_a1_text: "Omnichannel adalah integrasi antara saluran komunikasi yang berbeda untuk memberikan pengalaman yang konsisten kepada pelanggan.",
+        faq_q2_text: "Bagaimana cara aplikasi SmartSales bekerja?",
+        faq_a2_text: "SmartSales mengintegrasikan berbagai saluran komunikasi ke dalam satu platform untuk pengelolaan yang efisien.",
+        faq_q3_text: "Siapa saja yang bisa menggunakan aplikasi SmartSales?",
+        faq_a3_text: "Bisnis dari semua ukuran, dari startup hingga perusahaan besar, dapat menggunakan SmartSales.",
+        faq_q4_text: "Apakah SmartSales terjamin keamanannya?",
         faq_a4_text: "Ya, kami memprioritaskan keamanan data dan mematuhi standar industri.",
 
         // CTA Section / Work Together
@@ -632,11 +617,11 @@ export const strings = createLocalizedStrings({
         sol_role_ops_desc: "Otomatiskan proses operasional",
 
         // Footer Section
-        footer_desc: "Identifikasi penelepon, filter panggilan yang tidak diinginkan, dan nikmati cara yang lebih aman dan cerdas untuk terhubung dengan Supercontact.",
+        footer_desc: "Kelola prospek, pantau interaksi pelanggan, dan tingkatkan penjualan dengan cara yang lebih cerdas, cepat, dan terintegrasi bersama SmartSales.",
         footer_newsletter_label: "Berlangganan buletin",
         footer_newsletter_placeholder: "Email Anda",
         footer_subscribe_btn: "Berlangganan",
-        footer_col_sales: "Supersales",
+        footer_col_sales: "SmartSales",
         footer_col_help: "Butuh Bantuan?",
         footer_col_download: "Unduh aplikasi kami",
         footer_new_badge: "Baru",
@@ -644,6 +629,6 @@ export const strings = createLocalizedStrings({
         footer_guides: "Panduan Pengaturan",
         footer_templates: "Templat",
         footer_integrations: "Integrasi",
-        footer_copyright: "© {year}, SuperContact",
+        footer_copyright: "© 2026, SmartSales",
     }
 });

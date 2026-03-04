@@ -123,7 +123,7 @@ export default function RegisterPage() {
         <div className="p-10">
           <Image
             src="/assets/logo3d.png"
-            alt="Supercontact Logo"
+            alt="SmartSales Logo"
             width={400}
             height={400}
           />
@@ -141,8 +141,8 @@ export default function RegisterPage() {
         <h2
           className={`text-3xl font-bold mt-0 text-center ${poppins.className}`}
         >
-          <span className="text-blue-600">Super</span>
-          <span className="text-green-600">Contact</span>
+          <span className="text-blue-600">Smart</span>
+          <span className="text-green-600">Sales</span>
         </h2>
 
         <p className="mt-2 text-sm text-gray-500 text-center">

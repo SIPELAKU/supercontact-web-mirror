@@ -16,24 +16,24 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 
-export function useMailingLists(page: number = 1, limit: number = 100) {
+export function useMailingLists(page: number = 1, limit: number = 10, search?: string) {
   return useQuery<MailingListsResponse>({
-    queryKey: ['mailing-lists', page, limit],
+    queryKey: ['mailing-lists', page, limit, search],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchMailingLists(token, page, limit);
+      return fetchMailingLists(token, page, limit, search);
     },
   });
 }
 
-export function useMailingListDetail(mailingListId: string) {
+export function useMailingListDetail(mailingListId: string, page: number = 1, limit: number = 10, search?: string) {
   return useQuery<MailingListDetailResponse>({
-    queryKey: ['mailing-list', mailingListId],
+    queryKey: ['mailing-list', mailingListId, page, limit, search],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchMailingListDetail(token, mailingListId);
+      return fetchMailingListDetail(token, mailingListId, page, limit, search);
     },
     enabled: !!mailingListId,
   });

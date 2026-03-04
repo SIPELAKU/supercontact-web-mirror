@@ -26,7 +26,7 @@ export const PrintableTable = React.forwardRef<
             </style>
             <div className="text-center mb-5">
                 <div className="text-2xl font-bold text-[#5479EE]">
-                    SuperContact <span className="text-sm font-normal text-gray-500">(Smart Relationship Management)</span>
+                    SmartSales <span className="text-sm font-normal text-gray-500">(Smart Relationship Management)</span>
                 </div>
             </div>
             <div className="border-b-2 border-gray-100 my-4"></div>

@@ -45,7 +45,7 @@ function TabPanel(props: TabPanelProps) {
             {...other}
         >
             {value === index && (
-                <Box sx={{ p: 3, height: '100%' }}>
+                <Box sx={{ p: 2, height: '100%' }}>
                     {children}
                 </Box>
             )}
@@ -54,7 +54,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const MenuItem = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
-    <Box sx={{ display: 'flex', gap: 2, mb: 1, p: 1, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' }, cursor: 'pointer' }}>
+    <Box sx={{ display: 'flex', gap: 2, mb: 0.5, p: 0.75, borderRadius: 2, '&:hover': { bgcolor: 'action.hover' }, cursor: 'pointer' }}>
         <Box sx={{ color: 'text.secondary', mt: 0.5 }}>
             {React.cloneElement(icon as React.ReactElement<any>, { fontSize: 'large' })}
         </Box>
@@ -108,7 +108,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                     </Stack>
                 </Box>
                 {/* WhatsApp Section */}
-                <Box>
+                {/* <Box>
                     <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, mb: 1, display: 'block' }}>
                         {strings.product_menu_wa}
                     </Typography>
@@ -117,7 +117,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         <MenuItem icon={<CampaignIcon />} title={strings.pm_wa_ads} desc={strings.pm_wa_ads_desc} />
                         <MenuItem icon={<RocketLaunchIcon />} title={strings.pm_wa_blast} desc={strings.pm_wa_blast_desc} />
                     </Stack>
-                </Box>
+                </Box> */}
             </Box>
         );
     }
@@ -129,7 +129,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                 display: 'flex',
                 width: '100%',
                 maxWidth: '1300px',
-                minHeight: '400px',
+                minHeight: '280px',
                 bgcolor: 'background.paper',
                 borderRadius: '24px',
                 overflow: 'hidden',
@@ -138,7 +138,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                 borderColor: 'divider',
             }}
         >
-            <Box sx={{ width: '280px', p: 3 }}>
+            <Box sx={{ width: '280px', p: 2 }}>
                 <Tabs
                     orientation="vertical"
                     variant="scrollable"
@@ -153,9 +153,9 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                             textTransform: 'none',
                             textAlign: 'left',
                             px: 3,
-                            py: 1.5,
-                            mb: 1,
-                            minHeight: '48px',
+                            py: 1,
+                            mb: 0.5,
+                            minHeight: '44px',
                             fontSize: '0.95rem',
                             fontWeight: 600,
                             borderRadius: '99px',
@@ -188,18 +188,18 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                             </Box>
                         }
                     />
-                    <Tab
+                    {/* <Tab
                         label={
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                                 {strings.product_menu_wa}
                                 <KeyboardArrowRightIcon sx={{ fontSize: 20 }} />
                             </Box>
                         }
-                    />
+                    /> */}
                 </Tabs>
             </Box>
 
-            <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 2, borderRadius: '16px', p: 1 }}>
+            <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 1.5, borderRadius: '16px', p: 0.5 }}>
                 <TabPanel value={value} index={0}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>
@@ -226,7 +226,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         </Grid>
                     </Grid>
                 </TabPanel>
-                <TabPanel value={value} index={2}>
+                {/* <TabPanel value={value} index={2}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>
                             <MenuItem icon={<WhatsAppIcon />} title={strings.pm_wa_api} desc={strings.pm_wa_api_desc} />
@@ -238,7 +238,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                             <MenuItem icon={<RocketLaunchIcon />} title={strings.pm_wa_blast} desc={strings.pm_wa_blast_desc} />
                         </Grid>
                     </Grid>
-                </TabPanel>
+                </TabPanel> */}
             </Box>
         </Paper>
     );

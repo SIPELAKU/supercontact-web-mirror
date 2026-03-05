@@ -577,9 +577,10 @@ export default function OmnichannelClient() {
                     {selectedContact ? (
                         <>
                             {/* Chat Header */}
-                            <div className="h-[72px] px-6 border-b border-gray-100 rounded-2xl bg-white flex items-center justify-between shrink-0">
+                            <div className="h-[100px] px-6 border-b border-gray-100 rounded-2xl bg-white flex items-center justify-between shrink-0">
+                                {/* Information */}
                                 <div className="flex items-center gap-4 min-w-0">
-                                    <div className="hidden sm:block">
+                                    <div className="hidden sm:flex flex-col gap-1">
                                         <h3 className="font-bold text-gray-900 truncate flex items-center gap-2 text-base">
                                             {selectedContact.display_name}
                                             <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1 uppercase tracking-wider">
@@ -587,7 +588,7 @@ export default function OmnichannelClient() {
                                                 No Sentiment
                                             </span>
                                         </h3>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className="flex flex-col items-start gap-1.5 mt-0.5">
                                             {(activeConversationId || isChannelSelected) && (
                                                 <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-100">
                                                     {/* {selectedContact.channel_types.includes("whatsapp") && ( */}
@@ -626,11 +627,11 @@ export default function OmnichannelClient() {
                                         </div>
                                     </div>
                                 </div>
-
+                                {/* Button Header */}
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={handleDeleteConversation}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                        className="p-2 border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-50 rounded-lg transition-all"
                                         title="Delete conversation"
                                         disabled={!activeConversationId || deleteConversationMutation.isPending}
                                     >
@@ -638,7 +639,7 @@ export default function OmnichannelClient() {
                                     </button>
                                     <button
                                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                        className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
+                                        className="p-2 text-gray-400 border border-gray-200 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
                                         title={isSidebarOpen ? "Close details" : "Open details"}
                                     >
                                         {isSidebarOpen ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}

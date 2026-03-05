@@ -16,13 +16,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
-import { Autocomplete, TextField, createTheme, ThemeProvider } from "@mui/material";
+import { Autocomplete, Paper, TextField, createTheme, ThemeProvider } from "@mui/material";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
 import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import ContactPickerDialog from "./ContactPickerDialog";
 
 // MUI Theme for consistent styling
 const theme = createTheme({
@@ -89,6 +90,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [assignedToName, setAssignedToName] = useState<string>("");
   const [contactSearch, setContactSearch] = useState("");
+  const [showContactPicker, setShowContactPicker] = useState(false);
   const queryClient = useQueryClient();
   const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
   const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
@@ -167,12 +169,17 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     if (!contactSearch) return rawContacts;
 
     // Safety client-side filter in case backend returns extra results
+    const query = contactSearch.toLowerCase();
     return rawContacts.filter(c =>
-      c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
-      c.email.toLowerCase().includes(contactSearch.toLowerCase()) ||
-      c.company.toLowerCase().includes(contactSearch.toLowerCase())
+      (c.name || '').toLowerCase().includes(query) ||
+      (c.email || '').toLowerCase().includes(query) ||
+      (c.company || '').toLowerCase().includes(query)
     );
   }, [contactsResponse, contactSearch]);
+
+  const MAX_DROPDOWN_ITEMS = 10;
+  const hasMoreContacts = contacts.length > MAX_DROPDOWN_ITEMS;
+  const displayContacts = contacts.slice(0, MAX_DROPDOWN_ITEMS);
 
   const handleUserSelect = (user: User) => {
     setSelectedUserId(user.id);
@@ -360,7 +367,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                   <Label className="text-sm font-medium text-gray-700">Name</Label>
                   <Autocomplete
                     freeSolo
-                    options={contacts}
+                    options={displayContacts}
+                    filterOptions={(x) => x}
                     getOptionLabel={(option) => {
                       if (typeof option === 'string') return option;
                       return `${option.name}${option.company ? ` - ${option.company}` : ''}`;
@@ -387,6 +395,22 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                           )}
                         </div>
                       </li>
+                    )}
+                    PaperComponent={({ children, ...paperProps }) => (
+                      <Paper {...paperProps} sx={{ borderRadius: '8px', boxShadow: 3 }}>
+                        {children}
+                        {hasMoreContacts && (
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setShowContactPicker(true);
+                            }}
+                            className="px-4 py-2.5 text-center text-sm font-semibold text-[#5479EE] cursor-pointer hover:bg-[#EEF2FF] border-t border-gray-200"
+                          >
+                            Show More ({contacts.length - MAX_DROPDOWN_ITEMS}+ more results)
+                          </div>
+                        )}
+                      </Paper>
                     )}
                     renderInput={(params) => (
                       <TextField
@@ -680,6 +704,16 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ContactPickerDialog
+        open={showContactPicker}
+        onClose={() => setShowContactPicker(false)}
+        onSelect={(contact) => {
+          handleContactSelect(contact);
+          setShowContactPicker(false);
+        }}
+        initialSearch={contactSearch}
+      />
 
       <ConfirmationPopup
         isOpen={showCloseConfirmation}

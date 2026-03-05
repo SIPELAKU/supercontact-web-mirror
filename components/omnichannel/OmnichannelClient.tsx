@@ -358,9 +358,9 @@ export default function OmnichannelClient() {
                     { label: "Omnichannel" },
                 ]}
             />
-            <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white gap-3">
+            <div className="flex relative h-[calc(100vh-64px)] overflow-hidden bg-white gap-3">
                 {/* Column 1: Contacts sidebar */}
-                <div className="w-80 border border-gray-200 shadow-lg rounded-2xl flex flex-col shrink-0">
+                <div className="w-80 border border-gray-200 shadow-lg rounded-2xl flex flex-col shrink-0 z-10 bg-white">
                     <div className="p-4 border-b border-gray-100 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <AppInput
@@ -577,10 +577,10 @@ export default function OmnichannelClient() {
                     {selectedContact ? (
                         <>
                             {/* Chat Header */}
-                            <div className="h-[100px] px-6 border-b border-gray-100 rounded-2xl bg-white flex items-center justify-between shrink-0">
+                            <div className="min-h-[100px] py-4 px-4 sm:px-6 border-b border-gray-100 rounded-2xl bg-white flex flex-col lg:flex-row items-start lg:items-center justify-between shrink-0 gap-4 lg:gap-0">
                                 {/* Information */}
-                                <div className="flex items-center gap-4 min-w-0">
-                                    <div className="hidden sm:flex flex-col gap-1">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0 w-full lg:w-auto">
+                                    <div className="flex flex-col gap-1 w-full sm:w-auto">
                                         <h3 className="font-bold text-gray-900 truncate flex items-center gap-2 text-base">
                                             {selectedContact.display_name}
                                             <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1 uppercase tracking-wider">
@@ -628,7 +628,7 @@ export default function OmnichannelClient() {
                                     </div>
                                 </div>
                                 {/* Button Header */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-end w-full lg:w-auto gap-2 mt-2 lg:mt-0">
                                     <button
                                         onClick={handleDeleteConversation}
                                         className="p-2 border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-50 rounded-lg transition-all"
@@ -639,10 +639,17 @@ export default function OmnichannelClient() {
                                     </button>
                                     <button
                                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                                        className="p-2 text-gray-400 border border-gray-200 hover:text-primary hover:bg-gray-50 rounded-lg transition-all"
+                                        className="p-2 text-gray-400 border border-gray-200 hover:text-primary hover:bg-gray-50 rounded-lg transition-all lg:hidden xl:inline-flex"
                                         title={isSidebarOpen ? "Close details" : "Open details"}
                                     >
                                         {isSidebarOpen ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                                    </button>
+                                    <button
+                                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                        className="p-2 text-gray-400 border border-gray-200 hover:text-primary hover:bg-gray-50 rounded-lg transition-all hidden lg:inline-flex xl:hidden"
+                                        title={isSidebarOpen ? "Close details" : "Open details"}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
                                     </button>
                                 </div>
                             </div>
@@ -902,11 +909,22 @@ export default function OmnichannelClient() {
                     )}
                 </div>
 
+                {/* Backdrop for mobile/laptop when sidebar open */}
+                {selectedContact && isSidebarOpen && (
+                    <div
+                        className="xl:hidden absolute inset-0 bg-gray-900/20 z-10 rounded-2xl"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
+                )}
+
                 {/* Column 3: Contact Details sidebar */}
                 {selectedContact && isSidebarOpen && (
-                    <div className="w-80 rounded-2xl border border-gray-200 bg-white flex flex-col shrink-0 animate-in slide-in-from-right duration-300 shadow-xl sm:shadow-none">
-                        <div className="p-6 border-b border-gray-100">
+                    <div className="absolute right-0 top-0 bottom-0 z-20 xl:relative xl:z-auto w-80 rounded-2xl border border-gray-200 bg-white flex flex-col shrink-0 animate-in slide-in-from-right duration-300 shadow-xl xl:shadow-none h-full">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                             <h3 className="font-bold text-gray-900 text-lg uppercase tracking-wider">Contact Details</h3>
+                            <button className="xl:hidden p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50" onClick={() => setIsSidebarOpen(false)}>
+                                <X className="w-4 h-4" />
+                            </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             <DetailItem label="Name" value={selectedContact.display_name} icon={<UserPlus className="w-4 h-4" />} />

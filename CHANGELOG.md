@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/lead-management/lead-detail-modal.tsx`
 - `components/contact/modal/EditContactModal.tsx`
 
+
 ## [1.8.32] - 2026-03-06
 ### Detail Versi 1.8.32
 #### ✨ Enhancements

@@ -230,3 +230,53 @@ export async function updateSubscriber(token: string, subscriberId: string, data
     throw error;
   }
 }
+
+export async function bulkDeleteSubscribers(token: string, contactIds: string[]): Promise<DeleteSubscriberResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers`;
+
+  logger.info("Making DELETE request to bulk delete subscribers", { url, contactIds });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ contact_ids: contactIds }),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse bulk delete subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers (DELETE bulk)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Bulk delete subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Bulk delete subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}

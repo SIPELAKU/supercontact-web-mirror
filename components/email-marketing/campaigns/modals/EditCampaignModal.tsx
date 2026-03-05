@@ -8,6 +8,7 @@ import { Campaign } from '@/lib/types/email-marketing';
 import {
   Alert,
   Box,
+  Button,
   Checkbox,
   CircularProgress,
   Dialog,
@@ -30,7 +31,8 @@ import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useEffect, useState, useRef } from 'react';
 import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
-import { useMailServers } from '@/lib/hooks/useMailServers';
+import { useMailSenders } from '@/lib/hooks/useMailSenders';
+import AddMailSenderDialog from './AddMailSenderDialog';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -46,24 +48,26 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'subscriber'>('mailing_list');
   const [selectedMailingLists, setSelectedMailingLists] = useState<string[]>([]);
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
-  const [selectedMailServer, setSelectedMailServer] = useState<string>('');
+  const [selectedMailSender, setSelectedMailSender] = useState<string>('');
   const [error, setError] = useState('');
 
   const updateMutation = useUpdateCampaign();
   const { data: mailingListsData } = useMailingLists();
   const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
-  const { data: mailServersData, isLoading: isLoadingMailServers } = useMailServers(1, 100);
+  const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
 
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || [];
-  const mailServers = mailServersData?.data?.mail_servers || [];
+  const mailSenders = mailSendersData?.data?.mail_senders || [];
+
+  const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
 
   useEffect(() => {
     if (open && campaign) {
       setSubject(campaign.subject || '');
       setHtmlContent(campaign.html_content || '');
       setRecipientSource(campaign.recipient_source as 'mailing_list' | 'subscriber' || 'mailing_list');
-      setSelectedMailServer(campaign.mail_server_id || '');
+      setSelectedMailSender(campaign.mail_sender_id || '');
       setSelectedMailingLists(campaign.mailing_list_ids || []);
       setSelectedSubscribers(campaign.contact_ids || []);
       setError('');
@@ -76,7 +80,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
     setRecipientSource('mailing_list');
     setSelectedMailingLists([]);
     setSelectedSubscribers([]);
-    setSelectedMailServer('');
+    setSelectedMailSender('');
     setError('');
     onClose();
   };
@@ -111,8 +115,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
 
     const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
 
-    if (!selectedMailServer) {
-      setError("Please select a Mail Server.");
+    if (!selectedMailSender) {
+      setError("Please select a Mail Sender.");
       return;
     }
     if (!subject.trim()) {
@@ -145,7 +149,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           action,
           mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
           contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
-          mail_server_id: selectedMailServer,
+          mail_sender_id: selectedMailSender,
         }
       });
 
@@ -182,18 +186,30 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                Mail Sender *
+              </Typography>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setIsAddMailSenderOpen(true)}
+                sx={{ textTransform: 'none', py: 0 }}
+              >
+                + Add New Mail Sender
+              </Button>
+            </Box>
             <AppSelect
-              label="Mail Server *"
-              placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select Mail Server"}
-              value={selectedMailServer}
-              onChange={(e) => setSelectedMailServer(e.target.value as string)}
-              options={mailServers.map(server => ({
-                value: server.id,
-                label: server.name
+              placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
+              value={selectedMailSender}
+              onChange={(e) => setSelectedMailSender(e.target.value as string)}
+              options={mailSenders.map(sender => ({
+                value: sender.id,
+                label: `${sender.name} (${sender.email})`
               }))}
               isBgWhite
-              error={Boolean(error && !selectedMailServer)}
-              helperText={error && !selectedMailServer ? "Mail server is required" : ""}
+              error={Boolean(error && !selectedMailSender)}
+              helperText={error && !selectedMailSender ? "Mail sender is required" : ""}
             />
           </Box>
 
@@ -321,7 +337,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
             setRecipientSource('mailing_list');
             setSelectedMailingLists([]);
             setSelectedSubscribers([]);
-            setSelectedMailServer('');
+            setSelectedMailSender('');
             setError('');
             onClose();
           }}
@@ -361,6 +377,13 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
         confirmText="Discard record"
         cancelText="Cancel"
         variant="danger"
+      />
+      <AddMailSenderDialog
+        open={isAddMailSenderOpen}
+        onClose={() => setIsAddMailSenderOpen(false)}
+        onSuccess={(sender) => {
+          setSelectedMailSender(sender.id);
+        }}
       />
     </Dialog>
   );

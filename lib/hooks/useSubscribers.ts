@@ -1,4 +1,5 @@
 import {
+  bulkDeleteSubscribers,
   createSubscriber,
   deleteSubscriber,
   fetchSubscribers,
@@ -50,6 +51,23 @@ export function useDeleteSubscriber() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteSubscriber(token, subscriberId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-list'] });
+    },
+  });
+}
+
+export function useBulkDeleteSubscribers() {
+  const queryClient = useQueryClient();
+
+  return useMutation<DeleteSubscriberResponse, Error, string[]>({
+    mutationFn: (contactIds: string[]) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return bulkDeleteSubscribers(token, contactIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscribers'] });

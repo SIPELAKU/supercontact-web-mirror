@@ -10,7 +10,7 @@ import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteSubscriber } from '@/lib/hooks/useSubscribers';
+import { useDeleteSubscriber, useBulkDeleteSubscribers } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
 
@@ -25,6 +25,7 @@ export default function SubscribersClient() {
   const [selectedToDelete, setSelectedToDelete] = useState<Subscriber[] | null>(null);
 
   const deleteMutation = useDeleteSubscriber();
+  const bulkDeleteMutation = useBulkDeleteSubscribers();
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
@@ -58,9 +59,14 @@ export default function SubscribersClient() {
     if (!selectedToDelete) return;
 
     try {
-      // Delete subscribers one by one
-      for (const subscriber of selectedToDelete) {
-        await deleteMutation.mutateAsync(subscriber.id);
+      const contactIds = selectedToDelete.map(s => s.id);
+
+      if (contactIds.length === 1) {
+        // Single delete
+        await deleteMutation.mutateAsync(contactIds[0]);
+      } else {
+        // Bulk delete
+        await bulkDeleteMutation.mutateAsync(contactIds);
       }
 
       notify.success(`${selectedToDelete.length} subscriber(s) deleted successfully.`);
@@ -100,7 +106,7 @@ export default function SubscribersClient() {
           onDeleteRequest={handleDeleteRequest}
           onImport={handleOpenImportModal}
           refreshTrigger={refreshTrigger}
-          isDeleting={deleteMutation.isPending}
+          isDeleting={deleteMutation.isPending || bulkDeleteMutation.isPending}
         />
       </Card>
 

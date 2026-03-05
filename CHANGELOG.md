@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.34] - 2026-03-05
+
+### Detail Versi 1.8.34
+
+#### ✨ Enhancements
+
+- **Subscribers - Bulk Delete**: Implemented a true bulk delete API request allowing users to delete multiple subscribers simultaneously, replacing the previous sequential one-by-one deletion flow.
+- **Campaigns - Mail Senders Integration**: Swapped the campaign creation/editing flow from relying on Mail Servers to using Mail Senders. Features include:
+  - Add & Edit Campaign modals now use the `/mail-senders` API to fetch sending domains.
+  - Added a new, inline "+ Add New Mail Sender" button directly in the Campaign modal.
+  - Implemented an inline 2-step `AddMailSenderDialog` that supports sender creation followed by immediate OTP validation (sending `name`, `email`, and `otp`).
+  - Adjusted underlying backend payload property from `mail_server_id` to `mail_sender_id` as specified by the updated API schema.
+
+#### 🐛 Bug Fixes
+
+- **Edit Campaign Modal**: Fixed an issue where the `Button` component was not imported, causing a `ReferenceError` when opening the modal after the mail senders integration.
+
 ## [1.8.33] - 2026-03-05
 
 ### Detail Versi 1.8.33

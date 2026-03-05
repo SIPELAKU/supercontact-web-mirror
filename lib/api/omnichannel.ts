@@ -8,6 +8,8 @@ import {
   ConnectEmailRequest,
   CreateConversationRequest,
   MediaUploadResponse,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -20,6 +22,8 @@ export type {
   ConnectEmailRequest,
   CreateConversationRequest,
   MediaUploadResponse,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
@@ -46,6 +50,27 @@ export async function fetchAccounts(token: string, channelType?: string): Promis
   // Handle different response structures
   const data = json.data || json;
   return Array.isArray(data) ? data : [];
+}
+
+export async function fetchOmnichannelContacts(token: string, q?: string): Promise<OmnichannelContactsResponse> {
+  const params = new URLSearchParams();
+  if (q) params.append('q', q);
+
+  const res = await fetchWithTimeout(`${API_BASE}/inbox/contacts?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch omnichannel contacts');
+  }
+
+  return json.data || json;
 }
 
 export async function connectWhatsApp(token: string, data: ConnectWhatsAppRequest): Promise<Account> {

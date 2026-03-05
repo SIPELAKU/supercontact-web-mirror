@@ -35,7 +35,6 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { AppButton } from "@/components/ui/app-button";
 import { cn } from "@/lib/utils";
-import { useAllContacts } from "@/lib/hooks/useContacts";
 import {
     useInbox,
     useConversation,
@@ -44,34 +43,39 @@ import {
     useAccounts,
     useCreateConversation,
     useMarkAsRead,
-    useUploadMedia
+    useUploadMedia,
+    useOmnichannelContacts
 } from "@/lib/hooks/useOmnichannel";
-import { Contact, ContactReq } from "@/lib/models/types";
+import { ContactReq } from "@/lib/models/types";
+import { OmnichannelContact } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { CircularProgress } from "@mui/material";
 import MessageList from "./MessageList";
+import RichTextToolbar from "../email-marketing/campaigns/RichTextToolbar";
 
 export default function OmnichannelClient() {
     const router = useRouter();
     const { getToken } = useAuth();
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+    const [selectedContact, setSelectedContact] = useState<OmnichannelContact | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [isNewContactOpen, setIsNewContactOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [chatMode, setChatMode] = useState<"whatsapp" | "email">("whatsapp");
+    const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
 
     const [emailSubject, setEmailSubject] = useState("");
     const [emailCc, setEmailCc] = useState("");
     const [emailBcc, setEmailBcc] = useState("");
-    const [emailBody, setEmailBody] = useState("");
+    const [emailHtmlContent, setEmailHtmlContent] = useState("");
     const [inputText, setInputText] = useState("");
     const [isChannelSelected, setIsChannelSelected] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const emailEditorRef = React.useRef<HTMLDivElement>(null);
 
     // Handle file trigger
     const handleFileTrigger = () => {
@@ -102,8 +106,15 @@ export default function OmnichannelClient() {
         }
     };
 
+    const execCommand = (command: string, value: string = "") => {
+        document.execCommand(command, false, value);
+        if (emailEditorRef.current) {
+            setEmailHtmlContent(emailEditorRef.current.innerHTML);
+        }
+    };
+
     // Contacts and Inbox data
-    const { data: contactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useAllContacts();
+    const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(searchTerm);
     const { data: inboxData } = useInbox(chatMode);
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
@@ -131,59 +142,18 @@ export default function OmnichannelClient() {
 
     // Filtered contacts based on search
     const filteredContacts = useMemo(() => {
-        if (!contactsData?.data?.contacts) return [];
-        const search = searchTerm.toLowerCase();
-
-        // Initial filter by search term
-        let filtered = contactsData.data.contacts.filter((c: any) =>
-            (c.name && c.name.toLowerCase().includes(search)) ||
-            (c.email && c.email.toLowerCase().includes(search)) ||
-            (c.phone && c.phone.toLowerCase().includes(search)) ||
-            (c.phone_number && c.phone_number.toLowerCase().includes(search))
-        );
-
-        // Sort by inbox order if inboxData exists
-        if (inboxData && Array.isArray(inboxData)) {
-            const inbox = inboxData as any[];
-            const conversationMap = new Map();
-
-            // Map contact_id to its index in inboxData for quick sorting
-            inbox.forEach((conv, index) => {
-                if (conv.contact_id) {
-                    // Only store the first occurrence (most recent) if a contact has multiple convs
-                    if (!conversationMap.has(conv.contact_id)) {
-                        conversationMap.set(conv.contact_id, index);
-                    }
-                }
-            });
-
-            filtered = [...filtered].sort((a: any, b: any) => {
-                const indexA = conversationMap.has(a.id) ? conversationMap.get(a.id) : 999999;
-                const indexB = conversationMap.has(b.id) ? conversationMap.get(b.id) : 999999;
-
-                // If both are in inbox, sort by inbox index
-                // If only one is in inbox, it comes first
-                // If neither are in inbox, maintain original order (or could sort by name)
-                if (indexA !== indexB) {
-                    return indexA - indexB;
-                }
-
-                // Secondary sort: alphabet by name for contacts not in inbox
-                return (a.name || "").localeCompare(b.name || "");
-            });
-        }
-
-        return filtered;
-    }, [contactsData, searchTerm, inboxData, chatMode]);
+        return omnichannelContactsData?.contacts || [];
+    }, [omnichannelContactsData]);
 
     // Auto-select conversation when chatMode or selectedContact changes
     useEffect(() => {
         if (selectedContact && inboxData && Array.isArray(inboxData)) {
-            const contactIdentifier = (selectedContact as any).phone || selectedContact.phone_number || selectedContact.email;
-            const existingConv = (inboxData as any[]).find(c =>
+            const contactIdentifier = selectedContact.phone_number || selectedContact.email;
+
+            const existingConv = (inboxData as any[]).find((c: any) =>
                 c.contact_identifier === contactIdentifier ||
                 c.external_contact_identifier === contactIdentifier ||
-                c.contact_id === selectedContact.id
+                c.contact_id === selectedContact.contact_id
             );
 
             if (existingConv) {
@@ -204,9 +174,15 @@ export default function OmnichannelClient() {
     }, [conversation]);
 
     // Handle contact selection
-    const handleSelectContact = (contact: any) => {
+    const handleSelectContact = (contact: OmnichannelContact) => {
         setSelectedContact(contact);
         setIsChannelSelected(false);
+        // Set default chat mode based on available channels
+        if (contact.channel_types.length > 0) {
+            if (!contact.channel_types.includes(chatMode)) {
+                setChatMode(contact.channel_types[0]);
+            }
+        }
     };
 
     const handleCreateContact = async (e: React.FormEvent) => {
@@ -255,9 +231,9 @@ export default function OmnichannelClient() {
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const content = chatMode === "whatsapp" ? inputText : emailBody;
+        const content = chatMode === "whatsapp" ? inputText : emailHtmlContent;
 
-        if (!selectedFile && !content.trim()) return;
+        if (!selectedFile && !content.trim() && content !== "<br>") return;
 
         // Validation for Media Upload (WhatsApp)
         if (chatMode === "whatsapp" && selectedFile) {
@@ -273,21 +249,38 @@ export default function OmnichannelClient() {
                 // Create new conversation first
                 if (!selectedContact) return;
 
-                const accountId = accounts?.find(a => a.channel_type === chatMode)?.id;
+                const accountId = accounts?.find((a: any) => a.channel_type === chatMode)?.id;
                 if (!accountId) {
                     notify.error(`No active ${chatMode} account found`);
                     return;
                 }
 
-                const newConv = await createConversationMutation.mutateAsync({
+                const payload: any = {
                     account_id: accountId,
-                    to: chatMode === "email" ? selectedContact.email : ((selectedContact as any).phone || (selectedContact as any).phone_number || (selectedContact as any).email),
-                    name: selectedContact.name,
+                    name: selectedContact.display_name,
                     subject: emailSubject,
                     message: content,
-                });
+                };
+
+                if (selectedContact.contact_id) {
+                    payload.contact_id = selectedContact.contact_id;
+                } else {
+                    payload.to = chatMode === "email" ? selectedContact.email! : (selectedContact.phone_number || selectedContact.email!);
+                }
+
+                const newConv = await createConversationMutation.mutateAsync(payload);
                 conversationId = newConv.id;
                 setActiveConversationId(conversationId);
+
+                // Add clearing here for new conversation email as well
+                if (chatMode === "email") {
+                    setEmailHtmlContent("");
+                    if (emailEditorRef.current) emailEditorRef.current.innerHTML = "";
+                    setEmailSubject("");
+                    setEmailCc("");
+                    setEmailBcc("");
+                    setIsEmailComposerOpen(false);
+                }
 
                 // If it's media, we still need to upload it to the new conversation
                 if (chatMode === "whatsapp" && selectedFile) {
@@ -316,10 +309,12 @@ export default function OmnichannelClient() {
                     });
                     if (chatMode === "whatsapp") setInputText("");
                     else {
-                        setEmailBody("");
+                        setEmailHtmlContent("");
+                        if (emailEditorRef.current) emailEditorRef.current.innerHTML = "";
                         setEmailSubject("");
                         setEmailCc("");
                         setEmailBcc("");
+                        setIsEmailComposerOpen(false);
                     }
                 }
             }
@@ -480,32 +475,25 @@ export default function OmnichannelClient() {
                             </div>
                         ) : filteredContacts.length > 0 ? (
                             <div className="divide-y divide-gray-50">
-                                {filteredContacts.map((contact: any) => {
-                                    // Find conversation for this contact to show unread count and time
-                                    const contactIdentifier = contact.phone || contact.phone_number || contact.email;
-                                    const conv = (inboxData as any)?.find((c: any) =>
-                                        c.contact_id === contact.id ||
-                                        c.external_contact_identifier === contactIdentifier
-                                    );
-
+                                {filteredContacts.map((contact: OmnichannelContact) => {
                                     return (
                                         <div
-                                            key={contact.id}
+                                            key={contact.contact_id}
                                             onClick={() => handleSelectContact(contact)}
                                             className={cn(
                                                 "p-4 cursor-pointer transition-all hover:bg-gray-200 group flex items-start gap-3 border-b border-gray-50",
-                                                selectedContact?.id === contact.id ? "bg-blue-50/50" : ""
+                                                selectedContact?.contact_id === contact.contact_id ? "bg-blue-50/50" : ""
                                             )}
                                         >
                                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600 shrink-0 text-sm">
-                                                {contact.name ? contact.name.split(' ').filter(Boolean).map((n: any[]) => n[0]).join('').slice(0, 2).toUpperCase() : "?"}
+                                                {contact.display_name ? contact.display_name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : "?"}
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex justify-between items-start">
-                                                    <h4 className="font-bold text-gray-900 truncate text-sm">{contact.name}</h4>
-                                                    {conv && conv.last_message_at && (
+                                                    <h4 className="font-bold text-gray-900 truncate text-sm">{contact.display_name}</h4>
+                                                    {contact.last_message_at && (
                                                         <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                                                            {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: false })
+                                                            {formatDistanceToNow(new Date(contact.last_message_at), { addSuffix: false })
                                                                 .replace('about ', '')
                                                                 .replace('less than a minute', 'now')
                                                                 .replace('minute', 'm')
@@ -519,11 +507,11 @@ export default function OmnichannelClient() {
                                                 </div>
                                                 <div className="flex justify-between items-center mt-0.5">
                                                     <p className="text-xs text-gray-500 truncate flex-1">
-                                                        {(contact as any).phone || (contact as any).phone_number || contact.email || "No contact info"}
+                                                        {contact.last_message_preview || contact.primary_identifier || "No contact info"}
                                                     </p>
-                                                    {conv && (conv.unread_count > 0) && (
+                                                    {contact.unread_count > 0 && (
                                                         <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white shadow-sm">
-                                                            {conv.unread_count > 99 ? '99+' : conv.unread_count}
+                                                            {contact.unread_count > 99 ? '99+' : contact.unread_count}
                                                         </span>
                                                     )}
                                                 </div>
@@ -560,7 +548,7 @@ export default function OmnichannelClient() {
                                 <div className="flex items-center gap-4 min-w-0">
                                     <div className="hidden sm:block">
                                         <h3 className="font-bold text-gray-900 truncate flex items-center gap-2 text-base">
-                                            {selectedContact.name}
+                                            {selectedContact.display_name}
                                             <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1 uppercase tracking-wider">
                                                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                                 No Sentiment
@@ -569,6 +557,7 @@ export default function OmnichannelClient() {
                                         <div className="flex items-center gap-1.5 mt-0.5">
                                             {(activeConversationId || isChannelSelected) && (
                                                 <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-100">
+                                                    {/* {selectedContact.channel_types.includes("whatsapp") && ( */}
                                                     <button
                                                         onClick={() => setChatMode("whatsapp")}
                                                         className={cn(
@@ -579,6 +568,8 @@ export default function OmnichannelClient() {
                                                         <MessageCircle className="w-3 h-3" />
                                                         WhatsApp
                                                     </button>
+                                                    {/* )} */}
+                                                    {/* {selectedContact.channel_types.includes("email") && ( */}
                                                     <button
                                                         onClick={() => setChatMode("email")}
                                                         className={cn(
@@ -589,12 +580,15 @@ export default function OmnichannelClient() {
                                                         <Mail className="w-3 h-3" />
                                                         Email
                                                     </button>
+                                                    {/* )} */}
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-3 ml-2">
-                                                <span className="text-xs text-gray-400">Phone: {(selectedContact as any).phone || (selectedContact as any).phone_number || "-"}</span>
+                                                <span className="text-xs text-gray-400">Identity: {selectedContact.primary_identifier}</span>
                                                 <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                <span className="text-xs text-gray-400">Email: {selectedContact.email || "-"}</span>
+                                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                                    Channels: {selectedContact.channel_types.join(", ")}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -747,10 +741,16 @@ export default function OmnichannelClient() {
                                                 </button>
                                             </form>
                                         </div>
+                                    ) : !isEmailComposerOpen ? (
+                                        <div className="flex justify-end p-2 pb-0">
+                                            <AppButton onClick={() => setIsEmailComposerOpen(true)} startIcon={<Mail className="w-4 h-4" />}>
+                                                Reply via Email
+                                            </AppButton>
+                                        </div>
                                     ) : (
                                         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:shadow-md">
                                             {/* Email Header Tabs */}
-                                            <div className="flex items-center justify-between px-4 py-2 bg-[#F8F9FA] border-b border-gray-100">
+                                            {/* <div className="flex items-center justify-between px-4 py-2 bg-[#F8F9FA] border-b border-gray-100">
                                                 <div className="flex items-center gap-1">
                                                     <button className="px-3 py-1.5 text-[11px] font-bold text-gray-700 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors">New Email</button>
                                                     <button className="px-3 py-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-700 transition-colors">Reply</button>
@@ -759,7 +759,7 @@ export default function OmnichannelClient() {
                                                     <div className="ml-1 px-2 py-0.5 bg-[#E8EAFD] text-[#5C67F2] text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter shadow-sm">New</div>
                                                 </div>
                                                 <div className="text-[10px] font-medium text-gray-400 font-mono">Ctrl+Enter to send</div>
-                                            </div>
+                                            </div> */}
 
                                             {/* Recipient Rows */}
                                             <div className="divide-y divide-gray-50">
@@ -804,42 +804,47 @@ export default function OmnichannelClient() {
                                                 </div>
                                             </div>
 
-                                            {/* Rich Text Toolbar (UI only) */}
-                                            <div className="px-4 py-2 flex items-center gap-1.5 border-b border-gray-50 bg-[#FBFBFC]">
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Bold className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Italic className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all underline decoration-2"><Underline className="w-3.5 h-3.5" /></button>
-                                                <div className="w-px h-4 bg-gray-200 mx-1"></div>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><List className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><ListOrdered className="w-3.5 h-3.5" /></button>
-                                                <div className="w-px h-4 bg-gray-200 mx-1"></div>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Link2 className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><ImageIcon className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Paperclip className="w-3.5 h-3.5" /></button>
-                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Quote className="w-3.5 h-3.5" /></button>
-                                            </div>
+                                            {/* Rich Text Toolbar */}
+                                            <RichTextToolbar onAction={execCommand} />
 
                                             {/* Email Body */}
                                             <div className="p-0">
-                                                <AppTextarea
-                                                    isBgWhite
-                                                    placeholder="Write an email reply..."
-                                                    value={emailBody}
-                                                    onChange={(e) => setEmailBody(e.target.value)}
+                                                <div
+                                                    ref={emailEditorRef}
+                                                    contentEditable
+                                                    onInput={(e) => setEmailHtmlContent((e.target as HTMLDivElement).innerHTML)}
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter' && e.ctrlKey) {
                                                             e.preventDefault();
                                                             handleSendMessage();
                                                         }
                                                     }}
-                                                    className="w-full bg-white border-none focus:ring-0 text-[13px] resize-none p-4 min-h-[160px] text-gray-700 leading-relaxed"
-                                                    sx={{
-                                                        "& .MuiOutlinedInput-root": {
-                                                            "& fieldset": { border: "none" },
-                                                            "& .MuiInputBase-input": { padding: 0 }
-                                                        }
-                                                    }}
+                                                    data-placeholder="Write an email reply..."
+                                                    className="w-full bg-white border-none focus:outline-none text-[13px] p-4 min-h-[220px] text-gray-700 leading-relaxed overflow-y-auto empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none"
+                                                    style={{ border: 'none' }}
                                                 />
+                                            </div>
+
+                                            {/* Send Button Trigger Footer */}
+                                            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                                                <AppButton
+                                                    type="button"
+                                                    variantStyle="outline"
+                                                    color="gray"
+                                                    className="text-xs py-1.5"
+                                                    onClick={() => setIsEmailComposerOpen(false)}
+                                                >
+                                                    Cancel
+                                                </AppButton>
+                                                <AppButton
+                                                    type="button"
+                                                    className="text-xs py-1.5"
+                                                    onClick={handleSendMessage}
+                                                    disabled={sendMessageMutation.isPending || createConversationMutation.isPending}
+                                                    startIcon={sendMessageMutation.isPending || createConversationMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                                >
+                                                    Send Email
+                                                </AppButton>
                                             </div>
                                         </div>
                                     )}
@@ -870,12 +875,12 @@ export default function OmnichannelClient() {
                             <h3 className="font-bold text-gray-900 text-lg uppercase tracking-wider">Contact Details</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                            <DetailItem label="Name" value={selectedContact.name} icon={<UserPlus className="w-4 h-4" />} />
+                            <DetailItem label="Name" value={selectedContact.display_name} icon={<UserPlus className="w-4 h-4" />} />
                             <DetailItem label="Email" value={selectedContact.email || "-"} icon={<Mail className="w-4 h-4" />} />
                             <DetailItem label="Phone" value={(selectedContact as any).phone || (selectedContact as any).phone_number || "-"} icon={<Phone className="w-4 h-4" />} />
                             <DetailItem label="Company" value={selectedContact.company || "-"} icon={<Building className="w-4 h-4" />} />
                             <DetailItem label="Position" value={(selectedContact as any).job_title || (selectedContact as any).position || "-"} icon={<Briefcase className="w-4 h-4" />} />
-                            <DetailItem label="Address" value={selectedContact.address || "-"} icon={<MapPin className="w-4 h-4" />} />
+                            {/* <DetailItem label="Address" value={selectedContact.address || "-"} icon={<MapPin className="w-4 h-4" />} /> */}
 
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
                                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">

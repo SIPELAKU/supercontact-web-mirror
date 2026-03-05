@@ -16,12 +16,15 @@ import {
   deleteAccount,
   refreshEmail,
   fetchInbox,
+  fetchOmnichannelContacts,
   createConversation,
   fetchConversation,
   deleteConversation,
   markAsRead,
   sendMessage,
   uploadMedia,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 } from "../api/omnichannel";
 
 // Account Management Hooks
@@ -34,6 +37,20 @@ export function useAccounts(channelType?: string) {
       return fetchAccounts(token, channelType);
     },
     staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useOmnichannelContacts(q?: string) {
+  const { token } = useAuth();
+  return useQuery<OmnichannelContactsResponse, Error>({
+    queryKey: ['omnichannels', 'inbox', 'contacts', q],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchOmnichannelContacts(token, q);
+    },
+    staleTime: 1000 * 30, // 30 seconds
     refetchOnWindowFocus: false,
     enabled: !!token,
   });

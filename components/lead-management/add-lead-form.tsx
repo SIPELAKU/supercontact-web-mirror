@@ -125,21 +125,21 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleContactSearchChange = useCallback((event: any, value: string) => {
-    // Update input value immediately for the form
-    if (value !== form.name) {
+  const handleContactSearchChange = useCallback((event: any, value: string, reason: string) => {
+    // Only update search when user is actually typing, not when a selection resets the input
+    if (reason === 'input') {
       updateField("name", value);
       setSelectedContactId("");
-    }
 
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    debounceTimerRef.current = setTimeout(() => {
-      setContactSearch(value);
-    }, 300);
-  }, [form.name, updateField]);
+      debounceTimerRef.current = setTimeout(() => {
+        setContactSearch(value);
+      }, 300);
+    }
+  }, [updateField]);
 
   const handleContactSelect = (contact: Contact | null) => {
     if (!contact) {

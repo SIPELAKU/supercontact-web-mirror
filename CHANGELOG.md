@@ -212,6 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### ✨ Enhancements
 
 - **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
+- **Edit Lead - Contact Picker**: The "Detail Lead" (edit) modal now uses the same Name autocomplete with contact search, 10-item limit, "Show More", and Contact Picker dialog — replacing the plain text input.
 
 #### 🐛 Bug Fixes
 
@@ -221,6 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `components/lead-management/ContactPickerDialog.tsx` [NEW]
 - `components/lead-management/add-lead-form.tsx`
+- `components/lead-management/lead-detail-modal.tsx`
 
 ## [1.8.19] - 2026-03-01
 

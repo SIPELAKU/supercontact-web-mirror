@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.31] - 2026-03-05
+
+### Detail Versi 1.8.31
+
+#### ✨ Omnichannel Enhancements & Dynamic Channels
+
+- **Unified Contacts API**: Refactored the Omnichannel Contact listing to use the new `/omnichannels/inbox/contacts` API via the `useOmnichannelContacts` hook. This provides unified access to contact details, dynamic channel availability, latest conversations, and unread counts.
+- **Dynamic Channel Selection**: Chat mode toggles (WhatsApp and Email) in the Chat Header now appear dynamically based on the contact's `channel_types`.
+- **Intelligent Conversation Routing**: Switching tabs automatically looks up and mounts the existing conversation ID for that specific channel type referencing the `useInbox` hook.
+- **Optimized Create Payload**: Creating new conversations for existing contacts now correctly prioritizes the `contact_id` reference instead of the raw `to` field.
+- **Email Composer Redesign**: Implemented a collapsible, rich text Email Composer complete with styling toolbar, "Reply via Email" toggle, and self-clearing Send/Cancel buttons.
+- **Email Sync Actions**: Added "Refresh" (24h sync) and "Full Sync" action buttons safely tucked in the Contact Sidebar for quick inbox synchronization without cluttering the chat view.
+- **Responsive Layout**: Re-engineered the chat interface for smaller screens. The Chat Header correctly wraps, and the Contact Details column transforms into a sliding overlay drawer with a backdrop on laptop sizes (`< xl` breakpoint).
+- **UI & Sentiment Polish**: Surfaced `sentiment_label` at the top of the chat header. Softened the read tick icon color and unified outbound message bubbles to use the primary brand blue (`#5479EE`).
+
+#### 📁 Files Modified
+
+- `components/omnichannel/OmnichannelClient.tsx`
+- `components/omnichannel/MessageList.tsx`
+- `lib/api/omnichannel.ts`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/types/omnichannel.ts`
+
+## [1.8.30] - 2026-03-05
+
+### Detail Versi 1.8.30
+
+#### ✨ Enhancements
+
+- **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
+
+#### 🐛 Bug Fixes
+
+- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
+
+#### 📁 Files Modified
+
+- `components/lead-management/ContactPickerDialog.tsx` [NEW]
+- `components/lead-management/add-lead-form.tsx`
+
 ## [1.8.29] - 2026-03-04
 
 ### Detail Versi 1.8.29
@@ -205,22 +245,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/contact/ContactTable.tsx`
 - `components/contact/ContactClient.tsx`
 - `lib/models/types.ts`
-## [1.8.20] - 2026-03-05
-
-### Detail Versi 1.8.20
-
-#### ✨ Enhancements
-
-- **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
-
-#### 🐛 Bug Fixes
-
-- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
-
-#### 📁 Files Modified
-
-- `components/lead-management/ContactPickerDialog.tsx` [NEW]
-- `components/lead-management/add-lead-form.tsx`
 
 ## [1.8.19] - 2026-03-01
 

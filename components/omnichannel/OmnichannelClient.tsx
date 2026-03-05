@@ -44,7 +44,8 @@ import {
     useCreateConversation,
     useMarkAsRead,
     useUploadMedia,
-    useOmnichannelContacts
+    useOmnichannelContacts,
+    useRefreshEmail
 } from "@/lib/hooks/useOmnichannel";
 import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
@@ -128,6 +129,7 @@ export default function OmnichannelClient() {
     const deleteConversationMutation = useDeleteConversation();
     const markAsReadMutation = useMarkAsRead();
     const uploadMediaMutation = useUploadMedia();
+    const refreshEmailMutation = useRefreshEmail();
 
     // New Contact Form State
     const [newContact, setNewContact] = useState<ContactReq>({
@@ -336,6 +338,15 @@ export default function OmnichannelClient() {
         }
     };
 
+    const handleRefreshEmail = async (fullSync: boolean) => {
+        try {
+            await refreshEmailMutation.mutateAsync(fullSync);
+            notify.success(fullSync ? "Full sync triggered successfully" : "Email refresh triggered successfully");
+        } catch (error) {
+            notify.error(handleError(error, "Refresh Email"));
+        }
+    };
+
     return (
         <div className="px-4 sm:px-6 lg:px-8 py-8">
             {/* Header */}
@@ -377,6 +388,28 @@ export default function OmnichannelClient() {
                                 New Contact
                             </AppButton>
                         )}
+                        <div className="flex items-center gap-2 w-full mt-2">
+                            <AppButton
+                                variantStyle="outline"
+                                color="gray"
+                                size="small"
+                                className="flex-1 text-[11px] h-8 px-2 border-gray-200 text-gray-500 hover:text-gray-700 font-semibold"
+                                onClick={() => handleRefreshEmail(false)}
+                                disabled={refreshEmailMutation.isPending}
+                            >
+                                {refreshEmailMutation.isPending ? "Refreshing..." : "Refresh"}
+                            </AppButton>
+                            <AppButton
+                                variantStyle="outline"
+                                color="gray"
+                                size="small"
+                                className="flex-1 text-[11px] h-8 px-2 border-gray-200 text-gray-500 hover:text-gray-700 font-semibold"
+                                onClick={() => handleRefreshEmail(true)}
+                                disabled={refreshEmailMutation.isPending}
+                            >
+                                Full Sync
+                            </AppButton>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
@@ -870,7 +903,7 @@ export default function OmnichannelClient() {
 
                 {/* Column 3: Contact Details sidebar */}
                 {selectedContact && isSidebarOpen && (
-                    <div className="w-80 border-l border-gray-200 bg-white flex flex-col shrink-0 animate-in slide-in-from-right duration-300 shadow-xl sm:shadow-none">
+                    <div className="w-80 rounded-2xl border border-gray-200 bg-white flex flex-col shrink-0 animate-in slide-in-from-right duration-300 shadow-xl sm:shadow-none">
                         <div className="p-6 border-b border-gray-100">
                             <h3 className="font-bold text-gray-900 text-lg uppercase tracking-wider">Contact Details</h3>
                         </div>

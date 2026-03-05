@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### ✨ Enhancements
 
 - **Subscribers - Bulk Delete**: Implemented a true bulk delete API request allowing users to delete multiple subscribers simultaneously, replacing the previous sequential one-by-one deletion flow.
+- **Mailing Lists - Bulk Delete Subscribers**: Added checkboxes and a "Delete Selected" bulk action to the mailing list subscribers table, allowing for the rapid removal of multiple subscribers from a specific mailing list via a dedicated API endpoint.
 - **Campaigns - Mail Senders Integration**: Swapped the campaign creation/editing flow from relying on Mail Servers to using Mail Senders. Features include:
   - Add & Edit Campaign modals now use the `/mail-senders` API to fetch sending domains.
   - Added a new, inline "+ Add New Mail Sender" button directly in the Campaign modal.

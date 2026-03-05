@@ -5,6 +5,148 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.29] - 2026-03-04
+
+### Detail Versi 1.8.29
+
+#### 🐛 Bug Fixes
+
+- **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+
+#### 📁 Files Modified
+
+- `components/dashboard/DashboardClient.tsx`
+
+## [1.8.28] - 2026-03-04
+
+### Detail Versi 1.8.28
+
+#### 🎨 Pricing UI Redesign & Brand Alignment
+
+- **Exclusive Card Overhaul**: Completely redesigned the "Exclusive" (formerly Enterprise) pricing card with a high-contrast primary blue background (`#5479EE`) and white text for a premium look.
+- **Multi-line Price Layout**: Refactored the "Hubungi Kami" / "Contact Us" text into a two-line layout with increased font size (2.1rem) and integrated the contract duration text directly after the second line for better spatial efficiency.
+- **WhatsApp Themed CTA**: Updated all pricing card action buttons to use the WhatsApp green theme (`#25D366`) with darker hover states for a more actionable UI.
+- **Recommended Badge**: Replaced the "Popular" tag with a "Recommended" badge using a bold green background to align with the new CTA styling.
+- **Feature Visuals**: Applied strikethrough decorations to features 4 & 5 on the Free Trial card to clearly communicate plan limitations.
+- **Improved Contrast**: Adjusted feature icons and list text colors to maintain high accessibility on both light and dark card backgrounds.
+
+#### 🌐 Localization & Copy Updates
+
+- **Plan Renaming**: Globally updated the second pricing tier name from "Enterprise" to "Exclusive" in both English and Indonesian locales.
+- **Contractual Strings**: Standardized the contract duration text for the Exclusive plan to " / sesuai kontrak" (ID) and "/ per contract" (EN).
+- **Tag Updates**: Updated localized plan tags to "Recommended" across all languages.
+
+#### 📁 Files Modified
+
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
+## [1.8.27] - 2026-03-04
+
+### Detail Versi 1.8.27
+
+#### ✨ Enhancements
+
+- **Campaigns Table Pagination**: Successfully migrated the Campaigns module from client-side array slicing to full backend server-side pagination and debounced textual searching.
+  - Implemented dynamic argument passing for `page`, `limit` and `search` inside `useCampaigns` hook.
+  - Mapped URLSearchParams directly within `lib/api/email-marketing/campaigns.ts`.
+  - Re-mapped the Data Table payload schema and correctly extracted `data.total` for accurate dynamic pagination markers, greatly improving listing performance on heavy databases.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/campaigns/CampaignsTable.tsx`
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/hooks/useCampaigns.ts`
+- `lib/types/email-marketing.ts`
+
+## [1.8.26] - 2026-03-04
+
+### Detail Versi 1.8.26
+
+#### 🏗️ Navigation & UI Polish
+
+- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
+- **WhatsApp Localization**: Implemented multi-language support for all WhatsApp interest messages across `Hero`, `WhatsAppFloatingButton`, and `PricingCards`.
+- **FAQ Refinement**: Cleaned up the `FAQ` component to strictly use localized strings, ensuring consistent branding and translations.
+
+#### 📁 Files Modified
+
+- `components/layout/FAQ.tsx`
+- `components/layout/WhatsAppFloatingButton.tsx`
+- `components/home/Hero.tsx`
+- `components/home/ProductMenu.tsx`
+- `components/home/SolutionMenu.tsx`
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
+## [1.8.25] - 2026-03-04
+
+### Detail Versi 1.8.25
+
+#### 🐛 Bug Fixes
+
+- **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/ImportContactModal.tsx`
+
+## [1.8.24] - 2026-03-04
+
+### Detail Versi 1.8.24
+
+#### 🎨 Global Branding & UI Consistency
+
+- **SmartSales Rebranding**: Finalized the revert of project-wide branding from "SuperContact" back to "SmartSales".
+  - **Sidebar**: Switched to high-quality SVG primary logo and added `logo3d.png` for collapsed state.
+  - **Email Templates**: Rebranded all HTML and Text email templates, including subject lines.
+  - **Site-wide Branding**: Updated logo and brand name in `Navbar`, `Footer`, `Hero` analytics, `EmailVerification`, and `PrintableTable`.
+  - **Metadata**: Updated root `layout.tsx` title, description, and OpenGraph tags.
+  - **Strings**: Refined localized string constants in `lib/utils/strings.ts`.
+
+#### 🔐 Authentication Flow & Layout
+
+- **Login Page**: Added a "Kembali ke Beranda" (Back to Home) button with icon and hover effects for better navigation.
+- **Forgot Password**: Refactored the layout to use a centered card design with shadow and rounded corners.
+- **OTP Verification**: Aligned layout with the centered card design to match the password recovery flow.
+- **New Password**: Unified the password reset page styling with the new card design and fixed zoom responsiveness.
+- **Zoom Optimization**: Resolved layout shifts and misalignment issues when the browser is zoomed (125%-200%) by migrating from fixed margins to dynamic flexbox centering.
+
+#### 📁 Files Modified
+
+- `app/layout.tsx`
+- `app/(auth)/login/page.tsx`
+- `app/(auth)/forgot-password/page.tsx`
+- `app/(auth)/forgot-password/verify-otp/page.tsx`
+- `app/(account)/new-password/page.tsx`
+- `app/(account)/email-verification/page.tsx`
+- `components/layout/Navbar.tsx`
+- `components/layout/Footer.tsx`
+- `components/layout/Sidebar.tsx`
+- `components/ui/printable-table.tsx`
+- `lib/utils/strings.ts`
+- `lib/utils/email-templates.ts`
+
+## [1.8.23] - 2026-03-02
+
+### Detail Versi 1.8.23
+
+#### ✨ Data Intelligence & Optimization
+
+- **Server-Side Pagination & Search**: Shifted subscriber lists from front-end pagination to highly efficient backend server-side pagination.
+  - **All Subscribers**: Updated the table to dynamically fetch chunked pages and pass search queries directly to the backend.
+  - **Mailing List Details**: The subscriber table within a specific mailing list now uses server-side pagination, ensuring fast load times even for mailing lists with thousands of contacts.
+  - **Debounced Search**: Input searches are now throttled by 500ms to prevent spamming the API with requests while typing.
+
+#### 📁 Files Modified
+
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/hooks/useMailingLists.ts`
+- `lib/hooks/useSubscribers.ts`
+
 ## [1.8.22] - 2026-03-01
 
 ### Detail Versi 1.8.22

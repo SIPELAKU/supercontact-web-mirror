@@ -3,23 +3,23 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    createCampaign,
-    deleteCampaign,
-    fetchCampaignDetail,
-    fetchCampaigns,
-    updateCampaign
+  createCampaign,
+  deleteCampaign,
+  fetchCampaignDetail,
+  fetchCampaigns,
+  updateCampaign
 } from '../api';
 import type { CreateCampaignData, UpdateCampaignData } from '../types/email-marketing';
 import Cookies from 'js-cookie';
 
 // Fetch all campaigns
-export function useCampaigns() {
+export function useCampaigns(page: number = 1, limit: number = 10, search?: string) {
   return useQuery({
-    queryKey: ['campaigns'],
+    queryKey: ['campaigns', page, limit, search],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchCampaigns(token);
+      return fetchCampaigns(token, page, limit, search);
     },
   });
 }

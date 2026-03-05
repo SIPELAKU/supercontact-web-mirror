@@ -47,12 +47,12 @@ export default function EmailVerification() {
     }
 
     try {
-      const response = await verifyOTP({ 
-        email, 
+      const response = await verifyOTP({
+        email,
         otp_type: "Verification Email",
-        code: otp 
+        code: otp
       });
-      
+
       if (response.success) {
         // On success, redirect to login with success message
         router.push('/login?verified=true');
@@ -61,7 +61,7 @@ export default function EmailVerification() {
         const errorMessage = response.error?.message || response.message || 'Invalid OTP code. Please try again.';
         setError(errorMessage);
       }
-      
+
     } catch (err: any) {
       const errorMessage = handleError(err, 'OTP verification error', 'Invalid OTP code. Please try again.');
       setError(errorMessage);
@@ -72,17 +72,17 @@ export default function EmailVerification() {
 
   const handleResendOTP = async () => {
     if (resendCooldown > 0) return;
-    
+
     setIsResending(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const response = await resendOTP({ 
-        email, 
-        otp_type: "Verification Email" 
+      const response = await resendOTP({
+        email,
+        otp_type: "Verification Email"
       });
-      
+
       if (response.success) {
         setResendCooldown(60); // 60 second cooldown
         setSuccessMessage('OTP code has been resent to your email');
@@ -91,7 +91,7 @@ export default function EmailVerification() {
         const errorMessage = response.error?.message || response.message || 'Failed to resend OTP. Please try again.';
         setError(errorMessage);
       }
-      
+
     } catch (err: any) {
       const errorMessage = handleError(err, 'Resend OTP error', 'Failed to resend OTP. Please try again.');
       setError(errorMessage);
@@ -113,14 +113,14 @@ export default function EmailVerification() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Image
-            src="/assets/logo-supercontact.png"
-            alt="Supercontact Logo"
+            src="/assets/sc-logo-primary.svg"
+            alt="SmartSales Logo"
             width={200}
             height={80}
             className="mx-auto"
           />
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
             Verify Your Email

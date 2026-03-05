@@ -294,29 +294,32 @@ export default function DashboardClient() {
 
   // ─── Chart data ───────────────────────────────────────────────────
   // Aggregate funnel periods by summing all the periods
-  const funnelChartData = funnelPeriods.length > 0
-    ? (() => {
-      const agg = funnelPeriods.reduce(
-        (acc, p) => ({
-          prospect: acc.prospect + p.prospect,
-          qualified: acc.qualified + p.qualified,
-          negotiation: acc.negotiation + p.negotiation,
-          proposal: acc.proposal + p.proposal,
-          closed_won: acc.closed_won + p.closed_won,
-          closed_lost: acc.closed_lost + p.closed_lost,
-        }),
-        { prospect: 0, qualified: 0, negotiation: 0, proposal: 0, closed_won: 0, closed_lost: 0 }
-      );
-      return [
-        { stage: "Prospect", count: agg.prospect },
-        { stage: "Qualified", count: agg.qualified },
-        { stage: "Negotiation", count: agg.negotiation },
-        { stage: "Proposal", count: agg.proposal },
-        { stage: "Closed - Won", count: agg.closed_won },
-        { stage: "Closed - Lost", count: agg.closed_lost },
-      ];
-    })()
-    : [];
+  const safeFunnelPeriods: any[] = Array.isArray(funnelPeriods)
+    ? funnelPeriods
+    : (funnelPeriods && (funnelPeriods as any)?.items)
+      ? (funnelPeriods as any)?.items
+      : [];
+
+  const funnelAgg = safeFunnelPeriods.reduce(
+    (acc: any, p: any) => ({
+      prospect: acc.prospect + (p?.prospect || 0),
+      qualified: acc.qualified + (p?.qualified || 0),
+      negotiation: acc.negotiation + (p?.negotiation || 0),
+      proposal: acc.proposal + (p?.proposal || 0),
+      closed_won: acc.closed_won + (p?.closed_won || 0),
+      closed_lost: acc.closed_lost + (p?.closed_lost || 0),
+    }),
+    { prospect: 0, qualified: 0, negotiation: 0, proposal: 0, closed_won: 0, closed_lost: 0 }
+  );
+
+  const funnelChartData = [
+    { stage: "Prospect", count: funnelAgg.prospect },
+    { stage: "Qualified", count: funnelAgg.qualified },
+    { stage: "Negotiation", count: funnelAgg.negotiation },
+    { stage: "Proposal", count: funnelAgg.proposal },
+    { stage: "Closed - Won", count: funnelAgg.closed_won },
+    { stage: "Closed - Lost", count: funnelAgg.closed_lost },
+  ];
 
   const productChartData = products
     .filter((p) => p.total_value > 0)
@@ -591,12 +594,16 @@ export default function DashboardClient() {
               <Box display="flex" justifyContent="center" alignItems="center" height="100%">
                 <CircularProgress size={28} />
               </Box>
+            ) : safeFunnelPeriods.length === 0 ? (
+              <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                <Typography color="text.secondary">No funnel data available</Typography>
+              </Box>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={funnelChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="stage" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#666" }} angle={-20} textAnchor="end" height={60} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#666" }} allowDecimals={false} />
                   <RechartsTooltip formatter={(value: number) => [value, "Count"]} contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }} />
                   <Bar dataKey="count" fill="#4fd1c5" radius={[4, 4, 0, 0]} maxBarSize={60} />
                 </BarChart>

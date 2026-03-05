@@ -37,18 +37,23 @@ import { format } from 'date-fns';
 import { ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const MailingListDetailPage = () => {
     const params = useParams();
     const router = useRouter();
     const listId = String(params.id);
 
-    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId);
-    const deleteSubscriberMutation = useDeleteMailingListSubscriber();
-
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
@@ -57,6 +62,9 @@ const MailingListDetailPage = () => {
     // Pagination for campaigns
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
+
+    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
+    const deleteSubscriberMutation = useDeleteMailingListSubscriber();
 
     const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1);
 
@@ -94,13 +102,9 @@ const MailingListDetailPage = () => {
         }
     };
 
-    // Filter subscribers based on search
-    const filteredSubscribers = subscribers.filter(s =>
-        searchQuery === '' ||
-        s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.company?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Server-filtered subscribers
+    const filteredSubscribers = subscribers;
+    const totalSubscribers = mailingList?.subscribers?.total || 0;
 
     // Filter campaigns based on search
     const filteredCampaigns = campaigns.filter(c =>
@@ -119,10 +123,7 @@ const MailingListDetailPage = () => {
         );
     }
 
-    const paginatedSubscribers = filteredSubscribers.slice(
-        subscriberPage * subscriberRowsPerPage,
-        subscriberPage * subscriberRowsPerPage + subscriberRowsPerPage
-    );
+    const paginatedSubscribers = filteredSubscribers;
 
     // Campaigns are paginated on server
     const paginatedCampaigns = filteredCampaigns;
@@ -321,7 +322,7 @@ const MailingListDetailPage = () => {
                             <TablePagination
                                 rowsPerPageOptions={[5, 10, 25, 50]}
                                 component="div"
-                                count={filteredSubscribers.length}
+                                count={totalSubscribers}
                                 rowsPerPage={subscriberRowsPerPage}
                                 page={subscriberPage}
                                 onPageChange={(_e, newPage) => setSubscriberPage(newPage)}

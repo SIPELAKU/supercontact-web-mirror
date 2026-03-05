@@ -26,8 +26,10 @@ import {
     Image as ImageIcon,
     Quote,
     Trash,
-    Paperclip
+    Paperclip,
+    Settings
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -53,6 +55,7 @@ import { CircularProgress } from "@mui/material";
 import MessageList from "./MessageList";
 
 export default function OmnichannelClient() {
+    const router = useRouter();
     const { getToken } = useAuth();
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -278,7 +281,7 @@ export default function OmnichannelClient() {
 
                 const newConv = await createConversationMutation.mutateAsync({
                     account_id: accountId,
-                    to: (selectedContact as any).phone || (selectedContact as any).phone_number || (selectedContact as any).email,
+                    to: chatMode === "email" ? selectedContact.email : ((selectedContact as any).phone || (selectedContact as any).phone_number || (selectedContact as any).email),
                     name: selectedContact.name,
                     subject: emailSubject,
                     message: content,
@@ -353,12 +356,23 @@ export default function OmnichannelClient() {
                 {/* Column 1: Contacts sidebar */}
                 <div className="w-80 border border-gray-200 shadow-lg rounded-2xl flex flex-col shrink-0">
                     <div className="p-4 border-b border-gray-100 flex flex-col gap-2">
-                        <AppInput
-                            placeholder="Search contacts..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            startIcon={<Search />}
-                        />
+                        <div className="flex items-center gap-2">
+                            <AppInput
+                                placeholder="Search contacts..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                startIcon={<Search />}
+                                className="flex-1"
+                                isBgWhite
+                            />
+                            <button
+                                onClick={() => router.push("/omnichannel/settings")}
+                                className="p-2.5 bg-gray-50 border border-gray-200 text-gray-400 hover:text-primary hover:border-primary/30 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 shrink-0 cursor-pointer"
+                                title="Omnichannel Settings"
+                            >
+                                <Settings className="w-5 h-5" />
+                            </button>
+                        </div>
                         {!isNewContactOpen && filteredContacts.length > 0 && (
                             <AppButton
                                 fullWidth

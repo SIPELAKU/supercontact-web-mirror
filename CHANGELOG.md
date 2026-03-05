@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.32] - 2026-03-06
+
+### Detail Versi 1.8.32
+
+#### ✨ Enhancements
+
+- **Pricing Page**: Added a new pricing trial component and a localization utility with various pricing-related strings.
+
+#### 📁 Files Modified
+
+- `components/price/PricingTrial.tsx` [NEW]
+- `lib/utils/strings.ts`
+
 ## [1.8.31] - 2026-03-05
 
 ### Detail Versi 1.8.31

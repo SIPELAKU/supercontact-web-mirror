@@ -15,10 +15,18 @@ import {
     Briefcase,
     Building,
     Loader2,
-    Trash,
-    Paperclip,
     Send,
-    File as FileIcon
+    File as FileIcon,
+    Bold,
+    Italic,
+    Underline,
+    List,
+    ListOrdered,
+    Link2,
+    Image as ImageIcon,
+    Quote,
+    Trash,
+    Paperclip
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
@@ -53,6 +61,8 @@ export default function OmnichannelClient() {
     const [chatMode, setChatMode] = useState<"whatsapp" | "email">("whatsapp");
 
     const [emailSubject, setEmailSubject] = useState("");
+    const [emailCc, setEmailCc] = useState("");
+    const [emailBcc, setEmailBcc] = useState("");
     const [emailBody, setEmailBody] = useState("");
     const [inputText, setInputText] = useState("");
     const [isChannelSelected, setIsChannelSelected] = useState(false);
@@ -302,10 +312,14 @@ export default function OmnichannelClient() {
                         content: content,
                     });
                     if (chatMode === "whatsapp") setInputText("");
-                    else setEmailBody("");
+                    else {
+                        setEmailBody("");
+                        setEmailSubject("");
+                        setEmailCc("");
+                        setEmailBcc("");
+                    }
                 }
             }
-            if (chatMode === "email") setEmailSubject("");
         } catch (error) {
             notify.error(handleError(error, "Send Message"));
         }
@@ -720,43 +734,98 @@ export default function OmnichannelClient() {
                                             </form>
                                         </div>
                                     ) : (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-xl divide-y divide-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 transition-all">
-                                            <div className="p-2 space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">To</span>
+                                        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm transition-all focus-within:shadow-md">
+                                            {/* Email Header Tabs */}
+                                            <div className="flex items-center justify-between px-4 py-2 bg-[#F8F9FA] border-b border-gray-100">
+                                                <div className="flex items-center gap-1">
+                                                    <button className="px-3 py-1.5 text-[11px] font-bold text-gray-700 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-50 transition-colors">New Email</button>
+                                                    <button className="px-3 py-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-700 transition-colors">Reply</button>
+                                                    <button className="px-3 py-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-700 transition-colors">Reply All</button>
+                                                    <button className="px-3 py-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-700 transition-colors">Forward</button>
+                                                    <div className="ml-1 px-2 py-0.5 bg-[#E8EAFD] text-[#5C67F2] text-[10px] font-bold rounded border border-blue-100 uppercase tracking-tighter shadow-sm">New</div>
+                                                </div>
+                                                <div className="text-[10px] font-medium text-gray-400 font-mono">Ctrl+Enter to send</div>
+                                            </div>
+
+                                            {/* Recipient Rows */}
+                                            <div className="divide-y divide-gray-50">
+                                                <div className="flex items-center gap-3 px-4 py-2.5">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 shrink-0">TO</span>
                                                     <input
                                                         type="text"
-                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-600"
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-700 placeholder:text-gray-300 font-medium"
                                                         defaultValue={selectedContact.email || ""}
                                                         readOnly
                                                     />
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 text-right">Subject</span>
+                                                <div className="flex items-center gap-3 px-4 py-2.5">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 shrink-0">CC</span>
+                                                    <input
+                                                        type="text"
+                                                        value={emailCc}
+                                                        onChange={(e) => setEmailCc(e.target.value)}
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-600 placeholder:text-gray-300"
+                                                        placeholder="cc@example.com (optional)"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-3 px-4 py-2.5">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 shrink-0">BCC</span>
+                                                    <input
+                                                        type="text"
+                                                        value={emailBcc}
+                                                        onChange={(e) => setEmailBcc(e.target.value)}
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 text-gray-600 placeholder:text-gray-300"
+                                                        placeholder="bcc@example.com (optional)"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-3 px-4 py-2.5">
+                                                    <span className="text-[10px] font-bold text-gray-400 uppercase w-12 shrink-0">SUBJECT</span>
                                                     <input
                                                         type="text"
                                                         value={emailSubject}
                                                         onChange={(e) => setEmailSubject(e.target.value)}
-                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 font-semibold text-gray-700"
-                                                        placeholder="Enter subject..."
+                                                        className="bg-transparent border-none focus:ring-0 text-xs flex-1 p-0 font-bold text-gray-900 placeholder:text-gray-300 uppercase tracking-tight"
+                                                        placeholder="Subject"
                                                     />
                                                 </div>
                                             </div>
-                                            <AppTextarea
-                                                placeholder="Write an email reply..."
-                                                value={emailBody}
-                                                onChange={(e) => setEmailBody(e.target.value)}
-                                                className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none p-4 min-h-[120px] text-gray-700"
-                                            />
-                                            <div className="p-2 flex justify-end">
-                                                <button
-                                                    onClick={() => handleSendMessage()}
-                                                    disabled={!emailBody.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
-                                                    className="px-6 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50"
-                                                >
-                                                    {(sendMessageMutation.isPending || createConversationMutation.isPending) ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
-                                                    Send Email
-                                                </button>
+
+                                            {/* Rich Text Toolbar (UI only) */}
+                                            <div className="px-4 py-2 flex items-center gap-1.5 border-b border-gray-50 bg-[#FBFBFC]">
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Bold className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Italic className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all underline decoration-2"><Underline className="w-3.5 h-3.5" /></button>
+                                                <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><List className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><ListOrdered className="w-3.5 h-3.5" /></button>
+                                                <div className="w-px h-4 bg-gray-200 mx-1"></div>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Link2 className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><ImageIcon className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Paperclip className="w-3.5 h-3.5" /></button>
+                                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded transition-all"><Quote className="w-3.5 h-3.5" /></button>
+                                            </div>
+
+                                            {/* Email Body */}
+                                            <div className="p-0">
+                                                <AppTextarea
+                                                    isBgWhite
+                                                    placeholder="Write an email reply..."
+                                                    value={emailBody}
+                                                    onChange={(e) => setEmailBody(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && e.ctrlKey) {
+                                                            e.preventDefault();
+                                                            handleSendMessage();
+                                                        }
+                                                    }}
+                                                    className="w-full bg-white border-none focus:ring-0 text-[13px] resize-none p-4 min-h-[160px] text-gray-700 leading-relaxed"
+                                                    sx={{
+                                                        "& .MuiOutlinedInput-root": {
+                                                            "& fieldset": { border: "none" },
+                                                            "& .MuiInputBase-input": { padding: 0 }
+                                                        }
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     )}

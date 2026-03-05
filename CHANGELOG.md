@@ -5,16 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.8.29] - 2026-03-04
+## [1.8.33] - 2026-03-05
 
-### Detail Versi 1.8.29
+### Detail Versi 1.8.33
+
+#### ✨ Enhancements
+
+- **Add Lead - Contact Picker**: The Name autocomplete dropdown now shows a maximum of 10 results. When more results are available, a "Show More" link opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns).
+- **Edit Lead - Contact Picker**: The "Detail Lead" (edit) modal now uses the same Name autocomplete with contact search, 10-item limit, "Show More", and Contact Picker dialog — replacing the plain text input.
+- **Add Lead - Phone Number**: Phone number validation now allows an optional `+` prefix (e.g. `+628123456789`).
+- **Add Lead - Company Label**: Removed the red `*` (required indicator) from the Company label for consistency.
 
 #### 🐛 Bug Fixes
 
-- **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values.
+- **Add Lead - Selection Validation**: Fixed validation error persisting after selecting a contact from the autocomplete dropdown.
+- **Edit Contact - ID in Payload**: Removed `id` from the PUT request body — the backend uses JSONB and was storing the `id` as a custom field.
 
 #### 📁 Files Modified
 
+- `components/lead-management/ContactPickerDialog.tsx` [NEW]
+- `components/lead-management/add-lead-form.tsx`
+- `components/lead-management/lead-detail-modal.tsx`
+- `components/contact/modal/EditContactModal.tsx`
+
+
+## [1.8.32] - 2026-03-06
+### Detail Versi 1.8.32
+#### ✨ Enhancements
+- **Pricing Page**: Added a new pricing trial component and a localization utility with various pricing-related strings.
+#### 📁 Files Modified
+- `components/price/PricingTrial.tsx` [NEW]
+- `lib/utils/strings.ts`
+## [1.8.31] - 2026-03-05
+### Detail Versi 1.8.31
+#### ✨ Omnichannel Enhancements & Dynamic Channels
+- **Unified Contacts API**: Refactored the Omnichannel Contact listing to use the new `/omnichannels/inbox/contacts` API via the `useOmnichannelContacts` hook. This provides unified access to contact details, dynamic channel availability, latest conversations, and unread counts.
+- **Dynamic Channel Selection**: Chat mode toggles (WhatsApp and Email) in the Chat Header now appear dynamically based on the contact's `channel_types`.
+- **Intelligent Conversation Routing**: Switching tabs automatically looks up and mounts the existing conversation ID for that specific channel type referencing the `useInbox` hook.
+- **Optimized Create Payload**: Creating new conversations for existing contacts now correctly prioritizes the `contact_id` reference instead of the raw `to` field.
+- **Email Composer Redesign**: Implemented a collapsible, rich text Email Composer complete with styling toolbar, "Reply via Email" toggle, and self-clearing Send/Cancel buttons.
+- **Email Sync Actions**: Added "Refresh" (24h sync) and "Full Sync" action buttons safely tucked in the Contact Sidebar for quick inbox synchronization without cluttering the chat view.
+- **Responsive Layout**: Re-engineered the chat interface for smaller screens. The Chat Header correctly wraps, and the Contact Details column transforms into a sliding overlay drawer with a backdrop on laptop sizes (`< xl` breakpoint).
+- **UI & Sentiment Polish**: Surfaced `sentiment_label` at the top of the chat header. Softened the read tick icon color and unified outbound message bubbles to use the primary brand blue (`#5479EE`).
+#### 📁 Files Modified
+- `components/omnichannel/OmnichannelClient.tsx`
+- `components/omnichannel/MessageList.tsx`
+- `lib/api/omnichannel.ts`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/types/omnichannel.ts`
+## [1.8.30] - 2026-03-05
+### Detail Versi 1.8.30
+#### ✨ Enhancements
+- **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
+#### 🐛 Bug Fixes
+- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
+#### 📁 Files Modified
+- `components/lead-management/ContactPickerDialog.tsx` [NEW]
+- `components/lead-management/add-lead-form.tsx`
+## [1.8.29] - 2026-03-04
+### Detail Versi 1.8.29
+#### 🐛 Bug Fixes
+- **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+#### 📁 Files Modified
 - `components/dashboard/DashboardClient.tsx`
 
 ## [1.8.28] - 2026-03-04
@@ -84,7 +137,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.25
 
 #### 🐛 Bug Fixes
-
 - **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
 
 #### 📁 Files Modified
@@ -205,24 +257,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/contact/ContactTable.tsx`
 - `components/contact/ContactClient.tsx`
 - `lib/models/types.ts`
-## [1.8.20] - 2026-03-05
-
-### Detail Versi 1.8.20
-
-#### ✨ Enhancements
-
-- **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
-- **Edit Lead - Contact Picker**: The "Detail Lead" (edit) modal now uses the same Name autocomplete with contact search, 10-item limit, "Show More", and Contact Picker dialog — replacing the plain text input.
-
-#### 🐛 Bug Fixes
-
-- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
-
-#### 📁 Files Modified
-
-- `components/lead-management/ContactPickerDialog.tsx` [NEW]
-- `components/lead-management/add-lead-form.tsx`
-- `components/lead-management/lead-detail-modal.tsx`
 
 ## [1.8.19] - 2026-03-01
 
@@ -312,7 +346,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses `/api/proxy/contacts/bulk` endpoint
 
 #### 🐛 Bug Fixes
-
 - **Google Fonts**: Removed all Poppins font imports to fix build timeout issues on restricted networks
 - **Localization**: Created custom LocalizedStrings implementation to replace react-localization dependency
 
@@ -522,7 +555,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.2
 
 #### 🎯 Individual Intelligence - Person Refinement
-
 - **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
 - **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
 - **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
@@ -661,7 +693,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/contact/modal/DeleteMultipleContactModal.tsx` [MOVED/RENAMED]
 - `components/contact/modal/EditContactModal.tsx` [MOVED/RENAMED]
 - `components/contact/modal/ImportContactModal.tsx` [MOVED/RENAMED]
-
 
 ## [1.7.5] - 2026-02-24
 
@@ -872,7 +903,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sidebar Cleanup**: Removed unused Power icon import from Sidebar component
 
 #### 📁 Files Modified
-
 - `components/modal/AddContact.tsx`
 - `components/modal/EditContact.tsx`
 - `components/layout/Sidebar.tsx`
@@ -1362,7 +1392,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed alignment styling issues to ensure visual consistency.
 
 #### 📁 Files Modified
-
 - `components/admin/mail-servers/MailServerClient.tsx`
 - `components/organization/departments-table/DepartmentsTableList.tsx`
 
@@ -1642,7 +1671,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/ui/app-datepicker.tsx`
 
 ---
-
 ## [1.5.1] - 2026-02-10
 
 
@@ -1922,7 +1950,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhance error and notification messages with React node support, improved multi-line formatting, and user-friendly field labels.
 
 ---
-
 ## [1.3.2] - 2026-02-02
 
 ### Detail Versi 1.3.2
@@ -2062,7 +2089,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.4] - 2026-01-27
 
 ### Detail Versi 1.2.4
-
 #### ✨ Lead Management Enhancements & Validation
 
 - **Comprehensive Validation:**
@@ -2412,7 +2438,6 @@ Then uncomment the real API calls and remove the mock data imports.
 ## [0.5.1] - 2026-01-14
 
 ### Detail Versi 0.5.1
-
 #### ♻️ Refactor Add Contact Modal
 
 - **Deskripsi:**
@@ -2482,7 +2507,6 @@ Then uncomment the real API calls and remove the mock data imports.
 ### Detail Versi 0.2.0
 
 #### 🎨 UI/UX Enhancement
-
 - **Profile Page Revamp:**
   - **New Dashboard UI:** Implementasi halaman profile baru dengan desain dashboard modern, cover image, dan ringkasan informasi user.
   - **Responsive Design:** Penyesuaian layout untuk tampilan mobile dan desktop yang konsisten.

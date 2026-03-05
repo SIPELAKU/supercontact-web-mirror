@@ -234,12 +234,12 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       newErrors.email = "Invalid email format";
     }
 
-    // Phone validation: numbers only, min 10
-    const phoneRegex = /^\d{10,}$/;
+    // Phone validation: numbers and optional leading +, min 10 digits
+    const phoneRegex = /^\+?\d{10,}$/;
     if (!form.phone_number.trim()) {
       newErrors.phone_number = "Phone number is required";
     } else if (!phoneRegex.test(form.phone_number)) {
-      newErrors.phone_number = "Phone number must be at least 10 digits and numbers only";
+      newErrors.phone_number = "Phone number must be at least 10 digits (optional + prefix)";
     }
 
     if (!form.company.trim()) newErrors.company = "Company is required";
@@ -476,7 +476,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Company */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-700">
-                    Company <span className="text-red-500">*</span>
+                    Company
                   </Label>
                   <AppInput
                     type="text"

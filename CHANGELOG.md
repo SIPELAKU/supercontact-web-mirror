@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.29] - 2026-03-04
+
+### Detail Versi 1.8.29
+
+#### 🐛 Bug Fixes
+
+- **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+
+#### 📁 Files Modified
+
+- `components/dashboard/DashboardClient.tsx`
+
 ## [1.8.28] - 2026-03-04
 
 ### Detail Versi 1.8.28

@@ -91,7 +91,7 @@ export default function OmnichannelClient() {
 
     // Contacts and Inbox data
     const { data: contactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useAllContacts();
-    const { data: inboxData } = useInbox();
+    const { data: inboxData } = useInbox(chatMode);
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
 
@@ -161,30 +161,39 @@ export default function OmnichannelClient() {
         }
 
         return filtered;
-    }, [contactsData, searchTerm, inboxData]);
+    }, [contactsData, searchTerm, inboxData, chatMode]);
+
+    // Auto-select conversation when chatMode or selectedContact changes
+    useEffect(() => {
+        if (selectedContact && inboxData && Array.isArray(inboxData)) {
+            const contactIdentifier = (selectedContact as any).phone || selectedContact.phone_number || selectedContact.email;
+            const existingConv = (inboxData as any[]).find(c =>
+                c.contact_identifier === contactIdentifier ||
+                c.external_contact_identifier === contactIdentifier ||
+                c.contact_id === selectedContact.id
+            );
+
+            if (existingConv) {
+                setActiveConversationId(existingConv.id);
+            } else {
+                setActiveConversationId(null);
+            }
+        } else if (!selectedContact) {
+            setActiveConversationId(null);
+        }
+    }, [chatMode, selectedContact, inboxData]);
+
+    // Mark conversation as read when it's opened and has unread messages
+    useEffect(() => {
+        if (conversation && conversation.unread_count > 0) {
+            markAsReadMutation.mutate(conversation.id);
+        }
+    }, [conversation]);
 
     // Handle contact selection
     const handleSelectContact = (contact: any) => {
         setSelectedContact(contact);
         setIsChannelSelected(false);
-        const contactIdentifier = contact.phone || contact.phone_number || contact.email;
-
-        // Find if there's an existing conversation for this contact
-        const existingConv = inboxData?.find(c =>
-            c.contact_identifier === contactIdentifier ||
-            c.external_contact_identifier === contactIdentifier ||
-            c.contact_identifier === contact.email
-        );
-
-        if (existingConv) {
-            setActiveConversationId(existingConv.id);
-            // Mark as read if there are unread messages
-            if (existingConv.unread_count > 0) {
-                markAsReadMutation.mutate(existingConv.id);
-            }
-        } else {
-            setActiveConversationId(null);
-        }
     };
 
     const handleCreateContact = async (e: React.FormEvent) => {

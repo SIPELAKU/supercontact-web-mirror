@@ -120,9 +120,10 @@ export const strings = createLocalizedStrings({
         plan_1_note: "Note:\nQuota will be freed when data is deleted",
 
         // Trial CTA
-        trial_title: "Still not convinced? Start with a 14-day FREE trial!",
-        trial_subtitle: "You will get full access to with all the features for 14 days.",
-        trial_button: "Start 14-Day Free Trial",
+        trial_title: "Still unsure? Start with the Free Plan now!",
+        trial_subtitle: "Enjoy SmartSales basic features with no time limits and no financial commitment.",
+        trial_button: "Start Now",
+        trial_wa_interest_msg: "Hi, I'm interested in the free plan",
 
         // FAQ
         faq_title: "FAQ's",
@@ -407,9 +408,10 @@ export const strings = createLocalizedStrings({
         plan_1_note: "Catatan:\nKuota akan bertambah kembali setelah data dihapus",
 
         // Trial CTA
-        trial_title: "Masih belum yakin? Mulai dengan uji coba GRATIS 14 hari!",
-        trial_subtitle: "Anda akan mendapatkan akses penuh dengan semua fitur selama 14 hari.",
-        trial_button: "Mulai 14 Hari Percobaan Gratis",
+        trial_title: "Masih ragu? Mulai dengan paket Gratis Sekarang!",
+        trial_subtitle: "Nikmati fitur dasar SmartSales tanpa batasan waktu dan tanpa komitmen finansial",
+        trial_button: "Mulai Sekarang",
+        trial_wa_interest_msg: "Halo, saya tertarik dengan paket free trial",
 
         // FAQ
         faq_title: "FAQ",

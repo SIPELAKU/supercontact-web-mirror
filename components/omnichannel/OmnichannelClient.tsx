@@ -17,7 +17,8 @@ import {
     Loader2,
     Trash,
     Paperclip,
-    Send
+    Send,
+    File as FileIcon
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
@@ -32,7 +33,8 @@ import {
     useDeleteConversation,
     useAccounts,
     useCreateConversation,
-    useMarkAsRead
+    useMarkAsRead,
+    useUploadMedia
 } from "@/lib/hooks/useOmnichannel";
 import { Contact, ContactReq } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
@@ -40,6 +42,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { CircularProgress } from "@mui/material";
+import MessageList from "./MessageList";
 
 export default function OmnichannelClient() {
     const { getToken } = useAuth();
@@ -53,6 +56,8 @@ export default function OmnichannelClient() {
     const [emailBody, setEmailBody] = useState("");
     const [inputText, setInputText] = useState("");
     const [isChannelSelected, setIsChannelSelected] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Handle file trigger
@@ -63,8 +68,24 @@ export default function OmnichannelClient() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            console.log("Selected file:", file.name);
-            // Implement file upload logic here if needed
+            setSelectedFile(file);
+            if (file.type.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                setPreviewUrl(url);
+            } else {
+                setPreviewUrl(null);
+            }
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setSelectedFile(null);
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -82,6 +103,7 @@ export default function OmnichannelClient() {
     const sendMessageMutation = useSendMessage();
     const deleteConversationMutation = useDeleteConversation();
     const markAsReadMutation = useMarkAsRead();
+    const uploadMediaMutation = useUploadMedia();
 
     // New Contact Form State
     const [newContact, setNewContact] = useState<ContactReq>({
@@ -184,7 +206,10 @@ export default function OmnichannelClient() {
                 body: JSON.stringify(newContact),
             });
 
-            if (!res.ok) throw new Error("Failed to create contact");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw errorData || new Error("Failed to create contact");
+            }
 
             notify.success("Contact created successfully");
             setIsNewContactOpen(false);
@@ -198,7 +223,9 @@ export default function OmnichannelClient() {
             });
             refetchContacts();
         } catch (error) {
-            notify.error(handleError(error, "Create Contact"));
+            notify.error("Error", {
+                description: handleError(error, "Create Contact"),
+            });
         } finally {
             setIsSubmittingContact(false);
         }
@@ -208,10 +235,19 @@ export default function OmnichannelClient() {
         if (e) e.preventDefault();
         const content = chatMode === "whatsapp" ? inputText : emailBody;
 
-        if (!content.trim()) return;
+        if (!selectedFile && !content.trim()) return;
+
+        // Validation for Media Upload (WhatsApp)
+        if (chatMode === "whatsapp" && selectedFile) {
+            if (!inputText.trim()) {
+                notify.error("Media must have a description in English");
+                return;
+            }
+        }
 
         try {
-            if (!activeConversationId) {
+            let conversationId = activeConversationId;
+            if (!conversationId) {
                 // Create new conversation first
                 if (!selectedContact) return;
 
@@ -221,29 +257,46 @@ export default function OmnichannelClient() {
                     return;
                 }
 
-                const payload: any = {
+                const newConv = await createConversationMutation.mutateAsync({
                     account_id: accountId,
-                    to: chatMode === "whatsapp" ? (selectedContact as any).phone || (selectedContact as any).phone_number : selectedContact.email,
+                    to: (selectedContact as any).phone || (selectedContact as any).phone_number || (selectedContact as any).email,
                     name: selectedContact.name,
-                    message: content
-                };
-
-                if (chatMode === "email") {
-                    payload.subject = emailSubject || "No Subject";
-                }
-
-                const newConv = await createConversationMutation.mutateAsync(payload);
-                setActiveConversationId(newConv.id);
-                notify.success("Conversation started");
-            } else {
-                await sendMessageMutation.mutateAsync({
-                    conversationId: activeConversationId,
-                    content: content
+                    subject: emailSubject,
+                    message: content,
                 });
-            }
+                conversationId = newConv.id;
+                setActiveConversationId(conversationId);
 
-            setInputText("");
-            setEmailBody("");
+                // If it's media, we still need to upload it to the new conversation
+                if (chatMode === "whatsapp" && selectedFile) {
+                    await uploadMediaMutation.mutateAsync({
+                        conversationId,
+                        file: selectedFile,
+                        content: inputText,
+                    });
+                    handleRemoveFile();
+                    setInputText("");
+                }
+            } else {
+                // Send to existing conversation
+                if (chatMode === "whatsapp" && selectedFile) {
+                    await uploadMediaMutation.mutateAsync({
+                        conversationId,
+                        file: selectedFile,
+                        content: inputText,
+                    });
+                    handleRemoveFile();
+                    setInputText("");
+                } else {
+                    await sendMessageMutation.mutateAsync({
+                        conversationId,
+                        content: content,
+                    });
+                    if (chatMode === "whatsapp") setInputText("");
+                    else setEmailBody("");
+                }
+            }
+            if (chatMode === "email") setEmailSubject("");
         } catch (error) {
             notify.error(handleError(error, "Send Message"));
         }
@@ -563,37 +616,14 @@ export default function OmnichannelClient() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 space-y-4">
+                                    <div className={cn("flex-1 min-h-0 flex flex-col", (!conversation || isLoadingConversation) && "items-center justify-center")}>
                                         {isLoadingConversation ? (
-                                            <div className="flex items-center justify-center h-full">
-                                                <Loader2 className="w-8 h-8 animate-spin text-gray-300" />
-                                            </div>
-                                        ) : conversation?.messages?.map((msg) => (
-                                            <div key={msg.id} className={cn(
-                                                "flex w-full",
-                                                msg.direction === 'outbound' ? "justify-end" : "justify-start"
-                                            )}>
-                                                <div className={cn(
-                                                    "max-w-[70%] rounded-2xl p-3 shadow-sm relative",
-                                                    msg.direction === 'outbound'
-                                                        ? "bg-primary text-white rounded-tr-none"
-                                                        : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
-                                                )}>
-                                                    {conversation.channel_type === 'email' && (
-                                                        <div className="text-[10px] font-bold opacity-70 uppercase tracking-wider border-b border-current/10 pb-1 mb-2">
-                                                            {msg.sender_identifier || (msg.direction === 'outbound' ? 'You' : conversation.contact_name)}
-                                                        </div>
-                                                    )}
-                                                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                                    <div className={cn(
-                                                        "text-[9px] mt-1 flex justify-end items-center gap-1",
-                                                        msg.direction === 'outbound' ? "text-blue-100" : "text-gray-400"
-                                                    )}>
-                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            <CircularProgress />
+                                        ) : conversation ? (
+                                            <MessageList messages={conversation.messages} channelType={conversation.channel_type} />
+                                        ) : (
+                                            <p className="text-gray-400 text-sm">Select a contact to start chatting</p>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -619,7 +649,31 @@ export default function OmnichannelClient() {
                                             </button>
 
                                             <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-2">
-                                                <div className="flex-1 relative group rounded-[28px] border border-gray-300">
+                                                <div className="flex-1 relative group rounded-[28px] border border-gray-300 overflow-hidden">
+                                                    {selectedFile && (
+                                                        <div className="p-3 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
+                                                            {previewUrl ? (
+                                                                <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                                                                    <img src={previewUrl} alt="preview" className="w-full h-full object-cover" />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 shrink-0">
+                                                                    <FileIcon className="w-6 h-6" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                                                                <p className="text-[10px] text-gray-500">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleRemoveFile}
+                                                                className="p-1.5 rounded-full hover:bg-white text-gray-400 hover:text-red-500 transition-colors shadow-sm"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                     <AppTextarea
                                                         placeholder="Type a message..."
                                                         value={inputText}
@@ -645,11 +699,11 @@ export default function OmnichannelClient() {
                                                 </div>
                                                 <button
                                                     type="submit"
-                                                    disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending}
+                                                    disabled={!inputText.trim() || sendMessageMutation.isPending || createConversationMutation.isPending || uploadMediaMutation.isPending}
                                                     className="w-11 h-11 bg-transparent text-green-500 hover:text-white border border-green-500 rounded-full flex items-center justify-center hover:bg-green-500/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0 cursor-pointer"
                                                 >
-                                                    {(sendMessageMutation.isPending || createConversationMutation.isPending) ? (
-                                                        <CircularProgress />
+                                                    {(sendMessageMutation.isPending || createConversationMutation.isPending || uploadMediaMutation.isPending) ? (
+                                                        <CircularProgress size={20} color="inherit" />
                                                     ) : (
                                                         <Send className="w-5 h-5" />
                                                     )}

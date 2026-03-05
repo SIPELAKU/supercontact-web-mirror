@@ -199,9 +199,9 @@ export function useUploadMedia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ conversationId, file }: { conversationId: string; file: File }) => {
+    mutationFn: ({ conversationId, file, content }: { conversationId: string; file: File; content?: string }) => {
       if (!token) throw new Error('No authentication token');
-      return uploadMedia(token, conversationId, file);
+      return uploadMedia(token, conversationId, file, content);
     },
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });

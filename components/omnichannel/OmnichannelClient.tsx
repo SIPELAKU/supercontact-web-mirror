@@ -585,7 +585,7 @@ export default function OmnichannelClient() {
                                             {selectedContact.display_name}
                                             <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 border border-gray-200 flex items-center gap-1 uppercase tracking-wider">
                                                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                                No Sentiment
+                                                {conversation?.sentiment_label || "No Sentiment"}
                                             </span>
                                         </h3>
                                         <div className="flex flex-col items-start gap-1.5 mt-0.5">

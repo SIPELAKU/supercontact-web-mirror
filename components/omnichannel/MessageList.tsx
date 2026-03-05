@@ -47,7 +47,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
       case 'delivered':
         return <CheckCheck size={14} className="text-gray-400" />;
       case 'read':
-        return <CheckCheck size={14} className="text-blue-500" />;
+        return <CheckCheck size={14} className="text-blue-200" />;
       case 'failed':
         return <X size={14} className="text-red-500" />;
       default:
@@ -90,8 +90,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
             >
               <div
                 className={`max-w-[70%] rounded-lg p-3 ${isOutbound
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                  ? 'bg-[#5479EE] text-white'
+                  : 'bg-gray-300 text-gray-900'
                   }`}
               >
                 {/* Message Content */}

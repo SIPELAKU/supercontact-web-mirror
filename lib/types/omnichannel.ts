@@ -32,6 +32,9 @@ export interface Conversation {
   last_message_at?: string;
   created_at: string;
   updated_at?: string;
+  sentiment_label?: "positive" | "negative" | "neutral";
+  sentiment_model?: string;
+  sentiment_score?: number;
 }
 
 export interface Message {

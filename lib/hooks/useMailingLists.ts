@@ -5,7 +5,8 @@ import {
   fetchMailingListCampaigns,
   fetchMailingListDetail,
   fetchMailingLists,
-  updateMailingList
+  updateMailingList,
+  bulkDeleteMailingListSubscribers
 } from '@/lib/api';
 import type {
   CreateMailingListData,
@@ -112,3 +113,20 @@ export function useDeleteMailingListSubscriber() {
     },
   });
 }
+
+export function useBulkDeleteMailingListSubscribers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ mailingListId, contactIds }: { mailingListId: string; contactIds: string[] }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return bulkDeleteMailingListSubscribers(token, mailingListId, contactIds);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['mailing-list', variables.mailingListId] });
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+    },
+  });
+}
+

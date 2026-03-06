@@ -120,6 +120,7 @@ deploy_staging:
 
     # Alias ke domain staging
     - vercel alias $DEPLOY_URL solvera-supercontact-staging.vercel.app --token=$VERCEL_TOKEN
+    - vercel alias $DEPLOY_URL staging.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Staging deployment selesai!"
@@ -161,7 +162,8 @@ deploy_prod:
     - vercel build --prod --token=$VERCEL_TOKEN
 
     # Deploy ke production
-    - vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+    - vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN  # ← tambahkan ini
 
     - echo ""
     - echo "✅ Production deployment selesai!"

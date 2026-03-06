@@ -5,6 +5,218 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.34] - 2026-03-05
+
+### Detail Versi 1.8.34
+
+#### ✨ Enhancements
+
+- **Subscribers - Bulk Delete**: Implemented a true bulk delete API request allowing users to delete multiple subscribers simultaneously, replacing the previous sequential one-by-one deletion flow.
+- **Mailing Lists - Bulk Delete Subscribers**: Added checkboxes and a "Delete Selected" bulk action to the mailing list subscribers table, allowing for the rapid removal of multiple subscribers from a specific mailing list via a dedicated API endpoint.
+- **Campaigns - Mail Senders Integration**: Swapped the campaign creation/editing flow from relying on Mail Servers to using Mail Senders. Features include:
+  - Add & Edit Campaign modals now use the `/mail-senders` API to fetch sending domains.
+  - Added a new, inline "+ Add New Mail Sender" button directly in the Campaign modal.
+  - Implemented an inline 2-step `AddMailSenderDialog` that supports sender creation followed by immediate OTP validation (sending `name`, `email`, and `otp`).
+  - Adjusted underlying backend payload property from `mail_server_id` to `mail_sender_id` as specified by the updated API schema.
+
+#### 🐛 Bug Fixes
+
+- **Edit Campaign Modal**: Fixed an issue where the `Button` component was not imported, causing a `ReferenceError` when opening the modal after the mail senders integration.
+
+## [1.8.33] - 2026-03-05
+
+### Detail Versi 1.8.33
+
+#### ✨ Enhancements
+
+- **Add Lead - Contact Picker**: The Name autocomplete dropdown now shows a maximum of 10 results. When more results are available, a "Show More" link opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns).
+- **Edit Lead - Contact Picker**: The "Detail Lead" (edit) modal now uses the same Name autocomplete with contact search, 10-item limit, "Show More", and Contact Picker dialog — replacing the plain text input.
+- **Add Lead - Phone Number**: Phone number validation now allows an optional `+` prefix (e.g. `+628123456789`).
+- **Add Lead - Company Label**: Removed the red `*` (required indicator) from the Company label for consistency.
+
+#### 🐛 Bug Fixes
+
+- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values.
+- **Add Lead - Selection Validation**: Fixed validation error persisting after selecting a contact from the autocomplete dropdown.
+- **Edit Contact - ID in Payload**: Removed `id` from the PUT request body — the backend uses JSONB and was storing the `id` as a custom field.
+
+#### 📁 Files Modified
+
+- `components/lead-management/ContactPickerDialog.tsx` [NEW]
+- `components/lead-management/add-lead-form.tsx`
+- `components/lead-management/lead-detail-modal.tsx`
+- `components/contact/modal/EditContactModal.tsx`
+
+
+## [1.8.32] - 2026-03-06
+### Detail Versi 1.8.32
+#### ✨ Enhancements
+- **Pricing Page**: Added a new pricing trial component and a localization utility with various pricing-related strings.
+#### 📁 Files Modified
+- `components/price/PricingTrial.tsx` [NEW]
+- `lib/utils/strings.ts`
+## [1.8.31] - 2026-03-05
+### Detail Versi 1.8.31
+#### ✨ Omnichannel Enhancements & Dynamic Channels
+- **Unified Contacts API**: Refactored the Omnichannel Contact listing to use the new `/omnichannels/inbox/contacts` API via the `useOmnichannelContacts` hook. This provides unified access to contact details, dynamic channel availability, latest conversations, and unread counts.
+- **Dynamic Channel Selection**: Chat mode toggles (WhatsApp and Email) in the Chat Header now appear dynamically based on the contact's `channel_types`.
+- **Intelligent Conversation Routing**: Switching tabs automatically looks up and mounts the existing conversation ID for that specific channel type referencing the `useInbox` hook.
+- **Optimized Create Payload**: Creating new conversations for existing contacts now correctly prioritizes the `contact_id` reference instead of the raw `to` field.
+- **Email Composer Redesign**: Implemented a collapsible, rich text Email Composer complete with styling toolbar, "Reply via Email" toggle, and self-clearing Send/Cancel buttons.
+- **Email Sync Actions**: Added "Refresh" (24h sync) and "Full Sync" action buttons safely tucked in the Contact Sidebar for quick inbox synchronization without cluttering the chat view.
+- **Responsive Layout**: Re-engineered the chat interface for smaller screens. The Chat Header correctly wraps, and the Contact Details column transforms into a sliding overlay drawer with a backdrop on laptop sizes (`< xl` breakpoint).
+- **UI & Sentiment Polish**: Surfaced `sentiment_label` at the top of the chat header. Softened the read tick icon color and unified outbound message bubbles to use the primary brand blue (`#5479EE`).
+#### 📁 Files Modified
+- `components/omnichannel/OmnichannelClient.tsx`
+- `components/omnichannel/MessageList.tsx`
+- `lib/api/omnichannel.ts`
+- `lib/hooks/useOmnichannel.ts`
+- `lib/types/omnichannel.ts`
+## [1.8.30] - 2026-03-05
+### Detail Versi 1.8.30
+#### ✨ Enhancements
+- **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
+#### 🐛 Bug Fixes
+- **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
+#### 📁 Files Modified
+- `components/lead-management/ContactPickerDialog.tsx` [NEW]
+- `components/lead-management/add-lead-form.tsx`
+## [1.8.29] - 2026-03-04
+### Detail Versi 1.8.29
+#### 🐛 Bug Fixes
+- **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+#### 📁 Files Modified
+- `components/dashboard/DashboardClient.tsx`
+
+## [1.8.28] - 2026-03-04
+
+### Detail Versi 1.8.28
+
+#### 🎨 Pricing UI Redesign & Brand Alignment
+
+- **Exclusive Card Overhaul**: Completely redesigned the "Exclusive" (formerly Enterprise) pricing card with a high-contrast primary blue background (`#5479EE`) and white text for a premium look.
+- **Multi-line Price Layout**: Refactored the "Hubungi Kami" / "Contact Us" text into a two-line layout with increased font size (2.1rem) and integrated the contract duration text directly after the second line for better spatial efficiency.
+- **WhatsApp Themed CTA**: Updated all pricing card action buttons to use the WhatsApp green theme (`#25D366`) with darker hover states for a more actionable UI.
+- **Recommended Badge**: Replaced the "Popular" tag with a "Recommended" badge using a bold green background to align with the new CTA styling.
+- **Feature Visuals**: Applied strikethrough decorations to features 4 & 5 on the Free Trial card to clearly communicate plan limitations.
+- **Improved Contrast**: Adjusted feature icons and list text colors to maintain high accessibility on both light and dark card backgrounds.
+
+#### 🌐 Localization & Copy Updates
+
+- **Plan Renaming**: Globally updated the second pricing tier name from "Enterprise" to "Exclusive" in both English and Indonesian locales.
+- **Contractual Strings**: Standardized the contract duration text for the Exclusive plan to " / sesuai kontrak" (ID) and "/ per contract" (EN).
+- **Tag Updates**: Updated localized plan tags to "Recommended" across all languages.
+
+#### 📁 Files Modified
+
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
+## [1.8.27] - 2026-03-04
+
+### Detail Versi 1.8.27
+
+#### ✨ Enhancements
+
+- **Campaigns Table Pagination**: Successfully migrated the Campaigns module from client-side array slicing to full backend server-side pagination and debounced textual searching.
+  - Implemented dynamic argument passing for `page`, `limit` and `search` inside `useCampaigns` hook.
+  - Mapped URLSearchParams directly within `lib/api/email-marketing/campaigns.ts`.
+  - Re-mapped the Data Table payload schema and correctly extracted `data.total` for accurate dynamic pagination markers, greatly improving listing performance on heavy databases.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/campaigns/CampaignsTable.tsx`
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/hooks/useCampaigns.ts`
+- `lib/types/email-marketing.ts`
+
+## [1.8.26] - 2026-03-04
+
+### Detail Versi 1.8.26
+
+#### 🏗️ Navigation & UI Polish
+
+- **Compact Menus**: Refined `ProductMenu` and `SolutionMenu` with a more compact design, reducing `minHeight` from 400px to 280px and optimizing internal padding/spacing for a sleeker look.
+- **WhatsApp Localization**: Implemented multi-language support for all WhatsApp interest messages across `Hero`, `WhatsAppFloatingButton`, and `PricingCards`.
+- **FAQ Refinement**: Cleaned up the `FAQ` component to strictly use localized strings, ensuring consistent branding and translations.
+
+#### 📁 Files Modified
+
+- `components/layout/FAQ.tsx`
+- `components/layout/WhatsAppFloatingButton.tsx`
+- `components/home/Hero.tsx`
+- `components/home/ProductMenu.tsx`
+- `components/home/SolutionMenu.tsx`
+- `components/price/PricingCards.tsx`
+- `lib/utils/strings.ts`
+
+## [1.8.25] - 2026-03-04
+
+### Detail Versi 1.8.25
+
+#### 🐛 Bug Fixes
+- **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
+
+#### 📁 Files Modified
+
+- `components/contact/modal/ImportContactModal.tsx`
+
+## [1.8.24] - 2026-03-04
+
+### Detail Versi 1.8.24
+
+#### 🎨 Global Branding & UI Consistency
+
+- **SmartSales Rebranding**: Finalized the revert of project-wide branding from "SuperContact" back to "SmartSales".
+  - **Sidebar**: Switched to high-quality SVG primary logo and added `logo3d.png` for collapsed state.
+  - **Email Templates**: Rebranded all HTML and Text email templates, including subject lines.
+  - **Site-wide Branding**: Updated logo and brand name in `Navbar`, `Footer`, `Hero` analytics, `EmailVerification`, and `PrintableTable`.
+  - **Metadata**: Updated root `layout.tsx` title, description, and OpenGraph tags.
+  - **Strings**: Refined localized string constants in `lib/utils/strings.ts`.
+
+#### 🔐 Authentication Flow & Layout
+
+- **Login Page**: Added a "Kembali ke Beranda" (Back to Home) button with icon and hover effects for better navigation.
+- **Forgot Password**: Refactored the layout to use a centered card design with shadow and rounded corners.
+- **OTP Verification**: Aligned layout with the centered card design to match the password recovery flow.
+- **New Password**: Unified the password reset page styling with the new card design and fixed zoom responsiveness.
+- **Zoom Optimization**: Resolved layout shifts and misalignment issues when the browser is zoomed (125%-200%) by migrating from fixed margins to dynamic flexbox centering.
+
+#### 📁 Files Modified
+
+- `app/layout.tsx`
+- `app/(auth)/login/page.tsx`
+- `app/(auth)/forgot-password/page.tsx`
+- `app/(auth)/forgot-password/verify-otp/page.tsx`
+- `app/(account)/new-password/page.tsx`
+- `app/(account)/email-verification/page.tsx`
+- `components/layout/Navbar.tsx`
+- `components/layout/Footer.tsx`
+- `components/layout/Sidebar.tsx`
+- `components/ui/printable-table.tsx`
+- `lib/utils/strings.ts`
+- `lib/utils/email-templates.ts`
+
+## [1.8.23] - 2026-03-02
+
+### Detail Versi 1.8.23
+
+#### ✨ Data Intelligence & Optimization
+
+- **Server-Side Pagination & Search**: Shifted subscriber lists from front-end pagination to highly efficient backend server-side pagination.
+  - **All Subscribers**: Updated the table to dynamically fetch chunked pages and pass search queries directly to the backend.
+  - **Mailing List Details**: The subscriber table within a specific mailing list now uses server-side pagination, ensuring fast load times even for mailing lists with thousands of contacts.
+  - **Debounced Search**: Input searches are now throttled by 500ms to prevent spamming the API with requests while typing.
+
+#### 📁 Files Modified
+
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/hooks/useMailingLists.ts`
+- `lib/hooks/useSubscribers.ts`
+
 ## [1.8.22] - 2026-03-01
 
 ### Detail Versi 1.8.22
@@ -152,7 +364,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses `/api/proxy/contacts/bulk` endpoint
 
 #### 🐛 Bug Fixes
-
 - **Google Fonts**: Removed all Poppins font imports to fix build timeout issues on restricted networks
 - **Localization**: Created custom LocalizedStrings implementation to replace react-localization dependency
 
@@ -362,7 +573,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.2
 
 #### 🎯 Individual Intelligence - Person Refinement
-
 - **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
 - **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
 - **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
@@ -501,7 +711,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/contact/modal/DeleteMultipleContactModal.tsx` [MOVED/RENAMED]
 - `components/contact/modal/EditContactModal.tsx` [MOVED/RENAMED]
 - `components/contact/modal/ImportContactModal.tsx` [MOVED/RENAMED]
-
 
 ## [1.7.5] - 2026-02-24
 
@@ -712,7 +921,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sidebar Cleanup**: Removed unused Power icon import from Sidebar component
 
 #### 📁 Files Modified
-
 - `components/modal/AddContact.tsx`
 - `components/modal/EditContact.tsx`
 - `components/layout/Sidebar.tsx`
@@ -1202,7 +1410,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed alignment styling issues to ensure visual consistency.
 
 #### 📁 Files Modified
-
 - `components/admin/mail-servers/MailServerClient.tsx`
 - `components/organization/departments-table/DepartmentsTableList.tsx`
 
@@ -1482,7 +1689,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/ui/app-datepicker.tsx`
 
 ---
-
 ## [1.5.1] - 2026-02-10
 
 
@@ -1762,7 +1968,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhance error and notification messages with React node support, improved multi-line formatting, and user-friendly field labels.
 
 ---
-
 ## [1.3.2] - 2026-02-02
 
 ### Detail Versi 1.3.2
@@ -1902,7 +2107,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.4] - 2026-01-27
 
 ### Detail Versi 1.2.4
-
 #### ✨ Lead Management Enhancements & Validation
 
 - **Comprehensive Validation:**
@@ -2252,7 +2456,6 @@ Then uncomment the real API calls and remove the mock data imports.
 ## [0.5.1] - 2026-01-14
 
 ### Detail Versi 0.5.1
-
 #### ♻️ Refactor Add Contact Modal
 
 - **Deskripsi:**
@@ -2322,7 +2525,6 @@ Then uncomment the real API calls and remove the mock data imports.
 ### Detail Versi 0.2.0
 
 #### 🎨 UI/UX Enhancement
-
 - **Profile Page Revamp:**
   - **New Dashboard UI:** Implementasi halaman profile baru dengan desain dashboard modern, cover image, dan ringkasan informasi user.
   - **Responsive Design:** Penyesuaian layout untuk tampilan mobile dan desktop yang konsisten.

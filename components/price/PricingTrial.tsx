@@ -3,6 +3,7 @@ import { Box, Typography, Button, Container, Grid } from '@mui/material';
 import Image from 'next/image';
 import { strings } from '@/lib/utils/strings';
 import { AppButton } from '../ui/app-button';
+import { NO_WA } from '@/lib/constants/constants';
 
 const PricingTrial = () => {
     return (
@@ -44,6 +45,10 @@ const PricingTrial = () => {
                             <AppButton
                                 variantStyle="primary"
                                 size="medium"
+                                onClick={() => {
+                                    const message = encodeURIComponent(strings.trial_wa_interest_msg)
+                                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank')
+                                }}
                             >
                                 {strings.trial_button}
                             </AppButton>

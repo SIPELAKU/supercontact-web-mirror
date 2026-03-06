@@ -8,6 +8,8 @@ import {
   ConnectEmailRequest,
   CreateConversationRequest,
   MediaUploadResponse,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -20,6 +22,8 @@ export type {
   ConnectEmailRequest,
   CreateConversationRequest,
   MediaUploadResponse,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
@@ -28,7 +32,7 @@ const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
 export async function fetchAccounts(token: string, channelType?: string): Promise<Account[]> {
   const params = new URLSearchParams();
   if (channelType) params.append('channel_type', channelType);
-  
+
   const res = await fetchWithTimeout(`${API_BASE}/accounts?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -40,15 +44,33 @@ export async function fetchAccounts(token: string, channelType?: string): Promis
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to fetch accounts');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to fetch accounts');
   }
 
   // Handle different response structures
   const data = json.data || json;
   return Array.isArray(data) ? data : [];
+}
+
+export async function fetchOmnichannelContacts(token: string, q?: string): Promise<OmnichannelContactsResponse> {
+  const params = new URLSearchParams();
+  if (q) params.append('q', q);
+
+  const res = await fetchWithTimeout(`${API_BASE}/inbox/contacts?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch omnichannel contacts');
+  }
+
+  return json.data || json;
 }
 
 export async function connectWhatsApp(token: string, data: ConnectWhatsAppRequest): Promise<Account> {
@@ -68,10 +90,7 @@ export async function connectWhatsApp(token: string, data: ConnectWhatsAppReques
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to connect WhatsApp account');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to connect WhatsApp account');
   }
 
   return json.data || json;
@@ -94,10 +113,7 @@ export async function connectEmail(token: string, data: ConnectEmailRequest): Pr
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to connect email account');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to connect email account');
   }
 
   return json.data || json;
@@ -118,10 +134,7 @@ export async function deleteAccount(token: string, accountId: string): Promise<v
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to delete account');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to delete account');
   }
 }
 
@@ -142,10 +155,7 @@ export async function refreshEmail(token: string, fullSync: boolean): Promise<vo
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to refresh emails');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to refresh emails');
   }
 }
 
@@ -154,7 +164,7 @@ export async function fetchInbox(token: string, channelType?: string, status?: s
   const params = new URLSearchParams();
   if (channelType) params.append('channel_type', channelType);
   if (status) params.append('status', status);
-  
+
   const res = await fetchWithTimeout(`${API_BASE}/inbox?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -166,10 +176,7 @@ export async function fetchInbox(token: string, channelType?: string, status?: s
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to fetch inbox');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to fetch inbox');
   }
 
   // Handle different response structures
@@ -220,10 +227,7 @@ export async function fetchConversation(token: string, conversationId: string): 
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to fetch conversation');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to fetch conversation');
   }
 
   return json.data || json;
@@ -244,10 +248,7 @@ export async function deleteConversation(token: string, conversationId: string):
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to delete conversation');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to delete conversation');
   }
 }
 
@@ -266,10 +267,7 @@ export async function markAsRead(token: string, conversationId: string): Promise
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to mark as read');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to mark as read');
   }
 }
 
@@ -291,19 +289,19 @@ export async function sendMessage(token: string, conversationId: string, content
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to send message');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to send message');
   }
 
   return json.data || json;
 }
 
-export async function uploadMedia(token: string, conversationId: string, file: File): Promise<MediaUploadResponse> {
+export async function uploadMedia(token: string, conversationId: string, file: File, content?: string): Promise<MediaUploadResponse> {
   const formData = new FormData();
-  formData.append('file', file);
-  
+  formData.append('files', file);
+  if (content) {
+    formData.append('content', content);
+  }
+
   const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/messages/upload`, {
     method: 'POST',
     headers: {
@@ -319,10 +317,7 @@ export async function uploadMedia(token: string, conversationId: string, file: F
   }
 
   if (!res.ok) {
-    const errorMessage = typeof json.error === 'string'
-      ? json.error
-      : (json.error?.message || json.message || 'Failed to upload media');
-    throw new Error(errorMessage);
+    throw json || new Error('Failed to upload media');
   }
 
   return json.data || json;

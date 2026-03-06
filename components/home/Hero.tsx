@@ -71,7 +71,7 @@ const Hero = () => {
                                 size="large"
                                 startIcon={<WhatsAppIcon />}
                                 onClick={() => {
-                                    const message = encodeURIComponent("Halo, saya tertarik dengan product supersales");
+                                    const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
                                     window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                                 }}
                                 sx={{
@@ -106,7 +106,7 @@ const Hero = () => {
                         <Box
                             component="img"
                             src="/assets/banner-design.png"
-                            alt="Supercontact Analytics"
+                            alt="SmartSales Analytics"
                             sx={{
                                 width: { xs: '100%', md: '500px', lg: '715.23px' },
                                 maxWidth: 'none',

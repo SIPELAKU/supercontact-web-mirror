@@ -140,7 +140,7 @@ export interface Campaign {
   mailing_list_ids?: string[];
   contact_ids?: string[];
   editor_type?: 'simple_editor' | 'visual_builder';
-  mail_server_id?: string;
+  mail_sender_id?: string;
   sent_at: string | null;
   stats: {
     delivered: number;
@@ -155,6 +155,10 @@ export interface Campaign {
 export interface CampaignsResponse {
   success: boolean;
   data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
     campaigns: Campaign[];
   };
   error?: {
@@ -182,7 +186,7 @@ export interface CreateCampaignData {
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
-  mail_server_id: string;
+  mail_sender_id: string;
 }
 
 export interface UpdateCampaignData {
@@ -193,7 +197,7 @@ export interface UpdateCampaignData {
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
-  mail_server_id: string;
+  mail_sender_id: string;
 }
 
 export interface Contact {

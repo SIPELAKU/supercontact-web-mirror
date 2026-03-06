@@ -27,7 +27,7 @@ export const PriceClient = () => {
             <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: 6, sm: 8, md: 4, lg: 6 }}>
                 <PricingHeader />
                 <Container maxWidth="lg">
-                    <PricingTabs value={tabValue} onChange={handleTabChange} />
+                    {/* <PricingTabs value={tabValue} onChange={handleTabChange} /> */}
                     <PricingCards />
                 </Container>
                 <Box mt={"150px"}>

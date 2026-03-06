@@ -13,8 +13,8 @@ import { LanguageProvider } from "@/lib/context/LanguageContext";
 // SEO Metadata
 export const metadata: Metadata = {
   title: {
-    template: "%s | SuperContact",
-    default: "SuperContact - Sales Management Platform",
+    template: "%s | SmartSales",
+    default: "SmartSales - Sales Management Platform",
   },
   description:
     "Platform manajemen penjualan dan CRM komprehensif untuk meningkatkan produktivitas tim sales Anda.",
@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     "Email Marketing",
     "Omnichannel",
   ],
-  authors: [{ name: "SuperContact Team" }],
+  authors: [{ name: "SmartSales Team" }],
   openGraph: {
-    title: "SuperContact - Sales Management Platform",
+    title: "SmartSales - Sales Management Platform",
     description:
       "Platform manajemen penjualan dan CRM komprehensif untuk meningkatkan produktivitas tim sales Anda.",
-    url: "https://supercontact.com",
-    siteName: "SuperContact",
+    url: "https://smartsales.id",
+    siteName: "SmartSales",
     locale: "id_ID",
     type: "website",
   },

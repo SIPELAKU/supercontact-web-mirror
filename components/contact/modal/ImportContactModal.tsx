@@ -587,14 +587,14 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={uploadContacts} disabled={isLoading || previewData.filter((r) => r.name?.trim() && r.email?.trim()).length === 0} variantStyle="primary" color="primary">
+                    <AppButton onClick={uploadContacts} disabled={isLoading || previewData.filter((r) => r.name?.trim()).length === 0} variantStyle="primary" color="primary">
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="animate-spin w-5 h-5" />
                           Importing...
                         </div>
                       ) : (
-                        `Import ${previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} Contacts`
+                        `Import ${previewData.filter((r) => r.name?.trim()).length} Contacts`
                       )}
                     </AppButton>
                   </div>

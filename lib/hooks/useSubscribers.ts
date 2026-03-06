@@ -1,4 +1,5 @@
 import {
+  bulkDeleteSubscribers,
   createSubscriber,
   deleteSubscriber,
   fetchSubscribers,
@@ -14,13 +15,13 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 
-export function useSubscribers(page: number = 1, limit: number = 100) {
+export function useSubscribers(page: number = 1, limit: number = 10, search?: string) {
   return useQuery<SubscribersResponse>({
-    queryKey: ['subscribers', page, limit],
+    queryKey: ['subscribers', page, limit, search],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchSubscribers(token, page, limit);
+      return fetchSubscribers(token, page, limit, search);
     },
   });
 }
@@ -50,6 +51,23 @@ export function useDeleteSubscriber() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteSubscriber(token, subscriberId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-list'] });
+    },
+  });
+}
+
+export function useBulkDeleteSubscribers() {
+  const queryClient = useQueryClient();
+
+  return useMutation<DeleteSubscriberResponse, Error, string[]>({
+    mutationFn: (contactIds: string[]) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return bulkDeleteSubscribers(token, contactIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscribers'] });

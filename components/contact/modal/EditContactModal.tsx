@@ -173,10 +173,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          id: initialData.id,
-          ...payload,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const text = await res.text();

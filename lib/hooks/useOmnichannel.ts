@@ -16,12 +16,15 @@ import {
   deleteAccount,
   refreshEmail,
   fetchInbox,
+  fetchOmnichannelContacts,
   createConversation,
   fetchConversation,
   deleteConversation,
   markAsRead,
   sendMessage,
   uploadMedia,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
 } from "../api/omnichannel";
 
 // Account Management Hooks
@@ -34,6 +37,20 @@ export function useAccounts(channelType?: string) {
       return fetchAccounts(token, channelType);
     },
     staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useOmnichannelContacts(q?: string) {
+  const { token } = useAuth();
+  return useQuery<OmnichannelContactsResponse, Error>({
+    queryKey: ['omnichannels', 'inbox', 'contacts', q],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchOmnichannelContacts(token, q);
+    },
+    staleTime: 1000 * 30, // 30 seconds
     refetchOnWindowFocus: false,
     enabled: !!token,
   });
@@ -108,8 +125,8 @@ export function useInbox(channelType?: string, status?: string) {
       if (!token) throw new Error('No authentication token');
       return fetchInbox(token, channelType, status);
     },
-    staleTime: 1000 * 10, 
-    refetchInterval: 10000, 
+    staleTime: 1000 * 10,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
     enabled: !!token,
   });
@@ -139,8 +156,8 @@ export function useConversation(conversationId: string) {
       if (!token) throw new Error('No authentication token');
       return fetchConversation(token, conversationId);
     },
-    staleTime: 1000 * 5, 
-    refetchInterval: 5000, 
+    staleTime: 1000 * 5,
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
     enabled: !!token && !!conversationId,
   });
@@ -199,9 +216,9 @@ export function useUploadMedia() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ conversationId, file }: { conversationId: string; file: File }) => {
+    mutationFn: ({ conversationId, file, content }: { conversationId: string; file: File; content?: string }) => {
       if (!token) throw new Error('No authentication token');
-      return uploadMedia(token, conversationId, file);
+      return uploadMedia(token, conversationId, file, content);
     },
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });

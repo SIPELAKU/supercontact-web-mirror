@@ -6,7 +6,7 @@ import ImportSubscriberModal from '@/components/email-marketing/subscribers/moda
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
+import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns, useBulkDeleteMailingListSubscribers } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import {
@@ -31,24 +31,31 @@ import {
     Tabs,
     TextField,
     Tooltip,
-    Typography
+    Typography,
+    Checkbox
 } from '@mui/material';
-import { format } from 'date-fns';
+import { format }
+    from 'date-fns';
 import { ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const MailingListDetailPage = () => {
     const params = useParams();
     const router = useRouter();
     const listId = String(params.id);
 
-    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId);
-    const deleteSubscriberMutation = useDeleteMailingListSubscriber();
-
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
@@ -57,6 +64,10 @@ const MailingListDetailPage = () => {
     // Pagination for campaigns
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
+
+    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
+    const deleteSubscriberMutation = useDeleteMailingListSubscriber();
+    const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
 
     const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1);
 
@@ -67,6 +78,7 @@ const MailingListDetailPage = () => {
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
     const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
+    const [selectedToDelete, setSelectedToDelete] = useState<string[]>([]);
 
     const mailingList = mailingListData?.data;
     const subscribers = mailingList?.subscribers?.contacts || [];
@@ -79,28 +91,59 @@ const MailingListDetailPage = () => {
     };
 
     const handleDeleteSubscriber = async () => {
-        if (!subscriberToDelete) return;
-
         try {
-            await deleteSubscriberMutation.mutateAsync({
-                mailingListId: listId,
-                subscriberId: subscriberToDelete.id
-            });
+            if (subscriberToDelete) {
+                await deleteSubscriberMutation.mutateAsync({
+                    mailingListId: listId,
+                    subscriberId: subscriberToDelete.id
+                });
+                notify.success('Subscriber removed from list successfully');
+            } else if (selectedToDelete.length > 0) {
+                await bulkDeleteSubscriberMutation.mutateAsync({
+                    mailingListId: listId,
+                    contactIds: selectedToDelete
+                });
+                notify.success(`${selectedToDelete.length} subscriber(s) removed from list successfully`);
+            }
 
-            notify.success('Subscriber removed from list successfully');
             setSubscriberToDelete(null);
+            setSelectedToDelete([]);
         } catch (err: any) {
-            notify.error(err.message || 'Failed to remove subscriber');
+            notify.error(err.message || 'Failed to remove subscriber(s)');
         }
     };
 
-    // Filter subscribers based on search
-    const filteredSubscribers = subscribers.filter(s =>
-        searchQuery === '' ||
-        s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.company?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.checked) {
+            const newSelecteds = filteredSubscribers.map((n) => n.id);
+            setSelectedToDelete(newSelecteds);
+            return;
+        }
+        setSelectedToDelete([]);
+    };
+
+    const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
+        const selectedIndex = selectedToDelete.indexOf(id);
+        let newSelected: string[] = [];
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selectedToDelete, id);
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selectedToDelete.slice(1));
+        } else if (selectedIndex === selectedToDelete.length - 1) {
+            newSelected = newSelected.concat(selectedToDelete.slice(0, -1));
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(
+                selectedToDelete.slice(0, selectedIndex),
+                selectedToDelete.slice(selectedIndex + 1),
+            );
+        }
+        setSelectedToDelete(newSelected);
+    };
+
+    // Server-filtered subscribers
+    const filteredSubscribers = subscribers;
+    const totalSubscribers = mailingList?.subscribers?.total || 0;
 
     // Filter campaigns based on search
     const filteredCampaigns = campaigns.filter(c =>
@@ -119,10 +162,7 @@ const MailingListDetailPage = () => {
         );
     }
 
-    const paginatedSubscribers = filteredSubscribers.slice(
-        subscriberPage * subscriberRowsPerPage,
-        subscriberPage * subscriberRowsPerPage + subscriberRowsPerPage
-    );
+    const paginatedSubscribers = filteredSubscribers;
 
     // Campaigns are paginated on server
     const paginatedCampaigns = filteredCampaigns;
@@ -229,29 +269,41 @@ const MailingListDetailPage = () => {
                         />
                     </Box>
                     {activeTab === 0 && (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <AppButton
-                                variantStyle="outline"
-                                startIcon={<Download size={18} />}
-                                onClick={() => setShowImportModal(true)}
-                                sx={{
-                                    height: '42px',
-                                    px: 3,
-                                }}
-                            >
-                                Import
-                            </AppButton>
-                            <AppButton
-                                variantStyle="primary"
-                                startIcon={<UserPlus size={18} />}
-                                onClick={() => setShowAddSubscriberModal(true)}
-                                sx={{
-                                    height: '42px',
-                                    px: 3,
-                                }}
-                            >
-                                Tambah Subscriber
-                            </AppButton>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            {selectedToDelete.length > 0 ? (
+                                <>
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', mr: 2 }}>
+                                        {selectedToDelete.length} selected
+                                    </Typography>
+                                    <AppButton
+                                        variantStyle="danger"
+                                        startIcon={<Trash2 size={18} />}
+                                        onClick={() => setSubscriberToDelete({ id: 'BULK' } as any)} // trigger dialog but for bulk
+                                        sx={{ height: '42px', px: 3 }}
+                                    >
+                                        Delete Selected
+                                    </AppButton>
+                                </>
+                            ) : (
+                                <>
+                                    <AppButton
+                                        variantStyle="outline"
+                                        startIcon={<Download size={18} />}
+                                        onClick={() => setShowImportModal(true)}
+                                        sx={{ height: '42px', px: 3 }}
+                                    >
+                                        Import
+                                    </AppButton>
+                                    <AppButton
+                                        variantStyle="primary"
+                                        startIcon={<UserPlus size={18} />}
+                                        onClick={() => setShowAddSubscriberModal(true)}
+                                        sx={{ height: '42px', px: 3 }}
+                                    >
+                                        Tambah Subscriber
+                                    </AppButton>
+                                </>
+                            )}
                         </Box>
                     )}
                 </Box>
@@ -263,7 +315,15 @@ const MailingListDetailPage = () => {
                             <Table>
                                 <TableHead>
                                     <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Email</TableCell>
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                color="primary"
+                                                indeterminate={selectedToDelete.length > 0 && selectedToDelete.length < paginatedSubscribers.length}
+                                                checked={paginatedSubscribers.length > 0 && selectedToDelete.length === paginatedSubscribers.length}
+                                                onChange={handleSelectAllClick}
+                                            />
+                                        </TableCell>
+                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Email</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama</TableCell>
                                         <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama Perusahaan</TableCell>
                                         <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Aksi</TableCell>
@@ -272,7 +332,7 @@ const MailingListDetailPage = () => {
                                 <TableBody>
                                     {paginatedSubscribers.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                                            <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                                                 <Typography variant="body2" color="text.secondary">
                                                     {searchQuery ? 'No subscribers found matching your search.' : 'No subscribers in this list yet.'}
                                                 </Typography>
@@ -283,12 +343,23 @@ const MailingListDetailPage = () => {
                                             <TableRow
                                                 key={subscriber.id}
                                                 hover
+                                                onClick={(event) => handleClick(event, subscriber.id)}
+                                                role="checkbox"
+                                                aria-checked={selectedToDelete.indexOf(subscriber.id) !== -1}
+                                                selected={selectedToDelete.indexOf(subscriber.id) !== -1}
                                                 sx={{
+                                                    cursor: 'pointer',
                                                     '&:hover': { bgcolor: '#f9fafb' },
                                                     '& td': { borderBottom: '1px solid #f3f4f6' }
                                                 }}
                                             >
-                                                <TableCell sx={{ py: 2, pl: 3 }}>{subscriber.email}</TableCell>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox
+                                                        color="primary"
+                                                        checked={selectedToDelete.indexOf(subscriber.id) !== -1}
+                                                    />
+                                                </TableCell>
+                                                <TableCell sx={{ py: 2 }}>{subscriber.email}</TableCell>
                                                 <TableCell sx={{ py: 2 }}>{subscriber.name || '-'}</TableCell>
                                                 <TableCell sx={{ py: 2 }}>{subscriber.company || '-'}</TableCell>
                                                 <TableCell align="center" sx={{ py: 2, pr: 3 }}>
@@ -306,7 +377,10 @@ const MailingListDetailPage = () => {
                                                             <IconButton
                                                                 size="small"
                                                                 color="error"
-                                                                onClick={() => setSubscriberToDelete(subscriber)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSubscriberToDelete(subscriber);
+                                                                }}
                                                             >
                                                                 <Trash2 size={18} />
                                                             </IconButton>
@@ -321,7 +395,7 @@ const MailingListDetailPage = () => {
                             <TablePagination
                                 rowsPerPageOptions={[5, 10, 25, 50]}
                                 component="div"
-                                count={filteredSubscribers.length}
+                                count={totalSubscribers}
                                 rowsPerPage={subscriberRowsPerPage}
                                 page={subscriberPage}
                                 onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
@@ -445,23 +519,30 @@ const MailingListDetailPage = () => {
                 mailingListIds={[listId]}
             />
 
-            {/* Delete Confirmation Dialog */}
             <Dialog
-                open={Boolean(subscriberToDelete)}
-                onClose={() => !deleteSubscriberMutation.isPending && setSubscriberToDelete(null)}
+                open={Boolean(subscriberToDelete) || selectedToDelete.length > 0 && Boolean(subscriberToDelete?.id === 'BULK')}
+                onClose={() => {
+                    if (!deleteSubscriberMutation.isPending && !bulkDeleteSubscriberMutation.isPending) {
+                        setSubscriberToDelete(null);
+                    }
+                }}
             >
-                <DialogTitle>Remove Subscriber</DialogTitle>
+                <DialogTitle>Remove Subscriber{selectedToDelete.length > 1 ? 's' : ''}</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?
+                        {selectedToDelete.length > 0 && subscriberToDelete?.id === 'BULK' ? (
+                            <>Are you sure you want to remove <strong>{selectedToDelete.length}</strong> selected subscriber(s) from this mailing list?</>
+                        ) : (
+                            <>Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?</>
+                        )}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <AppButton variantStyle="outline" onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending}>
+                    <AppButton variantStyle="outline" onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
                         Cancel
                     </AppButton>
-                    <AppButton variantStyle="danger" onClick={handleDeleteSubscriber} disabled={deleteSubscriberMutation.isPending}>
-                        {deleteSubscriberMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Remove'}
+                    <AppButton variantStyle="danger" onClick={handleDeleteSubscriber} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
+                        {deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Remove'}
                     </AppButton>
                 </DialogActions>
             </Dialog>

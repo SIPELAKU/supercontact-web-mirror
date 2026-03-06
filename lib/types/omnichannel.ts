@@ -32,6 +32,9 @@ export interface Conversation {
   last_message_at?: string;
   created_at: string;
   updated_at?: string;
+  sentiment_label?: "positive" | "negative" | "neutral";
+  sentiment_model?: string;
+  sentiment_score?: number;
 }
 
 export interface Message {
@@ -73,7 +76,8 @@ export interface ConnectEmailRequest {
 
 export interface CreateConversationRequest {
   account_id: string;
-  to: string;
+  to?: string;
+  contact_id?: string;
   name: string;
   subject?: string;
   message?: string;
@@ -90,4 +94,28 @@ export interface EmailRefreshRequest {
 // Response Types
 export interface MediaUploadResponse {
   media_url: string;
+}
+
+export interface OmnichannelContact {
+  inbox_key: string;
+  contact_id: string;
+  display_name: string;
+  primary_identifier: string;
+  email?: string;
+  phone_number?: string;
+  company?: string;
+  position?: string;
+  channel_types: ('email' | 'whatsapp')[];
+  unread_count: number;
+  latest_conversation_id?: string;
+  last_message_at?: string;
+  last_message_preview?: string;
+  subject?: string;
+}
+
+export interface OmnichannelContactsResponse {
+  contacts: OmnichannelContact[];
+  total: number;
+  page: number;
+  limit: number;
 }

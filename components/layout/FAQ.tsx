@@ -28,23 +28,23 @@ const FAQ = () => {
     const faqs = [
         {
             id: 1,
-            question: strings.faq_q1_text || "Apa itu aplikasi CRM?",
-            answer: strings.faq_a1_text || "Aplikasi CRM (Customer Relationship Management) adalah sistem yang membantu bisnis mengelola interaksi dengan pelanggan.",
+            question: strings.faq_q1_text,
+            answer: strings.faq_a1_text,
         },
         {
             id: 2,
-            question: strings.faq_q2_text || "Bagaimana cara aplikasi Supersales bekerja?",
-            answer: strings.faq_a2_text || "Supersales mengintegrasikan berbagai saluran komunikasi dan data pelanggan dalam satu platform yang mudah digunakan.",
+            question: strings.faq_q2_text,
+            answer: strings.faq_a2_text,
         },
         {
             id: 3,
-            question: strings.faq_q3_text || "Siapa saja yang bisa menggunakan aplikasi Supersales?",
-            answer: strings.faq_a3_text || "Supersales cocok untuk berbagai jenis bisnis, mulai dari UMKM hingga perusahaan besar yang membutuhkan manajemen pelanggan yang efisien.",
+            question: strings.faq_q3_text,
+            answer: strings.faq_a3_text,
         },
         {
             id: 4,
-            question: strings.faq_q4_text || "Apakah Supersales terjamin keamanannya?",
-            answer: strings.faq_a4_text || "Ya, kami memprioritaskan keamanan data pelanggan dengan enkripsi tingkat tinggi dan kepatuhan terhadap standar industri.",
+            question: strings.faq_q4_text,
+            answer: strings.faq_a4_text,
         },
     ];
 

@@ -14,8 +14,15 @@ import { fetchWithTimeout } from "../api-client";
 // Functions
 // ============================================
 
-export async function fetchMailingLists(token: string, page: number = 1, limit: number = 10): Promise<MailingListsResponse> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists?page=${page}&limit=${limit}`;
+export async function fetchMailingLists(token: string, page: number = 1, limit: number = 10, search?: string): Promise<MailingListsResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists?${queryParams.toString()}`;
 
   logger.info("Making GET request to fetch mailing lists", { url, page, limit });
 
@@ -112,10 +119,17 @@ export async function fetchMailingListCampaigns(token: string, mailingListId: st
   }
 }
 
-export async function fetchMailingListDetail(token: string, mailingListId: string): Promise<MailingListDetailResponse> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}`;
+export async function fetchMailingListDetail(token: string, mailingListId: string, page: number = 1, limit: number = 10, search?: string): Promise<MailingListDetailResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}?${queryParams.toString()}`;
 
-  logger.info("Making GET request to fetch mailing list detail", { url, mailingListId });
+  logger.info("Making GET request to fetch mailing list detail", { url, mailingListId, page, limit });
 
   try {
     const res = await fetchWithTimeout(url, {
@@ -353,6 +367,56 @@ export async function deleteMailingListSubscriber(token: string, mailingListId: 
     return json;
   } catch (error: any) {
     logger.error("Delete subscriber request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function bulkDeleteMailingListSubscribers(token: string, mailingListId: string, contactIds: string[]): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}/subscribers`;
+
+  logger.info("Making DELETE request for bulk delete subscribers from mailing list", { url, mailingListId, contactIds });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ contact_ids: contactIds })
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse bulk delete subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId}/subscribers (DELETE)`, { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Bulk delete subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to bulk delete subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Bulk delete subscribers request failed", { error: error.message, url });
     throw error;
   }
 }

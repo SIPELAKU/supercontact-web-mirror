@@ -38,12 +38,22 @@ interface SubscribersTableProps {
 }
 
 const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting, refreshTrigger }: SubscribersTableProps) => {
-  const { data, isLoading, error, refetch } = useSubscribers();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
+
+  // Simple debounce for search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, isLoading, error, refetch } = useSubscribers(page + 1, rowsPerPage, debouncedSearch);
 
   useEffect(() => {
     if (refreshTrigger > 0) {
@@ -52,20 +62,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
   }, [refreshTrigger, refetch]);
 
   const rows = data?.data?.contacts || [];
-
-  // Filter rows based on search query using useMemo to avoid infinite loops
-  const filteredRows = useMemo(() => {
-    if (searchQuery.trim() === '') {
-      return rows;
-    } else {
-      const query = searchQuery.toLowerCase();
-      return rows.filter(row =>
-        row.email.toLowerCase().includes(query) ||
-        row.name?.toLowerCase().includes(query) ||
-        row.company?.toLowerCase().includes(query)
-      );
-    }
-  }, [searchQuery, rows]);
+  const totalCount = data?.data?.total || 0;
 
   // Reset to first page when searching
   useEffect(() => {
@@ -81,7 +78,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = filteredRows.map((n) => n.id);
+      const newSelected = rows.map((n) => n.id);
       setSelected(newSelected);
       return;
     }
@@ -118,8 +115,6 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
   };
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
-
-  const paginatedRows = filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <div>
@@ -177,8 +172,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
             <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
               <TableCell padding="checkbox" sx={{ pl: 3 }}>
                 <Checkbox
-                  indeterminate={selected.length > 0 && selected.length < filteredRows.length}
-                  checked={filteredRows.length > 0 && selected.length === filteredRows.length}
+                  indeterminate={selected.length > 0 && selected.length < rows.length}
+                  checked={rows.length > 0 && selected.length === rows.length}
                   onChange={handleSelectAll}
                   color="primary"
                 />
@@ -197,7 +192,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
                   <CircularProgress size={30} />
                 </TableCell>
               </TableRow>
-            ) : paginatedRows.length === 0 ? (
+            ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                   <span className="text-gray-500">
@@ -206,7 +201,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedRows.map((row) => {
+              rows.map((row) => {
                 const isItemSelected = isSelected(row.id);
                 return (
                   <TableRow
@@ -256,7 +251,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={filteredRows.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}

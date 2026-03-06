@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### ✨ Enhancements
 
+- **Campaigns - Mail Sender Management**: Added edit and delete functionality for mail senders directly in the campaign modals:
+  - Added "Edit" and "Delete" buttons next to the selected mail sender dropdown
+  - Edit button opens a dialog to update the sender name via `PUT /mail-senders/{id}`
+  - Delete button shows confirmation before removing via `DELETE /mail-senders/{id}`
+  - Both buttons use consistent AppButton styling with primary blue and danger red colors
+  - After deletion, the mail sender selection is automatically cleared
 - **Campaigns - Subscriber Selection Improvements**: Enhanced the subscriber selection experience in Add Campaign and Edit Campaign modals with pagination and search functionality:
   - Added pagination controls showing 10 subscribers per page instead of limiting to 1000 total
   - Implemented search field to filter subscribers by email or name
@@ -26,12 +32,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🐛 Bug Fixes
 
 - **Campaigns - Subscriber Limit Removed**: Fixed the 10-subscriber limit in campaign creation/editing modals. Previously, only the first 10 subscribers were available for selection even when more existed in the system. Now all subscribers are accessible through pagination and search.
+- **Sidebar - Icon Layout Shift**: Fixed text movement issue in the sidebar when scrolling. Custom icons (Omnichannel, Sales, Data Intelligence) now have explicit width/height attributes and min-width/min-height styles to prevent layout shifts during image loading.
+- **Campaigns - Button Color Consistency**: Fixed inconsistent blue colors between "+ Add New Mail Sender" link and action buttons. All buttons now use the same primary blue (#5479EE) from the AppButton component.
+
+#### 📁 Files Created
+
+- `components/email-marketing/campaigns/modals/MailSenderManager.tsx`
 
 #### 📁 Files Modified
 
+- `lib/api/email-marketing/mail-senders.ts`
+- `lib/hooks/useMailSenders.ts`
 - `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
 - `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
 - `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+- `components/layout/Sidebar.tsx`
 
 ## [1.8.34] - 2026-03-05
 

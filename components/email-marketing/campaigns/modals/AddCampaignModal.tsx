@@ -10,6 +10,7 @@ import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
 import AddMailSenderDialog from './AddMailSenderDialog';
+import MailSenderManager from './MailSenderManager';
 import {
   Alert,
   Box,
@@ -167,27 +168,40 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
                 Mail Sender *
               </Typography>
-              <Button
+              <AppButton
                 variant="text"
                 size="small"
                 onClick={() => setIsAddMailSenderOpen(true)}
-                sx={{ textTransform: 'none', py: 0 }}
+                variantStyle="text"
+                color="primary"
               >
                 + Add New Mail Sender
-              </Button>
+              </AppButton>
             </Box>
-            <AppSelect
-              placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
-              value={selectedMailSender}
-              onChange={(e) => setSelectedMailSender(e.target.value as string)}
-              options={mailSenders.map(sender => ({
-                value: sender.id,
-                label: `${sender.name} (${sender.email})`
-              }))}
-              isBgWhite
-              error={Boolean(error && !selectedMailSender)}
-              helperText={error && !selectedMailSender ? "Mail sender is required" : ""}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ flex: 1 }}>
+                <AppSelect
+                  placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
+                  value={selectedMailSender}
+                  onChange={(e) => setSelectedMailSender(e.target.value as string)}
+                  options={mailSenders.map(sender => ({
+                    value: sender.id,
+                    label: `${sender.name} (${sender.email})`
+                  }))}
+                  isBgWhite
+                  error={Boolean(error && !selectedMailSender)}
+                  helperText={error && !selectedMailSender ? "Mail sender is required" : ""}
+                />
+              </Box>
+              {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
+                <MailSenderManager
+                  mailSenderId={selectedMailSender}
+                  mailSenderName={mailSenders.find(s => s.id === selectedMailSender)!.name}
+                  mailSenderEmail={mailSenders.find(s => s.id === selectedMailSender)!.email}
+                  onDelete={() => setSelectedMailSender('')}
+                />
+              )}
+            </Box>
           </Box>
 
           <Box>

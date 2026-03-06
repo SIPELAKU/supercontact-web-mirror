@@ -23,6 +23,7 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
+  Pagination,
   Radio,
   RadioGroup,
   Stack,
@@ -48,15 +49,20 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [selectedMailSender, setSelectedMailSender] = useState<string>('');
   const [error, setError] = useState('');
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberLimit] = useState(10);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
-  const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
+  const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers(subscriberPage, subscriberLimit, subscriberSearch);
   const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
 
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || []; // API returns contacts field
   const mailSenders = mailSendersData?.data?.mail_senders || [];
+  const totalSubscribers = subscribersData?.data?.total || 0;
+  const totalSubscriberPages = Math.ceil(totalSubscribers / subscriberLimit);
 
   const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
 
@@ -267,29 +273,53 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Select Subscribers *
               </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search subscribers by email or name..."
+                value={subscriberSearch}
+                onChange={(e) => {
+                  setSubscriberSearch(e.target.value);
+                  setSubscriberPage(1); // Reset to first page on search
+                }}
+                sx={{ mb: 2 }}
+              />
               {isLoadingSubscribers ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                   <CircularProgress size={24} />
                 </Box>
               ) : subscribers.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  No subscribers available. Please add subscribers first.
+                  {subscriberSearch ? 'No subscribers found matching your search.' : 'No subscribers available. Please add subscribers first.'}
                 </Typography>
               ) : (
-                <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                  {subscribers.map((subscriber) => (
-                    <FormControlLabel
-                      key={subscriber.id}
-                      control={
-                        <Checkbox
-                          checked={selectedSubscribers.includes(subscriber.id)}
-                          onChange={() => handleSubscriberToggle(subscriber.id)}
-                        />
-                      }
-                      label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
-                    />
-                  ))}
-                </Box>
+                <>
+                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
+                    {subscribers.map((subscriber) => (
+                      <FormControlLabel
+                        key={subscriber.id}
+                        control={
+                          <Checkbox
+                            checked={selectedSubscribers.includes(subscriber.id)}
+                            onChange={() => handleSubscriberToggle(subscriber.id)}
+                          />
+                        }
+                        label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
+                      />
+                    ))}
+                  </Box>
+                  {totalSubscriberPages > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                      <Pagination
+                        count={totalSubscriberPages}
+                        page={subscriberPage}
+                        onChange={(e, page) => setSubscriberPage(page)}
+                        color="primary"
+                        size="small"
+                      />
+                    </Box>
+                  )}
+                </>
               )}
               {error && selectedSubscribers.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>

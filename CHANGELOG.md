@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.35] - 2026-03-06
+
+### Detail Versi 1.8.35
+
+#### ✨ Enhancements
+
+- **Campaigns - Subscriber Selection Improvements**: Enhanced the subscriber selection experience in Add Campaign and Edit Campaign modals with pagination and search functionality:
+  - Added pagination controls showing 10 subscribers per page instead of limiting to 1000 total
+  - Implemented search field to filter subscribers by email or name
+  - Search automatically resets to page 1 when typing
+  - Pagination controls only appear when there are multiple pages
+  - Shows appropriate "No subscribers found" message when search returns no results
+- **Campaign Statistics - Refresh Button**: Added a refresh icon button in the Campaign Statistics modal header that refetches the latest campaign data from the backend API (`/api/v1/campaigns/{campaign_id}`):
+  - Icon spins during data refresh for visual feedback
+  - Tooltip shows "Refresh statistics" on hover
+  - Updates all campaign stats (delivered, opened, clicked, bounced) in real-time
+  - Positioned next to the "Campaign Statistics" title for easy access
+
+#### 🐛 Bug Fixes
+
+- **Campaigns - Subscriber Limit Removed**: Fixed the 10-subscriber limit in campaign creation/editing modals. Previously, only the first 10 subscribers were available for selection even when more existed in the system. Now all subscribers are accessible through pagination and search.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+
 ## [1.8.34] - 2026-03-05
 
 ### Detail Versi 1.8.34

@@ -146,7 +146,14 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 borderColor: 'divider',
             }}
         >
-            <Box sx={{ width: '280px', p: 2 }}>
+            <Box
+                sx={{
+                    width: '200px',
+                    flexShrink: 0,
+                    alignSelf: 'flex-start',
+                    p: 2
+                }}
+            >
                 <Tabs
                     orientation="vertical"
                     variant="scrollable"
@@ -155,7 +162,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                     aria-label="Solution tabs"
                     TabIndicatorProps={{ sx: { display: 'none' } }}
                     sx={{
+                        width: '100%',
                         '& .MuiTab-root': {
+                            width: '100%',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             textTransform: 'none',

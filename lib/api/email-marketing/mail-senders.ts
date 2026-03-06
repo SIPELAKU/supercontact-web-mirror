@@ -51,6 +51,22 @@ export interface ValidateMailSenderResponse {
     error: any;
 }
 
+export interface UpdateMailSenderData {
+    name: string;
+}
+
+export interface UpdateMailSenderResponse {
+    success: boolean;
+    data: MailSender;
+    error: any;
+}
+
+export interface DeleteMailSenderResponse {
+    success: boolean;
+    data: any;
+    error: any;
+}
+
 // ============================================
 // Functions
 // ============================================
@@ -200,6 +216,105 @@ export async function validateMailSender(token: string, mailSenderId: string, ot
         return json;
     } catch (error: any) {
         logger.error("Validate mail sender request failed", { error: error.message, url });
+        throw error;
+    }
+}
+
+export async function updateMailSender(token: string, mailSenderId: string, data: UpdateMailSenderData): Promise<UpdateMailSenderResponse> {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/mail-senders/${mailSenderId}`;
+
+    logger.info("Making PUT request to update mail sender", { url, mailSenderId, data });
+
+    try {
+        const res = await fetchWithTimeout(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        });
+
+        let json;
+        try {
+            json = await res.json();
+        } catch (parseError: any) {
+            logger.error("Failed to parse update mail sender response JSON", {
+                status: res.status,
+                statusText: res.statusText,
+                parseError: parseError.message
+            });
+            throw new Error(`Server returned invalid response (${res.status})`);
+        }
+
+        logger.apiResponse(`/mail-senders/${mailSenderId} (PUT)`, { status: res.status, response: json });
+
+        if (res.status === 401) {
+            throw new Error("UNAUTHORIZED");
+        }
+
+        if (!res.ok) {
+            logger.error(`Update mail sender failed: ${res.status}`, {
+                status: res.status,
+                statusText: res.statusText,
+                response: json,
+                url
+            });
+            throw new Error(json.error?.message || `Failed to update mail sender (${res.status}: ${res.statusText})`);
+        }
+
+        return json;
+    } catch (error: any) {
+        logger.error("Update mail sender request failed", { error: error.message, url });
+        throw error;
+    }
+}
+
+export async function deleteMailSender(token: string, mailSenderId: string): Promise<DeleteMailSenderResponse> {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/mail-senders/${mailSenderId}`;
+
+    logger.info("Making DELETE request to delete mail sender", { url, mailSenderId });
+
+    try {
+        const res = await fetchWithTimeout(url, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+        });
+
+        let json;
+        try {
+            json = await res.json();
+        } catch (parseError: any) {
+            logger.error("Failed to parse delete mail sender response JSON", {
+                status: res.status,
+                statusText: res.statusText,
+                parseError: parseError.message
+            });
+            throw new Error(`Server returned invalid response (${res.status})`);
+        }
+
+        logger.apiResponse(`/mail-senders/${mailSenderId} (DELETE)`, { status: res.status, response: json });
+
+        if (res.status === 401) {
+            throw new Error("UNAUTHORIZED");
+        }
+
+        if (!res.ok) {
+            logger.error(`Delete mail sender failed: ${res.status}`, {
+                status: res.status,
+                statusText: res.statusText,
+                response: json,
+                url
+            });
+            throw new Error(json.error?.message || `Failed to delete mail sender (${res.status}: ${res.statusText})`);
+        }
+
+        return json;
+    } catch (error: any) {
+        logger.error("Delete mail sender request failed", { error: error.message, url });
         throw error;
     }
 }

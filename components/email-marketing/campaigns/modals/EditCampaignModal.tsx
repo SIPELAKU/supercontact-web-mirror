@@ -35,6 +35,8 @@ import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
 import AddMailSenderDialog from './AddMailSenderDialog';
 import MailSenderManager from './MailSenderManager';
+import RecipientSourceSelector from './RecipientSourceSelector';
+import { CAMPAIGN_ERROR_MESSAGES } from '@/lib/constants/campaign';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -123,25 +125,25 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
     const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
 
     if (!subject.trim()) {
-      setError("Subject is required.");
+      setError(CAMPAIGN_ERROR_MESSAGES.SUBJECT_REQUIRED);
       return;
     }
 
     if (action === 'send') {
       if (!selectedMailSender) {
-        setError("Please select a Mail Sender.");
+        setError(CAMPAIGN_ERROR_MESSAGES.SENDER_REQUIRED);
         return;
       }
       if (!finalHtmlContent.trim()) {
-        setError("Email content is required.");
+        setError(CAMPAIGN_ERROR_MESSAGES.CONTENT_REQUIRED);
         return;
       }
       if (recipientSource === 'mailing_list' && selectedMailingLists.length === 0) {
-        setError("Please select at least one mailing list.");
+        setError(CAMPAIGN_ERROR_MESSAGES.MAILING_LIST_REQUIRED);
         return;
       }
       if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
-        setError("Please select at least one subscriber.");
+        setError(CAMPAIGN_ERROR_MESSAGES.SUBSCRIBER_REQUIRED);
         return;
       }
     }
@@ -264,20 +266,14 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
             )}
           </Box>
 
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Recipient Source</FormLabel>
-            <RadioGroup
-              value={recipientSource}
-              onChange={(e) => {
-                setRecipientSource(e.target.value as 'mailing_list' | 'subscriber');
-                setSelectedMailingLists([]);
-                setSelectedSubscribers([]);
-              }}
-            >
-              <FormControlLabel value="mailing_list" control={<Radio />} label="Mailing List" />
-              <FormControlLabel value="subscriber" control={<Radio />} label="Contact (Subscribers)" />
-            </RadioGroup>
-          </FormControl>
+          <RecipientSourceSelector
+            value={recipientSource}
+            onChange={(value) => {
+              setRecipientSource(value);
+              setSelectedMailingLists([]);
+              setSelectedSubscribers([]);
+            }}
+          />
 
           {recipientSource === 'mailing_list' && (
             <Box>

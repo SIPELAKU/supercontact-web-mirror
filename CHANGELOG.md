@@ -5,24 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.8.36] - 2026-03-08
+## [1.9.0] - 2026-03-08
 
-### Detail Versi 1.8.36
+### Detail Versi 1.9.0
 
-#### ✨ Enhancements
+#### ✨ Enhancements - Campaigns & Infrastructure
 
-- **Campaigns - Optimized Draft Saving**: Relaxed validation requirements for saving campaigns as drafts to improve user workflow flexibility:
-  - Only **Email Subject** is now required to save a campaign as a draft.
-  - Removed mandatory validation for Mail Sender, Email Content, and Recipients when the "Save as Draft" action is selected.
-  - Full validation is still strictly enforced when using the "Create & Send" or "Update & Send" actions.
-  - Refined UI logic to hide error highlighting and messages for elective fields during the draft saving process.
-  - Updated input labels to remove required asterisks (`*`) from elective fields (Mail Sender, Content, Recipients).
-  - Optimized API payloads to pass `undefined` for empty elective fields, ensuring compatibility with backend nullable configurations.
+- **Campaigns - Workflow Optimization**: Major overhaul of the campaign draft saving process to prioritize user speed and flexibility:
+  - **Relaxed Draft Validation**: Only the **Email Subject** is now required to save a draft.
+  - **Atomic Send Validation**: Strict validation for Mail Sender, Content, and Recipients is now deferred until the final "Send" action.
+  - **Label Refinement**: Removed mandatory markers (`*`) from elective fields to align with the new elective validation logic.
+  - **Error Visibility**: Implemented context-aware error messages that only appear when relevant to the user's current action.
+- **Data Governance - Global Taxonomy**: Introduced a comprehensive industry and geographic mapping layer:
+  - Added `INDUSTRY_TAXONOMY` with multi-level sector classifications.
+  - Implemented `GEOGRAPHIC_TAXONOMY` covering all Indonesian provinces and cities.
+  - Added normalization helpers to standardize user input for CRM and Campaign data.
+- **Testing & Quality Assurance**: 
+  - Created a high-volume **Mock Data Generator** for stress-testing campaign listings with 500+ records.
+  - Implemented a functional **Validation Test Suite** to ensure draft/send logic integrity.
+
+#### 🏗️ Architectural Refactoring
+
+- **Component Decoupling**: Extracted `RecipientSourceSelector` into a standalone modular component to reduce logic duplication in Add/Edit modals.
+- **Centralized Constants**: Migrated magic strings and error messages to `lib/constants/campaign.ts` for improved maintainability.
+- **Type Safety**: Updated `CreateCampaignData` and `UpdateCampaignData` interfaces to support elective fields for legacy and future drafts.
+
+#### 🐛 Bug Fixes
+
+- **TypeScript - AppButton Propping**: Fixed a type error where the redundant `variant` prop was passed to the custom `AppButton` component.
+- **Campaign Payloads - Property Alignment**: Synchronized the frontend `mail_sender_id` property with the backend update, resolving a mapping issue during campaign creation.
+
+#### 📁 Files Created
+
+- `lib/utils/taxonomy.ts`
+- `lib/mocks/campaign-data.ts`
+- `lib/constants/campaign.ts`
+- `lib/tests/campaign-validation.test.ts`
+- `components/email-marketing/campaigns/modals/RecipientSourceSelector.tsx`
 
 #### 📁 Files Modified
 
+- `package.json`
 - `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
 - `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `lib/types/email-marketing.ts`
+
 
 
 ## [1.8.35] - 2026-03-06

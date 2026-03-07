@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.36] - 2026-03-08
+
+### Detail Versi 1.8.36
+
+#### ✨ Enhancements
+
+- **Campaigns - Optimized Draft Saving**: Relaxed validation requirements for saving campaigns as drafts to improve user workflow flexibility:
+  - Only **Email Subject** is now required to save a campaign as a draft.
+  - Removed mandatory validation for Mail Sender, Email Content, and Recipients when the "Save as Draft" action is selected.
+  - Full validation is still strictly enforced when using the "Create & Send" or "Update & Send" actions.
+  - Refined UI logic to hide error highlighting and messages for elective fields during the draft saving process.
+  - Updated input labels to remove required asterisks (`*`) from elective fields (Mail Sender, Content, Recipients).
+  - Optimized API payloads to pass `undefined` for empty elective fields, ensuring compatibility with backend nullable configurations.
+
+#### 📁 Files Modified
+
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+
+
 ## [1.8.35] - 2026-03-06
 
 ### Detail Versi 1.8.35

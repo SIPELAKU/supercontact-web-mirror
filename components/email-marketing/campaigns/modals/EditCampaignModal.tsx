@@ -122,25 +122,28 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
 
     const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
 
-    if (!selectedMailSender) {
-      setError("Please select a Mail Sender.");
-      return;
-    }
     if (!subject.trim()) {
       setError("Subject is required.");
       return;
     }
-    if (!finalHtmlContent.trim()) {
-      setError("Email content is required.");
-      return;
-    }
-    if (recipientSource === 'mailing_list' && selectedMailingLists.length === 0) {
-      setError("Please select at least one mailing list.");
-      return;
-    }
-    if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
-      setError("Please select at least one subscriber.");
-      return;
+
+    if (action === 'send') {
+      if (!selectedMailSender) {
+        setError("Please select a Mail Sender.");
+        return;
+      }
+      if (!finalHtmlContent.trim()) {
+        setError("Email content is required.");
+        return;
+      }
+      if (recipientSource === 'mailing_list' && selectedMailingLists.length === 0) {
+        setError("Please select at least one mailing list.");
+        return;
+      }
+      if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
+        setError("Please select at least one subscriber.");
+        return;
+      }
     }
 
     setError('');
@@ -149,14 +152,14 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
       await updateMutation.mutateAsync({
         campaignId: campaign.id,
         data: {
-          recipient_source: recipientSource,
+          recipient_source: action === 'send' ? recipientSource : (recipientSource || undefined),
           editor_type: currentEditorType,
           subject: subject.trim(),
-          html_content: finalHtmlContent.trim(),
+          html_content: action === 'send' ? finalHtmlContent.trim() : (finalHtmlContent?.trim() || undefined),
           action,
-          mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
-          contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
-          mail_sender_id: selectedMailSender,
+          mailing_list_ids: recipientSource === 'mailing_list' && selectedMailingLists.length > 0 ? selectedMailingLists : undefined,
+          contact_ids: recipientSource === 'subscriber' && selectedSubscribers.length > 0 ? selectedSubscribers : undefined,
+          mail_sender_id: selectedMailSender || undefined,
         }
       });
 
@@ -195,10 +198,9 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
-                Mail Sender *
+                Mail Sender
               </Typography>
               <AppButton
-                variant="text"
                 size="small"
                 onClick={() => setIsAddMailSenderOpen(true)}
                 variantStyle="text"
@@ -218,8 +220,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                     label: `${sender.name} (${sender.email})`
                   }))}
                   isBgWhite
-                  error={Boolean(error && !selectedMailSender)}
-                  helperText={error && !selectedMailSender ? "Mail sender is required" : ""}
+                  error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender)}
+                  helperText={error && error.includes("Mail Sender") && !selectedMailSender ? "Mail sender is required" : ""}
                 />
               </Box>
               {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
@@ -242,9 +244,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               fullWidth
-              required
-              error={Boolean(error && !subject.trim())}
-              helperText={error && !subject.trim() ? "Subject is required" : ""}
+              error={Boolean(error && error.includes("Subject") && !subject.trim())}
+              helperText={error && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
             />
           </Box>
 
@@ -256,7 +257,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
               onChange={(html) => setHtmlContent(html)}
               isLoading={updateMutation.isPending}
             />
-            {error && !htmlContent.trim() && (
+            {error && error.includes("Email content") && !htmlContent.trim() && (
               <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                 Content is required
               </Typography>
@@ -281,7 +282,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           {recipientSource === 'mailing_list' && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Mailing Lists *
+                Select Mailing Lists
               </Typography>
               {mailingLists.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
@@ -303,7 +304,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                   ))}
                 </Box>
               )}
-              {error && selectedMailingLists.length === 0 && (
+              {error && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   Please select at least one mailing list
                 </Typography>
@@ -314,7 +315,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           {recipientSource === 'subscriber' && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Subscribers *
+                Select Subscribers
               </Typography>
               <TextField
                 fullWidth
@@ -364,7 +365,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                   )}
                 </>
               )}
-              {error && selectedSubscribers.length === 0 && (
+              {error && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   Please select at least one subscriber
                 </Typography>

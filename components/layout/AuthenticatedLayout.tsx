@@ -23,7 +23,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     pathname?.startsWith('/new-password') ||
     pathname?.startsWith('/email-verification') ||
     pathname?.startsWith('/crm-sales') ||
-    pathname?.startsWith('/crm-services');
+    pathname?.startsWith('/crm-services') ||
+    pathname?.startsWith('/public-omnichannel');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {

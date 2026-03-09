@@ -378,6 +378,35 @@ export const strings = createLocalizedStrings({
         crm_services_cta_desc: "Join hundreds of CS teams that have switched to SmartSales CRM Services. Start your free evaluation today.",
         crm_services_cta_btn: "Try CRM Services Free",
 
+        omni_hero_badge: "Omnichannel App",
+        omni_hero_title: "One Inbox for All Customer Messages",
+        omni_hero_desc: "Stop switching between tabs. Manage WhatsApp, Instagram DM, and other channels in one unified platform. Turn conversations into service or sales tickets with just one click.",
+        omni_hero_btn_trial: "Start Free Trial",
+        omni_hero_btn_demo: "Watch Demo",
+
+        omni_integ_badge: "OMNICHANNEL APP",
+        omni_integ_title: "Full Integration Without Platform Boundaries",
+        omni_integ_subtitle: "Be present on the platforms your customers use. Answer faster, gather context, and increase sales conversions.",
+        omni_integ_feat1_title: "One Inbox (Omnichannel)",
+        omni_integ_feat1_desc: "Manage chats from various channels on a single screen. No need to log into multiple apps to respond to your customers professionally.",
+        omni_integ_feat2_title: "Instagram & WhatsApp API Integration",
+        omni_integ_feat2_desc: "Reply to Instagram Direct Messages (DM), comments, and official WhatsApp Business messages directly from the SmartSales dashboard in real-time.",
+        omni_integ_feat3_title: "Ticket Creation Integration",
+        omni_integ_feat3_desc: "Convert complaint messages or prospect inquiries into customer support tickets or sales pipelines automatically, right from the chat panel.",
+
+        omni_collab_title: "Team Collaboration Made Easier and More Efficient",
+        omni_collab_subtitle: "Empower your team to respond without overlapping. See who is currently replying to a customer and escalate complex issues to a supervisor.",
+        omni_collab_list1_title: "Allocate Chats to Specific Agents",
+        omni_collab_list1_desc: "Distribute incoming messages to the right CS or Sales agent automatically (Routing) or manually.",
+        omni_collab_list2_title: "Save Conversation History",
+        omni_collab_list2_desc: "Don't make customers repeat their stories. All agents can view previous conversation history.",
+        omni_collab_list3_title: "Automated Replies (Auto-Reply)",
+        omni_collab_list3_desc: "Greet customers instantly even outside working hours. Use templates to answer FAQs with one click.",
+
+        omni_cta_title: "Don't keep your customers waiting.",
+        omni_cta_desc: "Centralize all your business communications today. Faster response means happier customers and higher sales.",
+        omni_cta_btn: "Try Omnichannel Free",
+
         // Solution Menu
         sol_menu_industry: "Industry",
         sol_menu_roles: "Roles",
@@ -749,6 +778,35 @@ export const strings = createLocalizedStrings({
         crm_services_cta_title: "Siap Memberikan Layanan Pelanggan Terbaik?",
         crm_services_cta_desc: "Bergabunglah dengan ratusan tim CS yang telah beralih ke SmartSales CRM Services. Mulai evaluasi gratis Anda hari ini.",
         crm_services_cta_btn: "Coba CRM Services Gratis",
+
+        omni_hero_badge: "Aplikasi Omnichannel",
+        omni_hero_title: "Satu Kotak Masuk untuk Semua Pesan Pelanggan",
+        omni_hero_desc: "Berhenti berpindah antar tab. Kelola WhatsApp, Instagram DM, dan saluran lainnya dalam satu platform terpadu. Ubah percakapan menjadi tiket layanan atau penjualan hanya dengan satu klik.",
+        omni_hero_btn_trial: "Mulai Uji Coba Gratis",
+        omni_hero_btn_demo: "Tonton Demo",
+
+        omni_integ_badge: "APLIKASI OMNICHANNEL",
+        omni_integ_title: "Integrasi Penuh Tanpa Batasan Platform",
+        omni_integ_subtitle: "Hadir di platform tempat pelanggan Anda berada. Jawab lebih cepat, kumpulkan konteks, dan tingkatkan konversi penjualan.",
+        omni_integ_feat1_title: "Satu Kotak Masuk (Omnichannel)",
+        omni_integ_feat1_desc: "Kelola obrolan (chat) dari berbagai saluran dalam satu layar. Tidak perlu lagi login ke banyak aplikasi untuk merespons pelanggan Anda secara profesional.",
+        omni_integ_feat2_title: "Integrasi Instagram & WhatsApp API",
+        omni_integ_feat2_desc: "Balas Direct Message (DM) Instagram, komentar, dan pesan WhatsApp Business resmi langsung dari dasbor SmartSales secara real-time.",
+        omni_integ_feat3_title: "Ticket Creation Integration",
+        omni_integ_feat3_desc: "Ubah pesan keluhan atau pertanyaan prospek menjadi tiket dukungan pelanggan (support ticket) atau pipeline sales secara otomatis langsung dari panel obrolan.",
+
+        omni_collab_title: "Kolaborasi Tim Jadi Lebih Mudah dan Efisien",
+        omni_collab_subtitle: "Berikan wewenang kepada tim Anda untuk merespons tanpa tumpang tindih. Lihat siapa yang sedang membalas pelanggan dan eskalasikan masalah kompleks ke supervisor.",
+        omni_collab_list1_title: "Alokasi Chat ke Agen Spesifik",
+        omni_collab_list1_desc: "Distribusikan pesan masuk ke agen CS atau Sales yang tepat secara otomatis (Routing) atau manual.",
+        omni_collab_list2_title: "Simpan Riwayat Percakapan",
+        omni_collab_list2_desc: "Jangan biarkan pelanggan mengulang ceritanya. Semua agen bisa melihat history percakapan sebelumnya.",
+        omni_collab_list3_title: "Balasan Otomatis (Auto-Reply)",
+        omni_collab_list3_desc: "Sapa pelanggan seketika meskipun di luar jam kerja. Gunakan template untuk menjawab FAQ dengan satu klik.",
+
+        omni_cta_title: "Jangan biarkan pelanggan Anda menunggu.",
+        omni_cta_desc: "Pusatkan semua komunikasi bisnis Anda hari ini. Respons lebih cepat berarti pelanggan yang lebih bahagia dan penjualan yang lebih tinggi.",
+        omni_cta_btn: "Coba Omnichannel Gratis",
 
         // Solution Menu
         sol_menu_industry: "Industri",

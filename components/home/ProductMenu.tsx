@@ -104,8 +104,10 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         {strings.product_menu_omnichannel}
                     </Typography>
                     <Stack spacing={1}>
-                        <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
-                        <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} />
+                        <Link href="public-omnichannel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
+                        </Link>
+                        {/* <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} /> */}
                         <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
                     </Stack>
                 </Box>
@@ -221,12 +223,14 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                 </TabPanel>
                 <TabPanel value={value} index={1}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
-                        <Grid item xs={4}>
-                            <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
+                        <Grid item xs={4} width="100%">
+                            <Link href="/public-omnichannel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
+                            </Link>
                         </Grid>
-                        <Grid item xs={4}>
+                        {/* <Grid item xs={4}>
                             <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} />
-                        </Grid>
+                        </Grid> */}
                         <Grid item xs={4}>
                             <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
                         </Grid>

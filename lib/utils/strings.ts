@@ -407,6 +407,33 @@ export const strings = createLocalizedStrings({
         omni_cta_desc: "Centralize all your business communications today. Faster response means happier customers and higher sales.",
         omni_cta_btn: "Try Omnichannel Free",
 
+        ticket_hero_badge: "Ticket Creation Integration",
+        ticket_hero_title: "Turn Conversations into Concrete Actions",
+        ticket_hero_desc: "Don't let customer complaints or requests drown in a pile of chats. Create task tickets directly from the chat panel, track their resolution, and increase your team's accountability.",
+        ticket_hero_btn: "Try Feature Free",
+
+        ticket_feat_title: "The Bridge Between Chat and Action",
+        ticket_feat_subtitle: "Answering customers is important, but solving their problems is key. This feature ensures every conversation has a clear follow-up.",
+        ticket_feat1_title: "One Click to Create Ticket",
+        ticket_feat1_desc: "No need to open a new tab or app. Your CS agent can create a ticket directly from the active chat window, automatically attaching the conversation transcript.",
+        ticket_feat2_title: "Escalate to Other Departments",
+        ticket_feat2_desc: "Technical questions? Shipping complaints? Easily forward tickets from the frontline CS team to tech, warehouse, or finance teams without losing context.",
+        ticket_feat3_title: "Monitor Resolution Status",
+        ticket_feat3_desc: "Track whether a ticket is still Open, In Progress, or Resolved. Ensure no customer waits too long.",
+
+        ticket_integ_title: "Seamless Integration with Other CRM Modules",
+        ticket_integ_subtitle: "Ticket creation isn't just for customer service (CS). This feature connects directly with CRM Sales and CRM Services modules to maximize your business operations.",
+        ticket_integ_list1_title: "Connect to CRM Sales",
+        ticket_integ_list1_desc: "Chat from a prospect asking about pricing? Turn that chat into a Sales Opportunity (Lead) ticket and put it right into your CRM Sales Pipeline.",
+        ticket_integ_list2_title: "SLA & Automated Alerts",
+        ticket_integ_list2_desc: "Set Service Level Agreement (SLA) deadlines for each complaint ticket. The system will alert you if a ticket breaches its deadline.",
+        ticket_integ_list3_title: "Centralized History on Customer Profile",
+        ticket_integ_list3_desc: "All tickets ever created will be saved in the customer's profile. Your CS can view past complaint history before responding to a new chat.",
+
+        ticket_cta_title: "Systematize your customer service.",
+        ticket_cta_desc: "Experience the ease of converting every chat into a measurable and accountable task.",
+        ticket_cta_btn: "Schedule Demo Now",
+
         // Solution Menu
         sol_menu_industry: "Industry",
         sol_menu_roles: "Roles",
@@ -807,6 +834,33 @@ export const strings = createLocalizedStrings({
         omni_cta_title: "Jangan biarkan pelanggan Anda menunggu.",
         omni_cta_desc: "Pusatkan semua komunikasi bisnis Anda hari ini. Respons lebih cepat berarti pelanggan yang lebih bahagia dan penjualan yang lebih tinggi.",
         omni_cta_btn: "Coba Omnichannel Gratis",
+
+        ticket_hero_badge: "Ticket Creation Integration",
+        ticket_hero_title: "Ubah Percakapan Menjadi Tindakan Nyata",
+        ticket_hero_desc: "Jangan biarkan keluhan atau permintaan pelanggan tenggelam dalam tumpukan chat. Buat tiket tugas langsung dari panel obrolan, pantau penyelesaiannya, dan tingkatkan akuntabilitas tim Anda.",
+        ticket_hero_btn: "Coba Fitur Gratis",
+
+        ticket_feat_title: "Jembatan Antara Chat dan Tindakan",
+        ticket_feat_subtitle: "Merespons pelanggan itu penting, tetapi menyelesaikan masalah mereka adalah kuncinya. Fitur ini memastikan setiap percakapan memiliki tindak lanjut yang jelas.",
+        ticket_feat1_title: "Satu Klik Buat Tiket",
+        ticket_feat1_desc: "Tidak perlu membuka tab baru atau aplikasi lain. Agen CS Anda dapat membuat tiket langsung dari jendela chat yang sedang berlangsung, menyertakan transkrip percakapan secara otomatis.",
+        ticket_feat2_title: "Eskalasi ke Departemen Lain",
+        ticket_feat2_desc: "Pertanyaan teknis? Keluhan pengiriman? Teruskan tiket dengan mudah dari tim CS depan (frontline) ke tim teknis, gudang, atau finance tanpa kehilangan konteks masalah pelanggan.",
+        ticket_feat3_title: "Pantau Status Penyelesaian",
+        ticket_feat3_desc: "Lacak apakah tiket masih berstatus Open, sedang diproses (In Progress), atau sudah selesai (Resolved). Pastikan tidak ada pelanggan yang menunggu terlalu lama.",
+
+        ticket_integ_title: "Integrasi Mulus dengan Modul CRM Lainnya",
+        ticket_integ_subtitle: "Pembuatan tiket bukan hanya untuk layanan pelanggan (CS). Fitur ini terhubung langsung dengan modul CRM Sales dan CRM Services untuk memaksimalkan operasional bisnis Anda.",
+        ticket_integ_list1_title: "Hubungkan ke CRM Sales",
+        ticket_integ_list1_desc: "Chat dari prospek yang menanyakan harga? Ubah chat tersebut menjadi tiket Peluang Penjualan (Lead) dan masukkan langsung ke dalam Pipeline CRM Sales Anda.",
+        ticket_integ_list2_title: "SLA & Peringatan Otomatis",
+        ticket_integ_list2_desc: "Atur batas waktu penyelesaian (SLA) untuk setiap tiket keluhan. Sistem akan memberi peringatan jika tiket melewati batas waktu yang ditentukan.",
+        ticket_integ_list3_title: "Riwayat Terpusat pada Profil Pelanggan",
+        ticket_integ_list3_desc: "Semua tiket yang pernah dibuat akan tersimpan di profil pelanggan. CS Anda dapat melihat riwayat keluhan masa lalu sebelum merespons chat terbaru.",
+
+        ticket_cta_title: "Sistematiskan layanan pelanggan Anda.",
+        ticket_cta_desc: "Rasakan kemudahan mengonversi setiap obrolan (chat) menjadi tugas (task) yang terukur dan dapat dipertanggungjawabkan.",
+        ticket_cta_btn: "Jadwalkan Demo Sekarang",
 
         // Solution Menu
         sol_menu_industry: "Industri",

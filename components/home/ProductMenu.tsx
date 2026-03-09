@@ -108,7 +108,9 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                             <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
                         </Link>
                         {/* <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} /> */}
-                        <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
+                        <Link href="/public-ticket" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
+                        </Link>
                     </Stack>
                 </Box>
                 {/* WhatsApp Section */}
@@ -206,24 +208,24 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
             <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 1.5, borderRadius: '16px', p: 0.5 }}>
                 <TabPanel value={value} index={0}>
                     <Grid container spacing={2} alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
-                        <Grid item xs={4} width="100%">
+                        <Grid item xs={6} width="100%">
                             <Link href="/crm-sales" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<BusinessIcon />} title={strings.pm_crm_sales} desc={strings.pm_crm_sales_desc} />
                             </Link>
                         </Grid>
-                        <Grid item xs={4} width="100%">
+                        <Grid item xs={6} width="100%">
                             <Link href="/crm-services" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<SupportAgentIcon />} title={strings.pm_crm_services} desc={strings.pm_crm_services_desc} />
                             </Link>
                         </Grid>
-                        <Grid item xs={4}>
+                        {/* <Grid item xs={4}>
                             <MenuItem icon={<MapIcon />} title={strings.pm_crm_canvassing} desc={strings.pm_crm_canvassing_desc} />
-                        </Grid>
+                        </Grid> */}
                     </Grid>
                 </TabPanel>
                 <TabPanel value={value} index={1}>
-                    <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
-                        <Grid item xs={4} width="100%">
+                    <Grid container spacing={2} alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
+                        <Grid item xs={6} width="100%">
                             <Link href="/public-omnichannel" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
                             </Link>
@@ -231,8 +233,10 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         {/* <Grid item xs={4}>
                             <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} />
                         </Grid> */}
-                        <Grid item xs={4}>
-                            <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
+                        <Grid item xs={6} width="100%">
+                            <Link href="/public-ticket" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<ConfirmationNumberIcon />} title={strings.pm_omni_ticket} desc={strings.pm_omni_ticket_desc} />
+                            </Link>
                         </Grid>
                     </Grid>
                 </TabPanel>

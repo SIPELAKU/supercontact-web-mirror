@@ -434,6 +434,54 @@ export const strings = createLocalizedStrings({
         ticket_cta_desc: "Experience the ease of converting every chat into a measurable and accountable task.",
         ticket_cta_btn: "Schedule Demo Now",
 
+        // Finance Solution
+        fin_hero_badge: "Finance Industry Solution",
+        fin_hero_title: "Increase Credit Disbursement & Customer Service",
+        fin_hero_desc: "Leave manual methods and messy data behind. SmartSales helps banks, cooperatives, and multifinance companies manage credit prospects and customer communications securely and centrally.",
+        fin_hero_btn1: "Start 14 Days Free",
+        fin_hero_btn2: "Consult with Team",
+
+        fin_chal_title: "Why Do Manual Methods Often Hinder Growth?",
+        fin_chal_subtitle: "FINANCIAL INSTITUTION CHALLENGES",
+        fin_chal1_title: "Messy Customer Data",
+        fin_chal1_desc: "Prospective debtor data comes from WhatsApp, Web Forms, and field sales, but is managed using spreadsheets that are prone to loss or leaks.",
+        fin_chal2_title: "Follow-up Too Slow",
+        fin_chal2_desc: "Because there are no automatic reminders, the sales team is often late in contacting customers, causing customers to switch to competing financial institutions.",
+        fin_chal3_title: "Unresolved Complaints",
+        fin_chal3_desc: "Complaints regarding blocked ATM cards or failed transfers often pile up in WhatsApp messages, making customers disappointed with your service.",
+
+        fin_sol_subtitle: "SMARTSALES SOLUTION",
+        fin_sol_title: "Change the Way You Manage Business",
+        fin_sol1_title: "Credit Application Automation (CRM Sales)",
+        fin_sol1_desc: "Use CRM Sales to create a visual Pipeline. Know exactly how many prospective debtors are still prospects, in the survey process, up to ready to disburse.",
+        fin_sol1_list1: "Send bills or installment due date reminders automatically via WhatsApp API.",
+        fin_sol1_list2: "Categorize prospective customers based on product type (Business Credit, Mortgage, Auto Loan).",
+        fin_sol1_list3: "Monitor the performance of the field marketing team (canvassing) from a single analytics dashboard.",
+
+        fin_sol2_title: "One Customer Communication Center",
+        fin_sol2_desc: "With the Omnichannel App, Customer Service (CS) no longer needs to switch applications. Reply to messages from WhatsApp, Instagram, and Website directly from one screen.",
+        fin_sol2_list1: "Use Auto-Reply to answer Frequently Asked Questions (FAQ) such as interest rates or operational hours.",
+        fin_sol2_list2: "Chat history is stored securely. CS always knows the customer's previous constraint history.",
+
+        fin_sol3_title: "Complaint Ticket Management (Ticketing)",
+        fin_sol3_desc: "Turn customer complaints (e.g.: failed transfer, swallowed ATM card) into structured task tickets with the CRM Services & Ticket Creation module.",
+        fin_sol3_list1: "Escalate problems from frontline CS directly to the IT or Verifier department quickly.",
+        fin_sol3_list2: "Monitor status (Open, In Progress, Resolved) so customers do not feel ignored.",
+
+        fin_impact_title: "Real Results for the Financial Sector",
+        fin_impact1_val: "+45%",
+        fin_impact1_desc: "Increase in Credit Disbursement",
+        fin_impact2_val: "2x",
+        fin_impact2_desc: "Faster Response to Customers",
+        fin_impact3_val: "Secure",
+        fin_impact3_desc: "Customer Data Security Guaranteed",
+        fin_impact4_val: "100%",
+        fin_impact4_desc: "Integrated in 1 Dashboard",
+
+        fin_cta_title: "Make Your Institution the Top Choice",
+        fin_cta_desc: "Customer trust starts with service and fast response. Automate your credit application and customer complaint handling system with SmartSales today.",
+        fin_cta_btn: "Try SmartSales Free",
+
         // Solution Menu
         sol_menu_industry: "Industry",
         sol_menu_roles: "Roles",
@@ -861,6 +909,54 @@ export const strings = createLocalizedStrings({
         ticket_cta_title: "Sistematiskan layanan pelanggan Anda.",
         ticket_cta_desc: "Rasakan kemudahan mengonversi setiap obrolan (chat) menjadi tugas (task) yang terukur dan dapat dipertanggungjawabkan.",
         ticket_cta_btn: "Jadwalkan Demo Sekarang",
+
+        // Finance Solution
+        fin_hero_badge: "Solusi Industri Keuangan",
+        fin_hero_title: "Tingkatkan Penyaluran Kredit & Layanan Nasabah",
+        fin_hero_desc: "Tinggalkan cara manual dan data yang berantakan. SmartSales membantu bank, koperasi, dan perusahaan multifinance mengelola prospek kredit serta komunikasi nasabah dengan aman dan terpusat.",
+        fin_hero_btn1: "Mulai Gratis 14 Hari",
+        fin_hero_btn2: "Konsultasi dengan Tim",
+
+        fin_chal_title: "Mengapa Cara Manual Sering Menghambat Pertumbuhan?",
+        fin_chal_subtitle: "TANTANGAN LEMBAGA KEUANGAN",
+        fin_chal1_title: "Data Nasabah Berantakan",
+        fin_chal1_desc: "Data calon debitur masuk dari WhatsApp, Form Web, dan sales lapangan, tetapi dikelola menggunakan spreadsheet yang rawan hilang atau bocor.",
+        fin_chal2_title: "Follow-up Terlalu Lambat",
+        fin_chal2_desc: "Karena tidak ada pengingat (reminder) otomatis, tim sales sering terlambat menghubungi nasabah, sehingga nasabah beralih ke lembaga keuangan kompetitor.",
+        fin_chal3_title: "Keluhan Tidak Tertangani",
+        fin_chal3_desc: "Keluhan mengenai pemblokiran kartu ATM atau kegagalan transfer sering tertumpuk di pesan WhatsApp, membuat nasabah kecewa terhadap pelayanan Anda.",
+
+        fin_sol_subtitle: "SOLUSI SMARTSALES",
+        fin_sol_title: "Ubah Cara Anda Mengelola Bisnis",
+        fin_sol1_title: "Otomatisasi Pengajuan Kredit (CRM Sales)",
+        fin_sol1_desc: "Gunakan CRM Sales untuk membuat Pipeline visual. Ketahui dengan pasti berapa banyak calon debitur yang masih prospek, dalam proses survei, hingga siap cair.",
+        fin_sol1_list1: "Kirim tagihan atau pengingat jatuh tempo angsuran secara otomatis via WhatsApp API.",
+        fin_sol1_list2: "Kategorikan calon nasabah berdasarkan jenis produk (Kredit Usaha, KPR, KKB).",
+        fin_sol1_list3: "Pantau kinerja tim marketing lapangan (canvassing) dari satu dasbor analitik.",
+
+        fin_sol2_title: "Satu Pusat Komunikasi Nasabah",
+        fin_sol2_desc: "Dengan Aplikasi Omnichannel, Customer Service (CS) tidak perlu lagi berpindah-pindah aplikasi. Balas pesan dari WhatsApp, Instagram, dan Website langsung dari satu layar.",
+        fin_sol2_list1: "Gunakan Auto-Reply untuk menjawab pertanyaan umum (FAQ) seperti suku bunga atau jam operasional.",
+        fin_sol2_list2: "Riwayat chat tersimpan dengan aman. CS selalu mengetahui riwayat kendala nasabah sebelumnya.",
+
+        fin_sol3_title: "Manajemen Tiket Keluhan (Ticketing)",
+        fin_sol3_desc: "Ubah keluhan nasabah (contoh: transfer gagal, kartu ATM tertelan) dari chat menjadi tiket tugas yang terstruktur dengan modul CRM Services & Ticket Creation.",
+        fin_sol3_list1: "Eskalasi masalah dari CS frontline langsung ke bagian IT atau Verifikator dengan cepat.",
+        fin_sol3_list2: "Pantau status (Open, In Progress, Resolved) agar nasabah tidak merasa diabaikan.",
+
+        fin_impact_title: "Hasil Nyata untuk Sektor Keuangan",
+        fin_impact1_val: "+45%",
+        fin_impact1_desc: "Peningkatan Penyaluran Kredit",
+        fin_impact2_val: "2x",
+        fin_impact2_desc: "Respons Kepada Nasabah Lebih Cepat",
+        fin_impact3_val: "Aman",
+        fin_impact3_desc: "Keamanan Data Nasabah Terjamin",
+        fin_impact4_val: "100%",
+        fin_impact4_desc: "Terintegrasi dalam 1 Dasbor",
+
+        fin_cta_title: "Jadikan Institusi Anda Pilihan Utama",
+        fin_cta_desc: "Kepercayaan nasabah dimulai dari pelayanan dan respons yang cepat. Otomatiskan sistem pengajuan kredit dan penanganan keluhan nasabah Anda bersama SmartSales hari ini.",
+        fin_cta_btn: "Coba SmartSales Gratis",
 
         // Solution Menu
         sol_menu_industry: "Industri",

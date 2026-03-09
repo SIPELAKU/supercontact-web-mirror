@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2026-03-10
+
+### Detail Versi 1.9.1
+
+#### 🧪 Testing & Quality Assurance — Comprehensive Unit Test Expansion
+
+- **Cookies Utility Tests** (`cookies.test.ts`): Validates `AUTH_COOKIE_NAME` constant, `hasAuthToken` behavior for valid/dummy/missing tokens, and auth action function existence.
+- **Auth Tokens Utility Tests** (`auth-tokens.test.ts`): Validates `generateSecureToken` output length, `generateTokenWithExpiration` timing accuracy, `isTokenExpired` for past/future dates, and `hashToken` deterministic consistency.
+- **Error Handler Utility Tests** (`error-handler.test.ts`): Validates string error passthrough, fallback messages for null/undefined, nested `data.detail` extraction, Axios-style `response.data.detail`, details array formatting with field names, standard `Error.message` extraction, and `handleError` return value.
+- **Taxonomy Utility Tests** (`taxonomy.test.ts`): Validates data integrity for industry/geographic/role taxonomies, `normalizeIndustry` exact and unknown lookups, `normalizeLocation` for Jakarta Pusat/Surabaya/unknown cities, and `getIndustryBreadcrumb` for known/unknown categories.
+- **Debounce Utility Tests** (`debounce.test.ts`): Validates return type, delayed execution, rapid-fire call cancellation, and default 300ms delay behavior.
+- **Strings / Localization Tests** (`strings.test.ts`): Validates default language (Indonesian), Indonesian/English string resolution, language switching, `formatString` placeholder replacement, fallback for missing keys, and key consistency across languages for critical UI strings.
+- **Middleware Route Logic Tests** (`middleware-routes.test.ts`): Validates protected route detection, public route exclusion, auth route exact matching, and redirect logic for authenticated users on auth routes, unauthenticated users on protected routes, and unauthenticated users on public routes.
+
+#### 📁 Files Created
+
+- `lib/tests/cookies.test.ts`
+- `lib/tests/auth-tokens.test.ts`
+- `lib/tests/error-handler.test.ts`
+- `lib/tests/taxonomy.test.ts`
+- `lib/tests/debounce.test.ts`
+- `lib/tests/strings.test.ts`
+- `lib/tests/middleware-routes.test.ts`
+
 ## [1.9.1] - 2026-03-09
 
 ### Detail Versi 1.9.1
@@ -41,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/home/SolutionMenu.tsx`
 - `components/layout/AuthenticatedLayout.tsx`
 - `lib/utils/strings.ts`
+
 
 ## [1.9.0] - 2026-03-08
 

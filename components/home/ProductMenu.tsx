@@ -92,8 +92,10 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         <Link href="/crm-sales" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <MenuItem icon={<BusinessIcon />} title={strings.pm_crm_sales} desc={strings.pm_crm_sales_desc} />
                         </Link>
-                        <MenuItem icon={<SupportAgentIcon />} title={strings.pm_crm_services} desc={strings.pm_crm_services_desc} />
-                        <MenuItem icon={<MapIcon />} title={strings.pm_crm_canvassing} desc={strings.pm_crm_canvassing_desc} />
+                        <Link href="/crm-services" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <MenuItem icon={<SupportAgentIcon />} title={strings.pm_crm_services} desc={strings.pm_crm_services_desc} />
+                        </Link>
+                        {/* <MenuItem icon={<MapIcon />} title={strings.pm_crm_canvassing} desc={strings.pm_crm_canvassing_desc} /> */}
                     </Stack>
                 </Box>
                 {/* Omnichannel Section */}
@@ -201,14 +203,16 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
 
             <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 1.5, borderRadius: '16px', p: 0.5 }}>
                 <TabPanel value={value} index={0}>
-                    <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
-                        <Grid item xs={4}>
+                    <Grid container spacing={2} alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
+                        <Grid item xs={4} width="100%">
                             <Link href="/crm-sales" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<BusinessIcon />} title={strings.pm_crm_sales} desc={strings.pm_crm_sales_desc} />
                             </Link>
                         </Grid>
-                        <Grid item xs={4}>
-                            <MenuItem icon={<SupportAgentIcon />} title={strings.pm_crm_services} desc={strings.pm_crm_services_desc} />
+                        <Grid item xs={4} width="100%">
+                            <Link href="/crm-services" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<SupportAgentIcon />} title={strings.pm_crm_services} desc={strings.pm_crm_services_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<MapIcon />} title={strings.pm_crm_canvassing} desc={strings.pm_crm_canvassing_desc} />

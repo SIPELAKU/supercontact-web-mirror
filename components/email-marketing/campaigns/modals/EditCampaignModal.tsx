@@ -18,6 +18,7 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
+  Pagination,
   Radio,
   RadioGroup,
   Stack,
@@ -33,6 +34,9 @@ import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
 import AddMailSenderDialog from './AddMailSenderDialog';
+import MailSenderManager from './MailSenderManager';
+import RecipientSourceSelector from './RecipientSourceSelector';
+import { CAMPAIGN_ERROR_MESSAGES } from '@/lib/constants/campaign';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -50,15 +54,20 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [selectedMailSender, setSelectedMailSender] = useState<string>('');
   const [error, setError] = useState('');
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberLimit] = useState(10);
+  const [subscriberSearch, setSubscriberSearch] = useState('');
 
   const updateMutation = useUpdateCampaign();
   const { data: mailingListsData } = useMailingLists();
-  const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers();
+  const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers(subscriberPage, subscriberLimit, subscriberSearch);
   const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
 
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || [];
   const mailSenders = mailSendersData?.data?.mail_senders || [];
+  const totalSubscribers = subscribersData?.data?.total || 0;
+  const totalSubscriberPages = Math.ceil(totalSubscribers / subscriberLimit);
 
   const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
 
@@ -115,25 +124,28 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
 
     const currentEditorType = editorRef.current?.getEditorType() || 'simple_editor';
 
-    if (!selectedMailSender) {
-      setError("Please select a Mail Sender.");
-      return;
-    }
     if (!subject.trim()) {
-      setError("Subject is required.");
+      setError(CAMPAIGN_ERROR_MESSAGES.SUBJECT_REQUIRED);
       return;
     }
-    if (!finalHtmlContent.trim()) {
-      setError("Email content is required.");
-      return;
-    }
-    if (recipientSource === 'mailing_list' && selectedMailingLists.length === 0) {
-      setError("Please select at least one mailing list.");
-      return;
-    }
-    if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
-      setError("Please select at least one subscriber.");
-      return;
+
+    if (action === 'send') {
+      if (!selectedMailSender) {
+        setError(CAMPAIGN_ERROR_MESSAGES.SENDER_REQUIRED);
+        return;
+      }
+      if (!finalHtmlContent.trim()) {
+        setError(CAMPAIGN_ERROR_MESSAGES.CONTENT_REQUIRED);
+        return;
+      }
+      if (recipientSource === 'mailing_list' && selectedMailingLists.length === 0) {
+        setError(CAMPAIGN_ERROR_MESSAGES.MAILING_LIST_REQUIRED);
+        return;
+      }
+      if (recipientSource === 'subscriber' && selectedSubscribers.length === 0) {
+        setError(CAMPAIGN_ERROR_MESSAGES.SUBSCRIBER_REQUIRED);
+        return;
+      }
     }
 
     setError('');
@@ -142,14 +154,14 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
       await updateMutation.mutateAsync({
         campaignId: campaign.id,
         data: {
-          recipient_source: recipientSource,
+          recipient_source: action === 'send' ? recipientSource : (recipientSource || undefined),
           editor_type: currentEditorType,
           subject: subject.trim(),
-          html_content: finalHtmlContent.trim(),
+          html_content: action === 'send' ? finalHtmlContent.trim() : (finalHtmlContent?.trim() || undefined),
           action,
-          mailing_list_ids: recipientSource === 'mailing_list' ? selectedMailingLists : undefined,
-          contact_ids: recipientSource === 'subscriber' ? selectedSubscribers : undefined,
-          mail_sender_id: selectedMailSender,
+          mailing_list_ids: recipientSource === 'mailing_list' && selectedMailingLists.length > 0 ? selectedMailingLists : undefined,
+          contact_ids: recipientSource === 'subscriber' && selectedSubscribers.length > 0 ? selectedSubscribers : undefined,
+          mail_sender_id: selectedMailSender || undefined,
         }
       });
 
@@ -188,29 +200,41 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
-                Mail Sender *
+                Mail Sender
               </Typography>
-              <Button
-                variant="text"
+              <AppButton
                 size="small"
                 onClick={() => setIsAddMailSenderOpen(true)}
-                sx={{ textTransform: 'none', py: 0 }}
+                variantStyle="text"
+                color="primary"
               >
                 + Add New Mail Sender
-              </Button>
+              </AppButton>
             </Box>
-            <AppSelect
-              placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
-              value={selectedMailSender}
-              onChange={(e) => setSelectedMailSender(e.target.value as string)}
-              options={mailSenders.map(sender => ({
-                value: sender.id,
-                label: `${sender.name} (${sender.email})`
-              }))}
-              isBgWhite
-              error={Boolean(error && !selectedMailSender)}
-              helperText={error && !selectedMailSender ? "Mail sender is required" : ""}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ flex: 1 }}>
+                <AppSelect
+                  placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
+                  value={selectedMailSender}
+                  onChange={(e) => setSelectedMailSender(e.target.value as string)}
+                  options={mailSenders.map(sender => ({
+                    value: sender.id,
+                    label: `${sender.name} (${sender.email})`
+                  }))}
+                  isBgWhite
+                  error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender)}
+                  helperText={error && error.includes("Mail Sender") && !selectedMailSender ? "Mail sender is required" : ""}
+                />
+              </Box>
+              {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
+                <MailSenderManager
+                  mailSenderId={selectedMailSender}
+                  mailSenderName={mailSenders.find(s => s.id === selectedMailSender)!.name}
+                  mailSenderEmail={mailSenders.find(s => s.id === selectedMailSender)!.email}
+                  onDelete={() => setSelectedMailSender('')}
+                />
+              )}
+            </Box>
           </Box>
 
           <Box>
@@ -222,9 +246,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               fullWidth
-              required
-              error={Boolean(error && !subject.trim())}
-              helperText={error && !subject.trim() ? "Subject is required" : ""}
+              error={Boolean(error && error.includes("Subject") && !subject.trim())}
+              helperText={error && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
             />
           </Box>
 
@@ -236,32 +259,26 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
               onChange={(html) => setHtmlContent(html)}
               isLoading={updateMutation.isPending}
             />
-            {error && !htmlContent.trim() && (
+            {error && error.includes("Email content") && !htmlContent.trim() && (
               <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                 Content is required
               </Typography>
             )}
           </Box>
 
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Recipient Source</FormLabel>
-            <RadioGroup
-              value={recipientSource}
-              onChange={(e) => {
-                setRecipientSource(e.target.value as 'mailing_list' | 'subscriber');
-                setSelectedMailingLists([]);
-                setSelectedSubscribers([]);
-              }}
-            >
-              <FormControlLabel value="mailing_list" control={<Radio />} label="Mailing List" />
-              <FormControlLabel value="subscriber" control={<Radio />} label="Contact (Subscribers)" />
-            </RadioGroup>
-          </FormControl>
+          <RecipientSourceSelector
+            value={recipientSource}
+            onChange={(value) => {
+              setRecipientSource(value);
+              setSelectedMailingLists([]);
+              setSelectedSubscribers([]);
+            }}
+          />
 
           {recipientSource === 'mailing_list' && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Mailing Lists *
+                Select Mailing Lists
               </Typography>
               {mailingLists.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
@@ -283,7 +300,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                   ))}
                 </Box>
               )}
-              {error && selectedMailingLists.length === 0 && (
+              {error && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   Please select at least one mailing list
                 </Typography>
@@ -294,33 +311,57 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
           {recipientSource === 'subscriber' && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Subscribers *
+                Select Subscribers
               </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search subscribers by email or name..."
+                value={subscriberSearch}
+                onChange={(e) => {
+                  setSubscriberSearch(e.target.value);
+                  setSubscriberPage(1); // Reset to first page on search
+                }}
+                sx={{ mb: 2 }}
+              />
               {isLoadingSubscribers ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                   <CircularProgress size={24} />
                 </Box>
               ) : subscribers.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
-                  No subscribers available. Please add subscribers first.
+                  {subscriberSearch ? 'No subscribers found matching your search.' : 'No subscribers available. Please add subscribers first.'}
                 </Typography>
               ) : (
-                <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                  {subscribers.map((subscriber) => (
-                    <FormControlLabel
-                      key={subscriber.id}
-                      control={
-                        <Checkbox
-                          checked={selectedSubscribers.includes(subscriber.id)}
-                          onChange={() => handleSubscriberToggle(subscriber.id)}
-                        />
-                      }
-                      label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
-                    />
-                  ))}
-                </Box>
+                <>
+                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
+                    {subscribers.map((subscriber) => (
+                      <FormControlLabel
+                        key={subscriber.id}
+                        control={
+                          <Checkbox
+                            checked={selectedSubscribers.includes(subscriber.id)}
+                            onChange={() => handleSubscriberToggle(subscriber.id)}
+                          />
+                        }
+                        label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
+                      />
+                    ))}
+                  </Box>
+                  {totalSubscriberPages > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                      <Pagination
+                        count={totalSubscriberPages}
+                        page={subscriberPage}
+                        onChange={(e, page) => setSubscriberPage(page)}
+                        color="primary"
+                        size="small"
+                      />
+                    </Box>
+                  )}
+                </>
               )}
-              {error && selectedSubscribers.length === 0 && (
+              {error && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
                 <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
                   Please select at least one subscriber
                 </Typography>

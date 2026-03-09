@@ -5,6 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-03-08
+
+### Detail Versi 1.9.0
+
+#### ✨ Enhancements - Campaigns & Infrastructure
+
+- **Campaigns - Workflow Optimization**: Major overhaul of the campaign draft saving process to prioritize user speed and flexibility:
+  - **Relaxed Draft Validation**: Only the **Email Subject** is now required to save a draft.
+  - **Atomic Send Validation**: Strict validation for Mail Sender, Content, and Recipients is now deferred until the final "Send" action.
+  - **Label Refinement**: Removed mandatory markers (`*`) from elective fields to align with the new elective validation logic.
+  - **Error Visibility**: Implemented context-aware error messages that only appear when relevant to the user's current action.
+- **Data Governance - Global Taxonomy**: Introduced a comprehensive industry and geographic mapping layer:
+  - Added `INDUSTRY_TAXONOMY` with multi-level sector classifications.
+  - Implemented `GEOGRAPHIC_TAXONOMY` covering all Indonesian provinces and cities.
+  - Added normalization helpers to standardize user input for CRM and Campaign data.
+- **Testing & Quality Assurance**: 
+  - Created a high-volume **Mock Data Generator** for stress-testing campaign listings with 500+ records.
+  - Implemented a functional **Validation Test Suite** to ensure draft/send logic integrity.
+
+#### 🏗️ Architectural Refactoring
+
+- **Component Decoupling**: Extracted `RecipientSourceSelector` into a standalone modular component to reduce logic duplication in Add/Edit modals.
+- **Centralized Constants**: Migrated magic strings and error messages to `lib/constants/campaign.ts` for improved maintainability.
+- **Type Safety**: Updated `CreateCampaignData` and `UpdateCampaignData` interfaces to support elective fields for legacy and future drafts.
+
+#### 🐛 Bug Fixes
+
+- **TypeScript - AppButton Propping**: Fixed a type error where the redundant `variant` prop was passed to the custom `AppButton` component.
+- **Campaign Payloads - Property Alignment**: Synchronized the frontend `mail_sender_id` property with the backend update, resolving a mapping issue during campaign creation.
+
+#### 📁 Files Created
+
+- `lib/utils/taxonomy.ts`
+- `lib/mocks/campaign-data.ts`
+- `lib/constants/campaign.ts`
+- `lib/tests/campaign-validation.test.ts`
+- `components/email-marketing/campaigns/modals/RecipientSourceSelector.tsx`
+
+#### 📁 Files Modified
+
+- `package.json`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `lib/types/email-marketing.ts`
+
+
+
+## [1.8.35] - 2026-03-06
+
+### Detail Versi 1.8.35
+
+#### ✨ Enhancements
+
+- **Campaigns - Mail Sender Management**: Added edit and delete functionality for mail senders directly in the campaign modals:
+  - Added "Edit" and "Delete" buttons next to the selected mail sender dropdown
+  - Edit button opens a dialog to update the sender name via `PUT /mail-senders/{id}`
+  - Delete button shows confirmation before removing via `DELETE /mail-senders/{id}`
+  - Both buttons use consistent AppButton styling with primary blue and danger red colors
+  - After deletion, the mail sender selection is automatically cleared
+- **Campaigns - Subscriber Selection Improvements**: Enhanced the subscriber selection experience in Add Campaign and Edit Campaign modals with pagination and search functionality:
+  - Added pagination controls showing 10 subscribers per page instead of limiting to 1000 total
+  - Implemented search field to filter subscribers by email or name
+  - Search automatically resets to page 1 when typing
+  - Pagination controls only appear when there are multiple pages
+  - Shows appropriate "No subscribers found" message when search returns no results
+- **Campaign Statistics - Refresh Button**: Added a refresh icon button in the Campaign Statistics modal header that refetches the latest campaign data from the backend API (`/api/v1/campaigns/{campaign_id}`):
+  - Icon spins during data refresh for visual feedback
+  - Tooltip shows "Refresh statistics" on hover
+  - Updates all campaign stats (delivered, opened, clicked, bounced) in real-time
+  - Positioned next to the "Campaign Statistics" title for easy access
+
+#### 🐛 Bug Fixes
+
+- **Campaigns - Subscriber Limit Removed**: Fixed the 10-subscriber limit in campaign creation/editing modals. Previously, only the first 10 subscribers were available for selection even when more existed in the system. Now all subscribers are accessible through pagination and search.
+- **Sidebar - Icon Layout Shift**: Fixed text movement issue in the sidebar when scrolling. Custom icons (Omnichannel, Sales, Data Intelligence) now have explicit width/height attributes and min-width/min-height styles to prevent layout shifts during image loading.
+- **Campaigns - Button Color Consistency**: Fixed inconsistent blue colors between "+ Add New Mail Sender" link and action buttons. All buttons now use the same primary blue (#5479EE) from the AppButton component.
+
+#### 📁 Files Created
+
+- `components/email-marketing/campaigns/modals/MailSenderManager.tsx`
+
+#### 📁 Files Modified
+
+- `lib/api/email-marketing/mail-senders.ts`
+- `lib/hooks/useMailSenders.ts`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+- `components/layout/Sidebar.tsx`
+
 ## [1.8.34] - 2026-03-05
 
 ### Detail Versi 1.8.34

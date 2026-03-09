@@ -33,9 +33,11 @@ const SalesIcon = ({ className }: { className?: string }) => {
     <img
       src="/assets/sales-icon-sb.svg"
       alt="Sales"
+      width={20}
+      height={20}
       className={cn("w-5 h-5", className)}
       onError={() => setHasError(true)}
-      style={{ display: hasError ? "none" : "block" }}
+      style={{ display: hasError ? "none" : "block", minWidth: "20px", minHeight: "20px" }}
     />
   );
 };
@@ -52,9 +54,11 @@ const OmnichannelIcon = ({ className }: { className?: string }) => {
     <img
       src="/assets/omnichannel.svg"
       alt="Omnichannel"
+      width={20}
+      height={20}
       className={cn("w-5 h-5", className)}
       onError={() => setHasError(true)}
-      style={{ display: hasError ? "none" : "block" }}
+      style={{ display: hasError ? "none" : "block", minWidth: "20px", minHeight: "20px" }}
     />
   );
 };
@@ -71,9 +75,11 @@ const DataIntelligenceIcon = ({ className }: { className?: string }) => {
     <img
       src="/icons/intelligence.png"
       alt="Data Intelligence"
+      width={20}
+      height={20}
       className={cn("w-5 h-5", className)}
       onError={() => setHasError(true)}
-      style={{ display: hasError ? "none" : "block" }}
+      style={{ display: hasError ? "none" : "block", minWidth: "20px", minHeight: "20px" }}
     />
   );
 };

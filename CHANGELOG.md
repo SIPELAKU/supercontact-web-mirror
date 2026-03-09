@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-03-09
+
+### Detail Versi 1.9.1
+
+#### ✨ Enhancements - Public Marketing Pages
+
+- **Omnichannel Public Page (`/public-omnichannel`)**: Created a dedicated public marketing route highlighting Omnichannel features.
+  - Added dynamic hero mockup showcasing a unified inbox across WhatsApp, Instagram, and Web.
+  - Built interactive collaboration section featuring bouncing CSS keyframe animations for floating cards.
+  - Implemented bilingual (ID/EN) translation strings for all sections.
+- **Ticket Creation Integration Page (`/public-ticket`)**: Created a new public page detailing the ticketing module.
+  - Built custom interactive flowcharts demonstrating data flowing from chats directly to CRM.
+  - Added 3-column feature highlights for 1-Click Ticketing, Escalation, and Monitoring.
+- **Finance Solution Page (`/solusi-keuangan`)**: Implemented industry-specific solution page for the financial sector.
+  - Designed custom Kanban board mockups ("Pipeline Pengajuan Kredit").
+  - Added alternating layout demonstrating CRM Sales, Omnichannel, and Ticketing applications in finance.
+- **CRM Service Page Refinement**: Ported the internal CRM Service page into a public-facing variant showcasing service request workflows.
+- **Navigation & Access**:
+  - Updated `ProductMenu` and `SolutionMenu` components to seamlessly route to these new public endpoints.
+  - Configured `AuthenticatedLayout` to safely bypass these routes from access-control middleware, allowing prospective users to view them without logging in.
+
+#### 📁 Files Created
+
+- `app/public-omnichannel/page.tsx`
+- `app/public-ticket/page.tsx`
+- `app/solusi-keuangan/page.tsx`
+- `components/public-omnichannel/*` (Hero, Features, Collaboration, CTA)
+- `components/ticket-public/*` (Hero, Features, Integration, CTA)
+- `components/solution-finance/*` (Hero, Challenges, Solutions, Impact CTA)
+
+#### 📁 Files Modified
+
+- `components/home/ProductMenu.tsx`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+- `lib/utils/strings.ts`
+
 ## [1.9.0] - 2026-03-08
 
 ### Detail Versi 1.9.0

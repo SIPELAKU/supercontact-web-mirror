@@ -260,7 +260,7 @@ export const IndividualClient = () => {
                             className="px-6!"
                             onClick={() => setIsSelectionEnabled(true)}
                         >
-                            Add Contact
+                            Add to Contact
                         </AppButton>
                     )}
                 </div>

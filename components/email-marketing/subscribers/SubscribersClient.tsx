@@ -10,7 +10,7 @@ import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteSubscriber, useBulkDeleteSubscribers } from '@/lib/hooks/useSubscribers';
+import { useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers } from '@/lib/hooks/useSubscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
 
@@ -26,6 +26,9 @@ export default function SubscribersClient() {
 
   const deleteMutation = useDeleteSubscriber();
   const bulkDeleteMutation = useBulkDeleteSubscribers();
+  const deleteAllMutation = useDeleteAllSubscribers();
+  const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+
 
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
@@ -80,7 +83,20 @@ export default function SubscribersClient() {
     }
   };
 
+  const handleConfirmDeleteAll = async () => {
+    try {
+      await deleteAllMutation.mutateAsync();
+      notify.success("All subscribers have been deleted successfully.");
+      forceRefetch();
+    } catch (err: any) {
+      notify.error(err.message || "Failed to delete all subscribers.");
+    } finally {
+      setConfirmAllOpen(false);
+    }
+  };
+
   return (
+
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Subscribers"
@@ -105,9 +121,11 @@ export default function SubscribersClient() {
           onEdit={handleOpenEditModal}
           onDeleteRequest={handleDeleteRequest}
           onImport={handleOpenImportModal}
+          onDeleteAllRequest={() => setConfirmAllOpen(true)}
           refreshTrigger={refreshTrigger}
-          isDeleting={deleteMutation.isPending || bulkDeleteMutation.isPending}
+          isDeleting={deleteMutation.isPending || bulkDeleteMutation.isPending || deleteAllMutation.isPending}
         />
+
       </Card>
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
@@ -135,11 +153,32 @@ export default function SubscribersClient() {
         </DialogContent>
         <DialogActions>
           <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
+          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}>
+            {deleteMutation.isPending || bulkDeleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
+          </AppButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
+        <DialogTitle>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <Typography variant="h6" color="error">Delete All Data</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            <strong>WARNING:</strong> Are you sure you want to delete <strong>all subscribers</strong> in your account? This action is highly destructive and cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
+          <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllMutation.isPending}>
+            {deleteAllMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete All Data!'}
           </AppButton>
         </DialogActions>
       </Dialog>
     </div>
   );
 }
+

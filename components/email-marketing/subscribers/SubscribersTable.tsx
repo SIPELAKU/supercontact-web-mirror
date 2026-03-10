@@ -33,11 +33,13 @@ interface SubscribersTableProps {
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (subscribers: Subscriber[]) => void;
   onImport: () => void;
+  onDeleteAllRequest: () => void;
   refreshTrigger: number;
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAllRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -146,6 +148,19 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
               Delete ({selected.length})
             </AppButton>
           )}
+          {selected.length === 0 && rows.length > 0 && (
+            <AppButton
+              variantStyle="soft"
+              color="danger"
+              startIcon={<Trash2 className="w-4 h-4" />}
+              onClick={onDeleteAllRequest}
+              className="ml-auto"
+              sx={{ px: 2, height: '36px' }}
+            >
+              Delete All Data
+            </AppButton>
+          )}
+
           <AppButton
             variantStyle="outline"
             color="primary"

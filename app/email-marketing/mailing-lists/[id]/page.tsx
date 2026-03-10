@@ -6,7 +6,7 @@ import ImportSubscriberModal from '@/components/email-marketing/subscribers/moda
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteMailingListSubscriber, useMailingListDetail, useMailingListCampaigns, useBulkDeleteMailingListSubscribers } from '@/lib/hooks/useMailingLists';
+import { useMailingListDetail, useDeleteMailingListSubscriber, useBulkDeleteMailingListSubscribers, useDeleteAllMailingListSubscribers, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import {
@@ -32,11 +32,12 @@ import {
     TextField,
     Tooltip,
     Typography,
-    Checkbox
+    Checkbox,
+    Stack
 } from '@mui/material';
 import { format }
     from 'date-fns';
-import { ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -68,7 +69,9 @@ const MailingListDetailPage = () => {
     const { data: mailingListData, isLoading, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
-
+    const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
+    const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
+    const [confirmAllOpen, setConfirmAllOpen] = useState(false);
     const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1);
 
     // Modals
@@ -76,7 +79,6 @@ const MailingListDetailPage = () => {
     const [showImportModal, setShowImportModal] = useState(false);
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-    const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
     const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
     const [selectedToDelete, setSelectedToDelete] = useState<string[]>([]);
 
@@ -92,24 +94,35 @@ const MailingListDetailPage = () => {
 
     const handleDeleteSubscriber = async () => {
         try {
-            if (subscriberToDelete) {
-                await deleteSubscriberMutation.mutateAsync({
-                    mailingListId: listId,
-                    subscriberId: subscriberToDelete.id
-                });
-                notify.success('Subscriber removed from list successfully');
-            } else if (selectedToDelete.length > 0) {
+            if (subscriberToDelete?.id === 'BULK') {
                 await bulkDeleteSubscriberMutation.mutateAsync({
                     mailingListId: listId,
                     contactIds: selectedToDelete
                 });
                 notify.success(`${selectedToDelete.length} subscriber(s) removed from list successfully`);
+            } else if (subscriberToDelete) {
+                await deleteSubscriberMutation.mutateAsync({
+                    mailingListId: listId,
+                    subscriberId: subscriberToDelete.id
+                });
+                notify.success('Subscriber removed from list successfully');
             }
 
             setSubscriberToDelete(null);
             setSelectedToDelete([]);
         } catch (err: any) {
             notify.error(err.message || 'Failed to remove subscriber(s)');
+        }
+    };
+
+    const handleConfirmDeleteAll = async () => {
+        try {
+            await deleteAllSubscriberMutation.mutateAsync(listId);
+            notify.success('All subscribers removed from list successfully');
+            setConfirmAllOpen(false);
+            setSelectedToDelete([]);
+        } catch (err: any) {
+            notify.error(err.message || 'Failed to remove all subscribers');
         }
     };
 
@@ -278,10 +291,10 @@ const MailingListDetailPage = () => {
                                     <AppButton
                                         variantStyle="danger"
                                         startIcon={<Trash2 size={18} />}
-                                        onClick={() => setSubscriberToDelete({ id: 'BULK' } as any)} // trigger dialog but for bulk
+                                        onClick={() => setSubscriberToDelete({ id: 'BULK', email: 'selected' })}
                                         sx={{ height: '42px', px: 3 }}
                                     >
-                                        Delete Selected
+                                        Delete Selected ({selectedToDelete.length})
                                     </AppButton>
                                 </>
                             ) : (
@@ -302,6 +315,18 @@ const MailingListDetailPage = () => {
                                     >
                                         Tambah Subscriber
                                     </AppButton>
+                                    {filteredSubscribers.length > 0 && (
+                                        <AppButton
+                                            variantStyle="soft"
+                                            color="danger"
+                                            startIcon={<Trash2 className="w-4 h-4" />}
+                                            onClick={() => setConfirmAllOpen(true)}
+                                            sx={{ height: '42px', px: 3, ml: 'auto' }}
+                                        >
+                                            Delete All Data
+                                        </AppButton>
+                                    )}
+
                                 </>
                             )}
                         </Box>
@@ -560,6 +585,26 @@ const MailingListDetailPage = () => {
                 subscriber={previewSubscriber}
                 onClose={() => setPreviewSubscriber(null)}
             />
+
+            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
+                <DialogTitle>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                        <Typography variant="h6" color="error">Remove All Subscribers</Typography>
+                    </Stack>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        <strong>WARNING:</strong> Are you sure you want to remove <strong>all subscribers</strong> from this mailing list? This action will only remove them from this list, it will not delete the contacts themselves.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline' disabled={deleteAllSubscriberMutation.isPending}>Cancel</AppButton>
+                    <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllSubscriberMutation.isPending}>
+                        {deleteAllSubscriberMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Remove All'}
+                    </AppButton>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

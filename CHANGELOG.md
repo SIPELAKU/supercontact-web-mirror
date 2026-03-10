@@ -5,7 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2026-03-10
+
+### Detail Versi 1.9.3
+
+#### ✨ Enhancements - Data Governance & Destructive Actions
+
+- **Global "Delete All" Functionality**: Implemented a standardized way to clear data across core modules, protected by severe confirmation dialogs.
+  - **Subscribers**: Added `deleteAllSubscribers` API and the corresponding `Delete All Data` action in the Subscribers list.
+  - **Contacts**: Added `deleteAllContacts` API and integrated the `Delete All Data` action in the Contacts toolbar.
+  - **Mailing List Subscribers**: Added list-specific `deleteAllMailingListSubscribers` functionality to remove all subscribers from a specific list without deleting them from global contacts.
+- **UI Standardization**:
+  - Standardized Table and Toolbar props (`onEdit`, `onDeleteRequest`, `onDeleteAllRequest`) across multiple components for better consistency.
+  - Implemented high-contrast, red-themed warning modals for irreversible destructive actions.
+
+#### 📁 Files Modified
+
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/api/contacts.ts`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/hooks/useSubscribers.ts`
+- `lib/hooks/useContacts.ts`
+- `lib/hooks/useMailingLists.ts`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactToolbar.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+
 ## [1.9.2] - 2026-03-10
+
 
 ### Detail Versi 1.9.1
 

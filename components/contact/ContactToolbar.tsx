@@ -1,4 +1,4 @@
-import { Trash2, Search, Download, Plus } from "lucide-react";
+import { Plus, Download, Printer, Filter, Settings, Trash2, Search, FileDown } from "lucide-react";
 import ColumnVisibilityPopover from "@/components/contact/column-visibility-popover";
 import FilterPopover from "@/components/contact/filter-popover";
 import DensityPopover, { Density } from "@/components/contact/density-popover";
@@ -22,7 +22,9 @@ interface ContactToolbarProps {
     onOpenAdd: () => void;
     onOpenImport: () => void;
     onOpenDeleteMultiple: () => void;
+    onOpenDeleteAll?: () => void;
 }
+
 
 export const ContactToolbar = ({
     allColumns,
@@ -39,7 +41,10 @@ export const ContactToolbar = ({
     onOpenAdd,
     onOpenImport,
     onOpenDeleteMultiple,
+    onOpenDeleteAll,
 }: ContactToolbarProps) => {
+
+
     return (
         <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 pt-5">
             <div className="flex flex-wrap gap-2">
@@ -91,6 +96,19 @@ export const ContactToolbar = ({
                 >
                     Add Contact
                 </AppButton>
+                {selectedContacts.length === 0 && (
+                    <AppButton
+                        variantStyle="soft"
+                        color="danger"
+                        startIcon={<Trash2 size={16} />}
+                        onClick={onOpenDeleteAll}
+                        sx={{ px: 2, height: '40px' }}
+                        className="ml-auto"
+                    >
+                        Delete All Data
+                    </AppButton>
+                )}
+
             </div>
         </section>
     );

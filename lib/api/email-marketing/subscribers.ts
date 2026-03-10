@@ -280,3 +280,51 @@ export async function bulkDeleteSubscribers(token: string, contactIds: string[])
     throw error;
   }
 }
+export async function deleteAllSubscribers(token: string): Promise<DeleteSubscriberResponse> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/all`;
+
+  logger.info("Making DELETE request to delete all subscribers", { url });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete all subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers/all (DELETE)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Delete all subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete all subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Delete all subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}

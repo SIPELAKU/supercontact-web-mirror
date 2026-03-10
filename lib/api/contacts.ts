@@ -135,3 +135,25 @@ export async function deleteContact(token: string, contactId: string): Promise<a
   }
   return json;
 }
+export async function deleteAllContacts(token: string): Promise<any> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts/all`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+  });
+
+  const json = await res.json();
+  console.log("Delete all contacts API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to delete all contacts";
+    throw new Error(errorMsg);
+  }
+  return json;
+}

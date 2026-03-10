@@ -33,11 +33,13 @@ interface SubscribersTableProps {
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (subscribers: Subscriber[]) => void;
   onImport: () => void;
+  onDeleteAllRequest: () => void;
   refreshTrigger: number;
   isDeleting: boolean;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAllRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -151,6 +153,7 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
             color="primary"
             startIcon={<Download className="w-4 h-4" />}
             onClick={onImport}
+            sx={{ ml: 'auto' }}
           >
             Import
           </AppButton>
@@ -162,7 +165,18 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
           >
             Add Subscriber
           </AppButton>
+          {selected.length === 0 && rows.length > 0 && (
+            <AppButton
+              variantStyle="soft"
+              color="danger"
+              startIcon={<Trash2 className="w-4 h-4" />}
+              onClick={onDeleteAllRequest}
+            >
+              Delete All Data
+            </AppButton>
+          )}
         </Box>
+
       </Box>
 
       {/* Table */}
@@ -229,7 +243,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, isDeleting
                     <TableCell sx={{ py: 2 }}>{row.company || '-'}</TableCell>
                     <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+
                         <IconButton
                           size="small"
                           onClick={() => setPreviewSubscriber(row)}

@@ -20,6 +20,7 @@ import StoreButton from '../ui/StoreButton';
 
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { Instagram } from '@mui/icons-material';
 
 const Footer = () => {
     useLanguage();
@@ -87,13 +88,13 @@ const Footer = () => {
                                 {strings.footer_col_sales}
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_crm}</Link>
+                                <Link href="/crm-sales" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_crm}</Link>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>Premium</Link>
+                                    <Link href="/public-omnichannel" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_omnichannel}</Link>
                                     <Box sx={{ bgcolor: 'white', color: '#062141', px: 1, py: 0.2, borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>{strings.footer_new_badge}</Box>
                                 </Box>
-                                <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
-                                <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>SmartSales Web</Link>
+                                <Link href="/solusi-keuangan" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
+                                <Link href="/" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>SmartSales Web</Link>
                             </Box>
                         </Grid>
 
@@ -111,7 +112,7 @@ const Footer = () => {
                         </Grid>
 
                         {/* App Download Section */}
-                        <Grid item xs={12} md={2.4}>
+                        {/* <Grid item xs={12} md={2.4}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
                                 {strings.footer_col_download}
                             </Typography>
@@ -119,7 +120,7 @@ const Footer = () => {
                                 <StoreButton store="apple" sx={{ bgcolor: '#04162d', '&:hover': { bgcolor: '#0a2a51' } }} />
                                 <StoreButton store="google" sx={{ bgcolor: '#04162d', '&:hover': { bgcolor: '#0a2a51' } }} />
                             </Box>
-                        </Grid>
+                        </Grid> */}
                     </Grid>
                 </Container>
             </Box>
@@ -132,7 +133,7 @@ const Footer = () => {
                             {strings.formatString(strings.footer_copyright, { year: currentYear.toString() })}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
+                            {/* <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
                                 <GitHubIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
@@ -143,7 +144,12 @@ const Footer = () => {
                             </IconButton>
                             <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
                                 <GoogleIcon fontSize="small" />
-                            </IconButton>
+                            </IconButton> */}
+                            <Link href="https://www.instagram.com/supercontact.id/" underline="none" target="_blank">
+                                <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
+                                    <Instagram fontSize="small" />
+                                </IconButton>
+                            </Link>
                         </Box>
                     </Box>
                 </Container>

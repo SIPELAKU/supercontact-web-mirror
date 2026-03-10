@@ -283,6 +283,8 @@ const MailingListDetailPage = () => {
                     </Box>
                     {activeTab === 0 && (
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+
+
                             {selectedToDelete.length > 0 ? (
                                 <>
                                     <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', mr: 2 }}>
@@ -303,7 +305,7 @@ const MailingListDetailPage = () => {
                                         variantStyle="outline"
                                         startIcon={<Download size={18} />}
                                         onClick={() => setShowImportModal(true)}
-                                        sx={{ height: '42px', px: 3 }}
+                                        sx={{ px: 3, ml: 'auto' }}
                                     >
                                         Import
                                     </AppButton>
@@ -311,7 +313,7 @@ const MailingListDetailPage = () => {
                                         variantStyle="primary"
                                         startIcon={<UserPlus size={18} />}
                                         onClick={() => setShowAddSubscriberModal(true)}
-                                        sx={{ height: '42px', px: 3 }}
+                                        sx={{ px: 3 }}
                                     >
                                         Tambah Subscriber
                                     </AppButton>
@@ -321,11 +323,12 @@ const MailingListDetailPage = () => {
                                             color="danger"
                                             startIcon={<Trash2 className="w-4 h-4" />}
                                             onClick={() => setConfirmAllOpen(true)}
-                                            sx={{ height: '42px', px: 3, ml: 'auto' }}
+                                            sx={{ px: 3 }}
                                         >
                                             Delete All Data
                                         </AppButton>
                                     )}
+
 
                                 </>
                             )}

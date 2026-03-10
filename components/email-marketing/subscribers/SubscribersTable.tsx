@@ -148,24 +148,12 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAl
               Delete ({selected.length})
             </AppButton>
           )}
-          {selected.length === 0 && rows.length > 0 && (
-            <AppButton
-              variantStyle="soft"
-              color="danger"
-              startIcon={<Trash2 className="w-4 h-4" />}
-              onClick={onDeleteAllRequest}
-              className="ml-auto"
-              sx={{ px: 2, height: '36px' }}
-            >
-              Delete All Data
-            </AppButton>
-          )}
-
           <AppButton
             variantStyle="outline"
             color="primary"
             startIcon={<Download className="w-4 h-4" />}
             onClick={onImport}
+            sx={{ ml: 'auto' }}
           >
             Import
           </AppButton>
@@ -177,7 +165,18 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAl
           >
             Add Subscriber
           </AppButton>
+          {selected.length === 0 && rows.length > 0 && (
+            <AppButton
+              variantStyle="soft"
+              color="danger"
+              startIcon={<Trash2 className="w-4 h-4" />}
+              onClick={onDeleteAllRequest}
+            >
+              Delete All Data
+            </AppButton>
+          )}
         </Box>
+
       </Box>
 
       {/* Table */}
@@ -244,7 +243,8 @@ const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAl
                     <TableCell sx={{ py: 2 }}>{row.company || '-'}</TableCell>
                     <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
                     <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+
                         <IconButton
                           size="small"
                           onClick={() => setPreviewSubscriber(row)}

@@ -71,7 +71,9 @@ export const ContactToolbar = ({
                     />
                 </div>
             </div>
-            <div className="flex flex-row flex-nowrap gap-3 shrink-0">
+            <div className="flex flex-row flex-nowrap gap-2 shrink-0">
+
+
                 {selectedContacts.length > 0 && (
                     <AppButton
                         onClick={onOpenDeleteMultiple}
@@ -102,12 +104,12 @@ export const ContactToolbar = ({
                         color="danger"
                         startIcon={<Trash2 size={16} />}
                         onClick={onOpenDeleteAll}
-                        sx={{ px: 2, height: '40px' }}
-                        className="ml-auto"
+                        sx={{ px: 2 }}
                     >
                         Delete All Data
                     </AppButton>
                 )}
+
 
             </div>
         </section>

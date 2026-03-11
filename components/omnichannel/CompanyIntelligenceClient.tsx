@@ -311,10 +311,10 @@ export default function CompanyIntelligenceClient({
 
           <div className="mt-6 overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100 p-6">
             {/* Filters Row */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
-              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 flex-1">
                 {/* Industry AppAutocomplete */}
-                <div className="w-full md:w-[200px]">
+                <div className="w-full sm:w-[200px]">
                   <AppAutocomplete
                     multiple
                     options={INDUSTRY_OPTIONS}
@@ -329,7 +329,7 @@ export default function CompanyIntelligenceClient({
                 </div>
 
                 {/* Location AppAutocomplete */}
-                <div className="w-full md:w-[200px]">
+                <div className="w-full sm:w-[200px]">
                   <AppAutocomplete
                     multiple
                     options={LOCATION_OPTIONS}
@@ -344,7 +344,7 @@ export default function CompanyIntelligenceClient({
                 </div>
 
                 {/* Search Input */}
-                <div className="w-full md:w-[300px]">
+                <div className="w-full sm:flex-1 sm:max-w-[300px]">
                   <Suspense>
                     <AppInput
                       placeholder="Search Company"
@@ -357,7 +357,7 @@ export default function CompanyIntelligenceClient({
                 </div>
               </div>
 
-              <div className="flex gap-3 w-full md:w-auto justify-end">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outlined"
                   startIcon={<Upload size={18} />}

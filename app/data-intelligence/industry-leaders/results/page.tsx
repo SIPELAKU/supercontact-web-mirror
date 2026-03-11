@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Search } from "lucide-react";
+import { ArrowLeft, Upload, Plus, Search, Save } from "lucide-react";
+import { Checkbox } from "@mui/material";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
@@ -13,7 +14,7 @@ import {
     IndustryLeaderCompany,
     FinancialStatus,
 } from "@/lib/types/IndustryLeader";
-import { searchCompanyIntelligence, saveCompanyToCrm } from "@/lib/api/company-intelligence";
+import { searchCompanyIntelligence, saveCompanyToCrm, bulkSaveCompaniesToCrm } from "@/lib/api/company-intelligence";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
@@ -34,6 +35,8 @@ export default function IndustryLeadersResultsPage() {
     const [totalCount, setTotalCount] = useState(0);
     const [isInitialized, setIsInitialized] = useState(false);
     const [usedCache, setUsedCache] = useState(false);
+    const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
+    const [isBulkSaving, setIsBulkSaving] = useState(false);
 
     // Load filter criteria and cached results from sessionStorage
     useEffect(() => {
@@ -155,6 +158,43 @@ export default function IndustryLeadersResultsPage() {
         }
     };
 
+    const handleSelectionChange = (id: string, selected: boolean) => {
+        setSelectedCompanyIds(prev => 
+            selected ? [...prev, id] : prev.filter(companyId => companyId !== id)
+        );
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedCompanyIds(companies.map(c => c.id));
+        } else {
+            setSelectedCompanyIds([]);
+        }
+    };
+
+    const handleBulkSaveToCRM = async () => {
+        if (selectedCompanyIds.length === 0) {
+            notify.error("Please select at least one company");
+            return;
+        }
+
+        setIsBulkSaving(true);
+        try {
+            const token = await getToken();
+            await bulkSaveCompaniesToCrm(token, selectedCompanyIds);
+            notify.success(`${selectedCompanyIds.length} companies saved to CRM successfully!`);
+            setSelectedCompanyIds([]);
+        } catch (err: any) {
+            console.error("Failed to bulk save to CRM:", err);
+            notify.error(err.message || "Failed to save companies to CRM");
+        } finally {
+            setIsBulkSaving(false);
+        }
+    };
+
+    const isAllSelected = companies.length > 0 && selectedCompanyIds.length === companies.length;
+    const isSomeSelected = selectedCompanyIds.length > 0 && selectedCompanyIds.length < companies.length;
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
             <PageHeader
@@ -182,19 +222,52 @@ export default function IndustryLeadersResultsPage() {
                 {/* Header Section */}
                 <div className="border-b border-gray-200 p-6">
                     <div className="mb-4 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900">
-                                Hasil Pencarian
-                            </h2>
-                            <p className="mt-1 text-sm text-gray-600">
-                                Ditemukan{" "}
-                                <span className="font-semibold text-gray-900">
-                                    {companies.length} Perusahaan
-                                </span>{" "}
-                                {searchQuery && `dari ${totalCount} total`}
-                            </p>
+                        <div className="flex items-center gap-4">
+                            {companies.length > 0 && (
+                                <Checkbox
+                                    checked={isAllSelected}
+                                    indeterminate={isSomeSelected}
+                                    onChange={(e) => handleSelectAll(e.target.checked)}
+                                    sx={{
+                                        color: "#5479EE",
+                                        "&.Mui-checked": {
+                                            color: "#5479EE",
+                                        },
+                                        "&.MuiCheckbox-indeterminate": {
+                                            color: "#5479EE",
+                                        },
+                                    }}
+                                />
+                            )}
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">
+                                    Hasil Pencarian
+                                </h2>
+                                <p className="mt-1 text-sm text-gray-600">
+                                    Ditemukan{" "}
+                                    <span className="font-semibold text-gray-900">
+                                        {companies.length} Perusahaan
+                                    </span>{" "}
+                                    {searchQuery && `dari ${totalCount} total`}
+                                    {selectedCompanyIds.length > 0 && (
+                                        <span className="ml-2 text-[#5479EE]">
+                                            ({selectedCompanyIds.length} selected)
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
                         </div>
                         <div className="flex gap-3">
+                            {selectedCompanyIds.length > 0 && (
+                                <AppButton
+                                    variantStyle="primary"
+                                    onClick={handleBulkSaveToCRM}
+                                    disabled={isBulkSaving}
+                                    startIcon={<Save size={18} />}
+                                >
+                                    {isBulkSaving ? "Saving..." : `Save Selected to CRM (${selectedCompanyIds.length})`}
+                                </AppButton>
+                            )}
                             <AppButton variantStyle="primary" startIcon={<Plus size={18} />}>
                                 Add Company
                             </AppButton>
@@ -236,6 +309,8 @@ export default function IndustryLeadersResultsPage() {
                                     company={company}
                                     onViewProfile={handleViewProfile}
                                     onSaveToCRM={handleSaveToCRM}
+                                    isSelected={selectedCompanyIds.includes(company.id)}
+                                    onSelectionChange={handleSelectionChange}
                                 />
                             ))}
                         </div>

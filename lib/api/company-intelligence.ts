@@ -101,7 +101,7 @@ export async function bulkSaveCompaniesToCrm(
 ): Promise<any> {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk-save-to-crm`, {
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/save-to-crm`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

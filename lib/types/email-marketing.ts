@@ -179,25 +179,25 @@ export interface CampaignDetailResponse {
 }
 
 export interface CreateCampaignData {
-  recipient_source: 'mailing_list' | 'subscriber';
+  recipient_source?: 'mailing_list' | 'subscriber';
   editor_type: 'simple_editor' | 'visual_builder';
   subject: string;
-  html_content: string;
+  html_content?: string;
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
-  mail_sender_id: string;
+  mail_sender_id?: string;
 }
 
 export interface UpdateCampaignData {
-  recipient_source: 'mailing_list' | 'subscriber';
+  recipient_source?: 'mailing_list' | 'subscriber';
   editor_type: 'simple_editor' | 'visual_builder';
   subject: string;
-  html_content: string;
+  html_content?: string;
   action: 'send' | 'draft';
   contact_ids?: string[];
   mailing_list_ids?: string[];
-  mail_sender_id: string;
+  mail_sender_id?: string;
 }
 
 export interface Contact {

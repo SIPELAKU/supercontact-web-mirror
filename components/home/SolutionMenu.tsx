@@ -111,7 +111,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<FlightIcon />} title={strings.sol_ind_travel} desc={strings.sol_ind_travel_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/perhotelan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} /></Grid>
@@ -237,7 +241,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                            <Link href="/solusi/perhotelan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} />

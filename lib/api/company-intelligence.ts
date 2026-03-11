@@ -95,6 +95,36 @@ export async function saveCompanyToCrm(
     return json?.data;
 }
 
+export async function bulkSaveCompaniesToCrm(
+    token: string,
+    cacheIds: string[]
+): Promise<any> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/save-to-crm`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ cache_ids: cacheIds }),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to bulk save companies to CRM";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
 export async function getMyTargetCompanies(
     token: string,
     params: {

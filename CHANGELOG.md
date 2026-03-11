@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.5] - 2026-03-11
+
+### Detail Versi 1.9.4
+
+#### ✨ Enhancements - Company Intelligence Bulk Operations
+
+- **Bulk Save to CRM**: Implemented bulk selection and save functionality for company intelligence search results:
+  - Added checkbox selection on each company result card
+  - Implemented "Select All" checkbox in the results header with indeterminate state support
+  - Added "Save Selected to CRM" button that appears when companies are selected
+  - Shows count of selected companies in both the header text and the bulk save button
+  - Bulk save uses a single API request (`POST /company-intelligence/bulk-save-to-crm`) with array of cache_ids
+  - Selection state is automatically cleared after successful bulk save
+  - Loading state with disabled button during bulk save operation
+  - Individual "Save To CRM" buttons remain available for single company saves
+
+#### 📁 Files Modified
+
+- `components/data-intelligence/CompanyResultCard.tsx`
+- `app/data-intelligence/industry-leaders/results/page.tsx`
+- `lib/api/company-intelligence.ts`
+
+
+
 ## [1.9.4] - 2026-03-11
 
 ### Detail Versi 1.9.4

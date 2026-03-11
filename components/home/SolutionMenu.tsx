@@ -101,7 +101,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                         <Grid container spacing={1}>
                             <Grid item xs={12}><MenuItem icon={<SchoolIcon />} title={strings.sol_ind_edu} desc={strings.sol_ind_edu_desc} /></Grid>
                             <Grid item xs={12}>
-                                <Link href="/solusi-keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Link href="/solusi/keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <MenuItem icon={<AccountBalanceIcon />} title={strings.sol_ind_finance} desc={strings.sol_ind_finance_desc} />
                                 </Link>
                             </Grid>
@@ -220,7 +220,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             <MenuItem icon={<SchoolIcon />} title={strings.sol_ind_edu} desc={strings.sol_ind_edu_desc} />
                         </Grid>
                         <Grid item xs={4}>
-                            <Link href="/solusi-keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Link href="/solusi/keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<AccountBalanceIcon />} title={strings.sol_ind_finance} desc={strings.sol_ind_finance_desc} />
                             </Link>
                         </Grid>

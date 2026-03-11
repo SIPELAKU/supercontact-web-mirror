@@ -88,12 +88,12 @@ const Footer = () => {
                                 {strings.footer_col_sales}
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <Link href="/crm-sales" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_crm}</Link>
+                                <Link href="/produk/crm-sales" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_crm}</Link>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Link href="/public-omnichannel" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_omnichannel}</Link>
+                                    <Link href="/produk/omnichannel" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_omnichannel}</Link>
                                     <Box sx={{ bgcolor: 'white', color: '#062141', px: 1, py: 0.2, borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>{strings.footer_new_badge}</Box>
                                 </Box>
-                                <Link href="/solusi-keuangan" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
+                                <Link href="/solusi/keuangan" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
                                 <Link href="/" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>SmartSales Web</Link>
                             </Box>
                         </Grid>

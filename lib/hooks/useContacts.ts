@@ -4,7 +4,7 @@
 import { useAuth } from "@/lib/context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContactResponse, fetchContacts } from "../api";
-import { deleteContact, deleteMultipleContacts } from "../api/contacts";
+import { deleteContact, deleteMultipleContacts, deleteAllContacts } from "../api/contacts";
 
 // Fetch all contacts with optional search
 export function useContacts(search?: string) {
@@ -65,6 +65,22 @@ export function useDeleteContact() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    },
+  });
+}
+export function useDeleteAllContacts() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error('No authentication token');
+      return deleteAllContacts(token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["all-contacts"] });
     },
   });
 }

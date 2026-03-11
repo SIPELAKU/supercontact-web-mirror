@@ -420,3 +420,51 @@ export async function bulkDeleteMailingListSubscribers(token: string, mailingLis
     throw error;
   }
 }
+export async function deleteAllMailingListSubscribers(token: string, mailingListId: string): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}/subscribers/all`;
+
+  logger.info("Making DELETE request to delete all subscribers from mailing list", { url, mailingListId });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete all mailing list subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/mailing-lists/${mailingListId}/subscribers/all (DELETE)`, { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Delete all mailing list subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to delete all mailing list subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Delete all mailing list subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}

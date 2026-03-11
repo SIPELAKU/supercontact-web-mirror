@@ -101,13 +101,21 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                         <Grid container spacing={1}>
                             <Grid item xs={12}><MenuItem icon={<SchoolIcon />} title={strings.sol_ind_edu} desc={strings.sol_ind_edu_desc} /></Grid>
                             <Grid item xs={12}>
-                                <Link href="/solusi-keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Link href="/solusi/keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <MenuItem icon={<AccountBalanceIcon />} title={strings.sol_ind_finance} desc={strings.sol_ind_finance_desc} />
                                 </Link>
                             </Grid>
                             <Grid item xs={12}><MenuItem icon={<LocalHospitalIcon />} title={strings.sol_ind_health} desc={strings.sol_ind_health_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<FlightIcon />} title={strings.sol_ind_travel} desc={strings.sol_ind_travel_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/tour-travel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<FlightIcon />} title={strings.sol_ind_travel} desc={strings.sol_ind_travel_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/perhotelan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} /></Grid>
@@ -220,7 +228,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             <MenuItem icon={<SchoolIcon />} title={strings.sol_ind_edu} desc={strings.sol_ind_edu_desc} />
                         </Grid>
                         <Grid item xs={4}>
-                            <Link href="/solusi-keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Link href="/solusi/keuangan" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<AccountBalanceIcon />} title={strings.sol_ind_finance} desc={strings.sol_ind_finance_desc} />
                             </Link>
                         </Grid>
@@ -228,10 +236,14 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             <MenuItem icon={<LocalHospitalIcon />} title={strings.sol_ind_health} desc={strings.sol_ind_health_desc} />
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<FlightIcon />} title={strings.sol_ind_travel} desc={strings.sol_ind_travel_desc} />
+                            <Link href="/solusi/tour-travel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<FlightIcon />} title={strings.sol_ind_travel} desc={strings.sol_ind_travel_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                            <Link href="/solusi/perhotelan" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} />

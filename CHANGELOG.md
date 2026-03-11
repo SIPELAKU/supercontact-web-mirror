@@ -5,7 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2026-03-11
+
+### Detail Versi 1.9.4
+
+#### ✨ Enhancements - Industry Specific Solution Pages
+
+- **Tour & Travel Solution Page (`/solusi/tour-travel`)**: Implemented a comprehensive marketing page for the travel sector.
+  - Added "Sales Pipeline Paket Liburan" Kanban board mockup.
+  - Created industry-specific pain point sections (Pesan Menumpuk, Data Tercecer, Reschedule).
+  - Showcased integrated CRM, Omnichannel, and Ticketing applications for travel agents.
+- **Hotel Industry Solution Page (`/solusi/perhotelan`)**: Created a dedicated hospitality solution page.
+  - Designed "Sales Pipeline Reservasi" mockup for guest booking management.
+  - Implemented sections for hospitality challenges and specific module applications (Room Reservation Profile, Shared WhatsApp, Guest Service Tickets).
+  - Added hospitality impact metrics (+35% occupancy, etc.).
+- **Multilingual Support**: Expanded `lib/utils/strings.ts` with hundreds of new localized strings (Indonesian & English) for Travel and Hotel sectors.
+- **Global Navigation & Security**:
+  - Integrated both industry pages into the `SolutionMenu` dropdown.
+  - Configured `AuthenticatedLayout` to allow public unauthenticated access to these routes.
+
+#### 📁 Files Created
+
+- `app/solusi/tour-travel/page.tsx`
+- `app/solusi/perhotelan/page.tsx`
+- `components/solution-travel/*` (Hero, Challenges, Solutions, Impact CTA, Client)
+- `components/solution-hotel/*` (Hero, Challenges, Solutions, Impact CTA, Client)
+
+#### 📁 Files Modified
+
+- `lib/utils/strings.ts`
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/home/SolutionMenu.tsx`
+
 ## [1.9.3] - 2026-03-10
+
 
 ### Detail Versi 1.9.3
 

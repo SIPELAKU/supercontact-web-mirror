@@ -221,7 +221,7 @@ export default function IndustryLeadersResultsPage() {
             <div className="rounded-lg border border-gray-200 bg-white shadow-lg">
                 {/* Header Section */}
                 <div className="border-b border-gray-200 p-6">
-                    <div className="mb-4 flex items-center justify-between">
+                    <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-4">
                             {companies.length > 0 && (
                                 <Checkbox
@@ -257,7 +257,7 @@ export default function IndustryLeadersResultsPage() {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap gap-3">
                             {selectedCompanyIds.length > 0 && (
                                 <AppButton
                                     variantStyle="primary"
@@ -265,7 +265,7 @@ export default function IndustryLeadersResultsPage() {
                                     disabled={isBulkSaving}
                                     startIcon={<Save size={18} />}
                                 >
-                                    {isBulkSaving ? "Saving..." : `Save Selected to CRM (${selectedCompanyIds.length})`}
+                                    {isBulkSaving ? "Saving..." : `Save Selected (${selectedCompanyIds.length})`}
                                 </AppButton>
                             )}
                             <AppButton variantStyle="primary" startIcon={<Plus size={18} />}>

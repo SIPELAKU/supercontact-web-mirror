@@ -3,17 +3,22 @@
 import { MapPin, Users, DollarSign, TrendingUp, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { IndustryLeaderCompany } from "@/lib/types/IndustryLeader";
+import { Checkbox } from "@mui/material";
 
 interface CompanyResultCardProps {
     company: IndustryLeaderCompany;
     onViewProfile: (id: string) => void;
     onSaveToCRM: (id: string) => void;
+    isSelected?: boolean;
+    onSelectionChange?: (id: string, selected: boolean) => void;
 }
 
 export default function CompanyResultCard({
     company,
     onViewProfile,
     onSaveToCRM,
+    isSelected = false,
+    onSelectionChange,
 }: CompanyResultCardProps) {
     const initials = company.name
         .split(" ")
@@ -24,6 +29,22 @@ export default function CompanyResultCard({
 
     return (
         <div className="flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+            {/* Selection Checkbox */}
+            {onSelectionChange && (
+                <div className="flex items-start pt-1">
+                    <Checkbox
+                        checked={isSelected}
+                        onChange={(e) => onSelectionChange(company.id, e.target.checked)}
+                        sx={{
+                            color: "#5479EE",
+                            "&.Mui-checked": {
+                                color: "#5479EE",
+                            },
+                        }}
+                    />
+                </div>
+            )}
+
             {/* Company Initial Badge */}
             <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#7B92F0] to-[#5479EE] text-2xl font-bold text-white">
                 {initials}

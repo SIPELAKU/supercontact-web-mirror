@@ -5,4 +5,3 @@ export * from './campaigns';
 export * from './mailing-lists';
 export * from './subscribers';
 export * from './mail-senders';
-

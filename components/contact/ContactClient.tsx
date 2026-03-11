@@ -14,6 +14,11 @@ import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
 import { ContactToolbar } from "./ContactToolbar";
 import { ContactTable } from "./ContactTable";
+import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts } from '@/lib/hooks/useContacts';
+import { AlertTriangle } from "lucide-react"; // Assuming lucide-react for icons
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'; // Assuming MUI for Dialog components
+import { Stack, Typography, CircularProgress } from '@mui/material'; // Assuming MUI for Stack, Typography, CircularProgress
+import { AppButton } from "@/components/ui/app-button"; // Assuming custom AppButton
 
 export const ContactClient = () => {
     const [openAdd, setOpenAdd] = useState(false);
@@ -33,6 +38,10 @@ export const ContactClient = () => {
     const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(false);
     const componentRef = useRef<HTMLDivElement>(null);
+    const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+    const deleteMutation = useDeleteContact();
+    const bulkDeleteMutation = useDeleteMultipleContacts();
+    const deleteAllMutation = useDeleteAllContacts();
 
     // Column definitions
     const allColumns = [
@@ -241,7 +250,6 @@ export const ContactClient = () => {
             link.setAttribute("download", "contacts_export.csv");
             link.style.visibility = "hidden";
             document.body.appendChild(link);
-            link.click();
             document.body.removeChild(link);
         }
     };
@@ -250,6 +258,26 @@ export const ContactClient = () => {
         contentRef: componentRef,
         documentTitle: "Contacts",
     });
+
+    const handleOpenEditModal = (item: Contact) => {
+        setSelectedItem(item);
+        setOpenEdit(true);
+    };
+
+    const handleDeleteRequest = (item: Contact) => {
+        setSelectedItem(item);
+        setOpenDelete(true);
+    };
+
+    const handleConfirmDeleteAll = async () => {
+        try {
+            await deleteAllMutation.mutateAsync();
+            setConfirmAllOpen(false);
+            loadDataAgain();
+        } catch (error) {
+            console.error("Failed to delete all contacts:", error);
+        }
+    };
 
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -274,7 +302,9 @@ export const ContactClient = () => {
                     onOpenAdd={() => setOpenAdd(true)}
                     onOpenImport={() => setOpenImport(true)}
                     onOpenDeleteMultiple={() => setOpenDeleteMultiple(true)}
+                    onOpenDeleteAll={() => setConfirmAllOpen(true)}
                 />
+
 
                 <ContactTable
                     loading={loading}
@@ -284,8 +314,8 @@ export const ContactClient = () => {
                     selected={selected}
                     handleSelectAll={handleSelectAll}
                     handleSelectRow={handleSelectRow}
-                    handleEdit={handleEdit}
-                    handleDelete={handleDelete}
+                    onEdit={handleOpenEditModal}
+                    onDeleteRequest={handleDeleteRequest}
                     handleDetail={handleDetail}
                     page={page}
                     rowsPerPage={rowsPerPage}
@@ -294,6 +324,7 @@ export const ContactClient = () => {
                     handleChangeRowsPerPage={handleChangeRowsPerPage}
                     allColumnsCount={allColumns.length}
                 />
+
             </div>
 
             <AddContactModal

@@ -5,6 +5,221 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2026-03-11
+
+### Detail Versi 1.9.4
+
+#### ✨ Enhancements - Industry Specific Solution Pages
+
+- **Tour & Travel Solution Page (`/solusi/tour-travel`)**: Implemented a comprehensive marketing page for the travel sector.
+  - Added "Sales Pipeline Paket Liburan" Kanban board mockup.
+  - Created industry-specific pain point sections (Pesan Menumpuk, Data Tercecer, Reschedule).
+  - Showcased integrated CRM, Omnichannel, and Ticketing applications for travel agents.
+- **Hotel Industry Solution Page (`/solusi/perhotelan`)**: Created a dedicated hospitality solution page.
+  - Designed "Sales Pipeline Reservasi" mockup for guest booking management.
+  - Implemented sections for hospitality challenges and specific module applications (Room Reservation Profile, Shared WhatsApp, Guest Service Tickets).
+  - Added hospitality impact metrics (+35% occupancy, etc.).
+- **Multilingual Support**: Expanded `lib/utils/strings.ts` with hundreds of new localized strings (Indonesian & English) for Travel and Hotel sectors.
+- **Global Navigation & Security**:
+  - Integrated both industry pages into the `SolutionMenu` dropdown.
+  - Configured `AuthenticatedLayout` to allow public unauthenticated access to these routes.
+
+#### 📁 Files Created
+
+- `app/solusi/tour-travel/page.tsx`
+- `app/solusi/perhotelan/page.tsx`
+- `components/solution-travel/*` (Hero, Challenges, Solutions, Impact CTA, Client)
+- `components/solution-hotel/*` (Hero, Challenges, Solutions, Impact CTA, Client)
+
+#### 📁 Files Modified
+
+- `lib/utils/strings.ts`
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/home/SolutionMenu.tsx`
+
+## [1.9.3] - 2026-03-10
+
+
+### Detail Versi 1.9.3
+
+#### ✨ Enhancements - Data Governance & Destructive Actions
+
+- **Global "Delete All" Functionality**: Implemented a standardized way to clear data across core modules, protected by severe confirmation dialogs.
+  - **Subscribers**: Added `deleteAllSubscribers` API and the corresponding `Delete All Data` action in the Subscribers list.
+  - **Contacts**: Added `deleteAllContacts` API and integrated the `Delete All Data` action in the Contacts toolbar.
+  - **Mailing List Subscribers**: Added list-specific `deleteAllMailingListSubscribers` functionality to remove all subscribers from a specific list without deleting them from global contacts.
+- **UI Standardization**:
+  - Standardized Table and Toolbar props (`onEdit`, `onDeleteRequest`, `onDeleteAllRequest`) across multiple components for better consistency.
+  - Implemented high-contrast, red-themed warning modals for irreversible destructive actions.
+
+#### 📁 Files Modified
+
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/api/contacts.ts`
+- `lib/api/email-marketing/mailing-lists.ts`
+- `lib/hooks/useSubscribers.ts`
+- `lib/hooks/useContacts.ts`
+- `lib/hooks/useMailingLists.ts`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactToolbar.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `app/email-marketing/mailing-lists/[id]/page.tsx`
+
+## [1.9.2] - 2026-03-10
+
+
+### Detail Versi 1.9.1
+
+#### 🧪 Testing & Quality Assurance — Comprehensive Unit Test Expansion
+
+- **Cookies Utility Tests** (`cookies.test.ts`): Validates `AUTH_COOKIE_NAME` constant, `hasAuthToken` behavior for valid/dummy/missing tokens, and auth action function existence.
+- **Auth Tokens Utility Tests** (`auth-tokens.test.ts`): Validates `generateSecureToken` output length, `generateTokenWithExpiration` timing accuracy, `isTokenExpired` for past/future dates, and `hashToken` deterministic consistency.
+- **Error Handler Utility Tests** (`error-handler.test.ts`): Validates string error passthrough, fallback messages for null/undefined, nested `data.detail` extraction, Axios-style `response.data.detail`, details array formatting with field names, standard `Error.message` extraction, and `handleError` return value.
+- **Taxonomy Utility Tests** (`taxonomy.test.ts`): Validates data integrity for industry/geographic/role taxonomies, `normalizeIndustry` exact and unknown lookups, `normalizeLocation` for Jakarta Pusat/Surabaya/unknown cities, and `getIndustryBreadcrumb` for known/unknown categories.
+- **Debounce Utility Tests** (`debounce.test.ts`): Validates return type, delayed execution, rapid-fire call cancellation, and default 300ms delay behavior.
+- **Strings / Localization Tests** (`strings.test.ts`): Validates default language (Indonesian), Indonesian/English string resolution, language switching, `formatString` placeholder replacement, fallback for missing keys, and key consistency across languages for critical UI strings.
+- **Middleware Route Logic Tests** (`middleware-routes.test.ts`): Validates protected route detection, public route exclusion, auth route exact matching, and redirect logic for authenticated users on auth routes, unauthenticated users on protected routes, and unauthenticated users on public routes.
+
+#### 📁 Files Created
+
+- `lib/tests/cookies.test.ts`
+- `lib/tests/auth-tokens.test.ts`
+- `lib/tests/error-handler.test.ts`
+- `lib/tests/taxonomy.test.ts`
+- `lib/tests/debounce.test.ts`
+- `lib/tests/strings.test.ts`
+- `lib/tests/middleware-routes.test.ts`
+
+## [1.9.1] - 2026-03-09
+
+### Detail Versi 1.9.1
+
+#### ✨ Enhancements - Public Marketing Pages
+
+- **Omnichannel Public Page (`/public-omnichannel`)**: Created a dedicated public marketing route highlighting Omnichannel features.
+  - Added dynamic hero mockup showcasing a unified inbox across WhatsApp, Instagram, and Web.
+  - Built interactive collaboration section featuring bouncing CSS keyframe animations for floating cards.
+  - Implemented bilingual (ID/EN) translation strings for all sections.
+- **Ticket Creation Integration Page (`/public-ticket`)**: Created a new public page detailing the ticketing module.
+  - Built custom interactive flowcharts demonstrating data flowing from chats directly to CRM.
+  - Added 3-column feature highlights for 1-Click Ticketing, Escalation, and Monitoring.
+- **Finance Solution Page (`/solusi-keuangan`)**: Implemented industry-specific solution page for the financial sector.
+  - Designed custom Kanban board mockups ("Pipeline Pengajuan Kredit").
+  - Added alternating layout demonstrating CRM Sales, Omnichannel, and Ticketing applications in finance.
+- **CRM Service Page Refinement**: Ported the internal CRM Service page into a public-facing variant showcasing service request workflows.
+- **Navigation & Access**:
+  - Updated `ProductMenu` and `SolutionMenu` components to seamlessly route to these new public endpoints.
+  - Configured `AuthenticatedLayout` to safely bypass these routes from access-control middleware, allowing prospective users to view them without logging in.
+
+#### 📁 Files Created
+
+- `app/public-omnichannel/page.tsx`
+- `app/public-ticket/page.tsx`
+- `app/solusi-keuangan/page.tsx`
+- `components/public-omnichannel/*` (Hero, Features, Collaboration, CTA)
+- `components/ticket-public/*` (Hero, Features, Integration, CTA)
+- `components/solution-finance/*` (Hero, Challenges, Solutions, Impact CTA)
+
+#### 📁 Files Modified
+
+- `components/home/ProductMenu.tsx`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+- `lib/utils/strings.ts`
+
+
+## [1.9.0] - 2026-03-08
+
+### Detail Versi 1.9.0
+
+#### ✨ Enhancements - Campaigns & Infrastructure
+
+- **Campaigns - Workflow Optimization**: Major overhaul of the campaign draft saving process to prioritize user speed and flexibility:
+  - **Relaxed Draft Validation**: Only the **Email Subject** is now required to save a draft.
+  - **Atomic Send Validation**: Strict validation for Mail Sender, Content, and Recipients is now deferred until the final "Send" action.
+  - **Label Refinement**: Removed mandatory markers (`*`) from elective fields to align with the new elective validation logic.
+  - **Error Visibility**: Implemented context-aware error messages that only appear when relevant to the user's current action.
+- **Data Governance - Global Taxonomy**: Introduced a comprehensive industry and geographic mapping layer:
+  - Added `INDUSTRY_TAXONOMY` with multi-level sector classifications.
+  - Implemented `GEOGRAPHIC_TAXONOMY` covering all Indonesian provinces and cities.
+  - Added normalization helpers to standardize user input for CRM and Campaign data.
+- **Testing & Quality Assurance**: 
+  - Created a high-volume **Mock Data Generator** for stress-testing campaign listings with 500+ records.
+  - Implemented a functional **Validation Test Suite** to ensure draft/send logic integrity.
+
+#### 🏗️ Architectural Refactoring
+
+- **Component Decoupling**: Extracted `RecipientSourceSelector` into a standalone modular component to reduce logic duplication in Add/Edit modals.
+- **Centralized Constants**: Migrated magic strings and error messages to `lib/constants/campaign.ts` for improved maintainability.
+- **Type Safety**: Updated `CreateCampaignData` and `UpdateCampaignData` interfaces to support elective fields for legacy and future drafts.
+
+#### 🐛 Bug Fixes
+
+- **TypeScript - AppButton Propping**: Fixed a type error where the redundant `variant` prop was passed to the custom `AppButton` component.
+- **Campaign Payloads - Property Alignment**: Synchronized the frontend `mail_sender_id` property with the backend update, resolving a mapping issue during campaign creation.
+
+#### 📁 Files Created
+
+- `lib/utils/taxonomy.ts`
+- `lib/mocks/campaign-data.ts`
+- `lib/constants/campaign.ts`
+- `lib/tests/campaign-validation.test.ts`
+- `components/email-marketing/campaigns/modals/RecipientSourceSelector.tsx`
+
+#### 📁 Files Modified
+
+- `package.json`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `lib/types/email-marketing.ts`
+
+
+
+## [1.8.35] - 2026-03-06
+
+### Detail Versi 1.8.35
+
+#### ✨ Enhancements
+
+- **Campaigns - Mail Sender Management**: Added edit and delete functionality for mail senders directly in the campaign modals:
+  - Added "Edit" and "Delete" buttons next to the selected mail sender dropdown
+  - Edit button opens a dialog to update the sender name via `PUT /mail-senders/{id}`
+  - Delete button shows confirmation before removing via `DELETE /mail-senders/{id}`
+  - Both buttons use consistent AppButton styling with primary blue and danger red colors
+  - After deletion, the mail sender selection is automatically cleared
+- **Campaigns - Subscriber Selection Improvements**: Enhanced the subscriber selection experience in Add Campaign and Edit Campaign modals with pagination and search functionality:
+  - Added pagination controls showing 10 subscribers per page instead of limiting to 1000 total
+  - Implemented search field to filter subscribers by email or name
+  - Search automatically resets to page 1 when typing
+  - Pagination controls only appear when there are multiple pages
+  - Shows appropriate "No subscribers found" message when search returns no results
+- **Campaign Statistics - Refresh Button**: Added a refresh icon button in the Campaign Statistics modal header that refetches the latest campaign data from the backend API (`/api/v1/campaigns/{campaign_id}`):
+  - Icon spins during data refresh for visual feedback
+  - Tooltip shows "Refresh statistics" on hover
+  - Updates all campaign stats (delivered, opened, clicked, bounced) in real-time
+  - Positioned next to the "Campaign Statistics" title for easy access
+
+#### 🐛 Bug Fixes
+
+- **Campaigns - Subscriber Limit Removed**: Fixed the 10-subscriber limit in campaign creation/editing modals. Previously, only the first 10 subscribers were available for selection even when more existed in the system. Now all subscribers are accessible through pagination and search.
+- **Sidebar - Icon Layout Shift**: Fixed text movement issue in the sidebar when scrolling. Custom icons (Omnichannel, Sales, Data Intelligence) now have explicit width/height attributes and min-width/min-height styles to prevent layout shifts during image loading.
+- **Campaigns - Button Color Consistency**: Fixed inconsistent blue colors between "+ Add New Mail Sender" link and action buttons. All buttons now use the same primary blue (#5479EE) from the AppButton component.
+
+#### 📁 Files Created
+
+- `components/email-marketing/campaigns/modals/MailSenderManager.tsx`
+
+#### 📁 Files Modified
+
+- `lib/api/email-marketing/mail-senders.ts`
+- `lib/hooks/useMailSenders.ts`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/ViewCampaignStatsModal.tsx`
+- `components/layout/Sidebar.tsx`
+
 ## [1.8.34] - 2026-03-05
 
 ### Detail Versi 1.8.34

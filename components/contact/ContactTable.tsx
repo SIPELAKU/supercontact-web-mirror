@@ -15,9 +15,10 @@ interface ContactTableProps {
     selected: number[];
     handleSelectAll: (event: React.ChangeEvent<HTMLInputElement>) => void;
     handleSelectRow: (index: number) => void;
-    handleEdit: (item: Contact) => void;
-    handleDelete: (item: Contact) => void;
+    onEdit: (item: Contact) => void;
+    onDeleteRequest: (item: Contact) => void;
     handleDetail: (item: Contact) => void;
+
     page: number;
     rowsPerPage: number;
     totalCount: number;
@@ -34,9 +35,10 @@ export const ContactTable = ({
     selected,
     handleSelectAll,
     handleSelectRow,
-    handleEdit,
-    handleDelete,
+    onEdit,
+    onDeleteRequest,
     handleDetail,
+
     page,
     rowsPerPage,
     totalCount,
@@ -232,9 +234,10 @@ export const ContactTable = ({
                                                 >
                                                     <Eye size={18} />
                                                 </IconButton>
-                                                <EditButton onClick={(e) => { e.stopPropagation(); handleEdit(item) }} />
-                                                <DeleteButton onClick={(e) => { e.stopPropagation(); handleDelete(item) }} />
+                                                <EditButton onClick={(e) => { e.stopPropagation(); onEdit(item) }} />
+                                                <DeleteButton onClick={(e) => { e.stopPropagation(); onDeleteRequest(item) }} />
                                             </div>
+
                                         </TableCell>
                                     )}
                                 </TableRow>
@@ -417,11 +420,12 @@ export const ContactTable = ({
                                     onClick={() => {
                                         const contact = previewContact;
                                         setPreviewContact(null);
-                                        handleEdit(contact);
+                                        onEdit(contact);
                                     }}
                                 >
                                     Edit
                                 </AppButton>
+
                             </div>
                         </DialogContent>
                     </>

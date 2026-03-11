@@ -6,10 +6,15 @@ import {
     fetchMailSenders,
     createMailSender,
     validateMailSender,
+    updateMailSender,
+    deleteMailSender,
     type MailSendersResponse,
     type CreateMailSenderData,
     type CreateMailSenderResponse,
     type ValidateMailSenderResponse,
+    type UpdateMailSenderData,
+    type UpdateMailSenderResponse,
+    type DeleteMailSenderResponse,
 } from "@/lib/api/email-marketing/mail-senders";
 
 export function useMailSenders() {
@@ -48,6 +53,36 @@ export function useValidateMailSender() {
             const token = Cookies.get("access_token");
             if (!token) throw new Error("No authentication token");
             return validateMailSender(token, mailSenderId, otp);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["mail-senders"] });
+        },
+    });
+}
+
+export function useUpdateMailSender() {
+    const queryClient = useQueryClient();
+
+    return useMutation<UpdateMailSenderResponse, Error, { mailSenderId: string; data: UpdateMailSenderData }>({
+        mutationFn: ({ mailSenderId, data }) => {
+            const token = Cookies.get("access_token");
+            if (!token) throw new Error("No authentication token");
+            return updateMailSender(token, mailSenderId, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["mail-senders"] });
+        },
+    });
+}
+
+export function useDeleteMailSender() {
+    const queryClient = useQueryClient();
+
+    return useMutation<DeleteMailSenderResponse, Error, string>({
+        mutationFn: (mailSenderId: string) => {
+            const token = Cookies.get("access_token");
+            if (!token) throw new Error("No authentication token");
+            return deleteMailSender(token, mailSenderId);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["mail-senders"] });

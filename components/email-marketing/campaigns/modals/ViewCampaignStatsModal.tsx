@@ -2,6 +2,7 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import { Campaign } from '@/lib/types/email-marketing';
+import { useCampaignDetail } from '@/lib/hooks/useCampaigns';
 import {
     Box,
     Dialog,
@@ -9,12 +10,15 @@ import {
     DialogContent,
     DialogTitle,
     Grid,
+    IconButton,
     Paper,
     Stack,
+    Tooltip,
     Typography
 } from '@mui/material';
 import { format } from 'date-fns';
 import { Activity, Mail, MousePointerClick, RefreshCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ViewCampaignStatsModalProps {
     open: boolean;
@@ -59,24 +63,70 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: n
 );
 
 const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsModalProps) => {
-    if (!campaign) return null;
+    const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(campaign);
+    
+    // Fetch campaign detail with refetch capability
+    const { data: campaignData, refetch, isRefetching } = useCampaignDetail(campaign?.id || '');
 
-    const stats = campaign.stats || {
+    // Update current campaign when data changes
+    useEffect(() => {
+        if (campaignData?.data) {
+            setCurrentCampaign(campaignData.data);
+        } else if (campaign) {
+            setCurrentCampaign(campaign);
+        }
+    }, [campaignData, campaign]);
+
+    if (!currentCampaign) return null;
+
+    const stats = currentCampaign.stats || {
         delivered: 0,
         opened: 0,
         clicked: 0,
         bounced: 0
     };
 
+    const handleRefresh = () => {
+        refetch();
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-            <DialogTitle sx={{ pb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Campaign Statistics
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {campaign.subject}
-                </Typography>
+        <>
+            <style>
+                {`
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                `}
+            </style>
+            <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+            <DialogTitle sx={{ pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Campaign Statistics
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {currentCampaign.subject}
+                    </Typography>
+                </Box>
+                <Tooltip title="Refresh statistics">
+                    <IconButton 
+                        onClick={handleRefresh} 
+                        disabled={isRefetching}
+                        sx={{ 
+                            ml: 2,
+                            '&:hover': { bgcolor: '#F3F4F6' }
+                        }}
+                    >
+                        <RefreshCcw 
+                            size={20} 
+                            style={{ 
+                                animation: isRefetching ? 'spin 1s linear infinite' : 'none'
+                            }} 
+                        />
+                    </IconButton>
+                </Tooltip>
             </DialogTitle>
 
             <DialogContent dividers sx={{ p: 0 }}>
@@ -99,7 +149,7 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                                         Status
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                                        {campaign.status.replace('_', ' ')}
+                                        {currentCampaign.status.replace('_', ' ')}
                                     </Typography>
                                 </Box>
                                 <Box>
@@ -107,7 +157,7 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                                         Sent Date
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {campaign.sent_at ? format(new Date(campaign.sent_at), 'dd MMM yyyy, HH:mm') : 'Not sent yet'}
+                                        {currentCampaign.sent_at ? format(new Date(currentCampaign.sent_at), 'dd MMM yyyy, HH:mm') : 'Not sent yet'}
                                     </Typography>
                                 </Box>
                                 <Box>
@@ -115,7 +165,7 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                                         Total Target
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                        {campaign.total_target.toLocaleString()} recipients
+                                        {currentCampaign.total_target.toLocaleString()} recipients
                                     </Typography>
                                 </Box>
                             </Box>
@@ -165,9 +215,9 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                             </Typography>
                         </Box>
                         <Box sx={{ height: 'calc(100% - 49px)', p: 2 }}>
-                            {campaign.html_content ? (
+                            {currentCampaign.html_content ? (
                                 <iframe
-                                    srcDoc={campaign.html_content}
+                                    srcDoc={currentCampaign.html_content}
                                     style={{
                                         width: '100%',
                                         height: '100%',
@@ -195,6 +245,7 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                 </AppButton>
             </DialogActions>
         </Dialog>
+        </>
     );
 };
 

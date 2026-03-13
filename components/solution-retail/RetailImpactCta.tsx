@@ -3,9 +3,12 @@
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function RetailImpactCta() {
     useLanguage();
+    const pathname = usePathname();
 
     const metrics = [
         { val: strings.retail_impact1_val, desc: strings.retail_impact1_desc },
@@ -103,6 +106,7 @@ export default function RetailImpactCta() {
                     </Typography>
                     <Button
                         variant="contained"
+                        onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                         sx={{
                             bgcolor: 'white',
                             color: '#597CFF',

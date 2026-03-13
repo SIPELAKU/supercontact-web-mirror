@@ -131,7 +131,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/it-saas" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} /></Grid>
                         </Grid>
                     </Stack>
@@ -273,7 +277,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                            <Link href="/solusi/it-saas" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} />

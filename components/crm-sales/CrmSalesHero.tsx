@@ -5,9 +5,12 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function CrmSalesHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -68,6 +71,7 @@ export default function CrmSalesHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',
@@ -84,7 +88,7 @@ export default function CrmSalesHero() {
                             >
                                 {strings.crm_sales_btn_trial}
                             </Button>
-                            <Button
+                            {/* <Button
                                 variant="outlined"
                                 startIcon={<PlayCircleOutlineIcon />}
                                 sx={{
@@ -103,7 +107,7 @@ export default function CrmSalesHero() {
                                 }}
                             >
                                 {strings.crm_sales_btn_demo}
-                            </Button>
+                            </Button> */}
                         </Box>
                     </Grid>
 

@@ -10,6 +10,8 @@ import AttachmentIcon from '@mui/icons-material/Attachment';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { SearchIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 // Custom icons for the mockup
 const InstagramIconMock = () => (
@@ -35,6 +37,7 @@ const WhatsAppIconMock = () => (
 
 export default function OmniHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -99,6 +102,7 @@ export default function OmniHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',
@@ -115,7 +119,7 @@ export default function OmniHero() {
                             >
                                 {strings.omni_hero_btn_trial}
                             </Button>
-                            <Button
+                            {/* <Button
                                 variant="outlined"
                                 startIcon={<PlayCircleOutlineIcon />}
                                 sx={{
@@ -134,7 +138,7 @@ export default function OmniHero() {
                                 }}
                             >
                                 {strings.omni_hero_btn_demo}
-                            </Button>
+                            </Button> */}
                         </Box>
                     </Box>
 

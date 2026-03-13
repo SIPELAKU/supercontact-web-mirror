@@ -3,10 +3,13 @@
 import { Box, Container, Typography, Stack, Button, Grid, Paper } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import ComputerIcon from '@mui/icons-material/Computer';
 
 export default function ITSaaSHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -72,16 +75,19 @@ export default function ITSaaSHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,
-                                    borderRadius: '12px',
+                                    borderRadius: '8px',
                                     textTransform: 'none',
                                     fontSize: '1rem',
-                                    '&:hover': { bgcolor: '#f0f0f0' }
+                                    '&:hover': {
+                                        bgcolor: 'rgba(255, 255, 255, 0.9)'
+                                    }
                                 }}
                             >
                                 {strings.it_hero_btn1}

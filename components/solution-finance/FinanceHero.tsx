@@ -4,9 +4,12 @@ import { Box, Container, Typography, Button, Paper } from "@mui/material";
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function FinanceHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -71,6 +74,7 @@ export default function FinanceHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

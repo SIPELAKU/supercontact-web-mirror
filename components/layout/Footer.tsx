@@ -33,7 +33,7 @@ const Footer = () => {
                 <Container maxWidth="lg">
                     <Grid container spacing={4} sx={{ alignItems: 'flex-start' }}>
                         {/* Brand & Newsletter Section */}
-                        <Grid item xs={12} md={5}>
+                        <Grid item xs={12} md={7}>
                             <Box sx={{ mb: 4 }}>
                                 <Image
                                     src="/assets/sc-logo-light.svg"
@@ -83,7 +83,7 @@ const Footer = () => {
                         </Grid>
 
                         {/* Navigation Links - SmartSales */}
-                        <Grid item xs={6} md={2.3}>
+                        <Grid item xs={6} md={5}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
                                 {strings.footer_col_sales}
                             </Typography>
@@ -99,7 +99,7 @@ const Footer = () => {
                         </Grid>
 
                         {/* Navigation Links - Need Help? */}
-                        <Grid item xs={6} md={2.3}>
+                        {/* <Grid item xs={6} md={2.3}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 3, color: 'white' }}>
                                 {strings.footer_col_help}
                             </Typography>
@@ -109,7 +109,7 @@ const Footer = () => {
                                 <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.footer_templates}</Link>
                                 <Link href="#" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.footer_integrations}</Link>
                             </Box>
-                        </Grid>
+                        </Grid> */}
 
                         {/* App Download Section */}
                         {/* <Grid item xs={12} md={2.4}>

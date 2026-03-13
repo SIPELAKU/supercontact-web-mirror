@@ -4,9 +4,12 @@ import { Box, Container, Typography, Stack, Button, Grid, Paper } from "@mui/mat
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import GroupsIcon from '@mui/icons-material/Groups';
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function OutsourcingHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -72,6 +75,7 @@ export default function OutsourcingHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

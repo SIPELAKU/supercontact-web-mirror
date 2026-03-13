@@ -8,9 +8,12 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HeadsetMicIcon from '@mui/icons-material/HeadsetMic';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function CrmServicesHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -74,6 +77,7 @@ export default function CrmServicesHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

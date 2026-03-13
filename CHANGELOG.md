@@ -5,7 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.7] - 2026-03-13
 
+### Detail Versi 1.9.7
+
+#### ✨ Enhancements - WhatsApp Redirect & Dynamic Messaging
+
+- **Global WhatsApp Redirect Integration**: Implemented a standardized WhatsApp redirect system for all "Mulai Uji Coba Gratis" (Hero) and CTA buttons across 12 product and solution landing pages.
+- **Dynamic Messaging Utility (`getWhatsAppLink`)**: Created a centralized utility to generate context-aware WhatsApp messages tailored to specific industry sectors (CRM Sales, IT & SaaS, Finance, etc.) while adhering to the "Smartsales" branding.
+- **Hero & CTA Components Coverage**: Updated 24 components (12 Hero + 12 CTA) with reactive path tracking to trigger personalized WhatsApp redirects.
+- **Unified Brand Voice**: Migrated all dynamic WhatsApp interest messages to use "Smartsales" branding.
+
+#### 📁 Files Created
+
+- `lib/utils/wa-link.ts`
+
+#### 📁 Files Modified
+
+- `CHANGELOG.md`
+- `components/crm-sales/*` (Hero, Cta)
+- `components/crm-services/*` (Hero, Cta)
+- `components/public-omnichannel/*` (Hero, Cta)
+- `components/ticket-public/*` (Hero, Cta)
+- `components/solution-finance/*` (Hero, ImpactCta)
+- `components/solution-fmcg/*` (Hero, ImpactCta)
+- `components/solution-hotel/*` (Hero, ImpactCta)
+- `components/solution-it-saas/*` (Hero, ImpactCta)
+- `components/solution-logistics/*` (Hero, ImpactCta)
+- `components/solution-outsourcing/*` (Hero, ImpactCta)
+- `components/solution-retail/*` (Hero, ImpactCta)
+- `components/solution-travel/*` (Hero, ImpactCta)
 
 ## [1.9.6] - 2026-03-13
 

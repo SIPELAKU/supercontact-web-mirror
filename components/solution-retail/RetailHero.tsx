@@ -6,9 +6,12 @@ import { strings } from "@/lib/utils/strings";
 import PersonIcon from '@mui/icons-material/Person';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function RetailHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -74,6 +77,7 @@ export default function RetailHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
+                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

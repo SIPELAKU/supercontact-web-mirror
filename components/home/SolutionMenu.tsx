@@ -116,11 +116,31 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<HotelIcon />} title={strings.sol_ind_hotel} desc={strings.sol_ind_hotel_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/logistik" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/fmcg" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/ritel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/it-saas" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/outsourcing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} />
+                                </Link>
+                            </Grid>
                         </Grid>
                     </Stack>
                 </Box>
@@ -246,19 +266,29 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} />
+                            <Link href="/solusi/logistik" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<LocalShippingIcon />} title={strings.sol_ind_logistics} desc={strings.sol_ind_logistics_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} />
+                            <Link href="/solusi/fmcg" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<ShoppingCartIcon />} title={strings.sol_ind_fmcg} desc={strings.sol_ind_fmcg_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} />
+                            <Link href="/solusi/ritel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<StoreIcon />} title={strings.sol_ind_retail} desc={strings.sol_ind_retail_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                            <Link href="/solusi/it-saas" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<ComputerIcon />} title={strings.sol_ind_it} desc={strings.sol_ind_it_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} />
+                            <Link href="/solusi/outsourcing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<GroupsIcon />} title={strings.sol_ind_outsourcing} desc={strings.sol_ind_outsourcing_desc} />
+                            </Link>
                         </Grid>
                     </Grid>
                 </TabPanel>

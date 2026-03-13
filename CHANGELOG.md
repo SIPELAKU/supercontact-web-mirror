@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+
+## [1.9.6] - 2026-03-13
+
+### Detail Versi 1.9.6
+
+#### ✨ Enhancements - Industry Specific Solution Pages (Extended)
+
+- **Logistics Solution Page (`/solusi/logistik`)**: Introduced a dedicated marketing page for the logistics sector.
+  - Implemented "Operational & Pickup Pipeline" Kanban board mockup.
+  - Added industry-specific challenge sections (Resi Menumpuk, Pickup Terlewat, Investigasi Lambat).
+  - Integrated CRM Sales, Omnichannel, and Ticketing for logistics operations.
+- **FMCG Solution Page (`/solusi/fmcg`)**: Added a comprehensive solution page for Fast-Moving Consumer Goods.
+  - Designed "Distributor Order Pipeline" mockup for order management.
+  - Showcased field canvassing and store visit tracking (GPS) features.
+  - Detailed the unified ordering center via WhatsApp API.
+- **Retail Industry Solution Page (`/solusi/ritel`)**: Implemented a new marketing page for the retail sector.
+  - Created "Member Promo Campaign" and "Customer Member Profile" mockups.
+  - Highlighted loyalty management, stock check via WhatsApp, and after-sales warranty claims.
+- **IT & SaaS Solution Page (`/solusi/it-saas`)**: Developed a dedicated solution page for the IT sector.
+  - Designed "IT Project Sales Pipeline" mockup for B2B deal management.
+  - Implemented Helpdesk Center via WhatsApp and Bug/Incident management ticketing sections.
+- **Outsourcing Solution Page (`/solusi/outsourcing`)**: Created a marketing page for the outsourcing industry.
+  - Implemented "Recruitment & Placement Pipeline" mockup.
+  - Showcased candidate database management and mass communication via WhatsApp Broadcast.
+
+#### 🏗️ Global Navigation & Layout
+- **Solution Menu**: Updated the `SolutionMenu` component to include the new industry solution pages.
+- **Authenticated Layout**: Configured all new solution routes in the `AuthenticatedLayout` to ensure public accessibility and consistent UI.
+
+#### 📁 Files Created
+
+- `app/solusi/logistik/page.tsx`
+- `app/solusi/fmcg/page.tsx`
+- `app/solusi/ritel/page.tsx`
+- `app/solusi/it-saas/page.tsx`
+- `app/solusi/outsourcing/page.tsx`
+- `components/solution-logistics/*`
+- `components/solution-fmcg/*`
+- `components/solution-retail/*`
+- `components/solution-it-saas/*`
+- `components/solution-outsourcing/*`
+
+#### 📁 Files Modified
+
+- `CHANGELOG.md`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+
 ## [1.9.5] - 2026-03-11
 
 ### Detail Versi 1.9.4

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-03-16
+
+### ✨ Added
+- **TableListUsers → SuperTable**: manualPagination,
+  server-side filter Position & Status, dynamic 
+  position options, bulk delete sequential,
+  export loop pagination, Print PDF toolbar,
+  mobile responsive
+
+### 📁 Modified Files
+- components/users/users-table/TableListUsers.tsx
+- components/users/UsersClient.tsx
+
 ## [1.10.0] - 2026-03-16
 
 ### ✨ Added

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.2] - 2026-03-16
+
+### ✨ Added
+- **CampaignsTable → SuperTable**: manualPagination,
+  client-side status filter (Draft/In Queue/Sending/
+  Sent/Canceled), bulk delete dengan skip otomatis 
+  untuk non-Draft, export Excel/CSV loop pagination,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/email-marketing/campaigns/CampaignsTable.tsx
+- components/email-marketing/campaigns/CampaignsClient.tsx
+
 ## [1.10.1] - 2026-03-16
 
 ### ✨ Added

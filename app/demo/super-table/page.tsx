@@ -51,7 +51,7 @@ const checklistData: TableIntegrationStatus[] = [
   { no: 2, tableName: 'TicketTable', filePath: 'components/support/tickets/TicketTable.tsx', module: 'Support', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search', 'Status filter', 'Selection'], superTableFeatures: ['manualPagination', 'column filters per kolom (select Priority & Status, dropdown Agent dengan UUID)', 'bulk delete sequential dengan progress toast', 'export loop semua halaman', 'mobile responsive'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 3, tableName: 'ProductTable', filePath: 'components/product/ProductTable.tsx', module: 'Product', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search', 'Action menu'], superTableFeatures: ['manualPagination', 'accessorFn formatting (Rupiah & persen)', 'bulk delete sequential', 'export loop semua halaman dengan do...while', 'race condition fix dengan useRef prevState'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 4, tableName: 'TableListUsers', filePath: 'components/users/TableListUsers.tsx', module: 'Users', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search', 'Filter role'], superTableFeatures: ['manualPagination', 'server-side filter Position & Status', 'dynamic position options dari data aktif', 'bulk delete sequential', 'export Excel/CSV loop pagination', 'Print PDF di toolbar', 'mobile responsive toolbar'], estimasiWaktu: 'Selesai', blockers: '' },
-  { no: 5, tableName: 'CampaignsTable', filePath: 'components/email-marketing/campaigns/CampaignsTable.tsx', module: 'Email Marketing', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Search', 'Status Filter'], superTableFeatures: ['Date Range Filter', 'Export', 'Row pinning'], estimasiWaktu: '1 hari', blockers: '' },
+  { no: 5, tableName: 'CampaignsTable', filePath: 'components/email-marketing/campaigns/CampaignsTable.tsx', module: 'Email Marketing', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search', 'Status Filter'], superTableFeatures: ['manualPagination', 'client-side status filter', 'bulk delete (Draft only) dengan skip notification', 'export Excel/CSV loop pagination', 'mobile responsive toolbar'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 6, tableName: 'ContactTable', filePath: 'components/contact/ContactTable.tsx', module: 'Contact', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Complex API Filter', 'Selection', 'Multi actions'], superTableFeatures: ['Advanced API Filters', 'Faceted values', 'Complex Bulk Actions'], estimasiWaktu: '2 hari', blockers: 'API butuh penyesuaian untuk filter variant baru' },
   { no: 7, tableName: 'QuotationTable', filePath: 'components/sales/QuotationTable.tsx', module: 'Sales', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['Amount Range', 'Date Filter', 'Export PDF Quotation'], estimasiWaktu: '1 hari', blockers: '' },
   { no: 8, tableName: 'DepartmentsTableList', filePath: 'components/organization/DepartmentsTableList.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Tree/Expand'], superTableFeatures: ['Expanding Sub Rows natively', 'Export'], estimasiWaktu: '1 hari', blockers: '' },
@@ -75,7 +75,7 @@ const IntegrationChecklist = () => {
         {/* Summary */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="success.main" fontWeight="bold">4</Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">5</Typography>
             <Typography variant="body2" color="text.secondary">✅ Selesai</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
@@ -83,7 +83,7 @@ const IntegrationChecklist = () => {
             <Typography variant="body2" color="text.secondary">🔄 Dikembalikan</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="text.secondary" fontWeight="bold">8</Typography>
+            <Typography variant="h4" color="text.secondary" fontWeight="bold">7</Typography>
             <Typography variant="body2" color="text.secondary">⏳ Belum</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>

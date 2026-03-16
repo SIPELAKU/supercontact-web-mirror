@@ -151,7 +151,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                     </Typography>
                     <Stack spacing={1}>
                         <Grid container spacing={1}>
-                            <Grid item xs={12}><MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/sales" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} /></Grid>
@@ -295,7 +299,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 <TabPanel value={value} index={1}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>
-                            <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                            <Link href="/solusi/sales" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />

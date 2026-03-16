@@ -33,7 +33,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     pathname?.startsWith('/solusi/fmcg') ||
     pathname?.startsWith('/solusi/ritel') ||
     pathname?.startsWith('/solusi/outsourcing') ||
-    pathname?.startsWith('/solusi/it-saas');
+    pathname?.startsWith('/solusi/it-saas') ||
+    pathname?.startsWith('/solusi/sales');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {

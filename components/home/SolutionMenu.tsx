@@ -156,7 +156,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/customer-service" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} /></Grid>
                             <Grid item xs={12}><MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} /></Grid>
@@ -304,7 +308,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                            <Link href="/solusi/customer-service" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} />

@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.10.0] - 2026-03-16
+
+### ✨ Added
+- **SuperTable Core**: Komponen tabel universal dengan dukungan manualPagination, columnFilters, export Excel/CSV, bulk actions, dan urlSync
+- **RolesTable → SuperTable**: Server-side pagination & search, export loop pagination, facetedValues, urlSync, densityToggle, fullScreenToggle
+- **TicketTable → SuperTable**: Column filters per kolom (Priority/Status select, Agent UUID dropdown), bulk delete sequential dengan progress toast, export loop pagination, mobile responsive toolbar
+- **ProductTable → SuperTable**: accessorFn formatting (Rupiah & persen), bulk delete sequential, export do...while loop, race condition fix dengan useRef prevState
+- **Demo Page /demo/super-table**: Integration checklist, filter variants demo, accessorFn formatting demo, bulk delete demo, server-side simulation
+
+### 🐛 Fixed
+- Generic constraint TData diubah dari Record<string,unknown> ke object untuk kompatibilitas semua TypeScript interface
+- Double pagination dihapus dari RolesTable dan TicketTable
+- Export kosong karena Authorization header tidak terkirim ke API
+- Export 422 error karena limit melebihi batas backend
+
+#### 📁 Modified Files
+- components/roles/RolesClient.tsx
+- components/roles/roles-table/RolesTable.tsx
+- components/roles/roles-button-open-modal/AddRoleButton.tsx
+- components/support/tickets/TicketTable.tsx
+- app/support/tickets/page.tsx
+- components/product/ProductTable.tsx
+- components/product/ProductClient.tsx
+- components/ui/super-table/types.ts
+- components/ui/super-table/SuperTable.tsx
+- components/ui/super-table/hooks/useTableConfig.tsx
+- components/ui/super-table/hooks/useTableState.ts
+- components/ui/super-table/hooks/useTableExport.ts
+- components/ui/super-table/components/BulkActionsBar.tsx
+- app/demo/super-table/page.tsx
+
+#### 📁 Created Files
+- (tidak ada file baru, hanya modifikasi)
+
+---
+
 ## [1.9.7] - 2026-03-13
 
 ### Detail Versi 1.9.7

@@ -92,7 +92,7 @@ export default function CSHero() {
                             >
                                 {strings.sol_cs_hero_btn1}
                             </Button>
-                            <Button
+                            {/* <Button
                                 variant="outlined"
                                 sx={{
                                     color: 'white',
@@ -112,7 +112,7 @@ export default function CSHero() {
                                 }}
                             >
                                 {strings.sol_cs_hero_btn2}
-                            </Button>
+                            </Button> */}
                         </Stack>
                     </Grid>
 

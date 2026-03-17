@@ -14,17 +14,6 @@ import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 // Custom icons for the mockup
-const InstagramIconMock = () => (
-    <Box sx={{
-        width: 16, height: 16, borderRadius: '4px',
-        background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-    }}>
-        <Box sx={{ width: 10, height: 10, border: '1.5px solid white', borderRadius: '3px', position: 'relative' }}>
-            <Box sx={{ width: 4, height: 4, border: '1.5px solid white', borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        </Box>
-    </Box>
-);
 
 const WhatsAppIconMock = () => (
     <Box sx={{
@@ -202,8 +191,8 @@ export default function OmniHero() {
                                             <Avatar sx={{ width: 40, height: 40, bgcolor: '#E2E8F0', mr: 1.5 }} />
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Rina_Style</Typography>
-                                                    <InstagramIconMock />
+                                                    <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#1E293B' }}>Andi Setiawan</Typography>
+                                                    <WhatsAppIconMock />
                                                 </Box>
                                                 <Typography variant="caption" sx={{ color: '#3B82F6', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
                                                     Apakah stok masih ...
@@ -246,8 +235,8 @@ export default function OmniHero() {
                                     {/* Chat Header */}
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid #F1F5F9' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <InstagramIconMock />
-                                            <Typography sx={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem' }}>@Rina_Style</Typography>
+                                            <WhatsAppIconMock />
+                                            <Typography sx={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem' }}>Andi Setiawan</Typography>
                                         </Box>
                                         <Button
                                             size="small"
@@ -286,7 +275,7 @@ export default function OmniHero() {
                                                 maxWidth: '100%', border: '1px solid #C7D2FE'
                                             }}>
                                                 <Typography sx={{ fontSize: '0.85rem', color: '#1E3A8A' }}>
-                                                    Halo Kak Rina! 👋 Terima kasih sudah menghubungi kami. Sebentar ya Kak, kami cek terlebih dahulu stoknya di gudang.
+                                                    Halo Kak Andi! 👋 Terima kasih sudah menghubungi kami. Sebentar ya Kak, kami cek terlebih dahulu stoknya di gudang.
                                                 </Typography>
                                             </Box>
                                             <Avatar sx={{ width: 28, height: 28, bgcolor: '#93C5FD' }} />

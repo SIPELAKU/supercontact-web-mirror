@@ -380,7 +380,7 @@ export const strings = createLocalizedStrings({
 
         omni_hero_badge: "Omnichannel App",
         omni_hero_title: "One Inbox for All Customer Messages",
-        omni_hero_desc: "Stop switching between tabs. Manage WhatsApp, Instagram DM, and other channels in one unified platform. Turn conversations into service or sales tickets with just one click.",
+        omni_hero_desc: "Stop switching between tabs. Manage WhatsApp and other channels in one unified platform. Turn conversations into service or sales tickets with just one click.",
         omni_hero_btn_trial: "Start Free Trial",
         omni_hero_btn_demo: "Watch Demo",
 
@@ -389,8 +389,8 @@ export const strings = createLocalizedStrings({
         omni_integ_subtitle: "Be present on the platforms your customers use. Answer faster, gather context, and increase sales conversions.",
         omni_integ_feat1_title: "One Inbox (Omnichannel)",
         omni_integ_feat1_desc: "Manage chats from various channels on a single screen. No need to log into multiple apps to respond to your customers professionally.",
-        omni_integ_feat2_title: "Instagram & WhatsApp API Integration",
-        omni_integ_feat2_desc: "Reply to Instagram Direct Messages (DM), comments, and official WhatsApp Business messages directly from the SmartSales dashboard in real-time.",
+        omni_integ_feat2_title: "WhatsApp API & Official Integration",
+        omni_integ_feat2_desc: "Reply to official WhatsApp Business messages and other integrated channels directly from the SmartSales dashboard in real-time.",
         omni_integ_feat3_title: "Ticket Creation Integration",
         omni_integ_feat3_desc: "Convert complaint messages or prospect inquiries into customer support tickets or sales pipelines automatically, right from the chat panel.",
 
@@ -1581,7 +1581,7 @@ export const strings = createLocalizedStrings({
 
         omni_hero_badge: "Aplikasi Omnichannel",
         omni_hero_title: "Satu Kotak Masuk untuk Semua Pesan Pelanggan",
-        omni_hero_desc: "Berhenti berpindah antar tab. Kelola WhatsApp, Instagram DM, dan saluran lainnya dalam satu platform terpadu. Ubah percakapan menjadi tiket layanan atau penjualan hanya dengan satu klik.",
+        omni_hero_desc: "Berhenti berpindah antar tab. Kelola WhatsApp dan saluran lainnya dalam satu platform terpadu. Ubah percakapan menjadi tiket layanan atau penjualan hanya dengan satu klik.",
         omni_hero_btn_trial: "Mulai Uji Coba Gratis",
         omni_hero_btn_demo: "Tonton Demo",
 
@@ -1590,8 +1590,8 @@ export const strings = createLocalizedStrings({
         omni_integ_subtitle: "Hadir di platform tempat pelanggan Anda berada. Jawab lebih cepat, kumpulkan konteks, dan tingkatkan konversi penjualan.",
         omni_integ_feat1_title: "Satu Kotak Masuk (Omnichannel)",
         omni_integ_feat1_desc: "Kelola obrolan (chat) dari berbagai saluran dalam satu layar. Tidak perlu lagi login ke banyak aplikasi untuk merespons pelanggan Anda secara profesional.",
-        omni_integ_feat2_title: "Integrasi Instagram & WhatsApp API",
-        omni_integ_feat2_desc: "Balas Direct Message (DM) Instagram, komentar, dan pesan WhatsApp Business resmi langsung dari dasbor SmartSales secara real-time.",
+        omni_integ_feat2_title: "Integrasi WhatsApp API Resmi",
+        omni_integ_feat2_desc: "Balas pesan WhatsApp Business resmi dan saluran komunikasi lainnya langsung dari dasbor SmartSales secara real-time.",
         omni_integ_feat3_title: "Ticket Creation Integration",
         omni_integ_feat3_desc: "Ubah pesan keluhan atau pertanyaan prospek menjadi tiket dukungan pelanggan (support ticket) atau pipeline sales secara otomatis langsung dari panel obrolan.",
 

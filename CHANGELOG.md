@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-03-17
+
+### ✨ Added
+- **Industry Solution Pages**: Developed a full suite of marketing landing pages for **Sales, Customer Service, Marketing, Human Resource,** and **Operations** industries at `/solusi/[industry]`.
+- **Dynamic Industry Components**: Implemented custom sections (`Hero`, `Challenges`, `Solutions`, `ImpactCTA`) for each industry with optimized "Glassmorphism" UI and interactive mockups.
+- **Automated WhatsApp Links**: Integrated `getWhatsAppLink` utility across all solution Hero and CTA buttons to trigger context-aware WhatsApp messages.
+- **Multilingual Support**: Added comprehensive Indonesian and English localization for all five new industry solution pages in `lib/utils/strings.ts`.
+- **Public Route Accessibility**: Configured `AuthenticatedLayout.tsx` to whitelist the new solution routes, allowing public unauthenticated access.
+- **Enhanced Navigation**: Updated `SolutionMenu.tsx` (Desktop & Mobile) to include direct links to the newly created industry solution modules.
+
+### 📁 Created Files
+- `app/solusi/sales/page.tsx`
+- `app/solusi/customer-service/page.tsx`
+- `app/solusi/marketing/page.tsx`
+- `app/solusi/human-resource/page.tsx`
+- `app/solusi/operasional/page.tsx`
+- `components/solusi/sales/*`
+- `components/solusi/customer-service/*`
+- `components/solusi/marketing/*`
+- `components/solusi/human-resource/*`
+- `components/solusi/operasional/*`
+
+### 📁 Modified Files
+- `lib/utils/strings.ts`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+
 ## [1.10.7] - 2026-03-17
 
 ### ✨ Added

@@ -10,18 +10,6 @@ import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 
-// Custom Mock Instagram Icon
-const InstagramIconMock = () => (
-    <Box sx={{
-        width: 24, height: 24, borderRadius: '6px',
-        background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
-    }}>
-        <Box sx={{ width: 14, height: 14, border: '1.5px solid white', borderRadius: '4px', position: 'relative' }}>
-            <Box sx={{ width: 6, height: 6, border: '1.5px solid white', borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-        </Box>
-    </Box>
-);
 
 // Define bouncing keyframes
 const bounceAnimation1 = keyframes`
@@ -186,33 +174,6 @@ export default function OmniCollaboration() {
                                 </Box>
                             </Paper>
 
-                            {/* Floating Card 2: Instagram (Middle Left - Bouncing) */}
-                            <Paper
-                                elevation={12}
-                                sx={{
-                                    position: 'absolute',
-                                    top: '40%',
-                                    left: { xs: '0%', md: '-5%' },
-                                    zIndex: 2,
-                                    borderRadius: '12px',
-                                    p: 1.5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1.5,
-                                    bgcolor: 'white',
-                                    minWidth: 160,
-                                    animation: `${bounceAnimation2} 5s ease-in-out infinite`,
-                                    animationDelay: '1s'
-                                }}
-                            >
-                                <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <InstagramIconMock />
-                                </Box>
-                                <Box>
-                                    <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#1E293B', lineHeight: 1.2 }}>Instagram</Typography>
-                                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.65rem' }}>DM & Comments</Typography>
-                                </Box>
-                            </Paper>
 
                             {/* Floating Card 3: Email & Web Chat (Bottom Right - Bouncing) */}
                             <Paper

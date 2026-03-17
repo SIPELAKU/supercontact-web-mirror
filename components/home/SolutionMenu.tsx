@@ -151,11 +151,31 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                     </Typography>
                     <Stack spacing={1}>
                         <Grid container spacing={1}>
-                            <Grid item xs={12}><MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} /></Grid>
-                            <Grid item xs={12}><MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/sales" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/customer-service" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/marketing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/human-resource" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                                </Link>
+                            </Grid>
                         </Grid>
                     </Stack>
                 </Box>
@@ -295,19 +315,29 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 <TabPanel value={value} index={1}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         <Grid item xs={4}>
-                            <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                            <Link href="/solusi/sales" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<TrendingUpIcon />} title={strings.sol_role_sales} desc={strings.sol_role_sales_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                            <Link href="/solusi/customer-service" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<SupportAgentIcon />} title={strings.sol_role_cs} desc={strings.sol_role_cs_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} />
+                            <Link href="/solusi/marketing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                            <Link href="/solusi/human-resource" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                            <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                            </Link>
                         </Grid>
                     </Grid>
                 </TabPanel>

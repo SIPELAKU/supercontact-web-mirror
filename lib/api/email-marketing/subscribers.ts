@@ -21,6 +21,7 @@ export interface UpdateSubscriberData {
   position: string;
   company: string;
   address: string;
+  custom_fields?: Record<string, string>;
 }
 
 // ============================================

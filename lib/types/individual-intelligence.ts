@@ -8,9 +8,10 @@ export interface KeyPerson {
 }
 
 export interface IndividualIntelligenceItem {
-    crm_company_id: string;
+    id?: string;
+    crm_company_id?: string;
     company_name: string;
-    company_intelligence_id: string;
+    company_description: string;
     industry: string;
     location: string;
     description: string;

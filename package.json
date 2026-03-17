@@ -1,6 +1,6 @@
 {
   "name": "sales-management",
-  "version": "1.10.5",
+  "version": "1.10.7",
   "private": true,
   "scripts": {
     "dev": "next dev --port=3100",

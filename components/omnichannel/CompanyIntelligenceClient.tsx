@@ -1,22 +1,10 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useMemo, useState, useRef, useEffect } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Button, Slider, Box, Typography, Menu, MenuItem } from "@mui/material";
-import { AppAutocomplete } from "@/components/ui/app-autocomplete";
-import { Plus, Search, Upload } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Printer } from "lucide-react";
 import { CompanyStats, CompanyTable } from "@/components/omnichannel";
-// Removed FilterByIndustry and FilterByStatus as they are replaced by new filters
-import InputSearch from "@/components/ui/input-search";
 import PageHeader from "@/components/ui/page-header";
-import Pagination from "@/components/ui/pagination";
-import {
-  CompanyStatus,
-  Industry,
-  IndustryOption,
-  StatusOption,
-} from "@/lib/types/Company";
-import { AppInput } from "../ui/app-input";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
 import { useReactToPrint } from "react-to-print";
@@ -25,8 +13,8 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { getMyTargetCompanies, deleteTargetCompany } from "@/lib/api/company-intelligence";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { CompanyIntelligenceItem, MyTargetCompaniesSummary } from "@/lib/types/company-intelligence";
-import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
 import IndustryLeadersContent from "./IndustryLeadersContent";
+import { SuperTableState } from "@/components/ui/super-table";
 
 interface CompanyIntelligenceClientProps {
   breadcrumbs?: { label: string; href?: string }[];
@@ -47,29 +35,41 @@ export default function CompanyIntelligenceClient({
   const [summary, setSummary] = useState<MyTargetCompaniesSummary | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<"dashboard" | "leaders">("dashboard");
 
-  // Filter States
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  // ===== TABLE STATE (driven by SuperTable) ===== //
+  const [tableState, setTableState] = useState({
+    pagination: { pageIndex: 0, pageSize: 10 },
+    globalFilter: "",
+    columnFilters: [] as { id: string; value: unknown }[],
+  });
 
-  const componentRef = useRef<HTMLDivElement>(null);
+  // Helper untuk normalize filter value ke array (MRT bisa return string atau array)
+  const toArray = (val: unknown): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val as string[];
+    if (typeof val === 'string') return [val];
+    return [];
+  };
 
-  // ===== SEARCH & PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [searchQuery, setSearchQuery] = useState("");
+  // Extract filters from SuperTable column filters
+  const industryFilter = toArray(
+    tableState.columnFilters.find((f) => f.id === 'industry')?.value
+  );
+  const locationFilter = toArray(
+    tableState.columnFilters.find((f) => f.id === 'location')?.value
+  );
+  const statusFilter = tableState.columnFilters
+    .find((f) => f.id === "status")?.value as string | undefined;
 
-  // Debounce search
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchQuery]);
+  const handleTableStateChange = useCallback((newState: SuperTableState) => {
+    setTableState({
+      pagination: {
+        pageIndex: newState.pagination.pageIndex,
+        pageSize: newState.pagination.pageSize,
+      },
+      globalFilter: newState.globalFilter || "",
+      columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+    });
+  }, []);
 
   const fetchCompanies = async () => {
     if (!enableSearch) return;
@@ -79,11 +79,11 @@ export default function CompanyIntelligenceClient({
     try {
       const token = await getToken();
       const params = {
-        industry: selectedIndustries,
-        location: selectedLocations,
-        search: debouncedSearchQuery,
-        page: page + 1, // API is 1-indexed
-        limit: rowsPerPage,
+        industry: industryFilter.length > 0 ? industryFilter : [],
+        location: locationFilter.length > 0 ? locationFilter : [],
+        search: tableState.globalFilter || "",
+        page: tableState.pagination.pageIndex + 1,
+        limit: tableState.pagination.pageSize,
       };
 
       const data = await getMyTargetCompanies(token, params);
@@ -98,108 +98,60 @@ export default function CompanyIntelligenceClient({
     }
   };
 
+  // Client-side status filter (API tidak support param status)
+  const filteredCompanies = statusFilter
+    ? companies.filter((c) => {
+        const val = (c.status || c.financial_status || "N/A").toLowerCase();
+        return val === statusFilter.toLowerCase();
+      })
+    : companies;
+
   useEffect(() => {
     if (enableSearch) {
       fetchCompanies();
     }
-  }, [debouncedSearchQuery, selectedIndustries, selectedLocations, page, rowsPerPage, getToken, enableSearch]);
+  }, [
+    tableState.globalFilter,
+    tableState.columnFilters,
+    tableState.pagination.pageIndex,
+    tableState.pagination.pageSize,
+    getToken,
+    enableSearch,
+  ]);
 
-  // ===== PAGINATION  ===== //
+  // ===== EXPORT (loop all pages) ===== //
+  const handleExportRequest = async (params: any): Promise<CompanyIntelligenceItem[]> => {
+    try {
+      const token = await getToken();
+      let allData: CompanyIntelligenceItem[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
 
-  const columns = [
-    { id: "name", label: "Company Name" },
-    { id: "industry", label: "Industry" },
-    { id: "location", label: "Location" },
-    { id: "employees", label: "Employees" },
-    { id: "status", label: "Status" },
-    { id: "action", label: "Action" },
-  ];
+      do {
+        const data = await getMyTargetCompanies(token, {
+          industry: industryFilter.length > 0 ? industryFilter : [],
+          location: locationFilter.length > 0 ? locationFilter : [],
+          search: tableState.globalFilter || "",
+          page: currentPage,
+          limit: 50,
+        });
 
-  const printableColumns = [
-    { header: "Company Name", accessorKey: "name" },
-    { header: "Industry", accessorKey: "industry" },
-    { header: "Location", accessorKey: "location" },
-    { header: "Employees", accessorKey: "employee_count" },
-    { header: "Financial Status", accessorKey: "financial_status" },
-  ];
+        const items = data.data || [];
+        const total = data.meta.total || 0;
+        totalPages = Math.ceil(total / 50) || 1;
 
-  // Selection State
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
-  const exportMenuOpen = Boolean(exportAnchorEl);
+        allData = [...allData, ...items];
+        currentPage++;
+      } while (currentPage <= totalPages);
 
-  const handleExportClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setExportAnchorEl(event.currentTarget);
-  };
-
-  const handleExportClose = () => {
-    setExportAnchorEl(null);
-  };
-
-  const handleExportCSV = () => {
-    const headers = printableColumns.map(col => col.header);
-    const keys = printableColumns.map(col => col.accessorKey);
-
-    const csvContent = [
-      headers.join(","),
-      ...companies.map((item) =>
-        keys
-          .map((key) => {
-            const val = (item as any)[key] || "";
-            return `"${String(val).replace(/"/g, '""')}"`;
-          })
-          .join(","),
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "target_companies_export.csv");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    handleExportClose();
-  };
-
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: "My Target Companies",
-    onAfterPrint: handleExportClose,
-  });
-
-  const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSelectOne = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(companies.map((c) => c.id));
-    } else {
-      setSelectedIds([]);
+      return allData;
+    } catch (err) {
+      console.error("Export error:", err);
+      return [];
     }
   };
 
+  // ===== DELETE (single — with confirmation) ===== //
   const handleDelete = (id: string) => {
     const companyToDelete = companies.find((c) => c.id === id);
     const companyName = companyToDelete?.name || "this company";
@@ -216,9 +168,6 @@ export default function CompanyIntelligenceClient({
           const token = await getToken();
           await deleteTargetCompany(token, id);
           notify.success("Company deleted successfully");
-
-          // Refresh the list & clear selection if needed
-          setSelectedIds((prev) => prev.filter((i) => i !== id));
           fetchCompanies();
         } catch (err: any) {
           console.error("Failed to delete company:", err);
@@ -230,30 +179,27 @@ export default function CompanyIntelligenceClient({
     });
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.length === 0) return;
+  // ===== BULK DELETE (with confirmation + Promise.all) ===== //
+  const handleBulkDelete = (ids: string[], clearSelection: () => void) => {
+    if (ids.length === 0) return;
 
     showConfirmation({
       type: "delete",
       title: "Delete Companies",
-      message: `Are you sure you want to delete ${selectedIds.length} companies from your target list?`,
-      confirmText: `Delete (${selectedIds.length})`,
+      message: `Are you sure you want to delete ${ids.length} companies from your target list?`,
+      confirmText: `Delete (${ids.length})`,
       cancelText: "Cancel",
       onConfirm: async () => {
         setIsLoading(true);
         try {
           const token = await getToken();
-          await Promise.all(selectedIds.map((id) => deleteTargetCompany(token, id)));
-          notify.success(`${selectedIds.length} companies deleted successfully`);
-
-          // Clear selection first
-          setSelectedIds([]);
-          // Then refresh
+          await Promise.all(ids.map((id) => deleteTargetCompany(token, id)));
+          notify.success(`${ids.length} companies deleted successfully`);
+          clearSelection();
           fetchCompanies();
         } catch (err: any) {
           console.error("Failed to delete companies:", err);
           notify.error("Failed to delete some companies");
-          // Refresh anyway to show current state
           fetchCompanies();
         } finally {
           setIsLoading(false);
@@ -261,6 +207,21 @@ export default function CompanyIntelligenceClient({
       },
     });
   };
+
+  // ===== PRINT PDF ===== //
+  const componentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "My Target Companies",
+  });
+
+  const printableColumns = [
+    { header: "Company Name", accessorKey: "name" },
+    { header: "Industry", accessorKey: "industry" },
+    { header: "Location", accessorKey: "location" },
+    { header: "Employees", accessorKey: "employee_count" },
+    { header: "Financial Status", accessorKey: "financial_status" },
+  ];
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -309,133 +270,54 @@ export default function CompanyIntelligenceClient({
             <CompanyStats summary={summary} />
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-lg bg-white shadow-sm border border-gray-100 p-6">
-            {/* Filters Row */}
-            <div className="flex flex-col lg:flex-row gap-4 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                {/* Industry AppAutocomplete */}
-                <div className="w-full sm:w-[200px]">
-                  <AppAutocomplete
-                    multiple
-                    options={INDUSTRY_OPTIONS}
-                    value={selectedIndustries}
-                    onChange={(event, newValue) => {
-                      setSelectedIndustries(newValue);
-                    }}
-                    placeholder="Industry"
-                    size="small"
-                    isBgWhite
-                  />
-                </div>
-
-                {/* Location AppAutocomplete */}
-                <div className="w-full sm:w-[200px]">
-                  <AppAutocomplete
-                    multiple
-                    options={LOCATION_OPTIONS}
-                    value={selectedLocations}
-                    onChange={(event, newValue) => {
-                      setSelectedLocations(newValue);
-                    }}
-                    placeholder="Location"
-                    size="small"
-                    isBgWhite
-                  />
-                </div>
-
-                {/* Search Input */}
-                <div className="w-full sm:flex-1 sm:max-w-[300px]">
-                  <Suspense>
-                    <AppInput
-                      placeholder="Search Company"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      isBgWhite
-                      startIcon={null}
-                    />
-                  </Suspense>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="outlined"
-                  startIcon={<Upload size={18} />}
-                  onClick={handleExportClick}
-                  className="border-[#D0D5DD] capitalize! text-[#344054]"
-                  sx={{
-                    paddingX: '16px',
-                    paddingY: '8px',
-                    borderRadius: '8px',
-                    borderColor: '#D0D5DD',
-                    color: '#344054',
-                    textTransform: 'none',
-                    '&:hover': {
-                      borderColor: '#5479EE',
-                      backgroundColor: 'rgba(84,121,238,0.05)'
-                    }
-                  }}
-                >
-                  Export
-                </Button>
-                <Menu
-                  anchorEl={exportAnchorEl}
-                  open={exportMenuOpen}
-                  onClose={handleExportClose}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                >
-                  <MenuItem onClick={handleExportCSV}>Export to CSV</MenuItem>
-                  <MenuItem onClick={handlePrint}>Print</MenuItem>
-                </Menu>
-                
-                {selectedIds.length > 0 && (
+          <CompanyTable
+            companies={filteredCompanies}
+            isLoading={isLoading}
+            isError={!!error}
+            rowCount={totalCount}
+            onStateChange={handleTableStateChange}
+            onExportRequest={handleExportRequest}
+            onDelete={handleDelete}
+            onBulkDelete={handleBulkDelete}
+            onRowClick={(row) =>
+              router.push(
+                `/data-intelligence/industry-leaders/profile/${row.id}?type=target`
+              )
+            }
+            renderTopLeftToolbar={() => (
+              <>
+                {/* Desktop Print button */}
+                <div className="hidden md:flex">
                   <AppButton
-                    onClick={handleBulkDelete}
-                    variantStyle="danger"
+                    variantStyle="outline"
+                    color="gray"
+                    onClick={handlePrint}
+                    startIcon={<Printer size={16} />}
                   >
-                    Delete ({selectedIds.length})
+                    Print PDF
                   </AppButton>
-                )}
-              </div>
-            </div>
-
-            {/* Table */}
-            <CompanyTable
-              company={companies}
-              isLoading={isLoading}
-              error={error}
-              showAction={true}
-              showInsightScore={false}
-              onDelete={handleDelete}
-              onRowClick={(id) => router.push(`/data-intelligence/industry-leaders/profile/${id}?type=target`)}
-              selectedIds={selectedIds}
-              onSelectOne={handleSelectOne}
-              onSelectAll={handleSelectAll}
-            />
-
-            {/* Pagination - Aligned to match mockup */}
-            <div className="flex w-full justify-end mt-4">
-              <Pagination
-                page={page}
-                rowsPerPage={rowsPerPage}
-                count={totalCount}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-              />
-            </div>
-          </div>
+                </div>
+                {/* Mobile Print icon */}
+                <div className="flex md:hidden">
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center justify-center w-9 h-9 
+                               rounded-md border border-gray-300 text-gray-600 
+                               hover:bg-gray-50 transition-colors"
+                    title="Print PDF"
+                  >
+                    <Printer size={16} />
+                  </button>
+                </div>
+              </>
+            )}
+          />
         </>
       ) : (
         <IndustryLeadersContent />
       )}
 
+      {/* Hidden printable table */}
       <div style={{ display: "none" }}>
         <PrintableTable
           ref={componentRef}

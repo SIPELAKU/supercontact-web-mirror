@@ -56,12 +56,21 @@ export function useUrlSync({
       restoredState.globalFilter = decodeURIComponent(gf);
     }
 
-    // cf: column filters (contoh fomat "status:active,type:premium")
+    // cf: column filters (contoh fomat "status:active,type:premium", array format "industry:Tech|Finance")
     const cf = searchParams.get(`${tableId}_cf`);
     if (cf) {
       const parsedFilters: MRT_ColumnFiltersState = cf.split(',').map((f) => {
-        const [id, val] = f.split(':');
-        return { id, value: decodeURIComponent(val) };
+        const colonIdx = f.indexOf(':');
+        const id = f.substring(0, colonIdx);
+        const rawVal = f.substring(colonIdx + 1);
+
+        // Array jika mengandung "|"
+        if (rawVal.includes('|')) {
+          const value = rawVal.split('|').map(decodeURIComponent);
+          return { id, value };
+        }
+
+        return { id, value: decodeURIComponent(rawVal) };
       });
       restoredState.columnFilters = parsedFilters;
     }
@@ -120,7 +129,12 @@ export function useUrlSync({
       // Column filters
       if (state.columnFilters.length > 0) {
         const filterStr = state.columnFilters
-          .map((f) => `${f.id}:${encodeURIComponent(String(f.value))}`)
+          .map(({ id, value }) => {
+            if (Array.isArray(value)) {
+              return `${id}:${value.map((v) => encodeURIComponent(String(v))).join('|')}`;
+            }
+            return `${id}:${encodeURIComponent(String(value))}`;
+          })
           .join(',');
         currentParams.set(`${tableId}_cf`, filterStr);
       } else {

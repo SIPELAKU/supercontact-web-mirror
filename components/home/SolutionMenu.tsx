@@ -166,7 +166,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<CampaignIcon />} title={strings.sol_role_marketing} desc={strings.sol_role_marketing_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/human-resource" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                                </Link>
+                            </Grid>
                             <Grid item xs={12}><MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} /></Grid>
                         </Grid>
                     </Stack>
@@ -322,7 +326,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                            <Link href="/solusi/human-resource" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
+                            </Link>
                         </Grid>
                         <Grid item xs={4}>
                             <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />

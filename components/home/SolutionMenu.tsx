@@ -171,7 +171,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                                     <MenuItem icon={<PeopleIcon />} title={strings.sol_role_hr} desc={strings.sol_role_hr_desc} />
                                 </Link>
                             </Grid>
-                            <Grid item xs={12}><MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} /></Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                                </Link>
+                            </Grid>
                         </Grid>
                     </Stack>
                 </Box>
@@ -331,7 +335,9 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             </Link>
                         </Grid>
                         <Grid item xs={4}>
-                            <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                            <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                            </Link>
                         </Grid>
                     </Grid>
                 </TabPanel>

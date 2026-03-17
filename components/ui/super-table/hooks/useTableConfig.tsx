@@ -45,7 +45,7 @@ export function useTableConfig<TData extends object>(
     inlineEditing = false,
     maxHeight = '70vh',
     stickyHeader = true,
-    
+
     // Filtering Defaults
     smartFilterVariants = true,
     facetedValues = true,
@@ -63,23 +63,32 @@ export function useTableConfig<TData extends object>(
     state: {
       isLoading: props.isLoading,
       showProgressBars: props.isFetching,
-      
+
       pagination: tableState.pagination,
       sorting: tableState.sorting,
       globalFilter: tableState.globalFilter, // Biarkan ui input tetap snappy
-      columnFilters: tableState.columnFilters,
+      columnFilters: tableState.columnFilters.map((f) => {
+        const colDef = props.columns?.find((c: any) => c.accessorKey === f.id || c.id === f.id) as any;
+        if (colDef && colDef.filterVariant === 'multi-select') {
+          return {
+            ...f,
+            value: Array.isArray(f.value) ? f.value : f.value ? [f.value] : [],
+          };
+        }
+        return f;
+      }),
       columnVisibility: tableState.columnVisibility,
       columnOrder: tableState.columnOrder,
       grouping: tableState.grouping,
       rowSelection: tableState.rowSelection,
     },
-    
+
     initialState: {
       showGlobalFilter: globalFilterAlwaysVisible,
       showColumnFilters: columnFilters,
       ...props.initialState,
     },
-    
+
     // ─── Force Native Internal Columns Size (FIX Spacer Bug) ─
     displayColumnDefOptions: {
       'mrt-row-actions': {
@@ -91,7 +100,7 @@ export function useTableConfig<TData extends object>(
         grow: false,
       },
     },
-    
+
     // ─── Server-Side Handling ────────
     manualPagination: props.manualPagination,
     rowCount: props.rowCount,
@@ -113,15 +122,15 @@ export function useTableConfig<TData extends object>(
     enablePagination: pagination,
     enableRowSelection: rowSelection !== 'none',
     enableSelectAll: rowSelection === 'multi',
-    
+
     // ─── Filter Specific Handling ─────
     enableFacetedValues: facetedValues,
     enableFilterMatchHighlighting: filterSwitching,
     columnFilterDisplayMode: popoverFilters ? 'popover' : 'subheader',
-    
+
     // ─── Toolbar Behaviors ───────────
     positionToolbarAlertBanner: 'none', // Di handle UI custom (BulkActionsBar)
-    
+
     // ─── Event Listeners (Setters) ───
     onPaginationChange: tableState.setPagination,
     onSortingChange: tableState.setSorting,
@@ -131,7 +140,7 @@ export function useTableConfig<TData extends object>(
     onColumnOrderChange: tableState.setColumnOrder,
     onGroupingChange: tableState.setGrouping,
     onRowSelectionChange: tableState.setRowSelection,
-    
+
     // ─── Interaction Callbacks ───────
     // Click events dipindah ke muiTableBodyRowProps di config styling bawah
   };
@@ -140,7 +149,7 @@ export function useTableConfig<TData extends object>(
   if (inlineEditing) {
     mrtConfig.enableEditing = true;
     mrtConfig.editDisplayMode = inlineEditing as 'row' | 'cell' | 'table';
-    
+
     // ── MODE: 'row' ──────────────────────────────────────────────────
     if (inlineEditing === 'row') {
       mrtConfig.onEditingRowSave = async ({ row, values, table }) => {
@@ -155,7 +164,7 @@ export function useTableConfig<TData extends object>(
           console.error('[SuperTable] onSaveRow gagal:', error);
         }
       };
-      
+
       mrtConfig.onEditingRowCancel = ({ row }) => {
         props.onCancelRowEdit?.(row.original);
       };
@@ -167,7 +176,7 @@ export function useTableConfig<TData extends object>(
         onBlur: async (e) => {
           const newValue = e.target.value;
           const oldValue = String(cell.getValue() ?? '');
-          if (newValue === oldValue) return; 
+          if (newValue === oldValue) return;
 
           table.setEditingCell(null);
           try {
@@ -185,7 +194,7 @@ export function useTableConfig<TData extends object>(
         size: 'small',
         sx: {
           '& .MuiOutlinedInput-root': {
-             fontSize: 'inherit',
+            fontSize: 'inherit',
           }
         }
       });
@@ -196,10 +205,10 @@ export function useTableConfig<TData extends object>(
   if (props.renderRowActions || inlineEditing === 'row') {
     mrtConfig.enableRowActions = true;
     mrtConfig.positionActionsColumn = 'last';
-    
+
     mrtConfig.renderRowActions = ({ row, table }) => {
       const isEditing = inlineEditing === 'row' && table.getState().editingRow?.id === row.id;
-      
+
       if (isEditing) {
         return (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -207,7 +216,7 @@ export function useTableConfig<TData extends object>(
           </Box>
         );
       }
-      
+
       if (inlineEditing === 'row') {
         return (
           <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
@@ -251,19 +260,19 @@ export function useTableConfig<TData extends object>(
       {/* 4.A Render Built-in Custom Export XLS/CSV if Enabled */}
       {props.features?.export?.excel && (
         <Tooltip arrow title="Export Excel (.xlsx)">
-          <IconButton 
-             onClick={() => exportUtils.exportToExcel(table)} 
-             disabled={exportUtils.isExporting}
+          <IconButton
+            onClick={() => exportUtils.exportToExcel(table)}
+            disabled={exportUtils.isExporting}
           >
             <FileDownloadIcon />
           </IconButton>
         </Tooltip>
       )}
       {props.features?.export?.csv && (
-         <Tooltip arrow title="Export CSV (.csv)">
-          <IconButton 
-             onClick={() => exportUtils.exportToCsv(table)}
-             disabled={exportUtils.isExporting}
+        <Tooltip arrow title="Export CSV (.csv)">
+          <IconButton
+            onClick={() => exportUtils.exportToCsv(table)}
+            disabled={exportUtils.isExporting}
           >
             <DescriptionIcon />
           </IconButton>
@@ -286,9 +295,9 @@ export function useTableConfig<TData extends object>(
   mrtConfig.renderEmptyRowsFallback = () => {
     if (props.isError) {
       return (
-        <ErrorState 
-          message={props.errorMessage} 
-          onRetry={props.onRetry} 
+        <ErrorState
+          message={props.errorMessage}
+          onRetry={props.onRetry}
         />
       );
     }
@@ -296,12 +305,12 @@ export function useTableConfig<TData extends object>(
       return <>{props.renderEmptyState()}</>;
     }
     // Jika tidak didefine renderEmptyState, MRT akan secara otomatis meren-der fallback loc default (noRecordsToDisplay)
-    return undefined; 
+    return undefined;
   };
 
   // Detail Panel
   if (props.renderDetailPanel) {
-     mrtConfig.renderDetailPanel = props.renderDetailPanel;
+    mrtConfig.renderDetailPanel = props.renderDetailPanel;
   }
 
   // ─── 5. UI STYLING & MATERIAL THEMING (Native MUI compliance) ─────
@@ -316,7 +325,7 @@ export function useTableConfig<TData extends object>(
       overflow: 'hidden',  // Ensure round corners apply to entire child panel
     },
   };
-  
+
   mrtConfig.muiTableContainerProps = {
     sx: {
       maxHeight: maxHeight,  // Sticky header need bounded box size
@@ -348,7 +357,7 @@ export function useTableConfig<TData extends object>(
       cursor: props.onRowClick || props.onRowDoubleClick ? 'pointer' : 'default',
       transition: 'background-color 0.2s',
       '&:hover': {
-         backgroundColor: 'rgba(0, 0, 0, 0.02)',
+        backgroundColor: 'rgba(0, 0, 0, 0.02)',
       },
       // Injeksi object overrides specific dari property parents
       ...props.getRowStyles?.(row.original),

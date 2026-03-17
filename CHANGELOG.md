@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.6] - 2026-03-17
+
+### 🐛 Fixed
+- **CompanyTable — filterValue.some crash**: Fixed runtime crash
+  `TypeError: filterValue.some is not a function` pada MRT_SelectCheckbox. 
+  Root cause: columnFilters di-restore dari URL sebagai string bukan array.
+
+- **useUrlSync.ts — Array serialization**: Serialize & deserialize
+  columnFilters kini support array value dengan separator pipe `|`.
+  Format: `industry:Tech|Finance` untuk array,
+  `status:success` untuk single value.
+
+- **useTableConfig.tsx — Defense layer**: Sanitasi columnFilters
+  di state sebelum dipass ke MRT dihapus karena clash dengan internal
+  array state mutation MRT saat multiple selection terjadi.
+
+- **CompanyTable — Status filter**: Fix case mismatch antara
+  filterSelectOptions vs data API lowercase. Pakai format
+  `{ value: "success", label: "Success" }`. Hapus
+  `columnFilterModeOptions: undefined` yang konflik.
+
+- **CompanyTable — Status client-side**: API tidak support param
+  status, difilter client-side di CompanyIntelligenceClient.
+
+- **CompanyTable — manualFiltering**: Set `manualFiltering={true}`
+  konsisten dengan manualPagination & manualSorting. Sebelumnya
+  false menyebabkan filter hanya cocokkan baris halaman aktif.
+
+- **CompanyTable — filterFn conflict**: Hapus
+  `filterFn: 'arrIncludesSome'` eksplisit dari kolom Industry &
+  Location. MRT v3 auto-set filterFn dari filterVariant.
+
+### 📁 Modified Files
+- components/omnichannel/company/company-table/CompanyTable.tsx
+- components/omnichannel/CompanyIntelligenceClient.tsx
+- components/ui/super-table/hooks/useUrlSync.ts
+- components/ui/super-table/hooks/useTableConfig.tsx
+
 ## [1.10.5] - 2026-03-17
 
 ### ✨ Added

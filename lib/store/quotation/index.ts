@@ -44,6 +44,8 @@ type FetchQuotationParams = {
     search?: string;
     dateRange?: string;
     status?: string;
+    date_from?: string; // Client Side Injector prop
+    date_to?: string;   // Client Side Injector prop
 };
 
 type requestBody = {
@@ -168,13 +170,18 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 page: params?.page ?? pagination.page,
                 limit: params?.limit ?? pagination.limit,
             };
-
-            const dateRange = params?.dateRange ?? get().dateRangeFilter;
-            if (dateRange && dateRange !== "all") {
-                const range = getDateRange(dateRange);
-                if (range) {
-                    query.date_from = String(range.start);
-                    query.date_to = String(range.end);
+            // Inject Explicit Client Property First
+            if (params?.date_from && params?.date_to) {
+                query.date_from = params.date_from;
+                query.date_to = params.date_to;
+            } else {
+                const dateRange = params?.dateRange ?? get().dateRangeFilter;
+                if (dateRange && dateRange !== "all") {
+                    const range = getDateRange(dateRange);
+                    if (range) {
+                        query.date_from = String(range.start);
+                        query.date_to = String(range.end);
+                    }
                 }
             }
 

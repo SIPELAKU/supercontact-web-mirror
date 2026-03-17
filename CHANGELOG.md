@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.3] - 2026-03-17
+
+### ✨ Added
+- **QuotationTable → SuperTable**: manualPagination,
+  client-side status filter (Accepted/Pending/Rejected),
+  date range filter server-side, export Excel/CSV 
+  loop pagination, accessorFn Rupiah formatting,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/quotation/QuotationTable.tsx
+- components/quotation/QuotationClient.tsx
+- lib/store/quotation/index.ts
+
 ## [1.10.2] - 2026-03-16
 
 ### ✨ Added

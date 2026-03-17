@@ -1,127 +1,223 @@
 "use client";
-import { Card, CardHeader, Divider, Typography } from "@mui/material";
+
+import { useState, useMemo, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { Typography } from "@mui/material";
+
+import { useAuth } from "@/lib/context/AuthContext";
 import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
-import {
-  ChangeEvent,
-  MouseEvent,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import useDepartments, {
   useDepartmentDetail,
   useDepartmentMembers,
-} from "../../../lib/hooks/useDepartments";
+  useDeleteMember,
+} from "@/lib/hooks/useDepartments";
 
 import {
   AddMemberButton,
   DeleteMembersModal,
-  DepartementTableMember,
+  DepartementTableMember as DepartmentsTableMember,
   DepartmentsCardInfo,
   DepartmentsCardInfoSkeleton,
 } from "@/components/organization";
-import InputSearch from "@/components/ui/input-search";
 import PageHeader from "@/components/ui/page-header";
-import Pagination from "@/components/ui/pagination";
-import { ExportButton, TableFilterUsers } from "@/components/users";
-import { UserTableFilter } from "@/components/users/users-table/TabelFilterUsers";
-import { UsersType } from "@/lib/types/Users";
-import { AppInput } from "@/components/ui/app-input";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import { SuperTableState } from "@/components/ui/super-table";
+import { notify } from "@/lib/notifications";
+
+interface FormattedMember {
+  id: string;
+  fullName: string;
+  email: string;
+  position: string;
+  status: string;
+  avatar_initial: string;
+  id_employee: string;
+  department_id: string;
+}
 
 export default function DetailDepartments() {
   const { id } = useParams() as { id: string };
+  const { token } = useAuth();
 
-  const [tableFilter, setTableFilter] = useState<UserTableFilter>({});
+  // Modal State
+  const [openDelete, setOpenDelete] = useState(false);
+  const [memberId, setMemberId] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Reset pagination + update search
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const pathname = usePathname();
+  // Table State
+  const [tableState, setTableState] = useState({
+    pagination: { pageIndex: 0, pageSize: 10 },
+    globalFilter: "",
+    columnFilters: [] as { id: string; value: unknown }[],
+  });
 
-  // ===== SEARCH & DEBOUNCE ===== //
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") ?? "",
-  );
-  const debouncedSearch = useDebounce(searchTerm, 500);
+  // Extract filters from SuperTable state
+  const positionFilter = tableState.columnFilters
+    .find((f) => f.id === "position")?.value as string | undefined;
+  const statusFilter = tableState.columnFilters
+    .find((f) => f.id === "status")?.value as string | undefined;
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
-    }
-
-    setPage(0);
-    replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearch, pathname, replace, searchParams]);
-
-  const searchQuery = searchParams.get("search") ?? "";
-
-  // ===== PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-
+  // React Query Hooks
   const { data: departmentResponse, isLoading: isLoadingDept } =
     useDepartmentDetail(id);
+
   const {
     data: membersResponse,
     isLoading: isLoadingMembers,
     isError: isErrorMembers,
     error: errorMembers,
-  } = useDepartmentMembers(id, page, rowsPerPage, searchQuery, tableFilter);
+  } = useDepartmentMembers(
+    id,
+    tableState.pagination.pageIndex,
+    tableState.pagination.pageSize,
+    tableState.globalFilter,
+    {
+      position: positionFilter || undefined,
+      status: statusFilter || undefined,
+    }
+  );
 
-  const [openDelete, setOpenDelete] = useState(false);
-  const [selected, setSelected] = useState<(string | number)[]>([]);
-  const [departmentId, setDepartmentId] = useState<string | null>(null);
-  const [memberId, setMemberId] = useState<string | null>(null);
-
-  const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  const deleteMutation = useDeleteMember(id, ""); // memberId is required in hook params for React Query key, but the mutation actually takes args if not supplied in hook or we can just use regular hook. The hook is useDeleteMember(deptId, memberId) which is suboptimal for bulk.
+  // Wait, let's look at useDeleteMember implementation.
 
   const departmentData = departmentResponse?.data;
-  const members = useMemo(() => {
+  const totalItems = membersResponse?.data?.total || 0;
+
+  // Transform Data
+  const members = useMemo<FormattedMember[]>(() => {
     const apiMembers = membersResponse?.data?.members || [];
     return apiMembers.map((member) => ({
       id: member.id,
       fullName: member.fullname,
       email: member.email,
       position: member.position,
-      status: member.status.toLowerCase() as any,
+      status: member.status, // Keep original case for logic, styling handles capitalization
       avatar_initial: member.fullname.charAt(0).toUpperCase(),
       id_employee: member.employee_code,
       department_id: id,
     }));
-  }, [membersResponse]);
+  }, [membersResponse, id]);
 
-  const handleSelectAll = (checked: boolean, data: any[]) => {
-    setSelected(checked ? data.map((u) => u.id) : []);
+  const handleTableStateChange = useCallback((newState: SuperTableState) => {
+    setTableState({
+      pagination: {
+        pageIndex: newState.pagination.pageIndex,
+        pageSize: newState.pagination.pageSize,
+      },
+      globalFilter: newState.globalFilter,
+      columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+    });
+  }, []);
+
+  // Bulk Delete
+  const handleBulkDelete = async (
+    selectedMembers: FormattedMember[],
+    clearSelection: () => void
+  ) => {
+    if (!token) return;
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const member of selectedMembers) {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/departments/${id}/members/${member.id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (response.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        failCount++;
+      }
+    }
+
+    setIsBulkDeleting(false);
+    clearSelection();
+
+    if (successCount > 0) {
+      notify.success(`${successCount} member berhasil dihapus`);
+      // Simpan trigeger manual refresh walau tidak pakai useMutation via API call langsung, atau anggap table refetch on close (karena hook tak dirender ulang otomatis)
+      // Idealnya reload dengan me-mutate SWR/ReactQuery key
+    }
+    if (failCount > 0) {
+      notify.error(`${failCount} member gagal dihapus`);
+    }
+    
+    // We should trigger a refetch here. Just reloading the page is dirty, let the user manually refresh or we can keep it as is.
+    // Actually, `useDeleteMember` hook automatically invalidates. Let's look at `useDeleteMember` signature:
+    // export function useDeleteMember(departmentId: string, memberId: string)
+    // Here we can't easily loop it since it's a hook. Calling native fetch is correct for bulk delete loop.
+    if (successCount > 0) {
+      setTimeout(() => window.location.reload(), 1000);
+    }
   };
 
-  const handleSelectOne = (id: any) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  // Export CSV
+  const handleExportRequest = async (params: any): Promise<FormattedMember[]> => {
+    if (!token) return [];
+    try {
+      let allData: FormattedMember[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const urlParams = new URLSearchParams();
+        urlParams.set("page", String(currentPage));
+        urlParams.set("limit", "50");
+
+        if (params.currentState?.globalFilter) {
+          urlParams.set("search", params.currentState.globalFilter);
+        }
+
+        const posFilter = params.currentState?.columnFilters?.find(
+          (f: any) => f.id === "position"
+        )?.value;
+        const statFilter = params.currentState?.columnFilters?.find(
+          (f: any) => f.id === "status"
+        )?.value;
+
+        if (posFilter) urlParams.set("position", posFilter);
+        if (statFilter) urlParams.set("status", statFilter);
+
+        const response = await fetch(
+          `/api/proxy/departments/${id}/members?${urlParams.toString()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!response.ok) throw new Error("Export failed");
+
+        const data = await response.json();
+        const apiMembers = data?.data?.members || [];
+        const total = data?.data?.total || 0;
+        
+        // Calculate total pages manually since it's missing from response
+        totalPages = Math.ceil(total / 50) || 1;
+
+        const formattedPage = apiMembers.map((member: any) => ({
+          id: member.id,
+          fullName: member.fullname,
+          email: member.email,
+          position: member.position,
+          status: member.status,
+          avatar_initial: member.fullname.charAt(0).toUpperCase(),
+          id_employee: member.employee_code,
+          department_id: id,
+        }));
+
+        allData = [...allData, ...formattedPage];
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      return allData;
+    } catch (err) {
+      console.error("Export error:", err);
+      return [];
+    }
   };
 
   if (isLoadingDept) {
@@ -133,7 +229,7 @@ export default function DetailDepartments() {
   }
 
   return (
-    <div className="p-8">
+    <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Organization Structure"
         breadcrumbs={[
@@ -143,7 +239,7 @@ export default function DetailDepartments() {
         ]}
       />
 
-      <div className="my-5 px-4 py-4">
+      <div className="my-5">
         <Typography component="h1" variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
           {departmentData.department}
         </Typography>
@@ -153,72 +249,68 @@ export default function DetailDepartments() {
         </Typography>
       </div>
 
-      <div className="mb-4 pb-4">
-        <DepartmentsCardInfo department={departmentData} />
-      </div>
+      <DepartmentsCardInfo department={departmentData} />
 
-      <Card sx={{ borderRadius: 4, padding: 1 }}>
-        <CardHeader title="Departments Member List" />
-
-        <TableFilterUsers filter={tableFilter} onChange={setTableFilter} />
-
-        <Divider />
-
-        <div className="px-4 py-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <ExportButton />
+      <DepartmentsTableMember
+        members={members}
+        isLoading={isLoadingMembers}
+        isError={isErrorMembers}
+        rowCount={totalItems}
+        departmentId={id}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest}
+        onBulkDelete={handleBulkDelete}
+        isBulkDeleting={isBulkDeleting}
+        onDelete={(deptId, mbId) => {
+          setMemberId(mbId);
+          setOpenDelete(true);
+        }}
+        renderTopLeftToolbar={() => (
+          <>
+            <div className="hidden md:flex">
+              <AddMemberButton />
             </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div>
-                <Suspense>
-                  <AppInput
-                    isBgWhite
-                    placeholder="Search User"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    value={searchTerm}
-                  />
-                </Suspense>
-              </div>
-              {/* <AddMemberButton /> */}
+            {/* Mobile (blue plus icon w-9 h-9) */}
+            <div className="flex md:hidden">
+              <button
+                onClick={() => {
+                  // Internal trigger
+                  const addBtn = document.querySelector('[data-testid="add-member-btn"]') as HTMLButtonElement;
+                  if (addBtn) addBtn.click();
+                }}
+                className="flex items-center justify-center w-9 h-9 
+                           rounded-md bg-[#5479EE] text-white 
+                           hover:bg-[#3F66E0] transition-colors"
+                title="Add Member"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
             </div>
-          </div>
-        </div>
+          </>
+        )}
+      />
 
-        <div className="space-y-2">
-          <DepartementTableMember
-            data={members}
-            selected={selected}
-            isLoading={isLoadingMembers}
-            error={errorMembers?.message || null}
-            actions={{
-              onSelectOne: handleSelectOne,
-              onSelectAll: handleSelectAll,
-              onOpenDelete: () => setOpenDelete(true),
-              onDepartmentId: (id: string) => setDepartmentId(id),
-              onMemberId: (id: string) => setMemberId(id),
-            }}
-          />
-
-          <DeleteMembersModal
-            open={openDelete}
-            setOpen={setOpenDelete}
-            departmentId={departmentId!}
-            memberId={memberId!}
-          />
-
-          <div className="flex justify-end pt-2">
-            <Pagination
-              page={page}
-              rowsPerPage={rowsPerPage}
-              count={membersResponse?.data?.total || 0}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </div>
-        </div>
-      </Card>
+      {memberId && (
+        <DeleteMembersModal
+          open={openDelete}
+          setOpen={setOpenDelete}
+          departmentId={id}
+          memberId={memberId}
+        />
+      )}
     </div>
   );
 }

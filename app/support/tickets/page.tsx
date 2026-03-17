@@ -1,59 +1,61 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Search, Upload } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Printer } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
-import { AppSelect } from "@/components/ui/app-select";
-import { AppAutocomplete } from "@/components/ui/app-autocomplete";
-import InputSearch from "@/components/ui/input-search";
-import BannerDashboard from "@/components/ui/banner-dashboard";
 import { TicketTable } from "@/components/support/tickets/TicketTable";
-import { useTickets, useDeleteTicket, useAssignableAgents } from "@/lib/hooks/useTickets";
+import { useTickets, useDeleteTicket } from "@/lib/hooks/useTickets";
 import { AddTicketModal } from "@/components/support/tickets/modals/AddTicketModal";
 import { EditTicketModal } from "@/components/support/tickets/modals/EditTicketModal";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { Ticket } from "@/lib/types/Ticket";
 import { notify } from "@/lib/notifications";
-import Pagination from "@/components/ui/pagination";
-import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/context/AuthContext";
 
-import { Card, CardHeader, Divider, Box, TablePagination } from "@mui/material";
-import ExportPopover from "./ExportPopover";
+
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
+import { SuperTableState } from "@/components/ui/super-table";
 
 export default function TicketManagementPage() {
-    const searchParams = useSearchParams();
-    const [page, setPage] = useState(0); // MUI TablePagination uses 0-indexed page
-    const [limit, setLimit] = useState(10);
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("Select Status");
-    const [priorityFilter, setPriorityFilter] = useState("Select Priority");
-    const [agentFilter, setAgentFilter] = useState("Select Agent");
-    const [agentSearch, setAgentSearch] = useState("");
-
+    const { token } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-    // Reset page on search or filter change
-    useEffect(() => {
-        setPage(0);
-    }, [search, statusFilter, priorityFilter, agentFilter]);
-
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const componentRef = useRef<HTMLDivElement>(null);
+
+    // ===== TABLE STATE (Driven by SuperTable) ===== //
+    const [tableState, setTableState] = useState({
+        pageIndex: 0,
+        pageSize: 10,
+        globalFilter: "",
+        columnFilters: [] as { id: string; value: unknown }[],
+    });
 
     // Confirmation Hook
     const { showConfirmation } = useConfirmation();
 
+    // Helper to extract specific column filter value
+    const getFilterValue = (id: string) => {
+        const filter = tableState.columnFilters.find((f) => f.id === id);
+        return filter ? (filter.value as string) : "";
+    };
+
     // Data Fetching
-    const { data: ticketData, isLoading } = useTickets(page + 1, limit, search, statusFilter, priorityFilter, agentFilter);
-    const { data: agentData, isLoading: isLoadingAgents } = useAssignableAgents(agentSearch);
+    const { data: ticketData, isLoading, isError } = useTickets(
+        tableState.pageIndex + 1, // API is 1-indexed
+        tableState.pageSize,
+        tableState.globalFilter,
+        getFilterValue("status"),
+        getFilterValue("priority"),
+        getFilterValue("assigned_agent")
+    );
+
     const deleteMutation = useDeleteTicket();
 
     const tickets = ticketData?.data?.tickets || [];
     const totalTickets = ticketData?.data?.total || 0;
-    const agents = agentData?.data || [];
 
     // Handlers
     const handleEdit = (ticket: Ticket) => setEditingTicket(ticket);
@@ -74,28 +76,96 @@ export default function TicketManagementPage() {
         });
     };
 
-    const agentOptions = [
-        ...agents.map((a: any) => ({ label: a.fullname, value: a.id }))
-    ];
+    const handleBulkDelete = async (selectedTickets: Ticket[], clearSelection: () => void) => {
+        console.log("handleBulkDelete dipanggil");
+        console.log("Jumlah tiket:", selectedTickets.length);
+        console.log("deleteMutation:", deleteMutation);
+        console.log("mutateAsync:", deleteMutation?.mutateAsync);
 
-    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const handleAgentSearchChange = useCallback((event: any, value: string) => {
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
+        setIsBulkDeleting(true);
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const ticket of selectedTickets) {
+            try {
+                console.log("Mencoba hapus ticket:", ticket.id);
+                await deleteMutation.mutateAsync(ticket.id);
+                console.log("Berhasil hapus:", ticket.id);
+                successCount++;
+            } catch (error: any) {
+                console.error("Gagal hapus ticket:", ticket.id);
+                console.error("Error detail:", error);
+                console.error("Error message:", error?.message);
+                failCount++;
+            }
         }
+        
+        setIsBulkDeleting(false);
+        clearSelection();
+        
+        if (successCount > 0) {
+            notify.success("Success", { description: `${successCount} tiket berhasil dihapus` });
+        }
+        if (failCount > 0) {
+            notify.error("Error", { description: `${failCount} tiket gagal dihapus` });
+        }
+    };
 
-        debounceTimerRef.current = setTimeout(() => {
-            setAgentSearch(value);
-        }, 300);
-    }, []);
+    const handleTableStateChange = (state: SuperTableState) => {
+        setTableState({
+            pageIndex: state.pagination.pageIndex,
+            pageSize: state.pagination.pageSize,
+            globalFilter: state.globalFilter,
+            columnFilters: state.columnFilters,
+        });
+    };
 
-    const columns = [
-        { id: "ticket_code", label: "Ticket ID" },
-        { id: "subject", label: "Subject" },
-        { id: "priority", label: "Priority" },
-        { id: "status", label: "Status" },
-        { id: "assigned_agent.fullname", label: "Assigned Agent" },
-    ];
+    const handleExportRequest = async (params: { format: "csv" | "excel", currentState: SuperTableState }) => {
+        try {
+            const search = params.currentState.globalFilter;
+            const status = getFilterValue("status");
+            const priority = getFilterValue("priority");
+            const agentId = getFilterValue("assigned_agent");
+
+            const LIMIT_PER_PAGE = 100;
+            let allData: any[] = [];
+            let currentPage = 1;
+            let totalPages = 1;
+
+            do {
+                const urlParams = new URLSearchParams();
+                urlParams.set("page", String(currentPage));
+                urlParams.set("limit", String(LIMIT_PER_PAGE));
+                if (search) urlParams.set("search", search);
+                if (status) urlParams.set("status", status);
+                if (priority) urlParams.set("priority", priority);
+                if (agentId) urlParams.set("assigned_agent_id", agentId);
+                
+                const response = await fetch(
+                    `/api/proxy/tickets?${urlParams.toString()}`,
+                    { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+                );
+                const data = await response.json();
+                
+                const items = data?.data?.tickets || [];
+                totalPages = data?.data?.total_pages || 1;
+                allData = [...allData, ...items];
+                currentPage++;
+                
+            } while (currentPage <= totalPages);
+            
+            return allData;
+        } catch (err) {
+            console.error("Export error:", err);
+            return [];
+        }
+    };
+
+    // Legacy Print (Will be updated in Task 3)
+    const handlePrint = useReactToPrint({
+        contentRef: componentRef,
+        documentTitle: "Tickets",
+    });
 
     const printableColumns = [
         { header: "Ticket ID", accessorKey: "ticket_code" },
@@ -109,149 +179,62 @@ export default function TicketManagementPage() {
         },
     ];
 
-    const handleExportCSV = () => {
-        if (!tickets || tickets.length === 0) return notify.error("Error", {
-            description: "Ticket data is empty"
-        })
-        const headers = columns.map((col) => col.label);
-        const keys = columns.map((col) => col.id);
-
-        const getNestedValue = (obj: any, path: string) => {
-            return path.split('.').reduce((acc, part) => acc && acc[part], obj);
-        };
-
-        const csvContent = [
-            headers.join(","),
-            ...tickets.map((item) =>
-                keys
-                    .map((key) => {
-                        const val = getNestedValue(item, key) || "";
-                        return `"${String(val).replace(/"/g, '""')}"`;
-                    })
-                    .join(","),
-            ),
-        ].join("\n");
-
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "ticket_export.csv");
-            link.style.visibility = "hidden";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    };
-
-    const handlePrint = useReactToPrint({
-        contentRef: componentRef,
-        documentTitle: "Tickets",
-    });
-
     return (
-        <div className="min-h-screen bg-[#ffffff] p-6">
-            <div className="max-w-[1600px] mx-auto space-y-6">
-                <PageHeader
-                    title="Ticket Management"
-                    breadcrumbs={[{ label: "Support" }, { label: "Ticket" }]}
-                />
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
+            <PageHeader
+                title="Ticket Management"
+                breadcrumbs={[{ label: "Support" }, { label: "Ticket" }]}
+            />
 
-                <Card className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-                    <CardHeader title="Filters" />
-                    <Box sx={{ p: 4, pt: 0 }}>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <AppSelect
-                                options={[
-                                    { label: "All Status", value: "" },
-                                    { label: "Open", value: "Open" },
-                                    { label: "In Progress", value: "In Progress" },
-                                    { label: "Closed", value: "Closed" },
-                                ]}
-                                placeholder="Select Status"
-                                value={statusFilter === "Select Status" ? "" : statusFilter}
-                                isBgWhite={true}
-                                onChange={(e) => setStatusFilter(e.target.value as string || "Select Status")}
-                            />
-                            <AppSelect
-                                options={[
-                                    { label: "All Priority", value: "" },
-                                    { label: "High", value: "High" },
-                                    { label: "Medium", value: "Medium" },
-                                    { label: "Low", value: "Low" },
-                                ]}
-                                placeholder="Select Priority"
-                                value={priorityFilter === "Select Priority" ? "" : priorityFilter}
-                                isBgWhite={true}
-                                onChange={(e) => setPriorityFilter(e.target.value as string || "Select Priority")}
-                            />
-                            <AppAutocomplete
-                                options={agentOptions}
-                                placeholder="Select Agent"
-                                value={agentFilter !== "Select Agent" ? (agentOptions.find((opt: any) => opt.value === agentFilter) || null) : null}
-                                onChange={(e, newValue) => {
-                                    setAgentFilter((newValue as any)?.value || "Select Agent");
-                                }}
-                                onInputChange={handleAgentSearchChange}
-                                loading={isLoadingAgents}
-                                isBgWhite={true}
-                            />
-                        </div>
-                    </Box>
-
-                    <Divider />
-
-                    {/* Toolbar */}
-                    <Box sx={{ p: 2, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <ExportPopover
-                            onExportCSV={handleExportCSV} onPrint={handlePrint}
-                        />
-
-                        <div className="flex gap-4">
-                            <div className="relative w-full md:w-[320px]">
-                                <InputSearch
-                                    placeholder="Search by ID, subject, or keyword"
-                                    handleSearch={setSearch}
-                                    searchParams={searchParams}
-                                />
+            <div className="w-full overflow-x-auto">
+                <TicketTable
+                    tickets={tickets}
+                    isLoading={isLoading}
+                    isError={isError}
+                    rowCount={totalTickets}
+                    onStateChange={handleTableStateChange}
+                    onExportRequest={handleExportRequest}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
+                    onBulkDelete={handleBulkDelete}
+                    isBulkDeleting={isBulkDeleting}
+                    renderTopLeftToolbar={() => (
+                        <>
+                            {/* Desktop */}
+                            <div className="hidden md:flex gap-2">
+                                <AppButton
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    startIcon={<Plus size={16} />}
+                                >
+                                    Add Ticket
+                                </AppButton>
+                                <AppButton
+                                    variantStyle="outline"
+                                    onClick={handlePrint}
+                                    startIcon={<Printer size={16} />}
+                                >
+                                    Print PDF
+                                </AppButton>
                             </div>
-                            <AppButton
-                                variantStyle="primary"
-                                className="gap-2"
-                                onClick={() => setIsAddModalOpen(true)}
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add Ticket
-                            </AppButton>
-                        </div>
-                    </Box>
 
-                    {/* Table Area */}
-                    <Box sx={{ p: 0 }}>
-                        <TicketTable
-                            tickets={tickets}
-                            isLoading={isLoading}
-                            onEdit={handleEdit}
-                            onDelete={handleDeleteClick}
-                        />
-                    </Box>
-
-                    {/* Pagination */}
-                    <TablePagination
-                        component="div"
-                        count={totalTickets}
-                        page={page}
-                        onPageChange={(_, newPage) => setPage(newPage)}
-                        rowsPerPage={limit}
-                        onRowsPerPageChange={(e) => {
-                            setLimit(parseInt(e.target.value, 10));
-                            setPage(0);
-                        }}
-                        rowsPerPageOptions={[5, 10, 25, 50]}
-                        sx={{ borderTop: '1px solid #e5e7eb' }}
-                    />
-                </Card>
+                            {/* Mobile — icon only, ukuran w-9 h-9 */}
+                            <div className="flex md:hidden gap-2">
+                                <button
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                                <button
+                                    onClick={handlePrint}
+                                    className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                                >
+                                    <Printer size={16} />
+                                </button>
+                            </div>
+                        </>
+                    )}
+                />
             </div>
 
             {/* Modals */}

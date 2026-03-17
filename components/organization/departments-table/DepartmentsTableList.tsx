@@ -1,147 +1,162 @@
 "use client";
 
-import { DepartmentsType } from "../../../lib/types/Departments";
-import { Avatar, Box, Checkbox, CircularProgress, IconButton } from "@mui/material";
-import { Pencil, Trash2 } from "lucide-react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import {
-  DeparmentsTableError,
-  DepartmentsTableDataNotFound,
-} from "@/components/organization";
-
+import React, { useMemo } from "react";
+import { Avatar, Box } from "@mui/material";
+import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
+import { DepartmentsType } from "@/lib/types/Departments";
+import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
+import { AppButton } from "@/components/ui/app-button";
 import Link from "next/link";
-import { randomInt } from "crypto";
-import { useRouter } from "next/navigation";
-import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 
-interface TableListDepartmetsProps {
-  data: DepartmentsType[];
-  selected: string[];
-  isLoading?: boolean;
-  error?: string | null;
-
-  actions: {
-    onSelectOne: (id: string) => void;
-    onSelectAll: (checked: boolean, data: DepartmentsType[]) => void;
-    onOpenEdit: (department: DepartmentsType) => void;
-    onOpenDelete: (department: DepartmentsType) => void;
-  };
+interface DepartmentsTableListProps {
+  departments: DepartmentsType[];
+  isLoading: boolean;
+  isError?: boolean;
+  rowCount?: number;
+  branchOptions?: string[];
+  onStateChange?: (state: SuperTableState) => void;
+  onExportRequest?: (params: any) => Promise<DepartmentsType[]>;
+  onEdit: (department: DepartmentsType) => void;
+  onDelete: (department: DepartmentsType) => void;
+  onBulkDelete?: (departments: DepartmentsType[], clearSelection: () => void) => Promise<void>;
+  isBulkDeleting?: boolean;
+  renderTopLeftToolbar?: () => React.ReactNode;
 }
 
-export default function TableListDepartment({
-  data,
-  selected,
+export default function DepartmentsTableList({
+  departments,
   isLoading,
-  error,
-  actions,
-}: TableListDepartmetsProps) {
-  const { onSelectOne, onSelectAll, onOpenEdit, onOpenDelete } = actions;
-  const router = useRouter();
-
-  if (error) {
-    return <DeparmentsTableError message="Failed to load Department data." />;
-  }
-
-  if (data.length === 0) {
-    return <DepartmentsTableDataNotFound />;
-  }
-
-  const isAllChecked = data.length > 0 && selected.length === data.length;
-  const isSomeChecked = selected.length > 0 && !isAllChecked;
+  isError,
+  rowCount = 0,
+  branchOptions = [],
+  onStateChange,
+  onExportRequest,
+  onEdit,
+  onDelete,
+  onBulkDelete,
+  isBulkDeleting = false,
+  renderTopLeftToolbar,
+}: DepartmentsTableListProps) {
+  const columns = useMemo<MRT_ColumnDef<DepartmentsType>[]>(() => [
+    {
+      accessorKey: "department",
+      header: "Department",
+      filterVariant: "select",
+      filterSelectOptions: ["Marketing", "Sales", "Customer Support", "Human Resources"],
+      columnFilterModeOptions: undefined,
+      Cell: ({ row }) => (
+        <Link href={`/organization/${row.original.id}`}>
+          <span className="font-medium hover:underline">
+            {row.original.department}
+          </span>
+        </Link>
+      ),
+    },
+    {
+      accessorKey: "branch",
+      header: "Branch",
+      filterVariant: "select",
+      filterSelectOptions: branchOptions,
+      columnFilterModeOptions: undefined,
+      Cell: ({ row }) => (
+        <span className="text-gray-500">{row.original.branch}</span>
+      ),
+    },
+    {
+      id: "manager",
+      accessorFn: (row) => row.manager?.fullname || "-",
+      header: "Manager",
+      enableColumnFilter: false,
+      Cell: ({ row }) =>
+        row.original.manager === null ? (
+          <span>-</span>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Avatar
+              src={row.original.manager.avatar_url || undefined}
+              sx={{ backgroundColor: "#dbeafe", color: "#2563eb", width: 32, height: 32 }}
+            >
+              {row.original.manager.avatar_initial}
+            </Avatar>
+            <span className="font-medium">
+              {row.original.manager.fullname}
+            </span>
+          </div>
+        ),
+    },
+    {
+      accessorKey: "manager_code",
+      header: "Manager ID",
+      enableColumnFilter: false,
+    },
+    {
+      accessorKey: "member_count",
+      header: "Member Count",
+      enableColumnFilter: false,
+      muiTableBodyCellProps: { align: "center" },
+      muiTableHeadCellProps: { align: "center" },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableColumnFilter: false,
+      enableSorting: false,
+      size: 120,
+      Cell: ({ row }) => (
+        <Box
+          sx={{ display: "flex", gap: 1 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <EditButton onClick={() => onEdit(row.original)} />
+          <DeleteButton onClick={() => onDelete(row.original)} />
+        </Box>
+      ),
+    },
+  ], [branchOptions, onEdit, onDelete]);
 
   return (
-    <Table className="overflow-hidden rounded-lg border border-gray-200">
-      <TableHead>
-        <TableRow className="bg-[#EEF2FD]!">
-          <TableCell padding="checkbox">
-            <Checkbox
-              checked={isAllChecked}
-              indeterminate={isSomeChecked}
-              onChange={(e) => onSelectAll(e.target.checked, data)}
-            />
-          </TableCell>
-
-          <TableCell>Department</TableCell>
-          <TableCell>Branch</TableCell>
-          <TableCell align="center">Manager</TableCell>
-          <TableCell>Manager ID</TableCell>
-          <TableCell align="center">Member Count</TableCell>
-          <TableCell>Action</TableCell>
-        </TableRow>
-      </TableHead>
-
-      <TableBody>
-        {isLoading ? (
-          <TableRow>
-            <TableCell colSpan={6}>
-              <Box sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: 120,
-              }} >
-                <CircularProgress />
-              </Box>
-            </TableCell>
-          </TableRow>
-        ) : data.map((department, index) => (
-          <TableRow
-            key={department.id}
-            className="transition-all hover:bg-gray-100 cursor-pointer"
-            onClick={() => router.push(`/organization/${department.id}`)}
+    <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
+      <SuperTable<DepartmentsType>
+        tableId="departments-table"
+        data={departments}
+        columns={columns}
+        rowCount={rowCount}
+        manualFiltering={true}
+        manualPagination={true}
+        manualSorting={true}
+        isLoading={isLoading}
+        isError={isError}
+        onStateChange={onStateChange}
+        onExportRequest={onExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        renderBulkActions={onBulkDelete ? ({ selectedRows, clearSelection }) => (
+          <AppButton
+            variantStyle="danger"
+            disabled={isBulkDeleting}
+            onClick={() => {
+              onBulkDelete(
+                selectedRows as DepartmentsType[],
+                clearSelection
+              );
+            }}
           >
-            <TableCell padding="checkbox">
-              <Checkbox
-                checked={selected.includes(department.id)}
-                onChange={() => onSelectOne(department.id)}
-              />
-            </TableCell>
-
-            <TableCell>
-              <Link href={`/organization/${department.id}`}>
-                <span className="font-medium hover:underline">
-                  {department.department}
-                </span>
-              </Link>
-            </TableCell>
-
-            <TableCell>
-              <span className="text-gray-500">{department.branch}</span>
-            </TableCell>
-            <TableCell align="center">
-              {department.manager === null ? "-" : (
-                <div className="flex items-center justify-center gap-3">
-                  <Avatar
-                    src={department.manager.avatar_url || undefined}
-                    sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}
-                  >
-                    {department.manager.avatar_initial}
-                  </Avatar>
-                  <span className="font-medium">
-                    {department.manager.fullname}
-                  </span>
-                </div>
-              )}
-            </TableCell>
-            <TableCell>{department.manager_code}</TableCell>
-
-            <TableCell align="center">
-              {department.member_count}
-            </TableCell>
-
-            <TableCell onClick={(e) => e.stopPropagation()}>
-              <div className="flex gap-2">
-                <EditButton onClick={() => onOpenEdit(department)} />
-                <DeleteButton onClick={() => onOpenDelete(department)} />
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            {isBulkDeleting
+              ? "Menghapus..."
+              : `Hapus ${selectedRows.length} Department`}
+          </AppButton>
+        ) : undefined}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          columnFilters: true,
+          sorting: true,
+          urlSync: true,
+          rowSelection: "multi",
+          export: { excel: true, csv: true },
+          densityToggle: true,
+          fullScreenToggle: true,
+        }}
+      />
+    </Box>
   );
 }

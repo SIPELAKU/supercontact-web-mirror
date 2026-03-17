@@ -60,6 +60,9 @@ npm run release:major    # Create major release (X.0.0)
 npm run tag:list         # List all version tags
 ```
 
+## 🧪 Demo
+Buka `/demo/super-table` untuk showcase fitur SuperTable
+
 ## 🔄 Deployment Workflow & Environments
 
 We adhere to a strict **3-Tier Deployment Pipeline**. Please ensure you are working on the correct branch.

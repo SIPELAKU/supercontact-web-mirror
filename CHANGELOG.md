@@ -5,6 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.10.5] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableMember → SuperTable**: manualPagination,
+  server-side filter Position & Status, bulk delete 
+  sequential, export Excel/CSV loop pagination,
+  fix status badge dari hardcoded ke dynamic API value,
+  AddMemberButton di toolbar
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableMember.tsx
+- app/organization/[id]/page.tsx
+
+## [1.10.4] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableList → SuperTable**: manualPagination,
+  server-side filter Department (hardcoded select) &
+  Branch (dynamic dari API), bulk delete sequential,
+  export Excel/CSV loop pagination, Print PDF toolbar,
+  row click navigation, mobile responsive
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableList.tsx
+- components/organization/OrganizationClient.tsx
+
+## [1.10.3] - 2026-03-17
+
+### ✨ Added
+- **QuotationTable → SuperTable**: manualPagination,
+  client-side status filter (Accepted/Pending/Rejected),
+  date range filter server-side, export Excel/CSV 
+  loop pagination, accessorFn Rupiah formatting,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/quotation/QuotationTable.tsx
+- components/quotation/QuotationClient.tsx
+- lib/store/quotation/index.ts
+
+## [1.10.2] - 2026-03-16
+
+### ✨ Added
+- **CampaignsTable → SuperTable**: manualPagination,
+  client-side status filter (Draft/In Queue/Sending/
+  Sent/Canceled), bulk delete dengan skip otomatis 
+  untuk non-Draft, export Excel/CSV loop pagination,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/email-marketing/campaigns/CampaignsTable.tsx
+- components/email-marketing/campaigns/CampaignsClient.tsx
+
+## [1.10.1] - 2026-03-16
+
+### ✨ Added
+- **TableListUsers → SuperTable**: manualPagination,
+  server-side filter Position & Status, dynamic 
+  position options, bulk delete sequential,
+  export loop pagination, Print PDF toolbar,
+  mobile responsive
+
+### 📁 Modified Files
+- components/users/users-table/TableListUsers.tsx
+- components/users/UsersClient.tsx
+
+## [1.10.0] - 2026-03-16
+
+### ✨ Added
+- **SuperTable Core**: Komponen tabel universal dengan dukungan manualPagination, columnFilters, export Excel/CSV, bulk actions, dan urlSync
+- **RolesTable → SuperTable**: Server-side pagination & search, export loop pagination, facetedValues, urlSync, densityToggle, fullScreenToggle
+- **TicketTable → SuperTable**: Column filters per kolom (Priority/Status select, Agent UUID dropdown), bulk delete sequential dengan progress toast, export loop pagination, mobile responsive toolbar
+- **ProductTable → SuperTable**: accessorFn formatting (Rupiah & persen), bulk delete sequential, export do...while loop, race condition fix dengan useRef prevState
+- **Demo Page /demo/super-table**: Integration checklist, filter variants demo, accessorFn formatting demo, bulk delete demo, server-side simulation
+
+### 🐛 Fixed
+- Generic constraint TData diubah dari Record<string,unknown> ke object untuk kompatibilitas semua TypeScript interface
+- Double pagination dihapus dari RolesTable dan TicketTable
+- Export kosong karena Authorization header tidak terkirim ke API
+- Export 422 error karena limit melebihi batas backend
+
+#### 📁 Modified Files
+- components/roles/RolesClient.tsx
+- components/roles/roles-table/RolesTable.tsx
+- components/roles/roles-button-open-modal/AddRoleButton.tsx
+- components/support/tickets/TicketTable.tsx
+- app/support/tickets/page.tsx
+- components/product/ProductTable.tsx
+- components/product/ProductClient.tsx
+- components/ui/super-table/types.ts
+- components/ui/super-table/SuperTable.tsx
+- components/ui/super-table/hooks/useTableConfig.tsx
+- components/ui/super-table/hooks/useTableState.ts
+- components/ui/super-table/hooks/useTableExport.ts
+- components/ui/super-table/components/BulkActionsBar.tsx
+- app/demo/super-table/page.tsx
+
+#### 📁 Created Files
+- (tidak ada file baru, hanya modifikasi)
+
+---
+
 ## [1.9.7] - 2026-03-13
 
 ### Detail Versi 1.9.7

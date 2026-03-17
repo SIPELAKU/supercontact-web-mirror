@@ -1,98 +1,98 @@
 "use client";
 
-import {
-  ChangeEvent,
-  MouseEvent,
-  Suspense,
-  useMemo,
-  useState,
-  useEffect,
-  useRef,
-} from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Card, CardHeader, Divider } from "@mui/material";
-import { useManagedUsers } from "@/lib/hooks/useManagedUser";
-import { ManageUser } from "@/lib/types/manage-users";
+import { useRef, useState, useEffect } from "react";
+import { Card } from "@mui/material";
 import PageHeader from "@/components/ui/page-header";
-import Pagination from "@/components/ui/pagination";
+import { useReactToPrint } from "react-to-print";
+import { PrintableTable } from "@/components/ui/printable-table";
+import { useManagedUsers, useDeleteManagedUser } from "@/lib/hooks/useManagedUser";
+import { ManageUser } from "@/lib/types/manage-users";
+import { useAuth } from "@/lib/context/AuthContext";
 import {
   AddUsersModal,
   CardStatUsers,
   DeleteUserModal,
   DetailUsersModal,
   EditUsersModal,
-  TableFilterUsers,
   TableListUsers,
 } from "@/components/users";
-import { AppButton } from "../ui/app-button";
-import { DownloadIcon, Plus, Upload } from "lucide-react";
-import { AppInput } from "../ui/app-input";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import ExportPopover from "./ExportPopover";
-import { useReactToPrint } from "react-to-print";
-import { PrintableTable } from "@/components/ui/printable-table";
-import { handleError } from "@/lib/utils/errorHandler";
+
+// Fitur SuperTable
+import { AppButton } from "@/components/ui/app-button";
+import { Plus, Printer } from "lucide-react";
+import { SuperTableState } from "@/components/ui/super-table";
+import { fetchManagedUsers } from "@/lib/api/manage-users";
 import { notify } from "@/lib/notifications";
+import { handleError } from "@/lib/utils/errorHandler";
 
 export default function UsersClient() {
+  const { token } = useAuth();
+  
+  // Modals Setup
   const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
-  const componentRef = useRef<HTMLDivElement>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
 
-  const [tableFilter, setTableFilter] = useState<{
-    position?: ManageUser["position"];
-    status?: ManageUser["status"];
-  }>({});
+  // Bulk Delete State & Hook
+  const deleteMutation = useDeleteManagedUser();
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Reset pagination + update search
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const pathname = usePathname();
+  // Printing Setup
+  const componentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Managed Users",
+  });
 
-  // ===== PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [totalCount, setTotalCount] = useState<number>(0);
+  const [allPositions, setAllPositions] = useState<string[]>([]);
 
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") ?? "",
-  );
-  const debouncedSearch = useDebounce(searchTerm, 500);
+  // SuperTable State Hook
+  const [tableState, setTableState] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+    globalFilter: "",
+    columnFilters: [] as { id: string; value: unknown }[]
+  });
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
+  const handleTableStateChange = (state: SuperTableState) => {
+    setTableState({
+      pageIndex: state.pagination.pageIndex,
+      pageSize: state.pagination.pageSize,
+      globalFilter: state.globalFilter,
+      columnFilters: state.columnFilters || []
+    });
+  };
 
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
-    }
+  const getFilterValue = (id: string) => {
+    const filter = tableState.columnFilters.find(
+      (f: { id: string; value: unknown }) => f.id === id
+    );
+    return filter ? (filter.value as string) : "";
+  };
 
-    setPage(0);
-    replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearch, pathname, replace, searchParams]);
+  // Extract variables for API
+  const pageParam = tableState.pageIndex + 1; // Backend 1-indexed
+  const limitParam = tableState.pageSize;
+  const searchParam = tableState.globalFilter || "";
+  
+  // Extract column filters
+  const positionFilter = (() => {
+    const val = getFilterValue("position");
+    return val && val !== "All" ? val : undefined;
+  })();
+  const statusFilter = getFilterValue("status") || undefined;
 
-  const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
-
+  // React Query Fetcher (Main Table Data)
   const {
     data: usersResponse,
     isLoading,
     isError,
     error,
-  } = useManagedUsers(
-    page + 1, // API usually expects 1-indexed page
-    rowsPerPage,
-    searchQuery,
-    tableFilter.position,
-    tableFilter.status,
-  );
+  } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter);
 
-  // Handle fetch error
+  // Error Handling
   useEffect(() => {
     if (isError && error) {
       const message = handleError(error, "Fetch Managed Users");
@@ -100,56 +100,81 @@ export default function UsersClient() {
     }
   }, [isError, error]);
 
-  // Set total count when data changes
+  const displayUsers = usersResponse?.data?.manage_users || [];
+  const totalCount = usersResponse?.data?.total || 0;
+
   useEffect(() => {
-    if (usersResponse?.data?.total) {
-      setTotalCount(usersResponse.data.total);
+    if (displayUsers && displayUsers.length > 0) {
+      const positions = Array.from(
+        new Set(displayUsers.map(u => u.position).filter(Boolean))
+      );
+      setAllPositions(prev => {
+        const merged = new Set([...prev, ...positions]);
+        return Array.from(merged);
+      });
     }
-  }, [usersResponse]);
+  }, [displayUsers]);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
+  // Manual API Fetcher for Export Function (Do-While Loop)
+  const handleExportRequest = async (params: { format: 'excel' | 'csv' }): Promise<ManageUser[]> => {
+    if (!token) throw new Error("No authorization token");
+    let allData: ManageUser[] = [];
+    let currentPage = 1;
+    let totalPages = 1;
+    
+    // We fetch without arbitrary limit restrictions to export everything reflecting current filters
+    do {
+      const resp = await fetchManagedUsers(
+        token, 
+        currentPage, 
+        1000, // Safe large chunk threshold
+        searchParam, 
+        positionFilter, 
+        statusFilter
+      );
+      
+      if (!resp.success) {
+        throw new Error("Failed to fetch page data for export");
+      }
+      
+      allData = [...allData, ...resp.data.manage_users];
+      
+      // Calculate remaining pages assuming backend limits resp.data.limit per request
+      totalPages = Math.ceil(resp.data.total / resp.data.limit);
+      currentPage++;
+      
+    } while (currentPage <= totalPages);
+    
+    return allData;
   };
 
-  const filteredUsers = useMemo(() => {
-    const apiUsers = usersResponse?.data?.manage_users || [];
-
-    return apiUsers;
-  }, [usersResponse?.data]);
-
-  const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
+  const handleBulkDelete = async (
+    selectedUsers: ManageUser[],
+    clearSelection: () => void
   ) => {
-    setPage(newPage);
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const user of selectedUsers) {
+      try {
+        await deleteMutation.mutateAsync(user.id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    
+    setIsBulkDeleting(false);
+    clearSelection();
+    
+    if (successCount > 0) {
+      notify.success(`${successCount} user berhasil dihapus`);
+    }
+    if (failCount > 0) {
+      notify.error(`${failCount} user gagal dihapus`);
+    }
   };
-
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  // No more slicing here, data is already paginated from backend
-  const displayUsers = filteredUsers;
-
-  const handleSelectAll = (checked: boolean, data: ManageUser[]) => {
-    setSelected(checked ? data.map((u) => u.id) : []);
-  };
-
-  const handleSelectOne = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
-  const columns = [
-    { id: "fullname", label: "User" },
-    { id: "email", label: "Email" },
-    { id: "position", label: "Position" },
-    { id: "employee_code", label: "Employee ID" },
-  ];
 
   const printableColumns = [
     { header: "User", accessorKey: "fullname" },
@@ -157,40 +182,6 @@ export default function UsersClient() {
     { header: "Position", accessorKey: "position" },
     { header: "Employee ID", accessorKey: "employee_code" },
   ];
-
-  const handleExportCSV = () => {
-    const headers = columns.map((col) => col.label);
-    const keys = columns.map((col) => col.id);
-
-    const csvContent = [
-      headers.join(","),
-      ...filteredUsers.map((item) =>
-        keys
-          .map((key) => {
-            const val = (item as any)[key] || "";
-            return `"${String(val).replace(/"/g, '""')}"`;
-          })
-          .join(","),
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "managed_users_export.csv");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: "Managed Users",
-  });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -209,72 +200,61 @@ export default function UsersClient() {
           boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
         }}
       >
-        <CardHeader
-          title="Filters"
-          titleTypographyProps={{
-            variant: "h6",
-            sx: { fontWeight: 500, fontSize: "18px" },
-          }}
-        />
-
-        {/* Filter */}
-        <TableFilterUsers filter={tableFilter} onChange={setTableFilter} />
-
-        <Divider />
-
-        {/* Search & Button */}
-        <div className="px-4 py-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <ExportPopover
-              onExportCSV={handleExportCSV}
-              onPrint={handlePrint}
-            />
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div>
-                <Suspense>
-                  <AppInput
-                    placeholder="Search User"
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    isBgWhite
-                  />
-                </Suspense>
-              </div>
-              <AppButton
-                variantStyle="primary"
-                color="primary"
-                startIcon={<Plus />}
-                onClick={() => setOpenAdd(true)}
-              >
-                Add New User
-              </AppButton>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 overflow-x-auto">
+        <div className="space-y-2 overflow-x-auto w-full">
           <TableListUsers
-            data={displayUsers}
-            selected={selected}
+            users={displayUsers}
+            positionOptions={["All", ...allPositions]}
             isLoading={isLoading}
-            error={error}
-            actions={{
-              onSelectOne: handleSelectOne,
-              onSelectAll: handleSelectAll,
-              onOpenEdit: (user) => {
-                setSelectedUser(user);
-                setOpenEdit(true);
-              },
-              onOpenDetail: (user) => {
-                setSelectedUser(user);
-                setOpenDetail(true);
-              },
-              onOpenDelete: (user) => {
-                setSelectedUser(user);
-                setOpenDelete(true);
-              },
+            isError={isError}
+            rowCount={totalCount}
+            onStateChange={handleTableStateChange}
+            onExportRequest={handleExportRequest}
+            onBulkDelete={handleBulkDelete}
+            isBulkDeleting={isBulkDeleting}
+            onEdit={(user) => {
+              setSelectedUser(user);
+              setOpenEdit(true);
             }}
+            onView={(user) => {
+              setSelectedUser(user);
+              setOpenDetail(true);
+            }}
+            onDelete={(user) => {
+              setSelectedUser(user);
+              setOpenDelete(true);
+            }}
+            renderTopLeftToolbar={() => (
+              <>
+                {/* Desktop */}
+                <div className="hidden md:flex gap-2">
+                  <AppButton onClick={() => setOpenAdd(true)}
+                    startIcon={<Plus size={16} />}>
+                    Add New User
+                  </AppButton>
+                  <AppButton variantStyle="outline" onClick={handlePrint}
+                    startIcon={<Printer size={16} />}>
+                    Print PDF
+                  </AppButton>
+                </div>
+
+                {/* Mobile — icon only w-9 h-9 */}
+                <div className="flex md:hidden gap-2">
+                  <button onClick={() => setOpenAdd(true)}
+                    className="flex items-center justify-center w-9 h-9 
+                               rounded-md bg-[#5479EE] text-white 
+                               hover:bg-[#3F66E0] transition-colors">
+                    <Plus size={16} />
+                  </button>
+                  <button onClick={handlePrint}
+                    className="flex items-center justify-center w-9 h-9 
+                               rounded-md border border-[#5479EE] 
+                               text-[#5479EE] hover:bg-blue-50 
+                               transition-colors">
+                    <Printer size={16} />
+                  </button>
+                </div>
+              </>
+            )}
           />
 
           <AddUsersModal open={openAdd} setOpen={setOpenAdd} />
@@ -300,16 +280,6 @@ export default function UsersClient() {
               user={selectedUser}
             />
           )}
-
-          <div className="flex justify-end pt-2">
-            <Pagination
-              page={page}
-              rowsPerPage={rowsPerPage}
-              count={totalCount}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </div>
         </div>
       </Card>
 
@@ -317,7 +287,7 @@ export default function UsersClient() {
         <PrintableTable
           ref={componentRef}
           title="Managed Users"
-          data={filteredUsers}
+          data={displayUsers}
           columns={printableColumns}
         />
       </div>

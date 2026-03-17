@@ -54,7 +54,7 @@ const checklistData: TableIntegrationStatus[] = [
   { no: 5, tableName: 'CampaignsTable', filePath: 'components/email-marketing/campaigns/CampaignsTable.tsx', module: 'Email Marketing', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search', 'Status Filter'], superTableFeatures: ['manualPagination', 'client-side status filter', 'bulk delete (Draft only) dengan skip notification', 'export Excel/CSV loop pagination', 'mobile responsive toolbar'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 6, tableName: 'ContactTable', filePath: 'components/contact/ContactTable.tsx', module: 'Contact', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Complex API Filter', 'Selection', 'Multi actions'], superTableFeatures: ['Advanced API Filters', 'Faceted values', 'Complex Bulk Actions'], estimasiWaktu: '2 hari', blockers: 'API butuh penyesuaian untuk filter variant baru' },
   { no: 7, tableName: 'QuotationTable', filePath: 'components/sales/QuotationTable.tsx', module: 'Sales', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['manualPagination', 'client-side status filter', 'date range filter', 'export Excel/CSV loop', 'mobile responsive toolbar', 'accessorFn formatting Rupiah'], estimasiWaktu: '1 hari', blockers: '' },
-  { no: 8, tableName: 'DepartmentsTableList', filePath: 'components/organization/DepartmentsTableList.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Tree/Expand'], superTableFeatures: ['Expanding Sub Rows natively', 'Export'], estimasiWaktu: '1 hari', blockers: '' },
+  { no: 8, tableName: 'DepartmentsTableList', filePath: 'components/organization/departments-table/DepartmentsTableList.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Tree/Expand'], superTableFeatures: ['manualPagination', 'server-side filter Department & Branch', 'dynamic branch options dari API', 'bulk delete sequential', 'export Excel/CSV loop pagination', 'Print PDF di toolbar', 'row click navigation ke detail', 'mobile responsive toolbar'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 9, tableName: 'DepartmentsTableMember', filePath: 'components/organization/DepartmentsTableMember.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['Filter by role', 'Export'], estimasiWaktu: '1 hari', blockers: '' },
   { no: 10, tableName: 'CompanyTable', filePath: 'components/omnichannel/CompanyTable.tsx', module: 'Omnichannel', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['Industry filter', 'Export'], estimasiWaktu: '1 hari', blockers: '' },
   { no: 11, tableName: 'SubscribersTable', filePath: 'components/email-marketing/subscribers/SubscribersTable.tsx', module: 'Email Marketing', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Heavy selection', 'Import/Export custom'], superTableFeatures: ['Native Export', 'Bulk delete/assign', 'Faceted Segment filter'], estimasiWaktu: '2 hari', blockers: 'Custom import logic perlu dipisah' },
@@ -75,7 +75,7 @@ const IntegrationChecklist = () => {
         {/* Summary */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="success.main" fontWeight="bold">6</Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">7</Typography>
             <Typography variant="body2" color="text.secondary">✅ Selesai</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
@@ -83,7 +83,7 @@ const IntegrationChecklist = () => {
             <Typography variant="body2" color="text.secondary">🔄 Dikembalikan</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="text.secondary" fontWeight="bold">6</Typography>
+            <Typography variant="h4" color="text.secondary" fontWeight="bold">5</Typography>
             <Typography variant="body2" color="text.secondary">⏳ Belum</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>

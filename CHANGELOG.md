@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.4] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableList → SuperTable**: manualPagination,
+  server-side filter Department (hardcoded select) &
+  Branch (dynamic dari API), bulk delete sequential,
+  export Excel/CSV loop pagination, Print PDF toolbar,
+  row click navigation, mobile responsive
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableList.tsx
+- components/organization/OrganizationClient.tsx
+
 ## [1.10.3] - 2026-03-17
 
 ### ✨ Added

@@ -68,7 +68,15 @@ const checklistData: TableIntegrationStatus[] = [
       'mobile responsive toolbar',
       '⚠️ Catatan: Filter Industry & Location client-side only (data halaman aktif). Bug filterValue.some dari URL sync belum resolved di SuperTable core.'
     ], estimasiWaktu: 'Selesai', blockers: '' },
-  { no: 11, tableName: 'SubscribersTable', filePath: 'components/email-marketing/subscribers/SubscribersTable.tsx', module: 'Email Marketing', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Heavy selection', 'Import/Export custom'], superTableFeatures: ['Native Export', 'Bulk delete/assign', 'Faceted Segment filter'], estimasiWaktu: '2 hari', blockers: 'Custom import logic perlu dipisah' },
+  { no: 11, tableName: 'SubscribersTable', filePath: 'components/email-marketing/subscribers/SubscribersTable.tsx', module: 'Email Marketing', complexity: 'High', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Heavy selection', 'Import/Export custom'], superTableFeatures: [
+      'manualPagination',
+      'globalFilter search',
+      'bulk delete',
+      'export Excel/CSV loop pagination',
+      'Add Subscriber button di toolbar',
+      'Import button di toolbar',
+      'mobile responsive toolbar (Import: border biru, Add: bg biru)'
+    ], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 12, tableName: 'Lead DataTable', filePath: 'components/lead-management/LeadDataTable.tsx', module: 'Lead Management', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Complex Filter', 'Pipeline View'], superTableFeatures: ['Pipeline group mode', 'Inline status edit', 'Advanced filter'], estimasiWaktu: '2 hari', blockers: 'Tarik UI Pipeline mungkin conflict' },
 ];
 
@@ -86,7 +94,7 @@ const IntegrationChecklist = () => {
         {/* Summary */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="success.main" fontWeight="bold">10</Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">11</Typography>
             <Typography variant="body2" color="text.secondary">✅ Selesai</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
@@ -94,7 +102,7 @@ const IntegrationChecklist = () => {
             <Typography variant="body2" color="text.secondary">🔄 Dikembalikan</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="text.secondary" fontWeight="bold">2</Typography>
+            <Typography variant="h4" color="text.secondary" fontWeight="bold">1</Typography>
             <Typography variant="body2" color="text.secondary">⏳ Belum</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>

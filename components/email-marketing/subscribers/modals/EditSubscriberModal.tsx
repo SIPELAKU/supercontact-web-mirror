@@ -89,10 +89,10 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
         data: {
           name: name.trim(),
           email: email.trim(),
-          phone_number: phoneNumber.trim() || undefined,
-          position: position.trim() || undefined,
-          company: company.trim() || undefined,
-          address: address.trim() || undefined,
+          phone_number: phoneNumber.trim() || '',
+          position: position.trim() || '',
+          company: company.trim() || '',
+          address: address.trim() || '',
           custom_fields: Object.keys(customFields).length > 0 ? customFields : undefined,
         }
       });

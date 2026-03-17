@@ -56,13 +56,18 @@ const checklistData: TableIntegrationStatus[] = [
   { no: 7, tableName: 'QuotationTable', filePath: 'components/sales/QuotationTable.tsx', module: 'Sales', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['manualPagination', 'client-side status filter', 'date range filter', 'export Excel/CSV loop', 'mobile responsive toolbar', 'accessorFn formatting Rupiah'], estimasiWaktu: '1 hari', blockers: '' },
   { no: 8, tableName: 'DepartmentsTableList', filePath: 'components/organization/departments-table/DepartmentsTableList.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Tree/Expand'], superTableFeatures: ['manualPagination', 'server-side filter Department & Branch', 'dynamic branch options dari API', 'bulk delete sequential', 'export Excel/CSV loop pagination', 'Print PDF di toolbar', 'row click navigation ke detail', 'mobile responsive toolbar'], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 9, tableName: 'DepartmentsTableMember', filePath: 'components/organization/departments-table/DepartmentsTableMember.tsx', module: 'Organization', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search'], superTableFeatures: ['manualPagination', 'server-side filter Position (14 opsi) & Status', 'bulk delete sequential (departmentId + memberId)', 'export Excel/CSV loop pagination', 'status badge fix (Active/Pending/Inactive)', 'AddMemberButton di toolbar', 'mobile responsive'], estimasiWaktu: 'Selesai', blockers: '' },
-  { no: 10, tableName: 'CompanyTable', filePath: 'components/omnichannel/CompanyTable.tsx', module: 'Omnichannel', complexity: 'Medium', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Search'], superTableFeatures: [
-      'Belum Selesai Migrasi Penuh',
-      'Fix Multi-Select Array Serialization (useUrlSync)',
-      'Fix konsistensi manualFiltering={true} agar filter sesuai server',
-      'Fix status filter case mismatch pakai {value, label}',
-      'Fix defense layer mapping di useTableConfig yang clash dengan MRT array state',
-    ], estimasiWaktu: '1 hari', blockers: '' },
+  { no: 10, tableName: 'CompanyTable', filePath: 'components/omnichannel/CompanyTable.tsx', module: 'Omnichannel', complexity: 'Medium', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Search'], superTableFeatures: [
+      'manualPagination + manualSorting',
+      'client-side filter Industry & Location (multi-select, facetedValues: false)',
+      'filter Status (select: Success/Failed/Enriching)',
+      'globalFilter (search)',
+      'bulk delete dengan showConfirmation modal',
+      'export Excel/CSV loop pagination',
+      'Print PDF di toolbar',
+      'row click navigation ke profile detail',
+      'mobile responsive toolbar',
+      '⚠️ Catatan: Filter Industry & Location client-side only (data halaman aktif). Bug filterValue.some dari URL sync belum resolved di SuperTable core.'
+    ], estimasiWaktu: 'Selesai', blockers: '' },
   { no: 11, tableName: 'SubscribersTable', filePath: 'components/email-marketing/subscribers/SubscribersTable.tsx', module: 'Email Marketing', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Heavy selection', 'Import/Export custom'], superTableFeatures: ['Native Export', 'Bulk delete/assign', 'Faceted Segment filter'], estimasiWaktu: '2 hari', blockers: 'Custom import logic perlu dipisah' },
   { no: 12, tableName: 'Lead DataTable', filePath: 'components/lead-management/LeadDataTable.tsx', module: 'Lead Management', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Complex Filter', 'Pipeline View'], superTableFeatures: ['Pipeline group mode', 'Inline status edit', 'Advanced filter'], estimasiWaktu: '2 hari', blockers: 'Tarik UI Pipeline mungkin conflict' },
 ];
@@ -81,7 +86,7 @@ const IntegrationChecklist = () => {
         {/* Summary */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="success.main" fontWeight="bold">8</Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">10</Typography>
             <Typography variant="body2" color="text.secondary">✅ Selesai</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
@@ -89,7 +94,7 @@ const IntegrationChecklist = () => {
             <Typography variant="body2" color="text.secondary">🔄 Dikembalikan</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="text.secondary" fontWeight="bold">4</Typography>
+            <Typography variant="h4" color="text.secondary" fontWeight="bold">2</Typography>
             <Typography variant="body2" color="text.secondary">⏳ Belum</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>

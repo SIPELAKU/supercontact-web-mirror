@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.7] - 2026-03-17
+
+### ✨ Added
+- **CompanyTable → SuperTable**: manualPagination,
+  manualSorting, manualFiltering, globalFilter search,
+  server-side filter Industry & Location (multi-select array),
+  filter Status client-side (API tidak support param status),
+  bulk delete dengan confirmation modal (Promise.all),
+  export Excel/CSV loop pagination, Print PDF toolbar,
+  row click navigation ke profile detail,
+  mobile responsive toolbar
+
+### 🐛 Fixed
+- **SubscribersTable**: mobile buttons Import dan Add
+  styling disesuaikan referensi CampaignsTable
+  (Import: border biru text biru, Add: bg solid biru text putih)
+
+### 📁 Modified Files
+- components/omnichannel/company/company-table/CompanyTable.tsx
+- components/omnichannel/CompanyIntelligenceClient.tsx
+- components/email-marketing/subscribers/SubscribersTable.tsx
+- components/email-marketing/subscribers/SubscribersClient.tsx
+- app/demo/super-table/page.tsx
+
 ## [1.10.6] - 2026-03-17
 
 ### 🐛 Fixed

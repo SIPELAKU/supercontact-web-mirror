@@ -47,7 +47,7 @@ const testSendValidation = () => {
         mockPayload.html_content && 
         mockPayload.mail_sender_id && 
         mockPayload.recipient_source && 
-        (mockPayload.mailing_list_ids?.length > 0 || mockPayload.contact_ids?.length > 0);
+        ((mockPayload.mailing_list_ids && mockPayload.mailing_list_ids.length > 0) || ((mockPayload as any).contact_ids && (mockPayload as any).contact_ids.length > 0));
 
     if (isComplete) {
         console.log("PASS: Send payload is complete.");

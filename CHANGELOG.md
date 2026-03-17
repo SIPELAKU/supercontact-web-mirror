@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.5] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableMember → SuperTable**: manualPagination,
+  server-side filter Position & Status, bulk delete 
+  sequential, export Excel/CSV loop pagination,
+  fix status badge dari hardcoded ke dynamic API value,
+  AddMemberButton di toolbar
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableMember.tsx
+- app/organization/[id]/page.tsx
+
 ## [1.10.4] - 2026-03-17
 
 ### ✨ Added

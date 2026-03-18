@@ -267,6 +267,13 @@ export interface SuperTableServerProps {
    */
   manualFiltering?: boolean;
 
+  /**
+   * Nonaktifkan auto-reset pageIndex ke 0 saat data/filter berubah.
+   * Berguna untuk mencegah infinite loop pada client-side filtered tables.
+   * @default undefined (MRT default behavior)
+   */
+  autoResetPageIndex?: boolean;
+
   /** 
    * Callback vital untuk komunikasi Server-Side. Dijalankan tiap ada perubahan state 
    * pada tabel (pindah page, search ketik, filter).

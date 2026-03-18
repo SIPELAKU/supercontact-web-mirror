@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-03-17
+
+### 🐛 Fixed
+- **LeadDataTable — Infinite loop**: Fixed runtime error `Maximum update depth exceeded` saat pertama kali filter. Root cause: MRT `autoResetPageIndex` reset pageIndex setiap kali data/filter berubah dan trigger setState loop tanpa henti. Fix: `autoResetPageIndex: false` ditambahkan ke SuperTable core (types.ts + useTableConfig.tsx).
+- **LeadDataTable — Filter pindah ke SuperTable**: LeadFilters custom component dihapus dari parent, diganti columnFilters SuperTable: Status (select), Source (select), Assigned To (select), Last Contacted (date-range). Kanban View tetap sync via onStateChange + shared filteredLeads useMemo di lead-management.tsx.
+- **LeadDataTable — Search toggle**: `globalFilterAlwaysVisible: false` agar search bar toggle show/hide via icon kaca pembesar seperti tabel lain, bukan selalu tampil.
+- **LeadDataTable — Date range Last Contacted**: accessorFn return Date object (bukan string) agar MRT betweenInclusive filterFn berfungsi dengan benar. Cell renderer disesuaikan ke getValue<Date | null>().
+- **LeadDataTable — handleTableStateChange**: Tambahkan useRef + JSON.stringify deep comparison agar setState hanya dipanggil jika columnFilters benar-benar berubah nilainya.
+
+### 📁 Modified Files
+- `components/lead-management/lead-management-table/data-table.tsx`
+- `components/lead-management/lead-management-table/columns.tsx`
+- `components/lead-management/lead-management.tsx`
+- `components/ui/super-table/types.ts`
+- `components/ui/super-table/hooks/useTableConfig.tsx`
+- `app/demo/super-table/page.tsx`
+
 ## [1.11.0] - 2026-03-17
 
 ### ✨ Added

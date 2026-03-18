@@ -106,6 +106,7 @@ export function useTableConfig<TData extends object>(
     rowCount: props.rowCount,
     manualSorting: props.manualSorting,
     manualFiltering: props.manualFiltering,
+    autoResetPageIndex: props.autoResetPageIndex,
 
     // ─── Feature Flags Mapping ───────
     enableHiding: columnVisibility,

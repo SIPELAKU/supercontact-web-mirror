@@ -77,7 +77,16 @@ const checklistData: TableIntegrationStatus[] = [
       'Import button di toolbar',
       'mobile responsive toolbar (Import: border biru, Add: bg biru)'
     ], estimasiWaktu: 'Selesai', blockers: '' },
-  { no: 12, tableName: 'Lead DataTable', filePath: 'components/lead-management/LeadDataTable.tsx', module: 'Lead Management', complexity: 'High', migrationStatus: 'Belum', currentFeatures: ['Pagination', 'Complex Filter', 'Pipeline View'], superTableFeatures: ['Pipeline group mode', 'Inline status edit', 'Advanced filter'], estimasiWaktu: '2 hari', blockers: 'Tarik UI Pipeline mungkin conflict' },
+  { no: 12, tableName: 'Lead DataTable', filePath: 'components/lead-management/lead-management-table/data-table.tsx', module: 'Lead Management', complexity: 'High', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Complex Filter', 'Pipeline View'], superTableFeatures: [
+      'client-side filter Status, Source, Assigned To (select via columnFilters)',
+      'client-side filter Last Contacted (date-range, accessorFn return Date)',
+      'globalFilter search (toggle show/hide, globalFilterAlwaysVisible: false)',
+      'autoResetPageIndex: false (fix infinite loop)',
+      'Kanban View sync via onStateChange shared state + useRef deep comparison',
+      'onRowClick → buka LeadDetailModal',
+      'export Excel/CSV',
+      'facetedValues: true (Assigned To auto-detect options)',
+    ], estimasiWaktu: 'Selesai', blockers: '' },
 ];
 
 const IntegrationChecklist = () => {
@@ -94,7 +103,7 @@ const IntegrationChecklist = () => {
         {/* Summary */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="success.main" fontWeight="bold">11</Typography>
+            <Typography variant="h4" color="success.main" fontWeight="bold">12</Typography>
             <Typography variant="body2" color="text.secondary">✅ Selesai</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
@@ -102,7 +111,7 @@ const IntegrationChecklist = () => {
             <Typography variant="body2" color="text.secondary">🔄 Dikembalikan</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>
-            <Typography variant="h4" color="text.secondary" fontWeight="bold">1</Typography>
+            <Typography variant="h4" color="text.secondary" fontWeight="bold">0</Typography>
             <Typography variant="body2" color="text.secondary">⏳ Belum</Typography>
           </Box>
           <Box p={2} border="1px solid" borderColor="divider" borderRadius={2} textAlign="center" flex={1} minWidth={120}>

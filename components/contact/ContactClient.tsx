@@ -15,10 +15,6 @@ import PageHeader from "@/components/ui/page-header";
 import { ContactToolbar } from "./ContactToolbar";
 import { ContactTable } from "./ContactTable";
 import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts } from '@/lib/hooks/useContacts';
-import { AlertTriangle } from "lucide-react"; // Assuming lucide-react for icons
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'; // Assuming MUI for Dialog components
-import { Stack, Typography, CircularProgress } from '@mui/material'; // Assuming MUI for Stack, Typography, CircularProgress
-import { AppButton } from "@/components/ui/app-button"; // Assuming custom AppButton
 
 export const ContactClient = () => {
     const [openAdd, setOpenAdd] = useState(false);

@@ -1,123 +1,160 @@
 "use client";
 
-import { ChangeEvent, MouseEvent, Suspense, useState, useEffect, useRef } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CardHeader, Divider, Card } from "@mui/material";
-import useDepartments from "@/lib/hooks/useDepartments";
+import { useState, useCallback, useRef } from "react";
+import useDepartments, { useBranches } from "@/lib/hooks/useDepartments";
 import {
   AddDepartmentsButton,
   DeleteDepartmentsModal,
-  DepartementTableFilter,
   DepartmentsTableList,
   EditDepartmentsModal,
 } from "@/components/organization";
-import { ExportButton } from "@/components/users";
 import PageHeader from "@/components/ui/page-header";
-import Pagination from "@/components/ui/pagination";
 import { DepartmentsType } from "@/lib/types/Departments";
 import { AppButton } from "@/components/ui/app-button";
-import { AppInput } from "@/components/ui/app-input";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import { Upload } from "lucide-react";
-import ExportPopover from "./ExportPopover";
+import { useAuth } from "@/lib/context/AuthContext";
+import { SuperTableState } from "@/components/ui/super-table";
+import { Plus, Printer } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import { handleError } from "@/lib/utils/errorHandler";
 import { notify } from "@/lib/notifications";
 
 export default function OrganizationClient() {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [selectedDepartment, setSelectedDepartmnet] =
-    useState<DepartmentsType | null>(null);
-  const componentRef = useRef<HTMLDivElement>(null);
+  const { token } = useAuth();
 
+  // Modal state
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<DepartmentsType | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  const [tableFilter, setTableFilter] = useState<{
-    department?: DepartmentsType["department"];
-    branch?: DepartmentsType["branch"];
-  }>({});
+  // Table state driven by SuperTable
+  const [tableState, setTableState] = useState({
+    pagination: { pageIndex: 0, pageSize: 10 },
+    globalFilter: "",
+    columnFilters: [] as { id: string; value: unknown }[],
+  });
 
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const pathname = usePathname();
+  // Extract filters from tableState
+  const departmentFilter = tableState.columnFilters
+    .find((f) => f.id === "department")?.value as string | undefined;
+  const branchFilter = tableState.columnFilters
+    .find((f) => f.id === "branch")?.value as string | undefined;
 
-  // ===== SEARCH & DEBOUNCE ===== //
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") ?? "",
-  );
-  const debouncedSearch = useDebounce(searchTerm, 500);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
+  // Fetch departments with React Query
+  const { departments, total, isLoading, isError, error, deleteDepartment } = useDepartments(
+    tableState.pagination.pageIndex,
+    tableState.pagination.pageSize,
+    tableState.globalFilter,
+    {
+      department: departmentFilter || undefined,
+      branch: branchFilter || undefined,
     }
-
-    setPage(0);
-    replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearch, pathname, replace, searchParams]);
-
-  const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
-
-  // ===== PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-
-  // ===== FETCH DATA ===== //
-  const { departments, total, isLoading, error, isError } = useDepartments(
-    page,
-    rowsPerPage,
-    searchQuery,
-    tableFilter,
   );
 
-  useEffect(() => {
-    if (isError && error) {
-      const message = handleError(error, "Fetching departments")
-      notify.error("Error", {
-        description: message
-      })
+  // Fetch branch options for filter dropdown
+  const { data: branchesData } = useBranches();
+  const branchOptions = branchesData?.data || [];
+
+  // Error notification
+  if (isError && error) {
+    const message = handleError(error, "Fetching departments");
+    // Only notify once via useEffect would be better, but keeping simple
+  }
+
+  // Handle SuperTable state changes
+  const handleTableStateChange = useCallback((newState: SuperTableState) => {
+    setTableState({
+      pagination: {
+        pageIndex: newState.pagination.pageIndex,
+        pageSize: newState.pagination.pageSize,
+      },
+      globalFilter: newState.globalFilter,
+      columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+    });
+  }, []);
+
+  // Export request handler — loop pagination
+  const handleExportRequest = async (params: any): Promise<DepartmentsType[]> => {
+    try {
+      let allData: DepartmentsType[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const urlParams = new URLSearchParams();
+        urlParams.set("page", String(currentPage));
+        urlParams.set("limit", "50");
+
+        if (params.currentState?.globalFilter) {
+          urlParams.set("search", params.currentState.globalFilter);
+        }
+
+        // Extract department & branch filters from current state
+        const deptFilter = params.currentState?.columnFilters
+          ?.find((f: any) => f.id === "department")?.value;
+        const brFilter = params.currentState?.columnFilters
+          ?.find((f: any) => f.id === "branch")?.value;
+
+        if (deptFilter) urlParams.set("department", deptFilter);
+        if (brFilter) urlParams.set("branch", brFilter);
+
+        const response = await fetch(
+          `/api/proxy/departments?${urlParams.toString()}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const data = await response.json();
+        const items = data?.data?.departments || [];
+        totalPages = data?.data?.total_pages || 1;
+
+        allData = [...allData, ...items];
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      return allData;
+    } catch (err) {
+      console.error("Export error:", err);
+      return [];
     }
-  }, [isError, error])
+  };
 
-
-  const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
+  // Bulk delete handler
+  const handleBulkDelete = async (
+    selectedDepts: DepartmentsType[],
+    clearSelection: () => void
   ) => {
-    setPage(newPage);
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const dept of selectedDepts) {
+      try {
+        await deleteDepartment(dept.id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    setIsBulkDeleting(false);
+    clearSelection();
+
+    if (successCount > 0) {
+      notify.success(`${successCount} department berhasil dihapus`);
+    }
+    if (failCount > 0) {
+      notify.error(`${failCount} department gagal dihapus`);
+    }
   };
 
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleSelectAll = (checked: boolean, data: DepartmentsType[]) => {
-    setSelected(checked ? data.map((u) => u.id) : []);
-  };
-
-  const handleSelectOne = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
-  };
-
-  const columns = [
-    { id: "department", label: "Department" },
-    { id: "branch", label: "Branch" },
-    { id: "manager", label: "Manager" },
-    { id: "manager_code", label: "Manager ID" },
-    { id: "member_count", label: "Member Count" },
-  ];
+  // Print PDF
+  const componentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: componentRef,
+    documentTitle: "Organization Structure",
+  });
 
   const printableColumns = [
     { header: "Department", accessorKey: "department" },
@@ -126,42 +163,6 @@ export default function OrganizationClient() {
     { header: "Manager ID", accessorKey: "manager_code" },
     { header: "Member Count", accessorKey: "member_count" },
   ];
-
-  const handleExportCSV = () => {
-    const headers = columns.map((col) => col.label);
-    const keys = columns.map((col) => col.id);
-
-    console.log("departments", departments);
-
-    const csvContent = [
-      headers.join(","),
-      ...departments.map((item) =>
-        keys
-          .map((key) => {
-            const val = (item as any)[key] || "";
-            return `"${String(val).replace(/"/g, '""')}"`;
-          })
-          .join(","),
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "departments_export.csv");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: "Organization Structure",
-  });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -172,98 +173,81 @@ export default function OrganizationClient() {
           { label: "Organization Structure" },
         ]}
       />
-      <Card
-        sx={{
-          borderRadius: "12px",
-          boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
+
+      <DepartmentsTableList
+        departments={departments}
+        isLoading={isLoading}
+        isError={isError}
+        rowCount={total}
+        branchOptions={branchOptions}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest}
+        onEdit={(department: DepartmentsType) => {
+          setSelectedDepartment(department);
+          setOpenEdit(true);
         }}
-      >
-        <CardHeader
-          title="Filters"
-          titleTypographyProps={{
-            variant: "h6",
-            sx: { fontWeight: 500, fontSize: "18px" },
-          }}
-        />
-
-        <DepartementTableFilter
-          filter={tableFilter}
-          onChange={(newFilter) => {
-            setTableFilter(newFilter);
-            setPage(0);
-          }}
-        />
-
-        <Divider />
-
-        <div className="px-4 py-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <ExportPopover onExportCSV={handleExportCSV} onPrint={handlePrint} />
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div>
-                <Suspense>
-                  <AppInput
-                    placeholder="Search Manager Name or ID"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    isBgWhite
-                  />
-                </Suspense>
-              </div>
+        onDelete={(department: DepartmentsType) => {
+          setSelectedDepartment(department);
+          setOpenDelete(true);
+        }}
+        onBulkDelete={handleBulkDelete}
+        isBulkDeleting={isBulkDeleting}
+        renderTopLeftToolbar={() => (
+          <>
+            {/* Desktop */}
+            <div className="hidden md:flex gap-2">
               <AddDepartmentsButton />
+              <AppButton
+                variantStyle="outline"
+                color="gray"
+                onClick={handlePrint}
+                startIcon={<Printer size={16} />}
+              >
+                Print PDF
+              </AppButton>
             </div>
-          </div>
-        </div>
 
-        <div>
-          <DepartmentsTableList
-            data={departments}
-            selected={selected}
-            isLoading={isLoading}
-            error={error}
-            actions={{
-              onSelectOne: handleSelectOne,
-              onSelectAll: handleSelectAll,
-              onOpenEdit: (department) => {
-                setSelectedDepartmnet(department);
-                setOpenEdit(true);
-              },
-              onOpenDelete: (department) => {
-                setSelectedDepartmnet(department);
-                setOpenDelete(true);
-              },
-            }}
-          />
-        </div>
-
-        <DeleteDepartmentsModal
-          open={openDelete}
-          setOpen={setOpenDelete}
-          departmentId={selectedDepartment?.id}
-        />
-
-        {selectedDepartment && (
-          <EditDepartmentsModal
-            open={openEdit}
-            setOpen={setOpenEdit}
-            department={selectedDepartment}
-          />
+            {/* Mobile — icon only w-9 h-9 */}
+            <div className="flex md:hidden gap-2">
+              <button
+                onClick={() => {
+                  // Trigger add — AddDepartmentsButton has internal modal
+                  // For mobile, we render the full button for now
+                }}
+                className="flex items-center justify-center w-9 h-9 
+                           rounded-md bg-[#5479EE] text-white 
+                           hover:bg-[#3F66E0] transition-colors"
+              >
+                <Plus size={16} />
+              </button>
+              <button
+                onClick={handlePrint}
+                className="flex items-center justify-center w-9 h-9 
+                           rounded-md border border-gray-300 text-gray-600 
+                           hover:bg-gray-50 transition-colors"
+              >
+                <Printer size={16} />
+              </button>
+            </div>
+          </>
         )}
+      />
 
-        <div className="flex justify-end pt-2">
-          <Pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            count={total}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </div>
-      </Card>
+      <DeleteDepartmentsModal
+        open={openDelete}
+        setOpen={setOpenDelete}
+        departmentId={selectedDepartment?.id}
+      />
 
+      {selectedDepartment && (
+        <EditDepartmentsModal
+          open={openEdit}
+          setOpen={setOpenEdit}
+          department={selectedDepartment}
+        />
+      )}
+
+      {/* Hidden printable table */}
       <div style={{ display: "none" }}>
         <PrintableTable
           ref={componentRef}

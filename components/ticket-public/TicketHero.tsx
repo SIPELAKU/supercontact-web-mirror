@@ -7,9 +7,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function TicketHero() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -73,6 +76,7 @@ export default function TicketHero() {
 
                         <Button
                             variant="contained"
+                            onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                             sx={{
                                 bgcolor: 'white',
                                 color: '#597CFF',

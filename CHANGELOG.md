@@ -5,6 +5,327 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.11.2] - 2026-03-18
+
+### ✨ Added
+- **ContactTable → SuperTable**: manualPagination, client-side filter (Name/Email/Phone text filter, Position & Company select faceted), globalFilter search toggle, export Excel/CSV loop pagination, renderRowActions (Eye preview + Edit + Delete), renderBulkActions sequential loop per ID, Add Contact + Import toolbar mobile responsive (Import: border biru icon-only, Add: bg biru icon-only), Preview Dialog popup info lengkap, autoResetPageIndex: false
+- **✅ Semua 12 tabel selesai dimigrasi ke SuperTable!**
+
+### 🐛 Fixed
+- **ContactTable — Bulk delete**: Ganti endpoint DELETE /contacts dengan body contact_ids (500 error) ke sequential loop deleteContact per ID. Menampilkan successCount/failCount informatif. Contact linked ke resource lain (FOREIGN_KEY_VIOLATION) akan di-skip dengan pesan error yang jelas.
+- **ContactTable — Filter tidak berfungsi**: Root cause: manualFiltering: true membuat MRT tidak menjalankan client-side filter. Fix: hapus manualFiltering: true, tambah filterVariant text pada Name/Email/Phone, filterVariant select pada Position/Company.
+- **ContactTable — Mobile buttons**: Import dan Add Contact button disesuaikan dengan pattern SubscribersTable (Import: border biru icon-only, Add: bg solid biru icon-only di mobile view).
+
+### 📁 Modified Files
+- `components/contact/ContactTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/columns.tsx` [NEW]
+- `components/contact/modal/DeleteMultipleContactModal.tsx`
+- `app/demo/super-table/page.tsx`
+
+## [1.11.1] - 2026-03-17
+
+### 🐛 Fixed
+- **LeadDataTable — Infinite loop**: Fixed runtime error `Maximum update depth exceeded` saat pertama kali filter. Root cause: MRT `autoResetPageIndex` reset pageIndex setiap kali data/filter berubah dan trigger setState loop tanpa henti. Fix: `autoResetPageIndex: false` ditambahkan ke SuperTable core (types.ts + useTableConfig.tsx).
+- **LeadDataTable — Filter pindah ke SuperTable**: LeadFilters custom component dihapus dari parent, diganti columnFilters SuperTable: Status (select), Source (select), Assigned To (select), Last Contacted (date-range). Kanban View tetap sync via onStateChange + shared filteredLeads useMemo di lead-management.tsx.
+- **LeadDataTable — Search toggle**: `globalFilterAlwaysVisible: false` agar search bar toggle show/hide via icon kaca pembesar seperti tabel lain, bukan selalu tampil.
+- **LeadDataTable — Date range Last Contacted**: accessorFn return Date object (bukan string) agar MRT betweenInclusive filterFn berfungsi dengan benar. Cell renderer disesuaikan ke getValue<Date | null>().
+- **LeadDataTable — handleTableStateChange**: Tambahkan useRef + JSON.stringify deep comparison agar setState hanya dipanggil jika columnFilters benar-benar berubah nilainya.
+
+### 📁 Modified Files
+- `components/lead-management/lead-management-table/data-table.tsx`
+- `components/lead-management/lead-management-table/columns.tsx`
+- `components/lead-management/lead-management.tsx`
+- `components/ui/super-table/types.ts`
+- `components/ui/super-table/hooks/useTableConfig.tsx`
+- `app/demo/super-table/page.tsx`
+
+## [1.11.0] - 2026-03-17
+
+### ✨ Added
+- **Industry Solution Pages**: Developed a full suite of marketing landing pages for **Sales, Customer Service, Marketing, Human Resource,** and **Operations** industries at `/solusi/[industry]`.
+- **Dynamic Industry Components**: Implemented custom sections (`Hero`, `Challenges`, `Solutions`, `ImpactCTA`) for each industry with optimized "Glassmorphism" UI and interactive mockups.
+- **Automated WhatsApp Links**: Integrated `getWhatsAppLink` utility across all solution Hero and CTA buttons to trigger context-aware WhatsApp messages.
+- **Multilingual Support**: Added comprehensive Indonesian and English localization for all five new industry solution pages in `lib/utils/strings.ts`.
+- **Public Route Accessibility**: Configured `AuthenticatedLayout.tsx` to whitelist the new solution routes, allowing public unauthenticated access.
+- **Enhanced Navigation**: Updated `SolutionMenu.tsx` (Desktop & Mobile) to include direct links to the newly created industry solution modules.
+
+### 📁 Created Files
+- `app/solusi/sales/page.tsx`
+- `app/solusi/customer-service/page.tsx`
+- `app/solusi/marketing/page.tsx`
+- `app/solusi/human-resource/page.tsx`
+- `app/solusi/operasional/page.tsx`
+- `components/solusi/sales/*`
+- `components/solusi/customer-service/*`
+- `components/solusi/marketing/*`
+- `components/solusi/human-resource/*`
+- `components/solusi/operasional/*`
+
+### 📁 Modified Files
+- `lib/utils/strings.ts`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+
+## [1.10.7] - 2026-03-17
+
+### ✨ Added
+- **CompanyTable → SuperTable**: manualPagination,
+  manualSorting, manualFiltering, globalFilter search,
+  server-side filter Industry & Location (multi-select array),
+  filter Status client-side (API tidak support param status),
+  bulk delete dengan confirmation modal (Promise.all),
+  export Excel/CSV loop pagination, Print PDF toolbar,
+  row click navigation ke profile detail,
+  mobile responsive toolbar
+
+### 🐛 Fixed
+- **SubscribersTable**: mobile buttons Import dan Add
+  styling disesuaikan referensi CampaignsTable
+  (Import: border biru text biru, Add: bg solid biru text putih)
+
+### 📁 Modified Files
+- components/omnichannel/company/company-table/CompanyTable.tsx
+- components/omnichannel/CompanyIntelligenceClient.tsx
+- components/email-marketing/subscribers/SubscribersTable.tsx
+- components/email-marketing/subscribers/SubscribersClient.tsx
+- app/demo/super-table/page.tsx
+
+## [1.10.6] - 2026-03-17
+
+### 🐛 Fixed
+- **CompanyTable — filterValue.some crash**: Fixed runtime crash
+  `TypeError: filterValue.some is not a function` pada MRT_SelectCheckbox. 
+  Root cause: columnFilters di-restore dari URL sebagai string bukan array.
+
+- **useUrlSync.ts — Array serialization**: Serialize & deserialize
+  columnFilters kini support array value dengan separator pipe `|`.
+  Format: `industry:Tech|Finance` untuk array,
+  `status:success` untuk single value.
+
+- **useTableConfig.tsx — Defense layer**: Sanitasi columnFilters
+  di state sebelum dipass ke MRT dihapus karena clash dengan internal
+  array state mutation MRT saat multiple selection terjadi.
+
+- **CompanyTable — Status filter**: Fix case mismatch antara
+  filterSelectOptions vs data API lowercase. Pakai format
+  `{ value: "success", label: "Success" }`. Hapus
+  `columnFilterModeOptions: undefined` yang konflik.
+
+- **CompanyTable — Status client-side**: API tidak support param
+  status, difilter client-side di CompanyIntelligenceClient.
+
+- **CompanyTable — manualFiltering**: Set `manualFiltering={true}`
+  konsisten dengan manualPagination & manualSorting. Sebelumnya
+  false menyebabkan filter hanya cocokkan baris halaman aktif.
+
+- **CompanyTable — filterFn conflict**: Hapus
+  `filterFn: 'arrIncludesSome'` eksplisit dari kolom Industry &
+  Location. MRT v3 auto-set filterFn dari filterVariant.
+
+### 📁 Modified Files
+- components/omnichannel/company/company-table/CompanyTable.tsx
+- components/omnichannel/CompanyIntelligenceClient.tsx
+- components/ui/super-table/hooks/useUrlSync.ts
+- components/ui/super-table/hooks/useTableConfig.tsx
+
+## [1.10.5] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableMember → SuperTable**: manualPagination,
+  server-side filter Position & Status, bulk delete 
+  sequential, export Excel/CSV loop pagination,
+  fix status badge dari hardcoded ke dynamic API value,
+  AddMemberButton di toolbar
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableMember.tsx
+- app/organization/[id]/page.tsx
+
+## [1.10.4] - 2026-03-17
+
+### ✨ Added
+- **DepartmentsTableList → SuperTable**: manualPagination,
+  server-side filter Department (hardcoded select) &
+  Branch (dynamic dari API), bulk delete sequential,
+  export Excel/CSV loop pagination, Print PDF toolbar,
+  row click navigation, mobile responsive
+
+### 📁 Modified Files
+- components/organization/departments-table/DepartmentsTableList.tsx
+- components/organization/OrganizationClient.tsx
+
+## [1.10.3] - 2026-03-17
+
+### ✨ Added
+- **QuotationTable → SuperTable**: manualPagination,
+  client-side status filter (Accepted/Pending/Rejected),
+  date range filter server-side, export Excel/CSV 
+  loop pagination, accessorFn Rupiah formatting,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/quotation/QuotationTable.tsx
+- components/quotation/QuotationClient.tsx
+- lib/store/quotation/index.ts
+
+## [1.10.2] - 2026-03-16
+
+### ✨ Added
+- **CampaignsTable → SuperTable**: manualPagination,
+  client-side status filter (Draft/In Queue/Sending/
+  Sent/Canceled), bulk delete dengan skip otomatis 
+  untuk non-Draft, export Excel/CSV loop pagination,
+  mobile responsive toolbar
+
+### 📁 Modified Files
+- components/email-marketing/campaigns/CampaignsTable.tsx
+- components/email-marketing/campaigns/CampaignsClient.tsx
+
+## [1.10.1] - 2026-03-16
+
+### ✨ Added
+- **TableListUsers → SuperTable**: manualPagination,
+  server-side filter Position & Status, dynamic 
+  position options, bulk delete sequential,
+  export loop pagination, Print PDF toolbar,
+  mobile responsive
+
+### 📁 Modified Files
+- components/users/users-table/TableListUsers.tsx
+- components/users/UsersClient.tsx
+
+## [1.10.0] - 2026-03-16
+
+### ✨ Added
+- **SuperTable Core**: Komponen tabel universal dengan dukungan manualPagination, columnFilters, export Excel/CSV, bulk actions, dan urlSync
+- **RolesTable → SuperTable**: Server-side pagination & search, export loop pagination, facetedValues, urlSync, densityToggle, fullScreenToggle
+- **TicketTable → SuperTable**: Column filters per kolom (Priority/Status select, Agent UUID dropdown), bulk delete sequential dengan progress toast, export loop pagination, mobile responsive toolbar
+- **ProductTable → SuperTable**: accessorFn formatting (Rupiah & persen), bulk delete sequential, export do...while loop, race condition fix dengan useRef prevState
+- **Demo Page /demo/super-table**: Integration checklist, filter variants demo, accessorFn formatting demo, bulk delete demo, server-side simulation
+
+### 🐛 Fixed
+- Generic constraint TData diubah dari Record<string,unknown> ke object untuk kompatibilitas semua TypeScript interface
+- Double pagination dihapus dari RolesTable dan TicketTable
+- Export kosong karena Authorization header tidak terkirim ke API
+- Export 422 error karena limit melebihi batas backend
+
+#### 📁 Modified Files
+- components/roles/RolesClient.tsx
+- components/roles/roles-table/RolesTable.tsx
+- components/roles/roles-button-open-modal/AddRoleButton.tsx
+- components/support/tickets/TicketTable.tsx
+- app/support/tickets/page.tsx
+- components/product/ProductTable.tsx
+- components/product/ProductClient.tsx
+- components/ui/super-table/types.ts
+- components/ui/super-table/SuperTable.tsx
+- components/ui/super-table/hooks/useTableConfig.tsx
+- components/ui/super-table/hooks/useTableState.ts
+- components/ui/super-table/hooks/useTableExport.ts
+- components/ui/super-table/components/BulkActionsBar.tsx
+- app/demo/super-table/page.tsx
+
+#### 📁 Created Files
+- (tidak ada file baru, hanya modifikasi)
+
+---
+
+## [1.9.7] - 2026-03-13
+
+### Detail Versi 1.9.7
+
+#### ✨ Enhancements - WhatsApp Redirect & Dynamic Messaging
+
+- **Global WhatsApp Redirect Integration**: Implemented a standardized WhatsApp redirect system for all "Mulai Uji Coba Gratis" (Hero) and CTA buttons across 12 product and solution landing pages.
+- **Dynamic Messaging Utility (`getWhatsAppLink`)**: Created a centralized utility to generate context-aware WhatsApp messages tailored to specific industry sectors (CRM Sales, IT & SaaS, Finance, etc.) while adhering to the "Smartsales" branding.
+- **Hero & CTA Components Coverage**: Updated 24 components (12 Hero + 12 CTA) with reactive path tracking to trigger personalized WhatsApp redirects.
+- **Unified Brand Voice**: Migrated all dynamic WhatsApp interest messages to use "Smartsales" branding.
+
+#### 📁 Files Created
+
+- `lib/utils/wa-link.ts`
+
+#### 📁 Files Modified
+
+- `CHANGELOG.md`
+- `components/crm-sales/*` (Hero, Cta)
+- `components/crm-services/*` (Hero, Cta)
+- `components/public-omnichannel/*` (Hero, Cta)
+- `components/ticket-public/*` (Hero, Cta)
+- `components/solution-finance/*` (Hero, ImpactCta)
+- `components/solution-fmcg/*` (Hero, ImpactCta)
+- `components/solution-hotel/*` (Hero, ImpactCta)
+- `components/solution-it-saas/*` (Hero, ImpactCta)
+- `components/solution-logistics/*` (Hero, ImpactCta)
+- `components/solution-outsourcing/*` (Hero, ImpactCta)
+- `components/solution-retail/*` (Hero, ImpactCta)
+- `components/solution-travel/*` (Hero, ImpactCta)
+
+## [1.9.6]
+
+### Detail Versi - 2026-03-18
+
+#### 🛠️ Hotfixes
+
+- **Notification Visibility Fix**: Resolved a z-index conflict where error notifications were being covered by modals (such as the Import Contact modal). The `Toaster` component in `app/layout.tsx` now uses a `zIndex` of `100000` to ensure it stays above all UI overlays.
+- **Mobile Responsiveness - CRM Modules**: Fixed layout overflow issues on mobile devices for card components in the CRM Sales and CRM Services sections. Optimized grid spacing, padding, and font sizes to ensure content fits within smaller screen widths.
+
+#### 📁 Files Modified
+
+- `app/layout.tsx`
+- `components/crm-sales/CrmSalesClient.tsx`
+- `components/crm-services/CrmServicesClient.tsx`
+- `components/crm-sales/CrmSalesFeatures.tsx`
+- `components/crm-services/CrmServicesWhyChoose.tsx`
+
+### Detail Versi - 2026-03-13
+
+#### ✨ Enhancements - Industry Specific Solution Pages (Extended)
+
+- **Logistics Solution Page (`/solusi/logistik`)**: Introduced a dedicated marketing page for the logistics sector.
+  - Implemented "Operational & Pickup Pipeline" Kanban board mockup.
+  - Added industry-specific challenge sections (Resi Menumpuk, Pickup Terlewat, Investigasi Lambat).
+  - Integrated CRM Sales, Omnichannel, and Ticketing for logistics operations.
+- **FMCG Solution Page (`/solusi/fmcg`)**: Added a comprehensive solution page for Fast-Moving Consumer Goods.
+  - Designed "Distributor Order Pipeline" mockup for order management.
+  - Showcased field canvassing and store visit tracking (GPS) features.
+  - Detailed the unified ordering center via WhatsApp API.
+- **Retail Industry Solution Page (`/solusi/ritel`)**: Implemented a new marketing page for the retail sector.
+  - Created "Member Promo Campaign" and "Customer Member Profile" mockups.
+  - Highlighted loyalty management, stock check via WhatsApp, and after-sales warranty claims.
+- **IT & SaaS Solution Page (`/solusi/it-saas`)**: Developed a dedicated solution page for the IT sector.
+  - Designed "IT Project Sales Pipeline" mockup for B2B deal management.
+  - Implemented Helpdesk Center via WhatsApp and Bug/Incident management ticketing sections.
+- **Outsourcing Solution Page (`/solusi/outsourcing`)**: Created a marketing page for the outsourcing industry.
+  - Implemented "Recruitment & Placement Pipeline" mockup.
+  - Showcased candidate database management and mass communication via WhatsApp Broadcast.
+
+#### 🏗️ Global Navigation & Layout
+- **Solution Menu**: Updated the `SolutionMenu` component to include the new industry solution pages.
+- **Authenticated Layout**: Configured all new solution routes in the `AuthenticatedLayout` to ensure public accessibility and consistent UI.
+
+#### 📁 Files Created
+
+- `app/solusi/logistik/page.tsx`
+- `app/solusi/fmcg/page.tsx`
+- `app/solusi/ritel/page.tsx`
+- `app/solusi/it-saas/page.tsx`
+- `app/solusi/outsourcing/page.tsx`
+- `components/solution-logistics/*`
+- `components/solution-fmcg/*`
+- `components/solution-retail/*`
+- `components/solution-it-saas/*`
+- `components/solution-outsourcing/*`
+
+#### 📁 Files Modified
+
+- `CHANGELOG.md`
+- `components/home/SolutionMenu.tsx`
+- `components/layout/AuthenticatedLayout.tsx`
+
 ## [1.9.5] - 2026-03-11
 
 ### Detail Versi 1.9.4

@@ -120,12 +120,12 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     target: target,
                     type_request: 'manual',
                     new_contact: {
-                        name: name.trim(),
-                        email: email.trim(),
-                        phone_number: phoneNumber.trim() || undefined,
-                        position: position.trim() || undefined,
-                        company: company.trim() || undefined,
-                        address: address.trim() || undefined
+                        name: name.trim() || '',
+                        email: email.trim() || '',
+                        phone_number: phoneNumber.trim() || '',
+                        position: position.trim() || '',
+                        company: company.trim() || '',
+                        address: address.trim() || ''
                     },
                     mailing_list_ids: listIdsToSend
                 });

@@ -28,7 +28,17 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     pathname?.startsWith('/produk/ticket') ||
     pathname?.startsWith('/solusi/keuangan') ||
     pathname?.startsWith('/solusi/tour-travel') ||
-    pathname?.startsWith('/solusi/perhotelan');
+    pathname?.startsWith('/solusi/perhotelan') ||
+    pathname?.startsWith('/solusi/logistik') ||
+    pathname?.startsWith('/solusi/fmcg') ||
+    pathname?.startsWith('/solusi/ritel') ||
+    pathname?.startsWith('/solusi/outsourcing') ||
+    pathname?.startsWith('/solusi/it-saas') ||
+    pathname?.startsWith('/solusi/sales') ||
+    pathname?.startsWith('/solusi/customer-service') ||
+    pathname?.startsWith('/solusi/marketing') ||
+    pathname?.startsWith('/solusi/human-resource') ||
+    pathname?.startsWith('/solusi/operasional');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {

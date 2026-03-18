@@ -1,256 +1,196 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/contact/modal/AddContactModal";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
-import { Density } from "@/components/contact/density-popover";
 import { Contact } from "@/lib/models/types";
 import DeleteMultipleContactModal from "@/components/contact/modal/DeleteMultipleContactModal";
 import ImportContactModal from "@/components/contact/modal/ImportContactModal";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
-import { ContactToolbar } from "./ContactToolbar";
 import { ContactTable } from "./ContactTable";
 import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts } from '@/lib/hooks/useContacts';
-import { AlertTriangle } from "lucide-react"; // Assuming lucide-react for icons
-import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'; // Assuming MUI for Dialog components
-import { Stack, Typography, CircularProgress } from '@mui/material'; // Assuming MUI for Stack, Typography, CircularProgress
-import { AppButton } from "@/components/ui/app-button"; // Assuming custom AppButton
+import { useAuth } from "@/lib/context/AuthContext";
+import { AlertTriangle } from "lucide-react";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, CircularProgress } from '@mui/material';
+import { AppButton } from "@/components/ui/app-button";
+import { notify } from "@/lib/notifications";
+import type { SuperTableState } from "@/components/ui/super-table";
+
+// Printable columns for PDF print
+const printableColumns = [
+    { header: "Name", accessorKey: "name" },
+    { header: "Phone", accessorKey: "phone_number" },
+    { header: "Email", accessorKey: "email" },
+    { header: "Position", accessorKey: "position" },
+    { header: "Company", accessorKey: "company" },
+    { header: "Address", accessorKey: "address" },
+];
 
 export const ContactClient = () => {
-    const [openAdd, setOpenAdd] = useState(false);
-    const [openEdit, setOpenEdit] = useState(false);
-    const [openDelete, setOpenDelete] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
-    const [dataContact, setDataContact] = useState<Contact[]>([]);
-    const [selected, setSelected] = useState<number[]>([]);
-    const [page, setPage] = useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-    const [totalCount, setTotalCount] = useState<number>(0);
     const router = useRouter();
-    const [searchTerm, setSearchTerm] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [openDeleteMultiple, setOpenDeleteMultiple] = useState(false);
-    const [openImport, setOpenImport] = useState(false);
-    const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
-    const [loading, setLoading] = useState(false);
-    const componentRef = useRef<HTMLDivElement>(null);
-    const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+    const { getToken } = useAuth();
     const deleteMutation = useDeleteContact();
     const bulkDeleteMutation = useDeleteMultipleContacts();
     const deleteAllMutation = useDeleteAllContacts();
+    const componentRef = useRef<HTMLDivElement>(null);
 
-    // Column definitions
-    const allColumns = [
-        { id: "selection", label: "Checkbox selection" },
-        { id: "name", label: "Name" },
-        { id: "email", label: "Email" },
-        { id: "phone", label: "Phone" },
-        { id: "position", label: "Position" },
-        { id: "company", label: "Company" },
-        { id: "address", label: "Address" },
-        { id: "action", label: "Action" },
-    ];
+    // --- Modal States ---
+    const [openAdd, setOpenAdd] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
+    const [openDelete, setOpenDelete] = useState(false);
+    const [openDeleteMultiple, setOpenDeleteMultiple] = useState(false);
+    const [openImport, setOpenImport] = useState(false);
+    const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
+    const [bulkDeleteContacts, setBulkDeleteContacts] = useState<Contact[]>([]);
+    const [bulkClearSelection, setBulkClearSelection] = useState<(() => void) | null>(null);
 
-    const printableColumns = [
-        { header: "Name", accessorKey: "name" },
-        { header: "Phone", accessorKey: "phone_number" },
-        { header: "Email", accessorKey: "email" },
-        { header: "Position", accessorKey: "position" },
-        { header: "Company", accessorKey: "company" },
-        { header: "Address", accessorKey: "address" },
-    ];
+    // --- Data State (server-side pagination + search) ---
+    const [dataContact, setDataContact] = useState<Contact[]>([]);
+    const [totalCount, setTotalCount] = useState<number>(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const [visibleColumns, setVisibleColumns] = useState<string[]>(
-        allColumns.map((col) => col.id),
-    );
+    // --- Current table state from SuperTable ---
+    const currentPageRef = useRef(0);
+    const currentPageSizeRef = useRef(10);
 
-    const [density, setDensity] = useState<Density>("standard");
-
-    const [filters, setFilters] = useState<any[]>([]);
-
-    const loadDataAgain = (pageNum = page, limitNum = rowsPerPage) => {
+    const loadData = useCallback(async (page: number, pageSize: number) => {
         setLoading(true);
-        fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${pageNum + 1
-            }&limit=${limitNum}&search=${debouncedSearch}`,
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${document.cookie
-                        .split("; ")
-                        .find((row) => row.startsWith("access_token="))
-                        ?.split("=")[1]
-                        }`,
+        setError(null);
+        try {
+            const token = await getToken();
+            if (!token) throw new Error("No authentication token");
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${page + 1}&limit=${pageSize}`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
                 },
-            },
-        )
-            .then((res) => res.json())
-            .then((res) => {
-                const contacts = Array.isArray(res.data)
-                    ? res.data
-                    : Array.isArray(res.data?.contacts)
-                        ? res.data.contacts
-                        : [];
-                const total = res.data?.total || res.total || 0;
+            );
+            const json = await res.json();
+            const contacts = Array.isArray(json.data)
+                ? json.data
+                : Array.isArray(json.data?.contacts)
+                    ? json.data.contacts
+                    : [];
+            const total = json.data?.total || json.total || 0;
 
-                setTotalCount(total);
-                setDataContact(contacts);
-            })
-            .catch(() => setDataContact([]))
-            .finally(() => setLoading(false));
-    };
+            setTotalCount(total);
+            setDataContact(contacts);
+        } catch (err: any) {
+            setError(err.message || "Failed to load contacts");
+            setDataContact([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [getToken]);
 
-    const handleChangePage = (
-        event: React.MouseEvent<HTMLButtonElement> | null,
-        newPage: number,
-    ) => {
-        setPage(newPage);
-        loadDataAgain(newPage, rowsPerPage);
-    };
+    // Initial load
+    useEffect(() => {
+        loadData(0, 10);
+    }, [loadData]);
 
-    const handleChangeRowsPerPage = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    ) => {
-        const newRowsPerPage = parseInt(event.target.value, 10);
-        setRowsPerPage(newRowsPerPage);
-        setPage(0);
-        loadDataAgain(0, newRowsPerPage);
-    };
+    // --- SuperTable State Change Handler (pagination only, filters are client-side) ---
+    const handleStateChange = useCallback((state: SuperTableState) => {
+        const newPage = state.pagination?.pageIndex ?? 0;
+        const newPageSize = state.pagination?.pageSize ?? 10;
 
-    function handleEdit(item: Contact) {
+        // Only refetch if pagination params actually changed
+        if (
+            newPage !== currentPageRef.current ||
+            newPageSize !== currentPageSizeRef.current
+        ) {
+            currentPageRef.current = newPage;
+            currentPageSizeRef.current = newPageSize;
+            loadData(newPage, newPageSize);
+        }
+    }, [loadData]);
+
+    // --- Export handler: loop all pages ---
+    const handleExportRequest = useCallback(async () => {
+        try {
+            const token = await getToken();
+            if (!token) throw new Error("No authentication token");
+
+            const allContacts: Contact[] = [];
+            let page = 1;
+            const limit = 100;
+            let hasMore = true;
+
+            while (hasMore) {
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${page}&limit=${limit}&search=`,
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    },
+                );
+                const json = await res.json();
+                const contacts = Array.isArray(json.data?.contacts)
+                    ? json.data.contacts
+                    : Array.isArray(json.data) ? json.data : [];
+                const total = json.data?.total || json.total || 0;
+
+                allContacts.push(...contacts);
+
+                if (allContacts.length >= total || contacts.length < limit) {
+                    hasMore = false;
+                }
+                page++;
+            }
+
+            return allContacts;
+        } catch (err) {
+            console.error("Export failed:", err);
+            return [];
+        }
+    }, [getToken]);
+
+    // --- Reload helper ---
+    const reloadCurrentPage = useCallback(() => {
+        loadData(currentPageRef.current, currentPageSizeRef.current);
+    }, [loadData]);
+
+    // --- Handlers ---
+    const handleEdit = (item: Contact) => {
         setSelectedItem(item);
         setOpenEdit(true);
-    }
-    function handleDelete(item: Contact) {
+    };
+
+    const handleDelete = (item: Contact) => {
         setSelectedItem(item);
         setOpenDelete(true);
-    }
+    };
 
-    function handleDetail(item: Contact) {
+    const handleDetail = (item: Contact) => {
         if (item.id) {
             router.push(`/contact/detail/${item.id}`);
         }
-    }
-
-    // Debounce search term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
-
-    useEffect(() => {
-        setPage(0);
-        loadDataAgain(0);
-    }, [debouncedSearch]);
-
-    const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.checked) {
-            setSelected(dataContact.map((_, i) => i));
-            setSelectedContacts(dataContact);
-        } else {
-            setSelected([]);
-            setSelectedContacts([]);
-        }
     };
 
-    const handleSelectRow = (index: number) => {
-        if (selected.includes(index)) {
-            setSelected(selected.filter((i) => i !== index));
-            setSelectedContacts(
-                selectedContacts.filter(
-                    (contact) => contact.id !== dataContact[index].id,
-                ),
-            );
-        } else {
-            setSelected([...selected, index]);
-            setSelectedContacts([...selectedContacts, dataContact[index]]);
-        }
+    const handleBulkDelete = (contacts: Contact[], clearSelection: () => void) => {
+        setBulkDeleteContacts(contacts);
+        setBulkClearSelection(() => clearSelection);
+        setOpenDeleteMultiple(true);
     };
 
-    // Client-side filtering logic
-    const filteredData = dataContact.filter((item) => {
-        if (filters.length === 0) return true;
-
-        return filters.every((filter) => {
-            if (!filter.columnId || !filter.operator) return true;
-
-            let itemValue = "";
-            // Map column IDs to item properties
-            if (filter.columnId === "name") itemValue = item.name;
-            else if (filter.columnId === "email") itemValue = item.email;
-            else if (filter.columnId === "phone") itemValue = item.phone_number;
-            else if (filter.columnId === "position") itemValue = item.position;
-            else if (filter.columnId === "company") itemValue = item.company;
-            else if (filter.columnId === "address") itemValue = item.address;
-            else return true; // unsupported column for filter
-
-            itemValue = (itemValue || "").toString().toLowerCase();
-            const filterValue = (filter.value || "").toString().toLowerCase();
-
-            switch (filter.operator) {
-                case "contains":
-                    return itemValue.includes(filterValue);
-                case "does not contain":
-                    return !itemValue.includes(filterValue);
-                case "equals":
-                    return itemValue === filterValue;
-                case "does not equal":
-                    return itemValue !== filterValue;
-                case "starts with":
-                    return itemValue.startsWith(filterValue);
-                case "ends with":
-                    return itemValue.endsWith(filterValue);
-                case "is empty":
-                    return itemValue === "";
-                case "is not empty":
-                    return itemValue !== "";
-                default:
-                    return true;
-            }
-        });
-    });
-
-    const handleExportCSV = () => {
-        const headers = allColumns
-            .filter((col) => col.id !== "selection" && col.id !== "action")
-            .map((col) => col.label);
-        const keys = allColumns
-            .filter((col) => col.id !== "selection" && col.id !== "action")
-            .map((col) => col.id);
-
-        const dataKeys = keys.map((key) => {
-            if (key === "phone") return "phone_number";
-            return key;
-        });
-
-        const csvContent = [
-            headers.join(","),
-            ...filteredData.map((item) =>
-                dataKeys
-                    .map((key) => {
-                        const val = (item as any)[key] || "";
-                        return `"${String(val).replace(/"/g, '""')}"`;
-                    })
-                    .join(","),
-            ),
-        ].join("\n");
-
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "contacts_export.csv");
-            link.style.visibility = "hidden";
-            document.body.appendChild(link);
-            document.body.removeChild(link);
+    const handleConfirmDeleteAll = async () => {
+        try {
+            await deleteAllMutation.mutateAsync();
+            setConfirmAllOpen(false);
+            reloadCurrentPage();
+        } catch (error) {
+            console.error("Failed to delete all contacts:", error);
         }
     };
 
@@ -259,26 +199,6 @@ export const ContactClient = () => {
         documentTitle: "Contacts",
     });
 
-    const handleOpenEditModal = (item: Contact) => {
-        setSelectedItem(item);
-        setOpenEdit(true);
-    };
-
-    const handleDeleteRequest = (item: Contact) => {
-        setSelectedItem(item);
-        setOpenDelete(true);
-    };
-
-    const handleConfirmDeleteAll = async () => {
-        try {
-            await deleteAllMutation.mutateAsync();
-            setConfirmAllOpen(false);
-            loadDataAgain();
-        } catch (error) {
-            console.error("Failed to delete all contacts:", error);
-        }
-    };
-
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
             <PageHeader
@@ -286,81 +206,98 @@ export const ContactClient = () => {
                 breadcrumbs={[{ label: "Dashboard" }, { label: "Contacts" }]}
             />
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
-                <ContactToolbar
-                    allColumns={allColumns}
-                    visibleColumns={visibleColumns}
-                    setVisibleColumns={setVisibleColumns}
-                    setFilters={setFilters}
-                    density={density}
-                    setDensity={setDensity}
-                    handleExportCSV={handleExportCSV}
-                    handlePrint={handlePrint}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    selectedContacts={selectedContacts}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+                <ContactTable
+                    data={dataContact}
+                    isLoading={loading}
+                    isError={!!error}
+                    errorMessage={error || undefined}
+                    rowCount={totalCount}
+                    onStateChange={handleStateChange}
+                    onExportRequest={handleExportRequest}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onDetail={handleDetail}
+                    onBulkDelete={handleBulkDelete}
+                    onDeleteAll={() => setConfirmAllOpen(true)}
                     onOpenAdd={() => setOpenAdd(true)}
                     onOpenImport={() => setOpenImport(true)}
-                    onOpenDeleteMultiple={() => setOpenDeleteMultiple(true)}
-                    onOpenDeleteAll={() => setConfirmAllOpen(true)}
                 />
-
-
-                <ContactTable
-                    loading={loading}
-                    filteredData={filteredData}
-                    density={density}
-                    visibleColumns={visibleColumns}
-                    selected={selected}
-                    handleSelectAll={handleSelectAll}
-                    handleSelectRow={handleSelectRow}
-                    onEdit={handleOpenEditModal}
-                    onDeleteRequest={handleDeleteRequest}
-                    handleDetail={handleDetail}
-                    page={page}
-                    rowsPerPage={rowsPerPage}
-                    totalCount={totalCount}
-                    handleChangePage={handleChangePage}
-                    handleChangeRowsPerPage={handleChangeRowsPerPage}
-                    allColumnsCount={allColumns.length}
-                />
-
             </div>
 
+            {/* Modals */}
             <AddContactModal
                 open={openAdd}
                 onClose={() => setOpenAdd(false)}
-                onSuccess={loadDataAgain}
+                onSuccess={reloadCurrentPage}
             />
             <EditContactModal
                 open={openEdit}
                 initialData={selectedItem}
                 onClose={() => setOpenEdit(false)}
-                onSuccess={loadDataAgain}
+                onSuccess={reloadCurrentPage}
             />
             <DeleteContactModal
                 open={openDelete}
                 initialData={selectedItem}
                 onClose={() => setOpenDelete(false)}
-                onSuccess={loadDataAgain}
+                onSuccess={reloadCurrentPage}
             />
             <DeleteMultipleContactModal
                 open={openDeleteMultiple}
-                selected={selectedContacts}
-                onClose={() => setOpenDeleteMultiple(false)}
-                onSuccess={loadDataAgain}
+                selected={bulkDeleteContacts}
+                onClose={() => {
+                    setOpenDeleteMultiple(false);
+                    bulkClearSelection?.();
+                }}
+                onSuccess={() => {
+                    reloadCurrentPage();
+                    bulkClearSelection?.();
+                }}
             />
             <ImportContactModal
                 open={openImport}
                 onClose={() => setOpenImport(false)}
-                onSuccess={loadDataAgain}
+                onSuccess={reloadCurrentPage}
             />
 
+            {/* Delete All Confirmation Dialog */}
+            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
+                <DialogTitle>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <AlertTriangle size={20} className="text-red-500" />
+                        <span>Delete All Contacts</span>
+                    </Stack>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete <strong>all contacts</strong>? This action cannot be undone.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <AppButton variantStyle="outline" onClick={() => setConfirmAllOpen(false)}>
+                        Cancel
+                    </AppButton>
+                    <AppButton
+                        variantStyle="danger"
+                        onClick={handleConfirmDeleteAll}
+                        disabled={deleteAllMutation.isPending}
+                    >
+                        {deleteAllMutation.isPending ? (
+                            <CircularProgress size={16} color="inherit" />
+                        ) : (
+                            "Delete All"
+                        )}
+                    </AppButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Hidden Printable Table */}
             <div style={{ display: "none" }}>
                 <PrintableTable
                     ref={componentRef}
                     title="Contacts"
-                    data={filteredData}
+                    data={dataContact}
                     columns={printableColumns}
                 />
             </div>

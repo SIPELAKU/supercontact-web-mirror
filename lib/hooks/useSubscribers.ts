@@ -15,6 +15,7 @@ import type {
 } from '@/lib/types/email-marketing';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
+import { UpdateSubscriberData } from '@/lib/api/email-marketing/subscribers';
 
 export function useSubscribers(page: number = 1, limit: number = 10, search?: string) {
   return useQuery<SubscribersResponse>({

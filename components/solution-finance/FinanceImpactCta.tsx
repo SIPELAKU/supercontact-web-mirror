@@ -3,9 +3,12 @@
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function FinanceImpactCta() {
     useLanguage();
+    const pathname = usePathname();
 
     const metrics = [
         { val: strings.fin_impact1_val, desc: strings.fin_impact1_desc, color: '#597CFF' },
@@ -66,6 +69,7 @@ export default function FinanceImpactCta() {
                         </Typography>
                         <Button
                             variant="contained"
+                            onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                             sx={{
                                 bgcolor: 'white',
                                 color: '#597CFF',

@@ -17,7 +17,7 @@ const CardStatUser = () => {
     "",
     "",
   );
-  const stats = usersResponse?.data?.stats;
+  const stats = (usersResponse?.data as any)?.stats;
 
   const totalUsers = stats?.total ?? 0;
   const activeUsers = stats?.active ?? 0;

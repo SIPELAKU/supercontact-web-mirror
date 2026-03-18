@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.2] - 2026-03-18
+
+### ✨ Added
+- **ContactTable → SuperTable**: manualPagination, client-side filter (Name/Email/Phone text filter, Position & Company select faceted), globalFilter search toggle, export Excel/CSV loop pagination, renderRowActions (Eye preview + Edit + Delete), renderBulkActions sequential loop per ID, Add Contact + Import toolbar mobile responsive (Import: border biru icon-only, Add: bg biru icon-only), Preview Dialog popup info lengkap, autoResetPageIndex: false
+- **✅ Semua 12 tabel selesai dimigrasi ke SuperTable!**
+
+### 🐛 Fixed
+- **ContactTable — Bulk delete**: Ganti endpoint DELETE /contacts dengan body contact_ids (500 error) ke sequential loop deleteContact per ID. Menampilkan successCount/failCount informatif. Contact linked ke resource lain (FOREIGN_KEY_VIOLATION) akan di-skip dengan pesan error yang jelas.
+- **ContactTable — Filter tidak berfungsi**: Root cause: manualFiltering: true membuat MRT tidak menjalankan client-side filter. Fix: hapus manualFiltering: true, tambah filterVariant text pada Name/Email/Phone, filterVariant select pada Position/Company.
+- **ContactTable — Mobile buttons**: Import dan Add Contact button disesuaikan dengan pattern SubscribersTable (Import: border biru icon-only, Add: bg solid biru icon-only di mobile view).
+
+### 📁 Modified Files
+- `components/contact/ContactTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/columns.tsx` [NEW]
+- `components/contact/modal/DeleteMultipleContactModal.tsx`
+- `app/demo/super-table/page.tsx`
+
 ## [1.11.1] - 2026-03-17
 
 ### 🐛 Fixed

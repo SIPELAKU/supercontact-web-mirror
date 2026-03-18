@@ -2,7 +2,7 @@
 
 import { Box, Container, Typography, Grid, Paper } from "@mui/material";
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
-import InstagramIcon from '@mui/icons-material/Instagram';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
@@ -18,8 +18,8 @@ export default function OmniIntegration() {
             desc: strings.omni_integ_feat1_desc
         },
         {
-            icon: <InstagramIcon sx={{ fontSize: 28, color: '#EC4899' }} />, // Pink
-            iconBg: '#FDF2F8',
+            icon: <WhatsAppIcon sx={{ fontSize: 28, color: '#22C55E' }} />, // Green
+            iconBg: '#F0FDF4',
             title: strings.omni_integ_feat2_title,
             desc: strings.omni_integ_feat2_desc
         },

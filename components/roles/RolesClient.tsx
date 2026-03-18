@@ -1,108 +1,84 @@
 "use client";
 
-import {
-  ChangeEvent,
-  MouseEvent,
-  Suspense,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import useRoles from "@/lib/hooks/useRoles";
-import {
-  AddPermissionsButton,
-  AddRoleButton,
-  RolesTable,
-} from "@/components/roles";
+import { AddRoleButton, RolesTable } from "@/components/roles";
 import PageHeader from "@/components/ui/page-header";
-import Pagination from "@/components/ui/pagination";
-import { AppInput } from "../ui/app-input";
-import { useDebounce } from "@/lib/hooks/useDebounce";
 import { handleError } from "@/lib/utils/errorHandler";
 import { notify } from "@/lib/notifications";
+import { SuperTableState } from "@/components/ui/super-table";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function RolesClient() {
-  // ===== SEARCH ===== //
-  const searchParams = useSearchParams();
-  const { replace } = useRouter();
-  const pathname = usePathname();
+  const { token } = useAuth();
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-  };
+  // ===== TABLE STATE (Driven by SuperTable) ===== //
+  const [tableState, setTableState] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+    globalFilter: "",
+  });
 
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") ?? "",
-  );
-  const debouncedSearch = useDebounce(searchTerm, 500);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
-    }
-
-    replace(`${pathname}?${params.toString()}`);
-  }, [debouncedSearch, pathname, replace, searchParams]);
-
-  // ===== PAGINATION ===== //
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [totalCount, setTotalCount] = useState<number>(0);
-
-  const searchQuery = searchParams.get("search")?.toLowerCase() ?? "";
-
+  // ===== FETCHING API ===== //
   const { roles, isLoading, isError, error } = useRoles(
-    page + 1,
-    rowsPerPage,
-    searchQuery,
+    tableState.pageIndex + 1, // API index starts at 1
+    tableState.pageSize,
+    tableState.globalFilter
   );
 
   // Error handling
   useEffect(() => {
     if (isError && error) {
-      const message = handleError(error, "Fetch Roles & Permissions")
+      const message = handleError(error, "Fetch Roles & Permissions");
       notify.error("Failed to load roles & permissions", { description: message });
     }
-  }, [isError, error])
+  }, [isError, error]);
 
+  const handleTableStateChange = (state: SuperTableState) => {
+    setTableState({
+      pageIndex: state.pagination.pageIndex,
+      pageSize: state.pagination.pageSize,
+      globalFilter: state.globalFilter,
+    });
+  };
 
-  // Set total count when data changes
-  useEffect(() => {
-    if (roles?.total) {
-      setTotalCount(roles.total);
+  const handleExportRequest = async (params: { format: "csv" | "excel", currentState: SuperTableState }) => {
+    try {
+      const search = params.currentState.globalFilter;
+      const LIMIT_PER_PAGE = 1000;
+      let allData: any[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      
+      do {
+        const urlParams = new URLSearchParams();
+        urlParams.set("page", String(currentPage));
+        urlParams.set("limit", String(LIMIT_PER_PAGE));
+        if (search) urlParams.set("search", search);
+        
+        const response = await fetch(
+          `/api/proxy/role-permissions?${urlParams.toString()}`,
+          { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
+        );
+        const data = await response.json();
+        
+        const items = data?.data?.roles || [];
+        totalPages = data?.data?.total_pages || 1;
+        allData = [...allData, ...items];
+        currentPage++;
+        
+      } while (currentPage <= totalPages);
+      
+      return allData;
+    } catch (err) {
+      console.error("Export error:", err);
+      return [];
     }
-  }, [roles]);
-
-  const handleChangePage = (
-    event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ) => {
-    setPage(newPage);
   };
-
-  const handleChangeRowsPerPage = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const paginatedRoles = useMemo(() => {
-    if (!Array.isArray(roles.roles)) return [];
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return roles.roles.slice(start, end);
-  }, [roles.roles, page, rowsPerPage]);
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
-      {/* Header */}
+      {/* Header (Standalone Mobile-Friendly) */}
       <PageHeader
         title="Roles & Permissions"
         breadcrumbs={[
@@ -111,42 +87,20 @@ export default function RolesClient() {
         ]}
       />
 
-      <div className="mt-[63px] overflow-auto rounded-xl border">
-        <div className="flex min-w-[490px] items-center justify-between px-6 py-4">
-          <Suspense>
-            <AppInput
-              placeholder="Search Permissions"
-              onChange={(e) => handleSearch(e.target.value)}
-              value={searchTerm}
-              className="w-[250px]!"
-              isBgWhite
-            />
-          </Suspense>
-
-          <div className="flex flex-row items-center gap-2">
-            <AddRoleButton />
-            {/* <AddPermissionsButton /> */}
+      {/* Table Data */}
+      <RolesTable
+        roles={roles?.roles || []}
+        isLoading={isLoading}
+        isError={isError}
+        rowCount={roles?.total || 0}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest}
+        renderTopLeftToolbar={() => (
+          <div className="flex gap-2">
+            <AddRoleButton hideLabelOnMobile />
           </div>
-        </div>
-
-        {/* Table Data */}
-        <RolesTable
-          roles={paginatedRoles}
-          isLoading={isLoading}
-          isError={isError}
-        />
-
-        {/* Pagination */}
-        <div className="flex min-w-[490px] justify-end">
-          <Pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            count={totalCount}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 }

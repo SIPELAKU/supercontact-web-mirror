@@ -1,38 +1,26 @@
 "use client";
 
-import { DeleteButton, EditButton, ViewButton } from '@/components/ui/app-action-buttons-table';
-import { AppButton } from '@/components/ui/app-button';
-import { AppInput } from '@/components/ui/app-input';
-import { useCampaigns } from '@/lib/hooks/useCampaigns';
-import { Campaign } from '@/lib/types/email-marketing';
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material';
-import { format } from 'date-fns';
-import { Eye, Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { notify } from '@/lib/notifications';
+import React, { useMemo } from "react";
+import { Box, Chip } from "@mui/material";
+import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
+import { Campaign } from "@/lib/types/email-marketing";
+import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { AppButton } from "@/components/ui/app-button";
+import { format } from "date-fns";
 
 interface CampaignsTableProps {
-  onAdd: () => void;
+  campaigns: Campaign[];
+  isLoading: boolean;
+  isError?: boolean;
+  rowCount?: number;
+  onStateChange?: (state: SuperTableState) => void;
+  onExportRequest?: (params: any) => Promise<Campaign[]>;
   onEdit: (campaign: Campaign) => void;
-  onDeleteRequest: (campaign: Campaign) => void;
-  onView: (campaign: Campaign) => void;
-  refreshTrigger: number;
+  onDelete: (campaign: Campaign) => void;
+  onView?: (campaign: Campaign) => void;
+  renderTopLeftToolbar?: () => React.ReactNode;
+  onBulkDelete?: (campaigns: Campaign[], clearSelection: () => void) => Promise<void>;
+  isBulkDeleting?: boolean;
 }
 
 const getStatusChip = (status: string) => {
@@ -50,158 +38,143 @@ const getStatusChip = (status: string) => {
   }
 };
 
-const CampaignsTable = ({ onAdd, onEdit, onDeleteRequest, onView, refreshTrigger }: CampaignsTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+export default function CampaignsTable({
+  campaigns,
+  isLoading,
+  isError,
+  rowCount = 0,
+  onStateChange,
+  onExportRequest,
+  onEdit,
+  onDelete,
+  onView,
+  renderTopLeftToolbar,
+  onBulkDelete,
+  isBulkDeleting,
+}: CampaignsTableProps) {
+  const columns = useMemo<MRT_ColumnDef<Campaign>[]>(() => [
+    {
+      id: "subject",
+      accessorKey: "subject",
+      header: "Subject",
+      enableColumnFilter: false,
+      Cell: ({ row }) => (
+        <span
+          className="font-medium text-gray-900 inline-block max-w-50 sm:max-w-75 truncate"
+          title={row.original.subject}
+        >
+          {row.original.subject}
+        </span>
+      ),
+    },
+    {
+      id: "status",
+      accessorKey: "status",
+      header: "Status",
+      filterVariant: "select",
+      filterSelectOptions: ['Draft', 'In Queue', 'Sending', 'Sent', 'Canceled'],
+      enableSorting: false,
+      Cell: ({ row }) => getStatusChip(row.original.status),
+    },
+    {
+      id: "sent_at",
+      accessorKey: "sent_at",
+      header: "Sent Date",
+      enableColumnFilter: false,
+      Cell: ({ row }) => (
+        <span>
+          {row.original.sent_at
+            ? format(new Date(row.original.sent_at), "dd MMM yyyy, HH:mm")
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      id: "user_fullname",
+      accessorKey: "user_fullname",
+      header: "Created By",
+      enableColumnFilter: false,
+      Cell: ({ row }) => <span>{row.original.user_fullname || 'N/A'}</span>,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableColumnFilter: false,
+      enableSorting: false,
+      size: 150,
+      muiTableBodyCellProps: {
+        align: "right",
+      },
+      muiTableHeadCellProps: {
+        align: "right",
+      },
+      Cell: ({ row }) => {
+        const canEditOrDelete =
+          row.original.status.toLowerCase() === 'draft' ||
+          row.original.status.toLowerCase() === 'in_queue' ||
+          row.original.status.toLowerCase() === 'queued';
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  // Reset page when search changes
-  useEffect(() => {
-    setPage(0);
-  }, [debouncedSearch]);
-
-  const { data, isLoading, error, refetch } = useCampaigns(page + 1, rowsPerPage, debouncedSearch);
-
-  const rows = useMemo(() => data?.data?.campaigns || [], [data?.data?.campaigns]);
-  const totalRows = data?.data?.total || 0;
-
-  useEffect(() => {
-    if (error) {
-      notify.error('Failed to fetch campaigns.');
-    }
-  }, [error]);
-
-  useEffect(() => {
-    refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshTrigger]);
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+        return (
+          <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+            {onView && <ViewButton onClick={() => onView(row.original)} />}
+            <EditButton
+              onClick={() => onEdit(row.original)}
+              disabled={!canEditOrDelete}
+              customTitle={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"}
+            />
+            <DeleteButton
+              onClick={() => onDelete(row.original)}
+              disabled={!canEditOrDelete}
+              customTitle={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"}
+            />
+          </Box>
+        );
+      },
+    },
+  ], [onDelete, onEdit, onView]);
 
   return (
-    <div>
-      {/* Toolbar */}
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box className="w-[250px]">
-          <AppInput
-            placeholder="Search campaigns..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            isBgWhite
-            startIcon={<Search className="w-4 h-4" />}
-          />
-        </Box>
-
-        <Box sx={{ display: 'flex', gap: 1 }}>
+    <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
+      <SuperTable<Campaign>
+        tableId="campaigns-table"
+        data={campaigns}
+        columns={columns}
+        rowCount={rowCount}
+        manualFiltering={true}
+        manualPagination={true}
+        manualSorting={true}
+        isLoading={isLoading}
+        isError={isError}
+        onStateChange={onStateChange}
+        onExportRequest={onExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        renderBulkActions={({ selectedRows, clearSelection }) => (
           <AppButton
-            variantStyle="outline"
-            color="primary"
-            startIcon={<RefreshCw className="w-4 h-4" />}
-            onClick={() => refetch()}
-            sx={{ borderRadius: '8px', textTransform: 'none' }}
+            variantStyle="danger"
+            disabled={isBulkDeleting}
+            onClick={() => {
+              if (onBulkDelete) {
+                onBulkDelete(selectedRows as Campaign[], clearSelection);
+              }
+            }}
           >
-            Refresh
+            {isBulkDeleting
+              ? "Menghapus..."
+              : `Hapus ${selectedRows.length} Kampanye`}
           </AppButton>
-          <AppButton
-            variantStyle="primary"
-            startIcon={<Plus className="w-4 h-4" />}
-            onClick={onAdd}
-          >
-            Create Campaign
-          </AppButton>
-        </Box>
-      </Box>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Status</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Created By</TableCell>
-              <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                  <CircularProgress size={30} />
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                  <span className="text-gray-500">
-                    {searchQuery ? 'No campaigns found matching your search.' : 'No campaigns yet.'}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row: Campaign) => {
-                const canEditOrDelete = row.status.toLowerCase() === 'draft' || row.status.toLowerCase() === 'in_queue' || row.status.toLowerCase() === 'queued';
-                return (
-                  <TableRow
-                    key={row.id}
-                    hover
-                    sx={{
-                      '&:hover': { bgcolor: '#f9fafb' },
-                      '& td': { borderBottom: '1px solid #f3f4f6' }
-                    }}
-                  >
-                    <TableCell sx={{ py: 2, pl: 3 }}>
-                      <span className="font-medium text-gray-900">{row.subject}</span>
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>{getStatusChip(row.status)}</TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      {row.sent_at ? format(new Date(row.sent_at), 'dd MMM yyyy, HH:mm') : '-'}
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>{row.user_fullname || 'N/A'}</TableCell>
-                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <ViewButton onClick={() => onView(row)} />
-                        <EditButton onClick={() => onEdit(row)} disabled={!canEditOrDelete} customTitle={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"} />
-                        <DeleteButton onClick={() => onDeleteRequest(row)} disabled={!canEditOrDelete} customTitle={canEditOrDelete ? "Delete" : "Can only delete Draft/In Queue"} />
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={totalRows}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </div>
-    </div>
+        )}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          columnFilters: true,
+          sorting: true,
+          urlSync: true,
+          rowSelection: "multi",
+          export: { excel: true, csv: true },
+          densityToggle: true,
+          fullScreenToggle: true,
+        }}
+      />
+    </Box>
   );
-};
-
-export default CampaignsTable;
+}

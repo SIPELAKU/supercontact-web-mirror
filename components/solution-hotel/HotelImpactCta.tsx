@@ -3,9 +3,12 @@
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function HotelImpactCta() {
     useLanguage();
+    const pathname = usePathname();
 
     const metrics = [
         { val: strings.hotel_impact1_val, desc: strings.hotel_impact1_desc, color: '#597CFF' },
@@ -66,6 +69,7 @@ export default function HotelImpactCta() {
                         </Typography>
                         <Button
                             variant="contained"
+                            onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                             sx={{
                                 bgcolor: 'white',
                                 color: '#597CFF',

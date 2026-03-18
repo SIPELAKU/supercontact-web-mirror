@@ -146,7 +146,7 @@ export const IndividualClient = () => {
             const selectedPeople = allPeople
                 .filter(item => selectedIds.includes(item.person.id))
                 .map(item => ({
-                    crm_company_id: item.company.crm_company_id,
+                    crm_company_id: item.company.crm_company_id || '',
                     person_id: item.person.id,
                     name: item.person.name,
                     role: item.person.role
@@ -199,7 +199,7 @@ export const IndividualClient = () => {
             {/* Toolbar */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
                 <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-                    <div className="w-full md:w-[240px]">
+                    <div className="w-full md:w-60">
                         <AppAutocomplete
                             multiple
                             options={INDUSTRY_OPTIONS}
@@ -275,7 +275,7 @@ export const IndividualClient = () => {
 
             {/* Grid / Loading */}
             {isLoading ? (
-                <div className="flex items-center justify-center min-h-[400px] gap-4">
+                <div className="flex items-center justify-center min-h-100 gap-4">
                     <CircularProgress size={30} />
                 </div>
             ) : allPeople.length > 0 ? (
@@ -292,7 +292,7 @@ export const IndividualClient = () => {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center min-h-[400px] border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <div className="flex flex-col items-center justify-center min-h-100 border border-dashed border-gray-200 rounded-xl bg-gray-50">
                     <p className="text-gray-500 font-medium">No individuals found.</p>
                     <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search query.</p>
                 </div>

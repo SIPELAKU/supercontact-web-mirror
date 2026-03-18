@@ -1,23 +1,25 @@
 import { RoleType } from "@/lib/types/Role";
-import { Box, Chip, CircularProgress, SxProps, Theme } from "@mui/material";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
+import { Chip, SxProps, Theme, Tooltip, Typography } from "@mui/material";
 import DeleteRolesPermissionsButton from "../roles-button-open-modal/DeleteRolesPermissionsButton";
 import EditPermissionsButton from "../roles-button-open-modal/EditPermissionsButton";
 import RolesTableDataNotFound from "./RolesTableDataNotFound";
 import RolesTableError from "./RolesTableError";
 import RolesTableSkeleton from "./RolesTableSkeleton";
+import React from 'react';
+import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
+import { MRT_TableInstance } from 'material-react-table';
 
 interface RolesTableProps {
   roles: RoleType[];
   isLoading: boolean;
   isError: boolean;
-  // error: string | null | undefined;
+  rowCount?: number;
+  onStateChange?: (state: SuperTableState) => void;
+  onExportRequest?: (params: {
+    format: "csv" | "excel";
+    currentState: SuperTableState;
+  }) => Promise<RoleType[]> | RoleType[] | void;
+  renderTopLeftToolbar?: (table: MRT_TableInstance<RoleType>) => React.ReactNode;
 }
 
 const formatPermissionLabel = (permission: string) => {
@@ -66,111 +68,127 @@ export default function RolesTable({
   roles,
   isLoading,
   isError,
+  rowCount,
+  onStateChange,
+  onExportRequest,
+  renderTopLeftToolbar,
 }: RolesTableProps) {
-
-  if (isError) {
-    return <RolesTableError message="Failed to load roles data." />;
-  }
-
-  if (roles.length === 0) {
-    return <RolesTableDataNotFound />;
-  }
-  return (
-    <Table>
-      <TableHead>
-        <TableRow className="bg-[#EEF2FD]!">
-          <TableCell>Role Access</TableCell>
-          <TableCell>Permissions</TableCell>
-          <TableCell>Actions</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {isLoading ? (
-          <TableRow>
-            <TableCell colSpan={6}>
-              <Box sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: 120,
-              }} >
-                <CircularProgress />
-              </Box>
-            </TableCell>
-          </TableRow>
-        ) : roles?.map((role) => (
-          <TableRow key={role.id} className="h-[55px]">
-            <TableCell>
+  const columns = React.useMemo<MRT_ColumnDef<RoleType>[]>(() => [
+    {
+      accessorKey: "role_name",
+      header: "Role Access",
+      Cell: ({ cell }) => {
+        const roleName = cell.getValue<string>();
+        return <Chip label={roleName} sx={getChipStyle(roleName)} />;
+      },
+    },
+    {
+      accessorKey: "permission_names",
+      header: "Permissions",
+      filterVariant: "multi-select",
+      Cell: ({ cell }) => {
+        const permissions = cell.getValue<string[]>() || [];
+        return (
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {permissions.slice(0, 3).map((item: string, index: number) => (
               <Chip
-                label={role?.role_name}
-                sx={getChipStyle(role?.role_name)}
+                key={index}
+                label={formatPermissionLabel(item)}
+                sx={PERMISSION_CHIP_STYLE}
               />
-            </TableCell>
-            <TableCell>
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {role?.permission_names
-                  ?.slice(0, 3)
-                  .map((item: string, index: number) => (
-                    <Chip
-                      key={index}
-                      label={formatPermissionLabel(item)}
-                      sx={PERMISSION_CHIP_STYLE}
-                    />
-                  ))}
-                {role?.permission_names?.length > 3 && (
-                  <Tooltip
-                    arrow
-                    title={
-                      <div className="p-1 px-2">
+            ))}
+            {permissions.length > 3 && (
+              <Tooltip
+                arrow
+                title={
+                  <div className="p-1 px-2">
+                    <Typography
+                      variant="caption"
+                      className="font-semibold block mb-1"
+                    >
+                      Full permissions:
+                    </Typography>
+                    <div className="flex flex-col gap-0.5">
+                      {permissions.map((p, i) => (
                         <Typography
+                          key={i}
                           variant="caption"
-                          className="font-semibold block mb-1"
+                          className="text-white/80"
                         >
-                          Full permissions:
+                          • {formatPermissionLabel(p)}
                         </Typography>
-                        <div className="flex flex-col gap-0.5">
-                          {role.permission_names.map((p, i) => (
-                            <Typography
-                              key={i}
-                              variant="caption"
-                              className="text-white/80"
-                            >
-                              • {formatPermissionLabel(p)}
-                            </Typography>
-                          ))}
-                        </div>
-                      </div>
-                    }
-                  >
-                    <Chip
-                      label={`+${role.permission_names.length - 3}`}
-                      variant="outlined"
-                      sx={{
-                        ...PERMISSION_CHIP_STYLE,
-                        backgroundColor: "transparent",
-                        cursor: "pointer",
-                        fontWeight: 600,
-                      }}
-                    />
-                  </Tooltip>
-                )}
-              </div>
-            </TableCell>
-
-            {/* Actions */}
-            <TableCell>
-              <div className="flex items-center">
-                <EditPermissionsButton
-                  roleId={role?.id}
-                  roleName={role?.role_name}
-                  assignedPermissions={role?.permission_names}
+                      ))}
+                    </div>
+                  </div>
+                }
+              >
+                <Chip
+                  label={`+${permissions.length - 3}`}
+                  variant="outlined"
+                  sx={{
+                    ...PERMISSION_CHIP_STYLE,
+                    backgroundColor: "transparent",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
                 />
-                <DeleteRolesPermissionsButton roleId={role?.id} roleName={role?.role_name} />
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+              </Tooltip>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      Cell: ({ row }) => {
+        const role = row.original;
+        return (
+          <div className="flex items-center gap-1">
+            <EditPermissionsButton
+              roleId={role.id}
+              roleName={role.role_name}
+              assignedPermissions={role.permission_names}
+            />
+            <DeleteRolesPermissionsButton roleId={role.id} roleName={role.role_name} />
+          </div>
+        );
+      },
+    },
+  ], []);
+
+  return (
+    <div className="mb-6">
+      <SuperTable
+        tableId="roles-table"
+        columns={columns}
+        data={roles || []}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage="Failed to load roles data."
+        rowCount={rowCount}
+        manualPagination={true}
+        manualFiltering={true}
+        onStateChange={onStateChange}
+        onExportRequest={onExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        features={{
+          sorting: true,
+          globalFilter: true,
+          pagination: true,
+          rowSelection: 'none',
+          export: { excel: true, csv: true },
+          urlSync: true,
+          densityToggle: true,
+          fullScreenToggle: true,
+          facetedValues: true
+        }}
+        initialState={{
+          pagination: { pageIndex: 0, pageSize: 10 }
+        }}
+        renderEmptyState={() => <Typography className="text-center p-4 text-gray-500">No roles data found.</Typography>}
+      />
+    </div>
   );
 }
+

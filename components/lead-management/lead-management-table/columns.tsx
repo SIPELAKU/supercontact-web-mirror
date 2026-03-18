@@ -24,69 +24,76 @@ export const sourceIcon: Record<LeadSource, React.ReactNode> = {
   "Manual Entry": <Image src={ManualEntry} alt={"manual-entry"} className="h-4 w-4" />,
 };
 
-// Column configuration interface
-export interface LeadColumn {
-  key: string;
-  label: string;
-  render: (lead: Lead) => React.ReactNode;
-  sortable?: boolean;
-}
+import { MRT_ColumnDef } from "material-react-table"; // Added MRT Import
 
-// Column definitions for MUI Table
-export const leadColumns: LeadColumn[] = [
+// Column definitions for MUI Table using SuperTable formatting
+export const leadColumns: MRT_ColumnDef<Lead>[] = [
   {
-    key: "lead_name",
-    label: "Lead Name",
-    sortable: true,
-    render: (lead) => <span className="text-black">{lead.contact.name}</span>,
+    accessorFn: (row) => row.contact.name,
+    id: "lead_name",
+    header: "Lead Name",
+    enableColumnFilter: false,
+    Cell: ({ row }) => <span className="text-black font-medium">{row.original.contact.name}</span>,
   },
   {
-    key: "lead_status",
-    label: "Status",
-    sortable: true,
-    render: (lead) => (
+    accessorKey: "lead_status",
+    header: "Status",
+    filterVariant: 'select',
+    filterSelectOptions: ['New', 'Contacted', 'Qualified', 'Unqualified'],
+    enableColumnFilter: true,
+    Cell: ({ cell }) => (
       <span
         className={cn(
-          "px-3 py-1 rounded-md text-white text-sm font-medium",
-          statusColors[lead.lead_status]
+          "px-3 py-1 rounded-md text-white text-sm font-medium whitespace-nowrap",
+          statusColors[cell.getValue<LeadStatus>()]
         )}
       >
-        {lead.lead_status}
+        {cell.getValue<string>()}
       </span>
     ),
   },
   {
-    key: "lead_source",
-    label: "Source",
-    sortable: true,
-    render: (lead) => (
-      <div className="flex items-center gap-2 text-black">
-        {sourceIcon[lead.lead_source]}
-        <span>{lead.lead_source}</span>
+    accessorKey: "lead_source",
+    header: "Source",
+    filterVariant: 'select',
+    filterSelectOptions: ['Web Form', 'WhatsApp', 'Manual Entry'],
+    enableColumnFilter: true,
+    Cell: ({ cell }) => (
+      <div className="flex items-center gap-2 text-black whitespace-nowrap">
+        {sourceIcon[cell.getValue<LeadSource>()]}
+        <span>{cell.getValue<string>()}</span>
       </div>
     ),
   },
   {
-    key: "user",
-    label: "Assigned To",
-    sortable: true,
-    render: (lead) => (
-      <span className="text-[#6B7280]">{lead.user.fullname}</span>
+    accessorFn: (row) => row.user.fullname,
+    id: "user",
+    header: "Assigned To",
+    filterVariant: 'select',
+    enableColumnFilter: true,
+    Cell: ({ row }) => (
+      <span className="text-[#6B7280]">{row.original.user.fullname}</span>
     ),
   },
   {
-    key: "last_contacted",
-    label: "Last Contacted",
-    sortable: true,
-    render: (lead) => {
-      const dateString = lead.contact.last_contacted?.created_at;
-      if (!dateString) return <span className="text-[#6B7280]">-</span>;
+    accessorFn: (row) => {
+      const dateStr = row.contact.last_contacted?.created_at;
+      if (!dateStr) return null;
+      return new Date(dateStr);
+    },
+    id: "last_contacted",
+    header: "Last Contacted",
+    filterVariant: 'date-range',
+    filterFn: 'betweenInclusive',
+    enableColumnFilter: true,
+    Cell: ({ cell }) => {
+      const val = cell.getValue<Date | null>();
+      if (!val) return <span className="text-[#6B7280]">-</span>;
 
       try {
-        const date = new Date(dateString);
         return (
-          <span className="text-[#6B7280]">
-            {format(date, "dd MMM yyyy 'at' HH:mm")}
+          <span className="text-[#6B7280] whitespace-nowrap">
+            {format(val, "dd MMM yyyy 'at' HH:mm")}
           </span>
         );
       } catch (error) {

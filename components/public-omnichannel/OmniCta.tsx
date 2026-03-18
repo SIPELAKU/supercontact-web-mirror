@@ -3,9 +3,12 @@
 import { Box, Container, Typography, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
+import { usePathname } from "next/navigation";
+import { getWhatsAppLink } from "@/lib/utils/wa-link";
 
 export default function OmniCta() {
     useLanguage();
+    const pathname = usePathname();
 
     return (
         <Box
@@ -46,6 +49,7 @@ export default function OmniCta() {
 
                 <Button
                     variant="contained"
+                    onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
                     sx={{
                         bgcolor: 'white',
                         color: '#597CFF',

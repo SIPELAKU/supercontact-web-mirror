@@ -1,284 +1,192 @@
 // components/email-marketing/subscribers/SubscribersTable.tsx
 "use client";
 
-import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
+import { useMemo, useState } from 'react';
+import { Box, IconButton, Stack, Tooltip } from '@mui/material';
+import { Download, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+
+import { SuperTable } from '@/components/ui/super-table';
+import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
-import { AppInput } from '@/components/ui/app-input';
-import { useSubscribers } from '@/lib/hooks/useSubscribers';
-import { notify } from '@/lib/notifications';
+import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
-import {
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Tooltip
-} from '@mui/material';
-import { Download, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
 
 interface SubscribersTableProps {
+  subscribers: Subscriber[];
+  isLoading: boolean;
+  totalCount: number;
   onAdd: () => void;
   onEdit: (subscriber: Subscriber) => void;
-  onDeleteRequest: (subscribers: Subscriber[]) => void;
+  onDeleteRequest: (ids: string[]) => void;
   onImport: () => void;
   onDeleteAllRequest: () => void;
-  refreshTrigger: number;
-  isDeleting: boolean;
+  onExportRequest?: (params: any) => Promise<Subscriber[]>;
+  onStateChange: (state: { page: number; limit: number; search: string }) => void;
 }
 
-const SubscribersTable = ({ onAdd, onEdit, onDeleteRequest, onImport, onDeleteAllRequest, isDeleting, refreshTrigger }: SubscribersTableProps) => {
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
+const SubscribersTable = ({
+  subscribers,
+  isLoading,
+  totalCount,
+  onAdd,
+  onEdit,
+  onDeleteRequest,
+  onImport,
+  onDeleteAllRequest,
+  onExportRequest,
+  onStateChange,
+}: SubscribersTableProps) => {
   const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
 
-  // Simple debounce for search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const { data, isLoading, error, refetch } = useSubscribers(page + 1, rowsPerPage, debouncedSearch);
-
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      refetch();
-    }
-  }, [refreshTrigger, refetch]);
-
-  const rows = data?.data?.contacts || [];
-  const totalCount = data?.data?.total || 0;
-
-  // Reset to first page when searching
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery]);
-
-  // Handle errors in an effect
-  useEffect(() => {
-    if (error) {
-      notify.error('Failed to fetch subscribers.');
-    }
-  }, [error]);
-
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleSelectOne = (id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-
-    setSelected(newSelected);
-  };
-
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
+  const columns = useMemo<MRT_ColumnDef<Subscriber>[]>(
+    () => [
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        filterVariant: 'text',
+        Cell: ({ cell }) => (
+          <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        filterVariant: 'text',
+        Cell: ({ cell }) => cell.getValue<string>() || '-',
+      },
+      {
+        accessorKey: 'company',
+        header: 'Company',
+        filterVariant: 'text',
+        Cell: ({ cell }) => cell.getValue<string>() || '-',
+      },
+      {
+        accessorKey: 'position',
+        header: 'Position',
+        filterVariant: 'text',
+        Cell: ({ cell }) => cell.getValue<string>() || 'N/A',
+      },
+    ],
+    []
+  );
 
   return (
-    <div>
-      {/* Toolbar */}
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <Box className="w-[250px]">
-          <AppInput
-            placeholder="Search subscribers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            isBgWhite
-            rounded='8px'
-            startIcon={<Search className="w-4 h-4 mr-2 text-gray-400" />}
-          />
-        </Box>
+    <>
+      <SuperTable<Subscriber>
+        tableId="subscribers-table"
+        data={subscribers}
+        columns={columns}
+        rowCount={totalCount}
+        isLoading={isLoading}
+        manualPagination={true}
+        manualSorting={false}
+        manualFiltering={false}
+        onStateChange={(state) => {
+          onStateChange({
+            page: state.pagination.pageIndex + 1,
+            limit: state.pagination.pageSize,
+            search: state.globalFilter || '',
+          });
+        }}
+        onExportRequest={onExportRequest}
+        initialState={{
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10,
+          },
+        }}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          globalFilterAlwaysVisible: true,
+          columnFilters: true,
+          sorting: true,
+          rowSelection: 'multi',
+          columnVisibility: true,
+          densityToggle: true,
+          fullScreenToggle: true,
+          export: { excel: true, csv: true },
+          urlSync: true,
+        }}
+        renderTopLeftToolbar={() => (
+          <>
+            {/* Desktop: Tombol dengan label */}
+            <div className="hidden md:flex gap-2">
+              <AppButton
+                variantStyle="outline"
+                onClick={onImport}
+                startIcon={<Download size={16} />}
+              >
+                Import
+              </AppButton>
+              <AppButton
+                variantStyle="primary"
+                onClick={onAdd}
+                startIcon={<Plus size={16} />}
+              >
+                Add Subscriber
+              </AppButton>
+            </div>
 
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          {selected.length > 0 && (
-            <AppButton
-              variantStyle="outline"
-              color="danger"
-              startIcon={<Trash2 className="w-4 h-4" />}
-              disabled={isDeleting}
-              onClick={() => {
-                const subscribersToDelete = rows.filter(r => selected.includes(r.id));
-                onDeleteRequest(subscribersToDelete);
-              }}
-            >
-              Delete ({selected.length})
-            </AppButton>
-          )}
+            {/* Mobile: Icon only */}
+            <div className="flex md:hidden gap-2">
+              <button 
+                onClick={onImport}
+                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                title="Import"
+              >
+                <Download size={16} />
+              </button>
+              <button 
+                onClick={onAdd}
+                className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
+                title="Add Subscriber"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </>
+        )}
+        renderBulkActions={({ selectedRows, clearSelection }) => (
           <AppButton
             variantStyle="outline"
-            color="primary"
-            startIcon={<Download className="w-4 h-4" />}
-            onClick={onImport}
-            sx={{ ml: 'auto' }}
+            color="danger"
+            startIcon={<Trash2 size={16} />}
+            onClick={() => {
+              const ids = (selectedRows as Subscriber[]).map((r) => r.id);
+              onDeleteRequest(ids);
+              clearSelection();
+            }}
           >
-            Import
+            {`Delete (${selectedRows.length})`}
           </AppButton>
-          <AppButton
-            variantStyle="primary"
-            color="primary"
-            startIcon={<Plus className="w-4 h-4" />}
-            onClick={onAdd}
-          >
-            Add Subscriber
-          </AppButton>
-          {selected.length === 0 && rows.length > 0 && (
-            <AppButton
-              variantStyle="soft"
-              color="danger"
-              startIcon={<Trash2 className="w-4 h-4" />}
-              onClick={onDeleteAllRequest}
-            >
-              Delete All Data
-            </AppButton>
-          )}
-        </Box>
-
-      </Box>
-
-      {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-              <TableCell padding="checkbox" sx={{ pl: 3 }}>
-                <Checkbox
-                  indeterminate={selected.length > 0 && selected.length < rows.length}
-                  checked={rows.length > 0 && selected.length === rows.length}
-                  onChange={handleSelectAll}
-                  color="primary"
-                />
-              </TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Email</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Name</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Company</TableCell>
-              <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Position</TableCell>
-              <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                  <CircularProgress size={30} />
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                  <span className="text-gray-500">
-                    {searchQuery ? 'No subscribers found matching your search.' : 'No subscribers yet.'}
-                  </span>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => {
-                const isItemSelected = isSelected(row.id);
-                return (
-                  <TableRow
-                    key={row.id}
-                    hover
-                    role="checkbox"
-                    aria-checked={isItemSelected}
-                    selected={isItemSelected}
-                    sx={{
-                      '&:hover': { bgcolor: '#f9fafb' },
-                      '& td': { borderBottom: '1px solid #f3f4f6' }
-                    }}
-                  >
-                    <TableCell padding="checkbox" sx={{ pl: 3 }}>
-                      <Checkbox
-                        checked={isItemSelected}
-                        onChange={() => handleSelectOne(row.id)}
-                        color="primary"
-                      />
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>
-                      <span className="font-medium text-gray-900">{row.email}</span>
-                    </TableCell>
-                    <TableCell sx={{ py: 2 }}>{row.name || '-'}</TableCell>
-                    <TableCell sx={{ py: 2 }}>{row.company || '-'}</TableCell>
-                    <TableCell sx={{ py: 2 }}>{row.position || 'N/A'}</TableCell>
-                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-
-                        <IconButton
-                          size="small"
-                          onClick={() => setPreviewSubscriber(row)}
-                          sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-                        >
-                          <Eye size={18} />
-                        </IconButton>
-                        <EditButton onClick={() => onEdit(row)} />
-                        <DeleteButton onClick={() => onDeleteRequest([row])} />
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </div>
+        )}
+        renderRowActions={({ row }) => (
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+            <Tooltip title="Preview">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewSubscriber(row.original);
+                }}
+                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+              >
+                <Eye size={18} />
+              </IconButton>
+            </Tooltip>
+            <EditButton onClick={() => onEdit(row.original)} />
+            <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
+          </Box>
+        )}
+      />
 
       <SubscriberPreviewPopup
         subscriber={previewSubscriber}
         onClose={() => setPreviewSubscriber(null)}
       />
-    </div>
+    </>
   );
 };
 

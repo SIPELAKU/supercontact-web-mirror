@@ -1,16 +1,18 @@
 "use client";
 
-import { Card, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Button as MuiButton, Stack, Typography } from '@mui/material';
+import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { notify } from '@/lib/notifications';
+import Cookies from 'js-cookie';
 
 import SubscribersTable from '@/components/email-marketing/subscribers/SubscribersTable';
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers } from '@/lib/hooks/useSubscribers';
+import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers } from '@/lib/hooks/useSubscribers';
+import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
 
@@ -19,18 +21,35 @@ export default function SubscribersClient() {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState<Subscriber | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [selectedToDelete, setSelectedToDelete] = useState<Subscriber[] | null>(null);
+  const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
+
+  // Server-side pagination & search state
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, isLoading, refetch } = useSubscribers(page, limit, debouncedSearch);
+
+  const subscribers = data?.data?.contacts || [];
+  const totalCount = data?.data?.total || 0;
 
   const deleteMutation = useDeleteSubscriber();
   const bulkDeleteMutation = useBulkDeleteSubscribers();
   const deleteAllMutation = useDeleteAllSubscribers();
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-
-
-  const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
   const handleOpenImportModal = () => setImportModalOpen(true);
@@ -43,7 +62,7 @@ export default function SubscribersClient() {
 
   const handleSuccess = () => {
     handleCloseModals();
-    forceRefetch();
+    refetch();
   };
 
   const handleOpenEditModal = (subscriber: Subscriber) => {
@@ -51,9 +70,9 @@ export default function SubscribersClient() {
     setEditModalOpen(true);
   };
 
-  const handleDeleteRequest = (subscribers: Subscriber[]) => {
-    if (subscribers.length > 0) {
-      setSelectedToDelete(subscribers);
+  const handleDeleteRequest = (ids: string[]) => {
+    if (ids.length > 0) {
+      setSelectedToDelete(ids);
       setConfirmOpen(true);
     }
   };
@@ -62,18 +81,14 @@ export default function SubscribersClient() {
     if (!selectedToDelete) return;
 
     try {
-      const contactIds = selectedToDelete.map(s => s.id);
-
-      if (contactIds.length === 1) {
-        // Single delete
-        await deleteMutation.mutateAsync(contactIds[0]);
+      if (selectedToDelete.length === 1) {
+        await deleteMutation.mutateAsync(selectedToDelete[0]);
       } else {
-        // Bulk delete
-        await bulkDeleteMutation.mutateAsync(contactIds);
+        await bulkDeleteMutation.mutateAsync(selectedToDelete);
       }
 
       notify.success(`${selectedToDelete.length} subscriber(s) deleted successfully.`);
-      forceRefetch();
+      refetch();
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete subscriber(s).';
       notify.error(errorMessage);
@@ -87,7 +102,7 @@ export default function SubscribersClient() {
     try {
       await deleteAllMutation.mutateAsync();
       notify.success("All subscribers have been deleted successfully.");
-      forceRefetch();
+      refetch();
     } catch (err: any) {
       notify.error(err.message || "Failed to delete all subscribers.");
     } finally {
@@ -95,8 +110,47 @@ export default function SubscribersClient() {
     }
   };
 
-  return (
+  // Handle state changes from SuperTable
+  const handleStateChange = useCallback((state: { page: number; limit: number; search: string }) => {
+    if (state.page !== page) setPage(state.page);
+    if (state.limit !== limit) {
+      setLimit(state.limit);
+      setPage(1);
+    }
+    if (state.search !== searchQuery) setSearchQuery(state.search);
+  }, [page, limit, searchQuery]);
 
+  // Export handler: loop pagination to fetch all data
+  const handleExportRequest = useCallback(async (): Promise<Subscriber[]> => {
+    try {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+
+      let allData: Subscriber[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const result = await fetchSubscribers(token, currentPage, 50, debouncedSearch || undefined);
+
+        const items = result?.data?.contacts || [];
+        const total = result?.data?.total || 0;
+        totalPages = Math.ceil(total / 50) || 1;
+
+        allData = [...allData, ...items];
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      return allData;
+    } catch (err) {
+      console.error('Export error:', err);
+      notify.error('Failed to export subscribers.');
+
+      return [];
+    }
+  }, [debouncedSearch]);
+
+  return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Subscribers"
@@ -106,27 +160,18 @@ export default function SubscribersClient() {
         ]}
       />
 
-      <div className="mb-6">
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-          All Subscribers
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Manage your email marketing subscribers
-        </Typography>
-      </div>
-
-      <Card sx={{ borderRadius: 4, padding: 1 }}>
-        <SubscribersTable
-          onAdd={handleOpenAddModal}
-          onEdit={handleOpenEditModal}
-          onDeleteRequest={handleDeleteRequest}
-          onImport={handleOpenImportModal}
-          onDeleteAllRequest={() => setConfirmAllOpen(true)}
-          refreshTrigger={refreshTrigger}
-          isDeleting={deleteMutation.isPending || bulkDeleteMutation.isPending || deleteAllMutation.isPending}
-        />
-
-      </Card>
+      <SubscribersTable
+        subscribers={subscribers}
+        isLoading={isLoading}
+        totalCount={totalCount}
+        onAdd={handleOpenAddModal}
+        onEdit={handleOpenEditModal}
+        onDeleteRequest={handleDeleteRequest}
+        onImport={handleOpenImportModal}
+        onDeleteAllRequest={() => setConfirmAllOpen(true)}
+        onExportRequest={handleExportRequest}
+        onStateChange={handleStateChange}
+      />
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
       <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
@@ -181,4 +226,3 @@ export default function SubscribersClient() {
     </div>
   );
 }
-

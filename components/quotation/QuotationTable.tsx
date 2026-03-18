@@ -1,260 +1,149 @@
-"use client"
+"use client";
 
-import CustomSelectStage from "@/components/pipeline/SelectDealStage"
+import React, { useMemo } from "react";
+import { Box, Chip } from "@mui/material";
+import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
+import { Quotation } from "@/lib/store/quotation";
+import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { formatRupiah } from "@/lib/helper/currency";
+import { format } from "date-fns";
 
-import { FilterBar } from "@/components/ui/filter"
-import { useEffect, useMemo, useState } from "react"
-import { formatRupiah } from "@/lib/helper/currency"
-import { formatMDY } from "@/lib/helper/date"
-import { useGetQuotationstore } from "@/lib/store/quotation"
-import { Plus, Search } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import Table from "@mui/material/Table"
-import TableBody from "@mui/material/TableBody"
-import TableCell from "@mui/material/TableCell"
-import TableHead from "@mui/material/TableHead"
-import TablePagination from "@mui/material/TablePagination"
-import TableRow from "@mui/material/TableRow"
-import { AppInput } from "../ui/app-input"
-import { AppButton } from "../ui/app-button"
-import { Box, CircularProgress } from "@mui/material"
-import { Spinner } from "../ui/spinner"
+interface QuotationTableProps {
+  quotations: Quotation[];
+  isLoading: boolean;
+  isError?: boolean;
+  rowCount?: number;
+  onStateChange?: (state: SuperTableState) => void;
+  onExportRequest?: (params: any) => Promise<Quotation[]>;
+  onView: (quotation: Quotation) => void;
+  onEdit: (quotation: Quotation) => void;
+  onDelete?: (quotation: Quotation) => void;
+  renderTopLeftToolbar?: () => React.ReactNode;
+}
 
-export const quotationStatus = [
-    { value: "all", label: "All", bgColor: "bg-white", textColor: "text-black" },
-    { value: "Accepted", label: "Accepted", bgColor: "bg-green-100", textColor: "text-green-800" },
-    { value: "Pending", label: "Pending", bgColor: "bg-yellow-100", textColor: "text-yellow-800" },
-    { value: "Rejected", label: "Rejected", bgColor: "bg-red-100", textColor: "text-red-800" },
-]
+const getStatusChip = (status: string) => {
+  const statusLower = status.toLowerCase();
+  switch (statusLower) {
+    case 'accepted': return <Chip label="Accepted" color="success" size="small" />;
+    case 'pending': return <Chip label="Pending" color="warning" size="small" />;
+    case 'rejected': return <Chip label="Rejected" color="error" size="small" />;
+    default: return <Chip label={status} size="small" />;
+  }
+};
 
-export default function QuotationTable() {
-    const router = useRouter();
-    const {
-        listQuotations,
-        pagination,
-        setLimit,
-        setPage,
-        loading,
-        searchQuery,
-        setSearchQuery,
-        dateRangeFilter,
-        setDateRangeFilter,
-        statusFilter,
-        setStatusFilter
-    } = useGetQuotationstore();
+export default function QuotationTable({
+  quotations,
+  isLoading,
+  isError,
+  rowCount = 0,
+  onStateChange,
+  onExportRequest,
+  onView,
+  onEdit,
+  onDelete,
+  renderTopLeftToolbar,
+}: QuotationTableProps) {
+  const columns = useMemo<MRT_ColumnDef<Quotation>[]>(() => [
+    {
+      id: "client",
+      accessorFn: (row) => row.lead?.contact?.name || '-',
+      header: "Client",
+      enableColumnFilter: false,
+    },
+    {
+      id: "quotation_number",
+      accessorKey: "quotation_number",
+      header: "Quotation ID",
+      enableColumnFilter: false,
+    },
+    {
+      id: "expire_date",
+      accessorKey: "expire_date",
+      header: "Date",
+      enableColumnFilter: true,
+      filterVariant: "date-range",
+      Cell: ({ row }) => (
+        <span>
+          {row.original.expire_date 
+            ? format(new Date(row.original.expire_date), "dd MMM yyyy") 
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      id: "quotation_status",
+      accessorKey: "quotation_status",
+      header: "Status",
+      filterVariant: "select",
+      filterSelectOptions: ['Accepted', 'Pending', 'Rejected'],
+      columnFilterModeOptions: undefined, // Mencegah reduksi MRT options
+      Cell: ({ row }) => getStatusChip(row.original.quotation_status),
+    },
+    {
+      id: "grand_total",
+      accessorFn: (row) => formatRupiah(row.grand_total),
+      header: "Amount",
+      enableColumnFilter: false,
+      Cell: ({ cell }) => (
+        <span className="font-medium text-right block">
+          {cell.getValue<string>()}
+        </span>
+      ),
+      muiTableBodyCellProps: {
+        align: "right",
+      },
+      muiTableHeadCellProps: {
+        align: "right",
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableColumnFilter: false,
+      enableSorting: false,
+      size: 150,
+      muiTableBodyCellProps: {
+        align: "right",
+      },
+      muiTableHeadCellProps: {
+        align: "right",
+      },
+      Cell: ({ row }) => (
+        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <ViewButton onClick={() => onView(row.original)} />
+          <EditButton onClick={() => onEdit(row.original)} />
+          {onDelete && <DeleteButton onClick={() => onDelete(row.original)} />}
+        </Box>
+      ),
+    },
+  ], [onView, onEdit, onDelete]);
 
-    const handleRowClick = (quotationId: string) => {
-        router.push(`/sales/quotation/${quotationId}`);
-    };
-
-    // Filter results locally as a safeguard in case the backend ignores query params
-    const filteredQuotations = useMemo(() => {
-        let list = [...listQuotations];
-
-        if (statusFilter && statusFilter !== "all") {
-            list = list.filter((q) => q.quotation_status.toLowerCase() === statusFilter.toLowerCase());
-        }
-
-        if (searchQuery && searchQuery.trim() !== "") {
-            const query = searchQuery.toLowerCase();
-            list = list.filter((q) => {
-                const clientName = (q.lead?.contact?.name || "").toLowerCase();
-                const quoNumber = (q.quotation_number || "").toLowerCase();
-                const quoTitle = (q.quotation_title || "").toLowerCase();
-                return (
-                    clientName.includes(query) ||
-                    quoNumber.includes(query) ||
-                    quoTitle.includes(query)
-                );
-            });
-        }
-
-        return list;
-    }, [listQuotations, statusFilter, searchQuery]);
-
-    return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8 overflow-visible">
-            <div className="px-6 pt-5">
-                <h2 className="font-medium pb-2">Filters</h2>
-                <FilterBar
-                    width="680px"
-                    filters={[
-                        {
-                            type: "custom",
-                            component: (
-                                <CustomSelectStage
-                                    placeholder="Select All"
-                                    value={statusFilter}
-                                    onChange={setStatusFilter}
-                                    data={quotationStatus}
-                                    className="bg-white rounded-lg font-normal"
-                                />
-                            )
-                        },
-                        {
-                            type: "custom",
-                            component: (
-                                <CustomSelectStage
-                                    placeholder="Select By Date Range"
-                                    value={dateRangeFilter}
-                                    onChange={setDateRangeFilter}
-                                    data={[
-                                        { label: "All", value: "all" },
-                                        { label: "Today", value: "today" },
-                                        { label: "This Week", value: "this_week" },
-                                        { label: "Last Week", value: "last_week" },
-                                        { label: "This Month", value: "this_month" },
-                                        { label: "Last Month", value: "last_month" }
-                                    ]}
-                                    className="bg-white rounded-lg font-normal"
-                                />
-                            )
-                        },
-                    ]}
-                />
-            </div>
-
-            <div className="border-b w-full p-0 border-gray-300" />
-
-            <div className="flex justify-between items-center gap-4 px-6 w-full">
-                {/* <div
-                    className="flex items-center min-w-137.5 h-10 rounded-lg bg-white border border-[#E5E7EB] px-3 hover:border-[#D1D5DB] focus-within:border-[#60A5FA] focus-within:ring-1 focus-within:ring-[#60A5FA] transition-all"
-                >
-                    <Search className="h-5 w-5 text-gray-400 mr-2" />
-                    <input
-                        type="text"
-                        placeholder="Search by name or quotation ID"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder:text-gray-400"
-                    />
-                </div> */}
-                <div className="min-w-137.5">
-                    <AppInput
-                        placeholder="Search by name or quotation ID"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        startIcon={<Search />}
-                        isBgWhite
-                    />
-                </div>
-
-                <Link href="/sales/quotation/add">
-                    <AppButton
-                        variantStyle="primary"
-                        color="primary"
-                        startIcon={<Plus width={20} height={20} />}
-                    >
-                        <span className="hidden font-semibold sm:inline">Add New Quotation</span>
-                        <span className="sm:hidden font-semibold">Add</span>
-                    </AppButton>
-                </Link>
-            </div>
-
-            <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ pl: 3 }}><span className="text-[#6B7280]">Client</span></TableCell>
-                            <TableCell><span className="text-[#6B7280]">Quotation ID</span></TableCell>
-                            <TableCell><span className="text-[#6B7280]">Date</span></TableCell>
-                            <TableCell><span className="text-[#6B7280]">Status</span></TableCell>
-                            <TableCell sx={{ pr: 3 }}><span className="text-[#6B7280]">Amount</span></TableCell>
-                        </TableRow>
-                    </TableHead>
-
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} sx={{ p: 0 }}>
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            height: 120,
-                                        }}
-                                    >
-                                        <CircularProgress size={30} />
-                                    </Box>
-                                </TableCell>
-                            </TableRow>
-                        ) : filteredQuotations.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center">
-                                    <div className="py-8 text-gray-500">No data available</div>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredQuotations.map((quotation) => (
-                                <TableRow
-                                    key={quotation.id}
-                                    onClick={() => handleRowClick(quotation.id)}
-                                    className="cursor-pointer hover:bg-gray-50"
-                                    sx={{
-                                        '&:hover': {
-                                            backgroundColor: '#f9fafb',
-                                        },
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    <TableCell sx={{ pl: 3 }}>
-                                        <span className="font-medium text-gray-900">
-                                            {quotation.lead.contact.name}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="text-gray-900">
-                                            {quotation.quotation_number}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className="font-medium text-gray-900">
-                                            {formatMDY(quotation.expire_date)}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span
-                                            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${quotation.quotation_status === "Accepted"
-                                                ? "bg-green-100 text-green-800"
-                                                : quotation.quotation_status === "Pending"
-                                                    ? "bg-yellow-100 text-yellow-800"
-                                                    : "bg-red-100 text-red-800"
-                                                }`}
-                                        >
-                                            {quotation.quotation_status}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell sx={{ pr: 3 }}>
-                                        <span className="font-medium text-gray-900">
-                                            {formatRupiah(quotation.grand_total)}
-                                        </span>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-
-                <TablePagination
-                    component="div"
-                    count={pagination.total}
-                    rowsPerPage={pagination.limit}
-                    page={pagination.page - 1}
-                    onPageChange={(_, page) => setPage(page + 1)}
-                    onRowsPerPageChange={(e) => {
-                        setLimit(Number(e.target.value));
-                        setPage(1);
-                    }}
-                    rowsPerPageOptions={[5, 10, 15, 20]}
-                    slotProps={{
-                        select: {
-                            inputProps: { 'aria-label': 'rows per page' }
-                        }
-                    }}
-                />
-            </div>
-        </div>
-    )
+  return (
+    <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
+      <SuperTable<Quotation>
+        tableId="quotations-table"
+        data={quotations}
+        columns={columns}
+        rowCount={rowCount}
+        manualFiltering={true}
+        manualPagination={true}
+        manualSorting={true}
+        isLoading={isLoading}
+        isError={isError}
+        onStateChange={onStateChange}
+        onExportRequest={onExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          columnFilters: true,
+          sorting: true,
+          urlSync: true,
+          export: { excel: true, csv: true },
+          densityToggle: true,
+          fullScreenToggle: true,
+        }}
+      />
+    </Box>
+  );
 }

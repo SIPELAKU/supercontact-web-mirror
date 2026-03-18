@@ -1,161 +1,164 @@
 "use client";
 
-import { Avatar, Box, Checkbox, CircularProgress, IconButton } from "@mui/material";
-import { Eye, Pencil, Trash2 } from "lucide-react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import {
-  UsersTableError,
-} from "@/components/users";
+import React, { useMemo } from "react";
+import { Avatar, Box } from "@mui/material";
+import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { ManageUser } from "@/lib/types/manage-users";
 import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { AppButton } from "@/components/ui/app-button";
 
 interface TableListUsersProps {
-  data: ManageUser[];
-  selected: string[];
-  isLoading?: boolean;
-  error?: Error | null | undefined;
-
-  actions: {
-    onSelectOne: (id: string) => void;
-    onSelectAll: (checked: boolean, data: ManageUser[]) => void;
-    onOpenEdit: (user: ManageUser) => void;
-    onOpenDetail: (user: ManageUser) => void;
-    onOpenDelete: (user: ManageUser) => void;
-  };
+  users: ManageUser[];
+  positionOptions?: string[];
+  isLoading: boolean;
+  isError?: boolean;
+  rowCount?: number;
+  onStateChange?: (state: SuperTableState) => void;
+  onExportRequest?: (params: any) => Promise<ManageUser[]>;
+  onEdit: (user: ManageUser) => void;
+  onDelete: (user: ManageUser) => void;
+  onView: (user: ManageUser) => void;
+  onBulkDelete?: (users: ManageUser[], clearSelection: () => void) => Promise<void>;
+  isBulkDeleting?: boolean;
+  renderTopLeftToolbar?: () => React.ReactNode;
 }
 
 export default function TableListUsers({
-  data,
-  selected,
+  users,
+  positionOptions = [],
   isLoading,
-  error,
-  actions,
+  isError,
+  rowCount = 0,
+  onStateChange,
+  onExportRequest,
+  onEdit,
+  onDelete,
+  onView,
+  onBulkDelete,
+  isBulkDeleting,
+  renderTopLeftToolbar,
 }: TableListUsersProps) {
-  const { onSelectOne, onSelectAll, onOpenEdit, onOpenDetail, onOpenDelete } =
-    actions;
-
-  const isAllChecked = data.length > 0 && selected.length === data.length;
-  const isSomeChecked = selected.length > 0 && !isAllChecked;
-
-  if (error) {
-    return <UsersTableError message="Failed to load users data." />;
-  }
-
-  // if (data.length === 0) {
-  //   return <UsersTableNotFound />;
-  // }
+  const columns = useMemo<MRT_ColumnDef<ManageUser>[]>(() => [
+    {
+      id: "fullname",
+      accessorFn: (row) => row.fullname,
+      header: "User",
+      enableColumnFilter: false,
+      Cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
+              {user.fullname.charAt(0).toUpperCase()}
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-medium text-gray-900">{user.fullname}</span>
+              <span className="text-xs text-gray-500">{user.email}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "position",
+      header: "Position",
+      filterVariant: "select",
+      filterSelectOptions: positionOptions,
+      Cell: ({ cell }) => (
+        <span className="capitalize">{cell.getValue<string>()}</span>
+      )
+    },
+    {
+      accessorKey: "employee_code",
+      header: "Employee ID",
+      enableColumnFilter: false,
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      filterVariant: "select",
+      filterSelectOptions: ["Active", "Pending"],
+      Cell: ({ cell }) => {
+        const val = cell.getValue<string>();
+        return (
+          <span
+            className={`rounded-full px-3 py-1 text-xs capitalize ${
+              val === "Active"
+                ? "bg-green-100 text-green-700"
+                : val === "Pending"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            {val}
+          </span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Action",
+      enableColumnFilter: false,
+      enableSorting: false,
+      enableHiding: false,
+      muiTableBodyCellProps: {
+        align: "right",
+      },
+      muiTableHeadCellProps: {
+        align: "right",
+      },
+      Cell: ({ row }) => (
+        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <ViewButton onClick={() => onView(row.original)} />
+          <EditButton onClick={() => onEdit(row.original)} />
+          <DeleteButton onClick={() => onDelete(row.original)} />
+        </Box>
+      ),
+    },
+  ], [onDelete, onEdit, onView]);
 
   return (
-    <Table className="overflow-hidden rounded-lg border border-gray-200">
-      <TableHead>
-        <TableRow className="bg-[#EEF2FD]!">
-          <TableCell padding="checkbox">
-            <Checkbox
-              checked={isAllChecked}
-              indeterminate={isSomeChecked}
-              onChange={(e) => onSelectAll(e.target.checked, data)}
-            />
-          </TableCell>
-
-          <TableCell>User</TableCell>
-          <TableCell>Email</TableCell>
-          <TableCell>Position</TableCell>
-          <TableCell>Employee ID</TableCell>
-          <TableCell>Status</TableCell>
-          <TableCell>Action</TableCell>
-        </TableRow>
-      </TableHead>
-
-      <TableBody>
-        {isLoading ? (
-          <TableRow>
-            <TableCell colSpan={6}>
-              <Box sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: 120,
-              }} >
-                <CircularProgress />
-              </Box>
-            </TableCell>
-          </TableRow>
-        ) : data.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={6}>
-              <Box sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: 120,
-              }} >
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <p className="text-sm font-medium text-gray-700">
-                    No users found
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Try adjusting filters or add new users.
-                  </p>
-                </div>
-              </Box>
-            </TableCell>
-          </TableRow>
-        ) : (
-          data.map((user) => (
-            <TableRow key={user.id} className="transition-all hover:bg-gray-100">
-              <TableCell padding="checkbox">
-                <Checkbox
-                  checked={selected.includes(user.id)}
-                  onChange={() => onSelectOne(user.id)}
-                />
-              </TableCell>
-
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar sx={{ backgroundColor: "#dbeafe", color: "#2563eb" }}>
-                    {user.fullname.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{user.fullname}</span>
-                    <span className="text-xs text-gray-500">{user.email}</span>
-                  </div>
-                </div>
-              </TableCell>
-
-              <TableCell>{user.email}</TableCell>
-              <TableCell className="capitalize">{user.position}</TableCell>
-              <TableCell>{user.employee_code}</TableCell>
-
-              <TableCell>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs capitalize ${user.status === "active"
-                    ? "bg-green-100 text-green-700"
-                    : user.status === "inactive"
-                      ? "bg-gray-200 text-gray-700"
-                      : "bg-yellow-100 text-yellow-700"
-                    } `}
-                >
-                  {user.status}
-                </span>
-              </TableCell>
-
-              <TableCell>
-                <div className="flex gap-2">
-                  <ViewButton onClick={() => onOpenDetail(user)} />
-                  <EditButton onClick={() => onOpenEdit(user)} />
-                  <DeleteButton onClick={() => {
-                    // console.log("user", user)
-                    onOpenDelete(user)
-                  }} />
-                </div>
-              </TableCell>
-            </TableRow>
-          )))}
-      </TableBody>
-    </Table>
+    <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
+      <SuperTable<ManageUser>
+        tableId="users-table"
+        data={users}
+        columns={columns}
+        rowCount={rowCount}
+        manualFiltering={true}
+        manualPagination={true}
+        manualSorting={true}
+        isLoading={isLoading}
+        isError={isError}
+        onStateChange={onStateChange}
+        onExportRequest={onExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        renderBulkActions={({ selectedRows, clearSelection }) => (
+          <AppButton
+            variantStyle="danger"
+            disabled={isBulkDeleting}
+            onClick={() => {
+              if (onBulkDelete) {
+                onBulkDelete(selectedRows as ManageUser[], clearSelection);
+              }
+            }}
+          >
+            {isBulkDeleting 
+              ? "Menghapus..." 
+              : `Hapus ${selectedRows.length} User`}
+          </AppButton>
+        )}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          columnFilters: true,
+          sorting: true,
+          urlSync: true,
+          rowSelection: "multi",
+          export: { excel: true, csv: true },
+          densityToggle: true,
+          fullScreenToggle: true,
+        }}
+      />
+    </Box>
   );
 }

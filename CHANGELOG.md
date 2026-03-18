@@ -264,9 +264,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/solution-retail/*` (Hero, ImpactCta)
 - `components/solution-travel/*` (Hero, ImpactCta)
 
-## [1.9.6] - 2026-03-13
+## [1.9.6]
 
-### Detail Versi 1.9.6
+### Detail Versi - 2026-03-18
+
+#### 🛠️ Hotfixes
+
+- **Notification Visibility Fix**: Resolved a z-index conflict where error notifications were being covered by modals (such as the Import Contact modal). The `Toaster` component in `app/layout.tsx` now uses a `zIndex` of `100000` to ensure it stays above all UI overlays.
+- **Mobile Responsiveness - CRM Modules**: Fixed layout overflow issues on mobile devices for card components in the CRM Sales and CRM Services sections. Optimized grid spacing, padding, and font sizes to ensure content fits within smaller screen widths.
+
+#### 📁 Files Modified
+
+- `app/layout.tsx`
+- `components/crm-sales/CrmSalesClient.tsx`
+- `components/crm-services/CrmServicesClient.tsx`
+- `components/crm-sales/CrmSalesFeatures.tsx`
+- `components/crm-services/CrmServicesWhyChoose.tsx`
+
+### Detail Versi - 2026-03-13
 
 #### ✨ Enhancements - Industry Specific Solution Pages (Extended)
 

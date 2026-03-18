@@ -75,7 +75,12 @@ export default function RootLayout({
       <body
         className={`${poppins.className} antialiased min-h-screen bg-[#ffffff]`}
       >
-        <Toaster position="top-right" />
+        <Toaster 
+          position="top-right" 
+          containerStyle={{
+            zIndex: 100000,
+          }}
+        />
         <MuiLocalizationProvider>
           <ConfirmationProvider>
             <AuthProvider>

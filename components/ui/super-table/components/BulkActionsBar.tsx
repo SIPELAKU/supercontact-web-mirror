@@ -51,8 +51,8 @@ export function BulkActionsBar<TData extends object>({
         <Typography
           variant="subtitle2"
           sx={{
-            fontWeight: 700,
-            color: theme.palette.primary.dark,
+            fontWeight: 500,
+            color: theme.palette.primary.contrastText,
             // Hilangkan gaya text-transform yang aneh kalau ada
             textTransform: 'none',
           }}
@@ -68,7 +68,7 @@ export function BulkActionsBar<TData extends object>({
       <IconButton
         onClick={clearSelection}
         size="small"
-        sx={{ color: theme.palette.primary.dark }}
+        sx={{ color: theme.palette.primary.contrastText }}
         title="Cancel"
       >
         <CloseIcon fontSize="small" />

@@ -329,3 +329,57 @@ export async function deleteAllSubscribers(token: string): Promise<DeleteSubscri
     throw error;
   }
 }
+
+export async function duplicateSubscribers(token: string, data: {
+  target: 'subscriber' | 'mailing_list';
+  contact_ids: string[];
+  mailing_list_ids?: string[];
+}): Promise<any> {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/duplicate`;
+  
+    logger.info("Making POST request to duplicate subscribers", { url, data });
+  
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(data),
+      });
+  
+      let json;
+      try {
+        json = await res.json();
+      } catch (parseError: any) {
+        logger.error("Failed to parse duplicate subscribers response JSON", {
+          status: res.status,
+          statusText: res.statusText,
+          parseError: parseError.message
+        });
+        throw new Error(`Server returned invalid response (${res.status})`);
+      }
+  
+      logger.apiResponse("/subscribers/duplicate (POST)", { status: res.status, response: json });
+  
+      if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+      }
+  
+      if (!res.ok) {
+        logger.error(`Duplicate subscribers failed: ${res.status}`, {
+          status: res.status,
+          statusText: res.statusText,
+          response: json,
+          url
+        });
+        throw new Error(json.error?.message || `Failed to duplicate subscribers (${res.status}: ${res.statusText})`);
+      }
+  
+      return json;
+    } catch (error: any) {
+      logger.error("Duplicate subscribers request failed", { error: error.message, url });
+      throw error;
+    }
+  }

@@ -74,13 +74,13 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
         }
 
         // Email validation for username
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.smtp_username)) {
-            notify.warning("Validation Error", { description: "Username must be a valid email address." });
-            setIsLoading(false);
-            return;
-        }
-
+        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // if (!emailRegex.test(formData.smtp_username)) {
+        //     notify.warning("Validation Error", { description: "Username must be a valid email address." });
+        //     setIsLoading(false);
+        //     return;
+        // }
+        console.log("masuk 1")
         try {
             await createMailServerMutation.mutateAsync({
                 name: formData.name,
@@ -92,13 +92,18 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 is_default: formData.is_default,
             });
 
+            console.log("masuk 2")
             notify.success("Mail Server Added", { description: "New mail server has been added successfully." });
             onSuccess();
             onClose();
         } catch (error: any) {
+            console.log("masuk 3")
             const message = handleError(error, "Add Mail Server");
+            console.log("error", error)
+            console.log("message", message)
             notify.error("Error", { description: message });
         } finally {
+            console.log("masuk 4")
             setIsLoading(false);
         }
     };
@@ -203,7 +208,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Username (Email) <span className="text-red-500">*</span></label>
+                                <label className="text-sm font-medium text-gray-700">Username<span className="text-red-500">*</span></label>
                                 <AppInput
                                     isBgWhite
                                     value={formData.smtp_username}

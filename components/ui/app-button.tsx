@@ -24,13 +24,18 @@ const COLORS = {
     hover: "#525B6B",
     light: "#F9FAFB",
   },
+  white: {
+    main: "#FFFFFF",
+    hover: "#F9FAFB",
+    light: "#F9FAFB",
+  }
 };
 
 // --- Types ---
 export interface AppButtonProps extends Omit<ButtonProps, "variant" | "color"> {
   children: React.ReactNode;
   variantStyle?: "primary" | "outline" | "danger" | "text" | "soft";
-  color?: "primary" | "danger" | "gray";
+  color?: "primary" | "danger" | "gray" | "white";
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
   disabled?: boolean;
@@ -67,6 +72,11 @@ const StyledButton = styled(Button, {
     : isGray
       ? COLORS.gray.light
       : COLORS.danger.light;
+  const whiteColor = isPrimary
+    ? COLORS.white.main
+    : isGray
+      ? COLORS.white.hover
+      : COLORS.white.light;
 
   // Common styles
   const contentStyle = {

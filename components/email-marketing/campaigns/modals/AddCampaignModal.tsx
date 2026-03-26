@@ -70,8 +70,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
 
   // Debug log to see what we're getting
-  console.log('Subscribers data:', subscribersData);
-  console.log('Subscribers array:', subscribers);
+  // console.log('Subscribers data:', subscribersData);
+  // console.log('Subscribers array:', subscribers);
 
   const handleClose = () => {
     setSubject('');

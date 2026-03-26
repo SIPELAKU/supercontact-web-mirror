@@ -5,7 +5,7 @@ import { Contact } from "@/lib/models/types";
 import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2 } from "lucide-react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider } from "@mui/material";
@@ -24,7 +24,9 @@ interface ContactTableProps {
   onDelete: (item: Contact) => void;
   onDetail: (item: Contact) => void;
   onBulkDelete?: (contacts: Contact[], clearSelection: () => void) => void;
+  onDuplicate?: (contacts: Contact[], clearSelection?: () => void) => void;
   onDeleteAll?: () => void;
+  isDuplicating?: boolean;
 
   onOpenAdd: () => void;
   onOpenImport: () => void;
@@ -42,9 +44,11 @@ export const ContactTable = ({
   onDelete,
   onDetail,
   onBulkDelete,
+  onDuplicate,
   onDeleteAll,
   onOpenAdd,
   onOpenImport,
+  isDuplicating,
 }: ContactTableProps) => {
   const [previewContact, setPreviewContact] = useState<Contact | null>(null);
 
@@ -105,6 +109,9 @@ export const ContactTable = ({
               <EditButton onClick={() => onEdit(row.original)} />
             </Box>
             <Box onClick={(e) => e.stopPropagation()}>
+              <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
+            </Box>
+            <Box onClick={(e) => e.stopPropagation()}>
               <DeleteButton onClick={() => onDelete(row.original)} />
             </Box>
           </div>
@@ -151,6 +158,13 @@ export const ContactTable = ({
         )}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <div className="flex gap-2 items-center">
+            <AppButton
+              variantStyle="primary"
+              disabled={isDuplicating}
+              onClick={() => onDuplicate?.(selectedRows, clearSelection)}
+            >
+              {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
+            </AppButton>
             <AppButton
               variantStyle="danger"
               startIcon={<Trash2 size={16} />}

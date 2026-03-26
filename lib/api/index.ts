@@ -20,7 +20,7 @@ export {
 
 // Contacts API
 export {
-    deleteContact, fetchContacts, deleteAllContacts,
+    fetchContacts, deleteMultipleContacts, deleteContact, deleteAllContacts, duplicateContacts,
     type Contact,
     type ContactResponse
 } from './contacts';
@@ -39,14 +39,14 @@ export {
 
 // Email Marketing API
 export {
-    createCampaign, createMailingList, createSubscriber, deleteCampaign, deleteMailingList,
+    createCampaign, createMailingList, createSubscriber, deleteCampaign, duplicateCampaigns, deleteMailingList,
     deleteMailingListSubscriber, bulkDeleteMailingListSubscribers, deleteAllMailingListSubscribers, deleteSubscriber, bulkDeleteSubscribers, deleteAllSubscribers, fetchCampaignDetail,
     // Campaigns
     fetchCampaigns, fetchMailingListDetail,
     // Mailing Lists
     fetchMailingLists, fetchMailingListCampaigns,
     // Subscribers
-    fetchSubscribers, updateCampaign, updateMailingList, updateSubscriber,
+    fetchSubscribers, updateCampaign, duplicateSubscribers, updateMailingList, updateSubscriber,
     type UpdateSubscriberData
 } from './email-marketing';
 

@@ -157,3 +157,33 @@ export async function deleteAllContacts(token: string): Promise<any> {
   }
   return json;
 }
+
+export async function duplicateContacts(token: string, contactIds: string[]): Promise<any> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts/duplicate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ contact_ids: contactIds }),
+  });
+
+  const json = await res.json();
+  console.log("Duplicate contacts API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to duplicate contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
+  return json;
+}

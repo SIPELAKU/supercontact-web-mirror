@@ -39,7 +39,7 @@ export {
 
 // Email Marketing API
 export {
-    createCampaign, createMailingList, createSubscriber, deleteCampaign, deleteMailingList,
+    createCampaign, createMailingList, createSubscriber, deleteCampaign, duplicateCampaigns, deleteMailingList,
     deleteMailingListSubscriber, bulkDeleteMailingListSubscribers, deleteAllMailingListSubscribers, deleteSubscriber, bulkDeleteSubscribers, deleteAllSubscribers, fetchCampaignDetail,
     // Campaigns
     fetchCampaigns, fetchMailingListDetail,

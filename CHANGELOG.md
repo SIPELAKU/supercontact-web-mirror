@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-03-26
+
+### ✨ Added
+- **Campaign Duplication**: Implementasi fitur cloning campaign (single & bulk) dengan suffix `(duplicate)` dan status default `draft`. API: `POST /api/v1/campaigns/duplicate`.
+- **Subscriber Duplication**: Implementasi fitur cloning subscriber (single & bulk) berdasarkan `contact_ids`. API: `POST /api/v1/subscribers/duplicate`.
+- **Contact Duplication**: Implementasi fitur cloning global contact (single & bulk) dengan `contact_ids`. Email & phone number dikosongkan pada hasil clone untuk menghindari unique constraint conflicts. API: `POST /api/v1/contacts/duplicate`.
+- **DuplicateButton Component**: Komponen reusable icon-button untuk aksi duplikasi di tabel.
+- **AppButton - White Color**: Menambahkan varian warna `white` pada komponen `AppButton`.
+
+### 🛠️ Refactor & Enhancements
+- **BulkActionsBar Styling**: Memperbarui warna teks dan icon pada `BulkActionsBar` agar lebih kontras menggunakan `primary.contrastText`.
+- **Duplicate Bulk Action**: Menambahkan tombol duplikasi pada toolbar aksi massal di `CampaignsTable`, `SubscribersTable`, dan `ContactTable`.
+
+### 🐛 Fixed
+- **API Error Handling**: Memperbarui parsing error pada API client agar dapat menampilkan detail validasi dari server (e.g. `smtp_username` invalid) alih-alih hanya pesan generic "Invalid request data".
+- **SubscribersTable Bulk Variant**: Mengubah variant tombol bulk duplicate dari `outline` ke `primary` dan bulk delete ke `danger` untuk konsistensi UI.
+
+### 📁 Created Files
+- `lib/api/email-marketing/subscribers.ts` (Modified with `duplicateSubscribers`)
+- `lib/api/contacts.ts` (Modified with `duplicateContacts`)
+
+### 📁 Modified Files
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/api/mail-servers.ts`
+- `lib/api/index.ts`
+- `lib/hooks/useCampaigns.ts`
+- `lib/hooks/useSubscribers.ts`
+- `lib/hooks/useContacts.ts`
+- `components/email-marketing/campaigns/CampaignsClient.tsx`
+- `components/email-marketing/campaigns/CampaignsTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/ui/app-action-buttons-table.tsx`
+- `components/ui/app-button.tsx`
+- `components/ui/super-table/components/BulkActionsBar.tsx`
+
 ## [1.11.2] - 2026-03-18
 
 ### ✨ Added

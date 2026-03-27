@@ -73,13 +73,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
             return;
         }
 
-        // Email validation for username
-        // const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        // if (!emailRegex.test(formData.smtp_username)) {
-        //     notify.warning("Validation Error", { description: "Username must be a valid email address." });
-        //     setIsLoading(false);
-        //     return;
-        // }
+
         try {
             await createMailServerMutation.mutateAsync({
                 name: formData.name,

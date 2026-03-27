@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-03-27
+
+### 🐛 Fixed
+- **Mail Server Validation**: Menghapus validasi email pada username field di Add/Edit Mail Server modal. Server akan melakukan validasi email saat testing koneksi.
+
 ## [1.12.0] - 2026-03-26
 
 ### ✨ Added

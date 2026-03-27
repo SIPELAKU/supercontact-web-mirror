@@ -76,13 +76,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
             return;
         }
 
-        // Email validation for username
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.smtp_username || "")) {
-            notify.warning("Validation Error", { description: "Username must be a valid email address." });
-            setIsLoading(false);
-            return;
-        }
+
 
         try {
             // Prepare payload
@@ -216,7 +210,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Username (Email) <span className="text-red-500">*</span></label>
+                                <label className="text-sm font-medium text-gray-700">Username <span className="text-red-500">*</span></label>
                                 <AppInput
                                     isBgWhite
                                     value={formData.smtp_username}

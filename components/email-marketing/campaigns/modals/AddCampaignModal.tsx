@@ -123,7 +123,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     }
 
     if (action === 'send') {
-      if (!selectedMailSender) {
+      if (selectedSmtp === 'brevo' && !selectedMailSender) {
         setError(CAMPAIGN_ERROR_MESSAGES.SENDER_REQUIRED);
         return;
       }

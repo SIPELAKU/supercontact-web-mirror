@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Home,
   Mail,
+  MessageCircle,
   Server,
   User,
   Users,
@@ -129,6 +130,16 @@ const menuData: MenuSection[] = [
         name: "Contact",
         icon: Contact,
         path: "/contact",
+      },
+      {
+        name: "Whatsapp Marketing",
+        icon: MessageCircle,
+        children: [
+          { name: "Recipients", path: "/whatsapp-marketing/recipients" },
+          { name: "Template Broadcasting", path: "/whatsapp-marketing/template-broadcasting" },
+          { name: "Campaign", path: "/whatsapp-marketing/campaigns" },
+          { name: "Whatsapp List", path: "/whatsapp-marketing/whatsapp-list" },
+        ],
       },
       {
         name: "Email Marketing",

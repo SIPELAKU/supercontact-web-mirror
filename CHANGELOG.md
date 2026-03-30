@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-03-30
+
+### ✨ Added
+- **SMTP Selection in Campaigns**: Menambahkan dropdown pemilihan SMTP (Brevo vs Custom Mail Server) pada modal Add/Edit Campaign.
+- **SMTP Tracking Warning**: Menambahkan alert informatif saat menggunakan SMTP eksternal bahwa fitur tracking (delivery, opens, clicks, bounces) tidak tersedia.
+- **Improved SMTP Labels**: Format label SMTP server kini menampilkan `Name (From Email)` untuk kejelasan dan kemudahan identifikasi.
+- **Recipient Status in Contacts**: Menambahkan field `is_recipient` pada model `Contact` dan menampilkan status "Recipient" berdampingan dengan "Subscribed" menggunakan Chip pada preview tabel Contact.
+
+### 🛠️ Refactor & Enhancements
+- **AppSelect Disabled Styling**: Memperbarui styling `AppSelect` saat dalam keadaan `disabled` (background abu-abu, menonaktifkan hover border) agar representasi visual lebih akurat.
+- **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
+- **Contact Property Renaming**: Mengubah property `is_subscribed` menjadi `is_subscriber` pada model `Contact` untuk konsistensi penamaan dengan entitas subscriber.
+
+### 📁 Modified Files
+- `lib/types/email-marketing.ts`
+- `lib/models/types.ts`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/ui/app-select.tsx`
+
 ## [1.13.0] - 2026-03-30
 
 ### ✨ Added

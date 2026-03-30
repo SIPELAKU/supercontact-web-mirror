@@ -142,6 +142,7 @@ export interface MailServer {
   created_at?: string;
   updated_at?: string;
   smtp_password?: string;
+  from_email?: string;
 }
 
 export type MailServerResponse = {

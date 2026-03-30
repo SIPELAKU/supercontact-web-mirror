@@ -38,6 +38,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
         attachment_limit_mb: 0,
         status: "Active",
         is_default: false,
+        from_email: "",
     });
 
     const [authMethod, setAuthMethod] = useState("username");
@@ -54,6 +55,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                 attachment_limit_mb: mailServer.attachment_limit_mb,
                 status: mailServer.status,
                 is_default: mailServer.is_default,
+                from_email: mailServer.from_email || "",
             });
             setAuthMethod("username");
         }
@@ -70,8 +72,14 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
         setIsLoading(true);
 
         // Validation logic
-        if (!formData.name || !formData.smtp_host || !formData.smtp_port || !formData.smtp_username || !formData.smtp_encryption) {
+        if (!formData.name || !formData.smtp_host || !formData.smtp_port || !formData.smtp_username || !formData.smtp_encryption || !formData.from_email) {
             notify.warning("Validation Error", { description: "Please fill in all required fields." });
+            setIsLoading(false);
+            return;
+        }
+
+        if (!formData.from_email.includes("@")) {
+            notify.warning("Validation Error", { description: "Please enter a valid sender email address." });
             setIsLoading(false);
             return;
         }
@@ -89,6 +97,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                 attachment_limit_mb: Number(formData.attachment_limit_mb),
                 is_default: formData.is_default,
                 status: formData.status,
+                from_email: formData.from_email,
             };
 
             // Only include password if it's not empty
@@ -237,6 +246,18 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                                 </div>
                                 <p className="text-xs text-gray-500">Only fill this if you want to change the password.</p>
                             </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Sender Email <span className="text-red-500">*</span></label>
+                            <AppInput
+                                fullWidth
+                                isBgWhite
+                                value={formData.from_email}
+                                onChange={(e) => handleChange("from_email", e.target.value)}
+                                placeholder="Example: noreply@yourdomain.com"
+                            />
+                            <p className="text-xs text-gray-500">The email address that will appear in the 'From' field of sent messages.</p>
                         </div>
                     </div>
                 </div>

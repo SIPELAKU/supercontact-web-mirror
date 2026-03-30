@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-03-30
+
+### ✨ Added
+- **Mail Server Sender Email**: Menambahkan field `from_email` pada konfigurasi Mail Server (Add/Edit Modal). Ini memisahkan username SMTP dengan alamat email pengirim yang muncul di pesan.
+- **Email Validation**: Menambahkan validasi pada field `from_email` untuk memastikan alamat email mengandung karakter `@`.
+
+### 📁 Modified Files
+- `lib/models/types.ts`
+- `components/admin/mail-servers/AddMailServerModal.tsx`
+- `components/admin/mail-servers/EditMailServerModal.tsx`
+
 ## [1.12.1] - 2026-03-27
 
 ### 🐛 Fixed

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.2] - 2026-03-31
+
+### 🛠️ Refactor & Enhancements
+- **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
+
+### 📁 Modified Files
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+
 ## [1.13.1] - 2026-03-30
 
 ### ✨ Added

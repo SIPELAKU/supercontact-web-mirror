@@ -8,7 +8,7 @@ import { contactColumns } from "./columns";
 import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2 } from "lucide-react";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider } from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 
 interface ContactTableProps {
   data: Contact[];
@@ -296,15 +296,26 @@ export const ContactTable = ({
                 )}
               </div>
 
-              {/* Subscription Status */}
-              <div className="mt-4 flex items-center gap-2">
-                <Chip
-                  label={previewContact.is_subscribed ? "Subscribed" : "Not Subscribed"}
-                  size="small"
-                  color={previewContact.is_subscribed ? "success" : "default"}
-                  sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                />
-              </div>
+              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                {/* Subscription Status */}
+                <div className="flex items-center gap-2">
+                  <Chip
+                    label={previewContact.is_subscriber ? "Subscribed" : "Not Subscribed"}
+                    size="small"
+                    color={previewContact.is_subscriber ? "success" : "default"}
+                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                  />
+                </div>
+                {/* Recipient Status */}
+                <div className="flex items-center gap-2">
+                  <Chip
+                    label={previewContact.is_recipient ? "Recipient" : "Not Recipient"}
+                    size="small"
+                    color={previewContact.is_recipient ? "success" : "default"}
+                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                  />
+                </div>
+              </Stack>
 
               {/* Custom Fields */}
               {previewContact.custom_fields && Object.keys(previewContact.custom_fields).length > 0 && (

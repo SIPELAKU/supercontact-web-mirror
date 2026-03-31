@@ -120,9 +120,9 @@ export default function RecipientsClient() {
     }
   };
 
-  const handleDuplicate = async (ids: string[]) => {
+  const handleDuplicate = async (ids: string[], target: string) => {
     try {
-      await duplicateMutation.mutateAsync(ids);
+      await duplicateMutation.mutateAsync({ ids, target });
       notify.success(`${ids.length} recipient(s) duplicated successfully.`);
       refetch();
     } catch (err: any) {

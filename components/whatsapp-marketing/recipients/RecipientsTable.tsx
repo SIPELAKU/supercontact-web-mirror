@@ -19,7 +19,7 @@ interface RecipientsTableProps {
   onEdit: (recipient: WaRecipient) => void;
   onDeleteRequest: (ids: string[]) => void;
   onDeleteAll?: () => void;
-  onDuplicate?: (ids: string[]) => void;
+  onDuplicate?: (ids: string[], target: string) => void;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   isDuplicating?: boolean;
 }
@@ -136,7 +136,7 @@ const RecipientsTable = ({
             disabled={isDuplicating}
             onClick={() => {
               const ids = (selectedRows as WaRecipient[]).map((r) => r.id);
-              if (onDuplicate) onDuplicate(ids);
+              if (onDuplicate) onDuplicate(ids, 'recipient');
               clearSelection();
             }}
           >
@@ -167,7 +167,7 @@ const RecipientsTable = ({
       renderRowActions={({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <EditButton onClick={() => onEdit(row.original)} />
-          <DuplicateButton onClick={() => onDuplicate && onDuplicate([row.original.id])} />
+          <DuplicateButton onClick={() => onDuplicate && onDuplicate([row.original.id], 'recipient')} />
           <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
         </Box>
       )}

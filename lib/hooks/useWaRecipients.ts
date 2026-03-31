@@ -147,7 +147,8 @@ async function bulkDeleteRecipients(
 
 async function duplicateRecipients(
   token: string,
-  ids: string[]
+  ids: string[],
+  target: string
 ): Promise<{ success: boolean }> {
   const res = await fetchWithTimeout(
     `${process.env.NEXT_PUBLIC_API_URL}/recipients/duplicate`,
@@ -157,7 +158,7 @@ async function duplicateRecipients(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ recipient_ids: ids }),
+      body: JSON.stringify({ target, recipient_ids: ids }),
     }
   );
 
@@ -269,11 +270,11 @@ export function useBulkDeleteWaRecipients() {
 export function useDuplicateWaRecipients() {
   const queryClient = useQueryClient();
 
-  return useMutation<{ success: boolean }, Error, string[]>({
-    mutationFn: (ids: string[]) => {
+  return useMutation<{ success: boolean }, Error, { ids: string[]; target: string }>({
+    mutationFn: ({ ids, target }) => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return duplicateRecipients(token, ids);
+      return duplicateRecipients(token, ids, target);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });

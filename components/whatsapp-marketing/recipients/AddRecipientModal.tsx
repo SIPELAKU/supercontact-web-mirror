@@ -8,7 +8,7 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useCreateWaRecipient, useUpdateWaRecipient } from "@/lib/hooks/useWaRecipients";
-import type { WaRecipient, WaRecipientType } from "@/lib/types/whatsapp-marketing";
+import type { CreateWaRecipientData, WaRecipient, WaRecipientType } from "@/lib/types/whatsapp-marketing";
 
 // ---------------------------------------------------------------------------
 // Local helpers
@@ -101,12 +101,12 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
       setErrors({});
       if (initialData) {
         setForm({
-          name:         initialData.name         ?? "",
-          email:        initialData.email        ?? "",
+          name: initialData.name ?? "",
+          email: initialData.email ?? "",
           phone_number: initialData.phone_number ?? "",
-          position:     initialData.position     ?? "",
-          company:      initialData.company      ?? "",
-          address:      initialData.address      ?? "",
+          position: initialData.position ?? "",
+          company: initialData.company ?? "",
+          address: initialData.address ?? "",
         });
       } else {
         setForm(EMPTY_FORM);
@@ -161,22 +161,34 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
 
     // Build payload — omit empty strings (backend normalises to null)
     const fields = {
-      ...(form.name.trim()         && { name:         form.name.trim() }),
-      ...(form.email.trim()        && { email:        form.email.trim() }),
+      ...(form.name.trim() && { name: form.name.trim() }),
+      ...(form.email.trim() && { email: form.email.trim() }),
       ...(form.phone_number.trim() && { phone_number: form.phone_number.trim() }),
-      ...(form.position.trim()     && { position:     form.position.trim() }),
-      ...(form.company.trim()      && { company:      form.company.trim() }),
-      ...(form.address.trim()      && { address:      form.address.trim() }),
+      ...(form.position.trim() && { position: form.position.trim() }),
+      ...(form.company.trim() && { company: form.company.trim() }),
+      ...(form.address.trim() && { address: form.address.trim() }),
+    };
+
+    const payload: CreateWaRecipientData = {
+      target: "recipient",
+      type_request: "manual",
+      new_contact: {
+        ...fields,
+        recipient_type: recipientType,
+      },
     };
 
     try {
       if (isEdit && initialData) {
-        await updateMutation.mutateAsync({ id: initialData.id, data: { recipient_type: recipientType, ...fields } });
+        await updateMutation.mutateAsync({
+          id: initialData.id,
+          data: payload,
+        });
         notify.success("Recipient updated!", {
           description: "Recipient has been updated successfully",
         });
       } else {
-        await createMutation.mutateAsync({ recipient_type: recipientType, ...fields });
+        await createMutation.mutateAsync(payload);
         notify.success("Recipient added!", {
           description: "Recipient has been added successfully",
         });

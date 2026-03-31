@@ -44,14 +44,74 @@ export interface WaRecipientsResponse {
 }
 
 export interface CreateWaRecipientData {
-  name?: string;
-  email?: string;
-  phone_number?: string;
-  position?: string;
-  company?: string;
-  address?: string;
-  recipient_type: WaRecipientType;
-  custom_fields?: Record<string, unknown>;
+  target: 'recipient';
+  type_request: 'manual';
+  new_contact: {
+    name?: string;
+    email?: string;
+    phone_number?: string;
+    position?: string;
+    company?: string;
+    address?: string;
+    recipient_type: WaRecipientType;
+  };
 }
 
-export type UpdateWaRecipientData = Partial<CreateWaRecipientData>;
+export type UpdateWaRecipientData = CreateWaRecipientData;
+
+export interface GroupBroadcast {
+  id: string;
+  name: string;
+  recipient_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupBroadcastsParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface GroupBroadcastsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    group_broadcasts: GroupBroadcast[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+export interface BulkCreateWaRecipientData {
+  target: 'recipient' | 'group_broadcast';
+  new_contacts: Array<{
+    name: string;
+    email?: string;
+    phone_number?: string;
+    position?: string;
+    company?: string;
+    address?: string;
+    recipient_type: WaRecipientType;
+    custom_fields?: Record<string, unknown>;
+    [key: string]: any;
+  }>;
+  group_broadcast_ids?: string[];
+}
+
+export interface BulkCreateWaRecipientResponse {
+  success: boolean;
+  data?: {
+    recipient_count: number;
+    recipients: WaRecipient[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}

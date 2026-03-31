@@ -25,6 +25,7 @@ import {
 } from '@/lib/hooks/useWaRecipients';
 import RecipientsTable from './RecipientsTable';
 import AddRecipientModal from './AddRecipientModal';
+import ImportWaRecipientModal from './ImportWaRecipientModal';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
 
 export default function RecipientsClient() {
@@ -37,6 +38,7 @@ export default function RecipientsClient() {
   // Modal / confirm state
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<WaRecipient | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
@@ -71,6 +73,7 @@ export default function RecipientsClient() {
   const handleCloseModals = () => {
     setAddModalOpen(false);
     setEditModalOpen(false);
+    setImportModalOpen(false);
     setSelectedRecipient(null);
   };
   const handleSuccess = () => {
@@ -157,6 +160,7 @@ export default function RecipientsClient() {
         isLoading={isLoading}
         totalCount={totalCount}
         onAdd={handleOpenAddModal}
+        onImport={() => setImportModalOpen(true)}
         onEdit={handleOpenEditModal}
         onDeleteRequest={handleDeleteRequest}
         onDeleteAll={() => setConfirmAllOpen(true)}
@@ -176,6 +180,13 @@ export default function RecipientsClient() {
         open={isEditModalOpen}
         recipientType="whatsapp"
         initialData={selectedRecipient ?? undefined}
+        onClose={handleCloseModals}
+        onSuccess={handleSuccess}
+      />
+
+      <ImportWaRecipientModal
+        open={isImportModalOpen}
+        recipientType="whatsapp"
         onClose={handleCloseModals}
         onSuccess={handleSuccess}
       />

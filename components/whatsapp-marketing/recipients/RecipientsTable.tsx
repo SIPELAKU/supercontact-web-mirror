@@ -1,21 +1,23 @@
 // components/whatsapp-marketing/recipients/RecipientsTable.tsx
 "use client";
 
-import { useMemo } from 'react';
-import { Box, Stack } from '@mui/material';
-import { Plus, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Box, Stack, IconButton, Tooltip } from '@mui/material';
+import { Plus, Trash2, Upload, Eye } from 'lucide-react';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
 import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
+import { WaRecipientPreviewPopup } from './WaRecipientPreviewPopup';
 
 interface RecipientsTableProps {
   recipients: WaRecipient[];
   isLoading: boolean;
   totalCount: number;
   onAdd: () => void;
+  onImport: () => void;
   onEdit: (recipient: WaRecipient) => void;
   onDeleteRequest: (ids: string[]) => void;
   onDeleteAll?: () => void;
@@ -29,6 +31,7 @@ const RecipientsTable = ({
   isLoading,
   totalCount,
   onAdd,
+  onImport,
   onEdit,
   onDeleteRequest,
   onDeleteAll,
@@ -36,6 +39,8 @@ const RecipientsTable = ({
   onStateChange,
   isDuplicating,
 }: RecipientsTableProps) => {
+  const [previewRecipient, setPreviewRecipient] = useState<WaRecipient | null>(null);
+
   const columns = useMemo<MRT_ColumnDef<WaRecipient>[]>(
     () => [
       {
@@ -69,7 +74,8 @@ const RecipientsTable = ({
   );
 
   return (
-    <SuperTable<WaRecipient>
+    <>
+      <SuperTable<WaRecipient>
       tableId="wa-recipients-table"
       data={recipients}
       columns={columns}
@@ -109,6 +115,14 @@ const RecipientsTable = ({
           {/* Desktop */}
           <div className="hidden md:flex gap-2">
             <AppButton
+              variantStyle="outline"
+              onClick={onImport}
+              startIcon={<Upload size={16} />}
+              color="primary"
+            >
+              Import
+            </AppButton>
+            <AppButton
               variantStyle="primary"
               onClick={onAdd}
               startIcon={<Plus size={16} />}
@@ -119,6 +133,13 @@ const RecipientsTable = ({
 
           {/* Mobile */}
           <div className="flex md:hidden gap-2">
+            <button
+              onClick={onImport}
+              className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+              title="Import Recipients"
+            >
+              <Upload size={16} />
+            </button>
             <button
               onClick={onAdd}
               className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
@@ -166,12 +187,30 @@ const RecipientsTable = ({
       )}
       renderRowActions={({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Tooltip title="Preview">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPreviewRecipient(row.original);
+              }}
+              sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+            >
+              <Eye size={18} />
+            </IconButton>
+          </Tooltip>
           <EditButton onClick={() => onEdit(row.original)} />
           <DuplicateButton onClick={() => onDuplicate && onDuplicate([row.original.id], 'recipient')} />
           <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
         </Box>
       )}
     />
+    
+    <WaRecipientPreviewPopup 
+      recipient={previewRecipient} 
+      onClose={() => setPreviewRecipient(null)} 
+    />
+  </>
   );
 };
 

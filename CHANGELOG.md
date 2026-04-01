@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-04-01
+
+### ✨ Added
+- **WhatsApp Group Broadcast Detail**: Implemented a comprehensive detail page for WhatsApp groups with dual-tab navigation.
+- **Recipient Management**: Added a dedicated "Recipients" tab with server-side pagination, search, and "Import/Add" functionality directly within the group context.
+- **Campaign Statistics**: Added a "Broadcast (campaign) sent" tab listing all sent broadcasts with aggregated delivery stats (Sent, Delivered, Read, Failed).
+- **Campaign Detail Modal**: Created `ViewBroadcastCampaignStatsModal` to visualize detailed WhatsApp campaign metrics, account info, and template variables.
+- **Bulk Operations**: Implemented bulk deletion and bulk duplication for WhatsApp Broadcast Groups with integrated selection toolbar.
+- **Contextual Imports**: Enhanced `AddRecipientModal` and `ImportWaRecipientModal` to support `target: 'broadcast_group'`, ensuring imported contacts are automatically linked to the active group.
+
+### 🛠️ Refactor & Enhancements
+- **Hook Optimization**: Updated `useGroupBroadcasts` for improved cache invalidation and state synchronization across the broadcasting module.
+- **API Harmonization**: Updated delete API integration to follow the bulk deletion pattern (IDs in request body) across the broadcasting module.
+
+### 🐛 Fixed
+- **State Update Warning**: Fixed a React error "Cannot update a component while rendering a different component" in `GroupBroadcastingTable` by wrapping notification logic in `useEffect`.
+
+### 📁 Created Files
+- `components/whatsapp-marketing/group-broadcasting/modals/ViewBroadcastCampaignStatsModal.tsx`
+
+### 📁 Modified Files
+- `lib/types/whatsapp-marketing.ts`
+- `lib/hooks/useGroupBroadcasts.ts`
+- `components/whatsapp-marketing/group-broadcasting/GroupBroadcastingTable.tsx`
+- `components/whatsapp-marketing/group-broadcasting/GroupBroadcastingClient.tsx`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/recipients/ImportWaRecipientModal.tsx`
+- `app/whatsapp-marketing/group-broadcasting/[id]/page.tsx`
+
 ## [1.13.2] - 2026-03-31
 
 ### 🛠️ Refactor & Enhancements

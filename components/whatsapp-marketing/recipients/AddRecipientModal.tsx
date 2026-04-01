@@ -60,6 +60,8 @@ interface AddRecipientModalProps {
   initialData?: WaRecipient;
   onClose: () => void;
   onSuccess: () => void;
+  target?: 'recipient' | 'broadcast_group';
+  broadcastGroupId?: string;
 }
 
 const EMPTY_FORM = {
@@ -77,6 +79,8 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
   initialData,
   onClose,
   onSuccess,
+  target = 'recipient',
+  broadcastGroupId,
 }) => {
   const isEdit = !!initialData;
 
@@ -170,12 +174,13 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
     };
 
     const payload: CreateWaRecipientData = {
-      target: "recipient",
+      target: target,
       type_request: "manual",
       new_contact: {
         ...fields,
         recipient_type: recipientType,
       },
+      ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
     };
 
     try {

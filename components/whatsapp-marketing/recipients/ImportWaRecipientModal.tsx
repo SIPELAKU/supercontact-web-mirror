@@ -16,6 +16,8 @@ interface ImportWaRecipientModalProps {
   recipientType: WaRecipientType;
   onClose: () => void;
   onSuccess: () => void;
+  target?: 'recipient' | 'broadcast_group';
+  broadcastGroupId?: string;
 }
 
 interface RecipientInputData {
@@ -54,6 +56,8 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
   recipientType,
   onClose,
   onSuccess,
+  target = 'recipient',
+  broadcastGroupId,
 }) => {
   const { getToken } = useAuth();
   const bulkCreateMutation = useBulkCreateWaRecipients();
@@ -261,8 +265,9 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
 
     try {
       await bulkCreateMutation.mutateAsync({
-        target: 'recipient',
-        new_contacts: validRecipients
+        target: target,
+        new_contacts: validRecipients,
+        ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
       });
 
       const skipped = previewData.length - validRecipients.length;

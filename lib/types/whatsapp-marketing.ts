@@ -44,9 +44,9 @@ export interface WaRecipientsResponse {
 }
 
 export interface CreateWaRecipientData {
-  target: 'recipient';
-  type_request: 'manual';
-  new_contact: {
+  target: 'recipient' | 'broadcast_group';
+  type_request: 'manual' | 'from_contacts';
+  new_contact?: {
     name?: string;
     email?: string;
     phone_number?: string;
@@ -54,7 +54,10 @@ export interface CreateWaRecipientData {
     company?: string;
     address?: string;
     recipient_type: WaRecipientType;
+    custom_fields?: Record<string, unknown>;
   };
+  contact_ids?: string[];
+  broadcast_group_ids?: string[];
 }
 
 export type UpdateWaRecipientData = CreateWaRecipientData;
@@ -79,7 +82,7 @@ export interface GroupBroadcastsResponse {
     page: number;
     limit: number;
     total_pages: number;
-    group_broadcasts: GroupBroadcast[];
+    broadcast_groups: GroupBroadcast[];
   };
   error?: {
     code: string;
@@ -88,7 +91,7 @@ export interface GroupBroadcastsResponse {
   };
 }
 export interface BulkCreateWaRecipientData {
-  target: 'recipient' | 'group_broadcast';
+  target: 'recipient' | 'broadcast_group';
   new_contacts: Array<{
     name: string;
     email?: string;
@@ -100,7 +103,7 @@ export interface BulkCreateWaRecipientData {
     custom_fields?: Record<string, unknown>;
     [key: string]: any;
   }>;
-  group_broadcast_ids?: string[];
+  broadcast_group_ids?: string[];
 }
 
 export interface BulkCreateWaRecipientResponse {
@@ -108,6 +111,78 @@ export interface BulkCreateWaRecipientResponse {
   data?: {
     recipient_count: number;
     recipients: WaRecipient[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export interface CreateGroupBroadcastData {
+  name: string;
+}
+
+export interface DuplicateGroupBroadcastsData {
+  broadcast_group_ids: string[];
+}
+
+export interface GroupBroadcastDetail {
+  id: string;
+  name: string;
+  recipient_count: number;
+  created_at: string;
+  updated_at: string;
+  recipients: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    recipients: WaRecipient[];
+  };
+}
+
+export interface GroupBroadcastDetailResponse {
+  success: boolean;
+  data: GroupBroadcastDetail;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export interface BroadcastCampaign {
+  id: string;
+  user_fullname: string;
+  name: string;
+  status: string;
+  total_target: number;
+  account_id: string;
+  template_id: string;
+  recipient_source: string;
+  broadcast_group_ids: string[];
+  contact_ids: string[];
+  variables: Record<string, any>;
+  sent_at: string;
+  stats: {
+    sent: number;
+    delivered: number;
+    read: number;
+    failed: number;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupBroadcastCampaignsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    broadcasts: BroadcastCampaign[];
   };
   error?: {
     code: string;

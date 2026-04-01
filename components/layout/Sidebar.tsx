@@ -136,9 +136,9 @@ const menuData: MenuSection[] = [
         icon: MessageCircle,
         children: [
           { name: "Recipients", path: "/whatsapp-marketing/recipients" },
-          { name: "Template Broadcasting", path: "/whatsapp-marketing/template-broadcasting" },
-          { name: "Campaign", path: "/whatsapp-marketing/campaigns" },
-          { name: "Whatsapp List", path: "/whatsapp-marketing/whatsapp-list" },
+          { name: "Broadcast Template", path: "/whatsapp-marketing/template-broadcasting" },
+          { name: "Broadcast Group", path: "/whatsapp-marketing/group-broadcasting" },
+          { name: "Broadcasts", path: "/whatsapp-marketing/broadcasting-wa" },
         ],
       },
       {

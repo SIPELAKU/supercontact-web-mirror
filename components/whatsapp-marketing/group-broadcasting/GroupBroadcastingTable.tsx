@@ -12,7 +12,7 @@ import {
   Typography,
   Checkbox
 } from '@mui/material';
-import { ChevronRight, Plus, Copy } from 'lucide-react';
+import { ChevronRight, Plus, Copy, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { notify } from '@/lib/notifications';
 import { useState, useEffect } from 'react';
@@ -21,10 +21,11 @@ interface GroupBroadcastingTableProps {
   onAdd: () => void;
   onEdit: (broadcast: GroupBroadcast) => void;
   onDeleteRequest: (broadcast: GroupBroadcast) => void;
+  onBulkDeleteRequest: (ids: string[]) => void;
   refreshTrigger: number;
 }
 
-const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest }: GroupBroadcastingTableProps) => {
+const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRequest }: GroupBroadcastingTableProps) => {
   const { data, isLoading, error } = useGroupBroadcasts();
   const duplicateMutation = useDuplicateGroupBroadcasts();
   
@@ -79,16 +80,25 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest }: GroupBroadca
           />
           <Typography variant="h6">Group Broadcasts ({broadcasts.length})</Typography>
           {isSomeSelected && (
-            <AppButton
-              variantStyle="outline"
-              color="primary"
-              startIcon={<Copy className="w-4 h-4" />}
-              onClick={() => handleDuplicate(selectedIds)}
-              disabled={duplicateMutation.isPending}
-              sx={{ ml: 2 }}
-            >
-              Duplicate ({selectedIds.length})
-            </AppButton>
+            <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+              <AppButton
+                variantStyle="outline"
+                color="primary"
+                startIcon={<Copy className="w-4 h-4" />}
+                onClick={() => handleDuplicate(selectedIds)}
+                disabled={duplicateMutation.isPending}
+              >
+                Duplicate ({selectedIds.length})
+              </AppButton>
+              <AppButton
+                variantStyle="danger"
+                color="danger"
+                startIcon={<Trash2 className="w-4 h-4" />}
+                onClick={() => onBulkDeleteRequest(selectedIds)}
+              >
+                Delete ({selectedIds.length})
+              </AppButton>
+            </Box>
           )}
         </Box>
         <AppButton

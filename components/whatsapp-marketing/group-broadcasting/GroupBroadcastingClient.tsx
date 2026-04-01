@@ -20,7 +20,8 @@ export default function GroupBroadcastingClient() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [broadcastToDelete, setBroadcastToDelete] = useState<GroupBroadcast | null>(null);
+  const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
+  const [deleteDescription, setDeleteDescription] = useState('');
 
   const deleteMutation = useDeleteGroupBroadcast();
 
@@ -47,21 +48,28 @@ export default function GroupBroadcastingClient() {
   };
 
   const handleDeleteRequest = (broadcast: GroupBroadcast) => {
-    setBroadcastToDelete(broadcast);
+    setIdsToDelete([broadcast.id]);
+    setDeleteDescription(`Are you sure you want to delete group broadcast "${broadcast.name}"? This action cannot be undone.`);
+    setConfirmOpen(true);
+  };
+
+  const handleBulkDeleteRequest = (ids: string[]) => {
+    setIdsToDelete(ids);
+    setDeleteDescription(`Are you sure you want to delete ${ids.length} selected group broadcast(s)? This action cannot be undone.`);
     setConfirmOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (!broadcastToDelete) return;
+    if (idsToDelete.length === 0) return;
 
     try {
-      await deleteMutation.mutateAsync(broadcastToDelete.id);
-      notify.success(`Broadcast group "${broadcastToDelete.name}" deleted successfully.`);
+      await deleteMutation.mutateAsync({ broadcast_group_ids: idsToDelete });
+      notify.success(`${idsToDelete.length} group broadcast(s) deleted successfully.`);
       setConfirmOpen(false);
-      setBroadcastToDelete(null);
+      setIdsToDelete([]);
       forceRefetch();
     } catch (err: any) {
-      notify.error(err.message || 'Failed to delete broadcast group.');
+      notify.error(err.message || 'Failed to delete broadcast group(s).');
     }
   };
 
@@ -80,6 +88,7 @@ export default function GroupBroadcastingClient() {
           onAdd={handleOpenAddModal}
           onEdit={handleEdit}
           onDeleteRequest={handleDeleteRequest}
+          onBulkDeleteRequest={handleBulkDeleteRequest}
           refreshTrigger={refreshTrigger}
         />
       </Card>
@@ -102,7 +111,7 @@ export default function GroupBroadcastingClient() {
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
-        description={`Are you sure you want to delete group broadcast "${broadcastToDelete?.name}"? This action cannot be undone.`}
+        description={deleteDescription}
         confirmText="Yes, Delete"
         cancelText="Cancel"
         variant="danger"

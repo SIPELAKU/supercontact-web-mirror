@@ -127,6 +127,10 @@ export interface DuplicateGroupBroadcastsData {
   broadcast_group_ids: string[];
 }
 
+export interface DeleteGroupBroadcastsData {
+  broadcast_group_ids: string[];
+}
+
 export interface GroupBroadcastDetail {
   id: string;
   name: string;

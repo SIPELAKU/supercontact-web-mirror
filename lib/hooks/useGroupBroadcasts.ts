@@ -9,6 +9,7 @@ import type {
   GroupBroadcastsResponse,
   GroupBroadcastDetailResponse,
   GroupBroadcastCampaignsResponse,
+  DeleteGroupBroadcastsData,
 } from '@/lib/types/whatsapp-marketing';
 
 async function fetchGroupBroadcasts(
@@ -160,13 +161,15 @@ async function updateGroupBroadcast(
 
 async function deleteGroupBroadcast(
   token: string,
-  id: string
+  data: DeleteGroupBroadcastsData
 ): Promise<{ success: boolean; data: any }> {
-  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/broadcast-groups/${id}`, {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/broadcast-groups`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(data),
   });
 
   const json = await res.json();
@@ -200,10 +203,10 @@ export function useDeleteGroupBroadcast() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => {
+    mutationFn: (data: DeleteGroupBroadcastsData) => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return deleteGroupBroadcast(token, id);
+      return deleteGroupBroadcast(token, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group-broadcasts'] });

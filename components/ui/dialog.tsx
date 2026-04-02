@@ -101,12 +101,13 @@ export function Dialog({
 export function DialogContent({
   className,
   children,
+  ...props
 }: {
   className?: string
   children: React.ReactNode
-}) {
+} & React.ComponentProps<typeof MUIDialogContent>) {
   return (
-    <MUIDialogContent className={cn("max-h-[95vh] bg-white rounded-lg", className)} dividers>
+    <MUIDialogContent className={cn("max-h-[95vh] bg-white rounded-lg", className)} dividers {...props}>
       {children}
     </MUIDialogContent>
   )
@@ -126,22 +127,26 @@ export function DialogTitle({
   className,
   children,
   style,
+  ...props
 }: {
   className?: string
   children: React.ReactNode
   style?: React.CSSProperties
-}) {
+} & React.ComponentProps<typeof MUIDialogTitle>) {
   return (
-    <MUIDialogTitle className={cn("text-xl font-semibold leading-tight p-0 m-0", className)} style={style}>{children}</MUIDialogTitle>
+    <MUIDialogTitle className={cn("text-xl font-semibold leading-tight p-0 m-0", className)} style={style} {...props}>
+      {children}
+    </MUIDialogTitle>
   )
 }
 
 export function DialogFooter({
   className,
   children,
+  ...props
 }: {
   className?: string
   children: React.ReactNode
-}) {
-  return <DialogActions className={cn("flex justify-end gap-3 pt-4", className)}>{children}</DialogActions>
+} & React.ComponentProps<typeof DialogActions>) {
+  return <DialogActions className={cn("flex justify-end gap-3 pt-4", className)} {...props}>{children}</DialogActions>
 }

@@ -45,6 +45,17 @@ const StyledTextArea = styled(TextField, {
       "&.Mui-error fieldset": {
         borderColor: theme.palette.error.main,
       },
+      
+      "&.Mui-disabled": {
+        backgroundColor: "#F9FAFB",
+        "& fieldset": {
+          borderColor: "rgba(0, 0, 0, 0.05) !important",
+        },
+        "& .MuiInputBase-input": {
+          color: "#4B5563",
+          WebkitTextFillColor: "#4B5563",
+        },
+      },
 
       "&.MuiInputBase-multiline": {
         padding: "12px 14px",

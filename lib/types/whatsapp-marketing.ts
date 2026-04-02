@@ -194,3 +194,80 @@ export interface GroupBroadcastCampaignsResponse {
     details?: Record<string, unknown>;
   };
 }
+
+export interface BroadcastTemplate {
+  id: string;
+  provider_content_sid: string;
+  friendly_name: string;
+  language: string;
+  variables: Record<string, any>;
+  types: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BroadcastTemplatesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface BroadcastTemplatesResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    templates: BroadcastTemplate[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export interface DuplicateBroadcastTemplatesData {
+  template_ids: string[];
+}
+
+export interface BroadcastTemplateDetailResponse {
+  success: boolean;
+  data: BroadcastTemplate;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
+}
+
+export type BroadcastTemplateType =
+  | 'twilio/text'
+  | 'twilio/media'
+  | 'twilio/location'
+  | 'twilio/list-picker'
+  | 'twilio/call-to-action'
+  | 'twilio/quick-reply'
+  | 'twilio/card'
+  | 'twilio/carousel'
+  | 'twilio/catalog'
+  | 'twilio/pay'
+  | 'twilio/flows'
+  | 'whatsapp/card'
+  | 'whatsapp/authentication'
+  | 'whatsapp/flows';
+
+export interface CreateBroadcastTemplateData {
+  friendly_name: string;
+  language: string;
+  variables?: Record<string, string>;
+  types: Partial<Record<BroadcastTemplateType, any>>;
+}
+
+export interface UpdateBroadcastTemplateData {
+  friendly_name?: string;
+  language?: string;
+  variables?: Record<string, string>;
+  types?: Partial<Record<BroadcastTemplateType, any>>;
+}

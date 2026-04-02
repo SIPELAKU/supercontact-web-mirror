@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-04-02
+
+### ✨ Added
+- **Broadcast Template Features**: Implemented core enhancements and visual refinements for the WhatsApp Broadcast Template module.
+- **Inline Variable Samples**: Implemented direct editing of variable sample values (e.g., {{1}}) within the template creation and detail forms.
+- **Character Counters**: Added real-time character count display (e.g., 50/1600) for WhatsApp template body fields in read-only mode.
+
+### 🛠️ Refactor & Enhancements
+- **Read-only Visual Overhaul**: Refined the "Content Configuration" section in template details with externalized labels, light-gray backgrounds, and muted borders for a professional disabled look.
+- **Automatic Name Sanitization**: Updated the template name field to automatically convert spaces to underscores and enforce lowercase alphanumeric characters during input.
+- **Dialog System Update**: Enhanced custom `DialogContent`, `DialogTitle`, and `DialogFooter` wrappers to properly forward the `sx` prop and other standard MUI attributes, resolving persistent TypeScript errors.
+
+### 🐛 Fixed
+- **Responsive Layout Overlap**: Fixed a layout bug in `GeneralInfoDetail` where long SID strings and template names would overlap in multi-column views on smaller screens using `word-break: break-word`.
+
+### 📁 Modified Files
+- `components/ui/dialog.tsx`
+- `components/ui/app-input.tsx`
+- `components/ui/app-textarea.tsx`
+- `components/whatsapp-marketing/templates/create/TemplateFormContent.tsx`
+- `components/whatsapp-marketing/templates/create/CreateTemplateClient.tsx`
+- `components/whatsapp-marketing/templates/create/GeneralInfoCard.tsx`
+- `components/whatsapp-marketing/templates/create/AddVariableSamplesModal.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+- `components/whatsapp-marketing/templates/detail/GeneralInfoDetail.tsx`
+
 ## [1.14.0] - 2026-04-01
 
 ### ✨ Added

@@ -53,14 +53,22 @@ export interface CreateWaRecipientData {
     position?: string;
     company?: string;
     address?: string;
-    recipient_type: WaRecipientType;
     custom_fields?: Record<string, unknown>;
   };
   contact_ids?: string[];
   broadcast_group_ids?: string[];
 }
 
-export type UpdateWaRecipientData = CreateWaRecipientData;
+export interface UpdateWaRecipientData {
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  position?: string;
+  company?: string;
+  address?: string;
+  custom_fields?: Record<string, unknown>;
+}
+
 
 export interface GroupBroadcast {
   id: string;
@@ -99,7 +107,6 @@ export interface BulkCreateWaRecipientData {
     position?: string;
     company?: string;
     address?: string;
-    recipient_type: WaRecipientType;
     custom_fields?: Record<string, unknown>;
     [key: string]: any;
   }>;

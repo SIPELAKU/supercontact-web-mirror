@@ -8,7 +8,8 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useCreateWaRecipient, useUpdateWaRecipient } from "@/lib/hooks/useWaRecipients";
-import type { CreateWaRecipientData, WaRecipient, WaRecipientType } from "@/lib/types/whatsapp-marketing";
+import type { CreateWaRecipientData, UpdateWaRecipientData, WaRecipient, WaRecipientType } from "@/lib/types/whatsapp-marketing";
+
 
 // ---------------------------------------------------------------------------
 // Local helpers
@@ -173,27 +174,28 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
       ...(form.address.trim() && { address: form.address.trim() }),
     };
 
-    const payload: CreateWaRecipientData = {
-      target: target,
-      type_request: "manual",
-      new_contact: {
-        ...fields,
-        recipient_type: recipientType,
-      },
-      ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
-    };
-
     try {
       if (isEdit && initialData) {
+        const updatePayload: UpdateWaRecipientData = {
+          ...fields,
+        };
         await updateMutation.mutateAsync({
           id: initialData.id,
-          data: payload,
+          data: updatePayload,
         });
         notify.success("Recipient updated!", {
           description: "Recipient has been updated successfully",
         });
       } else {
-        await createMutation.mutateAsync(payload);
+        const createPayload: CreateWaRecipientData = {
+          target: target,
+          type_request: "manual",
+          new_contact: {
+            ...fields,
+          },
+          ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
+        };
+        await createMutation.mutateAsync(createPayload);
         notify.success("Recipient added!", {
           description: "Recipient has been added successfully",
         });

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-04-06
+
+### ✨ Added
+- **WhatsApp Marketing Recipients**: Simplified the recipient creation and update payloads by removing the redundant `recipient_type` field and standardizing the data structure for single and bulk operations.
+- **Row-level Navigation**: Enhanced the Broadcast Templates table by enabling direct navigation to the detail page upon clicking a table row, improving the interaction flow.
+
+### 🛠️ Refactor & Enhancements
+- **Template Table Interaction**: Added a visual hover effect (underline) to campaign names and removed the redundant "Edit" button from the action column.
+- **Navigation UX**: Updated the "Back" button in the template detail view to use a text variant with an arrow icon for a cleaner, more consistent interface.
+- **Form Focus Stability**: Fixed a focus loss issue in the template creation form where inputs would unmount on every keystroke by refactoring sub-components to the top level.
+
+### 🐛 Fixed
+- **Product Price Formatting**: Fixed a bug in the product edit modal where backend prices with decimal points (e.g., `10000.00`) were incorrectly formatted as `1.000.000` instead of `10.000`.
+
+### 📁 Modified Files
+- `lib/types/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/recipients/ImportWaRecipientModal.tsx`
+- `components/product/AddProductModal.tsx`
+- `components/whatsapp-marketing/templates/create/TemplateFormContent.tsx`
+- `components/whatsapp-marketing/templates/BroadcastTemplatesTable.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+
 ## [1.15.0] - 2026-04-02
 
 ### ✨ Added

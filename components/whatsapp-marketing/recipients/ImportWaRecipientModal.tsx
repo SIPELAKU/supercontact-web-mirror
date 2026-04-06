@@ -255,7 +255,6 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
       .filter((r) => r.name?.trim() && r.phone_number?.trim())
       .map(r => ({
         ...r,
-        recipient_type: recipientType,
       }));
 
     if (validRecipients.length === 0) {

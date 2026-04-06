@@ -178,7 +178,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         if (!product || product.length === 0) return;
         setFormData({
             productName: product[0]?.product_name ?? "",
-            price: formatPrice(product[0]?.price ?? 0),
+            price: formatPrice(Math.floor(Number(product[0]?.price ?? 0))),
             sku: product[0]?.sku ?? "",
             taxRate: product[0]?.tax_rate ?? '11%',
             description: product[0]?.description ?? "",

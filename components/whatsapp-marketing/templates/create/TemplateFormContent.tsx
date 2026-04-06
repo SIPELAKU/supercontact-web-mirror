@@ -18,6 +18,95 @@ interface TemplateFormContentProps {
   isReadOnly?: boolean;
 }
 
+interface AddVariableButtonProps {
+  onAdd: () => void;
+  isReadOnly?: boolean;
+}
+
+const AddVariableButton = ({ onAdd, isReadOnly }: AddVariableButtonProps) => {
+  if (isReadOnly) return null;
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+      <Stack direction="row" spacing={0.5} alignItems="center">
+        <Typography
+          variant="caption"
+          sx={{
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            color: 'primary.main',
+            '&:hover': { textDecoration: 'underline' }
+          }}
+          onClick={onAdd}
+        >
+          + Add Variable
+        </Typography>
+        <Tooltip
+          arrow
+          title={
+            <Box sx={{ p: 0.5 }}>
+              <Typography variant="caption" display="block" fontWeight="bold">
+                Click here to add content variables to this field.
+              </Typography>
+              <Typography variant="caption" display="block">
+                Variables allow you to personalize messages. With variables, you can customize a URL or input a customer's name at time of send.
+              </Typography>
+            </Box>
+          }
+        >
+          <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+            <Info size={14} color="#6B7280" />
+          </Box>
+        </Tooltip>
+      </Stack>
+    </Box>
+  );
+};
+
+interface RenderVariableSamplesProps {
+  text: string;
+  variables?: Record<string, string>;
+  onVariablesChange?: (variables: Record<string, string>) => void;
+  isReadOnly?: boolean;
+}
+
+const RenderVariableSamples = ({ text, variables, onVariablesChange, isReadOnly }: RenderVariableSamplesProps) => {
+  if (!variables) return null;
+  const matches = (text || '').match(/{{(\d+)}}/g);
+  if (!matches) return null;
+
+  const uniqueVars = Array.from(new Set(matches.map(m => m.replace(/[{}]/g, ''))));
+
+  return (
+    <Stack spacing={2} sx={{ mt: isReadOnly ? 1 : 2, mb: 1 }}>
+      {uniqueVars.map(v => (
+        <Box key={v}>
+          <Typography 
+            variant="caption" 
+            fontWeight={isReadOnly ? "medium" : "bold"} 
+            display="block" 
+            mb={0.5} 
+            color="text.primary"
+          >
+            Sample content for variable &#123;&#123;{v}&#125;&#125;
+          </Typography>
+          <AppInput 
+            isBgWhite
+            placeholder={`Enter sample for {{${v}}}`}
+            value={variables[v] || ''}
+            onChange={(e) => {
+              if (onVariablesChange) {
+                onVariablesChange({ ...variables, [v]: e.target.value });
+              }
+            }}
+            disabled={isReadOnly || !onVariablesChange}
+            size="small"
+          />
+        </Box>
+      ))}
+    </Stack>
+  );
+};
+
 export default function TemplateFormContent({
   type,
   formData,
@@ -41,83 +130,6 @@ export default function TemplateFormContent({
     } else {
       updateField(field, newValue);
     }
-  };
-
-  const AddVariableButton = ({ onAdd }: { onAdd: () => void }) => {
-    if (isReadOnly) return null;
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <Typography
-            variant="caption"
-            sx={{
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              color: 'primary.main',
-              '&:hover': { textDecoration: 'underline' }
-            }}
-            onClick={onAdd}
-          >
-            + Add Variable
-          </Typography>
-          <Tooltip
-            arrow
-            title={
-              <Box sx={{ p: 0.5 }}>
-                <Typography variant="caption" display="block" fontWeight="bold">
-                  Click here to add content variables to this field.
-                </Typography>
-                <Typography variant="caption" display="block">
-                  Variables allow you to personalize messages. With variables, you can customize a URL or input a customer's name at time of send.
-                </Typography>
-              </Box>
-            }
-          >
-            <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
-              <Info size={14} color="#6B7280" />
-            </Box>
-          </Tooltip>
-        </Stack>
-      </Box>
-    );
-  };
-
-  const RenderVariableSamples = ({ text }: { text: string }) => {
-    if (!variables) return null;
-    const matches = (text || '').match(/{{(\d+)}}/g);
-    if (!matches) return null;
-
-    const uniqueVars = Array.from(new Set(matches.map(m => m.replace(/[{}]/g, ''))));
-
-    return (
-      <Stack spacing={2} sx={{ mt: isReadOnly ? 1 : 2, mb: 1 }}>
-        {uniqueVars.map(v => (
-          <Box key={v}>
-            <Typography 
-              variant="caption" 
-              fontWeight={isReadOnly ? "medium" : "bold"} 
-              display="block" 
-              mb={0.5} 
-              color="text.primary"
-            >
-              Sample content for variable &#123;&#123;{v}&#125;&#125;
-            </Typography>
-            <AppInput 
-              isBgWhite
-              placeholder={`Enter sample for {{${v}}}`}
-              value={variables[v] || ''}
-              onChange={(e) => {
-                if (onVariablesChange) {
-                  onVariablesChange({ ...variables, [v]: e.target.value });
-                }
-              }}
-              disabled={isReadOnly || !onVariablesChange}
-              size="small"
-            />
-          </Box>
-        ))}
-      </Stack>
-    );
   };
 
   const renderTextForm = () => (
@@ -151,8 +163,8 @@ export default function TemplateFormContent({
           </Typography>
         )}
       </Box>
-      <AddVariableButton onAdd={() => handleAddVariable(formData.body, 'body')} />
-      <RenderVariableSamples text={formData.body} />
+      <AddVariableButton onAdd={() => handleAddVariable(formData.body, 'body')} isReadOnly={isReadOnly} />
+      <RenderVariableSamples text={formData.body} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
     </Box>
   );
 
@@ -171,8 +183,8 @@ export default function TemplateFormContent({
           onChange={(e) => updateField('media', [e.target.value])}
           disabled={isReadOnly}
         />
-        <AddVariableButton onAdd={() => handleAddVariable(formData.media?.[0], 'media', (val) => updateField('media', [val]))} />
-        <RenderVariableSamples text={formData.media?.[0]} />
+        <AddVariableButton onAdd={() => handleAddVariable(formData.media?.[0], 'media', (val) => updateField('media', [val]))} isReadOnly={isReadOnly} />
+        <RenderVariableSamples text={formData.media?.[0]} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
       </Box>
       <Box sx={{ position: 'relative' }}>
         {isReadOnly && (
@@ -204,8 +216,8 @@ export default function TemplateFormContent({
             </Typography>
           )}
         </Box>
-        <AddVariableButton onAdd={() => handleAddVariable(formData.body, 'body')} />
-        <RenderVariableSamples text={formData.body} />
+        <AddVariableButton onAdd={() => handleAddVariable(formData.body, 'body')} isReadOnly={isReadOnly} />
+        <RenderVariableSamples text={formData.body} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
       </Box>
     </Box>
   );
@@ -307,7 +319,7 @@ export default function TemplateFormContent({
                 const nextNum = matches.length > 0 ? Math.max(...matches.map((m: string) => parseInt(m.replace(/[{}]/g, '')))) + 1 : 1;
                 newActions[index] = { ...newActions[index], title: (action.title || '') + `{{${nextNum}}}` };
                 updateField('actions', newActions);
-              }} />
+              }} isReadOnly={isReadOnly} />
             </Box>
 
             {action.type === 'URL' ? (
@@ -333,7 +345,7 @@ export default function TemplateFormContent({
                   const nextNum = matches.length > 0 ? Math.max(...matches.map((m: string) => parseInt(m.replace(/[{}]/g, '')))) + 1 : 1;
                   newActions[index] = { ...newActions[index], url: (action.url || '') + `{{${nextNum}}}` };
                   updateField('actions', newActions);
-                }} />
+                }} isReadOnly={isReadOnly} />
               </Box>
             ) : (
               <Box>

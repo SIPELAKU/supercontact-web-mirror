@@ -8,9 +8,9 @@ import { Grid, Stack, Box, CircularProgress, Typography } from '@mui/material';
 import PageHeader from '@/components/ui/page-header';
 import { AppButton } from '@/components/ui/app-button';
 import { notify } from '@/lib/notifications';
-import { 
-  useBroadcastTemplateDetail, 
-  useUpdateBroadcastTemplate 
+import {
+  useBroadcastTemplateDetail,
+  useUpdateBroadcastTemplate
 } from '@/lib/hooks/useBroadcastTemplates';
 import GeneralInfoDetail from './GeneralInfoDetail';
 import GeneralInfoCard from '../create/GeneralInfoCard';
@@ -18,6 +18,7 @@ import TemplateFormContent from '../create/TemplateFormContent';
 import MessagePreview from '../create/MessagePreview';
 import AddVariableSamplesModal from '../create/AddVariableSamplesModal';
 import { BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
+import { ArrowLeft } from 'lucide-react';
 
 export default function TemplateDetailClient() {
   const { id } = useParams() as { id: string };
@@ -27,7 +28,7 @@ export default function TemplateDetailClient() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Edit State
   const [editName, setEditName] = useState('');
   const [editLanguage, setEditLanguage] = useState('');
@@ -67,10 +68,10 @@ export default function TemplateDetailClient() {
   const handleSave = async (samples?: Record<string, string>) => {
     try {
       // Capture variables/samples
-      const finalVariables: Record<string, string> = { 
-        ...(samples || editVariables) 
+      const finalVariables: Record<string, string> = {
+        ...(samples || editVariables)
       };
-      
+
       const bodyStr = JSON.stringify(editTypeData);
       const matches = bodyStr.match(/{{(\d+)}}/g);
       if (matches) {
@@ -135,6 +136,7 @@ export default function TemplateDetailClient() {
         ]}
       />
 
+      <AppButton onClick={() => router.back()} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back</AppButton>
       <Grid container spacing={3}>
         <Grid item xs={12} md={7} lg={8}>
           <Stack spacing={3}>
@@ -146,7 +148,7 @@ export default function TemplateDetailClient() {
                   onNameChange={setEditName}
                   onLanguageChange={setEditLanguage}
                 />
-                
+
                 {activeType && (
                   <TemplateFormContent
                     type={activeType}
@@ -179,13 +181,13 @@ export default function TemplateDetailClient() {
                 onEdit={() => setIsEditing(true)}
               />
             )}
-            
+
             {/* Show content detail even in read-only mode if not editing */}
             {!isEditing && activeType && (
               <TemplateFormContent
                 type={activeType}
                 formData={template.types[activeType]}
-                onChange={() => {}} // Read-only
+                onChange={() => { }} // Read-only
                 variables={template.variables}
                 isReadOnly={true}
               />

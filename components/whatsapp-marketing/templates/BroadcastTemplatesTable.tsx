@@ -43,7 +43,7 @@ const BroadcastTemplatesTable = ({
         filterVariant: 'text',
         Cell: ({ row }) => (
           <div className="flex flex-col">
-            <span className="font-semibold text-[#5479EE]">
+            <span className="font-semibold text-[#5479EE] group-hover:underline">
               {row.original.friendly_name}
             </span>
             <span className="text-xs text-gray-500 font-mono">
@@ -150,11 +150,12 @@ const BroadcastTemplatesTable = ({
       )}
       renderRowActions={({ row }) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
-          <EditButton onClick={() => onEdit(row.original)} />
-          <DuplicateButton onClick={() => onDuplicate([row.original.id])} />
-          <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
+          <DuplicateButton onClick={(e) => { e.stopPropagation(); onDuplicate([row.original.id]); }} />
+          <DeleteButton onClick={(e) => { e.stopPropagation(); onDeleteRequest([row.original.id]); }} />
         </Stack>
       )}
+      onRowClick={(row) => onEdit(row)}
+      getRowClassName={() => 'group'}
     />
   );
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import Slider from 'react-slick';
-import { Box, Container, Typography, Card, Rating, Stack } from '@mui/material';
+import { Box, Container, Typography, Card, Rating, useMediaQuery, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 // Import CSS slick-carousel
@@ -12,20 +12,27 @@ const CustomSliderWrapper = styled(Box)(({ theme }) => ({
     padding: "80px 0", // Increased padding to prevent clipping of scaled cards
     "& .slick-list": {
         overflow: "visible",
+        "@media (max-width: 768px)": {
+            overflow: "hidden",
+        }
     },
     // Efek kartu pudar (opacity rendah) dan ukuran lebih kecil saat tidak fokus
     "& .slick-slide": {
         transition: "all 0.5s ease-in-out",
         opacity: 0.2, // Sangat pudar sesuai desain
         transform: "scale(0.85)",
+        "@media (max-width: 768px)": {
+            transform: "scale(1)",
+            opacity: 1,
+        }
     },
     // Efek kartu fokus di tengah (terang dan besar)
     "& .slick-center": {
         opacity: 1,
         transform: "scale(1.1)", // Lebih besar dari kartu lainnya
-        "& .MuiCard-root": {
-            boxShadow: "0px 25px 50px rgba(0,0,0,0.08)",
-            border: "none",
+        "@media (max-width: 768px)": {
+            transform: "scale(1)",
+            opacity: 1,
         }
     },
     // Indicator Lonjong (Custom Dots)
@@ -97,40 +104,24 @@ const data = [
 ];
 
 const TrustedBy = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // < 600px
+    const isTablet = useMediaQuery(theme.breakpoints.down('md')); // < 900px
+
+    // Menentukan slidesToShow secara dinamis berdasarkan ukuran layar
+    const dynamicSlidesToShow = isMobile ? 1 : isTablet ? 2 : 3;
+    const dynamicCenterMode = isMobile ? false : true;
+
     const settings = {
         dots: true,
         infinite: true,
-        centerMode: true,
-        centerPadding: "0px",
-        slidesToShow: 3,
+        centerMode: dynamicCenterMode,
+        centerPadding: isMobile ? "0px" : isTablet ? "30px" : "0px",
+        slidesToShow: dynamicSlidesToShow,
         speed: 600,
         autoplay: true,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    centerMode: true,
-                    centerPadding: "30px",
-                }
-            },
-            {
-                breakpoint: 768,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "40px",
-                }
-            },
-            {
-                breakpoint: 480,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "15px",
-                }
-            }
-        ]
+        slidesToScroll: 1,
+        // Dihapus pengaturan responsive dari react-slick untuk menghindari bug hydration di mobile device
     };
 
     return (
@@ -156,7 +147,7 @@ const TrustedBy = () => {
                 <CustomSliderWrapper>
                     <Slider {...settings}>
                         {data.map((item) => (
-                            <Box key={item.id} sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+                            <Box key={item.id} sx={{ px: { xs: 0, sm: 2, md: 3 } }}>
                                 <Card sx={{
                                     p: { xs: 2.5, md: 4 }, // Reduced padding to fit 294px height
                                     borderRadius: 5,
@@ -222,7 +213,7 @@ const TrustedBy = () => {
                 </CustomSliderWrapper>
 
                 {/* Brand Logos Footer */}
-                <Box
+                {/* <Box
                     sx={{
                         mt: 10,
                         display: { xs: 'grid', sm: 'flex' },
@@ -254,7 +245,7 @@ const TrustedBy = () => {
                             />
                         );
                     })}
-                </Box>
+                </Box> */}
 
             </Container>
         </Box>

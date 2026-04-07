@@ -54,11 +54,46 @@ const CustomSliderWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const data = [
-    { id: 1, company: "Levi's", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Levis-logo-quer.svg/1920px-Levis-logo-quer.svg.png", name: "Tommy Haffman", role: "Founder of Levis", text: "Materio is awesome, and I particularly enjoy knowing that if I get stuck on something." },
-    { id: 2, company: "Airbnb", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_Bélo.svg/2560px-Airbnb_Logo_Bélo.svg.png", name: "Eugenia Moore", role: "CTO of Airbnb", text: "This template is superior in so many ways. The code, the design, the regular updates, the support.. It's the whole package. Excellent Work." },
-    { id: 3, company: "Continental", logo: "/assets/continental.png", name: "Sara Smith", role: "Founder of Continental", text: "All the requirements for developers have been taken into consideration, so I'm able to build any interface I want." },
-    { id: 4, company: "Eckerd", logo: "/assets/eckerd.png", name: "John Doe", role: "CEO of Eckerd", text: "I've never used a template as flexible as Vuexy. It's the best dashboard strategy I've ever seen." },
-    { id: 5, company: "Dribbble", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Dribbble-logo.gif?20141017124952", name: "Alex Jones", role: "Design Lead", text: "Amazing quality and attention to detail. Highly recommended for any professional project." },
+    {
+        id: 1,
+        company: "PT Sigap Prima Astrea (Security Services)",
+        logo: "/assets/logos/sigap-logo-dark.png",
+        name: "A. Riki Adhi",
+        role: "Commercial & Sales Division Head",
+        text: "Mengelola ribuan kontrak jasa keamanan kini jauh lebih terkontrol dan otomatis."
+    },
+    {
+        id: 2,
+        company: "PT Kansai Paint (Consumer & Industrial Paint)",
+        logo: "/assets/logos/kansai-logo-real.png",
+        name: "Indra Laban",
+        role: "Marketing Director",
+        text: "SmartSales memberikan visibilitas penuh untuk memantau performa sales di ribuan toko retail."
+    },
+    {
+        id: 3,
+        company: "PT Sunson Textile Manufacturer Tbk (Textile)",
+        logo: "/assets/logos/sunson-logo-real.png",
+        name: "Muchtar Mansyur",
+        role: "President Director",
+        text: "SmartSales membantu mengelola pipeline pesanan internasional dan lokal dalam satu dasbor."
+    },
+    {
+        id: 4,
+        company: "PT Woori Consulting (Business & Investment Consulting)",
+        logo: "/assets/logos/woori-logo-real-final.png",
+        name: "Lee Han Geun",
+        role: "CEO & President Director",
+        text: "SmartSales memungkinkan kami mencatat histori interaksi klien secara mendetail dan profesional."
+    },
+    {
+        id: 5,
+        company: "PT Megacon Bangun Persada (Concrete/Precast)",
+        logo: "/assets/logos/megacon-logo-real.png",
+        name: "Hendi Setia Bakti",
+        role: "Direktur Utama / Operational Head",
+        text: "Proyek konstruksi memiliki siklus penjualan yang teknis dan panjang."
+    },
 ];
 
 const TrustedBy = () => {

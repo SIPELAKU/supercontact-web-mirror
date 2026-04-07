@@ -111,7 +111,7 @@ const TrustedBy = () => {
                 settings: {
                     slidesToShow: 2,
                     centerMode: true,
-                    centerPadding: "40px",
+                    centerPadding: "30px",
                 }
             },
             {
@@ -119,7 +119,7 @@ const TrustedBy = () => {
                 settings: {
                     slidesToShow: 1,
                     centerMode: true,
-                    centerPadding: "50px",
+                    centerPadding: "40px",
                 }
             },
             {
@@ -127,7 +127,7 @@ const TrustedBy = () => {
                 settings: {
                     slidesToShow: 1,
                     centerMode: true,
-                    centerPadding: "30px",
+                    centerPadding: "15px",
                 }
             }
         ]
@@ -158,12 +158,12 @@ const TrustedBy = () => {
                         {data.map((item) => (
                             <Box key={item.id} sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
                                 <Card sx={{
-                                    p: { xs: 3, md: 4 }, // Reduced padding to fit 294px height
+                                    p: { xs: 2.5, md: 4 }, // Reduced padding to fit 294px height
                                     borderRadius: 5,
                                     textAlign: 'center',
                                     width: { xs: '100%', md: '360px' },
                                     height: { xs: 'auto', md: '294px' },
-                                    minHeight: { xs: 320, md: 'unset' },
+                                    minHeight: { xs: 300, md: 'unset' },
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',

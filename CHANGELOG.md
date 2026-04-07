@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.3] - 2026-04-08
+
+### 🛠️ Refactor & Enhancements
+- **TrustedBy Testimonials**: Updated the "Trusted By" carousel with real-world Indonesian corporate data, featuring executives from various industries.
+- **Content Optimization**: Refined and trimmed testimonial text across all cards to ensure all UI elements (logos, 5-star ratings, names, and roles) remain perfectly visible within fixed-height containers.
+- **Logo Visibility & Fixes**: Implemented dark-mode variants for light background visibility and resolved broken asset issues by sourcing verified image URLs directly from official company websites.
+
+### 📁 Modified Files
+- `components/layout/TrustedBy.tsx`
+
+## [1.15.2] - 2026-04-07
+
+### ✨ Added
+- **Official Company Logos**: Replaced AI-generated placeholders with official logos for PT Sigap, PT Kansai Paint, PT Sunson Textile, PT Woori Consulting, and PT Megacon to ensure brand authenticity.
+- **Logo Asset Management**: Created a dedicated `public/assets/logos/` directory to store high-quality official corporate assets for improved stability and performance.
+
+### 🛠️ Refactor & Enhancements
+- **TrustedBy Testimonials**: Updated the "Trusted By" carousel with real-world Indonesian corporate data, featuring executives from various industries.
+- **Content Optimization**: Refined and trimmed testimonial text across all cards to ensure all UI elements (logos, 5-star ratings, names, and roles) remain perfectly visible within fixed-height containers.
+- **Logo Visibility & Fixes**: Implemented dark-mode variants for light background visibility and resolved broken asset issues by sourcing verified image URLs directly from official company websites.
+
+### 📁 Modified Files
+- `package.json`
+- `components/layout/TrustedBy.tsx`
+
 ## [1.11.2] - 2026-03-18
 
 ### ✨ Added

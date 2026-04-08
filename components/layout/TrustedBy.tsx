@@ -1,6 +1,6 @@
 import React from 'react';
 import Slider from 'react-slick';
-import { Box, Container, Typography, Card, Rating, Stack } from '@mui/material';
+import { Box, Container, Typography, Card, Rating, useMediaQuery, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 // Import CSS slick-carousel
@@ -12,20 +12,27 @@ const CustomSliderWrapper = styled(Box)(({ theme }) => ({
     padding: "80px 0", // Increased padding to prevent clipping of scaled cards
     "& .slick-list": {
         overflow: "visible",
+        "@media (max-width: 768px)": {
+            overflow: "hidden",
+        }
     },
     // Efek kartu pudar (opacity rendah) dan ukuran lebih kecil saat tidak fokus
     "& .slick-slide": {
         transition: "all 0.5s ease-in-out",
         opacity: 0.2, // Sangat pudar sesuai desain
         transform: "scale(0.85)",
+        "@media (max-width: 768px)": {
+            transform: "scale(1)",
+            opacity: 1,
+        }
     },
     // Efek kartu fokus di tengah (terang dan besar)
     "& .slick-center": {
         opacity: 1,
         transform: "scale(1.1)", // Lebih besar dari kartu lainnya
-        "& .MuiCard-root": {
-            boxShadow: "0px 25px 50px rgba(0,0,0,0.08)",
-            border: "none",
+        "@media (max-width: 768px)": {
+            transform: "scale(1)",
+            opacity: 1,
         }
     },
     // Indicator Lonjong (Custom Dots)
@@ -54,48 +61,67 @@ const CustomSliderWrapper = styled(Box)(({ theme }) => ({
 }));
 
 const data = [
-    { id: 1, company: "Levi's", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Levis-logo-quer.svg/1920px-Levis-logo-quer.svg.png", name: "Tommy Haffman", role: "Founder of Levis", text: "Materio is awesome, and I particularly enjoy knowing that if I get stuck on something." },
-    { id: 2, company: "Airbnb", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_Bélo.svg/2560px-Airbnb_Logo_Bélo.svg.png", name: "Eugenia Moore", role: "CTO of Airbnb", text: "This template is superior in so many ways. The code, the design, the regular updates, the support.. It's the whole package. Excellent Work." },
-    { id: 3, company: "Continental", logo: "/assets/continental.png", name: "Sara Smith", role: "Founder of Continental", text: "All the requirements for developers have been taken into consideration, so I'm able to build any interface I want." },
-    { id: 4, company: "Eckerd", logo: "/assets/eckerd.png", name: "John Doe", role: "CEO of Eckerd", text: "I've never used a template as flexible as Vuexy. It's the best dashboard strategy I've ever seen." },
-    { id: 5, company: "Dribbble", logo: "https://upload.wikimedia.org/wikipedia/commons/7/7d/Dribbble-logo.gif?20141017124952", name: "Alex Jones", role: "Design Lead", text: "Amazing quality and attention to detail. Highly recommended for any professional project." },
+    {
+        id: 1,
+        company: "PT Sigap Prima Astrea (Security Services)",
+        logo: "/assets/logos/sigap-logo-dark.png",
+        name: "A. Riki Adhi",
+        role: "Commercial & Sales Division Head",
+        text: "Mengelola ribuan kontrak jasa keamanan kini jauh lebih terkontrol dan otomatis."
+    },
+    {
+        id: 2,
+        company: "PT Kansai Paint (Consumer & Industrial Paint)",
+        logo: "/assets/logos/kansai-logo-real.png",
+        name: "Indra Laban",
+        role: "Marketing Director",
+        text: "SmartSales memberikan visibilitas penuh untuk memantau performa sales di ribuan toko retail."
+    },
+    {
+        id: 3,
+        company: "PT Sunson Textile Manufacturer Tbk (Textile)",
+        logo: "/assets/logos/sunson-logo-real.png",
+        name: "Muchtar Mansyur",
+        role: "President Director",
+        text: "SmartSales membantu mengelola pipeline pesanan internasional dan lokal dalam satu dasbor."
+    },
+    {
+        id: 4,
+        company: "PT Woori Consulting (Business & Investment Consulting)",
+        logo: "/assets/logos/woori-logo-real-final.png",
+        name: "Lee Han Geun",
+        role: "CEO & President Director",
+        text: "SmartSales memungkinkan kami mencatat histori interaksi klien secara mendetail dan profesional."
+    },
+    {
+        id: 5,
+        company: "PT Megacon Bangun Persada (Concrete/Precast)",
+        logo: "/assets/logos/megacon-logo-real.png",
+        name: "Hendi Setia Bakti",
+        role: "Direktur Utama / Operational Head",
+        text: "Proyek konstruksi memiliki siklus penjualan yang teknis dan panjang."
+    },
 ];
 
 const TrustedBy = () => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // < 600px
+    const isTablet = useMediaQuery(theme.breakpoints.down('md')); // < 900px
+
+    // Menentukan slidesToShow secara dinamis berdasarkan ukuran layar
+    const dynamicSlidesToShow = isMobile ? 1 : isTablet ? 2 : 3;
+    const dynamicCenterMode = isMobile ? false : true;
+
     const settings = {
         dots: true,
         infinite: true,
-        centerMode: true,
-        centerPadding: "0px",
-        slidesToShow: 3,
+        centerMode: dynamicCenterMode,
+        centerPadding: isMobile ? "0px" : isTablet ? "30px" : "0px",
+        slidesToShow: dynamicSlidesToShow,
         speed: 600,
         autoplay: true,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    centerMode: true,
-                    centerPadding: "40px",
-                }
-            },
-            {
-                breakpoint: 768,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "50px",
-                }
-            },
-            {
-                breakpoint: 480,
-                settings: {
-                    slidesToShow: 1,
-                    centerMode: true,
-                    centerPadding: "30px",
-                }
-            }
-        ]
+        slidesToScroll: 1,
+        // Dihapus pengaturan responsive dari react-slick untuk menghindari bug hydration di mobile device
     };
 
     return (
@@ -121,14 +147,14 @@ const TrustedBy = () => {
                 <CustomSliderWrapper>
                     <Slider {...settings}>
                         {data.map((item) => (
-                            <Box key={item.id} sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+                            <Box key={item.id} sx={{ px: { xs: 0, sm: 2, md: 3 } }}>
                                 <Card sx={{
-                                    p: { xs: 3, md: 4 }, // Reduced padding to fit 294px height
+                                    p: { xs: 2.5, md: 4 }, // Reduced padding to fit 294px height
                                     borderRadius: 5,
                                     textAlign: 'center',
                                     width: { xs: '100%', md: '360px' },
                                     height: { xs: 'auto', md: '294px' },
-                                    minHeight: { xs: 320, md: 'unset' },
+                                    minHeight: { xs: 300, md: 'unset' },
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -187,7 +213,7 @@ const TrustedBy = () => {
                 </CustomSliderWrapper>
 
                 {/* Brand Logos Footer */}
-                <Box
+                {/* <Box
                     sx={{
                         mt: 10,
                         display: { xs: 'grid', sm: 'flex' },
@@ -219,7 +245,7 @@ const TrustedBy = () => {
                             />
                         );
                     })}
-                </Box>
+                </Box> */}
 
             </Container>
         </Box>

@@ -322,3 +322,58 @@ export async function fetchBroadcastRecipients(
     throw error;
   }
 }
+
+/**
+ * Fetch detail for a specific broadcast
+ */
+export async function fetchBroadcastDetail(
+  token: string,
+  id: string
+): Promise<{ success: boolean; data: BroadcastCampaign; error?: any }> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcasts/${id}`;
+
+  logger.info("Making GET request to fetch broadcast detail", { url, id });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse broadcast detail response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/broadcasts/${id} (GET)`, { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Fetch broadcast detail failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch broadcast detail (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch broadcast detail request failed", { error: error.message, url });
+    throw error;
+  }
+}

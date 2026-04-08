@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogTitle,
@@ -12,13 +13,14 @@ import {
   Stack,
   Card,
   CardContent,
-  Chip
+  Chip,
+  IconButton
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
 import { BroadcastCampaign, BroadcastRecipient, BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
 import { format } from 'date-fns';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
-import { useBroadcastRecipients } from '@/lib/hooks/useBroadcasts';
+import { useBroadcastRecipients, useBroadcastDetail } from '@/lib/hooks/useBroadcasts';
 import { EditButton } from '@/components/ui/app-action-buttons-table';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
 import MessagePreview from '../../templates/create/MessagePreview';
@@ -39,12 +41,23 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
 
   const [editingRecipient, setEditingRecipient] = useState<BroadcastRecipient | null>(null);
 
-  const { data: recipientsResponse, isLoading } = useBroadcastRecipients(
+  const { data: detailResponse, isLoading: isLoadingDetail, isFetching: isFetchingDetail, refetch: refetchDetail } = useBroadcastDetail(broadcast?.id || '');
+  const detailData = detailResponse?.data;
+
+  const { data: recipientsResponse, isLoading, refetch } = useBroadcastRecipients(
     broadcast?.id || '',
     tableState.pageIndex + 1,
     tableState.pageSize,
     tableState.globalFilter
   );
+
+  const handleReload = () => {
+    // Invalidate everything related to broadcasts to ensure stats are updated
+    queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
+    queryClient.invalidateQueries({ queryKey: ['group-broadcast-campaigns'] });
+    refetchDetail();
+    refetch();
+  };
 
   // console.log("recipientsResponse", recipientsResponse);
 
@@ -86,15 +99,16 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   const recipients = recipientsResponse?.data?.recipients || [];
   const totalRecipients = recipientsResponse?.data?.total || 0;
 
-  const stats = broadcast?.stats || { sent: 0, delivered: 0, read: 0, failed: 0 };
+  const activeBroadcast = detailData || broadcast;
+  const stats = activeBroadcast?.stats || { sent: 0, delivered: 0, read: 0, failed: 0 };
 
-  const activeType = broadcast?.template_content ? (Object.keys(broadcast.template_content.types)[0] as BroadcastTemplateType) : null;
-  const activeTemplateData = broadcast?.template_content && activeType ? broadcast.template_content.types[activeType] : null;
+  const activeType = activeBroadcast?.template_content ? (Object.keys(activeBroadcast.template_content.types)[0] as BroadcastTemplateType) : null;
+  const activeTemplateData = activeBroadcast?.template_content && activeType ? activeBroadcast.template_content.types[activeType] : null;
 
   const previewData = useMemo(() => {
     if (!activeTemplateData) return null;
     const data = JSON.parse(JSON.stringify(activeTemplateData));
-    const vars = broadcast?.variables || {};
+    const vars = activeBroadcast?.variables || {};
 
     const replaceVars = (text: string) => {
       if (!text || typeof text !== 'string') return text;
@@ -119,24 +133,35 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     if (data.fallback_text) data.fallback_text = replaceVars(data.fallback_text);
 
     return data;
-  }, [activeTemplateData, broadcast?.variables]);
+  }, [activeTemplateData, activeBroadcast?.variables]);
 
-  if (!broadcast) return null;
+  if (!activeBroadcast) return null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>Broadcast Details & Statistics</DialogTitle>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        Broadcast Details & Statistics
+        <AppButton 
+           variantStyle="outline" 
+           size="small" 
+           onClick={handleReload}
+           startIcon={<RefreshCw size={16} className={isFetchingDetail ? "animate-spin" : ""} />}
+           disabled={isFetchingDetail || isLoading}
+        >
+          {isFetchingDetail || isLoading ? "Reloading..." : "Reload Data"}
+        </AppButton>
+      </DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={4}>
           {/* Left Top Side: Stats & Info */}
           <Grid item xs={12} md={5}>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>{broadcast.name}</Typography>
+              <Typography variant="h6" gutterBottom>{activeBroadcast.name}</Typography>
               <Typography variant="body2" color="text.secondary">
-                Created: {format(new Date(broadcast.created_at), "dd MMM yyyy, HH:mm")}
+                Created: {format(new Date(activeBroadcast.created_at), "dd MMM yyyy, HH:mm")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Status: <Chip label={broadcast.status} size="small" variant="outlined" sx={{ ml: 1 }} />
+                Status: <Chip label={activeBroadcast.status} size="small" variant="outlined" sx={{ ml: 1 }} />
               </Typography>
             </Box>
 
@@ -160,9 +185,9 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
             <Box sx={{ mt: 4 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Configuration</Typography>
               <Stack spacing={1}>
-                <DetailItem label="Total Target" value={broadcast.total_target} />
-                <DetailItem label="Recipient Source" value={broadcast.recipient_source?.replace(/_/g, ' ')} />
-                <DetailItem label="Template ID" value={broadcast.template_id} />
+                <DetailItem label="Total Target" value={activeBroadcast.total_target} />
+                <DetailItem label="Recipient Source" value={activeBroadcast.recipient_source?.replace(/_/g, ' ')} />
+                <DetailItem label="Template ID" value={activeBroadcast.template_id} />
               </Stack>
             </Box>
           </Grid>
@@ -225,7 +250,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
         onClose={() => setEditingRecipient(null)}
         onSuccess={() => {
           // Refresh the recipients list for this broadcast
-          queryClient.invalidateQueries({ queryKey: ['broadcast-recipients', broadcast.id] });
+          queryClient.invalidateQueries({ queryKey: ['broadcast-recipients', activeBroadcast.id] });
           setEditingRecipient(null);
         }}
       />

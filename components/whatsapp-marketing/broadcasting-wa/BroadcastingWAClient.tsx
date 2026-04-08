@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Box, Stack } from '@mui/material';
-import { Plus } from 'lucide-react';
+import { Plus, Copy } from 'lucide-react';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
 import { SuperTableState } from '@/components/ui/super-table';
@@ -12,7 +12,7 @@ import { handleError } from '@/lib/utils/errorHandler';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 import BroadcastingWATable from '@/components/whatsapp-marketing/broadcasting-wa/BroadcastingWATable';
-import { useBroadcasts, useDeleteBroadcast } from '@/lib/hooks/useBroadcasts';
+import { useBroadcasts, useDeleteBroadcast, useDuplicateBroadcast } from '@/lib/hooks/useBroadcasts';
 import { BroadcastCampaign } from '@/lib/types/whatsapp-marketing';
 import { fetchBroadcasts } from '@/lib/api';
 
@@ -31,6 +31,7 @@ export default function BroadcastingWAClient() {
 
   const { token } = useAuth();
   const deleteMutation = useDeleteBroadcast();
+  const duplicateMutation = useDuplicateBroadcast();
 
   // SuperTable State Hook
   const [tableState, setTableState] = useState({
@@ -105,6 +106,27 @@ export default function BroadcastingWAClient() {
     setViewModalOpen(true);
   };
 
+  const handleDuplicate = async (broadcast: BroadcastCampaign) => {
+    try {
+      await duplicateMutation.mutateAsync([broadcast.id]);
+      notify.success(`Broadcast "${broadcast.name}" duplicated successfully.`);
+    } catch (err: any) {
+      handleError(err, "Duplicate Broadcast");
+    }
+  };
+
+  const handleBulkDuplicate = async (selectedRows: BroadcastCampaign[], clearSelection: () => void) => {
+    if (!selectedRows.length) return;
+    try {
+      const ids = selectedRows.map(r => r.id);
+      await duplicateMutation.mutateAsync(ids);
+      notify.success(`${selectedRows.length} broadcasts duplicated successfully.`);
+      clearSelection();
+    } catch (err: any) {
+      handleError(err, "Duplicate Broadcasts");
+    }
+  };
+
   const handleDeleteRequest = (broadcast: BroadcastCampaign) => {
     setBroadcastToDelete(broadcast);
     setConfirmOpen(true);
@@ -143,6 +165,7 @@ export default function BroadcastingWAClient() {
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         onView={handleView}
+        onDuplicate={handleDuplicate}
         renderTopLeftToolbar={() => (
           <Box className="flex gap-2">
             <AppButton
@@ -150,6 +173,18 @@ export default function BroadcastingWAClient() {
               startIcon={<Plus size={16} />}
             >
               Create Broadcast
+            </AppButton>
+          </Box>
+        )}
+        renderBulkActions={({ selectedRows, clearSelection }) => (
+          <Box className="flex gap-2">
+            <AppButton
+              variantStyle="primary"
+              onClick={() => handleBulkDuplicate(selectedRows, clearSelection)}
+              startIcon={<Copy size={16} />}
+              isLoading={duplicateMutation.isPending}
+            >
+              Duplicate ({selectedRows.length})
             </AppButton>
           </Box>
         )}

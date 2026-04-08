@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Box, Chip, Typography, Stack } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
-import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, ViewButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { format } from "date-fns";
 
 interface BroadcastingWATableProps {
@@ -17,7 +17,9 @@ interface BroadcastingWATableProps {
   onEdit: (broadcast: BroadcastCampaign) => void;
   onDelete: (broadcast: BroadcastCampaign) => void;
   onView?: (broadcast: BroadcastCampaign) => void;
+  onDuplicate?: (broadcast: BroadcastCampaign) => void;
   renderTopLeftToolbar?: () => React.ReactNode;
+  renderBulkActions?: (params: { selectedRows: BroadcastCampaign[]; clearSelection: () => void }) => React.ReactNode;
 }
 
 const getStatusChip = (status: string) => {
@@ -43,7 +45,9 @@ export default function BroadcastingWATable({
   onEdit,
   onDelete,
   onView,
+  onDuplicate,
   renderTopLeftToolbar,
+  renderBulkActions,
 }: BroadcastingWATableProps) {
   const columns = useMemo<MRT_ColumnDef<BroadcastCampaign>[]>(() => [
     {
@@ -114,13 +118,14 @@ export default function BroadcastingWATable({
         return (
           <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
             {onView && <ViewButton onClick={() => onView(row.original)} />}
+            {onDuplicate && <DuplicateButton onClick={() => onDuplicate(row.original)} />}
             <EditButton onClick={() => onEdit(row.original)} disabled={!isDraft} />
             <DeleteButton onClick={() => onDelete(row.original)} disabled={!isDraft} />
           </Box>
         );
       },
     },
-  ], [onDelete, onEdit, onView]);
+  ], [onDelete, onEdit, onView, onDuplicate]);
 
   return (
     <Box sx={{ width: "100%" }} className="super-table-container">
@@ -137,13 +142,14 @@ export default function BroadcastingWATable({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        renderBulkActions={renderBulkActions}
         features={{
           pagination: true,
           globalFilter: true,
           columnFilters: true,
           sorting: true,
           urlSync: true,
-          rowSelection: 'none',
+          rowSelection: 'multi',
           export: { excel: true, csv: true },
           densityToggle: true,
         }}

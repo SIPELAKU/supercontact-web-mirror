@@ -153,12 +153,12 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Broadcast Details & Statistics
-        <AppButton 
-           variantStyle="outline" 
-           size="small" 
-           onClick={handleReload}
-           startIcon={<RefreshCw size={16} className={isFetchingDetail ? "animate-spin" : ""} />}
-           disabled={isFetchingDetail || isLoading}
+        <AppButton
+          variantStyle="outline"
+          size="small"
+          onClick={handleReload}
+          startIcon={<RefreshCw size={16} className={isFetchingDetail ? "animate-spin" : ""} />}
+          disabled={isFetchingDetail || isLoading}
         >
           {isFetchingDetail || isLoading ? "Reloading..." : "Reload Data"}
         </AppButton>
@@ -199,7 +199,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
               <Stack spacing={1}>
                 <DetailItem label="Total Target" value={activeBroadcast.total_target} />
                 <DetailItem label="Recipient Source" value={activeBroadcast.recipient_source?.replace(/_/g, ' ')} />
-                <DetailItem label="Template ID" value={activeBroadcast.template_id} />
+                {/* <DetailItem label="Template ID" value={activeBroadcast.template_id} /> */}
               </Stack>
             </Box>
           </Grid>

@@ -20,6 +20,8 @@
     "deploy:staging-tags": "node scripts/deploy-status.js staging-tags",
     "deploy:prod-tags": "node scripts/deploy-status.js prod-tags",
     "deploy:all-tags": "node scripts/deploy-status.js tags",
+    "deploy:hotfix-staging": "node scripts/deploy-status.js hotfix-staging",
+    "deploy:hotfix-prod": "node scripts/deploy-status.js hotfix-prod",
     "tag:list": "git tag -l -n9 --sort=-v:refname",
     "tag:delete": "git tag -d",
     "postinstall": "git config core.hooksPath .githooks || true"

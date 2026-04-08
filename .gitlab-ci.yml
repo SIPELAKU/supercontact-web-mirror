@@ -10,6 +10,8 @@
 #   ❌ Buka MR             → TIDAK jalan
 #   ✅ Buat tag v1.5.0-rc.1 → JALAN → deploy ke STAGING
 #   ✅ Buat tag v1.5.0      → JALAN → deploy ke PRODUCTION
+#   ✅ Push/merge ke staging → JALAN → deploy HOTFIX ke STAGING
+#   ✅ Push/merge ke main    → JALAN → deploy HOTFIX ke PRODUCTION
 #
 # ALUR DEPLOYMENT:
 #
@@ -27,6 +29,11 @@
 #               git push origin v1.5.0
 #               → GitLab CI jalan → deploy via Vercel CLI
 #               URL: solvera-supercontact.vercel.app
+#
+#   [hotfix]  → Lead push langsung ke staging/main:
+#               Push ke staging → auto deploy STAGING
+#               Push ke main → auto deploy PRODUCTION
+#               (Tanpa perlu buat tag manual)
 #
 # PREREQUISITE (setup satu kali):
 #
@@ -82,7 +89,10 @@ variables:
 # Deploy to STAGING (Vercel Preview)
 # ============================================================
 #
-# Dipicu oleh tag RC: v1.5.0-rc.1, v1.5.0-rc.2, dst.
+# Dipicu oleh:
+#   1. Tag RC: v1.5.0-rc.1, v1.5.0-rc.2, dst.
+#   2. Push/merge ke branch staging (hotfix)
+#
 # Deploy ke: solvera-supercontact-staging.vercel.app
 #
 # Vercel CLI akan:
@@ -97,8 +107,15 @@ deploy_staging:
     name: staging
     url: https://solvera-supercontact-staging.vercel.app
   script:
-    - echo "🚀 Deploying to STAGING via Vercel..."
-    - echo "   Tag     → $CI_COMMIT_TAG"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "🚀 Deploying to STAGING via tag: $CI_COMMIT_TAG"
+      else
+        echo "🔥 HOTFIX: Deploying to STAGING from branch push"
+        echo "   Branch  → $CI_COMMIT_BRANCH"
+        echo "   Commit  → $CI_COMMIT_SHORT_SHA"
+        echo "   Message → $CI_COMMIT_MESSAGE"
+      fi
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
@@ -125,15 +142,26 @@ deploy_staging:
     - echo ""
     - echo "✅ Staging deployment selesai!"
     - echo "   URL → https://solvera-supercontact-staging.vercel.app"
-    - echo "   Tag → $CI_COMMIT_TAG"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "   Tag → $CI_COMMIT_TAG"
+      else
+        echo "   Commit → $CI_COMMIT_SHORT_SHA (hotfix)"
+      fi
   rules:
+    # Dipicu oleh tag RC
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+-rc\.\d+$/'
+    # Dipicu oleh push/merge ke branch staging (hotfix)
+    - if: '$CI_COMMIT_BRANCH == "staging"'
 
 # ============================================================
 # Deploy to PRODUCTION (Vercel Production)
 # ============================================================
 #
-# Dipicu oleh tag rilis: v1.5.0, v2.0.0, dst.
+# Dipicu oleh:
+#   1. Tag rilis: v1.5.0, v2.0.0, dst.
+#   2. Push/merge ke branch main (hotfix)
+#
 # Deploy ke: solvera-supercontact.vercel.app
 #
 # Vercel CLI akan:
@@ -147,8 +175,15 @@ deploy_prod:
     name: production
     url: https://solvera-supercontact.vercel.app
   script:
-    - echo "🟢 Deploying to PRODUCTION via Vercel..."
-    - echo "   Tag     → $CI_COMMIT_TAG"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "🟢 Deploying to PRODUCTION via tag: $CI_COMMIT_TAG"
+      else
+        echo "🔥 HOTFIX: Deploying to PRODUCTION from branch push"
+        echo "   Branch  → $CI_COMMIT_BRANCH"
+        echo "   Commit  → $CI_COMMIT_SHORT_SHA"
+        echo "   Message → $CI_COMMIT_MESSAGE"
+      fi
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
@@ -163,14 +198,24 @@ deploy_prod:
 
     # Deploy ke production
     - DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
-    - vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN  # ← tambahkan ini
+    - vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Production deployment selesai!"
     - echo "   URL → https://solvera-supercontact.vercel.app"
-    - echo "   Tag → $CI_COMMIT_TAG"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "   Tag → $CI_COMMIT_TAG"
+      else
+        echo "   Commit → $CI_COMMIT_SHORT_SHA (hotfix)"
+      fi
   rules:
+    # Dipicu oleh tag rilis (tanpa -rc suffix)
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+    # Dipicu oleh push/merge ke branch main (hotfix)
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    # Juga match master untuk backward compatibility
+    - if: '$CI_COMMIT_BRANCH == "master"'
   # Uncomment baris di bawah jika ingin manual approval sebelum deploy prod
   # when: manual
   # allow_failure: false

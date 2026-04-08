@@ -74,6 +74,40 @@ function getLatestCommitOnBranch(branch) {
   return { sha, msg: msg.substring(0, 50), date: date.substring(0, 16) };
 }
 
+/**
+ * Otomatis hapus [skip ci] / [ci skip] dari HEAD commit message.
+ * Ini penting saat cherry-pick dari dev (yang otomatis ada [skip ci])
+ * ke staging/main — kalau tidak dihapus, GitLab CI akan skip pipeline.
+ */
+function stripSkipCI() {
+  const headMsg = run('git log -1 --format=%B');
+  if (!headMsg) return false;
+
+  // Cek apakah ada [skip ci] atau [ci skip] (case-insensitive)
+  if (!/\[(skip ci|ci skip)\]/i.test(headMsg)) return false;
+
+  // Hapus [skip ci] / [ci skip] dari message
+  const cleanMsg = headMsg.replace(/\s*\[(skip ci|ci skip)\]/gi, '').trim();
+
+  console.log('\n   🧹 Terdeteksi [skip ci] di commit message!');
+  console.log('      → Otomatis menghapus agar GitLab CI tetap jalan...');
+
+  // Amend commit dengan message yang sudah bersih
+  try {
+    execSync(`git commit --amend -m "${cleanMsg.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+    console.log('      ✅ [skip ci] berhasil dihapus dari commit message');
+    console.log(`      📝 Message baru: ${cleanMsg.substring(0, 60)}`);
+    return true;
+  } catch (e) {
+    console.log(`      ⚠️  Gagal menghapus [skip ci]: ${e.message}`);
+    console.log('      💡 Hapus manual: git commit --amend (lalu hapus [skip ci])');
+    return false;
+  }
+}
+
 function showStatus() {
   console.log('\n🚀  SUPERCONTACT WEB — Deployment Status');
   sep();
@@ -451,6 +485,9 @@ async function deployHotfix(target) {
     }
     console.log(`   ${cherryResult || 'Success'}`);
 
+    // Otomatis hapus [skip ci] dari commit message (dari dev)
+    stripSkipCI();
+
     console.log(`\n3️⃣  Push ${targetBranch}...`);
     run(`git push origin ${targetBranch}`, true);
 
@@ -488,6 +525,9 @@ async function deployHotfix(target) {
     }
     console.log(`   ${mergeResult || 'Already up to date.'}`);
 
+    // Otomatis hapus [skip ci] dari merge commit message (jika ada)
+    stripSkipCI();
+
     console.log(`\n3️⃣  Push ${targetBranch}...`);
     run(`git push origin ${targetBranch}`, true);
 
@@ -514,6 +554,9 @@ async function deployHotfix(target) {
       console.log('❌ Dibatalkan.');
       return;
     }
+
+    // Otomatis hapus [skip ci] dari commit message terakhir (jika ada)
+    stripSkipCI();
 
     console.log(`\n⏳ Pushing ${targetBranch}...`);
     run(`git push origin ${targetBranch}`, true);

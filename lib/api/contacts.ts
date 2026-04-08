@@ -36,7 +36,7 @@ export interface ContactResponse {
 
 export async function fetchContacts(
   token: string,
-  params?: { search?: string; page?: number; limit?: number }
+  params?: { search?: string; page?: number; limit?: number; include_all?: boolean }
 ): Promise<ContactResponse> {
   const queryParams = new URLSearchParams();
 
@@ -48,6 +48,9 @@ export async function fetchContacts(
   }
   if (params?.limit) {
     queryParams.append('limit', params.limit.toString());
+  }
+  if (params?.include_all !== undefined) {
+    queryParams.append('include_all', params.include_all.toString());
   }
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/contacts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;

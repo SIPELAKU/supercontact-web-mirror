@@ -87,6 +87,18 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
       },
     },
     {
+      accessorKey: 'error_message',
+      header: 'Error Message',
+      Cell: ({ row, cell }) => {
+        const val = cell.getValue<string>();
+        const status = row.original.status?.toLowerCase();
+        if ((status === 'failed' || status === 'undelivered') && val) {
+          return <Typography variant="caption" color="error" sx={{ fontStyle: 'italic' }}>{val}</Typography>;
+        }
+        return val || '-';
+      }
+    },
+    {
       id: 'actions',
       header: 'Actions',
       size: 80,

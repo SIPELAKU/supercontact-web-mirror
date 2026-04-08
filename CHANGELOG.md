@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.5] - 2026-04-08
+
+### ✨ Added
+- **WhatsApp Recipient Management Tab**: Enhanced the "Add New Recipient" modal to support "Buat Manual" and "Import dari Kontak" tabs natively, ensuring UI consistency with Email Marketing.
+- **Broadcast Group Assignment**: Added a robust Multiple Select Autocomplete input to assign imported/manual contacts seamlessly directly into active Broadcast Groups.
+- **Dynamic Stats Independent Reload**: The WhatsApp Broadcasting "View Details & Statistics" modal now fetches real-time isolated data via `useBroadcastDetail` (`/api/v1/broadcasts/{broadcast_id}`) with an inline "Reload Data" button for immediate campaign status sync without page reloads.
+- **Error Status Transparency**: Injected a direct `Error Message` column into the Broadcast Recipients status table that prominently highlights message delivery failures or unmapped variables.
+
+### 🛠️ Refactor & Enhancements
+- **Global Contacts Bypass**: Integrated the `include_all` parameter across WhatsApp Marketing and Email Marketing contact importation hooks to securely fetch unfiltered global contacts (bypassing the `is_contact` default query limit).
+- **Template Builder Polish**: Enforced a `read-only` (disabled) state on the "Template Language" dropdown selection specifically during Edit mode, safeguarding core template properties post-creation.
+
+### 🐛 Fixed
+- **TypeScript Strict Data Parsing**: Remedied the `Type 'Element' is not assignable to type 'string'` error generated in customized `AppAutocomplete` implementations and secured the `activeBroadcast` prop pipeline against uninitialized null-state errors in the detailed statistics view.
+
+### 📁 Modified Files
+- `lib/hooks/useContacts.ts`
+- `lib/hooks/useBroadcasts.ts`
+- `lib/api/contacts.ts`
+- `lib/api/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+- `components/whatsapp-marketing/templates/create/GeneralInfoCard.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+- `components/email-marketing/subscribers/modals/AddSubscriberModal.tsx`
+
 ## [1.15.4] - 2026-04-08
 
 ### ✨ Added
@@ -15,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛠️ Refactor & Enhancements
 - **Broadcast Detail Layout**: Redesigned the "Broadcast Details & Statistics" modal into a modern 2-column layout (Statistics/Info on the left, Message Preview on the right) with the recipient status table positioned at the bottom.
-- **Edit Broadcast UI Sync**: Refactored the "Edit Broadcast" modal to achieve 100% parity with the "Create Broadcast" experience, including full support for Individual Contacts vs. Broadcast Groups and automated variable mapping.
+- **Edit Broadcast UI Sync**: Refactored the "Edit Broadcast" modal to achieve 100% parity with t1he "Create Broadcast" experience, including full support for Individual Contacts vs. Broadcast Groups and automated variable mapping.
 - **API Versioning & Standardization**: 
   - Migrated Broadcast Recipient fetching to the versioned `/api/v1` endpoint.
   - Updated the Broadcast update method to use **`PUT`** for backend consistency.

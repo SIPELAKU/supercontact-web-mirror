@@ -75,5 +75,10 @@ export {
     fetchNotifications, fetchUnreadCount, markNotificationAsRead, markAllNotificationsAsRead, type NotificationData, type NotificationsResponse, type UnreadCountResponse
 } from './notifications';
 
+// WhatsApp Marketing API
+export {
+    fetchBroadcasts, createBroadcast, updateBroadcast, deleteBroadcast
+} from './whatsapp-marketing';
+
 // Billings API
 export * from './billings';

@@ -9,6 +9,11 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useCreateWaRecipient, useUpdateWaRecipient } from "@/lib/hooks/useWaRecipients";
 import type { CreateWaRecipientData, UpdateWaRecipientData, WaRecipient, WaRecipientType } from "@/lib/types/whatsapp-marketing";
+import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { IconUser, IconUsers } from '@tabler/icons-react';
+import { AppAutocomplete } from '@/components/ui/app-autocomplete';
+import { useContacts } from '@/lib/hooks/useContacts';
+import { useGroupBroadcasts } from '@/lib/hooks/useGroupBroadcasts';
 
 
 // ---------------------------------------------------------------------------
@@ -88,6 +93,16 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [creationMode, setCreationMode] = useState<'manual' | 'from_contacts'>('manual');
+  const [selectedContacts, setSelectedContacts] = useState<any[]>([]);
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const [selectedGroups, setSelectedGroups] = useState<any[]>([]);
+
+  const { data: contactsData, isLoading: isLoadingContacts } = useContacts(contactSearchQuery, true);
+  const contactOptions = contactsData?.data?.contacts || [];
+
+  const { data: groupsData } = useGroupBroadcasts({ page: 1, limit: 100 });
+  const groupOptions = groupsData?.data?.broadcast_groups || [];
 
   const createMutation = useCreateWaRecipient();
   const updateMutation = useUpdateWaRecipient();
@@ -104,6 +119,11 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
   useEffect(() => {
     if (open) {
       setErrors({});
+      setCreationMode('manual');
+      setSelectedContacts([]);
+      setSelectedGroups([]);
+      setContactSearchQuery('');
+      
       if (initialData) {
         setForm({
           name: initialData.name ?? "",
@@ -116,8 +136,15 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
       } else {
         setForm(EMPTY_FORM);
       }
+
+      if (broadcastGroupId && groupOptions.length > 0) {
+        const defaultGroup = groupOptions.find((g) => g.id === broadcastGroupId);
+        if (defaultGroup) {
+          setSelectedGroups([defaultGroup]);
+        }
+      }
     }
-  }, [open, initialData]);
+  }, [open, initialData, broadcastGroupId, groupOptions.length]);
 
   const set = (field: keyof typeof EMPTY_FORM) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -125,27 +152,38 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    const hasIdentity =
-      form.name.trim() || form.email.trim() || form.phone_number.trim();
 
-    if (!hasIdentity) {
-      errs.name = "At least one of Name, Email, or Phone Number is required";
+    if (creationMode === 'manual') {
+      const hasIdentity =
+        form.name.trim() || form.email.trim() || form.phone_number.trim();
+
+      if (!hasIdentity) {
+        errs.name = "At least one of Name, Email, or Phone Number is required";
+      }
+
+      if (form.phone_number && /[a-zA-Z]/.test(form.phone_number)) {
+        errs.phone_number = "Cannot contain letters";
+      }
+
+      if (form.position && form.position.length < 3) {
+        errs.position = "Must be at least 3 characters";
+      }
+
+      if (form.company && form.company.length < 3) {
+        errs.company = "Must be at least 3 characters";
+      }
+
+      if (form.address && form.address.length < 6) {
+        errs.address = "Must be at least 6 characters";
+      }
+    } else {
+      if (!isEdit && selectedContacts.length === 0) {
+        errs.contacts = "Please select at least one contact to import.";
+      }
     }
 
-    if (form.phone_number && /[a-zA-Z]/.test(form.phone_number)) {
-      errs.phone_number = "Cannot contain letters";
-    }
-
-    if (form.position && form.position.length < 3) {
-      errs.position = "Must be at least 3 characters";
-    }
-
-    if (form.company && form.company.length < 3) {
-      errs.company = "Must be at least 3 characters";
-    }
-
-    if (form.address && form.address.length < 6) {
-      errs.address = "Must be at least 6 characters";
+    if (!isEdit && target === 'broadcast_group' && selectedGroups.length === 0) {
+        errs.broadcastGroups = "At least one broadcast group is required.";
     }
 
     return errs;
@@ -174,6 +212,8 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
       ...(form.address.trim() && { address: form.address.trim() }),
     };
 
+    const groupIdsToSend = selectedGroups.map(g => g.id);
+
     try {
       if (isEdit && initialData) {
         const updatePayload: UpdateWaRecipientData = {
@@ -187,18 +227,30 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
           description: "Recipient has been updated successfully",
         });
       } else {
-        const createPayload: CreateWaRecipientData = {
-          target: target,
-          type_request: "manual",
-          new_contact: {
-            ...fields,
-          },
-          ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
-        };
-        await createMutation.mutateAsync(createPayload);
-        notify.success("Recipient added!", {
-          description: "Recipient has been added successfully",
-        });
+        if (creationMode === 'from_contacts') {
+            const contactIds = selectedContacts.map(c => c.id);
+            const createPayload: CreateWaRecipientData = {
+              target: target,
+              type_request: 'from_contacts',
+              contact_ids: contactIds,
+              ...(groupIdsToSend.length > 0 && { broadcast_group_ids: groupIdsToSend }),
+            };
+            await createMutation.mutateAsync(createPayload);
+            notify.success("Recipients imported!", { description: "Recipients imported successfully" });
+        } else {
+            const createPayload: CreateWaRecipientData = {
+              target: target,
+              type_request: "manual",
+              new_contact: {
+                ...fields,
+              },
+              ...(groupIdsToSend.length > 0 && { broadcast_group_ids: groupIdsToSend })
+            };
+            await createMutation.mutateAsync(createPayload);
+            notify.success("Recipient added!", {
+              description: "Recipient has been added successfully",
+            });
+        }
       }
       onSuccess();
       handleClose();
@@ -231,62 +283,126 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
                 : "Fill in the details below to add a new recipient."}
             </p>
 
-            <div className="mt-6 flex flex-col md:flex-row gap-4">
-              {/* Left column */}
-              <div className="w-full md:w-1/2 flex flex-col gap-4">
-                <InputField
-                  label="Name"
-                  value={form.name}
-                  onChange={set("name")}
-                  placeholder="Enter name"
-                  error={errors.name}
-                />
-                <InputField
-                  label="Email"
-                  value={form.email}
-                  onChange={set("email")}
-                  placeholder="Enter email"
-                  error={errors.email}
-                />
-                <InputField
-                  label="Company"
-                  value={form.company}
-                  onChange={set("company")}
-                  placeholder="Enter company"
-                  error={errors.company}
-                />
-              </div>
+            <div className="mt-6 flex flex-col gap-4">
+              {!isEdit && (
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                    <ToggleButtonGroup
+                        value={creationMode}
+                        exclusive
+                        onChange={(_, newMode) => {
+                            if (newMode) setCreationMode(newMode);
+                            setErrors({});
+                            setSelectedContacts([]);
+                            setForm(EMPTY_FORM);
+                        }}
+                        aria-label="creation mode"
+                        sx={{ borderRadius: '8px', border: '1px solid #ccc' }}
+                    >
+                        <ToggleButton value="manual" aria-label="manual" sx={{ textTransform: 'none' }}>
+                            <IconUser size="1rem" style={{ marginRight: 8 }} /> Buat Manual
+                        </ToggleButton>
+                        <ToggleButton value="from_contacts" aria-label="import" sx={{ textTransform: 'none' }}>
+                            <IconUsers size="1rem" style={{ marginRight: 8 }} /> Import dari Kontak
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
+              )}
 
-              {/* Right column */}
-              <div className="w-full md:w-1/2 flex flex-col gap-4">
-                <InputField
-                  label="Phone Number"
-                  value={form.phone_number}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^[^a-zA-Z]*$/.test(val)) {
-                      setForm((s) => ({ ...s, phone_number: val }));
-                      setErrors((p) => ({ ...p, phone_number: "" }));
-                    }
-                  }}
-                  placeholder="Enter phone number"
-                  error={errors.phone_number}
-                />
-                <InputField
-                  label="Position"
-                  value={form.position}
-                  onChange={set("position")}
-                  placeholder="Enter position"
-                  error={errors.position}
-                />
-                <InputField
-                  label="Address"
-                  value={form.address}
-                  onChange={set("address")}
-                  placeholder="Enter address"
-                  error={errors.address}
-                />
-              </div>
+              {creationMode === 'manual' ? (
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {/* Left column */}
+                    <div className="w-full md:w-1/2 flex flex-col gap-4">
+                      <InputField
+                        label="Name"
+                        value={form.name}
+                        onChange={set("name")}
+                        placeholder="Enter name"
+                        error={errors.name}
+                      />
+                      <InputField
+                        label="Email"
+                        value={form.email}
+                        onChange={set("email")}
+                        placeholder="Enter email"
+                        error={errors.email}
+                      />
+                      <InputField
+                        label="Company"
+                        value={form.company}
+                        onChange={set("company")}
+                        placeholder="Enter company"
+                        error={errors.company}
+                      />
+                    </div>
+
+                    {/* Right column */}
+                    <div className="w-full md:w-1/2 flex flex-col gap-4">
+                      <InputField
+                        label="Phone Number"
+                        value={form.phone_number}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^[^a-zA-Z]*$/.test(val)) {
+                            setForm((s) => ({ ...s, phone_number: val }));
+                            setErrors((p) => ({ ...p, phone_number: "" }));
+                          }
+                        }}
+                        placeholder="Enter phone number"
+                        error={errors.phone_number}
+                      />
+                      <InputField
+                        label="Position"
+                        value={form.position}
+                        onChange={set("position")}
+                        placeholder="Enter position"
+                        error={errors.position}
+                      />
+                      <InputField
+                        label="Address"
+                        value={form.address}
+                        onChange={set("address")}
+                        placeholder="Enter address"
+                        error={errors.address}
+                      />
+                    </div>
+                  </div>
+              ) : (
+                  <AppAutocomplete
+                      multiple
+                      isBgWhite
+                      options={contactOptions}
+                      loading={isLoadingContacts}
+                      getOptionLabel={(option) => `${option.name || 'No Name'} (${option.email || 'No Email'})`}
+                      value={selectedContacts}
+                      onChange={(_, newValue) => setSelectedContacts(newValue)}
+                      onInputChange={(_, newInputValue) => {
+                          setContactSearchQuery(newInputValue);
+                      }}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      label="Pilih Kontak untuk di-import"
+                      placeholder="Search name or email..."
+                      error={Boolean(errors.contacts)}
+                      helperText={errors.contacts}
+                  />
+              )}
+
+              {!isEdit && (
+                  <div className="mt-2">
+                      <AppAutocomplete
+                          multiple
+                          isBgWhite
+                          options={groupOptions}
+                          getOptionLabel={(option) => option.name}
+                          value={selectedGroups}
+                          onChange={(_, newValue) => setSelectedGroups(newValue)}
+                          isOptionEqualToValue={(option, value) => option.id === value.id}
+                          label={target === 'broadcast_group' ? "Add to Broadcast Group *" : "Add to Broadcast Group (Optional)"}
+                          placeholder="Search broadcast group..."
+                          error={Boolean(errors.broadcastGroups)}
+                          helperText={errors.broadcastGroups}
+                      />
+                  </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">

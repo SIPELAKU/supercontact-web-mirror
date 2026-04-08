@@ -7,14 +7,14 @@ import { ContactResponse, fetchContacts } from "../api";
 import { deleteContact, deleteMultipleContacts, deleteAllContacts, duplicateContacts } from "../api/contacts";
 
 // Fetch all contacts with optional search
-export function useContacts(search?: string) {
+export function useContacts(search?: string, include_all?: boolean) {
   const { getToken } = useAuth();
   return useQuery<ContactResponse, Error>({
-    queryKey: ["contacts", search],
+    queryKey: ["contacts", search, include_all],
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error('No authentication token');
-      return fetchContacts(token, { search, limit: 100 });
+      return fetchContacts(token, { search, limit: 100, include_all });
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,

@@ -147,6 +147,7 @@ export default function TemplateDetailClient() {
                   language={editLanguage}
                   onNameChange={setEditName}
                   onLanguageChange={setEditLanguage}
+                  isEdit={true}
                 />
 
                 {activeType && (

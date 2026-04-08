@@ -8,7 +8,8 @@ import {
   updateBroadcast,
   deleteBroadcast,
   fetchBroadcastRecipients,
-  fetchBroadcastDetail
+  fetchBroadcastDetail,
+  duplicateBroadcast
 } from '../api/whatsapp-marketing';
 import Cookies from 'js-cookie';
 
@@ -78,6 +79,24 @@ export function useDeleteBroadcast() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteBroadcast(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
+    },
+  });
+}
+
+/**
+ * Duplicate existing WhatsApp broadcasts
+ */
+export function useDuplicateBroadcast() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (broadcastIds: string[]) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return duplicateBroadcast(token, broadcastIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broadcasts'] });

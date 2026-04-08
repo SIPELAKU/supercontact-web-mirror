@@ -258,6 +258,67 @@ export async function deleteBroadcast(token: string, id: string): Promise<any> {
 }
 
 /**
+ * Duplicate existing WhatsApp broadcasts
+ */
+export async function duplicateBroadcast(
+  token: string,
+  broadcastIds: string[]
+): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcasts/duplicate`;
+
+  logger.info("Making POST request to duplicate broadcasts", { url, broadcastIds });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ broadcast_ids: broadcastIds }),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      if (res.status === 201) return { success: true };
+      logger.error("Failed to parse duplicate broadcasts response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/broadcasts/duplicate (POST)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Duplicate broadcasts failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+
+      const errorMsg = json.error?.message || `Failed to duplicate broadcasts (${res.status}: ${res.statusText})`;
+      const error = new Error(errorMsg) as any;
+      error.data = json;
+      throw error;
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Duplicate broadcasts request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+/**
  * Fetch recipients for a specific broadcast with their status
  */
 export async function fetchBroadcastRecipients(

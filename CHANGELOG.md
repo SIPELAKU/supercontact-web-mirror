@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.4] - 2026-04-08
+
+### ✨ Added
+- **WhatsApp Message Preview**: Integrated a real-time WhatsApp-style mockup in both "Broadcast Details" and "Edit Broadcast" modals, allowing users to visualize how templates and dynamic variables will appear to recipients.
+- **Pending Status Support**: Added visual support for the `pending` recipient status in the broadcast statistics table with a dedicated warning indicator.
+
+### 🛠️ Refactor & Enhancements
+- **Broadcast Detail Layout**: Redesigned the "Broadcast Details & Statistics" modal into a modern 2-column layout (Statistics/Info on the left, Message Preview on the right) with the recipient status table positioned at the bottom.
+- **Edit Broadcast UI Sync**: Refactored the "Edit Broadcast" modal to achieve 100% parity with the "Create Broadcast" experience, including full support for Individual Contacts vs. Broadcast Groups and automated variable mapping.
+- **API Versioning & Standardization**: 
+  - Migrated Broadcast Recipient fetching to the versioned `/api/v1` endpoint.
+  - Updated the Broadcast update method to use **`PUT`** for backend consistency.
+- **UI Refinements**: 
+  - Replaced underscores with spaces in labels (e.g., "Recipient Source") within the detail view for better readability.
+  - Simplified the main Broadcast Table by hiding row selection checkboxes.
+- **Cache Synchronization**: Implemented React Query invalidation to automatically refresh the recipient list in the statistics modal after editing a contact.
+
+### 📁 Modified Files
+- `lib/api/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/broadcasting-wa/modals/EditBroadcastModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/BroadcastingWATable.tsx`
+
+
 ## [1.15.3] - 2026-04-08
 
 ### 🛠️ Refactor & Enhancements

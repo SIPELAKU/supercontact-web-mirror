@@ -10,6 +10,7 @@ interface GeneralInfoCardProps {
   language: string;
   onNameChange: (val: string) => void;
   onLanguageChange: (val: string) => void;
+  isEdit?: boolean;
 }
 
 const LANGUAGES = [
@@ -22,6 +23,7 @@ export default function GeneralInfoCard({
   language,
   onNameChange,
   onLanguageChange,
+  isEdit = false,
 }: GeneralInfoCardProps) {
   return (
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
@@ -64,6 +66,7 @@ export default function GeneralInfoCard({
               value={language}
               onChange={(e) => onLanguageChange(e.target.value as string)}
               options={LANGUAGES}
+              disabled={isEdit}
             />
           </Box>
         </Box>

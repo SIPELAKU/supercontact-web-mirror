@@ -11,6 +11,8 @@
  *   npm run deploy:prod         → Deploy staging → prod
  *   npm run deploy:staging-tags → Lihat tag RC staging
  *   npm run deploy:prod-tags    → Lihat tag production
+ *   npm run deploy:hotfix-staging → Hotfix langsung ke staging
+ *   npm run deploy:hotfix-prod    → Hotfix langsung ke production
  */
 
 const { execSync } = require('child_process');
@@ -62,6 +64,50 @@ function getLatestTagOnBranch(branch) {
 
 // ── Status ───────────────────────────────────────────────────
 
+function getLatestCommitOnBranch(branch) {
+  const sha = run(`git log -1 --format=%h ${branch} 2>nul`) ||
+              run(`git log -1 --format=%h origin/${branch} 2>nul`) || '-';
+  const msg = run(`git log -1 --format=%s ${branch} 2>nul`) ||
+              run(`git log -1 --format=%s origin/${branch} 2>nul`) || '-';
+  const date = run(`git log -1 --format=%ci ${branch} 2>nul`) ||
+               run(`git log -1 --format=%ci origin/${branch} 2>nul`) || '-';
+  return { sha, msg: msg.substring(0, 50), date: date.substring(0, 16) };
+}
+
+/**
+ * Otomatis hapus [skip ci] / [ci skip] dari HEAD commit message.
+ * Ini penting saat cherry-pick dari dev (yang otomatis ada [skip ci])
+ * ke staging/main — kalau tidak dihapus, GitLab CI akan skip pipeline.
+ */
+function stripSkipCI() {
+  const headMsg = run('git log -1 --format=%B');
+  if (!headMsg) return false;
+
+  // Cek apakah ada [skip ci] atau [ci skip] (case-insensitive)
+  if (!/\[(skip ci|ci skip)\]/i.test(headMsg)) return false;
+
+  // Hapus [skip ci] / [ci skip] dari message
+  const cleanMsg = headMsg.replace(/\s*\[(skip ci|ci skip)\]/gi, '').trim();
+
+  console.log('\n   🧹 Terdeteksi [skip ci] di commit message!');
+  console.log('      → Otomatis menghapus agar GitLab CI tetap jalan...');
+
+  // Amend commit dengan message yang sudah bersih
+  try {
+    execSync(`git commit --amend -m "${cleanMsg.replace(/"/g, '\\"')}"`, {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+    console.log('      ✅ [skip ci] berhasil dihapus dari commit message');
+    console.log(`      📝 Message baru: ${cleanMsg.substring(0, 60)}`);
+    return true;
+  } catch (e) {
+    console.log(`      ⚠️  Gagal menghapus [skip ci]: ${e.message}`);
+    console.log('      💡 Hapus manual: git commit --amend (lalu hapus [skip ci])');
+    return false;
+  }
+}
+
 function showStatus() {
   console.log('\n🚀  SUPERCONTACT WEB — Deployment Status');
   sep();
@@ -72,7 +118,10 @@ function showStatus() {
   console.log('\n📊  Status Per Branch');
   sep();
   for (const [icon, branch] of [['🔧', 'dev'], ['🧪', 'staging'], ['🟢', 'main']]) {
-    console.log(`${icon}  ${branch.padEnd(10)} → Tag terbaru: ${getLatestTagOnBranch(branch)}`);
+    const tag = getLatestTagOnBranch(branch);
+    const commit = getLatestCommitOnBranch(branch);
+    console.log(`${icon}  ${branch.padEnd(10)} → Tag: ${tag.padEnd(18)} Commit: ${commit.sha} (${commit.date})`);
+    console.log(`              → ${commit.msg}`);
   }
   sep();
 }
@@ -326,6 +375,215 @@ async function deployProd() {
   console.log('');
 }
 
+// ── Hotfix Deployment ────────────────────────────────────────
+//
+// Hotfix = push langsung ke staging/main TANPA buat tag.
+// GitLab CI akan otomatis deploy karena rules sudah match
+// push ke branch staging/main.
+//
+// Alur:
+//   1. Cherry-pick atau commit fix di branch saat ini
+//   2. Push langsung ke staging/main
+//   3. GitLab CI otomatis deploy
+// ──────────────────────────────────────────────────────────────
+
+async function deployHotfix(target) {
+  const isStaging = target === 'staging';
+  const icon = isStaging ? '🧪' : '🟢';
+  const envName = isStaging ? 'STAGING' : 'PRODUCTION';
+  const targetBranch = isStaging ? 'staging' : 'main';
+  const url = isStaging
+    ? 'https://solvera-supercontact-staging.vercel.app'
+    : 'https://solvera-supercontact.vercel.app';
+
+  console.log(`\n🔥  HOTFIX DEPLOY KE ${envName}`);
+  sep();
+
+  // Fetch dulu
+  console.log('⏳ Fetching dari remote...');
+  run('git fetch --all --tags --force');
+
+  const current = getCurrentBranch();
+  const version = getPackageVersion();
+  const currentSha = run('git rev-parse --short HEAD');
+
+  console.log(`\n📁  Branch saat ini : ${current}`);
+  console.log(`📦  Versi           : v${version}`);
+  console.log(`🔗  Commit          : ${currentSha}`);
+  console.log(`🎯  Target          : ${targetBranch} (${envName})`);
+  sep();
+
+  // Tampilkan commit yang belum ada di target
+  const pendingCommits = run(`git log origin/${targetBranch}..HEAD --oneline 2>nul`);
+  if (pendingCommits) {
+    console.log(`\n📋 Commit yang akan di-deploy ke ${envName}:`);
+    const commits = pendingCommits.split('\n').filter(Boolean);
+    for (const c of commits.slice(0, 10)) {
+      console.log(`   • ${c}`);
+    }
+    if (commits.length > 10) {
+      console.log(`   ... dan ${commits.length - 10} commit lainnya`);
+    }
+  } else if (current === targetBranch) {
+    console.log(`\n📋 Kamu sudah di branch ${targetBranch}.`);
+    console.log(`   Push akan memicu deployment otomatis via GitLab CI.`);
+  } else {
+    console.log(`\n⚠️  Tidak ada commit baru dibanding origin/${targetBranch}.`);
+  }
+
+  // Pilih metode
+  console.log('');
+  sep();
+  console.log('📍 Metode hotfix:');
+  console.log(`   1. Cherry-pick commit tertentu ke ${targetBranch}`);
+  console.log(`   2. Merge branch saat ini (${current}) ke ${targetBranch}`);
+  console.log(`   3. Push langsung (jika sudah di branch ${targetBranch})`);
+  sep();
+
+  const method = await ask('\nPilih metode (1/2/3): ');
+
+  if (method === '1') {
+    // Cherry-pick
+    const commitHash = await ask('🔗 Masukkan commit hash yang ingin di-cherry-pick: ');
+    if (!commitHash) {
+      console.log('❌ Commit hash diperlukan.');
+      return;
+    }
+
+    // Verify commit exists
+    const commitInfo = run(`git log -1 --oneline ${commitHash} 2>nul`);
+    if (!commitInfo) {
+      console.log(`❌ Commit ${commitHash} tidak ditemukan.`);
+      return;
+    }
+
+    console.log(`\n📋 Langkah yang akan dijalankan:`);
+    console.log(`   1. git checkout ${targetBranch} && git pull`);
+    console.log(`   2. git cherry-pick ${commitHash}`);
+    console.log(`   3. git push origin ${targetBranch}`);
+    console.log(`   4. GitLab CI otomatis deploy ke ${envName}`);
+    console.log('');
+
+    const confirm = await ask(`🔥 Lanjut hotfix ke ${envName}? (y/n): `);
+    if (confirm.toLowerCase() !== 'y') {
+      console.log('❌ Dibatalkan.');
+      return;
+    }
+
+    console.log('\n⏳ Menjalankan hotfix...\n');
+
+    console.log(`1️⃣  Checkout ${targetBranch}...`);
+    run(`git checkout ${targetBranch}`, true);
+    run(`git pull origin ${targetBranch}`, true);
+
+    console.log(`\n2️⃣  Cherry-pick ${commitHash}...`);
+    const cherryResult = run(`git cherry-pick ${commitHash} 2>&1`);
+    if (cherryResult.includes('CONFLICT')) {
+      console.log('\n❌ CONFLICT saat cherry-pick! Selesaikan dulu.');
+      console.log('   Untuk membatalkan: git cherry-pick --abort');
+      return;
+    }
+    console.log(`   ${cherryResult || 'Success'}`);
+
+    // Otomatis hapus [skip ci] dari commit message (dari dev)
+    stripSkipCI();
+
+    console.log(`\n3️⃣  Push ${targetBranch}...`);
+    run(`git push origin ${targetBranch}`, true);
+
+    // Kembali ke branch asal
+    console.log(`\n4️⃣  Kembali ke branch ${current}...`);
+    run(`git checkout ${current}`);
+
+  } else if (method === '2') {
+    // Merge
+    console.log(`\n📋 Langkah yang akan dijalankan:`);
+    console.log(`   1. git checkout ${targetBranch} && git pull`);
+    console.log(`   2. git merge --no-ff ${current}`);
+    console.log(`   3. git push origin ${targetBranch}`);
+    console.log(`   4. GitLab CI otomatis deploy ke ${envName}`);
+    console.log('');
+
+    const confirm = await ask(`🔥 Lanjut hotfix ke ${envName}? (y/n): `);
+    if (confirm.toLowerCase() !== 'y') {
+      console.log('❌ Dibatalkan.');
+      return;
+    }
+
+    console.log('\n⏳ Menjalankan hotfix...\n');
+
+    console.log(`1️⃣  Checkout ${targetBranch}...`);
+    run(`git checkout ${targetBranch}`, true);
+    run(`git pull origin ${targetBranch}`, true);
+
+    console.log(`\n2️⃣  Merge ${current} ke ${targetBranch}...`);
+    const mergeResult = run(`git merge --no-ff ${current} 2>&1`);
+    if (mergeResult.includes('CONFLICT')) {
+      console.log('\n❌ MERGE CONFLICT! Selesaikan conflict dulu.');
+      console.log('   Untuk membatalkan: git merge --abort');
+      return;
+    }
+    console.log(`   ${mergeResult || 'Already up to date.'}`);
+
+    // Otomatis hapus [skip ci] dari merge commit message (jika ada)
+    stripSkipCI();
+
+    console.log(`\n3️⃣  Push ${targetBranch}...`);
+    run(`git push origin ${targetBranch}`, true);
+
+    // Kembali ke branch asal
+    console.log(`\n4️⃣  Kembali ke branch ${current}...`);
+    run(`git checkout ${current}`);
+
+  } else if (method === '3') {
+    // Push langsung
+    if (current !== targetBranch) {
+      console.log(`\n⚠️  Kamu di branch ${current}, bukan ${targetBranch}.`);
+      const switchBranch = await ask(`   Pindah ke ${targetBranch}? (y/n): `);
+      if (switchBranch.toLowerCase() === 'y') {
+        run(`git checkout ${targetBranch}`, true);
+        run(`git pull origin ${targetBranch}`, true);
+      } else {
+        console.log('❌ Dibatalkan.');
+        return;
+      }
+    }
+
+    const confirm = await ask(`\n🔥 Push ke ${targetBranch} dan deploy ke ${envName}? (y/n): `);
+    if (confirm.toLowerCase() !== 'y') {
+      console.log('❌ Dibatalkan.');
+      return;
+    }
+
+    // Otomatis hapus [skip ci] dari commit message terakhir (jika ada)
+    stripSkipCI();
+
+    console.log(`\n⏳ Pushing ${targetBranch}...`);
+    run(`git push origin ${targetBranch}`, true);
+
+  } else {
+    console.log('❌ Pilihan tidak valid.');
+    return;
+  }
+
+  console.log('');
+  sep();
+  console.log(`${icon}  Hotfix deployment ke ${envName} selesai!`);
+  console.log(`    Commit : ${run('git rev-parse --short HEAD')}`);
+  console.log(`    URL    : ${url}`);
+  console.log(`    CI/CD  : Cek GitLab → CI/CD → Pipelines`);
+  console.log(`    ⏰ GitLab CI akan otomatis build & deploy.`);
+  sep();
+  console.log('');
+
+  // Backmerge reminder
+  if (!isStaging) {
+    console.log('⚠️  PENTING: Jangan lupa backmerge ke dev!');
+    console.log('   git checkout dev && git merge main && git push origin dev');
+    console.log('');
+  }
+}
+
 // ── Delete Tag ───────────────────────────────────────────────
 
 async function deleteTag() {
@@ -490,12 +748,14 @@ async function showMenu() {
   console.log('  1. 📊  Cek status deployment');
   console.log('  2. 🧪  Deploy ke STAGING  (dev → staging + tag RC)');
   console.log('  3. 🟢  Deploy ke PRODUCTION  (staging → main + tag rilis)');
-  console.log('  4. 🏷️   Lihat semua tag');
-  console.log('  5. 🗑️   Hapus tag');
-  console.log('  6. ❌  Keluar');
+  console.log('  4. 🔥  HOTFIX ke STAGING  (push langsung, tanpa tag)');
+  console.log('  5. 🔥  HOTFIX ke PRODUCTION  (push langsung, tanpa tag)');
+  console.log('  6. 🏷️   Lihat semua tag');
+  console.log('  7. 🗑️   Hapus tag');
+  console.log('  8. ❌  Keluar');
   sep();
 
-  const choice = await ask('\nPilih (1-6): ');
+  const choice = await ask('\nPilih (1-8): ');
 
   switch (choice) {
     case '1':
@@ -510,13 +770,19 @@ async function showMenu() {
       await deployProd();
       break;
     case '4':
+      await deployHotfix('staging');
+      break;
+    case '5':
+      await deployHotfix('production');
+      break;
+    case '6':
       run('git fetch --tags --force');
       showTags('all');
       break;
-    case '5':
+    case '7':
       await deleteTag();
       break;
-    case '6':
+    case '8':
       console.log('👋 Bye!');
       break;
     default:
@@ -541,6 +807,13 @@ async function main() {
     case 'prod':
     case 'production':
       await deployProd();
+      break;
+    case 'hotfix-staging':
+      await deployHotfix('staging');
+      break;
+    case 'hotfix-prod':
+    case 'hotfix-production':
+      await deployHotfix('production');
       break;
     case 'staging-tags':
       run('git fetch --tags --force');

@@ -166,11 +166,22 @@ export interface GroupBroadcastDetailResponse {
 export interface CreateBroadcastData {
   name: string;
   template_id: string | null;
-  action: 'draft' | 'send';
+  action: 'send' | 'draft';
   recipient_source: 'recipient' | 'broadcast_group';
-  broadcast_group_ids?: string[];
   contact_ids?: string[];
-  variables: Record<string, string>;
+  broadcast_group_ids?: string[];
+  variables?: Record<string, string>;
+}
+
+export interface UpdateBroadcastData {
+  name?: string;
+  template_id?: string | null;
+  action?: 'send' | 'draft';
+  recipient_source?: 'recipient' | 'broadcast_group';
+  contact_ids?: string[];
+  broadcast_group_ids?: string[];
+  variables?: Record<string, string>;
+  status?: string;
 }
 
 export interface BroadcastCampaign {
@@ -201,6 +212,30 @@ export interface BroadcastCampaign {
   };
   created_at: string;
   updated_at: string;
+}
+
+export interface BroadcastRecipient extends WaRecipient {
+  status: 'sent' | 'delivered' | 'read' | 'failed' | 'undelivered' | string;
+  sent_at?: string;
+  delivered_at?: string;
+  read_at?: string;
+  error_message?: string;
+}
+
+export interface BroadcastRecipientsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    recipients: BroadcastRecipient[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, unknown>;
+  };
 }
 
 export interface BroadcastsResponse {

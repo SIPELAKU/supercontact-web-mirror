@@ -6,8 +6,9 @@ import {
   fetchBroadcasts,
   createBroadcast,
   updateBroadcast,
-  deleteBroadcast
-} from '../api';
+  deleteBroadcast,
+  fetchBroadcastRecipients
+} from '../api/whatsapp-marketing';
 import Cookies from 'js-cookie';
 
 /**
@@ -80,5 +81,25 @@ export function useDeleteBroadcast() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
     },
+  });
+}
+
+/**
+ * Fetch recipients for a specific broadcast
+ */
+export function useBroadcastRecipients(
+  id: string,
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+) {
+  return useQuery({
+    queryKey: ['broadcast-recipients', id, page, limit, search],
+    queryFn: async () => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchBroadcastRecipients(token, id, page, limit, search);
+    },
+    enabled: !!id,
   });
 }

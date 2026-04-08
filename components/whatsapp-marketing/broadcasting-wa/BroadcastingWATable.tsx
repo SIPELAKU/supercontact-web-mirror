@@ -143,7 +143,7 @@ export default function BroadcastingWATable({
           columnFilters: true,
           sorting: true,
           urlSync: true,
-          rowSelection: "multi",
+          rowSelection: 'none',
           export: { excel: true, csv: true },
           densityToggle: true,
         }}

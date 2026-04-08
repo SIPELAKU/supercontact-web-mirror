@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.6] - 2026-04-09
+
+### ✨ Added
+- **Duplicate Broadcast Functionality**: Added a "Duplicate" button to the Broadcast Table and Edit Broadcast modal, allowing users to clone existing campaigns.
+
+### 🛠️ Refactor & Enhancements
+- **UI Polish**: Updated the "Broadcast Details & Statistics" modal to hide the Template ID field for better UX.
+
+### 📁 Modified Files
+- `components/whatsapp-marketing/broadcasting-wa/BroadcastingWAClient.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+
 ## [1.15.5] - 2026-04-08
 
 ### ✨ Added

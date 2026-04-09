@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.7] - 2026-04-09
+
+### ✨ Added
+- **Premium Subscription UI**: Completely redesigned the "My Subscription" interface with a modern 2-card layout (Free Trial & Exclusive) featuring premium SaaS aesthetics.
+- **Active Plan Indicators**: Added dynamic "ACTIVE" badges with pulse animations and card scaling effects to highlight the current active subscription.
+- **WhatsApp Sales Integration**: Integrated WhatsApp-based call-to-actions for all plan upgrades with brand-consistent styling (#25D366).
+
+### 🛠️ Refactor & Enhancements
+- **Admin Settings Migration**: Moved Omnichannel account management from the general settings page to a centralized Admin area (`Admin > WhatsApp Accounts` and `Admin > Email Accounts`).
+- **Sidebar Restructuring**: Updated the main navigation sidebar to reflect the new centralized account management structure under the Admin section.
+- **Codebase Hardening**: Optimized the `SubscriptionClient` component by cleaning up dynamic API falls-back and standardizing layout structures.
+
+### 🐛 Fixed
+- **JSX Syntax Stability**: Resolved critical build errors related to "Unexpected token" and "JSX element has no corresponding closing tag" in the subscription module.
+- **TypeScript Type Safety**: Fixed prop-type mismatches in MUI Buttons and resolved literal type comparison errors for `currentPlan` detection.
+
+### 📁 Modified Files
+- `components/subscription/SubscriptionClient.tsx`
+- `components/layout/Sidebar.tsx`
+- `app/admin/whatsapp-accounts/page.tsx`
+- `app/admin/email-accounts/page.tsx`
+- `app/omnichannel/settings/page.tsx` (Deleted)
+
 ## [1.15.6] - 2026-04-09
 
 ### ✨ Added

@@ -14,6 +14,7 @@ import {
   Mail,
   MessageCircle,
   Server,
+  Settings,
   User,
   Users,
 } from "lucide-react";
@@ -213,9 +214,13 @@ const menuData: MenuSection[] = [
         path: "/subscription",
       },
       {
-        name: "Mail Servers",
-        icon: Server,
-        path: "/admin/mail-servers",
+        name: "Settings",
+        icon: Settings,
+        children: [
+          { name: "Mail Server", path: "/admin/mail-servers" },
+          { name: "WhatsApp Account", path: "/admin/whatsapp-accounts" },
+          { name: "Email Account", path: "/admin/email-accounts" },
+        ],
       },
     ],
   },

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.8] - 2026-04-10
+
+### 🛠️ Refactor & Enhancements
+- **Price Page**: Updated the price page to remove some features which are not available yet.
+- **Login Page**: Change language from Bahasa Indonesia to English.
+- **Error Page**: Change language from Bahasa Indonesia to English.
+- **Not Found Page**: Change language from Bahasa Indonesia to English.
+
+### 📁 Modified Files
+- `components/price/PricingCards.tsx`
+- `app/auth/login/page.tsx`
+- `app/error/page.tsx`
+- `app/not-found/page.tsx`
+
 ## [1.15.7] - 2026-04-09
 
 ### ✨ Added

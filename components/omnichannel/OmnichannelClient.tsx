@@ -371,13 +371,13 @@ export default function OmnichannelClient() {
                                 className="flex-1"
                                 isBgWhite
                             />
-                            <button
+                            {/* <button
                                 onClick={() => router.push("/omnichannel/settings")}
                                 className="p-2.5 bg-gray-50 border border-gray-200 text-gray-400 hover:text-primary hover:border-primary/30 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 shrink-0 cursor-pointer"
                                 title="Omnichannel Settings"
                             >
                                 <Settings className="w-5 h-5" />
-                            </button>
+                            </button> */}
                         </div>
                         {!isNewContactOpen && filteredContacts.length > 0 && (
                             <AppButton

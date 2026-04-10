@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "@/components/ui/page-header";
-import { Box, Typography, Grid, Paper, Stack, Divider, Chip, CircularProgress } from "@mui/material";
+import { Box, Typography, Grid, Paper, Stack, Divider, Chip, CircularProgress, Button } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { CreditCard, CheckCircle2, Zap, LayoutDashboard } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { fetchBillingPlans, fetchCurrentBilling, checkoutBillingPlan, BillingPlan, CurrentBilling } from "@/lib/api";
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { NO_WA } from "@/lib/constants/constants";
 
 export default function SubscriptionClient() {
     const { token, userProfile, userPlanName } = useAuth();
@@ -43,6 +45,7 @@ export default function SubscriptionClient() {
 
 
     // Determine the active plan prioritizing the API response, then falling back to auth context
+    // const currentPlan: string = "Exclusive";
     const currentPlan = currentBilling?.plan_name || userPlanName || "Free Tier";
     const isTrial = currentPlan.toLowerCase() === "trial";
     const activePlanId = currentBilling?.plan_id;
@@ -140,108 +143,149 @@ export default function SubscriptionClient() {
                     </Grid >
 
                     {/* Available Upgrade Plans */}
-                    < Grid item xs={12} md={7} >
+                    <Grid item xs={12} md={7}>
                         <Grid container spacing={3}>
-                            {plans.map((plan) => {
-                                const isCurrent = plan.id === activePlanId || plan.code === currentPlan?.toLowerCase();
-                                const isPopular = plan.code === 'standard' || plan.code === 'professional'; // Fallback logic for popular mark
-                                const isTrialPlan = plan.code?.toLowerCase() === 'trial' || plan.name?.toLowerCase().includes('trial');
+                            {/* Free Trial Card */}
+                            <Grid item xs={12} sm={6}>
+                                <div className={`h-full relative transition-all duration-300 ${currentPlan === "Free Trial" ? "rounded-3xl p-[2px] bg-[#5479EE] shadow-xl scale-[1.02]" : ""}`}>
+                                    {currentPlan === "Free Trial" && (
+                                        <div className="absolute top-4 left-4 bg-[#5479EE] text-white text-[10px] font-bold px-2 py-1 rounded-md tracking-widest z-10 flex items-center gap-1.5 shadow-sm">
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                                            ACTIVE
+                                        </div>
+                                    )}
+                                    <div className="bg-white rounded-[22px] border border-gray-200 p-8 flex flex-col h-full items-center text-center">
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-4">Free Trial</h3>
+                                        <p className="text-sm text-gray-500 mb-6">
+                                            Mulai gunakan SmartSales secara<br />gratis dengan batasan<br />penggunaan.
+                                        </p>
+                                        <div className="flex items-baseline justify-center mb-8">
+                                            <span className="text-sm font-semibold text-gray-600 mr-2">Rp.</span>
+                                            <span className="text-[64px] leading-none font-bold text-[#5479EE]">0</span>
+                                            <span className="text-sm text-gray-500 ml-1">/bulan</span>
+                                        </div>
+                                        <div className="flex flex-col gap-5 text-left w-full mb-8">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium text-gray-700 leading-tight">Hingga 100 kontak (batas<br />maksimum)</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium text-gray-700">1-2 pengguna per akun</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium text-gray-700">Fitur CRM dasar</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-300 mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium text-gray-400 line-through">Tanpa akses Data Intelligence</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-auto w-full">
+                                            <Button
+                                                variant="contained"
+                                                size="large"
+                                                fullWidth
+                                                disabled={currentPlan === "Free Trial"}
+                                                onClick={() => window.open(`https://wa.me/${NO_WA}?text=${encodeURIComponent("Hi, I'm interested in the free plan")}`, '_blank')}
+                                                sx={{
+                                                    borderRadius: '12px',
+                                                    textTransform: 'none',
+                                                    fontWeight: 600,
+                                                    bgcolor: currentPlan === "Free Trial" ? "#F8FAFC" : "#25D366",
+                                                    border: currentPlan === "Free Trial" ? "1px solid #E2E8F0" : "none",
+                                                    color: currentPlan === "Free Trial" ? "#94A3B8" : "#FFFFFF",
+                                                    py: 1.5,
+                                                    boxShadow: 'none',
+                                                    '&.Mui-disabled': {
+                                                        bgcolor: '#F8FAFC',
+                                                        color: '#94A3B8',
+                                                        borderColor: '#E2E8F0',
+                                                    },
+                                                    '&:hover': {
+                                                        bgcolor: currentPlan === "Free Trial" ? "#F8FAFC" : "#128C7E",
+                                                        boxShadow: 'none'
+                                                    }
+                                                }}
+                                            >
+                                                {currentPlan === "Free Trial" ? (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <CheckCircle2 size={18} className="text-[#25D366]" />
+                                                        <span>Current Plan</span>
+                                                    </div>
+                                                ) : "Whatsapp Sales"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Grid>
 
-                                if (isTrialPlan && !isTrial) {
-                                    return null;
-                                }
-
-                                return (
-                                    <Grid item xs={12} sm={6} key={plan.id}>
-                                        <Paper
-                                            elevation={0}
-                                            sx={{
-                                                p: 4,
-                                                borderRadius: 3,
-                                                border: isCurrent ? "2px solid #10B981" : (isPopular ? "2px solid #4F46E5" : "1px solid #E5E7EB"),
-                                                height: '100%',
-                                                bgcolor: '#ffffff',
-                                                position: 'relative',
-                                                display: 'flex',
-                                                flexDirection: 'column'
-                                            }}
-                                        >
-                                            {isPopular && (
-                                                <Box
-                                                    sx={{
-                                                        position: 'absolute',
-                                                        top: -12,
-                                                        left: 24,
-                                                        bgcolor: '#4F46E5',
-                                                        color: '#fff',
-                                                        px: 1.5,
-                                                        py: 0.5,
-                                                        borderRadius: 1,
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 0.5
-                                                    }}
-                                                >
-                                                    <Zap size={14} /> MOST POPULAR
-                                                </Box>
-                                            )}
-
-                                            {isCurrent && (
-                                                <Box
-                                                    sx={{
-                                                        position: 'absolute',
-                                                        top: -12,
-                                                        right: 24,
-                                                        bgcolor: '#10B981',
-                                                        color: '#fff',
-                                                        px: 1.5,
-                                                        py: 0.5,
-                                                        borderRadius: 1,
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 0.5
-                                                    }}
-                                                >
-                                                    <CheckCircle2 size={14} /> ACTIVE
-                                                </Box>
-                                            )}
-
-                                            <Typography variant="h6" fontWeight={700} gutterBottom>
-                                                {plan.name}
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 1 }}>
-                                                <Typography variant="h4" fontWeight={800} color="text.primary">
-                                                    Rp {parseInt(plan.price).toLocaleString('id-ID')}
-                                                </Typography>
-                                                <Typography variant="body1" color="text.secondary" sx={{ ml: 1 }}>
-                                                    /{plan.billing_interval.toLowerCase() === 'monthly' ? 'mo' : plan.billing_interval}
-                                                </Typography>
-                                            </Box>
-
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3, minHeight: 40 }}>
-                                                {plan.description}
-                                            </Typography>
-
-                                            <Box sx={{ mt: 'auto' }}>
-                                                <AppButton
-                                                    variantStyle={isCurrent ? "outline" : (isPopular ? "primary" : "outline")}
-                                                    className="w-full"
-                                                    onClick={() => handleUpgrade(plan.id)}
-                                                    disabled={isCurrent || isProcessingId === plan.id || isTrialPlan}
-                                                >
-                                                    {isProcessingId === plan.id ? "Processing..." : (isCurrent ? "Current Plan" : `Upgrade to ${plan.name}`)}
-                                                </AppButton>
-                                            </Box>
-                                        </Paper>
-                                    </Grid>
-                                );
-                            })}
+                            {/* Exclusive Card */}
+                            <Grid item xs={12} sm={6}>
+                                <div className={`h-full relative transition-all duration-300 ${currentPlan === "Exclusive" ? "rounded-3xl p-[2px] bg-linear-to-br from-white/40 to-white/0 shadow-2xl scale-[1.02]" : ""}`}>
+                                    {currentPlan === "Exclusive" && (
+                                        <div className="absolute top-4 left-4 bg-white text-[#5479EE] text-[10px] font-bold px-2 py-1 rounded-md tracking-widest z-10 flex items-center gap-1.5 shadow-md">
+                                            <div className="w-1.5 h-1.5 bg-[#5479EE] rounded-full animate-pulse" />
+                                            ACTIVE
+                                        </div>
+                                    )}
+                                    <div className="bg-[#5479EE] rounded-[22px] p-8 flex flex-col h-full items-center text-center relative overflow-hidden">
+                                        <div className="absolute top-4 right-4 bg-[#25D366] text-white text-[11px] font-bold px-3 py-1.5 rounded-md tracking-wide">
+                                            Recommended
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-4 mt-4">Exclusive</h3>
+                                        <p className="text-sm font-medium text-white mb-6 px-1">
+                                            Maksimalkan potensi bisnis Anda<br />dengan solusi CRM yang dapat<br />dikustomisasi.
+                                        </p>
+                                        <div className="flex flex-col items-center justify-center mb-8 text-white min-h-[56px] w-full">
+                                            <div className="text-[34px] font-bold leading-tight">Hubungi</div>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-[34px] font-bold leading-tight">Kami</span>
+                                                <span className="text-[15px] font-semibold">/ sesuai kontrak</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-5 text-left w-full mb-8 text-white">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium leading-tight">Kontak & pengguna tanpa<br />batas</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium leading-tight">Akses penuh ke Data<br />Intelligence</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium leading-tight">Workflow & automasi kustom</span>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
+                                                <span className="text-[15px] font-medium leading-tight">Dukungan & onboarding khusus</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-auto w-full">
+                                            <AppButton
+                                                className={`w-full ${currentPlan === "Exclusive" ? "bg-white/10 text-white/60 border border-white/20 cursor-default" : "bg-[#25D366] hover:bg-[#128C7E] text-white"} rounded-xl py-2.5 font-semibold transition-colors`}
+                                                onClick={() => currentPlan !== "Exclusive" && window.open('https://wa.me/628212345678', '_blank')}
+                                            >
+                                                {currentPlan === "Exclusive" ? (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <CheckCircle2 size={18} />
+                                                        <span>Current Plan</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <WhatsAppIcon sx={{ fontSize: 20 }} />
+                                                        Whatsapp Sales
+                                                    </div>
+                                                )}
+                                            </AppButton>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Grid>
                         </Grid>
-                    </Grid >
+                    </Grid>
                 </Grid >
             )
             }

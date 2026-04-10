@@ -15,7 +15,7 @@ import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddC
 import EditCampaignModal from '@/components/email-marketing/campaigns/modals/EditCampaignModal';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteCampaign, useCampaigns } from '@/lib/hooks/useCampaigns';
+import { useDeleteCampaign, useCampaigns, useDuplicateCampaigns } from '@/lib/hooks/useCampaigns';
 import { fetchCampaigns } from '@/lib/api';
 import { Campaign } from '@/lib/types/email-marketing';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
@@ -32,7 +32,9 @@ export default function CampaignsClient() {
 
   const { token } = useAuth();
   const deleteMutation = useDeleteCampaign();
+  const duplicateMutation = useDuplicateCampaigns();
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDuplicating, setIsBulkDuplicating] = useState(false);
 
   // SuperTable State Hook
   const [tableState, setTableState] = useState({
@@ -152,6 +154,34 @@ export default function CampaignsClient() {
     forceRefetch();
   };
 
+  const handleDuplicate = async (campaign: Campaign) => {
+    try {
+      await duplicateMutation.mutateAsync([campaign.id]);
+      notify.success(`Campaign "${campaign.subject}" duplicated successfully.`);
+      forceRefetch();
+    } catch (err: any) {
+      handleError(err, "Duplicate Campaign");
+    }
+  };
+
+  const handleBulkDuplicate = async (
+    selectedCampaigns: Campaign[],
+    clearSelection: () => void
+  ) => {
+    setIsBulkDuplicating(true);
+    try {
+      const ids = selectedCampaigns.map(c => c.id);
+      await duplicateMutation.mutateAsync(ids);
+      notify.success(`${selectedCampaigns.length} campaigns duplicated successfully.`);
+      clearSelection();
+      forceRefetch();
+    } catch (err: any) {
+      handleError(err, "Bulk Duplicate Campaigns");
+    } finally {
+      setIsBulkDuplicating(false);
+    }
+  };
+
   const forceRefetch = () => setRefreshTrigger(c => c + 1);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
@@ -217,8 +247,11 @@ export default function CampaignsClient() {
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
         onView={handleView}
+        onDuplicate={handleDuplicate}
         onBulkDelete={handleBulkDelete}
+        onBulkDuplicate={handleBulkDuplicate}
         isBulkDeleting={isBulkDeleting}
+        isBulkDuplicating={isBulkDuplicating}
         renderTopLeftToolbar={() => (
           <>
             {/* Desktop */}

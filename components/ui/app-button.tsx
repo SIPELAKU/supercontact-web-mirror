@@ -24,13 +24,23 @@ const COLORS = {
     hover: "#525B6B",
     light: "#F9FAFB",
   },
+  white: {
+    main: "#FFFFFF",
+    hover: "#F9FAFB",
+    light: "#F9FAFB",
+  },
+  success: {
+    main: "#22C55E",
+    hover: "#16A34A",
+    light: "#DCFCE7",
+  }
 };
 
 // --- Types ---
 export interface AppButtonProps extends Omit<ButtonProps, "variant" | "color"> {
   children: React.ReactNode;
   variantStyle?: "primary" | "outline" | "danger" | "text" | "soft";
-  color?: "primary" | "danger" | "gray";
+  color?: "primary" | "danger" | "gray" | "white" | "success";
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
   disabled?: boolean;
@@ -52,21 +62,37 @@ const StyledButton = styled(Button, {
 }>(({ theme, variantStyle, customColor }) => {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
+  const isSuccess = customColor === "success";
+  
   const mainColor = isPrimary
     ? COLORS.primary.main
     : isGray
       ? COLORS.gray.main
-      : COLORS.danger.main;
+      : isSuccess
+        ? COLORS.success.main
+        : COLORS.danger.main;
+        
   const hoverColor = isPrimary
     ? COLORS.primary.hover
     : isGray
       ? COLORS.gray.hover
-      : COLORS.danger.hover;
+      : isSuccess
+        ? COLORS.success.hover
+        : COLORS.danger.hover;
+        
   const lightColor = isPrimary
     ? COLORS.primary.light
     : isGray
       ? COLORS.gray.light
-      : COLORS.danger.light;
+      : isSuccess
+        ? COLORS.success.light
+        : COLORS.danger.light;
+        
+  const whiteColor = isPrimary
+    ? COLORS.white.main
+    : isGray
+      ? COLORS.white.hover
+      : COLORS.white.light;
 
   // Common styles
   const contentStyle = {
@@ -89,13 +115,13 @@ const StyledButton = styled(Button, {
     case "primary":
       return {
         ...contentStyle,
-        backgroundColor: COLORS.primary.main, // Explicitly primary blue mainly
+        backgroundColor: mainColor,
         color: "#ffffff",
         "&:hover": {
-          backgroundColor: COLORS.primary.hover,
+          backgroundColor: hoverColor,
         },
         "&.Mui-disabled": {
-          backgroundColor: alpha(COLORS.primary.main, 0.3),
+          backgroundColor: alpha(mainColor, 0.3),
           color: "#ffffff",
         },
       };

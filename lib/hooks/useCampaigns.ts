@@ -7,7 +7,8 @@ import {
   deleteCampaign,
   fetchCampaignDetail,
   fetchCampaigns,
-  updateCampaign
+  updateCampaign,
+  duplicateCampaigns
 } from '../api';
 import type { CreateCampaignData, UpdateCampaignData } from '../types/email-marketing';
 import Cookies from 'js-cookie';
@@ -79,6 +80,22 @@ export function useDeleteCampaign() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return deleteCampaign(token, campaignId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+  });
+}
+
+// Duplicate campaigns
+export function useDuplicateCampaigns() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (campaignIds: string[]) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return duplicateCampaigns(token, campaignIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });

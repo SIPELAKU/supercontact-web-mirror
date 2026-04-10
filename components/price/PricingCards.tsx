@@ -231,7 +231,7 @@ const PricingCards = () => {
                             strings.plan_1_feat_2,
                             strings.plan_1_feat_3,
                             strings.plan_1_feat_4,
-                            strings.plan_1_feat_5,
+                            // strings.plan_1_feat_5,
                         ]}
                     />
                 </Grid>
@@ -249,7 +249,7 @@ const PricingCards = () => {
                             strings.plan_2_feat_1,
                             strings.plan_2_feat_2,
                             strings.plan_2_feat_3,
-                            strings.plan_2_feat_4,
+                            // strings.plan_2_feat_4,
                             strings.plan_2_feat_5,
                         ]}
                     />

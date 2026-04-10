@@ -80,7 +80,7 @@ export default function LoginPage() {
             className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors group"
           >
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            Kembali ke Beranda
+            Back to Home
           </Link>
         </div>
 

@@ -12,7 +12,7 @@ import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
 import { ContactTable } from "./ContactTable";
-import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts } from '@/lib/hooks/useContacts';
+import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts, useDuplicateContacts } from '@/lib/hooks/useContacts';
 import { useAuth } from "@/lib/context/AuthContext";
 import { AlertTriangle } from "lucide-react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, CircularProgress } from '@mui/material';
@@ -36,6 +36,7 @@ export const ContactClient = () => {
     const deleteMutation = useDeleteContact();
     const bulkDeleteMutation = useDeleteMultipleContacts();
     const deleteAllMutation = useDeleteAllContacts();
+    const duplicateMutation = useDuplicateContacts();
     const componentRef = useRef<HTMLDivElement>(null);
 
     // --- Modal States ---
@@ -194,6 +195,18 @@ export const ContactClient = () => {
         }
     };
 
+    const handleDuplicate = async (contacts: Contact[], clearSelection?: () => void) => {
+        try {
+            const ids = contacts.map(c => c.id);
+            await duplicateMutation.mutateAsync(ids);
+            notify.success(`${contacts.length} contact(s) duplicated successfully.`);
+            clearSelection?.();
+            reloadCurrentPage();
+        } catch (err: any) {
+            notify.error(err.message || "Failed to duplicate contact(s).");
+        }
+    };
+
     const handlePrint = useReactToPrint({
         contentRef: componentRef,
         documentTitle: "Contacts",
@@ -218,10 +231,12 @@ export const ContactClient = () => {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onDetail={handleDetail}
+                    onDuplicate={handleDuplicate}
                     onBulkDelete={handleBulkDelete}
                     onDeleteAll={() => setConfirmAllOpen(true)}
                     onOpenAdd={() => setOpenAdd(true)}
                     onOpenImport={() => setOpenImport(true)}
+                    isDuplicating={duplicateMutation.isPending}
                 />
             </div>
 

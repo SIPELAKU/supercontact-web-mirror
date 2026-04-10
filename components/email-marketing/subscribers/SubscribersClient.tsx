@@ -11,7 +11,7 @@ import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import PageHeader from '@/components/ui/page-header';
-import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers } from '@/lib/hooks/useSubscribers';
+import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
 import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { AppButton } from '@/components/ui/app-button';
@@ -49,6 +49,7 @@ export default function SubscribersClient() {
   const deleteMutation = useDeleteSubscriber();
   const bulkDeleteMutation = useBulkDeleteSubscribers();
   const deleteAllMutation = useDeleteAllSubscribers();
+  const duplicateMutation = useDuplicateSubscribers();
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
 
   const handleOpenAddModal = () => setAddModalOpen(true);
@@ -107,6 +108,19 @@ export default function SubscribersClient() {
       notify.error(err.message || "Failed to delete all subscribers.");
     } finally {
       setConfirmAllOpen(false);
+    }
+  };
+
+  const handleDuplicate = async (ids: string[]) => {
+    try {
+      await duplicateMutation.mutateAsync({
+        target: 'subscriber',
+        contact_ids: ids
+      });
+      notify.success(`${ids.length} subscriber(s) duplicated successfully.`);
+      refetch();
+    } catch (err: any) {
+      notify.error(err.message || "Failed to duplicate subscriber(s).");
     }
   };
 
@@ -169,8 +183,10 @@ export default function SubscribersClient() {
         onDeleteRequest={handleDeleteRequest}
         onImport={handleOpenImportModal}
         onDeleteAllRequest={() => setConfirmAllOpen(true)}
+        onDuplicate={handleDuplicate}
         onExportRequest={handleExportRequest}
         onStateChange={handleStateChange}
+        isDuplicating={duplicateMutation.isPending}
       />
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />

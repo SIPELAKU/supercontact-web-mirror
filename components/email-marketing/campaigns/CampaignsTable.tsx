@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Campaign } from "@/lib/types/email-marketing";
-import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, ViewButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 
@@ -20,7 +20,10 @@ interface CampaignsTableProps {
   onView?: (campaign: Campaign) => void;
   renderTopLeftToolbar?: () => React.ReactNode;
   onBulkDelete?: (campaigns: Campaign[], clearSelection: () => void) => Promise<void>;
+  onBulkDuplicate?: (campaigns: Campaign[], clearSelection: () => void) => Promise<void>;
   isBulkDeleting?: boolean;
+  isBulkDuplicating?: boolean;
+  onDuplicate?: (campaign: Campaign) => void;
 }
 
 const getStatusChip = (status: string) => {
@@ -50,7 +53,10 @@ export default function CampaignsTable({
   onView,
   renderTopLeftToolbar,
   onBulkDelete,
+  onBulkDuplicate,
   isBulkDeleting,
+  isBulkDuplicating,
+  onDuplicate,
 }: CampaignsTableProps) {
   const columns = useMemo<MRT_ColumnDef<Campaign>[]>(() => [
     {
@@ -122,6 +128,12 @@ export default function CampaignsTable({
               disabled={!canEditOrDelete}
               customTitle={canEditOrDelete ? "Edit" : "Can only edit Draft/In Queue"}
             />
+            {onDuplicate && (
+              <DuplicateButton
+                onClick={() => onDuplicate(row.original)}
+                customTitle="Duplicate"
+              />
+            )}
             <DeleteButton
               onClick={() => onDelete(row.original)}
               disabled={!canEditOrDelete}
@@ -131,7 +143,7 @@ export default function CampaignsTable({
         );
       },
     },
-  ], [onDelete, onEdit, onView]);
+  ], [onDelete, onEdit, onView, onDuplicate]);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
@@ -149,19 +161,34 @@ export default function CampaignsTable({
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
         renderBulkActions={({ selectedRows, clearSelection }) => (
-          <AppButton
-            variantStyle="danger"
-            disabled={isBulkDeleting}
-            onClick={() => {
-              if (onBulkDelete) {
-                onBulkDelete(selectedRows as Campaign[], clearSelection);
-              }
-            }}
-          >
-            {isBulkDeleting
-              ? "Menghapus..."
-              : `Hapus ${selectedRows.length} Kampanye`}
-          </AppButton>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <AppButton
+              variantStyle="primary"
+              disabled={isBulkDuplicating}
+              onClick={() => {
+                if (onBulkDuplicate) {
+                  onBulkDuplicate(selectedRows as Campaign[], clearSelection);
+                }
+              }}
+            >
+              {isBulkDuplicating
+                ? "Duplicating..."
+                : `Duplicate ${selectedRows.length} Campaigns`}
+            </AppButton>
+            <AppButton
+              variantStyle="danger"
+              disabled={isBulkDeleting}
+              onClick={() => {
+                if (onBulkDelete) {
+                  onBulkDelete(selectedRows as Campaign[], clearSelection);
+                }
+              }}
+            >
+              {isBulkDeleting
+                ? "Deleting..."
+                : `Delete ${selectedRows.length} Campaigns`}
+            </AppButton>
+          </Box>
         )}
         features={{
           pagination: true,

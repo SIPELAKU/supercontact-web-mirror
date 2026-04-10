@@ -6,6 +6,7 @@ import {
   deleteSubscriber,
   fetchSubscribers,
   updateSubscriber,
+  duplicateSubscribers,
 } from '@/lib/api';
 import type {
   CreateSubscriberData,
@@ -105,6 +106,27 @@ export function useUpdateSubscriber() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return updateSubscriber(token, subscriberId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
+      queryClient.invalidateQueries({ queryKey: ['mailing-list'] });
+    },
+  });
+}
+
+export function useDuplicateSubscribers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      target: 'subscriber' | 'mailing_list';
+      contact_ids: string[];
+      mailing_list_ids?: string[];
+    }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return duplicateSubscribers(token, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscribers'] });

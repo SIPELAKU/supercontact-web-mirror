@@ -36,6 +36,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
         attachment_limit_mb: 0,
         status: "Active",
         is_default: false,
+        from_email: "",
     });
 
     const [authMethod, setAuthMethod] = useState("username"); // 'username' or 'ssl'
@@ -52,6 +53,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 attachment_limit_mb: 0,
                 status: "Active",
                 is_default: false,
+                from_email: "",
             });
             setAuthMethod("username");
         }
@@ -67,19 +69,18 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
         setIsLoading(true);
 
         // Validation logic
-        if (!formData.name || !formData.smtp_host || !formData.smtp_port || !formData.smtp_username || !formData.smtp_password || !formData.smtp_encryption) {
+        if (!formData.name || !formData.smtp_host || !formData.smtp_port || !formData.smtp_username || !formData.smtp_password || !formData.smtp_encryption || !formData.from_email) {
             notify.warning("Validation Error", { description: "Please fill in all required fields." });
             setIsLoading(false);
             return;
         }
 
-        // Email validation for username
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.smtp_username)) {
-            notify.warning("Validation Error", { description: "Username must be a valid email address." });
+        if (!formData.from_email.includes("@")) {
+            notify.warning("Validation Error", { description: "Please enter a valid sender email address." });
             setIsLoading(false);
             return;
         }
+
 
         try {
             await createMailServerMutation.mutateAsync({
@@ -90,6 +91,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 smtp_password: formData.smtp_password,
                 smtp_encryption: formData.smtp_encryption,
                 is_default: formData.is_default,
+                from_email: formData.from_email,
             });
 
             notify.success("Mail Server Added", { description: "New mail server has been added successfully." });
@@ -203,7 +205,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">Username (Email) <span className="text-red-500">*</span></label>
+                                <label className="text-sm font-medium text-gray-700">Username<span className="text-red-500">*</span></label>
                                 <AppInput
                                     isBgWhite
                                     value={formData.smtp_username}
@@ -221,6 +223,18 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2">
+                            <label className="text-sm font-medium text-gray-700">Sender Email <span className="text-red-500">*</span></label>
+                            <AppInput
+                                fullWidth
+                                isBgWhite
+                                value={formData.from_email}
+                                onChange={(e) => handleChange("from_email", e.target.value)}
+                                placeholder="Example: noreply@yourdomain.com"
+                            />
+                            <p className="text-xs text-gray-500">The email address that will appear in the 'From' field of sent messages.</p>
                         </div>
                     </div>
                 </div>

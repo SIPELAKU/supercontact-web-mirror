@@ -5,10 +5,11 @@ import { Contact } from "@/lib/models/types";
 import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2 } from "lucide-react";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider } from "@mui/material";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save } from "lucide-react";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
+import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 interface ContactTableProps {
   data: Contact[];
@@ -24,10 +25,13 @@ interface ContactTableProps {
   onDelete: (item: Contact) => void;
   onDetail: (item: Contact) => void;
   onBulkDelete?: (contacts: Contact[], clearSelection: () => void) => void;
+  onDuplicate?: (contacts: Contact[], clearSelection?: () => void) => void;
   onDeleteAll?: () => void;
+  isDuplicating?: boolean;
 
   onOpenAdd: () => void;
   onOpenImport: () => void;
+  onSuccess?: () => void;
 }
 
 export const ContactTable = ({
@@ -42,11 +46,17 @@ export const ContactTable = ({
   onDelete,
   onDetail,
   onBulkDelete,
+  onDuplicate,
   onDeleteAll,
   onOpenAdd,
   onOpenImport,
+  isDuplicating,
+  onSuccess,
 }: ContactTableProps) => {
   const [previewContact, setPreviewContact] = useState<Contact | null>(null);
+  const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -105,6 +115,9 @@ export const ContactTable = ({
               <EditButton onClick={() => onEdit(row.original)} />
             </Box>
             <Box onClick={(e) => e.stopPropagation()}>
+              <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
+            </Box>
+            <Box onClick={(e) => e.stopPropagation()}>
               <DeleteButton onClick={() => onDelete(row.original)} />
             </Box>
           </div>
@@ -151,6 +164,25 @@ export const ContactTable = ({
         )}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <div className="flex gap-2 items-center">
+            <AppButton
+              variantStyle="primary"
+              color="success"
+              startIcon={<Save size={16} />}
+              onClick={() => {
+                setSelectedIds(selectedRows.map(r => r.id));
+                setClearSelectionFn(() => clearSelection);
+                setIsSaveAsModalOpen(true);
+              }}
+            >
+              Save As
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
+              disabled={isDuplicating}
+              onClick={() => onDuplicate?.(selectedRows, clearSelection)}
+            >
+              {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
+            </AppButton>
             <AppButton
               variantStyle="danger"
               startIcon={<Trash2 size={16} />}
@@ -282,15 +314,26 @@ export const ContactTable = ({
                 )}
               </div>
 
-              {/* Subscription Status */}
-              <div className="mt-4 flex items-center gap-2">
-                <Chip
-                  label={previewContact.is_subscribed ? "Subscribed" : "Not Subscribed"}
-                  size="small"
-                  color={previewContact.is_subscribed ? "success" : "default"}
-                  sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                />
-              </div>
+              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                {/* Subscription Status */}
+                <div className="flex items-center gap-2">
+                  <Chip
+                    label={previewContact.is_subscriber ? "Subscribed" : "Not Subscribed"}
+                    size="small"
+                    color={previewContact.is_subscriber ? "success" : "default"}
+                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                  />
+                </div>
+                {/* Recipient Status */}
+                <div className="flex items-center gap-2">
+                  <Chip
+                    label={previewContact.is_recipient ? "Recipient" : "Not Recipient"}
+                    size="small"
+                    color={previewContact.is_recipient ? "success" : "default"}
+                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                  />
+                </div>
+              </Stack>
 
               {/* Custom Fields */}
               {previewContact.custom_fields && Object.keys(previewContact.custom_fields).length > 0 && (
@@ -340,6 +383,17 @@ export const ContactTable = ({
           </>
         )}
       </Dialog>
+
+      <SaveAsModal
+        open={isSaveAsModalOpen}
+        onClose={() => setIsSaveAsModalOpen(false)}
+        selectedIds={selectedIds}
+        sourceType="contact"
+        onSuccess={() => {
+          if (clearSelectionFn) clearSelectionFn();
+          if (onSuccess) onSuccess();
+        }}
+      />
     </>
   );
 };

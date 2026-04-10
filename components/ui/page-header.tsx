@@ -9,6 +9,7 @@ export default function PageHeader({
   title,
   description,
   breadcrumbs,
+  image,
   imageWidth = 160,
   imageHeight = 160,
   className,
@@ -16,54 +17,59 @@ export default function PageHeader({
   return (
     <div
       className={cn(
-        "bg-[#DDE4FC] h-40 rounded-xl shadow-sm px-6 py-6",
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between",
-        "gap-4 mb-6",
+        "bg-white border border-gray-200 rounded-xl shadow-sm px-6 py-5 mb-6 animate-in fade-in slide-in-from-top-1 duration-300",
         className
       )}
     >
-      <div className="flex-1">
-        <h1 className="text-2xl font-semibold text-foreground">
-          {title}
-        </h1>
-        {description && (
-          <p className="text-muted-foreground text-sm mt-1 mb-2">
-            {description}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
+          {/* Breadcrumbs at the top */}
+          {breadcrumbs && breadcrumbs.length > 0 && (
+            <nav
+              className="flex items-center gap-2 mb-1"
+              aria-label="Breadcrumb"
+            >
+              {breadcrumbs.map((item, i) => (
+                <span key={i} className="flex items-center gap-2">
+                  {item.href ? (
+                    <Link href={item.href} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <span className="text-sm text-gray-400">{item.label}</span>
+                  )}
+
+                  {i < breadcrumbs.length - 1 && (
+                    <span className="text-gray-300 text-xs">•</span>
+                  )}
+                </span>
+              ))}
+            </nav>
+          )}
+
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            {title}
+          </h1>
+          {description && (
+            <p className="text-muted-foreground text-sm mt-1">
+              {description}
+            </p>
+          )}
+        </div>
+
+        {/* Optional Image - only shown if explicitly provided via props */}
+        {image && (
+          <div className="hidden sm:block">
+            <Image
+              src={image}
+              width={imageWidth}
+              height={imageHeight}
+              alt="Header illustration"
+              className="object-contain"
+            />
+          </div>
         )}
-
-        <nav
-          className="flex items-center gap-2 mt-1"
-          aria-label="Breadcrumb"
-        >
-          {breadcrumbs.map((item, i) => (
-            <span key={i} className="flex items-center gap-2">
-              {item.href ? (
-                <Link href={item.href} className="text-sm text-[#4C542F] hover:underline">
-                  {item.label}
-                </Link>
-              ) : (
-                <span className="text-sm text-[#4C542F]">{item.label}</span>
-              )}
-
-              {i < breadcrumbs.length - 1 && (
-                <span className="text-muted-foreground/40">•</span>
-              )}
-            </span>
-          ))}
-        </nav>
       </div>
-
-      <div className="hidden sm:block">
-        <Image
-          src={"/icons/headicon.png"}
-          width={imageWidth}
-          height={imageHeight}
-          alt="Header illustration"
-          className="object-contain mr-30 pt-9"
-        />
-      </div>
-
     </div>
   );
 }

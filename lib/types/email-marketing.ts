@@ -141,6 +141,7 @@ export interface Campaign {
   contact_ids?: string[];
   editor_type?: 'simple_editor' | 'visual_builder';
   mail_sender_id?: string;
+  mail_server_id?: string;
   sent_at: string | null;
   stats: {
     delivered: number;
@@ -187,6 +188,7 @@ export interface CreateCampaignData {
   contact_ids?: string[];
   mailing_list_ids?: string[];
   mail_sender_id?: string;
+  mail_server_id?: string | null;
 }
 
 export interface UpdateCampaignData {
@@ -198,6 +200,7 @@ export interface UpdateCampaignData {
   contact_ids?: string[];
   mailing_list_ids?: string[];
   mail_sender_id?: string;
+  mail_server_id?: string | null;
 }
 
 export interface Contact {

@@ -36,7 +36,7 @@ export interface ContactResponse {
 
 export async function fetchContacts(
   token: string,
-  params?: { search?: string; page?: number; limit?: number }
+  params?: { search?: string; page?: number; limit?: number; include_all?: boolean }
 ): Promise<ContactResponse> {
   const queryParams = new URLSearchParams();
 
@@ -48,6 +48,9 @@ export async function fetchContacts(
   }
   if (params?.limit) {
     queryParams.append('limit', params.limit.toString());
+  }
+  if (params?.include_all !== undefined) {
+    queryParams.append('include_all', params.include_all.toString());
   }
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/contacts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -157,3 +160,57 @@ export async function deleteAllContacts(token: string): Promise<any> {
   }
   return json;
 }
+
+export async function duplicateContacts(token: string, contactIds: string[]): Promise<any> {
+  const res = await fetchWithTimeout(`/api/proxy/contacts/duplicate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ contact_ids: contactIds }),
+  });
+
+  const json = await res.json();
+  console.log("Duplicate contacts API response:", json);
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok || !json.success) {
+    let errorMsg = json.message || json.error?.message || "Failed to duplicate contacts";
+    if (json.error?.details && Array.isArray(json.error.details)) {
+      const details = json.error.details
+        .map((d: any) => `${d.field}: ${d.message}`)
+        .join(", ");
+      if (details) errorMsg = details;
+    }
+    throw new Error(errorMsg);
+  }
+  return json;
+}
+
+export async function saveAsContacts(token: string, target: string[], contactIds: string[]): Promise<any> {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/contacts/save-as`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ target, contact_ids: contactIds }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    let errorMsg = json.message || json.error?.message || "Failed to save contacts as target";
+    throw new Error(errorMsg);
+  }
+  return json;
+}
+

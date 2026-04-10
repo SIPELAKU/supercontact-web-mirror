@@ -7,6 +7,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-04-10
+
+### ✨ Added
+- **"Save As" Bulk Operation**: Implemented a powerful cross-entity migration feature that allows users to bulk-save Contacts, Subscribers, or Recipients as alternative target types.
+- **Cross-Entity Targets**: Simplified data management by allowing entities to coexist as multiple types (Contact, Subscriber, and Recipient) without record duplication.
+- **Reusable SaveAsModal**: Developed a modular modal component that dynamically adapts its options based on the source page (e.g., hiding the "Contact" option when saving from the Contacts page).
+- **Green UI Action**: Introduced a new "success" (green) color variant for `AppButton` and applied it to the "Save As" action across all relevant tables for better visual distinction.
+
+### 🛠️ Refactor & Enhancements
+- **Global Table Integration**: Unified the bulk actions toolbar in `ContactTable`, `SubscribersTable`, and `RecipientsTable` to include the functional "Save As" trigger.
+- **Localization Polish**: Standardized technical descriptions within the Save As workflow from Bahasa Indonesia to English for professional consistency.
+- **API Versioning Integration**: New endpoints (`/api/v1/.../save-as`) implemented across all marketing modules with support for both `contact_ids` and `recipient_ids` payloads.
+- **Auth Context Integration**: Secured CRM migration operations by integrating `useAuth` into the modal workflow, ensuring only authenticated tokens are used for cross-entity operations.
+
+### 📁 Created Files
+- `components/modal/SaveAsModal.tsx`
+
+### 📁 Modified Files
+- `lib/api/contacts.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/api/whatsapp-marketing.ts`
+- `components/contact/ContactTable.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/whatsapp-marketing/recipients/RecipientsTable.tsx`
+- `components/ui/app-button.tsx`
+
+## [1.15.8] - 2026-04-10
+
+### 🛠️ Refactor & Enhancements
+- **Price Page**: Updated the price page to remove some features which are not available yet.
+- **Login Page**: Change language from Bahasa Indonesia to English.
+- **Error Page**: Change language from Bahasa Indonesia to English.
+- **Not Found Page**: Change language from Bahasa Indonesia to English.
+
+### 📁 Modified Files
+- `components/price/PricingCards.tsx`
+- `app/auth/login/page.tsx`
+- `app/error/page.tsx`
+- `app/not-found/page.tsx`
+
+## [1.15.7] - 2026-04-09
+
+### ✨ Added
+- **Premium Subscription UI**: Completely redesigned the "My Subscription" interface with a modern 2-card layout (Free Trial & Exclusive) featuring premium SaaS aesthetics.
+- **Active Plan Indicators**: Added dynamic "ACTIVE" badges with pulse animations and card scaling effects to highlight the current active subscription.
+- **WhatsApp Sales Integration**: Integrated WhatsApp-based call-to-actions for all plan upgrades with brand-consistent styling (#25D366).
+
+### 🛠️ Refactor & Enhancements
+- **Admin Settings Migration**: Moved Omnichannel account management from the general settings page to a centralized Admin area (`Admin > WhatsApp Accounts` and `Admin > Email Accounts`).
+- **Sidebar Restructuring**: Updated the main navigation sidebar to reflect the new centralized account management structure under the Admin section.
+- **Codebase Hardening**: Optimized the `SubscriptionClient` component by cleaning up dynamic API falls-back and standardizing layout structures.
+
+### 🐛 Fixed
+- **JSX Syntax Stability**: Resolved critical build errors related to "Unexpected token" and "JSX element has no corresponding closing tag" in the subscription module.
+- **TypeScript Type Safety**: Fixed prop-type mismatches in MUI Buttons and resolved literal type comparison errors for `currentPlan` detection.
+
+### 📁 Modified Files
+- `components/subscription/SubscriptionClient.tsx`
+- `components/layout/Sidebar.tsx`
+- `app/admin/whatsapp-accounts/page.tsx`
+- `app/admin/email-accounts/page.tsx`
+- `app/omnichannel/settings/page.tsx` (Deleted)
+
+## [1.15.6] - 2026-04-09
+
+### ✨ Added
+- **Duplicate Broadcast Functionality**: Added a "Duplicate" button to the Broadcast Table and Edit Broadcast modal, allowing users to clone existing campaigns.
+
+### 🛠️ Refactor & Enhancements
+- **UI Polish**: Updated the "Broadcast Details & Statistics" modal to hide the Template ID field for better UX.
+
+### 📁 Modified Files
+- `components/whatsapp-marketing/broadcasting-wa/BroadcastingWAClient.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+
+## [1.15.5] - 2026-04-08
+
+### ✨ Added
+- **WhatsApp Recipient Management Tab**: Enhanced the "Add New Recipient" modal to support "Buat Manual" and "Import dari Kontak" tabs natively, ensuring UI consistency with Email Marketing.
+- **Broadcast Group Assignment**: Added a robust Multiple Select Autocomplete input to assign imported/manual contacts seamlessly directly into active Broadcast Groups.
+- **Dynamic Stats Independent Reload**: The WhatsApp Broadcasting "View Details & Statistics" modal now fetches real-time isolated data via `useBroadcastDetail` (`/api/v1/broadcasts/{broadcast_id}`) with an inline "Reload Data" button for immediate campaign status sync without page reloads.
+- **Error Status Transparency**: Injected a direct `Error Message` column into the Broadcast Recipients status table that prominently highlights message delivery failures or unmapped variables.
+
+### 🛠️ Refactor & Enhancements
+- **Global Contacts Bypass**: Integrated the `include_all` parameter across WhatsApp Marketing and Email Marketing contact importation hooks to securely fetch unfiltered global contacts (bypassing the `is_contact` default query limit).
+- **Template Builder Polish**: Enforced a `read-only` (disabled) state on the "Template Language" dropdown selection specifically during Edit mode, safeguarding core template properties post-creation.
+
+### 🐛 Fixed
+- **TypeScript Strict Data Parsing**: Remedied the `Type 'Element' is not assignable to type 'string'` error generated in customized `AppAutocomplete` implementations and secured the `activeBroadcast` prop pipeline against uninitialized null-state errors in the detailed statistics view.
+
+### 📁 Modified Files
+- `lib/hooks/useContacts.ts`
+- `lib/hooks/useBroadcasts.ts`
+- `lib/api/contacts.ts`
+- `lib/api/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+- `components/whatsapp-marketing/templates/create/GeneralInfoCard.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+- `components/email-marketing/subscribers/modals/AddSubscriberModal.tsx`
+
+## [1.15.4] - 2026-04-08
+
+### ✨ Added
+- **WhatsApp Message Preview**: Integrated a real-time WhatsApp-style mockup in both "Broadcast Details" and "Edit Broadcast" modals, allowing users to visualize how templates and dynamic variables will appear to recipients.
+- **Pending Status Support**: Added visual support for the `pending` recipient status in the broadcast statistics table with a dedicated warning indicator.
+
+### 🛠️ Refactor & Enhancements
+- **Broadcast Detail Layout**: Redesigned the "Broadcast Details & Statistics" modal into a modern 2-column layout (Statistics/Info on the left, Message Preview on the right) with the recipient status table positioned at the bottom.
+- **Edit Broadcast UI Sync**: Refactored the "Edit Broadcast" modal to achieve 100% parity with t1he "Create Broadcast" experience, including full support for Individual Contacts vs. Broadcast Groups and automated variable mapping.
+- **API Versioning & Standardization**: 
+  - Migrated Broadcast Recipient fetching to the versioned `/api/v1` endpoint.
+  - Updated the Broadcast update method to use **`PUT`** for backend consistency.
+- **UI Refinements**: 
+  - Replaced underscores with spaces in labels (e.g., "Recipient Source") within the detail view for better readability.
+  - Simplified the main Broadcast Table by hiding row selection checkboxes.
+- **Cache Synchronization**: Implemented React Query invalidation to automatically refresh the recipient list in the statistics modal after editing a contact.
+
+### 📁 Modified Files
+- `lib/api/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/broadcasting-wa/modals/EditBroadcastModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
+- `components/whatsapp-marketing/broadcasting-wa/BroadcastingWATable.tsx`
+
+
 ## [1.15.3] - 2026-04-08
 
 ### 🛠️ Refactor & Enhancements
@@ -31,6 +156,168 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📁 Modified Files
 - `package.json`
 - `components/layout/TrustedBy.tsx`
+
+## [1.15.1] - 2026-04-06
+
+### ✨ Added
+- **WhatsApp Marketing Recipients**: Simplified the recipient creation and update payloads by removing the redundant `recipient_type` field and standardizing the data structure for single and bulk operations.
+- **Row-level Navigation**: Enhanced the Broadcast Templates table by enabling direct navigation to the detail page upon clicking a table row, improving the interaction flow.
+
+### 🛠️ Refactor & Enhancements
+- **Template Table Interaction**: Added a visual hover effect (underline) to campaign names and removed the redundant "Edit" button from the action column.
+- **Navigation UX**: Updated the "Back" button in the template detail view to use a text variant with an arrow icon for a cleaner, more consistent interface.
+- **Form Focus Stability**: Fixed a focus loss issue in the template creation form where inputs would unmount on every keystroke by refactoring sub-components to the top level.
+
+### 🐛 Fixed
+- **Product Price Formatting**: Fixed a bug in the product edit modal where backend prices with decimal points (e.g., `10000.00`) were incorrectly formatted as `1.000.000` instead of `10.000`.
+
+### 📁 Modified Files
+- `lib/types/whatsapp-marketing.ts`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/recipients/ImportWaRecipientModal.tsx`
+- `components/product/AddProductModal.tsx`
+- `components/whatsapp-marketing/templates/create/TemplateFormContent.tsx`
+- `components/whatsapp-marketing/templates/BroadcastTemplatesTable.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+
+## [1.15.0] - 2026-04-02
+
+### ✨ Added
+- **Broadcast Template Features**: Implemented core enhancements and visual refinements for the WhatsApp Broadcast Template module.
+- **Inline Variable Samples**: Implemented direct editing of variable sample values (e.g., {{1}}) within the template creation and detail forms.
+- **Character Counters**: Added real-time character count display (e.g., 50/1600) for WhatsApp template body fields in read-only mode.
+
+### 🛠️ Refactor & Enhancements
+- **Read-only Visual Overhaul**: Refined the "Content Configuration" section in template details with externalized labels, light-gray backgrounds, and muted borders for a professional disabled look.
+- **Automatic Name Sanitization**: Updated the template name field to automatically convert spaces to underscores and enforce lowercase alphanumeric characters during input.
+- **Dialog System Update**: Enhanced custom `DialogContent`, `DialogTitle`, and `DialogFooter` wrappers to properly forward the `sx` prop and other standard MUI attributes, resolving persistent TypeScript errors.
+
+### 🐛 Fixed
+- **Responsive Layout Overlap**: Fixed a layout bug in `GeneralInfoDetail` where long SID strings and template names would overlap in multi-column views on smaller screens using `word-break: break-word`.
+
+### 📁 Modified Files
+- `components/ui/dialog.tsx`
+- `components/ui/app-input.tsx`
+- `components/ui/app-textarea.tsx`
+- `components/whatsapp-marketing/templates/create/TemplateFormContent.tsx`
+- `components/whatsapp-marketing/templates/create/CreateTemplateClient.tsx`
+- `components/whatsapp-marketing/templates/create/GeneralInfoCard.tsx`
+- `components/whatsapp-marketing/templates/create/AddVariableSamplesModal.tsx`
+- `components/whatsapp-marketing/templates/detail/TemplateDetailClient.tsx`
+- `components/whatsapp-marketing/templates/detail/GeneralInfoDetail.tsx`
+
+## [1.14.0] - 2026-04-01
+
+### ✨ Added
+- **WhatsApp Group Broadcast Detail**: Implemented a comprehensive detail page for WhatsApp groups with dual-tab navigation.
+- **Recipient Management**: Added a dedicated "Recipients" tab with server-side pagination, search, and "Import/Add" functionality directly within the group context.
+- **Campaign Statistics**: Added a "Broadcast (campaign) sent" tab listing all sent broadcasts with aggregated delivery stats (Sent, Delivered, Read, Failed).
+- **Campaign Detail Modal**: Created `ViewBroadcastCampaignStatsModal` to visualize detailed WhatsApp campaign metrics, account info, and template variables.
+- **Bulk Operations**: Implemented bulk deletion and bulk duplication for WhatsApp Broadcast Groups with integrated selection toolbar.
+- **Contextual Imports**: Enhanced `AddRecipientModal` and `ImportWaRecipientModal` to support `target: 'broadcast_group'`, ensuring imported contacts are automatically linked to the active group.
+
+### 🛠️ Refactor & Enhancements
+- **Hook Optimization**: Updated `useGroupBroadcasts` for improved cache invalidation and state synchronization across the broadcasting module.
+- **API Harmonization**: Updated delete API integration to follow the bulk deletion pattern (IDs in request body) across the broadcasting module.
+
+### 🐛 Fixed
+- **State Update Warning**: Fixed a React error "Cannot update a component while rendering a different component" in `GroupBroadcastingTable` by wrapping notification logic in `useEffect`.
+
+### 📁 Created Files
+- `components/whatsapp-marketing/group-broadcasting/modals/ViewBroadcastCampaignStatsModal.tsx`
+
+### 📁 Modified Files
+- `lib/types/whatsapp-marketing.ts`
+- `lib/hooks/useGroupBroadcasts.ts`
+- `components/whatsapp-marketing/group-broadcasting/GroupBroadcastingTable.tsx`
+- `components/whatsapp-marketing/group-broadcasting/GroupBroadcastingClient.tsx`
+- `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
+- `components/whatsapp-marketing/recipients/ImportWaRecipientModal.tsx`
+- `app/whatsapp-marketing/group-broadcasting/[id]/page.tsx`
+
+## [1.13.2] - 2026-03-31
+
+### 🛠️ Refactor & Enhancements
+- **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
+
+### 📁 Modified Files
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+
+## [1.13.1] - 2026-03-30
+
+### ✨ Added
+- **SMTP Selection in Campaigns**: Menambahkan dropdown pemilihan SMTP (Brevo vs Custom Mail Server) pada modal Add/Edit Campaign.
+- **SMTP Tracking Warning**: Menambahkan alert informatif saat menggunakan SMTP eksternal bahwa fitur tracking (delivery, opens, clicks, bounces) tidak tersedia.
+- **Improved SMTP Labels**: Format label SMTP server kini menampilkan `Name (From Email)` untuk kejelasan dan kemudahan identifikasi.
+- **Recipient Status in Contacts**: Menambahkan field `is_recipient` pada model `Contact` dan menampilkan status "Recipient" berdampingan dengan "Subscribed" menggunakan Chip pada preview tabel Contact.
+
+### 🛠️ Refactor & Enhancements
+- **AppSelect Disabled Styling**: Memperbarui styling `AppSelect` saat dalam keadaan `disabled` (background abu-abu, menonaktifkan hover border) agar representasi visual lebih akurat.
+- **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
+- **Contact Property Renaming**: Mengubah property `is_subscribed` menjadi `is_subscriber` pada model `Contact` untuk konsistensi penamaan dengan entitas subscriber.
+
+### 📁 Modified Files
+- `lib/types/email-marketing.ts`
+- `lib/models/types.ts`
+- `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
+- `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/ui/app-select.tsx`
+
+## [1.13.0] - 2026-03-30
+
+### ✨ Added
+- **Mail Server Sender Email**: Menambahkan field `from_email` pada konfigurasi Mail Server (Add/Edit Modal). Ini memisahkan username SMTP dengan alamat email pengirim yang muncul di pesan.
+- **Email Validation**: Menambahkan validasi pada field `from_email` untuk memastikan alamat email mengandung karakter `@`.
+
+### 📁 Modified Files
+- `lib/models/types.ts`
+- `components/admin/mail-servers/AddMailServerModal.tsx`
+- `components/admin/mail-servers/EditMailServerModal.tsx`
+
+## [1.12.1] - 2026-03-27
+
+### 🐛 Fixed
+- **Mail Server Validation**: Menghapus validasi email pada username field di Add/Edit Mail Server modal. Server akan melakukan validasi email saat testing koneksi.
+
+## [1.12.0] - 2026-03-26
+
+### ✨ Added
+- **Campaign Duplication**: Implementasi fitur cloning campaign (single & bulk) dengan suffix `(duplicate)` dan status default `draft`. API: `POST /api/v1/campaigns/duplicate`.
+- **Subscriber Duplication**: Implementasi fitur cloning subscriber (single & bulk) berdasarkan `contact_ids`. API: `POST /api/v1/subscribers/duplicate`.
+- **Contact Duplication**: Implementasi fitur cloning global contact (single & bulk) dengan `contact_ids`. Email & phone number dikosongkan pada hasil clone untuk menghindari unique constraint conflicts. API: `POST /api/v1/contacts/duplicate`.
+- **DuplicateButton Component**: Komponen reusable icon-button untuk aksi duplikasi di tabel.
+- **AppButton - White Color**: Menambahkan varian warna `white` pada komponen `AppButton`.
+
+### 🛠️ Refactor & Enhancements
+- **BulkActionsBar Styling**: Memperbarui warna teks dan icon pada `BulkActionsBar` agar lebih kontras menggunakan `primary.contrastText`.
+- **Duplicate Bulk Action**: Menambahkan tombol duplikasi pada toolbar aksi massal di `CampaignsTable`, `SubscribersTable`, dan `ContactTable`.
+
+### 🐛 Fixed
+- **API Error Handling**: Memperbarui parsing error pada API client agar dapat menampilkan detail validasi dari server (e.g. `smtp_username` invalid) alih-alih hanya pesan generic "Invalid request data".
+- **SubscribersTable Bulk Variant**: Mengubah variant tombol bulk duplicate dari `outline` ke `primary` dan bulk delete ke `danger` untuk konsistensi UI.
+
+### 📁 Created Files
+- `lib/api/email-marketing/subscribers.ts` (Modified with `duplicateSubscribers`)
+- `lib/api/contacts.ts` (Modified with `duplicateContacts`)
+
+### 📁 Modified Files
+- `lib/api/email-marketing/campaigns.ts`
+- `lib/api/mail-servers.ts`
+- `lib/api/index.ts`
+- `lib/hooks/useCampaigns.ts`
+- `lib/hooks/useSubscribers.ts`
+- `lib/hooks/useContacts.ts`
+- `components/email-marketing/campaigns/CampaignsClient.tsx`
+- `components/email-marketing/campaigns/CampaignsTable.tsx`
+- `components/email-marketing/subscribers/SubscribersClient.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/contact/ContactClient.tsx`
+- `components/contact/ContactTable.tsx`
+- `components/ui/app-action-buttons-table.tsx`
+- `components/ui/app-button.tsx`
+- `components/ui/super-table/components/BulkActionsBar.tsx`
 
 ## [1.11.2] - 2026-03-18
 

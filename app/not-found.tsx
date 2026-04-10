@@ -12,17 +12,17 @@ export default function NotFound() {
 
                 {/* Error Message */}
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Halaman Tidak Ditemukan
+                    Page Not Found
                 </h2>
                 <p className="text-gray-600 mb-8">
-                    Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.
+                    Sorry, the page you are looking for does not exist or has been moved.
                 </p>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Link href="/">
                         <AppButton variantStyle="primary" color="primary">
-                            Kembali ke Beranda
+                            Back to Home
                         </AppButton>
                     </Link>
                     <Link href="/analytics/dashboard">

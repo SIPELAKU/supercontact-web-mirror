@@ -12,7 +12,9 @@ import {
   HelpCircle,
   Home,
   Mail,
+  MessageCircle,
   Server,
+  Settings,
   User,
   Users,
 } from "lucide-react";
@@ -131,6 +133,16 @@ const menuData: MenuSection[] = [
         path: "/contact",
       },
       {
+        name: "Whatsapp Marketing",
+        icon: MessageCircle,
+        children: [
+          { name: "Recipients", path: "/whatsapp-marketing/recipients" },
+          { name: "Broadcast Template", path: "/whatsapp-marketing/template-broadcasting" },
+          { name: "Broadcast Group", path: "/whatsapp-marketing/group-broadcasting" },
+          { name: "Broadcasts", path: "/whatsapp-marketing/broadcasting-wa" },
+        ],
+      },
+      {
         name: "Email Marketing",
         icon: Mail,
         children: [
@@ -202,9 +214,13 @@ const menuData: MenuSection[] = [
         path: "/subscription",
       },
       {
-        name: "Mail Servers",
-        icon: Server,
-        path: "/admin/mail-servers",
+        name: "Settings",
+        icon: Settings,
+        children: [
+          { name: "Mail Server", path: "/admin/mail-servers" },
+          { name: "WhatsApp Account", path: "/admin/whatsapp-accounts" },
+          { name: "Email Account", path: "/admin/email-accounts" },
+        ],
       },
     ],
   },

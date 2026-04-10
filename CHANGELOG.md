@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-04-10
+
+### ✨ Added
+- **"Save As" Bulk Operation**: Implemented a powerful cross-entity migration feature that allows users to bulk-save Contacts, Subscribers, or Recipients as alternative target types.
+- **Cross-Entity Targets**: Simplified data management by allowing entities to coexist as multiple types (Contact, Subscriber, and Recipient) without record duplication.
+- **Reusable SaveAsModal**: Developed a modular modal component that dynamically adapts its options based on the source page (e.g., hiding the "Contact" option when saving from the Contacts page).
+- **Green UI Action**: Introduced a new "success" (green) color variant for `AppButton` and applied it to the "Save As" action across all relevant tables for better visual distinction.
+
+### 🛠️ Refactor & Enhancements
+- **Global Table Integration**: Unified the bulk actions toolbar in `ContactTable`, `SubscribersTable`, and `RecipientsTable` to include the functional "Save As" trigger.
+- **Localization Polish**: Standardized technical descriptions within the Save As workflow from Bahasa Indonesia to English for professional consistency.
+- **API Versioning Integration**: New endpoints (`/api/v1/.../save-as`) implemented across all marketing modules with support for both `contact_ids` and `recipient_ids` payloads.
+- **Auth Context Integration**: Secured CRM migration operations by integrating `useAuth` into the modal workflow, ensuring only authenticated tokens are used for cross-entity operations.
+
+### 📁 Created Files
+- `components/modal/SaveAsModal.tsx`
+
+### 📁 Modified Files
+- `lib/api/contacts.ts`
+- `lib/api/email-marketing/subscribers.ts`
+- `lib/api/whatsapp-marketing.ts`
+- `components/contact/ContactTable.tsx`
+- `components/email-marketing/subscribers/SubscribersTable.tsx`
+- `components/whatsapp-marketing/recipients/RecipientsTable.tsx`
+- `components/ui/app-button.tsx`
+
 ## [1.15.8] - 2026-04-10
 
 ### 🛠️ Refactor & Enhancements

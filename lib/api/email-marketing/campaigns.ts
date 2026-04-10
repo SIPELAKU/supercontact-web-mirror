@@ -266,3 +266,53 @@ export async function deleteCampaign(token: string, campaignId: string): Promise
     throw error;
   }
 }
+
+export async function duplicateCampaigns(token: string, campaignIds: string[]): Promise<any> {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/duplicate`;
+  
+    logger.info("Making POST request to duplicate campaigns", { url, campaignIds });
+  
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ campaign_ids: campaignIds }),
+      });
+  
+      let json;
+      try {
+        json = await res.json();
+      } catch (parseError: any) {
+        logger.error("Failed to parse duplicate campaigns response JSON", {
+          status: res.status,
+          statusText: res.statusText,
+          parseError: parseError.message
+        });
+        throw new Error(`Server returned invalid response (${res.status})`);
+      }
+  
+      logger.apiResponse("/campaigns/duplicate (POST)", { status: res.status, response: json });
+  
+      if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+      }
+  
+      if (!res.ok) {
+        logger.error(`Duplicate campaigns failed: ${res.status}`, {
+          status: res.status,
+          statusText: res.statusText,
+          response: json,
+          url
+        });
+        throw new Error(json.error?.message || `Failed to duplicate campaigns (${res.status}: ${res.statusText})`);
+      }
+  
+      return json;
+    } catch (error: any) {
+      logger.error("Duplicate campaigns request failed", { error: error.message, url });
+      throw error;
+    }
+  }

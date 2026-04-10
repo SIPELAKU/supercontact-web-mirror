@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Copy } from "lucide-react";
 import { AppButtonIcon, AppButtonIconProps } from "./app-button-icon";
 
 interface ActionButtonProps extends Omit<AppButtonIconProps, "icon"> {
@@ -40,6 +40,18 @@ export const ViewButton: React.FC<ActionButtonProps> = ({ onClick, color, varian
             <span>
                 <IconButton size="small" onClick={onClick} {...props}>
                     <Eye className="w-4 h-4" />
+                </IconButton>
+            </span>
+        </Tooltip>
+    );
+};
+
+export const DuplicateButton: React.FC<ActionButtonProps> = ({ onClick, color, variantStyle, isLoading, customTitle, ...props }) => {
+    return (
+        <Tooltip title={customTitle || "Duplicate"}>
+            <span>
+                <IconButton size="small" onClick={onClick} {...props}>
+                    <Copy className="w-4 h-4" />
                 </IconButton>
             </span>
         </Tooltip>

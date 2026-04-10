@@ -65,7 +65,8 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
           fullWidth={fullWidth}
           size="small"
           error={error}
-          sx={{ backgroundColor: isBgWhite ? "white !important" : INPUT_BG }}
+          disabled={props.disabled}
+          sx={{ backgroundColor: props.disabled ? "#F3F4F6" : (isBgWhite ? "white !important" : INPUT_BG) }}
         >
           <Select
             labelId={labelId}
@@ -112,15 +113,24 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#262B43/22",
               },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "primary.main",
-              },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                 borderWidth: "1.5px",
                 borderColor: "primary.main",
               },
               "&.Mui-error .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#d32f2f", // Error red color
+              },
+              "&.Mui-disabled": {
+                backgroundColor: "#F3F4F6",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#E5E7EB !important",
+                },
+                "& .MuiSelect-select": {
+                  cursor: "not-allowed",
+                }
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: props.disabled ? "#E5E7EB" : "primary.main",
               },
               ...sx,
             }}

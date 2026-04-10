@@ -49,7 +49,9 @@ export async function createMailServer(token: string, data: any) {
         const errorMessage = typeof json.error === 'string'
             ? json.error
             : (json.error?.message || json.message || "Failed to create mail server");
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;
@@ -75,7 +77,9 @@ export async function updateMailServer(token: string, id: string, data: any) {
         const errorMessage = typeof json.error === 'string'
             ? json.error
             : (json.error?.message || json.message || "Failed to update mail server");
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;
@@ -101,7 +105,9 @@ export async function updateMailServerStatus(token: string, id: string, data: an
         const errorMessage = typeof json.error === 'string'
             ? json.error
             : (json.error?.message || json.message || "Failed to update mail server status");
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;
@@ -126,7 +132,9 @@ export async function deleteMailServer(token: string, id: string) {
         const errorMessage = typeof json.error === 'string'
             ? json.error
             : (json.error?.message || json.message || "Failed to delete mail server");
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;
@@ -154,7 +162,9 @@ export async function fetchMailServerConnectionLog(token: string, mailServerId: 
     if (!res.ok) {
         // For now, I will throw error with message from backend
         const errorMessage = json.error?.message || json.message || "Failed to fetch connection log";
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;
@@ -175,7 +185,9 @@ export async function testMailServerConnection(token: string, mailServerId: stri
     if (!res.ok) {
         // If 400 or other errors, backend might return { error: { message: ... } } or { message: ... }
         const errorMessage = json.error?.message || json.message || "Failed to test connection";
-        throw new Error(errorMessage);
+        const error = new Error(errorMessage) as any;
+        error.data = json;
+        throw error;
     }
 
     return json;

@@ -51,7 +51,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
 
     const createMutation = useCreateSubscriber();
     const { data: mailingListsData } = useMailingLists();
-    const { data: contactsData, isLoading: isLoadingContacts } = useContacts(contactSearchQuery);
+    const { data: contactsData, isLoading: isLoadingContacts } = useContacts(contactSearchQuery, true);
 
     const listOptions = mailingListsData?.data?.mailing_lists || [];
     const contactOptions = contactsData?.data?.contacts || [];

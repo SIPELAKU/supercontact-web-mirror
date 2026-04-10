@@ -39,7 +39,7 @@ export default function Error({
                     Terjadi Kesalahan
                 </h1>
                 <p className="text-gray-600 mb-6">
-                    Maaf, terjadi kesalahan yang tidak terduga. Silakan coba lagi atau hubungi tim support jika masalah berlanjut.
+                    Sorry, an unexpected error occurred. Please try again or contact support if the problem persists.
                 </p>
 
                 {/* Error Details (Development only) */}
@@ -62,13 +62,13 @@ export default function Error({
                         onClick={reset}
                         className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        Coba Lagi
+                        Try Again
                     </button>
                     <button
                         onClick={() => window.location.href = '/'}
                         className="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
                     >
-                        Kembali ke Beranda
+                        Back to Home
                     </button>
                 </div>
             </div>

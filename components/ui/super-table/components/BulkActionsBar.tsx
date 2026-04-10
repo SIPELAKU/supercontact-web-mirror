@@ -51,13 +51,13 @@ export function BulkActionsBar<TData extends object>({
         <Typography
           variant="subtitle2"
           sx={{
-            fontWeight: 700,
-            color: theme.palette.primary.dark,
+            fontWeight: 500,
+            color: theme.palette.primary.contrastText,
             // Hilangkan gaya text-transform yang aneh kalau ada
-            textTransform: 'none', 
+            textTransform: 'none',
           }}
         >
-          {selectedCount} baris dipilih
+          {selectedCount} line selected
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -68,8 +68,8 @@ export function BulkActionsBar<TData extends object>({
       <IconButton
         onClick={clearSelection}
         size="small"
-        sx={{ color: theme.palette.primary.dark }}
-        title="Batal Pilih Semua"
+        sx={{ color: theme.palette.primary.contrastText }}
+        title="Cancel"
       >
         <CloseIcon fontSize="small" />
       </IconButton>

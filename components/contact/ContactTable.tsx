@@ -7,8 +7,9 @@ import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
 import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2 } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save } from "lucide-react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
+import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 interface ContactTableProps {
   data: Contact[];
@@ -30,6 +31,7 @@ interface ContactTableProps {
 
   onOpenAdd: () => void;
   onOpenImport: () => void;
+  onSuccess?: () => void;
 }
 
 export const ContactTable = ({
@@ -49,8 +51,12 @@ export const ContactTable = ({
   onOpenAdd,
   onOpenImport,
   isDuplicating,
+  onSuccess,
 }: ContactTableProps) => {
   const [previewContact, setPreviewContact] = useState<Contact | null>(null);
+  const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -158,6 +164,18 @@ export const ContactTable = ({
         )}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <div className="flex gap-2 items-center">
+            <AppButton
+              variantStyle="primary"
+              color="success"
+              startIcon={<Save size={16} />}
+              onClick={() => {
+                setSelectedIds(selectedRows.map(r => r.id));
+                setClearSelectionFn(() => clearSelection);
+                setIsSaveAsModalOpen(true);
+              }}
+            >
+              Save As
+            </AppButton>
             <AppButton
               variantStyle="primary"
               disabled={isDuplicating}
@@ -365,6 +383,17 @@ export const ContactTable = ({
           </>
         )}
       </Dialog>
+
+      <SaveAsModal
+        open={isSaveAsModalOpen}
+        onClose={() => setIsSaveAsModalOpen(false)}
+        selectedIds={selectedIds}
+        sourceType="contact"
+        onSuccess={() => {
+          if (clearSelectionFn) clearSelectionFn();
+          if (onSuccess) onSuccess();
+        }}
+      />
     </>
   );
 };

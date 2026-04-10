@@ -438,3 +438,61 @@ export async function fetchBroadcastDetail(
     throw error;
   }
 }
+
+/**
+ * Save recipients as other targets
+ */
+export async function saveAsRecipients(
+  token: string,
+  target: string[],
+  recipientIds: string[]
+): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/recipients/save-as`;
+
+  logger.info("Making POST request to save recipients as target", { url, target, recipientIds });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ target, recipient_ids: recipientIds }),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse save as recipients response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/recipients/save-as (POST)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Save as recipients failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to save as recipients (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Save as recipients request failed", { error: error.message, url });
+    throw error;
+  }
+}
+

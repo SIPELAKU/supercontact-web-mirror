@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Box, Stack, IconButton, Tooltip } from '@mui/material';
-import { Plus, Trash2, Upload, Eye } from 'lucide-react';
+import { Plus, Trash2, Upload, Eye, Save } from 'lucide-react';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
@@ -11,6 +11,7 @@ import { AppButton } from '@/components/ui/app-button';
 import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
 import { WaRecipientPreviewPopup } from './WaRecipientPreviewPopup';
+import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 interface RecipientsTableProps {
   recipients: WaRecipient[];
@@ -24,6 +25,7 @@ interface RecipientsTableProps {
   onDuplicate?: (ids: string[], target: string) => void;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   isDuplicating?: boolean;
+  onSuccess?: () => void;
 }
 
 const RecipientsTable = ({
@@ -38,8 +40,12 @@ const RecipientsTable = ({
   onDuplicate,
   onStateChange,
   isDuplicating,
+  onSuccess,
 }: RecipientsTableProps) => {
   const [previewRecipient, setPreviewRecipient] = useState<WaRecipient | null>(null);
+  const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
   const columns = useMemo<MRT_ColumnDef<WaRecipient>[]>(
     () => [
@@ -154,6 +160,18 @@ const RecipientsTable = ({
           <Stack direction="row" spacing={1}>
             <AppButton
               variantStyle="primary"
+              color="success"
+              startIcon={<Save size={16} />}
+              onClick={() => {
+                setSelectedIds((selectedRows as WaRecipient[]).map((r) => r.id));
+                setClearSelectionFn(() => clearSelection);
+                setIsSaveAsModalOpen(true);
+              }}
+            >
+              Save As
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
               disabled={isDuplicating}
               onClick={() => {
                 const ids = (selectedRows as WaRecipient[]).map((r) => r.id);
@@ -209,6 +227,17 @@ const RecipientsTable = ({
       <WaRecipientPreviewPopup
         recipient={previewRecipient}
         onClose={() => setPreviewRecipient(null)}
+      />
+
+      <SaveAsModal
+        open={isSaveAsModalOpen}
+        onClose={() => setIsSaveAsModalOpen(false)}
+        selectedIds={selectedIds}
+        sourceType="recipient"
+        onSuccess={() => {
+          if (clearSelectionFn) clearSelectionFn();
+          if (onSuccess) onSuccess();
+        }}
       />
     </>
   );

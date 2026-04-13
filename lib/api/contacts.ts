@@ -190,3 +190,27 @@ export async function duplicateContacts(token: string, contactIds: string[]): Pr
   }
   return json;
 }
+
+export async function saveAsContacts(token: string, target: string[], contactIds: string[]): Promise<any> {
+  const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/contacts/save-as`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ target, contact_ids: contactIds }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    let errorMsg = json.message || json.error?.message || "Failed to save contacts as target";
+    throw new Error(errorMsg);
+  }
+  return json;
+}
+

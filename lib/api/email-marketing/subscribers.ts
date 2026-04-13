@@ -335,51 +335,102 @@ export async function duplicateSubscribers(token: string, data: {
   contact_ids: string[];
   mailing_list_ids?: string[];
 }): Promise<any> {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/duplicate`;
-  
-    logger.info("Making POST request to duplicate subscribers", { url, data });
-  
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/duplicate`;
+
+  logger.info("Making POST request to duplicate subscribers", { url, data });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data),
+    });
+
+    let json;
     try {
-      const res = await fetchWithTimeout(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(data),
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse duplicate subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
       });
-  
-      let json;
-      try {
-        json = await res.json();
-      } catch (parseError: any) {
-        logger.error("Failed to parse duplicate subscribers response JSON", {
-          status: res.status,
-          statusText: res.statusText,
-          parseError: parseError.message
-        });
-        throw new Error(`Server returned invalid response (${res.status})`);
-      }
-  
-      logger.apiResponse("/subscribers/duplicate (POST)", { status: res.status, response: json });
-  
-      if (res.status === 401) {
-        throw new Error("UNAUTHORIZED");
-      }
-  
-      if (!res.ok) {
-        logger.error(`Duplicate subscribers failed: ${res.status}`, {
-          status: res.status,
-          statusText: res.statusText,
-          response: json,
-          url
-        });
-        throw new Error(json.error?.message || `Failed to duplicate subscribers (${res.status}: ${res.statusText})`);
-      }
-  
-      return json;
-    } catch (error: any) {
-      logger.error("Duplicate subscribers request failed", { error: error.message, url });
-      throw error;
+      throw new Error(`Server returned invalid response (${res.status})`);
     }
+
+    logger.apiResponse("/subscribers/duplicate (POST)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Duplicate subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to duplicate subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Duplicate subscribers request failed", { error: error.message, url });
+    throw error;
   }
+}
+
+export async function saveAsSubscribers(token: string, target: string[], contactIds: string[]): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/save-as`;
+
+  logger.info("Making POST request to save as subscribers", { url, target, contactIds });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ target, contact_ids: contactIds }),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse save as subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers/save-as (POST)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Save as subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to save as subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Save as subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}
+

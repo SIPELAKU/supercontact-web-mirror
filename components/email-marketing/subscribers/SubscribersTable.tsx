@@ -3,7 +3,8 @@
 
 import { useMemo, useState } from 'react';
 import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Download, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Eye, Pencil, Plus, Trash2, Save } from 'lucide-react';
+import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
@@ -25,6 +26,7 @@ interface SubscribersTableProps {
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   onDuplicate?: (ids: string[]) => void;
   isDuplicating?: boolean;
+  onSuccess?: () => void;
 }
 
 const SubscribersTable = ({
@@ -40,8 +42,12 @@ const SubscribersTable = ({
   onStateChange,
   onDuplicate,
   isDuplicating,
+  onSuccess,
 }: SubscribersTableProps) => {
   const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
+  const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
   const columns = useMemo<MRT_ColumnDef<Subscriber>[]>(
     () => [
@@ -156,6 +162,18 @@ const SubscribersTable = ({
           <Stack direction="row" spacing={1}>
             <AppButton
               variantStyle="primary"
+              color="success"
+              startIcon={<Save size={16} />}
+              onClick={() => {
+                setSelectedIds((selectedRows as Subscriber[]).map((r) => r.id));
+                setClearSelectionFn(() => clearSelection);
+                setIsSaveAsModalOpen(true);
+              }}
+            >
+              Save As
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
               disabled={isDuplicating}
               onClick={() => {
                 const ids = (selectedRows as Subscriber[]).map((r) => r.id);
@@ -203,6 +221,17 @@ const SubscribersTable = ({
       <SubscriberPreviewPopup
         subscriber={previewSubscriber}
         onClose={() => setPreviewSubscriber(null)}
+      />
+
+      <SaveAsModal
+        open={isSaveAsModalOpen}
+        onClose={() => setIsSaveAsModalOpen(false)}
+        selectedIds={selectedIds}
+        sourceType="subscriber"
+        onSuccess={() => {
+          if (clearSelectionFn) clearSelectionFn();
+          if (onSuccess) onSuccess();
+        }}
       />
     </>
   );

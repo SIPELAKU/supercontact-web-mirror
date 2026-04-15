@@ -1,7 +1,11 @@
 import { Copy, Code, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { AppButton } from '@/components/ui/app-button';
 
-export default function EmbedShareTab() {
+interface EmbedShareTabProps {
+  initialData?: any;
+}
+
+export default function EmbedShareTab({ initialData }: EmbedShareTabProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
       <h2 className="text-lg font-bold text-gray-900 mb-2">Embed & Share</h2>

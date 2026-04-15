@@ -1,7 +1,11 @@
 import { Sparkles, Copy } from 'lucide-react';
 import { AppButton } from '@/components/ui/app-button';
 
-export default function OutreachHookTab() {
+interface OutreachHookTabProps {
+  initialData?: any;
+}
+
+export default function OutreachHookTab({ initialData }: OutreachHookTabProps) {
   const VARIABLES = [
     '{{target_name}}',
     '{{company_name}}',
@@ -63,11 +67,11 @@ export default function OutreachHookTab() {
         <div className="flex justify-end">
           <AppButton
             variantStyle="primary"
-            color="dark"
+            color="primary"
             startIcon={<Copy size={16} />}
             className="rounded-lg"
           >
-             Copy Template
+            Copy Template
           </AppButton>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Chip, IconButton, Tooltip } from '@mui/material';
 import { Eye, FileText, MoreVertical, Plus } from 'lucide-react';
 
@@ -24,6 +25,7 @@ interface LeadMagnetsTableProps {
 }
 
 const LeadMagnetsTable = ({ data }: LeadMagnetsTableProps) => {
+  const router = useRouter();
   const columns = useMemo<MRT_ColumnDef<LeadMagnet>[]>(
     () => [
       {
@@ -108,21 +110,16 @@ const LeadMagnetsTable = ({ data }: LeadMagnetsTableProps) => {
       }}
       renderRowActions={({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <Tooltip title="Preview">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                // setPreviewRecipient(row.original);
-              }}
-              sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-            >
-              <Eye size={18} />
-            </IconButton>
+          <Tooltip title="View Detail">
+            <Link href={`/smart-capture/detail/${row.original.id}`}>
+              <IconButton
+                size="small"
+                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+              >
+                <Eye size={18} />
+              </IconButton>
+            </Link>
           </Tooltip>
-          <EditButton onClick={() => {
-            // onEdit(row.original)
-          }} />
           <DuplicateButton onClick={() => {
             // onDuplicate && onDuplicate([row.original.id], 'recipient')
           }} />

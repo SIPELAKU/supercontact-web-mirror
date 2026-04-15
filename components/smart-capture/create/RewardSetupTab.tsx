@@ -1,7 +1,11 @@
 import { Upload } from 'lucide-react';
 import { AppButton } from '@/components/ui/app-button';
 
-export default function RewardSetupTab() {
+interface RewardSetupTabProps {
+  initialData?: any;
+}
+
+export default function RewardSetupTab({ initialData }: RewardSetupTabProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
       <h2 className="text-lg font-bold text-gray-900 mb-6">Reward (Lead Magnet) Setup</h2>
@@ -12,6 +16,7 @@ export default function RewardSetupTab() {
           <label className="text-sm font-medium text-gray-700">Campaign / Form Name</label>
           <input
             type="text"
+            defaultValue={initialData?.name || ""}
             className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5479EE] focus:border-[#5479EE] placeholder-gray-400"
             placeholder="e.g., Sales Strategy Ebook"
           />

@@ -1,6 +1,10 @@
 import { Plus, CheckCircle2, Circle } from 'lucide-react';
 
-export default function DynamicFormTab() {
+interface DynamicFormTabProps {
+  initialData?: any;
+}
+
+export default function DynamicFormTab({ initialData }: DynamicFormTabProps) {
   return (
     <div className="flex flex-col lg:flex-row gap-6 w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
       
@@ -17,7 +21,7 @@ export default function DynamicFormTab() {
               <label className="text-sm font-medium text-gray-700">Form Title</label>
               <input
                 type="text"
-                defaultValue="Template SOP Sales 2026"
+                defaultValue={initialData?.name || "Template SOP Sales 2026"}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#5479EE] focus:border-[#5479EE]"
               />
             </div>

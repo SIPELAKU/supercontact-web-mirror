@@ -192,29 +192,29 @@ export type TestConnectionResponse = {
     details?: any;
   };
 };
-export type SmartCaptureStatus = "Draft" | "Active" | "Inactive";
+export type SmartCaptureStatus = "Draft" | "Active" | "Inactive" | "Archived";
 export type SmartCaptureTarget = "email" | "whatsapp";
 
 export interface SmartCapture {
- id: string;
- company_id: string;
- name: string;
- email_subject?: string;
- email_body?: string;
- form_title?: string;
- form_description?: string;
- target: SmartCaptureTarget;
- content_template?: string;
- status: SmartCaptureStatus;
- code: string;
- views: number;
- valid_leads: number;
- conversions: number;
- deleted_at?: string;
- created_at: string;
- updated_at: string;
- files?: SmartCaptureFile[];
- form_fields?: FormField[];
+  id: string;
+  company_id: string;
+  name: string;
+  email_subject?: string;
+  email_body?: string;
+  form_title?: string;
+  form_description?: string;
+  target: SmartCaptureTarget;
+  content_template?: string;
+  status: SmartCaptureStatus;
+  code: string;
+  views: number;
+  valid_leads: number;
+  conversions: number;
+  deleted_at?: string;
+  created_at: string;
+  updated_at: string;
+  files?: SmartCaptureFile[];
+  form_fields?: FormField[];
 }
 
 export interface SmartCaptureDetail extends SmartCapture {

@@ -15,17 +15,18 @@ interface DetailHeaderProps {
 export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { mutate, isPending } = useUpdateSmartCaptureStatus();
-  
+
   const status = data.status;
   const isActive = status === 'Active';
   const isDraft = status === 'Draft';
   const isInactive = status === 'Inactive';
+  const isArchived = status === 'Archived';
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (isActive) {
-      notify.info("Active campaigns are locked and cannot be changed.");
-      return;
-    }
+    // if (isActive) {
+    //   notify.info("Active campaigns are locked and cannot be changed.");
+    //   return;
+    // }
     setAnchorEl(event.currentTarget);
   };
 
@@ -107,32 +108,39 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
                 transformOrigin={{ horizontal: 'left', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
               >
-                <MenuItem 
+                <MenuItem
                   onClick={() => handleStatusChange('Active')}
                   disabled={isActive}
                   sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A' }}
                 >
                   Set as Active
                 </MenuItem>
-                <MenuItem 
+                <MenuItem
                   onClick={() => handleStatusChange('Inactive')}
                   disabled={isInactive}
                   sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444' }}
                 >
                   Set as Inactive
                 </MenuItem>
-                <MenuItem 
+                <MenuItem
                   onClick={() => handleStatusChange('Draft')}
                   disabled={isDraft}
                   sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
                 >
                   Set as Draft
                 </MenuItem>
+                <MenuItem
+                  onClick={() => handleStatusChange('Archived')}
+                  disabled={isArchived}
+                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
+                >
+                  Set as Archived
+                </MenuItem>
               </Menu>
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            Magnet ID: <span className="font-mono">{data.id}</span> • Created on April 12, 2026
+            Magnet Code: <span className="font-mono">{data.code}</span> • Created on {new Date(data.created_at).toLocaleDateString()}
           </p>
         </div>
       </div>

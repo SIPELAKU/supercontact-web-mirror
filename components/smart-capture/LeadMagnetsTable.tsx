@@ -10,10 +10,10 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3 } from 'lucide-react';
 import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
-import { 
-  useUpdateSmartCaptureStatus, 
-  useDeleteMultipleSmartCaptures, 
-  useDuplicateSmartCaptures 
+import {
+  useUpdateSmartCaptureStatus,
+  useDeleteMultipleSmartCaptures,
+  useDuplicateSmartCaptures
 } from '@/lib/hooks/useSmartCaptures';
 import { notify } from '@/lib/notifications';
 
@@ -23,7 +23,7 @@ export interface LeadMagnet extends Partial<SmartCapture> {
   status: SmartCaptureStatus;
   views: number;
   valid_leads: number;
-  conversion?: number; 
+  conversion?: number;
 }
 
 interface LeadMagnetsTableProps {
@@ -38,17 +38,18 @@ interface LeadMagnetsTableProps {
 const StatusCell = ({ row }: { row: SmartCapture }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { mutate, isPending } = useUpdateSmartCaptureStatus();
-  
+
   const status = row.status;
   const isActive = status === 'Active';
   const isDraft = status === 'Draft';
   const isInactive = status === 'Inactive';
+  const isArchived = status === 'Archived';
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (isActive) {
-      notify.info("Active campaigns are locked and cannot be changed here.");
-      return;
-    }
+    // if (isActive) {
+    //   notify.info("Active campaigns are locked and cannot be changed here.");
+    //   return;
+    // }
     setAnchorEl(event.currentTarget);
   };
 
@@ -74,14 +75,14 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
         label={isPending ? "Updating..." : status}
         size="small"
         onClick={handleClick}
-        icon={!isActive && !isPending ? <ChevronDown size={14} /> : undefined}
+        icon={!isPending ? <ChevronDown size={14} /> : undefined}
         disabled={isPending}
         sx={{
           bgcolor: isActive ? '#DCFCE7' : isDraft ? '#F1F5F9' : '#FEE2E2',
           color: isActive ? '#16A34A' : isDraft ? '#64748B' : '#EF4444',
           fontWeight: 600,
           borderRadius: '6px',
-          cursor: isActive ? 'default' : 'pointer',
+          cursor: 'pointer',
           '&:hover': {
             bgcolor: isActive ? '#DCFCE7' : isDraft ? '#E2E8F0' : '#FECACA',
           },
@@ -109,27 +110,30 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
         transformOrigin={{ horizontal: 'left', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
       >
-        <MenuItem 
-          onClick={() => handleStatusChange('Active')}
-          disabled={isActive}
-          sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A', '&:hover': { bgcolor: '#DCFCE7/50' } }}
-        >
-          Set as Active
-        </MenuItem>
-        <MenuItem 
-          onClick={() => handleStatusChange('Inactive')}
-          disabled={isInactive}
-          sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444', '&:hover': { bgcolor: '#FEE2E2/50' } }}
-        >
-          Set as Inactive
-        </MenuItem>
-        <MenuItem 
-          onClick={() => handleStatusChange('Draft')}
-          disabled={isDraft}
-          sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B', '&:hover': { bgcolor: '#F1F5F9/50' } }}
-        >
-          Set as Draft
-        </MenuItem>
+        {!isActive && (
+          <MenuItem
+            onClick={() => handleStatusChange('Active')}
+            sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A', '&:hover': { bgcolor: '#DCFCE7/50' } }}
+          >
+            Set as Active
+          </MenuItem>
+        )}
+        {!isInactive && (
+          <MenuItem
+            onClick={() => handleStatusChange('Inactive')}
+            sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444', '&:hover': { bgcolor: '#FEE2E2/50' } }}
+          >
+            Set as Inactive
+          </MenuItem>
+        )}
+        {!isArchived && (
+          <MenuItem
+            onClick={() => handleStatusChange('Archived')}
+            sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B', '&:hover': { bgcolor: '#F1F5F9/50' } }}
+          >
+            Set as Archived
+          </MenuItem>
+        )}
       </Menu>
     </>
   );
@@ -243,8 +247,8 @@ const LeadMagnetsTable = ({
       renderRowActions={({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <Tooltip title={row.original.status === 'Draft' ? "Edit Data" : "View Detail"}>
-            <Link href={row.original.status === 'Draft' 
-              ? `/smart-capture/edit/${row.original.id}` 
+            <Link href={row.original.status === 'Draft'
+              ? `/smart-capture/edit/${row.original.id}`
               : `/smart-capture/detail/${row.original.id}`
             }>
               <IconButton

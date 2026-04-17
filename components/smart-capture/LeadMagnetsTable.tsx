@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { DeleteButton, DuplicateButton, EditButton } from '../ui/app-action-buttons-table';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Eye, FileText, Plus, ChevronDown, Trash2, Copy } from 'lucide-react';
+import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3 } from 'lucide-react';
 import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
 import { 
   useUpdateSmartCaptureStatus, 
@@ -242,13 +242,16 @@ const LeadMagnetsTable = ({
       }}
       renderRowActions={({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <Tooltip title="View Detail">
-            <Link href={`/smart-capture/detail/${row.original.id}`}>
+          <Tooltip title={row.original.status === 'Draft' ? "Edit Data" : "View Detail"}>
+            <Link href={row.original.status === 'Draft' 
+              ? `/smart-capture/edit/${row.original.id}` 
+              : `/smart-capture/detail/${row.original.id}`
+            }>
               <IconButton
                 size="small"
                 sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
               >
-                <Eye size={18} />
+                {row.original.status === 'Draft' ? <Edit3 size={18} /> : <Eye size={18} />}
               </IconButton>
             </Link>
           </Tooltip>

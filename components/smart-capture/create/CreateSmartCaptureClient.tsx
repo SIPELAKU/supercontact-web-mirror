@@ -11,7 +11,7 @@ import DynamicFormTab from './DynamicFormTab';
 import OutreachHookTab from './OutreachHookTab';
 import EmbedShareTab from './EmbedShareTab';
 import { FormField, SmartCaptureCreateReq, SmartCapture } from '@/lib/models/types';
-import { createSmartCapture } from '@/lib/api';
+import { createSmartCapture, updateSmartCapture } from '@/lib/api';
 import { notify } from '@/lib/notifications';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
@@ -21,23 +21,39 @@ const DEFAULT_FIELDS: FormField[] = [
   { name: 'phone_number', label: 'Phone Number', type: 'text', required: true, sort_order: 2, sorting_id: 'core-phone' },
 ];
 
-export default function CreateSmartCaptureClient() {
+interface CreateSmartCaptureClientProps {
+  initialData?: SmartCapture;
+  mode?: 'create' | 'edit';
+}
+
+export default function CreateSmartCaptureClient({ 
+  initialData, 
+  mode = 'create' 
+}: CreateSmartCaptureClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [successData, setSuccessData] = useState<SmartCapture | null>(null);
 
   const [formData, setFormData] = useState<SmartCaptureCreateReq>({
-    name: '',
+    name: initialData?.name || '',
     action: 'draft',
-    email_subject: '',
-    email_body: '',
-    form_title: '',
-    form_description: '',
-    target: 'email',
-    content_template: 'Hello {{target_name}}, I see {{company_name}} is growing. I have a free {{asset_name}} for your team\'s reference. Please check it here: {{magnet_link}}',
-    file_ids: [],
-    form_fields: DEFAULT_FIELDS,
+    email_subject: initialData?.email_subject || '',
+    email_body: initialData?.email_body || '',
+    form_title: initialData?.form_title || '',
+    form_description: initialData?.form_description || '',
+    target: initialData?.target || 'email',
+    content_template: initialData?.content_template || 'Hello {{target_name}}, I see {{company_name}} is growing. I have a free {{asset_name}} for your team\'s reference. Please check it here: {{magnet_link}}',
+    file_ids: initialData?.files?.map(f => f.id) || [],
+    form_fields: initialData?.form_fields?.map(f => ({
+      name: f.name,
+      label: f.label,
+      type: f.field_type || f.type || 'text',
+      required: f.required,
+      sort_order: f.sort_order,
+      options: f.options,
+      sorting_id: f.sorting_id
+    })) || DEFAULT_FIELDS,
   });
 
   const TABS = [
@@ -68,14 +84,19 @@ export default function CreateSmartCaptureClient() {
       const token = Cookies.get('access_token') as string;
       const payload = { ...formData, action };
 
-      const response = await createSmartCapture(token, payload);
+      let response;
+      if (mode === 'edit' && initialData?.id) {
+        response = await updateSmartCapture(token, initialData.id, payload);
+      } else {
+        response = await createSmartCapture(token, payload);
+      }
 
       if (response.success) {
         if (action === 'publish') {
           setSuccessData(response.data);
-          notify.success("Smart Capture published successfully!");
+          notify.success(`Smart Capture ${mode === 'edit' ? 'updated and ' : ''}published successfully!`);
         } else {
-          notify.success("Draft saved successfully!");
+          notify.success(`${mode === 'edit' ? 'Draft updated' : 'Draft saved'} successfully!`);
           router.push('/smart-capture');
         }
       }
@@ -102,7 +123,7 @@ export default function CreateSmartCaptureClient() {
           </AppButton>
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              Create New Lead Magnet
+              {mode === 'edit' ? 'Edit Lead Magnet' : 'Create New Lead Magnet'}
             </h1>
             <p className="text-gray-500 text-xs mt-0.5">
               Lead Magnets
@@ -156,7 +177,13 @@ export default function CreateSmartCaptureClient() {
 
         {/* Right Content Area */}
         <div className="flex-1 w-full">
-          {activeTab === 1 && <RewardSetupTab formData={formData} updateFormData={updateFormData} />}
+          {activeTab === 1 && (
+            <RewardSetupTab 
+              formData={formData} 
+              updateFormData={updateFormData} 
+              initialFiles={initialData?.files}
+            />
+          )}
           {activeTab === 2 && <DynamicFormTab formData={formData} updateFormData={updateFormData} />}
           {activeTab === 3 && <OutreachHookTab formData={formData} updateFormData={updateFormData} />}
         </div>

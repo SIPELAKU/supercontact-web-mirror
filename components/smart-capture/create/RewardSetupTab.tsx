@@ -11,11 +11,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 interface RewardSetupTabProps {
   formData: SmartCaptureCreateReq;
   updateFormData: (updates: Partial<SmartCaptureCreateReq>) => void;
+  initialFiles?: SmartCaptureFile[];
 }
 
-export default function RewardSetupTab({ formData, updateFormData }: RewardSetupTabProps) {
+export default function RewardSetupTab({ 
+  formData, 
+  updateFormData,
+  initialFiles = []
+}: RewardSetupTabProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<SmartCaptureFile[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<SmartCaptureFile[]>(initialFiles);
   const [previewFile, setPreviewFile] = useState<SmartCaptureFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -171,7 +171,7 @@ export async function updateSmartCapture(
     const url = getFullUrl(`/smart-captures/${id}`);
 
     const res = await fetchWithTimeout(url, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

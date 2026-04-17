@@ -271,6 +271,10 @@ export interface SmartCaptureCreateReq {
   form_fields?: FormField[];
 }
 
+export interface SmartCaptureUpdateReq extends Partial<Omit<SmartCaptureCreateReq, 'action'>> {
+  action: 'draft' | 'publish';
+}
+
 export interface SmartCaptureFile {
   id: string;
   external_file_id: string;

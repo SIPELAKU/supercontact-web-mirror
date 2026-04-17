@@ -1,16 +1,49 @@
-import { Chip } from "@mui/material";
+import { useState } from "react";
+import { Chip, Menu, MenuItem } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
-import { LeadMagnet } from "../../LeadMagnetsTable";
-import { Edit, Trash2 } from "lucide-react";
+import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
+import { Trash2, ChevronDown } from "lucide-react";
+import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
+import { notify } from "@/lib/notifications";
 
 interface DetailHeaderProps {
-  data: LeadMagnet;
+  data: SmartCapture;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
-  const isActive = data.status === 'Active';
+export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { mutate, isPending } = useUpdateSmartCaptureStatus();
+  
+  const status = data.status;
+  const isActive = status === 'Active';
+  const isDraft = status === 'Draft';
+  const isInactive = status === 'Inactive';
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (isActive) {
+      notify.info("Active campaigns are locked and cannot be changed.");
+      return;
+    }
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleStatusChange = (newStatus: SmartCaptureStatus) => {
+    mutate({ id: data.id, status: newStatus }, {
+      onSuccess: () => {
+        notify.success(`Status updated to ${newStatus}`);
+        handleClose();
+      },
+      onError: (err: any) => {
+        notify.error(err.message || "Failed to update status");
+      }
+    });
+  };
 
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200">
@@ -33,17 +66,70 @@ export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-gray-900">{data.name}</h1>
-            <Chip
-              label={data.status}
-              size="small"
-              sx={{
-                bgcolor: isActive ? '#DCFCE7' : '#F1F5F9',
-                color: isActive ? '#16A34A' : '#64748B',
-                fontWeight: 600,
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-              }}
-            />
+            <div className="relative">
+              <Chip
+                label={isPending ? "Updating..." : status}
+                size="small"
+                onClick={handleClick}
+                icon={!isActive && !isPending ? <ChevronDown size={14} /> : undefined}
+                disabled={isPending}
+                sx={{
+                  bgcolor: isActive ? '#DCFCE7' : isDraft ? '#F1F5F9' : '#FEE2E2',
+                  color: isActive ? '#16A34A' : isDraft ? '#64748B' : '#EF4444',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  cursor: isActive ? 'default' : 'pointer',
+                  fontSize: '0.75rem',
+                  '&:hover': {
+                    bgcolor: isActive ? '#DCFCE7' : isDraft ? '#E2E8F0' : '#FECACA',
+                  },
+                  transition: 'all 0.2s',
+                  '.MuiChip-icon': {
+                    color: 'inherit',
+                    ml: 0.5,
+                    mr: -0.5,
+                  }
+                }}
+              />
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                PaperProps={{
+                  sx: {
+                    mt: 1,
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                    border: '1px solid #F1F5F9',
+                    minWidth: '140px',
+                  }
+                }}
+                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+              >
+                <MenuItem 
+                  onClick={() => handleStatusChange('Active')}
+                  disabled={isActive}
+                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A' }}
+                >
+                  Set as Active
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleStatusChange('Inactive')}
+                  disabled={isInactive}
+                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444' }}
+                >
+                  Set as Inactive
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => handleStatusChange('Draft')}
+                  disabled={isDraft}
+                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
+                >
+                  Set as Draft
+                </MenuItem>
+              </Menu>
+            </div>
           </div>
           <p className="text-sm text-gray-500 mt-1">
             Magnet ID: <span className="font-mono">{data.id}</span> • Created on April 12, 2026
@@ -51,19 +137,12 @@ export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
         </div>
       </div>
       <div className="flex gap-2 w-full md:w-auto">
-        {/* <AppButton
-          onClick={onEdit}
-          variantStyle="outline"
-          startIcon={<Edit size={16} />}
-          className="flex-1 md:flex-none"
-        >
-          Edit
-        </AppButton> */}
         <AppButton
           onClick={onDelete}
+          color="danger"
           variantStyle="outline"
-          className="flex-1 md:flex-none !text-red-500 !border-red-200 hover:!bg-red-50"
           startIcon={<Trash2 size={16} />}
+          className="flex-1 md:flex-none"
         >
           Delete
         </AppButton>

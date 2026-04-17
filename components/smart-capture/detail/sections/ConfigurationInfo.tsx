@@ -1,18 +1,26 @@
-import { LeadMagnet } from "../../LeadMagnetsTable";
+import { useState, useEffect, useCallback } from "react";
+import { SmartCapture } from "@/lib/models/types";
 import { Link2, Zap, Gift, Copy } from "lucide-react";
 import { notify } from "@/lib/notifications";
 
 interface ConfigurationInfoProps {
-  data: LeadMagnet;
+  data: SmartCapture;
 }
 
 export const ConfigurationInfo = ({ data }: ConfigurationInfoProps) => {
-  const copyToClipboard = (text: string) => {
+  const [magnetUrl, setMagnetUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && data.code) {
+      setMagnetUrl(`${window.location.origin}/m/${data.code}`);
+    }
+  }, [data.code]);
+
+  const copyToClipboard = useCallback((text: string) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     notify.success("Link copied to clipboard!");
-  };
-
-  const magnetUrl = `${window.location.origin}/m/${data.id}`;
+  }, []);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -28,7 +36,7 @@ export const ConfigurationInfo = ({ data }: ConfigurationInfoProps) => {
               <Link2 size={14} className="text-gray-400 shrink-0" />
               {magnetUrl}
             </div>
-            <button 
+            <button
               onClick={() => copyToClipboard(magnetUrl)}
               className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 transition-colors"
               title="Copy Link"
@@ -58,10 +66,21 @@ export const ConfigurationInfo = ({ data }: ConfigurationInfoProps) => {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">Reward Asset</p>
-              <p className="text-sm font-medium text-gray-900 text-blue-600 truncate hover:underline cursor-pointer">
-                {data.name.replace(' ', '_').toLowerCase()}.pdf
+              <p 
+                className="text-sm font-medium text-gray-900 truncate hover:underline cursor-pointer transition-all hover:text-blue-600"
+                onClick={() => {
+                  const file = data.files?.[0];
+                  if (file?.file_url) window.open(file.file_url, '_blank');
+                }}
+                title={data.files?.[0]?.file_name ? "Click to open asset" : ""}
+              >
+                {data.files && data.files.length > 0 ? data.files[0].file_name : "No asset uploaded"}
               </p>
-              <p className="text-xs text-gray-400 mt-1">PDF File • 1.2 MB</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {data.files && data.files.length > 0
+                  ? `${(data.files[0].file_size / 1024 / 1024).toFixed(1)} MB`
+                  : "N/A"}
+              </p>
             </div>
           </div>
         </div>

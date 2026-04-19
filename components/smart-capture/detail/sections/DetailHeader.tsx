@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Chip, Menu, MenuItem } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
-import { Trash2, ChevronDown, Archive } from "lucide-react";
+import { Trash2, ChevronDown, Archive, Play, Pause } from "lucide-react";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { notify } from "@/lib/notifications";
 
@@ -153,17 +153,41 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
         </div>
       </div>
       <div className="flex gap-2 w-full md:w-auto">
-        {isActive && (
+        {!isActive && (
           <AppButton
-            onClick={() => handleStatusChange('Archived')}
-            color="gray"
-            variantStyle="outline"
-            startIcon={<Archive size={16} />}
+            onClick={() => handleStatusChange('Active')}
+            color="success"
+            variantStyle="primary"
+            startIcon={<Play size={16} />}
             className="flex-1 md:flex-none"
             disabled={isPending}
           >
-            Archive
+            {isDraft ? "Publish" : "Activate"}
           </AppButton>
+        )}
+        {isActive && (
+          <>
+            <AppButton
+              onClick={() => handleStatusChange('Inactive')}
+              color="danger"
+              variantStyle="outline"
+              startIcon={<Pause size={16} />}
+              className="flex-1 md:flex-none"
+              disabled={isPending}
+            >
+              Deactivate
+            </AppButton>
+            <AppButton
+              onClick={() => handleStatusChange('Archived')}
+              color="gray"
+              variantStyle="outline"
+              startIcon={<Archive size={16} />}
+              className="flex-1 md:flex-none"
+              disabled={isPending}
+            >
+              Archive
+            </AppButton>
+          </>
         )}
         <AppButton
           onClick={onDelete}

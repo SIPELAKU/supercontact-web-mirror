@@ -125,6 +125,15 @@ export const CapturedLeadsTable = () => {
         },
       },
       {
+        accessorKey: 'error_message',
+        header: 'Error Message',
+        Cell: ({ cell }) => (
+          <span className="text-red-500 font-medium text-[13px]">
+            {cell.getValue<string>() || '-'}
+          </span>
+        ),
+      },
+      {
         accessorKey: 'captured_at',
         header: 'Captured At',
         Cell: ({ cell }) => (

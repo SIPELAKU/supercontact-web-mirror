@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { DeleteButton, DuplicateButton, EditButton } from '../ui/app-action-buttons-table';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3 } from 'lucide-react';
+import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw } from 'lucide-react';
 import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
 import {
   useUpdateSmartCaptureStatus,
@@ -16,6 +16,7 @@ import {
   useDuplicateSmartCaptures
 } from '@/lib/hooks/useSmartCaptures';
 import { notify } from '@/lib/notifications';
+import { BulkUpdateStatusModal } from '../modal/BulkUpdateStatusModal';
 
 export interface LeadMagnet extends Partial<SmartCapture> {
   id: string;
@@ -58,7 +59,7 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
   };
 
   const handleStatusChange = (newStatus: SmartCaptureStatus) => {
-    mutate({ id: row.id, status: newStatus }, {
+    mutate({ ids: [row.id], status: newStatus }, {
       onSuccess: () => {
         notify.success(`Status updated to ${newStatus}`);
         handleClose();
@@ -152,6 +153,10 @@ const LeadMagnetsTable = ({
   const { mutate: duplicateMutate, isPending: isDuplicating } = useDuplicateSmartCaptures();
   const { mutate: deleteMutate, isPending: isDeleting } = useDeleteMultipleSmartCaptures();
 
+  const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
+  const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
+  const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
+
   const handleDuplicate = (ids: string[], clearSelection?: () => void) => {
     duplicateMutate(ids, {
       onSuccess: () => {
@@ -214,103 +219,124 @@ const LeadMagnetsTable = ({
   );
 
   return (
-    <SuperTable<SmartCapture>
-      tableId="lead-magnets-table"
-      data={data}
-      columns={columns}
-      rowCount={rowCount}
-      isLoading={isLoading}
-      isFetching={isFetching || isDuplicating || isDeleting}
-      manualPagination={true}
-      manualSorting={true}
-      manualFiltering={true}
-      onStateChange={onStateChange}
-      initialState={initialState || {
-        pagination: {
-          pageIndex: 0,
-          pageSize: 10,
-        },
-      }}
-      features={{
-        pagination: true,
-        globalFilter: true,
-        globalFilterAlwaysVisible: true,
-        columnFilters: false,
-        sorting: true,
-        rowSelection: 'multi',
-        columnVisibility: false,
-        densityToggle: false,
-        fullScreenToggle: false,
-        export: { excel: false, csv: false },
-        urlSync: false,
-      }}
-      renderRowActions={({ row }) => (
-        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-          <Tooltip title={row.original.status === 'Draft' ? "Edit Data" : "View Detail"}>
-            <Link href={row.original.status === 'Draft'
-              ? `/smart-capture/edit/${row.original.id}`
-              : `/smart-capture/detail/${row.original.id}`
-            }>
-              <IconButton
-                size="small"
-                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-              >
-                {row.original.status === 'Draft' ? <Edit3 size={18} /> : <Eye size={18} />}
-              </IconButton>
-            </Link>
-          </Tooltip>
-          <DuplicateButton onClick={() => handleDuplicate([row.original.id])} />
-          <DeleteButton onClick={() => handleDelete([row.original.id])} />
-        </Box>
-      )}
-      renderBulkActions={({ selectedRows, clearSelection }) => (
-        <div className="flex gap-2 items-center">
-          <AppButton
-            variantStyle="primary"
-            startIcon={<Copy size={16} />}
-            disabled={isDuplicating}
-            onClick={() => handleDuplicate(selectedRows.map(r => r.id), clearSelection)}
-          >
-            Duplicate ({selectedRows.length})
-          </AppButton>
-          <AppButton
-            variantStyle="danger"
-            startIcon={<Trash2 size={16} />}
-            disabled={isDeleting}
-            onClick={() => handleDelete(selectedRows.map(r => r.id), clearSelection)}
-          >
-            Delete ({selectedRows.length})
-          </AppButton>
-        </div>
-      )}
-      renderTopLeftToolbar={() => (
-        <>
-          {/* Desktop */}
-          <div className="hidden md:flex gap-2">
-            <Link href="/smart-capture/create">
-              <AppButton
-                variantStyle="primary"
-                startIcon={<Plus size={16} />}
-              >
-                Add New Magnet
-              </AppButton>
-            </Link>
+    <>
+      <SuperTable<SmartCapture>
+        tableId="lead-magnets-table"
+        data={data}
+        columns={columns}
+        rowCount={rowCount}
+        isLoading={isLoading}
+        isFetching={isFetching || isDuplicating || isDeleting}
+        manualPagination={true}
+        manualSorting={true}
+        manualFiltering={true}
+        onStateChange={onStateChange}
+        initialState={initialState || {
+          pagination: {
+            pageIndex: 0,
+            pageSize: 10,
+          },
+        }}
+        features={{
+          pagination: true,
+          globalFilter: true,
+          globalFilterAlwaysVisible: true,
+          columnFilters: false,
+          sorting: true,
+          rowSelection: 'multi',
+          columnVisibility: false,
+          densityToggle: false,
+          fullScreenToggle: false,
+          export: { excel: false, csv: false },
+          urlSync: false,
+        }}
+        renderRowActions={({ row }) => (
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+            <Tooltip title={row.original.status === 'Draft' ? "Edit Data" : "View Detail"}>
+              <Link href={row.original.status === 'Draft'
+                ? `/smart-capture/edit/${row.original.id}`
+                : `/smart-capture/detail/${row.original.id}`
+              }>
+                <IconButton
+                  size="small"
+                  sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                >
+                  {row.original.status === 'Draft' ? <Edit3 size={18} /> : <Eye size={18} />}
+                </IconButton>
+              </Link>
+            </Tooltip>
+            <DuplicateButton onClick={() => handleDuplicate([row.original.id])} />
+            <DeleteButton onClick={() => handleDelete([row.original.id])} />
+          </Box>
+        )}
+        renderBulkActions={({ selectedRows, clearSelection }) => (
+          <div className="flex gap-2 items-center">
+            <AppButton
+              variantStyle="primary"
+              startIcon={<Copy size={16} />}
+              disabled={isDuplicating}
+              onClick={() => handleDuplicate(selectedRows.map(r => r.id), clearSelection)}
+            >
+              Duplicate ({selectedRows.length})
+            </AppButton>
+            <AppButton
+              variantStyle="soft"
+              startIcon={<RefreshCcw size={16} />}
+              onClick={() => {
+                setSelectedBulkIds(selectedRows.map(r => r.id));
+                setClearSelectionFn(() => clearSelection);
+                setIsBulkStatusModalOpen(true);
+              }}
+            >
+              Update Status ({selectedRows.length})
+            </AppButton>
+            <AppButton
+              variantStyle="danger"
+              startIcon={<Trash2 size={16} />}
+              disabled={isDeleting}
+              onClick={() => handleDelete(selectedRows.map(r => r.id), clearSelection)}
+            >
+              Delete ({selectedRows.length})
+            </AppButton>
           </div>
+        )}
+        renderTopLeftToolbar={() => (
+          <>
+            {/* Desktop */}
+            <div className="hidden md:flex gap-2">
+              <Link href="/smart-capture/create">
+                <AppButton
+                  variantStyle="primary"
+                  startIcon={<Plus size={16} />}
+                >
+                  Add New Magnet
+                </AppButton>
+              </Link>
+            </div>
 
-          {/* Mobile */}
-          <div className="flex md:hidden gap-2">
-            <Link href="/smart-capture/create">
-              <button
-                className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
-                title="Add New Magnet"
-              >
-                <Plus size={16} />
-              </button>
-            </Link>
-          </div>
-        </>
-      )}
-    />
+            {/* Mobile */}
+            <div className="flex md:hidden gap-2">
+              <Link href="/smart-capture/create">
+                <button
+                  className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
+                  title="Add New Magnet"
+                >
+                  <Plus size={16} />
+                </button>
+              </Link>
+            </div>
+          </>
+        )}
+      />
+      <BulkUpdateStatusModal
+        open={isBulkStatusModalOpen}
+        onClose={() => setIsBulkStatusModalOpen(false)}
+        selectedIds={selectedBulkIds}
+        onSuccess={() => {
+          if (clearSelectionFn) clearSelectionFn();
+        }}
+      />
+    </>
   );
 };
 

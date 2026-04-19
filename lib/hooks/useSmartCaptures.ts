@@ -58,16 +58,18 @@ export function useUpdateSmartCaptureStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
       const token = Cookies.get('access_token');
       if (!token) {
         throw new Error('No authentication token');
       }
-      return updateSmartCaptureStatus(token, id, status);
+      return updateSmartCaptureStatus(token, ids, status);
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["smart-captures"] });
-      queryClient.invalidateQueries({ queryKey: ["smart-capture-detail", variables.id] });
+      variables.ids.forEach(id => {
+        queryClient.invalidateQueries({ queryKey: ["smart-capture-detail", id] });
+      });
     },
   });
 }

@@ -195,6 +195,13 @@ export type TestConnectionResponse = {
 export type SmartCaptureStatus = "Draft" | "Active" | "Inactive" | "Archived";
 export type SmartCaptureTarget = "email" | "whatsapp";
 
+export interface LogStats {
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+}
+
 export interface SmartCapture {
   id: string;
   company_id: string;
@@ -215,6 +222,7 @@ export interface SmartCapture {
   updated_at: string;
   files?: SmartCaptureFile[];
   form_fields?: FormField[];
+  log_stats?: LogStats;
 }
 
 export interface SmartCaptureDetail extends SmartCapture {

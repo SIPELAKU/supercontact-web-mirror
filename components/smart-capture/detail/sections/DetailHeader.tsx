@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Chip, Menu, MenuItem } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown, Archive } from "lucide-react";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { notify } from "@/lib/notifications";
 
@@ -35,7 +35,7 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
   };
 
   const handleStatusChange = (newStatus: SmartCaptureStatus) => {
-    mutate({ id: data.id, status: newStatus }, {
+    mutate({ ids: [data.id], status: newStatus }, {
       onSuccess: () => {
         notify.success(`Status updated to ${newStatus}`);
         handleClose();
@@ -72,14 +72,14 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
                 label={isPending ? "Updating..." : status}
                 size="small"
                 onClick={handleClick}
-                icon={!isActive && !isPending ? <ChevronDown size={14} /> : undefined}
+                icon={!isPending ? <ChevronDown size={14} /> : undefined}
                 disabled={isPending}
                 sx={{
                   bgcolor: isActive ? '#DCFCE7' : isDraft ? '#F1F5F9' : '#FEE2E2',
                   color: isActive ? '#16A34A' : isDraft ? '#64748B' : '#EF4444',
                   fontWeight: 600,
                   borderRadius: '6px',
-                  cursor: isActive ? 'default' : 'pointer',
+                  cursor: 'pointer',
                   fontSize: '0.75rem',
                   '&:hover': {
                     bgcolor: isActive ? '#DCFCE7' : isDraft ? '#E2E8F0' : '#FECACA',
@@ -108,34 +108,42 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
                 transformOrigin={{ horizontal: 'left', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
               >
-                <MenuItem
-                  onClick={() => handleStatusChange('Active')}
-                  disabled={isActive}
-                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A' }}
-                >
-                  Set as Active
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleStatusChange('Inactive')}
-                  disabled={isInactive}
-                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444' }}
-                >
-                  Set as Inactive
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleStatusChange('Draft')}
-                  disabled={isDraft}
-                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
-                >
-                  Set as Draft
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleStatusChange('Archived')}
-                  disabled={isArchived}
-                  sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
-                >
-                  Set as Archived
-                </MenuItem>
+                {!isActive && (
+                  <MenuItem
+                    onClick={() => handleStatusChange('Active')}
+                    disabled={isActive}
+                    sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#16A34A' }}
+                  >
+                    Set as Active
+                  </MenuItem>
+                )}
+                {!isInactive && (
+                  <MenuItem
+                    onClick={() => handleStatusChange('Inactive')}
+                    disabled={isInactive}
+                    sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444' }}
+                  >
+                    Set as Inactive
+                  </MenuItem>
+                )}
+                {/* {!isDraft && (
+                  <MenuItem
+                    onClick={() => handleStatusChange('Draft')}
+                    disabled={isDraft}
+                    sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
+                  >
+                    Set as Draft
+                  </MenuItem>
+                )} */}
+                {!isArchived && (
+                  <MenuItem
+                    onClick={() => handleStatusChange('Archived')}
+                    disabled={isArchived}
+                    sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
+                  >
+                    Set as Archived
+                  </MenuItem>
+                )}
               </Menu>
             </div>
           </div>
@@ -145,6 +153,18 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
         </div>
       </div>
       <div className="flex gap-2 w-full md:w-auto">
+        {isActive && (
+          <AppButton
+            onClick={() => handleStatusChange('Archived')}
+            color="gray"
+            variantStyle="outline"
+            startIcon={<Archive size={16} />}
+            className="flex-1 md:flex-none"
+            disabled={isPending}
+          >
+            Archive
+          </AppButton>
+        )}
         <AppButton
           onClick={onDelete}
           color="danger"

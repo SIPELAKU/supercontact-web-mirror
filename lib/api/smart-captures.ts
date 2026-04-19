@@ -366,15 +366,15 @@ export async function saveAsSubmissions(
 }
 
 /**
- * Update smart capture status using the specialized endpoint.
+ * Update smart capture status using the specialized bulk endpoint.
  */
 export async function updateSmartCaptureStatus(
   token: string,
-  id: string,
+  smartCaptureIds: string[],
   status: string
 ): Promise<any> {
   try {
-    const url = getFullUrl(`/smart-captures/${id}/status`);
+    const url = getFullUrl("/smart-captures/status");
 
     const res = await fetchWithTimeout(url, {
       method: "PATCH",
@@ -383,7 +383,7 @@ export async function updateSmartCaptureStatus(
         Authorization: `Bearer ${token}`,
         'Accept': 'application/json'
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ smart_capture_ids: smartCaptureIds, status }),
     });
 
     return await handleResponse(res, "Failed to update status");

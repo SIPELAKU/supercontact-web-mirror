@@ -115,8 +115,8 @@ export default function PublicMagnetClient() {
 
       {/* Branding Header (Optional) */}
       <div className="mb-8 flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity">
-        <div className="w-8 h-8 bg-[#5479EE] rounded-lg flex items-center justify-center text-white">
-          <Globe size={18} />
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center">
+          <img src="/assets/logo3d.png" alt="SmartSales" className="h-10" />
         </div>
         <span className="text-sm font-bold text-gray-900 tracking-tight">SmartSales Capture</span>
       </div>
@@ -193,15 +193,14 @@ export default function PublicMagnetClient() {
                   ) : fieldType === 'radio' ? (
                     <div className="grid grid-cols-1 gap-2">
                       {field.options?.map((opt) => (
-                        <label 
+                        <label
                           key={opt}
-                          className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                            value === opt 
-                              ? 'bg-blue-50 border-blue-200 text-[#5479EE] shadow-sm' 
-                              : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200'
-                          }`}
+                          className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${value === opt
+                            ? 'bg-blue-50 border-blue-200 text-[#5479EE] shadow-sm'
+                            : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200'
+                            }`}
                         >
-                          <input 
+                          <input
                             type="radio"
                             name={field.name}
                             value={opt}
@@ -219,7 +218,7 @@ export default function PublicMagnetClient() {
                       {field.options?.map((opt) => {
                         const values = value ? value.split(', ') : [];
                         const isChecked = values.includes(opt);
-                        
+
                         const handleToggle = () => {
                           let newValues;
                           if (isChecked) {
@@ -231,15 +230,14 @@ export default function PublicMagnetClient() {
                         };
 
                         return (
-                          <label 
+                          <label
                             key={opt}
-                            className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                              isChecked
-                                ? 'bg-blue-50 border-blue-200 text-[#5479EE] shadow-sm' 
-                                : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200'
-                            }`}
+                            className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${isChecked
+                              ? 'bg-blue-50 border-blue-200 text-[#5479EE] shadow-sm'
+                              : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200'
+                              }`}
                           >
-                            <input 
+                            <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={handleToggle}
@@ -298,7 +296,7 @@ export default function PublicMagnetClient() {
 
       {/* Footer Branding */}
       <p className="mt-12 text-xs text-gray-400 font-medium flex items-center gap-1.5">
-        Powered by <img src="/assets/sc-logo.png" alt="SmartSales" className="h-3.5 grayscale opacity-50" />
+        Powered by <img src="/assets/logo3d.png" alt="SmartSales" className="h-3.5 grayscale opacity-50" />
       </p>
 
     </div>

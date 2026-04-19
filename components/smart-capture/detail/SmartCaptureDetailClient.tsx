@@ -9,6 +9,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { LeadMagnet } from "../LeadMagnetsTable";
 import { DetailHeader } from "./sections/DetailHeader";
 import { PerformanceStats } from "./sections/PerformanceStats";
+import { OutreachStats } from "./sections/OutreachStats";
 import { ConfigurationInfo } from "./sections/ConfigurationInfo";
 import { CapturedLeadsTable } from "./sections/CapturedLeadsTable";
 import { notify } from "@/lib/notifications";
@@ -99,6 +100,9 @@ export const SmartCaptureDetailClient = () => {
 
             {/* Performance Metrics */}
             <PerformanceStats data={data} />
+
+            {/* Outreach Statistics */}
+            <OutreachStats data={data} />
 
             {/* Main Content: Table and Configuration */}
             <div className="flex flex-col gap-6">

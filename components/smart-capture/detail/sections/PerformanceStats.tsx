@@ -39,7 +39,10 @@ export const PerformanceStats = ({ data }: PerformanceStatsProps) => {
           <div className="mb-1">
             <span className="text-sm font-medium text-gray-500">Total Valid Leads</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 leading-none">{data.valid_leads.toLocaleString()}</h2>
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-2xl font-bold text-gray-900 leading-none">{data.valid_leads.toLocaleString()}</h2>
+            {/* <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">New Today: 4</span> */}
+          </div>
           <p className="text-[10px] text-gray-400 mt-2 line-clamp-1 italic">Prospect who have verified their contacts info</p>
         </div>
       </div>

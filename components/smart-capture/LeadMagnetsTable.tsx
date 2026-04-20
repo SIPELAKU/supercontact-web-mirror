@@ -242,21 +242,21 @@ const LeadMagnetsTable = ({
           export: { excel: false, csv: false },
           urlSync: false,
         }}
+        onRowClick={(row, event) => {
+          console.log("clicked");
+          // Prevent navigation if clicking on interactive elements like chips or buttons
+          const target = event.target as HTMLElement;
+          if (target.closest('button') || target.closest('.MuiChip-root')) {
+            return;
+          }
+
+          const path = row.status === 'Draft'
+            ? `/smart-capture/edit/${row.id}`
+            : `/smart-capture/detail/${row.id}`;
+          router.push(path);
+        }}
         renderRowActions={({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-            <Tooltip title={row.original.status === 'Draft' ? "Edit Data" : "View Detail"}>
-              <Link href={row.original.status === 'Draft'
-                ? `/smart-capture/edit/${row.original.id}`
-                : `/smart-capture/detail/${row.original.id}`
-              }>
-                <IconButton
-                  size="small"
-                  sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-                >
-                  {row.original.status === 'Draft' ? <Edit3 size={18} /> : <Eye size={18} />}
-                </IconButton>
-              </Link>
-            </Tooltip>
             <DuplicateButton onClick={() => handleDuplicate([row.original.id])} />
             <DeleteButton onClick={() => handleDelete([row.original.id])} />
           </Box>

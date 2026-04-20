@@ -202,7 +202,8 @@ const LeadMagnetsTable = ({
       {
         id: 'conversion',
         header: 'Konversi',
-        accessorFn: (row) => (row as any).conversion ?? 0,
+        // accessorFn: (row) => (row as any).conversion ?? 0,
+        accessorKey: 'conversions',
         Cell: ({ cell }) => <span className="text-gray-700">{cell.getValue<number>()}%</span>,
       },
     ],

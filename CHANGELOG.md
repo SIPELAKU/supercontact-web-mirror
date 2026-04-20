@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.1] - 2026-04-20
+
+### ✨ Added
+- **Smart Capture (Lead Magnets) Module Expansion**:
+    - **Mail Sender Selection**: Added mail sender selection to the Smart Capture creation form.
+    - **Mail Sender Management**: Added mail sender management to the Smart Capture detail page.
+
+### 🛠️ Refactor & Enhancements
+- **Modular Component Architecture**: Refactored all Smart Capture creation tabs to be data-aware and reusable, enabling a shared codebase between Lead Magnet creation and editing workflows.
+- **Cross-Component Navigation**: Integrated specialized row actions and preview triggers that bridge the gap between admin management and public-facing assets.
+- **Visual Polish**: Applied premium SaaS aesthetics to the public magnet page, including micro-animations, glassmorphism effects, and secure data handling indicators.
+
+### 📁 Created Files
+- `components/smart-capture/detail/SmartCaptureDetailClient.tsx`
+- `components/smart-capture/edit/EditSmartCaptureClient.tsx`
+- `components/smart-capture/public/PublicMagnetClient.tsx`
+- `components/smart-capture/detail/sections/DetailHeader.tsx`
+- `components/smart-capture/detail/sections/PerformanceStats.tsx`
+- `components/smart-capture/detail/sections/ConfigurationInfo.tsx`
+- `components/smart-capture/detail/sections/CapturedLeadsTable.tsx`
+
+### 📁 Modified Files
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/smart-capture/LeadMagnetsTable.tsx`
+- `components/smart-capture/create/RewardSetupTab.tsx`
+- `components/smart-capture/create/DynamicFormTab.tsx`
+- `components/smart-capture/create/OutreachHookTab.tsx`
+- `components/smart-capture/create/EmbedShareTab.tsx`
+
 ## [1.18.0] - 2026-04-20
 
 ### ✨ Added

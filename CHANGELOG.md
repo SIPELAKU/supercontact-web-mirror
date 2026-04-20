@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-04-20
+
+### ✨ Added
+- **Smart Capture (Lead Magnets) Module Expansion**:
+    - **Performance Dashboard**: Integrated a comprehensive detail page with real-time performance analytics including total views, validated leads count, and conversion rate tracking.
+    - **Public Landing Page**: Deployed a high-conversion, mobile-optimized public landing page at `/m/[id]` featuring dynamic forms and instant reward delivery success states.
+    - **Edit Wizard**: Implemented a full multi-tab editing experience (`Reward`, `Form`, `Hook`, `Share`) allowing users to modify existing lead magnets seamlessly.
+    - **Capture Leads Analytics**: Added a dedicated "Captured Leads" table within the detail view utilizing the standardized `SuperTable` for easy data management.
+    - **Public Access Logic**: Configured the application shell to allow bypass of authentication for magnet landing pages, ensuring prospects can access forms immediately.
+
+### 🛠️ Refactor & Enhancements
+- **Modular Component Architecture**: Refactored all Smart Capture creation tabs to be data-aware and reusable, enabling a shared codebase between Lead Magnet creation and editing workflows.
+- **Cross-Component Navigation**: Integrated specialized row actions and preview triggers that bridge the gap between admin management and public-facing assets.
+- **Visual Polish**: Applied premium SaaS aesthetics to the public magnet page, including micro-animations, glassmorphism effects, and secure data handling indicators.
+
+### 📁 Created Files
+- `app/smart-capture/detail/[id]/page.tsx`
+- `app/smart-capture/edit/[id]/page.tsx`
+- `app/m/[id]/page.tsx`
+- `components/smart-capture/detail/SmartCaptureDetailClient.tsx`
+- `components/smart-capture/edit/EditSmartCaptureClient.tsx`
+- `components/smart-capture/public/PublicMagnetClient.tsx`
+- `components/smart-capture/detail/sections/DetailHeader.tsx`
+- `components/smart-capture/detail/sections/PerformanceStats.tsx`
+- `components/smart-capture/detail/sections/ConfigurationInfo.tsx`
+- `components/smart-capture/detail/sections/CapturedLeadsTable.tsx`
+
+### 📁 Modified Files
+- `components/layout/AuthenticatedLayout.tsx`
+- `components/smart-capture/LeadMagnetsTable.tsx`
+- `components/smart-capture/create/RewardSetupTab.tsx`
+- `components/smart-capture/create/DynamicFormTab.tsx`
+- `components/smart-capture/create/OutreachHookTab.tsx`
+- `components/smart-capture/create/EmbedShareTab.tsx`
+
 ## [1.17.0] - 2026-04-15
 
 ### ✨ Added

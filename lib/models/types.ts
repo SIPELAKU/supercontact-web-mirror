@@ -192,3 +192,191 @@ export type TestConnectionResponse = {
     details?: any;
   };
 };
+export type SmartCaptureStatus = "Draft" | "Active" | "Inactive" | "Archived";
+export type SmartCaptureTarget = "email" | "whatsapp";
+
+export interface LogStats {
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+}
+
+export interface SmartCapture {
+  id: string;
+  company_id: string;
+  name: string;
+  email_subject?: string;
+  email_body?: string;
+  form_title?: string;
+  form_description?: string;
+  target: SmartCaptureTarget;
+  content_template?: string;
+  status: SmartCaptureStatus;
+  code: string;
+  views: number;
+  valid_leads: number;
+  conversions: number;
+  deleted_at?: string;
+  created_at: string;
+  updated_at: string;
+  files?: SmartCaptureFile[];
+  form_fields?: FormField[];
+  log_stats?: LogStats;
+}
+
+export interface SmartCaptureDetail extends SmartCapture {
+  files: SmartCaptureFile[];
+  form_fields: FormField[];
+}
+
+export interface SmartCaptureStats {
+  total_views: number;
+  total_valid_leads: number;
+  total_conversions: number;
+}
+
+export type SmartCaptureResponse = {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    smart_captures: SmartCapture[];
+    stats?: SmartCaptureStats;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export interface FormField {
+  id?: string;
+  smart_capture_id?: string;
+  type?: string; // For creation payload
+  field_type?: string; // For detail response
+  name: string;
+  label: string;
+  required: boolean;
+  sort_order: number;
+  options?: string[];
+  sorting_id?: string;
+}
+
+export interface SmartCaptureCreateReq {
+  name: string;
+  action: 'draft' | 'publish';
+  email_subject?: string;
+  email_body?: string;
+  form_title?: string;
+  form_description?: string;
+  target?: SmartCaptureTarget;
+  content_template?: string;
+  file_ids?: string[];
+  form_fields?: FormField[];
+}
+
+export interface SmartCaptureUpdateReq extends Partial<Omit<SmartCaptureCreateReq, 'action'>> {
+  action: 'draft' | 'publish';
+}
+
+export interface SmartCaptureFile {
+  id: string;
+  external_file_id: string;
+  file_name: string;
+  file_path: string;
+  file_url: string;
+  file_size: number;
+  mime_type: string;
+  sort_order: number;
+}
+
+export type SmartCaptureCreateResponse = {
+  success: boolean;
+  data: SmartCapture;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export type SmartCaptureDetailResponse = {
+  success: boolean;
+  data: SmartCapture;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export type SmartCaptureFileUploadResponse = {
+  success: boolean;
+  data: {
+    files: SmartCaptureFile[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export interface PublicFormFieldValue {
+  name: string;
+  value: string;
+}
+
+export interface SmartCapturePublicSubmitReq {
+  fields: PublicFormFieldValue[];
+}
+
+export type SmartCapturePublicSubmitResponse = {
+  success: boolean;
+  data: {
+    id: string;
+    smart_capture_id: string;
+    fullname: string;
+    email: string;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+export type EmailStatus = "pending" | "sent" | "delivered" | "opened" | "clicked" | "bounced" | "failed" | "unknown";
+export type PhoneStatus = "valid" | "invalid" | "unknown";
+
+export interface SmartCaptureSubmission {
+  id: string;
+  smart_capture_id: string;
+  name: string;
+  email: string;
+  phone_number: string;
+  custom_fields: Record<string, any>;
+  phone_status: PhoneStatus;
+  email_status: EmailStatus;
+  error_message?: string;
+  captured_at: string;
+}
+
+export type SmartCaptureSubmissionsResponse = {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    submissions: SmartCaptureSubmission[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};

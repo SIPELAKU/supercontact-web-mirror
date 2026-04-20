@@ -44,7 +44,6 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
   const isActive = status === 'Active';
   const isDraft = status === 'Draft';
   const isInactive = status === 'Inactive';
-  const isArchived = status === 'Archived';
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     // if (isActive) {
@@ -125,14 +124,6 @@ const StatusCell = ({ row }: { row: SmartCapture }) => {
             sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#EF4444', '&:hover': { bgcolor: '#FEE2E2/50' } }}
           >
             Set as Inactive
-          </MenuItem>
-        )}
-        {!isArchived && (
-          <MenuItem
-            onClick={() => handleStatusChange('Archived')}
-            sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B', '&:hover': { bgcolor: '#F1F5F9/50' } }}
-          >
-            Set as Archived
           </MenuItem>
         )}
       </Menu>

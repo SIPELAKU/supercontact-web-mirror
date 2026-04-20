@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.2] - 2026-04-21
+
+### Fix
+- **Smart Capture (Lead Magnets) Module Expansion**:
+    - **Row Click Navigation**: Fixed the issue where clicking on a row in the Lead Magnets table was not navigating to the detail or edit page.
+    - **Edit Button**: Removed the edit button from the Lead Magnets table as it was not needed.
+    - **Wiring Conversions Column**: Wiring conversions column to the Lead Magnets table to display the number of conversions.
+
 ## [1.18.1] - 2026-04-20
 
 ### ✨ Added

@@ -118,17 +118,18 @@ export default function DynamicFormTab({ formData, updateFormData }: DynamicForm
   };
 
   const handleLabelChange = (index: number, label: string) => {
+    const field = fields[index];
+    const isCore = coreFieldNames.includes(field.name);
     const updates: Partial<FormField> = { label };
 
-    // Auto-map if the name is still a default generated one (field_ or custom_)
-    const field = fields[index];
-    if (!coreFieldNames.includes(field.name) && (field.name.startsWith('field_') || field.name.startsWith('custom_'))) {
+    if (!isCore) {
+      // Sync name with label: lowercase and spaces to underscores
+      updates.name = label.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      
+      // Still attempt to auto-set type if it looks like a known field
       const mapping = getMappingForLabel(label);
       if (mapping) {
-        updates.name = mapping.name;
         updates.type = mapping.type;
-
-        // Initialize options for choice fields
         if (['dropdown', 'radio', 'checkbox'].includes(mapping.type) && (!field.options || field.options.length === 0)) {
           updates.options = ['Option 1', 'Option 2'];
         }
@@ -222,13 +223,13 @@ export default function DynamicFormTab({ formData, updateFormData }: DynamicForm
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={fields.map((f) => f.sorting_id || f.name || f.id || '')}
+                items={fields.map((f) => f.sorting_id || f.id || f.name || '')}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-3">
                   {fields.map((field, index) => (
                     <SortableFieldItem
-                      key={field.name || field.id}
+                      key={field.sorting_id || field.id || field.name}
                       field={field}
                       index={index}
                       coreFieldNames={coreFieldNames}
@@ -376,7 +377,7 @@ function SortableFieldItem({
     transition,
     isDragging,
   } = useSortable({ 
-    id: field.sorting_id || field.name || field.id || '',
+    id: field.sorting_id || field.id || field.name || '',
     disabled: isCore, // Restriction: "tidak bisa diubah urutan card nya"
   });
 
@@ -447,27 +448,8 @@ function SortableFieldItem({
         </div>
       </div>
 
-      {/* Row 2: Advanced Mapping (System Name and Type) */}
-      <div className="grid grid-cols-2 gap-4 py-4 border-t border-gray-50 mt-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 mb-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">System Name (Alias)</label>
-          </div>
-          <input
-            type="text"
-            value={field.name}
-            readOnly={isCore}
-            disabled={isCore}
-            onChange={(e) => updateField(index, { name: e.target.value })}
-            placeholder="e.g., email"
-            className={`w-full px-3 py-2 border rounded-lg text-[13px] font-mono focus:outline-none transition-all ${
-              isCore 
-                ? 'bg-gray-100/50 border-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-gray-50 border-gray-200 text-blue-600 focus:ring-1 focus:ring-blue-500'
-            }`}
-          />
-        </div>
-
+      {/* Row 2: Field Type Selection (System Name is now hidden and auto-synced) */}
+      <div className="grid grid-cols-1 gap-4 py-4 border-t border-gray-50 mt-1">
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Field Type</label>
           <select

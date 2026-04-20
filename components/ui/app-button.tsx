@@ -63,7 +63,6 @@ const StyledButton = styled(Button, {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
   const isSuccess = customColor === "success";
-
   const mainColor = isPrimary
     ? COLORS.primary.main
     : isGray
@@ -71,7 +70,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.main
         : COLORS.danger.main;
-
   const hoverColor = isPrimary
     ? COLORS.primary.hover
     : isGray
@@ -79,7 +77,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.hover
         : COLORS.danger.hover;
-
   const lightColor = isPrimary
     ? COLORS.primary.light
     : isGray
@@ -87,7 +84,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.light
         : COLORS.danger.light;
-
   const whiteColor = isPrimary
     ? COLORS.white.main
     : isGray

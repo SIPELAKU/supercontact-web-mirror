@@ -54,6 +54,7 @@ export default function CreateSmartCaptureClient({
       options: f.options,
       sorting_id: f.sorting_id
     })) || DEFAULT_FIELDS,
+    mail_sender_id: initialData?.mail_sender_id || '',
   });
 
   const TABS = [

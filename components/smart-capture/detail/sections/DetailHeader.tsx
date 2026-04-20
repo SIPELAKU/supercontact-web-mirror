@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Chip, Menu, MenuItem } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
-import { Trash2, ChevronDown, Archive, Play, Pause } from "lucide-react";
+import { Trash2, ChevronDown, Play, Pause } from "lucide-react";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { notify } from "@/lib/notifications";
 
@@ -20,7 +20,6 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
   const isActive = status === 'Active';
   const isDraft = status === 'Draft';
   const isInactive = status === 'Inactive';
-  const isArchived = status === 'Archived';
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     // if (isActive) {
@@ -135,15 +134,6 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
                     Set as Draft
                   </MenuItem>
                 )} */}
-                {!isArchived && (
-                  <MenuItem
-                    onClick={() => handleStatusChange('Archived')}
-                    disabled={isArchived}
-                    sx={{ fontSize: '13px', fontWeight: 500, py: 1.5, color: '#64748B' }}
-                  >
-                    Set as Archived
-                  </MenuItem>
-                )}
               </Menu>
             </div>
           </div>
@@ -169,23 +159,13 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
           <>
             <AppButton
               onClick={() => handleStatusChange('Inactive')}
-              color="danger"
+              color="gray"
               variantStyle="outline"
               startIcon={<Pause size={16} />}
               className="flex-1 md:flex-none"
               disabled={isPending}
             >
-              Deactivate
-            </AppButton>
-            <AppButton
-              onClick={() => handleStatusChange('Archived')}
-              color="gray"
-              variantStyle="outline"
-              startIcon={<Archive size={16} />}
-              className="flex-1 md:flex-none"
-              disabled={isPending}
-            >
-              Archive
+              Inactivate
             </AppButton>
           </>
         )}

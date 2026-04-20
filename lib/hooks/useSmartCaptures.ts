@@ -16,7 +16,7 @@ export function useSmartCaptures(params: {
   page?: number;
   limit?: number;
   search?: string;
-  status?: string;
+  status?: string | string[];
   target?: string;
 } = {}) {
   const { page = 1, limit = 10, search, status, target } = params;

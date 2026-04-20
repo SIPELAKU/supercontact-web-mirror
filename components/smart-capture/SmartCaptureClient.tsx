@@ -9,8 +9,10 @@ import LeadMagnetsTable from './LeadMagnetsTable';
 import PageHeader from '../ui/page-header';
 import { useSmartCaptures } from '@/lib/hooks/useSmartCaptures';
 import { SuperTableState } from '@/components/ui/super-table/types';
+import { Tabs, Tab, Box, Badge, Chip } from '@mui/material';
 
 export default function SmartCaptureClient() {
+  const [tabIndex, setTabIndex] = useState(0);
   const [params, setParams] = useState({
     page: 1,
     limit: 10,
@@ -19,7 +21,17 @@ export default function SmartCaptureClient() {
     target: '',
   });
 
-  const { data: response, isLoading, isFetching } = useSmartCaptures(params);
+  // Query for Active campaigns
+  const { data: activeRes, isLoading: activeLoading, isFetching: activeFetching } = useSmartCaptures({
+    ...params,
+    status: 'Active'
+  });
+
+  // Query for Inactive campaigns (Draft + Inactive)
+  const { data: inactiveRes, isLoading: inactiveLoading, isFetching: inactiveFetching } = useSmartCaptures({
+    ...params,
+    status: ['Draft', 'Inactive']
+  });
 
   const handleStateChange = (state: SuperTableState) => {
     setParams((prev) => ({
@@ -27,20 +39,26 @@ export default function SmartCaptureClient() {
       page: state.pagination.pageIndex + 1,
       limit: state.pagination.pageSize,
       search: state.globalFilter,
-      // For status and target, if column filters were enabled:
-      // status: state.columnFilters.find(f => f.id === 'status')?.value as string || '',
-      // target: state.columnFilters.find(f => f.id === 'target')?.value as string || '',
     }));
   };
 
-  const smartCaptures = response?.data?.smart_captures || [];
-  const totalCount = response?.data?.total || 0;
-  const stats = response?.data?.stats;
+  const handleTabChange = (_: any, newIndex: number) => {
+    setTabIndex(newIndex);
+    setParams(prev => ({ ...prev, page: 1 })); // Reset page on tab switch
+  };
 
+  const activeCount = activeRes?.data?.total || 0;
+  const inactiveCount = inactiveRes?.data?.total || 0;
+
+  const currentData = tabIndex === 0 ? activeRes : inactiveRes;
+  const currentLoading = tabIndex === 0 ? activeLoading : inactiveLoading;
+  const currentFetching = tabIndex === 0 ? activeFetching : inactiveFetching;
+
+  const stats = currentData?.data?.stats;
   const totalViews = stats?.total_views || 0;
   const totalLeads = stats?.total_valid_leads || 0;
-  const conversionRate = totalViews > 0 
-    ? ((totalLeads / totalViews) * 100).toFixed(1) 
+  const conversionRate = totalViews > 0
+    ? ((totalLeads / totalViews) * 100).toFixed(1)
     : "0.0";
 
   return (
@@ -89,13 +107,76 @@ export default function SmartCaptureClient() {
 
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1">
-        <LeadMagnetsTable 
-          data={smartCaptures} 
-          rowCount={totalCount}
-          isLoading={isLoading}
-          isFetching={isFetching}
+      {/* Tabs and Table Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 overflow-hidden">
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
+          <Tabs
+            value={tabIndex}
+            onChange={handleTabChange}
+            sx={{
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                minWidth: 100,
+                py: 2,
+              },
+              '& .Mui-selected': {
+                color: '#5479EE !important',
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#5479EE',
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+              }
+            }}
+          >
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  Active
+                  <Chip
+                    label={activeCount}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      bgcolor: tabIndex === 0 ? '#EEF2FF' : '#F8FAFC',
+                      color: tabIndex === 0 ? '#5479EE' : '#94A3B8',
+                      transition: 'all 0.2s'
+                    }}
+                  />
+                </Box>
+              }
+            />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  Inactive
+                  <Chip
+                    label={inactiveCount}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      bgcolor: tabIndex === 1 ? '#EEF2FF' : '#F8FAFC',
+                      color: tabIndex === 1 ? '#5479EE' : '#94A3B8',
+                      transition: 'all 0.2s'
+                    }}
+                  />
+                </Box>
+              }
+            />
+          </Tabs>
+        </Box>
+
+        <LeadMagnetsTable
+          data={currentData?.data?.smart_captures || []}
+          rowCount={currentData?.data?.total || 0}
+          isLoading={currentLoading}
+          isFetching={currentFetching}
           onStateChange={handleStateChange}
           initialState={{
             pagination: {

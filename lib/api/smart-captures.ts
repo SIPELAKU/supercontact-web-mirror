@@ -72,7 +72,7 @@ export async function fetchSmartCaptures(
     page?: number;
     limit?: number;
     search?: string;
-    status?: string;
+    status?: string | string[];
     target?: string;
   } = {}
 ): Promise<SmartCaptureResponse> {
@@ -88,7 +88,13 @@ export async function fetchSmartCaptures(
     });
 
     if (search) queryParams.append('search', search);
-    if (status) queryParams.append('status', status);
+    if (status) {
+      if (Array.isArray(status)) {
+        status.forEach(s => queryParams.append('status', s));
+      } else {
+        queryParams.append('status', status);
+      }
+    }
     if (target) queryParams.append('target', target);
 
     const url = `${baseUrl}?${queryParams.toString()}`;

@@ -17,12 +17,13 @@ import {
 import { X } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
+import { saveAsSubmissions } from "@/lib/api/smart-captures";
 import { saveAsContacts } from "@/lib/api/contacts";
 import { saveAsSubscribers } from "@/lib/api/email-marketing/subscribers";
 import { saveAsRecipients } from "@/lib/api/whatsapp-marketing";
 import { useAuth } from "@/lib/context/AuthContext";
 
-export type SaveAsSourceType = "contact" | "subscriber" | "recipient";
+export type SaveAsSourceType = "contact" | "subscriber" | "recipient" | "submission";
 
 interface SaveAsModalProps {
     open: boolean;
@@ -30,6 +31,7 @@ interface SaveAsModalProps {
     selectedIds: string[];
     sourceType: SaveAsSourceType;
     onSuccess?: () => void;
+    smartCaptureId?: string;
 }
 
 export const SaveAsModal: React.FC<SaveAsModalProps> = ({
@@ -38,6 +40,7 @@ export const SaveAsModal: React.FC<SaveAsModalProps> = ({
     selectedIds,
     sourceType,
     onSuccess,
+    smartCaptureId,
 }) => {
     const [targets, setTargets] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +72,9 @@ export const SaveAsModal: React.FC<SaveAsModalProps> = ({
                 await saveAsSubscribers(token, targets, selectedIds);
             } else if (sourceType === "recipient") {
                 await saveAsRecipients(token, targets, selectedIds);
+            } else if (sourceType === "submission") {
+                if (!smartCaptureId) throw new Error("Smart Capture ID is missing");
+                await saveAsSubmissions(token, smartCaptureId, targets, selectedIds);
             }
 
             notify.success("Successfully saved contacts to selected targets");

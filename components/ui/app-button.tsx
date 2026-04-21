@@ -39,7 +39,7 @@ const COLORS = {
 // --- Types ---
 export interface AppButtonProps extends Omit<ButtonProps, "variant" | "color"> {
   children: React.ReactNode;
-  variantStyle?: "primary" | "outline" | "danger" | "text" | "soft";
+  variantStyle?: "primary" | "outline" | "danger" | "text" | "soft" | "white";
   color?: "primary" | "danger" | "gray" | "white" | "success";
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
@@ -63,7 +63,6 @@ const StyledButton = styled(Button, {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
   const isSuccess = customColor === "success";
-  
   const mainColor = isPrimary
     ? COLORS.primary.main
     : isGray
@@ -71,7 +70,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.main
         : COLORS.danger.main;
-        
   const hoverColor = isPrimary
     ? COLORS.primary.hover
     : isGray
@@ -79,7 +77,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.hover
         : COLORS.danger.hover;
-        
   const lightColor = isPrimary
     ? COLORS.primary.light
     : isGray
@@ -87,7 +84,6 @@ const StyledButton = styled(Button, {
       : isSuccess
         ? COLORS.success.light
         : COLORS.danger.light;
-        
   const whiteColor = isPrimary
     ? COLORS.white.main
     : isGray
@@ -164,6 +160,20 @@ const StyledButton = styled(Button, {
       return {
         ...contentStyle,
         backgroundColor: lightColor,
+        color: mainColor,
+        "&:hover": {
+          backgroundColor: alpha(mainColor, 0.12),
+        },
+        "&.Mui-disabled": {
+          backgroundColor: alpha(mainColor, 0.05),
+          color: alpha(mainColor, 0.38),
+        },
+      };
+
+    case "white":
+      return {
+        ...contentStyle,
+        backgroundColor: whiteColor,
         color: mainColor,
         "&:hover": {
           backgroundColor: alpha(mainColor, 0.12),

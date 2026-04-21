@@ -17,6 +17,7 @@ import {
   Settings,
   User,
   Users,
+  Target,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -126,6 +127,11 @@ const menuData: MenuSection[] = [
           { name: "Pipeline", path: "/sales/pipeline" },
           { name: "Quotation", path: "/sales/quotation" },
         ],
+      },
+      {
+        name: "Smart Capture",
+        icon: Target,
+        path: "/smart-capture",
       },
       {
         name: "Contact",

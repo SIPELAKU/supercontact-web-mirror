@@ -82,3 +82,15 @@ export {
 
 // Billings API
 export * from './billings';
+
+// Smart Capture API
+export {
+    fetchSmartCaptureById,
+    createSmartCapture,
+    updateSmartCapture,
+    uploadSmartCaptureFiles,
+    deleteSmartCaptureFiles,
+    fetchPublicSmartCaptureForm,
+    submitPublicSmartCaptureForm,
+    fetchSmartCaptureSubmissions
+} from './smart-captures';

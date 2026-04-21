@@ -22,6 +22,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     pathname?.startsWith('/forgot-password') ||
     pathname?.startsWith('/new-password') ||
     pathname?.startsWith('/email-verification') ||
+    pathname?.startsWith('/m/') ||
     pathname?.startsWith('/produk/crm-sales') ||
     pathname?.startsWith('/produk/crm-services') ||
     pathname?.startsWith('/produk/omnichannel') ||

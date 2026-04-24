@@ -30,7 +30,7 @@ export const MailServerClient = () => {
 
     // Data fetching
     const { data: response, isLoading, isError, error, refetch } = useMailServers(page + 1, rowsPerPage, debouncedSearch);
-    const mailServers = response?.data?.mail_servers || [];
+    const mailServers = (response?.data?.mail_servers || []).filter(item => !item.is_system_mail_server);
     const totalCount = response?.data?.total || 0;
 
     // Handle fetch error

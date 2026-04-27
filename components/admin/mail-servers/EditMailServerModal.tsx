@@ -39,6 +39,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
         status: "Active",
         is_default: false,
         from_email: "",
+        smtp_region: "",
     });
 
     const [authMethod, setAuthMethod] = useState("username");
@@ -56,6 +57,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                 status: mailServer.status,
                 is_default: mailServer.is_default,
                 from_email: mailServer.from_email || "",
+                smtp_region: mailServer.smtp_region || "",
             });
             setAuthMethod("username");
         }
@@ -98,6 +100,7 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                 is_default: formData.is_default,
                 status: formData.status,
                 from_email: formData.from_email,
+                smtp_region: formData.smtp_region,
             };
 
             // Only include password if it's not empty
@@ -199,22 +202,34 @@ const EditMailServerModal: React.FC<EditMailServerModalProps> = ({
                             </div>
                         </div>
 
-                        <div className="space-y-2 mb-4">
-                            <label className="text-sm font-medium text-gray-700">Connection Encryption <span className="text-red-500">*</span></label>
-                            <AppSelect
-                                isBgWhite
-                                fullWidth
-                                size="small"
-                                value={formData.smtp_encryption}
-                                onChange={(e) => handleChange("smtp_encryption", e.target.value)}
-                                displayEmpty
-                                options={[
-                                    { value: "TLS(STARTTLS)", label: "TLS (STARTTLS)" },
-                                    { value: "SSL/TLS", label: "SSL/TLS" },
-                                    { value: "None", label: "None" },
-                                ]}
-                            />
-                            <p className="text-xs text-gray-500">Recommended. Encryption is requested at the start of the SMTP session.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Connection Encryption <span className="text-red-500">*</span></label>
+                                <AppSelect
+                                    isBgWhite
+                                    fullWidth
+                                    size="small"
+                                    value={formData.smtp_encryption}
+                                    onChange={(e) => handleChange("smtp_encryption", e.target.value)}
+                                    displayEmpty
+                                    options={[
+                                        { value: "TLS(STARTTLS)", label: "TLS (STARTTLS)" },
+                                        { value: "SSL/TLS", label: "SSL/TLS" },
+                                        { value: "None", label: "None" },
+                                    ]}
+                                />
+                                <p className="text-xs text-gray-500">Recommended. Encryption is requested at the start of the SMTP session.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Region</label>
+                                <AppInput
+                                    isBgWhite
+                                    value={formData.smtp_region}
+                                    onChange={(e) => handleChange("smtp_region", e.target.value)}
+                                    placeholder="Example: ap-southeast-1"
+                                />
+                                <p className="text-xs text-gray-500">Region code for the SMTP server if applicable.</p>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

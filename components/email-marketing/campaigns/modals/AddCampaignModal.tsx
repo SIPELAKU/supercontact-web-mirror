@@ -32,9 +32,13 @@ import {
   RadioGroup,
   Stack,
   TextField,
-  Typography
+  Typography,
+  InputAdornment,
+  Grid,
+  Paper
 } from '@mui/material';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
+import { Search, Users, User, CheckCircle2 } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 
@@ -57,6 +61,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [subscriberPage, setSubscriberPage] = useState(1);
   const [subscriberLimit] = useState(10);
   const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [mailingListSearch, setMailingListSearch] = useState('');
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
@@ -86,6 +91,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setSelectedMailSender('');
     setSelectedSmtp('brevo');
     setError('');
+    setMailingListSearch('');
+    setSubscriberSearch('');
     onClose();
   };
 
@@ -103,6 +110,29 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         ? prev.filter(id => id !== subscriberId)
         : [...prev, subscriberId]
     );
+  };
+
+  const filteredMailingLists = useMemo(() => {
+    if (!mailingListSearch.trim()) return mailingLists;
+    return mailingLists.filter(list =>
+      list.name.toLowerCase().includes(mailingListSearch.toLowerCase())
+    );
+  }, [mailingLists, mailingListSearch]);
+
+  const handleSelectAllMailingLists = () => {
+    if (selectedMailingLists.length === filteredMailingLists.length && filteredMailingLists.length > 0) {
+      setSelectedMailingLists([]);
+    } else {
+      setSelectedMailingLists(filteredMailingLists.map(l => l.id));
+    }
+  };
+
+  const handleSelectAllSubscribers = () => {
+    if (selectedSubscribers.length === subscribers.length && subscribers.length > 0) {
+      setSelectedSubscribers([]);
+    } else {
+      setSelectedSubscribers(subscribers.map(s => s.id));
+    }
   };
 
   const handleSubmit = async (action: 'send' | 'draft') => {
@@ -279,42 +309,127 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
 
           {recipientSource === 'mailing_list' && (
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Mailing Lists
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Select Mailing Lists
+                </Typography>
+                {mailingLists.length > 0 && (
+                  <Button 
+                    size="small" 
+                    onClick={handleSelectAllMailingLists}
+                    sx={{ textTransform: 'none', fontWeight: 500 }}
+                  >
+                    {selectedMailingLists.length === filteredMailingLists.length && filteredMailingLists.length > 0 ? 'Deselect All' : 'Select All'}
+                  </Button>
+                )}
+              </Box>
+
+              {mailingLists.length > 0 && (
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search mailing lists..."
+                  value={mailingListSearch}
+                  onChange={(e) => setMailingListSearch(e.target.value)}
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search className="w-4 h-4 text-gray-400" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+
               {mailingLists.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No mailing lists available. Please create one first.
+                <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: '#f9fafb', borderStyle: 'dashed' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No mailing lists available. Please create one first.
+                  </Typography>
+                </Paper>
+              ) : filteredMailingLists.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                  No mailing lists found matching "{mailingListSearch}"
                 </Typography>
               ) : (
-                <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                  {mailingLists.map((list) => (
-                    <FormControlLabel
-                      key={list.id}
-                      control={
-                        <Checkbox
-                          checked={selectedMailingLists.includes(list.id)}
-                          onChange={() => handleMailingListToggle(list.id)}
-                        />
-                      }
-                      label={`${list.name} (${list.subscriber_count} subscribers)`}
-                    />
-                  ))}
+                <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
+                  <Grid container spacing={1.5}>
+                    {filteredMailingLists.map((list) => {
+                      const isSelected = selectedMailingLists.includes(list.id);
+                      return (
+                        <Grid item xs={12} sm={6} key={list.id}>
+                          <Paper
+                            variant="outlined"
+                            onClick={() => handleMailingListToggle(list.id)}
+                            sx={{
+                              p: 1.5,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              transition: 'all 0.2s',
+                              borderColor: isSelected ? 'primary.main' : 'divider',
+                              bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                bgcolor: isSelected ? 'primary.50' : '#f8fafc',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                              }
+                            }}
+                          >
+                            <Checkbox
+                              size="small"
+                              checked={isSelected}
+                              sx={{ p: 0 }}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={() => handleMailingListToggle(list.id)}
+                            />
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                                {list.name}
+                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                                <Users className="w-3 h-3 text-gray-400" />
+                                <Typography variant="caption" color="text.secondary">
+                                  {list.subscriber_count.toLocaleString()} subscribers
+                                </Typography>
+                              </Box>
+                            </Box>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-600" />}
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
                 </Box>
               )}
               {error && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                <Alert severity="error" sx={{ mt: 1, py: 0 }}>
                   Please select at least one mailing list
-                </Typography>
+                </Alert>
               )}
             </Box>
           )}
 
           {recipientSource === 'subscriber' && (
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Subscribers
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Select Subscribers
+                </Typography>
+                {subscribers.length > 0 && (
+                  <Button 
+                    size="small" 
+                    onClick={handleSelectAllSubscribers}
+                    sx={{ textTransform: 'none', fontWeight: 500 }}
+                  >
+                    {selectedSubscribers.length === subscribers.length && subscribers.length > 0 ? 'Deselect All' : 'Select All'}
+                  </Button>
+                )}
+              </Box>
+              
               <TextField
                 fullWidth
                 size="small"
@@ -325,30 +440,78 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   setSubscriberPage(1); // Reset to first page on search
                 }}
                 sx={{ mb: 2 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search className="w-4 h-4 text-gray-400" />
+                    </InputAdornment>
+                  ),
+                }}
               />
               {isLoadingSubscribers ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
                   <CircularProgress size={24} />
                 </Box>
               ) : subscribers.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  {subscriberSearch ? 'No subscribers found matching your search.' : 'No subscribers available. Please add subscribers first.'}
-                </Typography>
+                <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: '#f9fafb', borderStyle: 'dashed' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {subscriberSearch ? `No subscribers found matching "${subscriberSearch}"` : 'No subscribers available. Please add subscribers first.'}
+                  </Typography>
+                </Paper>
               ) : (
                 <>
-                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                    {subscribers.map((subscriber) => (
-                      <FormControlLabel
-                        key={subscriber.id}
-                        control={
-                          <Checkbox
-                            checked={selectedSubscribers.includes(subscriber.id)}
-                            onChange={() => handleSubscriberToggle(subscriber.id)}
-                          />
-                        }
-                        label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
-                      />
-                    ))}
+                  <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
+                    <Grid container spacing={1.5}>
+                      {subscribers.map((subscriber) => {
+                        const isSelected = selectedSubscribers.includes(subscriber.id);
+                        return (
+                          <Grid item xs={12} sm={6} key={subscriber.id}>
+                            <Paper
+                              variant="outlined"
+                              onClick={() => handleSubscriberToggle(subscriber.id)}
+                              sx={{
+                                p: 1.5,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                transition: 'all 0.2s',
+                                borderColor: isSelected ? 'primary.main' : 'divider',
+                                bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                                '&:hover': {
+                                  borderColor: 'primary.main',
+                                  bgcolor: isSelected ? 'primary.50' : '#f8fafc',
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                }
+                              }}
+                            >
+                              <Checkbox
+                                size="small"
+                                checked={isSelected}
+                                sx={{ p: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={() => handleSubscriberToggle(subscriber.id)}
+                              />
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                                  {subscriber.email}
+                                </Typography>
+                                {subscriber.name && (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                                    <User className="w-3 h-3 text-gray-400" />
+                                    <Typography variant="caption" color="text.secondary" noWrap>
+                                      {subscriber.name}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-600" />}
+                            </Paper>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
                   </Box>
                   {totalSubscriberPages > 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
@@ -364,9 +527,9 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                 </>
               )}
               {error && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                <Alert severity="error" sx={{ mt: 1, py: 0 }}>
                   Please select at least one subscriber
-                </Typography>
+                </Alert>
               )}
             </Box>
           )}

@@ -38,9 +38,10 @@ import {
   Paper
 } from '@mui/material';
 import { useState, useRef, useMemo } from 'react';
-import { Search, Users, User, CheckCircle2 } from 'lucide-react';
+import { Search, Users, User, CheckCircle2, Maximize2, Minimize2, X } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
+import { IconButton } from '@mui/material';
 
 interface AddCampaignModalProps {
   open: boolean;
@@ -62,6 +63,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [subscriberLimit] = useState(10);
   const [subscriberSearch, setSubscriberSearch] = useState('');
   const [mailingListSearch, setMailingListSearch] = useState('');
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
@@ -93,6 +95,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setError('');
     setMailingListSearch('');
     setSubscriberSearch('');
+    setIsFullScreen(false);
     onClose();
   };
 
@@ -199,8 +202,36 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   return (
-    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="lg" fullWidth>
-      <DialogTitle>Create New Campaign</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={() => setShowCloseConfirmation(true)}
+      maxWidth="lg"
+      fullWidth
+      fullScreen={isFullScreen}
+    >
+      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+          Create New Campaigns
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton
+            aria-label="fullscreen"
+            onClick={() => setIsFullScreen(!isFullScreen)}
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </IconButton>
+          <IconButton
+            aria-label="close"
+            onClick={() => setShowCloseConfirmation(true)}
+            size="small"
+            sx={{ color: 'text.secondary' }}
+          >
+            <X className="w-5 h-5" />
+          </IconButton>
+        </Box>
+      </DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Stack spacing={3} sx={{ mt: 1 }}>
@@ -314,8 +345,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   Select Mailing Lists
                 </Typography>
                 {mailingLists.length > 0 && (
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={handleSelectAllMailingLists}
                     sx={{ textTransform: 'none', fontWeight: 500 }}
                   >
@@ -420,8 +451,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   Select Subscribers
                 </Typography>
                 {subscribers.length > 0 && (
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={handleSelectAllSubscribers}
                     sx={{ textTransform: 'none', fontWeight: 500 }}
                   >
@@ -429,7 +460,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   </Button>
                 )}
               </Box>
-              
+
               <TextField
                 fullWidth
                 size="small"

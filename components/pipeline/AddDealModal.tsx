@@ -120,6 +120,13 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     }
   }, [id, setStage]);
 
+  useEffect(() => {
+    if (open) {
+      fetchContact({ query: "" });
+      fetchProduct();
+    }
+  }, [open, fetchContact, fetchProduct]);
+
 
   const selectedContactOption = useMemo(() => {
     // Priority 1: If we have a fetched deal and the ID matches, use the detailed contact/company info from it
@@ -437,7 +444,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   onInputChange={(_, inputValue) => {
                     const keyword = inputValue.trim();
                     if (keyword.length < 1) {
-                      clearContact();
+                      fetchContact({ query: "" });
                       return;
                     }
                     fetchContact({ query: inputValue });

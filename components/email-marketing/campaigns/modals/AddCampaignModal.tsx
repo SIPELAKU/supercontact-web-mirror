@@ -40,6 +40,7 @@ import {
 import { useState, useRef, useMemo } from 'react';
 import { Search, Users, User, CheckCircle2, Maximize2, Minimize2, X } from 'lucide-react';
 import { notify } from '@/lib/notifications';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 import { IconButton } from '@mui/material';
 
@@ -58,7 +59,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [selectedMailSender, setSelectedMailSender] = useState<string>('');
   const [selectedSmtp, setSelectedSmtp] = useState<string>('brevo');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | any[] | null>(null);
   const [subscriberPage, setSubscriberPage] = useState(1);
   const [subscriberLimit] = useState(10);
   const [subscriberSearch, setSubscriberSearch] = useState('');
@@ -193,9 +194,16 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       onSuccess();
       handleClose();
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create campaign.';
-      setError(errorMessage);
-      notify.error(errorMessage);
+      if (err.details && Array.isArray(err.details)) {
+        setError(err.details);
+        notify.error('Validation failed', {
+          description: <ApiErrorDisplay errors={err.details} />
+        });
+      } else {
+        const errorMessage = typeof err.message === 'string' ? err.message.replace(/_/g, " ") : (err.message || 'Failed to create campaign.');
+        setError(errorMessage);
+        notify.error(errorMessage);
+      }
     }
   };
 
@@ -233,7 +241,18 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         </Box>
       </DialogTitle>
       <DialogContent dividers>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {typeof error === 'string' ? (
+              error
+            ) : (
+              <div className="text-black">
+                <p className="font-bold">Please fix the following errors:</p>
+                <ApiErrorDisplay errors={error} maxHeight="150px" />
+              </div>
+            )}
+          </Alert>
+        )}
         <Stack spacing={3} sx={{ mt: 1 }}>
           <Box>
             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#374151' }}>
@@ -286,8 +305,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                     label: `${sender.name} (${sender.email})`
                   }))}
                   isBgWhite
-                  error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
-                  helperText={error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}
+                  error={Boolean(typeof error === 'string' && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
+                  helperText={typeof error === 'string' && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}
                 />
               </Box>
               {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
@@ -310,8 +329,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               fullWidth
-              error={Boolean(error && error.includes("Subject") && !subject.trim())}
-              helperText={error && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
+              error={Boolean(typeof error === 'string' && error.includes("Subject") && !subject.trim())}
+              helperText={typeof error === 'string' && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
             />
           </Box>
 
@@ -322,7 +341,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               onChange={(html) => setHtmlContent(html)}
               isLoading={createMutation.isPending}
             />
-            {error && error.includes("Email content") && !htmlContent.trim() && (
+            {typeof error === 'string' && error.includes("Email content") && !htmlContent.trim() && (
               <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                 Content is required
               </Typography>
@@ -436,7 +455,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   </Grid>
                 </Box>
               )}
-              {error && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
+              {typeof error === 'string' && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
                 <Alert severity="error" sx={{ mt: 1, py: 0 }}>
                   Please select at least one mailing list
                 </Alert>
@@ -557,7 +576,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   )}
                 </>
               )}
-              {error && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
+              {typeof error === 'string' && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
                 <Alert severity="error" sx={{ mt: 1, py: 0 }}>
                   Please select at least one subscriber
                 </Alert>

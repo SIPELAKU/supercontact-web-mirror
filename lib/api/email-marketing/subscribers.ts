@@ -118,13 +118,11 @@ export async function createSubscriber(token: string, data: CreateSubscriberData
     }
 
     if (!res.ok) {
-      logger.error(`Create subscriber failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to create subscriber (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to create subscriber (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;
@@ -216,13 +214,11 @@ export async function updateSubscriber(token: string, subscriberId: string, data
     }
 
     if (!res.ok) {
-      logger.error(`Update subscriber failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to update subscriber (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to update subscriber (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;
@@ -266,13 +262,11 @@ export async function bulkDeleteSubscribers(token: string, contactIds: string[])
     }
 
     if (!res.ok) {
-      logger.error(`Bulk delete subscribers failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to delete subscribers (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to delete subscribers (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;

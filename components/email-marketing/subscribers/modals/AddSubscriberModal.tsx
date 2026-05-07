@@ -26,6 +26,7 @@ import { IconUser, IconUsers } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import { AppButton } from '@/components/ui/app-button';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 
 interface AddSubscriberModalProps {
     open: boolean;
@@ -47,7 +48,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
     const [selectedLists, setSelectedLists] = useState<MailingList[]>([]);
     const [contactSearchQuery, setContactSearchQuery] = useState('');
 
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string | any[] | null>(null);
 
     const createMutation = useCreateSubscriber();
     const { data: mailingListsData } = useMailingLists();
@@ -135,9 +136,16 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                 handleClose();
             }
         } catch (err: any) {
-            const errorMessage = err.message || 'An error occurred.';
-            setError(errorMessage);
-            notify.error(errorMessage);
+            if (err.details && Array.isArray(err.details)) {
+                setError(err.details);
+                notify.error('Validation failed', {
+                    description: <ApiErrorDisplay errors={err.details} />
+                });
+            } else {
+                const errorMessage = typeof err.message === 'string' ? err.message.replace(/_/g, " ") : (err.message || 'An error occurred.');
+                setError(errorMessage);
+                notify.error(errorMessage);
+            }
         }
     };
 
@@ -147,7 +155,18 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
         <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
             <DialogTitle>Add New Subscriber</DialogTitle>
             <DialogContent dividers>
-                {error && !createMutation.isPending && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {error && !createMutation.isPending && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {typeof error === 'string' ? (
+                            error
+                        ) : (
+                            <div className="text-black">
+                                <p className="font-bold">Please fix the following errors:</p>
+                                <ApiErrorDisplay errors={error} maxHeight="150px" />
+                            </div>
+                        )}
+                    </Alert>
+                )}
                 <Stack spacing={3} sx={{ mt: 1 }}>
                     <Box sx={{ textAlign: 'center', }}>
                         <ToggleButtonGroup

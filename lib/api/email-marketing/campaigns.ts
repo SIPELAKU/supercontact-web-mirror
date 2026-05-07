@@ -154,13 +154,11 @@ export async function createCampaign(token: string, data: CreateCampaignData): P
     }
 
     if (!res.ok) {
-      logger.error(`Create campaign failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to create campaign (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to create campaign (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.3] - 2026-05-07
+
+### ✨ Added
+- **Standardized API Error Handling**:
+    - **New Component**: `ApiErrorDisplay` for rendering structured field-level validation errors.
+    - **Fullscreen Error View**: Added a modal view for large error lists (e.g., bulk import failures) with professional formatting and field name cleanup.
+- **Campaign Visual Builder Enhancements**:
+    - **Focus Mode (Zen Mode)**: Added an immersive editing mode that hides the modal header and footer to maximize space for the Visual Builder.
+    - **Quick Action Bar**: Integrated a floating header in Focus Mode with Subject/SMTP reference and "Save as Draft" / "Create & Send" shortcuts.
+
+### 🛠️ Refactor & Enhancements
+- **Pipeline Module UX**:
+    - **Pre-fetching Options**: Updated `AddDealModal` to pre-fetch contacts and products immediately on open, removing the need to type before seeing the list.
+    - **Persistent Search**: Improved autocomplete behavior to retain the full list when search input is cleared.
+- **Visual Polish**:
+    - Removed redundant dividers and borders in the Campaign Editor's Focus Mode for a seamless, distraction-free UI.
+    - Standardized error message formatting across Email Marketing modules.
+
+### 🐞 Fixed
+- **TypeScript Type Safety**: Resolved union type mismatch errors (`string | any[]`) in campaign and subscriber modals.
+- **JSX Architecture**: Fixed structural nesting and syntax errors in the Campaign Modal related to the new conditional rendering logic.
+- **Editor Responsiveness**: Fixed height constraints in `EmailTabbedEditor` to ensure it correctly fills the screen in all display modes.
+
+
 ## [1.18.2] - 2026-04-21
 
 ### Fix

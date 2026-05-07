@@ -15,6 +15,11 @@ export interface Subscriber {
   updated_at: string;
 }
 
+export interface CampaignSubscriber extends Subscriber {
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  error_message: string | null;
+}
+
 export interface SubscribersResponse {
   success: boolean;
   data: {
@@ -23,6 +28,22 @@ export interface SubscribersResponse {
     limit: number;
     total_pages: number;
     contacts: Subscriber[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface CampaignSubscribersResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    contacts: CampaignSubscriber[];
   };
   error?: {
     code: string;

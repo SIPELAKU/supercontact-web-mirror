@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { notify } from "@/lib/notifications";
+import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
@@ -266,23 +267,33 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
       if (!res.ok) {
         const text = await res.text();
-        let errorMessage = text;
         try {
           const resJson = JSON.parse(text);
           if (resJson?.error?.details && Array.isArray(resJson.error.details)) {
+            // Group unique errors by field and message
             const uniqueErrors = Array.from(
               new Set(
-                resJson.error.details.map(
-                  (d: any) => `${d.field}: ${d.message}`
+                resJson.error.details.map((d: any) => 
+                  JSON.stringify({ field: d.field, message: d.message })
                 )
               )
-            );
-            errorMessage = uniqueErrors.join(", ");
+            ).map((s: any) => JSON.parse(s));
+
+            const description = <ApiErrorDisplay errors={uniqueErrors} />;
+
+            notify.error("Failed to upload subscribers to server.", {
+              description,
+              duration: 10000,
+            });
+            setIsLoading(false);
+            return;
           } else if (resJson?.error?.message) {
-            errorMessage = resJson.error.message;
+            throw new Error(resJson.error.message);
           }
-        } catch { }
-        throw new Error(errorMessage || "Failed to upload subscribers");
+        } catch (e: any) {
+          if (e instanceof Error) throw e;
+        }
+        throw new Error(text || "Failed to upload subscribers");
       }
 
       const skipped = previewData.length - validSubscribers.length;
@@ -293,8 +304,10 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
       handleClose();
       onSuccess();
     } catch (error: any) {
+      // If we already handled the notification inside the try block for detailed errors,
+      // this part will only be reached for other types of errors.
       notify.error("Failed to upload subscribers to server.", {
-        description: error.message,
+        description: typeof error.message === 'string' ? error.message.replace(/_/g, " ") : error.message,
         duration: 10000,
       });
     } finally {

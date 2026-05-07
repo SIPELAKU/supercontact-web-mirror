@@ -7,6 +7,7 @@ import {
   deleteCampaign,
   fetchCampaignDetail,
   fetchCampaigns,
+  fetchCampaignSubscribers,
   updateCampaign,
   duplicateCampaigns
 } from '../api';
@@ -100,5 +101,18 @@ export function useDuplicateCampaigns() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
     },
+  });
+}
+
+// Fetch campaign subscribers with status
+export function useCampaignSubscribers(campaignId: string, page: number = 1, limit: number = 10, search?: string) {
+  return useQuery({
+    queryKey: ['campaign-subscribers', campaignId, page, limit, search],
+    queryFn: async () => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchCampaignSubscribers(token, campaignId, page, limit, search);
+    },
+    enabled: !!campaignId,
   });
 }

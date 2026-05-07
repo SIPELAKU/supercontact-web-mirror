@@ -145,6 +145,10 @@ export interface MailServer {
   smtp_password?: string;
   from_email?: string;
   smtp_region?: string;
+  limit_per_minute?: number;
+  limit_per_hour?: number;
+  limit_per_day?: number;
+  limit_per_month?: number;
 }
 
 export type MailServerResponse = {

@@ -35,7 +35,8 @@ import {
   Typography,
   InputAdornment,
   Grid,
-  Paper
+  Paper,
+  Tooltip
 } from '@mui/material';
 import { useState, useRef, useMemo } from 'react';
 import { Search, Users, User, CheckCircle2, Maximize2, Minimize2, X } from 'lucide-react';
@@ -65,6 +66,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [subscriberSearch, setSubscriberSearch] = useState('');
   const [mailingListSearch, setMailingListSearch] = useState('');
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
@@ -97,6 +99,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setMailingListSearch('');
     setSubscriberSearch('');
     setIsFullScreen(false);
+    setIsFocusMode(false);
     onClose();
   };
 
@@ -216,32 +219,47 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       maxWidth="lg"
       fullWidth
       fullScreen={isFullScreen}
+      sx={{
+        '& .MuiDialog-paper': isFocusMode ? {
+          margin: 0,
+          maxHeight: '100vh',
+          height: '100vh',
+          borderRadius: 0
+        } : {}
+      }}
     >
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-          Create New Campaigns
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            aria-label="fullscreen"
-            onClick={() => setIsFullScreen(!isFullScreen)}
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
-            {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-          </IconButton>
-          <IconButton
-            aria-label="close"
-            onClick={() => setShowCloseConfirmation(true)}
-            size="small"
-            sx={{ color: 'text.secondary' }}
-          >
-            <X className="w-5 h-5" />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      <DialogContent dividers>
-        {error && (
+      {!isFocusMode && (
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+            Create New Campaigns
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              aria-label="fullscreen"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            </IconButton>
+            <IconButton
+              aria-label="close"
+              onClick={() => setShowCloseConfirmation(true)}
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              <X className="w-5 h-5" />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+      )}
+      <DialogContent dividers={!isFocusMode} sx={{ 
+        p: isFocusMode ? 0 : 3, 
+        display: 'flex', 
+        flexDirection: 'column',
+        bgcolor: isFocusMode ? '#f8fafc' : 'background.paper'
+      }}>
+        {!isFocusMode && error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {typeof error === 'string' ? (
               error
@@ -253,8 +271,10 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
             )}
           </Alert>
         )}
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <Box>
+        <Stack spacing={isFocusMode ? 0 : 3} sx={{ mt: 0, flex: 1, minHeight: 0 }}>
+          {!isFocusMode && (
+            <>
+            <Box>
             <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#374151' }}>
               SMTP
             </Typography>
@@ -333,21 +353,100 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               helperText={typeof error === 'string' && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
             />
           </Box>
+            </>
+          )}
 
-          <Box>
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: isFocusMode ? 'auto' : 600,
+            height: isFocusMode ? '100%' : 'auto'
+          }}>
+            {isFocusMode ? (
+              <Box sx={{ 
+                p: 1.5, 
+                px: 3,
+                bgcolor: 'white', 
+                borderBottom: '1px solid #e5e7eb', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                   <Box>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: -0.5 }}>
+                        CAMPAIGN SUBJECT
+                      </Typography>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                        {subject || '(No Subject)'}
+                      </Typography>
+                   </Box>
+                   <Box sx={{ width: '1px', height: 32, bgcolor: '#e5e7eb' }} />
+                   <Box>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: -0.5 }}>
+                        SMTP SERVER
+                      </Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {selectedSmtp === 'brevo' ? 'Brevo (Mail-Sender)' : (mailServers.find(s => s.id === selectedSmtp)?.name || 'Default')}
+                      </Typography>
+                   </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                   <AppButton size="small" variantStyle="outline" onClick={() => handleSubmit('draft')} isLoading={createMutation.isPending}>
+                      Save as Draft
+                   </AppButton>
+                   <AppButton size="small" variantStyle="primary" onClick={() => handleSubmit('send')} isLoading={createMutation.isPending}>
+                      Create & Send
+                   </AppButton>
+                   <Box sx={{ width: '1px', height: 24, bgcolor: '#e5e7eb', mx: 0.5 }} />
+                   <IconButton 
+                    size="small" 
+                    onClick={() => setIsFocusMode(false)}
+                    sx={{ color: 'text.secondary', border: '1px solid #e5e7eb' }}
+                   >
+                      <Minimize2 size={18}/>
+                   </IconButton>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                  Email Content
+                </Typography>
+                <Tooltip title="Focus Mode hides other fields to give you more room for editing">
+                  <Button 
+                    size="small" 
+                    variant="outlined"
+                    onClick={() => {
+                      setIsFocusMode(true);
+                      setIsFullScreen(true);
+                    }}
+                    startIcon={<Maximize2 size={14}/>}
+                    sx={{ textTransform: 'none', borderRadius: '6px' }}
+                  >
+                    Focus Mode
+                  </Button>
+                </Tooltip>
+              </Box>
+            )}
             <EmailTabbedEditor
               ref={editorRef}
               value={htmlContent}
               onChange={(html) => setHtmlContent(html)}
               isLoading={createMutation.isPending}
+              height={isFocusMode ? "100%" : "600px"}
             />
-            {typeof error === 'string' && error.includes("Email content") && !htmlContent.trim() && (
+            {!isFocusMode && typeof error === 'string' && error.includes("Email content") && !htmlContent.trim() && (
               <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                 Content is required
               </Typography>
             )}
           </Box>
 
+          {!isFocusMode && (
+            <>
           <RecipientSourceSelector
             value={recipientSource}
             onChange={(value) => {
@@ -583,44 +682,48 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               )}
             </Box>
           )}
+        </>
+      )}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <AppButton
-          onClick={() => {
-            setSubject('');
-            setHtmlContent('');
-            setRecipientSource('mailing_list');
-            setSelectedMailingLists([]);
-            setSelectedSubscribers([]);
-            setSelectedMailSender('');
-            setSelectedSmtp('brevo');
-            setError('');
-            onClose();
-          }}
-          color="gray"
-          variantStyle="outline"
-          isLoading={createMutation.isPending}
-        >
-          Cancel
-        </AppButton>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      {!isFocusMode && (
+        <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
           <AppButton
-            onClick={() => handleSubmit('draft')}
+            onClick={() => {
+              setSubject('');
+              setHtmlContent('');
+              setRecipientSource('mailing_list');
+              setSelectedMailingLists([]);
+              setSelectedSubscribers([]);
+              setSelectedMailSender('');
+              setSelectedSmtp('brevo');
+              setError('');
+              onClose();
+            }}
+            color="gray"
             variantStyle="outline"
             isLoading={createMutation.isPending}
           >
-            Save as Draft
+            Cancel
           </AppButton>
-          <AppButton
-            onClick={() => handleSubmit('send')}
-            variantStyle="primary"
-            isLoading={createMutation.isPending}
-          >
-            Create & Send
-          </AppButton>
-        </Box>
-      </DialogActions>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <AppButton
+              onClick={() => handleSubmit('draft')}
+              variantStyle="outline"
+              isLoading={createMutation.isPending}
+            >
+              Save as Draft
+            </AppButton>
+            <AppButton
+              onClick={() => handleSubmit('send')}
+              variantStyle="primary"
+              isLoading={createMutation.isPending}
+            >
+              Create & Send
+            </AppButton>
+          </Box>
+        </DialogActions>
+      )}
 
       <ConfirmationPopup
         isOpen={showCloseConfirmation}

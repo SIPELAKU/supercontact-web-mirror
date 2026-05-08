@@ -257,7 +257,9 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         p: isFocusMode ? 0 : 3, 
         display: 'flex', 
         flexDirection: 'column',
-        bgcolor: isFocusMode ? '#f8fafc' : 'background.paper'
+        overflow: isFocusMode ? 'hidden' : 'auto',
+        bgcolor: isFocusMode ? '#f8fafc' : 'background.paper',
+        flex: 1
       }}>
         {!isFocusMode && error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -361,7 +363,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
             display: 'flex', 
             flexDirection: 'column', 
             minHeight: isFocusMode ? 'auto' : 600,
-            height: isFocusMode ? '100%' : 'auto'
+            height: isFocusMode ? '100%' : 'auto',
+            overflow: isFocusMode ? 'hidden' : 'visible'
           }}>
             {isFocusMode ? (
               <Box sx={{ 

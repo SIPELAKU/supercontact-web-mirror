@@ -198,9 +198,17 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                 minHeight: 0
             }}>
                 {activeTab === 0 ? (
-                    <Box>
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
                         <RichTextToolbar onAction={execCommand} />
-                        <Box sx={{ p: 2, minHeight: height || "400px", bgcolor: "white" }}>
+                        <Box sx={{ 
+                            p: 2, 
+                            flex: 1, 
+                            display: "flex", 
+                            flexDirection: "column", 
+                            minHeight: 0, 
+                            bgcolor: "white",
+                            overflowY: "auto"
+                        }}>
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
                                 Isi Email
                             </Typography>
@@ -209,13 +217,14 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                                 contentEditable
                                 onInput={handleContentChange}
                                 style={{
-                                    minHeight: height ? `calc(${height} - 100px)` : "350px",
+                                    flex: 1,
                                     padding: "12px",
                                     border: "1px solid #e5e7eb",
                                     borderRadius: "4px",
                                     outline: "none",
                                     backgroundColor: "white",
                                     fontFamily: "inherit",
+                                    minHeight: height ? "auto" : "350px",
                                 }}
                             />
                         </Box>

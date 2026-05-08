@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.4] - 2026-05-08
+
+### 🐞 Fixed
+- **Autocomplete Input**: Resolved multiple issues in `AddDealModal`, including the inability to clear selections, disappearing values during search, and potential crashes in the comparison logic.
+- **Modal UX**: Integrated Focus Mode into the Edit Campaign modal and enabled vertical scrolling (overflow-y) for improved content visibility.
+
+
 ## [1.18.3] - 2026-05-07
 
 ### ✨ Added

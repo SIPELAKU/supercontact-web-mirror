@@ -55,8 +55,10 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [fetchedDeal, setFetchedDeal] = useState<any>(null);
+  const [persistedContact, setPersistedContact] = useState<{ value: string; label: string } | null>(null);
+  const [persistedProduct, setPersistedProduct] = useState<{ value: string; label: string } | null>(null);
 
-  const reset = () =>
+  const reset = () => {
     setFormData({
       client_account: "",
       product_id: "",
@@ -66,6 +68,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       probability_of_close: "0",
       notes: ""
     });
+    setPersistedContact(null);
+    setPersistedProduct(null);
+  };
 
   const deal = fetchedDeal;
 
@@ -117,6 +122,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     } else {
       setFetchedDeal(null);
       reset();
+      setPersistedContact(null);
+      setPersistedProduct(null);
     }
   }, [id, setStage]);
 
@@ -149,10 +156,15 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     if (formData.client_account) {
       const found = listContact.find(c => c.value === formData.client_account);
       if (found) return found;
+
+      // Priority 3: Use persisted selection if still matching the ID
+      if (persistedContact && persistedContact.value === formData.client_account) {
+        return persistedContact;
+      }
     }
 
     return null;
-  }, [deal, formData.client_account, listContact]);
+  }, [deal, formData.client_account, listContact, persistedContact]);
 
   const contactOptions = useMemo(() => {
     if (!selectedContactOption) return listContact;
@@ -178,9 +190,14 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     if (formData.product_id) {
       const found = listProduct.find(p => p.id === formData.product_id);
       if (found) return { value: found.id, label: found.sku };
+
+      // Priority 3: Persisted product
+      if (persistedProduct && persistedProduct.value === formData.product_id) {
+        return persistedProduct;
+      }
     }
     return null;
-  }, [deal, formData.product_id, listProduct]);
+  }, [deal, formData.product_id, listProduct, persistedProduct]);
 
   const productOptions = useMemo(() => {
     const listOpts = listProduct.map(p => ({
@@ -390,17 +407,24 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
                   onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                      setFormData({ ...formData, product_id: (newValue as any).value });
+                      const val = newValue as { value: string; label: string };
+                      setFormData({ ...formData, product_id: val.value });
+                      setPersistedProduct(val);
                     } else if (!newValue) {
                       setFormData({ ...formData, product_id: "" });
+                      setPersistedProduct(null);
                     }
                   }}
                   onInputChange={(_, inputValue) => {
-                    if (inputValue.trim().length > 0) {
-                      fetchProduct({ search: inputValue });
+                    const keyword = inputValue.trim();
+                    if (keyword.length < 1) {
+                      fetchProduct({ search: "" });
+                      return;
                     }
+                    fetchProduct({ search: inputValue });
                   }}
                   isOptionEqualToValue={(option, value) => {
+                    if (!value) return false;
                     if (typeof option === 'string' || typeof value === 'string') return option === value;
                     return (option as any).value === (value as any).value;
                   }}
@@ -438,7 +462,12 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
                   onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                      setFormData({ ...formData, client_account: (newValue as any).value });
+                      const val = newValue as { value: string; label: string };
+                      setFormData({ ...formData, client_account: val.value });
+                      setPersistedContact(val);
+                    } else if (!newValue) {
+                      setFormData({ ...formData, client_account: "" });
+                      setPersistedContact(null);
                     }
                   }}
                   onInputChange={(_, inputValue) => {
@@ -450,6 +479,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                     fetchContact({ query: inputValue });
                   }}
                   isOptionEqualToValue={(option, value) => {
+                    if (!value) return false;
                     if (typeof option === 'string' || typeof value === 'string') return option === value;
                     return (option as any).value === (value as any).value;
                   }}

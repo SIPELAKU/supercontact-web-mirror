@@ -9,6 +9,8 @@ import PageHeader from '@/components/ui/page-header';
 import { useMailingListDetail, useDeleteMailingListSubscriber, useBulkDeleteMailingListSubscribers, useDeleteAllMailingListSubscribers, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
+import { SuperTable } from '@/components/ui/super-table';
+import { subscriberColumns, campaignColumns } from './columns';
 import {
     Box,
     Chip,
@@ -21,23 +23,14 @@ import {
     IconButton,
     Paper,
     Tab,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
     Tabs,
-    TextField,
     Tooltip,
     Typography,
-    Checkbox,
     Stack
 } from '@mui/material';
 import { format }
     from 'date-fns';
-import { AlertTriangle, ArrowLeft, Download, Eye, Filter, Search, Trash2, UserPlus } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -154,6 +147,14 @@ const MailingListDetailPage = () => {
         setSelectedToDelete(newSelected);
     };
 
+    const handleBulkDelete = async (selectedRows: any[], clearSelection: () => void) => {
+        setSelectedToDelete(selectedRows.map(r => r.original.id));
+        setSubscriberToDelete({ id: 'BULK', email: 'selected' });
+        // The actual deletion happens in handleDeleteSubscriber which should call clearSelection
+        // But for now we just store the clearSelection function if needed, 
+        // or just let the user confirm and then we'll refresh.
+    };
+
     // Server-filtered subscribers
     const filteredSubscribers = subscribers;
     const totalSubscribers = mailingList?.subscribers?.total || 0;
@@ -238,291 +239,134 @@ const MailingListDetailPage = () => {
             </Box>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
-                {/* Toolbar */}
-                <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1 }}>
-                        <AppButton
-                            variantStyle="soft"
-                            startIcon={<Filter size={18} />}
-                            sx={{
-                                height: '42px',
-                                px: 2.5
-                            }}
-                        >
-                            Filters
-                        </AppButton>
-                        <TextField
-                            size="small"
-                            placeholder={activeTab === 0 ? "Search..." : "Search campaigns..."}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            InputProps={{
-                                startAdornment: <Search size={18} style={{ marginRight: 8, color: '#9ca3af' }} />
-                            }}
-                            sx={{
-                                flex: 1,
-                                maxWidth: '400px',
-                                '& .MuiOutlinedInput-root': {
-                                    height: '42px',
-                                    borderRadius: '8px',
-                                    bgcolor: 'white',
-                                    '& fieldset': {
-                                        borderColor: '#e5e7eb',
-                                    },
-                                    '&:hover fieldset': {
-                                        borderColor: '#d1d5db',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                        borderColor: '#5D87FF',
-                                        borderWidth: '1px',
-                                    }
-                                }
-                            }}
-                        />
-                    </Box>
-                    {activeTab === 0 && (
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-
-
-                            {selectedToDelete.length > 0 ? (
-                                <>
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary', mr: 2 }}>
-                                        {selectedToDelete.length} selected
-                                    </Typography>
-                                    <AppButton
-                                        variantStyle="danger"
-                                        startIcon={<Trash2 size={18} />}
-                                        onClick={() => setSubscriberToDelete({ id: 'BULK', email: 'selected' })}
-                                        sx={{ height: '42px', px: 3 }}
-                                    >
-                                        Delete Selected ({selectedToDelete.length})
-                                    </AppButton>
-                                </>
-                            ) : (
-                                <>
-                                    <AppButton
-                                        variantStyle="outline"
-                                        startIcon={<Download size={18} />}
-                                        onClick={() => setShowImportModal(true)}
-                                        sx={{ px: 3, ml: 'auto' }}
-                                    >
-                                        Import
-                                    </AppButton>
-                                    <AppButton
-                                        variantStyle="primary"
-                                        startIcon={<UserPlus size={18} />}
-                                        onClick={() => setShowAddSubscriberModal(true)}
-                                        sx={{ px: 3 }}
-                                    >
-                                        Tambah Subscriber
-                                    </AppButton>
-                                    {filteredSubscribers.length > 0 && (
-                                        <AppButton
-                                            variantStyle="soft"
-                                            color="danger"
-                                            startIcon={<Trash2 className="w-4 h-4" />}
-                                            onClick={() => setConfirmAllOpen(true)}
-                                            sx={{ px: 3 }}
-                                        >
-                                            Delete All Data
-                                        </AppButton>
-                                    )}
-
-
-                                </>
-                            )}
-                        </Box>
-                    )}
-                </Box>
-
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
-                    <>
-                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-                            <Table>
-                                <TableHead>
-                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-                                        <TableCell padding="checkbox">
-                                            <Checkbox
-                                                color="primary"
-                                                indeterminate={selectedToDelete.length > 0 && selectedToDelete.length < paginatedSubscribers.length}
-                                                checked={paginatedSubscribers.length > 0 && selectedToDelete.length === paginatedSubscribers.length}
-                                                onChange={handleSelectAllClick}
-                                            />
-                                        </TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Email</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Nama Perusahaan</TableCell>
-                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Aksi</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {paginatedSubscribers.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {searchQuery ? 'No subscribers found matching your search.' : 'No subscribers in this list yet.'}
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        paginatedSubscribers.map((subscriber) => (
-                                            <TableRow
-                                                key={subscriber.id}
-                                                hover
-                                                onClick={(event) => handleClick(event, subscriber.id)}
-                                                role="checkbox"
-                                                aria-checked={selectedToDelete.indexOf(subscriber.id) !== -1}
-                                                selected={selectedToDelete.indexOf(subscriber.id) !== -1}
-                                                sx={{
-                                                    cursor: 'pointer',
-                                                    '&:hover': { bgcolor: '#f9fafb' },
-                                                    '& td': { borderBottom: '1px solid #f3f4f6' }
-                                                }}
-                                            >
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox
-                                                        color="primary"
-                                                        checked={selectedToDelete.indexOf(subscriber.id) !== -1}
-                                                    />
-                                                </TableCell>
-                                                <TableCell sx={{ py: 2 }}>{subscriber.email}</TableCell>
-                                                <TableCell sx={{ py: 2 }}>{subscriber.name || '-'}</TableCell>
-                                                <TableCell sx={{ py: 2 }}>{subscriber.company || '-'}</TableCell>
-                                                <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                                                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                                                        <Tooltip title="Preview">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => setPreviewSubscriber(subscriber)}
-                                                                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-                                                            >
-                                                                <Eye size={18} />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="Delete">
-                                                            <IconButton
-                                                                size="small"
-                                                                color="error"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setSubscriberToDelete(subscriber);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={18} />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    </Box>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                            <TablePagination
-                                rowsPerPageOptions={[5, 10, 25, 50]}
-                                component="div"
-                                count={totalSubscribers}
-                                rowsPerPage={subscriberRowsPerPage}
-                                page={subscriberPage}
-                                onPageChange={(_e, newPage) => setSubscriberPage(newPage)}
-                                onRowsPerPageChange={(e) => {
-                                    setSubscriberRowsPerPage(parseInt(e.target.value, 10));
-                                    setSubscriberPage(0);
-                                }}
-                            />
-                        </div>
-                    </>
+                    <SuperTable<Subscriber>
+                        data={subscribers}
+                        columns={subscriberColumns}
+                        isLoading={isLoading}
+                        rowCount={totalSubscribers}
+                        manualPagination={true}
+                        onStateChange={(state) => {
+                            if (state.pagination) {
+                                setSubscriberPage(state.pagination.pageIndex);
+                                setSubscriberRowsPerPage(state.pagination.pageSize);
+                            }
+                            if (state.globalFilter !== undefined) {
+                                setSearchQuery(state.globalFilter);
+                            }
+                        }}
+                        features={{
+                            globalFilter: true,
+                            rowSelection: "multi",
+                            pagination: true,
+                            densityToggle: true,
+                            fullScreenToggle: true,
+                        }}
+                        renderRowActions={({ row }) => (
+                            <div className="flex gap-1">
+                                <Tooltip title="Preview">
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => setPreviewSubscriber(row.original)}
+                                        sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                                    >
+                                        <Eye size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete">
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => setSubscriberToDelete(row.original)}
+                                    >
+                                        <Trash2 size={18} />
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
+                        )}
+                        renderTopLeftToolbar={() => (
+                            <div className="flex gap-2">
+                                <AppButton
+                                    variantStyle="outline"
+                                    startIcon={<Download size={18} />}
+                                    onClick={() => setShowImportModal(true)}
+                                    sx={{ height: '40px' }}
+                                >
+                                    Import
+                                </AppButton>
+                                <AppButton
+                                    variantStyle="primary"
+                                    startIcon={<UserPlus size={18} />}
+                                    onClick={() => setShowAddSubscriberModal(true)}
+                                    sx={{ height: '40px' }}
+                                >
+                                    Tambah Subscriber
+                                </AppButton>
+                            </div>
+                        )}
+                        renderBulkActions={({ selectedRows, clearSelection }) => (
+                            <div className="flex gap-2 items-center">
+                                <AppButton
+                                    variantStyle="danger"
+                                    startIcon={<Trash2 size={18} />}
+                                    onClick={() => handleBulkDelete(selectedRows, clearSelection)}
+                                    sx={{ height: '40px' }}
+                                >
+                                    Delete Selected ({selectedRows.length})
+                                </AppButton>
+                                <AppButton
+                                    variantStyle="soft"
+                                    color="danger"
+                                    startIcon={<Trash2 size={18} />}
+                                    onClick={() => setConfirmAllOpen(true)}
+                                    sx={{ height: '40px' }}
+                                >
+                                    Delete All Data
+                                </AppButton>
+                            </div>
+                        )}
+                    />
                 )}
 
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
-                    <>
-                        <div className="overflow-hidden rounded-lg border border-gray-200 mx-6 mb-6">
-                            <Table>
-                                <TableHead>
-                                    <TableRow className="bg-[#EEF2FD]!" sx={{ '& th': { borderBottom: '1px solid #e5e7eb' } }}>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pl: 3 }}>Subject</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Sent Date</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Delivered</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Opened</TableCell>
-                                        <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Open Rate</TableCell>
-                                        <TableCell align="center" sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3 }}>Actions</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {isLoadingCampaigns || isFetchingCampaigns ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                                                <CircularProgress size={30} />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : paginatedCampaigns.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {searchQuery ? 'No campaigns found matching your search.' : 'No sent campaigns yet.'}
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        paginatedCampaigns.map((campaign) => {
-                                            const openRate = campaign.stats.delivered > 0
-                                                ? ((campaign.stats.opened / campaign.stats.delivered) * 100).toFixed(1)
-                                                : '0';
-                                            return (
-                                                <TableRow
-                                                    key={campaign.id}
-                                                    hover
-                                                    sx={{
-                                                        '&:hover': { bgcolor: '#f9fafb' },
-                                                        '& td': { borderBottom: '1px solid #f3f4f6' }
-                                                    }}
-                                                >
-                                                    <TableCell sx={{ py: 2, pl: 3 }}>{campaign.subject}</TableCell>
-                                                    <TableCell sx={{ py: 2 }}>
-                                                        {campaign.sent_at
-                                                            ? format(new Date(campaign.sent_at), 'dd MMM yyyy, HH:mm')
-                                                            : '-'
-                                                        }
-                                                    </TableCell>
-                                                    <TableCell sx={{ py: 2 }}>{campaign.stats.delivered}</TableCell>
-                                                    <TableCell sx={{ py: 2 }}>{campaign.stats.opened}</TableCell>
-                                                    <TableCell sx={{ py: 2 }}>{openRate}%</TableCell>
-                                                    <TableCell align="center" sx={{ py: 2, pr: 3 }}>
-                                                        <Tooltip title="View Statistics">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => {
-                                                                    setSelectedCampaign(campaign);
-                                                                    setViewModalOpen(true);
-                                                                }}
-                                                            >
-                                                                <Eye size={18} />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                            <TablePagination
-                                rowsPerPageOptions={[5, 10, 25, 50]}
-                                component="div"
-                                count={totalCampaigns}
-                                rowsPerPage={campaignRowsPerPage}
-                                page={campaignPage}
-                                onPageChange={(_e, newPage) => setCampaignPage(newPage)}
-                                onRowsPerPageChange={(e) => {
-                                    setCampaignRowsPerPage(parseInt(e.target.value, 10));
-                                    setCampaignPage(0);
-                                }}
-                            />
-                        </div>
-                    </>
+                    <SuperTable<Campaign>
+                        data={campaigns}
+                        columns={campaignColumns}
+                        isLoading={isLoadingCampaigns || isFetchingCampaigns}
+                        rowCount={totalCampaigns}
+                        manualPagination={true}
+                        onStateChange={(state) => {
+                            if (state.pagination) {
+                                setCampaignPage(state.pagination.pageIndex);
+                                setCampaignRowsPerPage(state.pagination.pageSize);
+                            }
+                            if (state.globalFilter !== undefined) {
+                                setSearchQuery(state.globalFilter);
+                            }
+                        }}
+                        features={{
+                            globalFilter: true,
+                            pagination: true,
+                            densityToggle: true,
+                            fullScreenToggle: true,
+                        }}
+                        renderRowActions={({ row }) => (
+                            <Tooltip title="View Statistics">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        setSelectedCampaign(row.original);
+                                        setViewModalOpen(true);
+                                    }}
+                                >
+                                    <Eye size={18} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    />
                 )}
             </div>
 

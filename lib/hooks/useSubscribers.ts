@@ -5,6 +5,8 @@ import {
 
   deleteSubscriber,
   fetchSubscribers,
+  fetchBulkJobs,
+  actionBulkJob,
   updateSubscriber,
   duplicateSubscribers,
 } from '@/lib/api';
@@ -12,7 +14,8 @@ import type {
   CreateSubscriberData,
   CreateSubscriberResponse,
   DeleteSubscriberResponse,
-  SubscribersResponse
+  SubscribersResponse,
+  BulkJobsResponse
 } from '@/lib/types/email-marketing';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
@@ -25,6 +28,34 @@ export function useSubscribers(page: number = 1, limit: number = 10, search?: st
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return fetchSubscribers(token, page, limit, search);
+    },
+  });
+}
+
+export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[]) {
+  return useQuery<BulkJobsResponse>({
+    queryKey: ['bulkJobs', page, limit, search, target],
+    queryFn: () => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchBulkJobs(token, page, limit, search, target);
+    },
+    refetchInterval: 5000,
+  });
+}
+
+export function useActionBulkJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ jobId, action }: { jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay' }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return actionBulkJob(token, jobId, action);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulkJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] });
     },
   });
 }

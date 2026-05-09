@@ -46,7 +46,7 @@ export {
     // Mailing Lists
     fetchMailingLists, fetchMailingListCampaigns,
     // Subscribers
-    fetchSubscribers, updateCampaign, duplicateSubscribers, updateMailingList, updateSubscriber,
+    fetchSubscribers, fetchBulkJobs, actionBulkJob, updateCampaign, duplicateSubscribers, updateMailingList, updateSubscriber,
     type UpdateSubscriberData
 } from './email-marketing';
 

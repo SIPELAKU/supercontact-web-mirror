@@ -247,60 +247,102 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     const token = await getToken();
 
     try {
-      const payload: any = {
-        new_contacts: validSubscribers,
-        target: mailingListIds && mailingListIds.length > 0 ? "mailing_list" : "subscriber",
-      };
-
-      if (mailingListIds && mailingListIds.length > 0) {
-        payload.mailing_list_ids = mailingListIds;
+      const CHUNK_SIZE = 10000;
+      const chunks = [];
+      for (let i = 0; i < validSubscribers.length; i += CHUNK_SIZE) {
+        chunks.push(validSubscribers.slice(i, i + CHUNK_SIZE));
       }
 
-      const res = await fetch("/api/proxy/subscribers/bulk", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+      let totalCreated = 0;
+      let totalSkipped = 0;
+      let totalFailed = 0;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const payload: any = {
+          new_contacts: chunk,
+          target: mailingListIds && mailingListIds.length > 0 ? "mailing_list" : "subscriber",
+        };
+
+        if (file?.name) {
+          payload.file_name = chunks.length > 1 ? `${file.name} (Part ${i + 1}/${chunks.length})` : file.name;
+        }
+
+        if (mailingListIds && mailingListIds.length > 0) {
+          payload.mailing_list_ids = mailingListIds;
+        }
+
+        const res = await fetch("/api/proxy/subscribers/bulk", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          try {
+            const resJson = JSON.parse(text);
+            if (resJson?.error?.details && Array.isArray(resJson.error.details)) {
+              // Group unique errors by field and message
+              const uniqueErrors = Array.from(
+                new Set(
+                  resJson.error.details.map((d: any) =>
+                    JSON.stringify({ field: d.field, message: d.message })
+                  )
+                )
+              ).map((s: any) => JSON.parse(s));
+
+              const description = <ApiErrorDisplay errors={uniqueErrors} />;
+
+              notify.error(`Failed to upload subscribers (Part ${i + 1}).`, {
+                description,
+                duration: 10000,
+              });
+              setIsLoading(false);
+              return;
+            } else if (resJson?.error?.message) {
+              throw new Error(resJson.error.message);
+            }
+          } catch (e: any) {
+            if (e instanceof Error) throw e;
+          }
+          throw new Error(text || `Failed to upload subscribers (Part ${i + 1})`);
+        }
+
+        const resJson = await res.json();
+        const successData = resJson.data || {};
+        totalCreated += (successData.created_rows || 0);
+        totalSkipped += (successData.skipped_rows || 0);
+        totalFailed += (successData.failed_rows || 0);
+      }
+
+      const description = (
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/20">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">Created</span>
+            <span className="text-xl font-bold text-white leading-tight">{totalCreated}</span>
+          </div>
+          <div className="w-px h-8 bg-white/20"></div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">Skipped</span>
+            <span className="text-xl font-bold text-white leading-tight">{totalSkipped}</span>
+          </div>
+          <div className="w-px h-8 bg-white/20"></div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-white/70 uppercase tracking-wider font-semibold">Failed</span>
+            <span className="text-xl font-bold text-white leading-tight">{totalFailed}</span>
+          </div>
+        </div>
+      );
+
+      notify.success(chunks.length > 1 ? `Subscribers import process started (${chunks.length} batches)` : "Subscribers import process started", {
+        description,
+        duration: 10000,
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        try {
-          const resJson = JSON.parse(text);
-          if (resJson?.error?.details && Array.isArray(resJson.error.details)) {
-            // Group unique errors by field and message
-            const uniqueErrors = Array.from(
-              new Set(
-                resJson.error.details.map((d: any) => 
-                  JSON.stringify({ field: d.field, message: d.message })
-                )
-              )
-            ).map((s: any) => JSON.parse(s));
-
-            const description = <ApiErrorDisplay errors={uniqueErrors} />;
-
-            notify.error("Failed to upload subscribers to server.", {
-              description,
-              duration: 10000,
-            });
-            setIsLoading(false);
-            return;
-          } else if (resJson?.error?.message) {
-            throw new Error(resJson.error.message);
-          }
-        } catch (e: any) {
-          if (e instanceof Error) throw e;
-        }
-        throw new Error(text || "Failed to upload subscribers");
-      }
-
-      const skipped = previewData.length - validSubscribers.length;
-      if (skipped > 0) {
-        notify.warning(`${skipped} row(s) skipped due to missing name or email`);
-      }
-      notify.success(`Successfully imported ${validSubscribers.length} subscribers`);
       handleClose();
       onSuccess();
     } catch (error: any) {
@@ -579,6 +621,15 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                 <div className="mt-3 text-sm text-gray-500">
                   Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
                   {" "}{previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim() || !r.email?.trim()).length} will be skipped.
+
+                  {previewData.filter((r) => r.name?.trim() && r.email?.trim()).length > 10000 && (
+                    <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-start gap-2">
+                      <div className="w-5 h-5 shrink-0 mt-0.5">ℹ️</div>
+                      <p>
+                        Since your data contains more than 10,000 rows, it will be automatically split into multiple batches to ensure a stable import process. You will see multiple entries in the Import History.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between gap-3 mt-6 font-medium">

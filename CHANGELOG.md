@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-05-09
+
+### ✨ Added
+- **Asynchronous Bulk Import System**: 
+    - Migrated subscriber import to an asynchronous background processing model for better scalability.
+    - Implemented a modern success summary popup with detailed statistics (Created, Skipped, Failed).
+- **Import History & Monitoring**:
+    - **New Modal**: "Import History" modal to track the progress and status of all bulk import jobs.
+    - **Real-time Updates**: Integrated 5-second polling to ensure job progress and status transitions are reflected instantly without page refresh.
+- **Job Control Actions**:
+    - **Interactive Actions**: Added ability to `Stop`, `Continue`, `Rollback`, and `Replay` bulk jobs directly from the history table.
+    - **Dynamic UI**: Action buttons are dynamically rendered based on the job's state machine (e.g., Stop only for processing jobs, Replay for failed jobs).
+- **Frontend Data Chunking**:
+    - **Auto-Splitting**: Implemented automatic data chunking (10,000 rows per batch) to circumvent server-side payload limits and prevent 500 errors.
+    - **Part Tracking**: Large imports are now split into parts (e.g., "Part 1/3") with aggregated success notifications.
+    - **UI Guidance**: Added an info alert in the import preview when data exceeds the batch limit.
+
+### 🛠️ Refactor & Enhancements
+- **Subscriber Toolbar**: Improved responsiveness for action buttons (Add Subscriber, Import, History) to prevent wrapping on smaller screens.
+- **Type Safety**: Updated `BulkJob` type definitions to support the complex status flow (Queued, Processing, Rollback, etc.).
+- **Data Synchronization**: Added intelligent refetch delays after import submission to ensure UI consistency with asynchronous backend state.
+
 ## [1.18.4] - 2026-05-08
 
 ### 🐞 Fixed

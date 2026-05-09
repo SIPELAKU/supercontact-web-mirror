@@ -229,3 +229,38 @@ export interface Contact {
   name: string;
   email: string;
 }
+
+// Bulk Jobs types
+export interface BulkJob {
+  id: string;
+  target: string;
+  status: 'Queued for Processing' | 'Processing' | 'Completed' | 'Failed' | 'Stopped' | 'Rolled Back' | 'Queued for Rollback' | 'Rollback Processing';
+  file_name: string;
+  mailing_list_ids: string[];
+  total_rows: number;
+  processed_rows: number;
+  created_rows: number;
+  skipped_rows: number;
+  failed_rows: number;
+  error_summary: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BulkJobsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    items: BulkJob[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}

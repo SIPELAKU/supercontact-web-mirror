@@ -10,6 +10,7 @@ import SubscribersTable from '@/components/email-marketing/subscribers/Subscribe
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
+import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
 import PageHeader from '@/components/ui/page-header';
 import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
 import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
@@ -20,6 +21,7 @@ export default function SubscribersClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
+  const [isHistoryModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState<Subscriber | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -54,6 +56,7 @@ export default function SubscribersClient() {
 
   const handleOpenAddModal = () => setAddModalOpen(true);
   const handleOpenImportModal = () => setImportModalOpen(true);
+  const handleOpenHistoryModal = () => setHistoryModalOpen(true);
   const handleCloseModals = () => {
     setAddModalOpen(false);
     setEditModalOpen(false);
@@ -63,7 +66,10 @@ export default function SubscribersClient() {
 
   const handleSuccess = () => {
     handleCloseModals();
-    refetch();
+    // Delay refetch to allow background async processes to reflect in the database
+    setTimeout(() => {
+      refetch();
+    }, 2000);
   };
 
   const handleOpenEditModal = (subscriber: Subscriber) => {
@@ -182,6 +188,7 @@ export default function SubscribersClient() {
         onEdit={handleOpenEditModal}
         onDeleteRequest={handleDeleteRequest}
         onImport={handleOpenImportModal}
+        onImportHistory={handleOpenHistoryModal}
         onDeleteAllRequest={() => setConfirmAllOpen(true)}
         onDuplicate={handleDuplicate}
         onExportRequest={handleExportRequest}
@@ -191,6 +198,7 @@ export default function SubscribersClient() {
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
       <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
+      <ImportHistoryModal open={isHistoryModalOpen} onClose={() => setHistoryModalOpen(false)} />
       {selectedSubscriber && (
         <EditSubscriberModal
           open={isEditModalOpen}

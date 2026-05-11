@@ -16,6 +16,7 @@ interface ImportHistoryModalProps {
   onClose: () => void;
   targetFilter: string[];
   storageKey: string;
+  mailingListIds?: string[];
 }
 
 const INTERVAL_OPTIONS = [
@@ -26,7 +27,7 @@ const INTERVAL_OPTIONS = [
   { value: 30000, label: "30 Detik (Lambat)" },
 ];
 
-const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey }) => {
+const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey, mailingListIds }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
@@ -58,7 +59,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
 
   // Jangan lakukan polling sebelum client mounted untuk mencegah mismatch
   const activeInterval = mounted ? refetchInterval : false;
-  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval);
+  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval, mailingListIds);
   const actionMutation = useActionBulkJob();
 
   const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
@@ -326,8 +327,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
                   size="small"
                   value={!mounted ? 5000 : (refetchInterval === false ? 0 : refetchInterval)}
                   onChange={(e) => handleIntervalChange(Number(e.target.value))}
-                  sx={{ 
-                    minWidth: 160, 
+                  sx={{
+                    minWidth: 160,
                     height: 36,
                     backgroundColor: 'white',
                     '.MuiSelect-select': { py: 0.5 }

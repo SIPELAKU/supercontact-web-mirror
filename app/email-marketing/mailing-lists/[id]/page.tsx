@@ -398,6 +398,7 @@ const MailingListDetailPage = () => {
                 onClose={() => setShowImportHistoryModal(false)}
                 targetFilter={["mailing_list"]}
                 storageKey="import_interval_mailing_list"
+                mailingListIds={[listId]}
             />
 
             <Dialog

@@ -32,13 +32,13 @@ export function useSubscribers(page: number = 1, limit: number = 10, search?: st
   });
 }
 
-export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], refetchInterval: number | false = 5000) {
+export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], refetchInterval: number | false = 5000, mailingListIds?: string[]) {
   return useQuery<BulkJobsResponse>({
-    queryKey: ['bulkJobs', page, limit, search, target],
+    queryKey: ['bulkJobs', page, limit, search, target, mailingListIds],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchBulkJobs(token, page, limit, search, target);
+      return fetchBulkJobs(token, page, limit, search, target, mailingListIds);
     },
     refetchInterval: refetchInterval,
   });

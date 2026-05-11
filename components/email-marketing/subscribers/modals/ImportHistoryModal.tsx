@@ -20,11 +20,11 @@ interface ImportHistoryModalProps {
 }
 
 const INTERVAL_OPTIONS = [
-  { value: 0, label: "Non-aktif (Manual)" },
-  { value: 2000, label: "2 Detik (Sangat Cepat)" },
-  { value: 5000, label: "5 Detik (Cepat)" },
-  { value: 10000, label: "10 Detik (Sedang)" },
-  { value: 30000, label: "30 Detik (Lambat)" },
+  { value: 0, label: "Off (Manual)" },
+  { value: 2000, label: "2 Second (Very Fast)" },
+  { value: 5000, label: "5 Second (Fast)" },
+  { value: 10000, label: "10 Second (Medium)" },
+  { value: 30000, label: "30 Second (Slow)" },
 ];
 
 const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey, mailingListIds }) => {

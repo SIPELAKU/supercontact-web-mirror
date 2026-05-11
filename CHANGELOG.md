@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-05-11
+
+### ✨ Added
+- **Dynamic Import Monitoring**:
+    - **Custom Refresh Intervals**: Added a dropdown to the Import History modal to control the auto-refresh speed (Manual, 2s, 5s, 10s, 30s).
+    - **Persistence**: Refetch settings are now saved in `localStorage` and uniquely identified by page/target context.
+- **Enhanced Message Reporting**:
+    - **Bulleted List Display**: Bulk job messages are now rendered as a clean bulleted list for better readability of multi-line logs.
+    - **Immersive Tooltips**: Implemented a scrollable tooltip on hover for long message lists, featuring truncation and a gradient fade-out in the table cell.
+- **Mailing List UX Parity**:
+    - **History Access**: Added "Import History" access to the Mailing List detail page, allowing users to track mailing-list-specific jobs.
+
+### 🐞 Fixed
+- **Hydration Synchronization**: Resolved a bug where the UI refresh interval would drift or default incorrectly due to SSR/CSR state mismatch.
+- **Polling Stability**: Added a mounting guard to prevent background polling from starting before the client environment is fully initialized.
+
+### 🛠️ Refactor & Enhancements
+- **Universal Modal**: Refactored `ImportHistoryModal` to be fully reusable across different modules with target-based filtering.
+- **Type Accuracy**: Updated `BulkJob` interface to support plural `messages` array for complex job reporting.
+
 ## [1.19.1] - 2026-05-11
 
 ### ✨ Added

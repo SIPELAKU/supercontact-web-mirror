@@ -32,7 +32,7 @@ export function useSubscribers(page: number = 1, limit: number = 10, search?: st
   });
 }
 
-export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[]) {
+export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], refetchInterval: number | false = 5000) {
   return useQuery<BulkJobsResponse>({
     queryKey: ['bulkJobs', page, limit, search, target],
     queryFn: () => {
@@ -40,7 +40,7 @@ export function useBulkJobs(page: number = 1, limit: number = 10, search?: strin
       if (!token) throw new Error('No authentication token');
       return fetchBulkJobs(token, page, limit, search, target);
     },
-    refetchInterval: 5000,
+    refetchInterval: refetchInterval,
   });
 }
 

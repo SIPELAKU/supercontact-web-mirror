@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Box, Stack, Chip, Tooltip } from "@mui/material";
+import React, { useMemo, useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Box, Stack, Chip, Tooltip, MenuItem, Select } from "@mui/material";
 import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw } from "lucide-react";
 import { SuperTable } from "@/components/ui/super-table";
 import type { MRT_ColumnDef } from "@/components/ui/super-table/types";
@@ -14,14 +14,51 @@ import { notify } from "@/lib/notifications";
 interface ImportHistoryModalProps {
   open: boolean;
   onClose: () => void;
+  targetFilter: string[];
+  storageKey: string;
 }
 
-const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose }) => {
+const INTERVAL_OPTIONS = [
+  { value: 0, label: "Non-aktif (Manual)" },
+  { value: 2000, label: "2 Detik (Sangat Cepat)" },
+  { value: 5000, label: "5 Detik (Cepat)" },
+  { value: 10000, label: "10 Detik (Sedang)" },
+  { value: 30000, label: "30 Detik (Lambat)" },
+];
+
+const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, ["subscriber", "contact"]);
+  const [refetchInterval, setRefetchInterval] = useState<number | false>(5000);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        const val = parseInt(saved, 10);
+        setRefetchInterval(val === 0 ? false : val);
+      } else {
+        // Simpan default 5000 jika belum ada
+        localStorage.setItem(storageKey, "5000");
+        setRefetchInterval(5000);
+      }
+    }
+  }, [storageKey]);
+
+  const handleIntervalChange = (val: number) => {
+    setRefetchInterval(val === 0 ? false : val);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(storageKey, val.toString());
+    }
+  };
+
+  // Jangan lakukan polling sebelum client mounted untuk mencegah mismatch
+  const activeInterval = mounted ? refetchInterval : false;
+  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval);
   const actionMutation = useActionBulkJob();
 
   const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
@@ -101,9 +138,63 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose }
         },
       },
       {
-        accessorKey: "target",
-        header: "Target",
-        Cell: ({ cell }) => <span className="capitalize">{cell.getValue<string>()?.replace("_", " ")}</span>,
+        accessorKey: "messages",
+        header: "Message",
+        Cell: ({ cell }) => {
+          const messages = cell.getValue<string[]>();
+
+          if (!messages || messages.length === 0) return <span className="text-gray-500">-</span>;
+
+          const content = (
+            <ul className="list-disc pl-4 m-0 text-gray-600 text-xs text-left w-full space-y-0.5">
+              {messages.map((msg, idx) => (
+                <li key={idx} className="wrap-break-word">{msg}</li>
+              ))}
+            </ul>
+          );
+
+          return (
+            <Tooltip
+              title={
+                <Box sx={{ maxHeight: 300, overflowY: 'auto', p: 0.5 }}>
+                  {content}
+                </Box>
+              }
+              arrow
+              placement="top"
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    boxShadow: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    maxWidth: 400
+                  }
+                }
+              }}
+            >
+              <Box sx={{
+                maxHeight: 60,
+                overflow: 'hidden',
+                position: 'relative',
+                cursor: 'pointer',
+                '&::after': messages.length > 2 ? {
+                  content: '""',
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '24px',
+                  background: 'linear-gradient(transparent, white)'
+                } : {}
+              }}>
+                {content}
+              </Box>
+            </Tooltip>
+          );
+        },
       },
       {
         accessorKey: "created_at",
@@ -219,13 +310,37 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose }
             fullScreenToggle: false,
           }}
           renderTopLeftToolbar={() => (
-            <AppButton
-              variantStyle="outline"
-              onClick={() => refetch()}
-              startIcon={<RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />}
-            >
-              Refresh
-            </AppButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <AppButton
+                variantStyle="outline"
+                onClick={() => refetch()}
+                startIcon={<RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />}
+              >
+                Refresh
+              </AppButton>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Auto-refresh:
+                </Typography>
+                <Select
+                  size="small"
+                  value={!mounted ? 5000 : (refetchInterval === false ? 0 : refetchInterval)}
+                  onChange={(e) => handleIntervalChange(Number(e.target.value))}
+                  sx={{ 
+                    minWidth: 160, 
+                    height: 36,
+                    backgroundColor: 'white',
+                    '.MuiSelect-select': { py: 0.5 }
+                  }}
+                >
+                  {INTERVAL_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+            </Box>
           )}
         />
       </DialogContent>

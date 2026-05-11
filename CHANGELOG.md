@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-05-11
+
+### ✨ Added
+- **Mailing List Search Enhancements**:
+    - Added `search` query parameter support for Mailing List Campaigns API.
+    - Integrated debounced search for campaigns within the Mailing List detail page.
+
+### 🛠️ Refactor & Enhancements
+- **UI Performance & Transitions**:
+    - Implemented `keepPreviousData` in mailing list hooks to prevent full-page refreshes during search and pagination.
+    - Refined loading state logic to maintain table visibility during refetches while showing subtle background indicators.
+    - Removed redundant client-side filtering for campaigns, optimizing data flow.
+
 ## [1.19.0] - 2026-05-09
 
 ### ✨ Added

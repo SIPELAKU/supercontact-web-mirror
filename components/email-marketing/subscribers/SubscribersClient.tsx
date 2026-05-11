@@ -198,7 +198,12 @@ export default function SubscribersClient() {
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
       <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      <ImportHistoryModal open={isHistoryModalOpen} onClose={() => setHistoryModalOpen(false)} />
+      <ImportHistoryModal 
+        open={isHistoryModalOpen} 
+        onClose={() => setHistoryModalOpen(false)} 
+        targetFilter={["subscriber", "contact"]}
+        storageKey="import_interval_subscriber"
+      />
       {selectedSubscriber && (
         <EditSubscriberModal
           open={isEditModalOpen}

@@ -3,6 +3,7 @@
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
+import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
@@ -30,7 +31,7 @@ import {
 } from '@mui/material';
 import { format }
     from 'date-fns';
-import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus, History } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -70,6 +71,7 @@ const MailingListDetailPage = () => {
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [showImportHistoryModal, setShowImportHistoryModal] = useState(false);
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
     const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
@@ -287,6 +289,14 @@ const MailingListDetailPage = () => {
                                     Import
                                 </AppButton>
                                 <AppButton
+                                    variantStyle="outline"
+                                    startIcon={<History size={18} />}
+                                    onClick={() => setShowImportHistoryModal(true)}
+                                    sx={{ height: '40px' }}
+                                >
+                                    History
+                                </AppButton>
+                                <AppButton
                                     variantStyle="primary"
                                     startIcon={<UserPlus size={18} />}
                                     onClick={() => setShowAddSubscriberModal(true)}
@@ -380,6 +390,14 @@ const MailingListDetailPage = () => {
                     setShowImportModal(false);
                 }}
                 mailingListIds={[listId]}
+            />
+
+            {/* Import History Modal */}
+            <ImportHistoryModal
+                open={showImportHistoryModal}
+                onClose={() => setShowImportHistoryModal(false)}
+                targetFilter={["mailing_list"]}
+                storageKey="import_interval_mailing_list"
             />
 
             <Dialog

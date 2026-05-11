@@ -243,6 +243,7 @@ export interface BulkJob {
   skipped_rows: number;
   failed_rows: number;
   error_summary: string | null;
+  messages?: string[];
   started_at: string | null;
   completed_at: string | null;
   created_at: string;

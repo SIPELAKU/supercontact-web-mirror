@@ -59,13 +59,13 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
-    const { data: mailingListData, isLoading, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
+    const { data: mailingListData, isLoading, isFetching, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
     const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
     const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1);
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? debouncedSearch : undefined, activeTab === 1);
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
@@ -159,12 +159,6 @@ const MailingListDetailPage = () => {
     const filteredSubscribers = subscribers;
     const totalSubscribers = mailingList?.subscribers?.total || 0;
 
-    // Filter campaigns based on search
-    const filteredCampaigns = campaigns.filter(c =>
-        searchQuery === '' ||
-        c.subject.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     if (error) {
         return (
             <Box sx={{ p: 3 }}>
@@ -176,12 +170,7 @@ const MailingListDetailPage = () => {
         );
     }
 
-    const paginatedSubscribers = filteredSubscribers;
-
-    // Campaigns are paginated on server
-    const paginatedCampaigns = filteredCampaigns;
-
-    if (isLoading) {
+    if (isLoading && !mailingListData) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
                 <CircularProgress />
@@ -246,6 +235,7 @@ const MailingListDetailPage = () => {
                         data={subscribers}
                         columns={subscriberColumns}
                         isLoading={isLoading}
+                        isFetching={isFetching}
                         rowCount={totalSubscribers}
                         manualPagination={true}
                         onStateChange={(state) => {
@@ -335,7 +325,8 @@ const MailingListDetailPage = () => {
                     <SuperTable<Campaign>
                         data={campaigns}
                         columns={campaignColumns}
-                        isLoading={isLoadingCampaigns || isFetchingCampaigns}
+                        isLoading={isLoadingCampaigns}
+                        isFetching={isFetchingCampaigns}
                         rowCount={totalCampaigns}
                         manualPagination={true}
                         onStateChange={(state) => {

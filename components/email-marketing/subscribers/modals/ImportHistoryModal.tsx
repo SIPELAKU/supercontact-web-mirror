@@ -10,6 +10,7 @@ import { BulkJob } from "@/lib/types/email-marketing";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ImportHistoryModalProps {
   open: boolean;
@@ -61,6 +62,31 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
   const activeInterval = mounted ? refetchInterval : false;
   const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval, mailingListIds);
   const actionMutation = useActionBulkJob();
+  const queryClient = useQueryClient();
+  const handledJobsRef = React.useRef<Set<string>>(new Set());
+
+  // Refetch subscribers/mailing lists when a job completes
+  useEffect(() => {
+    if (data?.data?.items) {
+      let shouldInvalidate = false;
+      data.data.items.forEach((job) => {
+        if (job.status === "Completed" && !handledJobsRef.current.has(job.id)) {
+          handledJobsRef.current.add(job.id);
+          shouldInvalidate = true;
+        }
+      });
+
+      if (shouldInvalidate) {
+        queryClient.invalidateQueries({ queryKey: ["subscribers"] });
+        queryClient.invalidateQueries({ queryKey: ["mailing-lists"] });
+        if (mailingListIds && mailingListIds.length > 0) {
+          mailingListIds.forEach((id) => {
+            queryClient.invalidateQueries({ queryKey: ["mailing-list", id] });
+          });
+        }
+      }
+    }
+  }, [data, queryClient, mailingListIds]);
 
   const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
     actionMutation.mutate(

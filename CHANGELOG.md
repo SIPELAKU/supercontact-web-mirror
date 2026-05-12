@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.1] - 2026-05-12
+
+### ✨ Added
+- **Automated Table Refresh**:
+    - Implemented automatic data synchronization that triggers a refetch of the Subscribers and Mailing List tables as soon as a bulk import job status transitions to `Completed`.
+- **Targeted History Filtering**:
+    - Enhanced the Import History modal on the Mailing List detail page to automatically filter jobs by the specific `mailing_list_ids`, ensuring users only see relevant import logs.
+
+### 🛠️ Refactor & Enhancements
+- **API & Hook Optimization**:
+    - Updated `fetchBulkJobs` and `useBulkJobs` to support multi-dimensional filtering via `mailing_list_ids` query parameters.
+- **UI Localization**:
+    - Updated auto-refresh interval labels to English for consistency with the global UI (e.g., "Off", "Very Fast", "Medium").
+
+## [1.20.0] - 2026-05-11
+
+### ✨ Added
+- **Dynamic Import Monitoring**:
+    - **Custom Refresh Intervals**: Added a dropdown to the Import History modal to control the auto-refresh speed (Manual, 2s, 5s, 10s, 30s).
+    - **Persistence**: Refetch settings are now saved in `localStorage` and uniquely identified by page/target context.
+- **Enhanced Message Reporting**:
+    - **Bulleted List Display**: Bulk job messages are now rendered as a clean bulleted list for better readability of multi-line logs.
+    - **Immersive Tooltips**: Implemented a scrollable tooltip on hover for long message lists, featuring truncation and a gradient fade-out in the table cell.
+- **Mailing List UX Parity**:
+    - **History Access**: Added "Import History" access to the Mailing List detail page, allowing users to track mailing-list-specific jobs.
+
+### 🐞 Fixed
+- **Hydration Synchronization**: Resolved a bug where the UI refresh interval would drift or default incorrectly due to SSR/CSR state mismatch.
+- **Polling Stability**: Added a mounting guard to prevent background polling from starting before the client environment is fully initialized.
+
+### 🛠️ Refactor & Enhancements
+- **Universal Modal**: Refactored `ImportHistoryModal` to be fully reusable across different modules with target-based filtering.
+- **Type Accuracy**: Updated `BulkJob` interface to support plural `messages` array for complex job reporting.
+
+## [1.19.1] - 2026-05-11
+
+### ✨ Added
+- **Mailing List Search Enhancements**:
+    - Added `search` query parameter support for Mailing List Campaigns API.
+    - Integrated debounced search for campaigns within the Mailing List detail page.
+
+### 🛠️ Refactor & Enhancements
+- **UI Performance & Transitions**:
+    - Implemented `keepPreviousData` in mailing list hooks to prevent full-page refreshes during search and pagination.
+    - Refined loading state logic to maintain table visibility during refetches while showing subtle background indicators.
+    - Removed redundant client-side filtering for campaigns, optimizing data flow.
+
+## [1.19.0] - 2026-05-09
+
+### ✨ Added
+- **Asynchronous Bulk Import System**: 
+    - Migrated subscriber import to an asynchronous background processing model for better scalability.
+    - Implemented a modern success summary popup with detailed statistics (Created, Skipped, Failed).
+- **Import History & Monitoring**:
+    - **New Modal**: "Import History" modal to track the progress and status of all bulk import jobs.
+    - **Real-time Updates**: Integrated 5-second polling to ensure job progress and status transitions are reflected instantly without page refresh.
+- **Job Control Actions**:
+    - **Interactive Actions**: Added ability to `Stop`, `Continue`, `Rollback`, and `Replay` bulk jobs directly from the history table.
+    - **Dynamic UI**: Action buttons are dynamically rendered based on the job's state machine (e.g., Stop only for processing jobs, Replay for failed jobs).
+- **Frontend Data Chunking**:
+    - **Auto-Splitting**: Implemented automatic data chunking (10,000 rows per batch) to circumvent server-side payload limits and prevent 500 errors.
+    - **Part Tracking**: Large imports are now split into parts (e.g., "Part 1/3") with aggregated success notifications.
+    - **UI Guidance**: Added an info alert in the import preview when data exceeds the batch limit.
+
+### 🛠️ Refactor & Enhancements
+- **Subscriber Toolbar**: Improved responsiveness for action buttons (Add Subscriber, Import, History) to prevent wrapping on smaller screens.
+- **Type Safety**: Updated `BulkJob` type definitions to support the complex status flow (Queued, Processing, Rollback, etc.).
+- **Data Synchronization**: Added intelligent refetch delays after import submission to ensure UI consistency with asynchronous backend state.
+
+## [1.18.4] - 2026-05-08
+
+### 🐞 Fixed
+- **Autocomplete Input**: Resolved multiple issues in `AddDealModal`, including the inability to clear selections, disappearing values during search, and potential crashes in the comparison logic.
+- **Modal UX**: Integrated Focus Mode into the Edit Campaign modal and enabled vertical scrolling (overflow-y) for improved content visibility.
+
+
+## [1.18.3] - 2026-05-07
+
+### ✨ Added
+- **Standardized API Error Handling**:
+    - **New Component**: `ApiErrorDisplay` for rendering structured field-level validation errors.
+    - **Fullscreen Error View**: Added a modal view for large error lists (e.g., bulk import failures) with professional formatting and field name cleanup.
+- **Campaign Visual Builder Enhancements**:
+    - **Focus Mode (Zen Mode)**: Added an immersive editing mode that hides the modal header and footer to maximize space for the Visual Builder.
+    - **Quick Action Bar**: Integrated a floating header in Focus Mode with Subject/SMTP reference and "Save as Draft" / "Create & Send" shortcuts.
+
+### 🛠️ Refactor & Enhancements
+- **Pipeline Module UX**:
+    - **Pre-fetching Options**: Updated `AddDealModal` to pre-fetch contacts and products immediately on open, removing the need to type before seeing the list.
+    - **Persistent Search**: Improved autocomplete behavior to retain the full list when search input is cleared.
+- **Visual Polish**:
+    - Removed redundant dividers and borders in the Campaign Editor's Focus Mode for a seamless, distraction-free UI.
+    - Standardized error message formatting across Email Marketing modules.
+
+### 🐞 Fixed
+- **TypeScript Type Safety**: Resolved union type mismatch errors (`string | any[]`) in campaign and subscriber modals.
+- **JSX Architecture**: Fixed structural nesting and syntax errors in the Campaign Modal related to the new conditional rendering logic.
+- **Editor Responsiveness**: Fixed height constraints in `EmailTabbedEditor` to ensure it correctly fills the screen in all display modes.
+
+
 ## [1.18.2] - 2026-04-21
 
 ### Fix

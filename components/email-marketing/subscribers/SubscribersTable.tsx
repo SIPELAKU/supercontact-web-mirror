@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Download, Eye, Pencil, Plus, Trash2, Save } from 'lucide-react';
+import { Download, Eye, Pencil, Plus, Trash2, Save, History } from 'lucide-react';
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 import { SuperTable } from '@/components/ui/super-table';
@@ -21,6 +21,7 @@ interface SubscribersTableProps {
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (ids: string[]) => void;
   onImport: () => void;
+  onImportHistory: () => void;
   onDeleteAllRequest: () => void;
   onExportRequest?: (params: any) => Promise<Subscriber[]>;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
@@ -37,6 +38,7 @@ const SubscribersTable = ({
   onEdit,
   onDeleteRequest,
   onImport,
+  onImportHistory,
   onDeleteAllRequest,
   onExportRequest,
   onStateChange,
@@ -125,8 +127,17 @@ const SubscribersTable = ({
             <div className="hidden md:flex gap-2">
               <AppButton
                 variantStyle="outline"
+                onClick={onImportHistory}
+                startIcon={<History size={16} />}
+                className="whitespace-nowrap"
+              >
+                History
+              </AppButton>
+              <AppButton
+                variantStyle="outline"
                 onClick={onImport}
                 startIcon={<Download size={16} />}
+                className="whitespace-nowrap"
               >
                 Import
               </AppButton>
@@ -134,6 +145,7 @@ const SubscribersTable = ({
                 variantStyle="primary"
                 onClick={onAdd}
                 startIcon={<Plus size={16} />}
+                className="whitespace-nowrap"
               >
                 Add Subscriber
               </AppButton>
@@ -141,6 +153,13 @@ const SubscribersTable = ({
 
             {/* Mobile: Icon only */}
             <div className="flex md:hidden gap-2">
+              <button
+                onClick={onImportHistory}
+                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                title="History"
+              >
+                <History size={16} />
+              </button>
               <button
                 onClick={onImport}
                 className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"

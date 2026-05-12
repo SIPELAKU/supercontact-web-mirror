@@ -11,6 +11,7 @@ interface EmailTabbedEditorProps {
     onChange: (html: string) => void;
     isLoading?: boolean;
     defaultEditorType?: 'simple_editor' | 'visual_builder';
+    height?: string;
 }
 
 export interface EmailTabbedEditorRef {
@@ -20,7 +21,7 @@ export interface EmailTabbedEditorRef {
 
 
 const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProps>((
-    { value, onChange, isLoading = false, defaultEditorType = 'simple_editor' },
+    { value, onChange, isLoading = false, defaultEditorType = 'simple_editor', height },
     ref
 ) => {
     const [activeTab, setActiveTab] = useState(0);
@@ -163,7 +164,15 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
     };
 
     return (
-        <Box sx={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+        <Box sx={{ 
+            width: "100%", 
+            height: height || "auto",
+            display: height ? "flex" : "block",
+            flexDirection: "column",
+            border: "1px solid #e5e7eb", 
+            borderRadius: "8px", 
+            overflow: "hidden" 
+        }}>
             <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "#f9fafb" }}>
                 <Tabs value={activeTab} onChange={handleTabChange} aria-label="email editor tabs">
                     <Tab
@@ -181,11 +190,25 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                 </Tabs>
             </Box>
 
-            <Box sx={{ p: activeTab === 0 ? 0 : 0 }}>
+            <Box sx={{ 
+                p: 0, 
+                flex: height ? 1 : "0 1 auto", 
+                display: "flex", 
+                flexDirection: "column",
+                minHeight: 0
+            }}>
                 {activeTab === 0 ? (
-                    <Box>
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
                         <RichTextToolbar onAction={execCommand} />
-                        <Box sx={{ p: 2, minHeight: "400px", bgcolor: "white" }}>
+                        <Box sx={{ 
+                            p: 2, 
+                            flex: 1, 
+                            display: "flex", 
+                            flexDirection: "column", 
+                            minHeight: 0, 
+                            bgcolor: "white",
+                            overflowY: "auto"
+                        }}>
                             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
                                 Isi Email
                             </Typography>
@@ -194,23 +217,24 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                                 contentEditable
                                 onInput={handleContentChange}
                                 style={{
-                                    minHeight: "350px",
+                                    flex: 1,
                                     padding: "12px",
                                     border: "1px solid #e5e7eb",
                                     borderRadius: "4px",
                                     outline: "none",
                                     backgroundColor: "white",
                                     fontFamily: "inherit",
+                                    minHeight: height ? "auto" : "350px",
                                 }}
                             />
                         </Box>
                     </Box>
                 ) : (
-                    <Box sx={{ height: "600px" }}>
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
                         <EmailEditor
                             ref={editorRef}
                             onReady={onReady}
-                            minHeight="600px"
+                            minHeight="100%"
                         />
                     </Box>
                 )}

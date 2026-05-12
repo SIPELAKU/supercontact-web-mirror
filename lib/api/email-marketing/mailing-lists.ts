@@ -70,8 +70,15 @@ export async function fetchMailingLists(token: string, page: number = 1, limit: 
   }
 }
 
-export async function fetchMailingListCampaigns(token: string, mailingListId: string, page: number = 1, limit: number = 10): Promise<any> {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}/campaigns?page=${page}&limit=${limit}`;
+export async function fetchMailingListCampaigns(token: string, mailingListId: string, page: number = 1, limit: number = 10, search?: string): Promise<any> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/mailing-lists/${mailingListId}/campaigns?${queryParams.toString()}`;
 
   logger.info("Making GET request to fetch mailing list campaigns", { url, mailingListId, page, limit });
 

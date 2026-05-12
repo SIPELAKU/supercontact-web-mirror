@@ -1,7 +1,7 @@
 // lib/api/api-client.ts
 // Shared API client utilities
 
-export const DEFAULT_TIMEOUT = 30000; // 30 seconds
+export const DEFAULT_TIMEOUT = 45000; // 45 seconds
 
 /**
  * Fetch with a timeout using AbortController

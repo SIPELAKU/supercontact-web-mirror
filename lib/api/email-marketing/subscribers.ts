@@ -90,7 +90,8 @@ export async function fetchBulkJobs(
   page: number = 1,
   limit: number = 10,
   search?: string,
-  target?: string[]
+  target?: string[],
+  mailingListIds?: string[]
 ): Promise<BulkJobsResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -103,6 +104,10 @@ export async function fetchBulkJobs(
   
   if (target && target.length > 0) {
     target.forEach(t => queryParams.append('target', t));
+  }
+
+  if (mailingListIds && mailingListIds.length > 0) {
+    mailingListIds.forEach(id => queryParams.append('mailing_list_ids', id));
   }
   
   const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/bulk?${queryParams.toString()}`;

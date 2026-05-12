@@ -10,23 +10,25 @@ import { BulkJob } from "@/lib/types/email-marketing";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ImportHistoryModalProps {
   open: boolean;
   onClose: () => void;
   targetFilter: string[];
   storageKey: string;
+  mailingListIds?: string[];
 }
 
 const INTERVAL_OPTIONS = [
-  { value: 0, label: "Non-aktif (Manual)" },
-  { value: 2000, label: "2 Detik (Sangat Cepat)" },
-  { value: 5000, label: "5 Detik (Cepat)" },
-  { value: 10000, label: "10 Detik (Sedang)" },
-  { value: 30000, label: "30 Detik (Lambat)" },
+  { value: 0, label: "Off (Manual)" },
+  { value: 2000, label: "2 Second (Very Fast)" },
+  { value: 5000, label: "5 Second (Fast)" },
+  { value: 10000, label: "10 Second (Medium)" },
+  { value: 30000, label: "30 Second (Slow)" },
 ];
 
-const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey }) => {
+const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey, mailingListIds }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
@@ -58,8 +60,33 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
 
   // Jangan lakukan polling sebelum client mounted untuk mencegah mismatch
   const activeInterval = mounted ? refetchInterval : false;
-  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval);
+  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval, mailingListIds);
   const actionMutation = useActionBulkJob();
+  const queryClient = useQueryClient();
+  const handledJobsRef = React.useRef<Set<string>>(new Set());
+
+  // Refetch subscribers/mailing lists when a job completes
+  useEffect(() => {
+    if (data?.data?.items) {
+      let shouldInvalidate = false;
+      data.data.items.forEach((job) => {
+        if (job.status === "Completed" && !handledJobsRef.current.has(job.id)) {
+          handledJobsRef.current.add(job.id);
+          shouldInvalidate = true;
+        }
+      });
+
+      if (shouldInvalidate) {
+        queryClient.invalidateQueries({ queryKey: ["subscribers"] });
+        queryClient.invalidateQueries({ queryKey: ["mailing-lists"] });
+        if (mailingListIds && mailingListIds.length > 0) {
+          mailingListIds.forEach((id) => {
+            queryClient.invalidateQueries({ queryKey: ["mailing-list", id] });
+          });
+        }
+      }
+    }
+  }, [data, queryClient, mailingListIds]);
 
   const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
     actionMutation.mutate(
@@ -326,8 +353,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
                   size="small"
                   value={!mounted ? 5000 : (refetchInterval === false ? 0 : refetchInterval)}
                   onChange={(e) => handleIntervalChange(Number(e.target.value))}
-                  sx={{ 
-                    minWidth: 160, 
+                  sx={{
+                    minWidth: 160,
                     height: 36,
                     backgroundColor: 'white',
                     '.MuiSelect-select': { py: 0.5 }

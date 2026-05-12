@@ -42,11 +42,11 @@ export {
     createCampaign, createMailingList, createSubscriber, deleteCampaign, duplicateCampaigns, deleteMailingList,
     deleteMailingListSubscriber, bulkDeleteMailingListSubscribers, deleteAllMailingListSubscribers, deleteSubscriber, bulkDeleteSubscribers, deleteAllSubscribers, fetchCampaignDetail,
     // Campaigns
-    fetchCampaigns, fetchMailingListDetail,
+    fetchCampaigns, fetchCampaignSubscribers, fetchMailingListDetail,
     // Mailing Lists
     fetchMailingLists, fetchMailingListCampaigns,
     // Subscribers
-    fetchSubscribers, updateCampaign, duplicateSubscribers, updateMailingList, updateSubscriber,
+    fetchSubscribers, fetchBulkJobs, actionBulkJob, updateCampaign, duplicateSubscribers, updateMailingList, updateSubscriber,
     type UpdateSubscriberData
 } from './email-marketing';
 

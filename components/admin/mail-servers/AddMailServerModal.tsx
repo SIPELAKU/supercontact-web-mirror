@@ -38,6 +38,10 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
         is_default: false,
         from_email: "",
         smtp_region: "",
+        limit_per_minute: 0,
+        limit_per_hour: 0,
+        limit_per_day: 0,
+        limit_per_month: 0,
     });
 
     const [authMethod, setAuthMethod] = useState("username"); // 'username' or 'ssl'
@@ -56,6 +60,10 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 is_default: false,
                 from_email: "",
                 smtp_region: "",
+                limit_per_minute: 0,
+                limit_per_hour: 0,
+                limit_per_day: 0,
+                limit_per_month: 0,
             });
             setAuthMethod("username");
         }
@@ -95,6 +103,11 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 is_default: formData.is_default,
                 from_email: formData.from_email,
                 smtp_region: formData.smtp_region,
+                attachment_limit_mb: Number(formData.attachment_limit_mb),
+                limit_per_minute: Number(formData.limit_per_minute),
+                limit_per_hour: Number(formData.limit_per_hour),
+                limit_per_day: Number(formData.limit_per_day),
+                limit_per_month: Number(formData.limit_per_month),
             });
 
             notify.success("Mail Server Added", { description: "New mail server has been added successfully." });
@@ -251,6 +264,55 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                             />
                             <p className="text-xs text-gray-500">The email address that will appear in the 'From' field of sent messages.</p>
                         </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Sending Limits</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Per Minute</label>
+                                <AppInput
+                                    isBgWhite
+                                    type="number"
+                                    value={formData.limit_per_minute?.toString()}
+                                    onChange={(e) => handleChange("limit_per_minute", parseInt(e.target.value) || 0)}
+                                    placeholder="60"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Per Hour</label>
+                                <AppInput
+                                    isBgWhite
+                                    type="number"
+                                    value={formData.limit_per_hour?.toString()}
+                                    onChange={(e) => handleChange("limit_per_hour", parseInt(e.target.value) || 0)}
+                                    placeholder="1000"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Per Day</label>
+                                <AppInput
+                                    isBgWhite
+                                    type="number"
+                                    value={formData.limit_per_day?.toString()}
+                                    onChange={(e) => handleChange("limit_per_day", parseInt(e.target.value) || 0)}
+                                    placeholder="10000"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">Per Month</label>
+                                <AppInput
+                                    isBgWhite
+                                    type="number"
+                                    value={formData.limit_per_month?.toString()}
+                                    onChange={(e) => handleChange("limit_per_month", parseInt(e.target.value) || 0)}
+                                    placeholder="250000"
+                                />
+                            </div>
+                        </div>
+                        <p className="mt-3 text-xs text-gray-500 italic">
+                            Tip: Set these limits based on your SMTP provider's recommendations to avoid being flagged as spam. Use 0 for unlimited.
+                        </p>
                     </div>
                 </div>
 

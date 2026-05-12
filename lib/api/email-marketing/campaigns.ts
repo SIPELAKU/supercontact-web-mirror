@@ -4,6 +4,7 @@
 import type {
   CampaignDetailResponse,
   CampaignsResponse,
+  CampaignSubscribersResponse,
   CreateCampaignData,
   UpdateCampaignData
 } from '../../types/email-marketing';
@@ -153,13 +154,11 @@ export async function createCampaign(token: string, data: CreateCampaignData): P
     }
 
     if (!res.ok) {
-      logger.error(`Create campaign failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to create campaign (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to create campaign (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;
@@ -316,3 +315,65 @@ export async function duplicateCampaigns(token: string, campaignIds: string[]): 
       throw error;
     }
   }
+
+export async function fetchCampaignSubscribers(
+  token: string,
+  campaignId: string,
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+): Promise<CampaignSubscribersResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (search) {
+    queryParams.append('search', search);
+  }
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}/subscribers?${queryParams.toString()}`;
+
+  logger.info("Making GET request to fetch campaign subscribers", { url, campaignId, page, limit });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse campaign subscribers response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/campaigns/${campaignId}/subscribers (GET)`, { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Fetch campaign subscribers failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch campaign subscribers (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch campaign subscribers request failed", { error: error.message, url });
+    throw error;
+  }
+}

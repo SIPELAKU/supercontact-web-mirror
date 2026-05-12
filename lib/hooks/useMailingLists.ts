@@ -16,7 +16,7 @@ import type {
   MailingListsResponse,
   UpdateMailingListData
 } from '@/lib/types/email-marketing';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 
 export function useMailingLists(page: number = 1, limit: number = 10, search?: string) {
@@ -27,6 +27,7 @@ export function useMailingLists(page: number = 1, limit: number = 10, search?: s
       if (!token) throw new Error('No authentication token');
       return fetchMailingLists(token, page, limit, search);
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -39,18 +40,20 @@ export function useMailingListDetail(mailingListId: string, page: number = 1, li
       return fetchMailingListDetail(token, mailingListId, page, limit, search);
     },
     enabled: !!mailingListId,
+    placeholderData: keepPreviousData,
   });
 }
 
-export function useMailingListCampaigns(mailingListId: string, page: number = 1, limit: number = 10, enabled: boolean = true) {
+export function useMailingListCampaigns(mailingListId: string, page: number = 1, limit: number = 10, search?: string, enabled: boolean = true) {
   return useQuery({
-    queryKey: ['mailing-list-campaigns', mailingListId, page, limit],
+    queryKey: ['mailing-list-campaigns', mailingListId, page, limit, search],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchMailingListCampaigns(token, mailingListId, page, limit);
+      return fetchMailingListCampaigns(token, mailingListId, page, limit, search);
     },
     enabled: !!mailingListId && enabled,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -15,6 +15,11 @@ export interface Subscriber {
   updated_at: string;
 }
 
+export interface CampaignSubscriber extends Subscriber {
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  error_message: string | null;
+}
+
 export interface SubscribersResponse {
   success: boolean;
   data: {
@@ -23,6 +28,22 @@ export interface SubscribersResponse {
     limit: number;
     total_pages: number;
     contacts: Subscriber[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+export interface CampaignSubscribersResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    contacts: CampaignSubscriber[];
   };
   error?: {
     code: string;
@@ -207,4 +228,40 @@ export interface Contact {
   id: string;
   name: string;
   email: string;
+}
+
+// Bulk Jobs types
+export interface BulkJob {
+  id: string;
+  target: string;
+  status: 'Queued for Processing' | 'Processing' | 'Completed' | 'Failed' | 'Stopped' | 'Rolled Back' | 'Queued for Rollback' | 'Rollback Processing';
+  file_name: string;
+  mailing_list_ids: string[];
+  total_rows: number;
+  processed_rows: number;
+  created_rows: number;
+  skipped_rows: number;
+  failed_rows: number;
+  error_summary: string | null;
+  messages?: string[];
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BulkJobsResponse {
+  success: boolean;
+  data: {
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    items: BulkJob[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }

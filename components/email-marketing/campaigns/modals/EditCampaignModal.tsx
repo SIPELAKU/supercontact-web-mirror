@@ -24,13 +24,18 @@ import {
   RadioGroup,
   Stack,
   TextField,
-  Typography
+  Typography,
+  InputAdornment,
+  Grid,
+  Paper,
+  Tooltip,
+  IconButton
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
 import { AppSelect } from '@/components/ui/app-select';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
@@ -38,6 +43,8 @@ import AddMailSenderDialog from './AddMailSenderDialog';
 import MailSenderManager from './MailSenderManager';
 import RecipientSourceSelector from './RecipientSourceSelector';
 import { CAMPAIGN_ERROR_MESSAGES } from '@/lib/constants/campaign';
+import { Search, Users, User, CheckCircle2, Maximize2, Minimize2, X } from 'lucide-react';
+import { ApiErrorDisplay } from '@/components/ui/api-error-display';
 
 interface EditCampaignModalProps {
   open: boolean;
@@ -55,10 +62,13 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
   const [selectedMailSender, setSelectedMailSender] = useState<string>('');
   const [selectedSmtp, setSelectedSmtp] = useState<string>('brevo');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | any[] | null>(null);
   const [subscriberPage, setSubscriberPage] = useState(1);
   const [subscriberLimit] = useState(10);
   const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [mailingListSearch, setMailingListSearch] = useState('');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   const updateMutation = useUpdateCampaign();
   const { data: mailingListsData } = useMailingLists();
@@ -96,7 +106,10 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
     setSelectedSubscribers([]);
     setSelectedMailSender('');
     setSelectedSmtp('brevo');
-    setError('');
+    setSubscriberSearch('');
+    setMailingListSearch('');
+    setIsFullScreen(false);
+    setIsFocusMode(false);
     onClose();
   };
 
@@ -114,6 +127,29 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
         ? prev.filter(id => id !== subscriberId)
         : [...prev, subscriberId]
     );
+  };
+
+  const filteredMailingLists = useMemo(() => {
+    if (!mailingListSearch.trim()) return mailingLists;
+    return mailingLists.filter(list =>
+      list.name.toLowerCase().includes(mailingListSearch.toLowerCase())
+    );
+  }, [mailingLists, mailingListSearch]);
+
+  const handleSelectAllMailingLists = () => {
+    if (selectedMailingLists.length === filteredMailingLists.length && filteredMailingLists.length > 0) {
+      setSelectedMailingLists([]);
+    } else {
+      setSelectedMailingLists(filteredMailingLists.map(l => l.id));
+    }
+  };
+
+  const handleSelectAllSubscribers = () => {
+    if (selectedSubscribers.length === subscribers.length && subscribers.length > 0) {
+      setSelectedSubscribers([]);
+    } else {
+      setSelectedSubscribers(subscribers.map(s => s.id));
+    }
   };
 
   const handleSubmit = async (action: 'send' | 'draft') => {
@@ -176,9 +212,16 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
       onSuccess();
       handleClose();
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to update campaign.';
-      setError(errorMessage);
-      notify.error(errorMessage);
+      if (err.details && Array.isArray(err.details)) {
+        setError(err.details);
+        notify.error('Validation failed', {
+          description: <ApiErrorDisplay errors={err.details} />
+        });
+      } else {
+        const errorMessage = typeof err.message === 'string' ? err.message.replace(/_/g, " ") : (err.message || 'Failed to update campaign.');
+        setError(errorMessage);
+        notify.error(errorMessage);
+      }
     }
   };
 
@@ -199,245 +242,521 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   return (
-    <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="lg" fullWidth>
-      <DialogTitle>Edit Campaign</DialogTitle>
-      <DialogContent dividers>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <Box>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#374151' }}>
-              SMTP
-            </Typography>
-            <AppSelect
-              placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select SMTP"}
-              value={selectedSmtp}
-              onChange={(e) => setSelectedSmtp(e.target.value as string)}
-              options={[
-                { value: 'brevo', label: 'Brevo (Mail-Sender)' },
-                ...mailServers.map(server => ({
-                  value: server.id,
-                  label: `${server.name} (${server.from_email})`
-                }))
-              ]}
-              isBgWhite
-            />
-            {selectedSmtp !== 'brevo' && (
-              <Alert severity="info" sx={{ mt: 1.5, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
-                When using an external SMTP server, advanced tracking features such as delivery confirmation, open rates, click-through tracking, and bounce reporting are not available.
-              </Alert>
-            )}
+    <Dialog
+      open={open}
+      onClose={() => setShowCloseConfirmation(true)}
+      maxWidth="lg"
+      fullWidth
+      fullScreen={isFullScreen}
+      sx={{
+        '& .MuiDialog-paper': isFocusMode ? {
+          margin: 0,
+          maxHeight: '100vh',
+          height: '100vh',
+          borderRadius: 0
+        } : {}
+      }}
+    >
+      {!isFocusMode && (
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+            Edit Campaigns
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              aria-label="fullscreen"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            </IconButton>
+            <IconButton
+              aria-label="close"
+              onClick={() => setShowCloseConfirmation(true)}
+              size="small"
+              sx={{ color: 'text.secondary' }}
+            >
+              <X className="w-5 h-5" />
+            </IconButton>
           </Box>
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
-                Mail Sender
-              </Typography>
-              <AppButton
-                size="small"
-                onClick={() => setIsAddMailSenderOpen(true)}
-                variantStyle="text"
-                color="primary"
-                disabled={selectedSmtp !== 'brevo'}
-              >
-                + Add New Mail Sender
-              </AppButton>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ flex: 1 }}>
+        </DialogTitle>
+      )}
+      <DialogContent dividers={!isFocusMode} sx={{
+        p: isFocusMode ? 0 : 3,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: isFocusMode ? 'hidden' : 'auto',
+        bgcolor: isFocusMode ? '#f8fafc' : 'background.paper',
+        flex: 1
+      }}>
+        {!isFocusMode && error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {typeof error === 'string' ? (
+              error
+            ) : (
+              <div className="text-black">
+                <p className="font-bold">Please fix the following errors:</p>
+                <ApiErrorDisplay errors={error} maxHeight="150px" />
+              </div>
+            )}
+          </Alert>
+        )}
+        <Stack spacing={isFocusMode ? 0 : 3} sx={{ mt: 0, flex: 1, minHeight: 0 }}>
+          {!isFocusMode && (
+            <>
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: '#374151' }}>
+                  SMTP
+                </Typography>
                 <AppSelect
-                  disabled={selectedSmtp !== 'brevo'}
-                  placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
-                  value={selectedMailSender}
-                  onChange={(e) => setSelectedMailSender(e.target.value as string)}
-                  options={mailSenders.map(sender => ({
-                    value: sender.id,
-                    label: `${sender.name} (${sender.email})`
-                  }))}
+                  placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select SMTP"}
+                  value={selectedSmtp}
+                  onChange={(e) => setSelectedSmtp(e.target.value as string)}
+                  options={[
+                    { value: 'brevo', label: 'Brevo (Mail-Sender)' },
+                    ...mailServers.map(server => ({
+                      value: server.id,
+                      label: `${server.name} (${server.from_email})`
+                    }))
+                  ]}
                   isBgWhite
-                  error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
-                  helperText={error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}
+                />
+                {selectedSmtp !== 'brevo' && (
+                  <Alert severity="info" sx={{ mt: 1.5, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
+                    When using an external SMTP server, advanced tracking features such as delivery confirmation, open rates, click-through tracking, and bounce reporting are not available.
+                  </Alert>
+                )}
+              </Box>
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                    Mail Sender
+                  </Typography>
+                  <AppButton
+                    size="small"
+                    onClick={() => setIsAddMailSenderOpen(true)}
+                    variantStyle="text"
+                    color="primary"
+                    disabled={selectedSmtp !== 'brevo'}
+                  >
+                    + Add New Mail Sender
+                  </AppButton>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <AppSelect
+                      disabled={selectedSmtp !== 'brevo'}
+                      placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
+                      value={selectedMailSender}
+                      onChange={(e) => setSelectedMailSender(e.target.value as string)}
+                      options={mailSenders.map(sender => ({
+                        value: sender.id,
+                        label: `${sender.name} (${sender.email})`
+                      }))}
+                      isBgWhite
+                      error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
+                      helperText={error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}
+                    />
+                  </Box>
+                  {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
+                    <MailSenderManager
+                      mailSenderId={selectedMailSender}
+                      mailSenderName={mailSenders.find(s => s.id === selectedMailSender)!.name}
+                      mailSenderEmail={mailSenders.find(s => s.id === selectedMailSender)!.email}
+                      onDelete={() => setSelectedMailSender('')}
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <Box>
+                <label htmlFor="email-subject">Email Subject</label>
+                <AppInput
+                  isBgWhite
+                  placeholder='Enter email subject'
+                  id="email-subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  fullWidth
+                  error={Boolean(error && error.includes("Subject") && !subject.trim())}
+                  helperText={error && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
                 />
               </Box>
-              {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
-                <MailSenderManager
-                  mailSenderId={selectedMailSender}
-                  mailSenderName={mailSenders.find(s => s.id === selectedMailSender)!.name}
-                  mailSenderEmail={mailSenders.find(s => s.id === selectedMailSender)!.email}
-                  onDelete={() => setSelectedMailSender('')}
-                />
-              )}
-            </Box>
-          </Box>
 
-          <Box>
-            <label htmlFor="email-subject">Email Subject</label>
-            <AppInput
-              isBgWhite
-              placeholder='Enter email subject'
-              id="email-subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              fullWidth
-              error={Boolean(error && error.includes("Subject") && !subject.trim())}
-              helperText={error && error.includes("Subject") && !subject.trim() ? "Subject is required" : ""}
-            />
-          </Box>
+            </>
+          )}
 
-          <Box>
+          <Box sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: isFocusMode ? 'auto' : 600,
+            height: isFocusMode ? '100%' : 'auto',
+            overflow: isFocusMode ? 'hidden' : 'visible'
+          }}>
+            {isFocusMode ? (
+              <Box sx={{
+                p: 1.5,
+                px: 3,
+                bgcolor: 'white',
+                borderBottom: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: -0.5 }}>
+                      CAMPAIGN SUBJECT
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {subject || '(No Subject)'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: '1px', height: 32, bgcolor: '#e5e7eb' }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: -0.5 }}>
+                      SMTP SERVER
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                      {selectedSmtp === 'brevo' ? 'Brevo (Mail-Sender)' : (mailServers.find(s => s.id === selectedSmtp)?.name || 'Default')}
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                  <AppButton size="small" variantStyle="outline" onClick={() => handleSubmit('draft')} isLoading={updateMutation.isPending}>
+                    Save as Draft
+                  </AppButton>
+                  <AppButton size="small" variantStyle="primary" onClick={() => handleSubmit('send')} isLoading={updateMutation.isPending}>
+                    Update & Send
+                  </AppButton>
+                  <Box sx={{ width: '1px', height: 24, bgcolor: '#e5e7eb', mx: 0.5 }} />
+                  <IconButton
+                    size="small"
+                    onClick={() => setIsFocusMode(false)}
+                    sx={{ color: 'text.secondary', border: '1px solid #e5e7eb' }}
+                  >
+                    <Minimize2 size={18} />
+                  </IconButton>
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
+                  Email Content
+                </Typography>
+                <Tooltip title="Focus Mode hides other fields to give you more room for editing">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setIsFocusMode(true);
+                      setIsFullScreen(true);
+                    }}
+                    startIcon={<Maximize2 size={14} />}
+                    sx={{ textTransform: 'none', borderRadius: '6px' }}
+                  >
+                    Focus Mode
+                  </Button>
+                </Tooltip>
+              </Box>
+            )}
             <EmailTabbedEditor
               ref={editorRef}
               defaultEditorType={campaign?.editor_type as 'simple_editor' | 'visual_builder' | undefined}
               value={htmlContent}
               onChange={(html) => setHtmlContent(html)}
               isLoading={updateMutation.isPending}
+              height={isFocusMode ? "100%" : "600px"}
             />
-            {error && error.includes("Email content") && !htmlContent.trim() && (
+            {!isFocusMode && typeof error === 'string' && error.includes("Email content") && !htmlContent.trim() && (
               <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                 Content is required
               </Typography>
             )}
           </Box>
 
-          <RecipientSourceSelector
-            value={recipientSource}
-            onChange={(value) => {
-              setRecipientSource(value);
-              setSelectedMailingLists([]);
-              setSelectedSubscribers([]);
-            }}
-          />
-
-          {recipientSource === 'mailing_list' && (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Mailing Lists
-              </Typography>
-              {mailingLists.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No mailing lists available. Please create one first.
-                </Typography>
-              ) : (
-                <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                  {mailingLists.map((list) => (
-                    <FormControlLabel
-                      key={list.id}
-                      control={
-                        <Checkbox
-                          checked={selectedMailingLists.includes(list.id)}
-                          onChange={() => handleMailingListToggle(list.id)}
-                        />
-                      }
-                      label={`${list.name} (${list.subscriber_count} subscribers)`}
-                    />
-                  ))}
-                </Box>
-              )}
-              {error && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                  Please select at least one mailing list
-                </Typography>
-              )}
-            </Box>
-          )}
-
-          {recipientSource === 'subscriber' && (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Select Subscribers
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search subscribers by email or name..."
-                value={subscriberSearch}
-                onChange={(e) => {
-                  setSubscriberSearch(e.target.value);
-                  setSubscriberPage(1); // Reset to first page on search
+          {!isFocusMode && (
+            <>
+              <RecipientSourceSelector
+                value={recipientSource}
+                onChange={(value) => {
+                  setRecipientSource(value);
+                  setSelectedMailingLists([]);
+                  setSelectedSubscribers([]);
                 }}
-                sx={{ mb: 2 }}
               />
-              {isLoadingSubscribers ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : subscribers.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  {subscriberSearch ? 'No subscribers found matching your search.' : 'No subscribers available. Please add subscribers first.'}
-                </Typography>
-              ) : (
-                <>
-                  <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #e0e0e0', borderRadius: 1, p: 1 }}>
-                    {subscribers.map((subscriber) => (
-                      <FormControlLabel
-                        key={subscriber.id}
-                        control={
-                          <Checkbox
-                            checked={selectedSubscribers.includes(subscriber.id)}
-                            onChange={() => handleSubscriberToggle(subscriber.id)}
-                          />
-                        }
-                        label={`${subscriber.email} ${subscriber.name ? `(${subscriber.name})` : ''}`}
-                      />
-                    ))}
-                  </Box>
-                  {totalSubscriberPages > 1 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                      <Pagination
-                        count={totalSubscriberPages}
-                        page={subscriberPage}
-                        onChange={(e, page) => setSubscriberPage(page)}
-                        color="primary"
+
+              {recipientSource === 'mailing_list' && (
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Select Mailing Lists
+                    </Typography>
+                    {mailingLists.length > 0 && (
+                      <Button
                         size="small"
-                      />
+                        onClick={handleSelectAllMailingLists}
+                        sx={{ textTransform: 'none', fontWeight: 500 }}
+                      >
+                        {selectedMailingLists.length === filteredMailingLists.length && filteredMailingLists.length > 0 ? 'Deselect All' : 'Select All'}
+                      </Button>
+                    )}
+                  </Box>
+
+                  {mailingLists.length > 0 && (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search mailing lists..."
+                      value={mailingListSearch}
+                      onChange={(e) => setMailingListSearch(e.target.value)}
+                      sx={{ mb: 2 }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search className="w-4 h-4 text-gray-400" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+
+                  {mailingLists.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: '#f9fafb', borderStyle: 'dashed' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No mailing lists available. Please create one first.
+                      </Typography>
+                    </Paper>
+                  ) : filteredMailingLists.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                      No mailing lists found matching "{mailingListSearch}"
+                    </Typography>
+                  ) : (
+                    <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
+                      <Grid container spacing={1.5}>
+                        {filteredMailingLists.map((list) => {
+                          const isSelected = selectedMailingLists.includes(list.id);
+                          return (
+                            <Grid item xs={12} sm={6} key={list.id}>
+                              <Paper
+                                variant="outlined"
+                                onClick={() => handleMailingListToggle(list.id)}
+                                sx={{
+                                  p: 1.5,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1.5,
+                                  transition: 'all 0.2s',
+                                  borderColor: isSelected ? 'primary.main' : 'divider',
+                                  bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                                  '&:hover': {
+                                    borderColor: 'primary.main',
+                                    bgcolor: isSelected ? 'primary.50' : '#f8fafc',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                  }
+                                }}
+                              >
+                                <Checkbox
+                                  size="small"
+                                  checked={isSelected}
+                                  sx={{ p: 0 }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={() => handleMailingListToggle(list.id)}
+                                />
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                  <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                                    {list.name}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                                    <Users className="w-3 h-3 text-gray-400" />
+                                    <Typography variant="caption" color="text.secondary">
+                                      {list.subscriber_count.toLocaleString()} subscribers
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-600" />}
+                              </Paper>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
                     </Box>
                   )}
-                </>
+                  {typeof error === 'string' && error.toLowerCase().includes("mailing list") && selectedMailingLists.length === 0 && (
+                    <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+                      Please select at least one mailing list
+                    </Alert>
+                  )}
+                </Box>
               )}
-              {error && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                  Please select at least one subscriber
-                </Typography>
+
+              {recipientSource === 'subscriber' && (
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Select Subscribers
+                    </Typography>
+                    {subscribers.length > 0 && (
+                      <Button
+                        size="small"
+                        onClick={handleSelectAllSubscribers}
+                        sx={{ textTransform: 'none', fontWeight: 500 }}
+                      >
+                        {selectedSubscribers.length === subscribers.length && subscribers.length > 0 ? 'Deselect All' : 'Select All'}
+                      </Button>
+                    )}
+                  </Box>
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search subscribers by email or name..."
+                    value={subscriberSearch}
+                    onChange={(e) => {
+                      setSubscriberSearch(e.target.value);
+                      setSubscriberPage(1); // Reset to first page on search
+                    }}
+                    sx={{ mb: 2 }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search className="w-4 h-4 text-gray-400" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {isLoadingSubscribers ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : subscribers.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', bgcolor: '#f9fafb', borderStyle: 'dashed' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {subscriberSearch ? `No subscribers found matching "${subscriberSearch}"` : 'No subscribers available. Please add subscribers first.'}
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <>
+                      <Box sx={{ maxHeight: 320, overflowY: 'auto', pr: 0.5 }}>
+                        <Grid container spacing={1.5}>
+                          {subscribers.map((subscriber) => {
+                            const isSelected = selectedSubscribers.includes(subscriber.id);
+                            return (
+                              <Grid item xs={12} sm={6} key={subscriber.id}>
+                                <Paper
+                                  variant="outlined"
+                                  onClick={() => handleSubscriberToggle(subscriber.id)}
+                                  sx={{
+                                    p: 1.5,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1.5,
+                                    transition: 'all 0.2s',
+                                    borderColor: isSelected ? 'primary.main' : 'divider',
+                                    bgcolor: isSelected ? 'primary.50' : 'background.paper',
+                                    '&:hover': {
+                                      borderColor: 'primary.main',
+                                      bgcolor: isSelected ? 'primary.50' : '#f8fafc',
+                                      transform: 'translateY(-1px)',
+                                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }
+                                  }}
+                                >
+                                  <Checkbox
+                                    size="small"
+                                    checked={isSelected}
+                                    sx={{ p: 0 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={() => handleSubscriberToggle(subscriber.id)}
+                                  />
+                                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+                                      {subscriber.email}
+                                    </Typography>
+                                    {subscriber.name && (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                                        <User className="w-3 h-3 text-gray-400" />
+                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                          {subscriber.name}
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                  {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-600" />}
+                                </Paper>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      </Box>
+                      {totalSubscriberPages > 1 && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                          <Pagination
+                            count={totalSubscriberPages}
+                            page={subscriberPage}
+                            onChange={(e, page) => setSubscriberPage(page)}
+                            color="primary"
+                            size="small"
+                          />
+                        </Box>
+                      )}
+                    </>
+                  )}
+                  {typeof error === 'string' && error.toLowerCase().includes("subscriber") && selectedSubscribers.length === 0 && (
+                    <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+                      Please select at least one subscriber
+                    </Alert>
+                  )}
+                </Box>
               )}
-            </Box>
+            </>
           )}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
-        <AppButton
-          onClick={() => {
-            setSubject('');
-            setHtmlContent('');
-            setRecipientSource('mailing_list');
-            setSelectedMailingLists([]);
-            setSelectedSubscribers([]);
-            setSelectedMailSender('');
-            setSelectedSmtp('brevo');
-            setError('');
-            onClose();
-          }}
-          color="gray"
-          variantStyle="outline"
-          disabled={updateMutation.isPending}
-        >
-          Cancel
-        </AppButton>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+      {!isFocusMode && (
+        <DialogActions sx={{ p: '16px 24px', justifyContent: 'space-between' }}>
           <AppButton
-            onClick={() => handleSubmit('draft')}
+            onClick={() => {
+              setSubject('');
+              setHtmlContent('');
+              setRecipientSource('mailing_list');
+              setSelectedMailingLists([]);
+              setSelectedSubscribers([]);
+              setSelectedMailSender('');
+              setSelectedSmtp('brevo');
+              setError('');
+              onClose();
+            }}
+            color="gray"
             variantStyle="outline"
             isLoading={updateMutation.isPending}
           >
-            Save as Draft
+            Cancel
           </AppButton>
-          <AppButton
-            onClick={() => handleSubmit('send')}
-            variantStyle="primary"
-            isLoading={updateMutation.isPending}
-          >
-            Update & Send
-          </AppButton>
-        </Box>
-      </DialogActions>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <AppButton
+              onClick={() => handleSubmit('draft')}
+              variantStyle="outline"
+              isLoading={updateMutation.isPending}
+            >
+              Save as Draft
+            </AppButton>
+            <AppButton
+              onClick={() => handleSubmit('send')}
+              variantStyle="primary"
+              isLoading={updateMutation.isPending}
+            >
+              Update & Send
+            </AppButton>
+          </Box>
+        </DialogActions>
+      )}
 
       <ConfirmationPopup
         isOpen={showCloseConfirmation}

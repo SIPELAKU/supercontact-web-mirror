@@ -5,7 +5,8 @@ import type {
   CreateSubscriberData,
   CreateSubscriberResponse,
   DeleteSubscriberResponse,
-  SubscribersResponse
+  SubscribersResponse,
+  BulkJobsResponse
 } from '../../types/email-marketing';
 import { logger } from "../../utils/logger";
 import { fetchWithTimeout } from "../api-client";
@@ -84,6 +85,127 @@ export async function fetchSubscribers(token: string, page: number = 1, limit: n
   }
 }
 
+export async function fetchBulkJobs(
+  token: string,
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  target?: string[],
+  mailingListIds?: string[]
+): Promise<BulkJobsResponse> {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  if (search) {
+    queryParams.append('search', search);
+  }
+  
+  if (target && target.length > 0) {
+    target.forEach(t => queryParams.append('target', t));
+  }
+
+  if (mailingListIds && mailingListIds.length > 0) {
+    mailingListIds.forEach(id => queryParams.append('mailing_list_ids', id));
+  }
+  
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/bulk?${queryParams.toString()}`;
+
+  logger.info("Making GET request to fetch bulk jobs", { url, page, limit, search, target });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse bulk jobs response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/subscribers/bulk (GET)", { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      logger.error(`Fetch bulk jobs failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.error?.message || `Failed to fetch bulk jobs (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Fetch bulk jobs request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function actionBulkJob(token: string, jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay'): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers/bulk/${jobId}`;
+
+  logger.info("Making PATCH request to action bulk job", { url, jobId, action });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ action }),
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse action bulk job response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse(`/subscribers/bulk/${jobId} (PATCH)`, { status: res.status, response: json });
+
+    if (res.status === 401) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok) {
+      const error: any = new Error(json.error?.message || `Failed to perform action ${action} on bulk job (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Action bulk job request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
 export async function createSubscriber(token: string, data: CreateSubscriberData): Promise<CreateSubscriberResponse> {
   const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers`;
 
@@ -118,13 +240,11 @@ export async function createSubscriber(token: string, data: CreateSubscriberData
     }
 
     if (!res.ok) {
-      logger.error(`Create subscriber failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to create subscriber (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to create subscriber (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;
@@ -216,13 +336,11 @@ export async function updateSubscriber(token: string, subscriberId: string, data
     }
 
     if (!res.ok) {
-      logger.error(`Update subscriber failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to update subscriber (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to update subscriber (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;
@@ -266,13 +384,11 @@ export async function bulkDeleteSubscribers(token: string, contactIds: string[])
     }
 
     if (!res.ok) {
-      logger.error(`Bulk delete subscribers failed: ${res.status}`, {
-        status: res.status,
-        statusText: res.statusText,
-        response: json,
-        url
-      });
-      throw new Error(json.error?.message || `Failed to delete subscribers (${res.status}: ${res.statusText})`);
+      const error: any = new Error(json.error?.message || `Failed to delete subscribers (${res.status}: ${res.statusText})`);
+      if (json.error?.details) {
+        error.details = json.error.details;
+      }
+      throw error;
     }
 
     return json;

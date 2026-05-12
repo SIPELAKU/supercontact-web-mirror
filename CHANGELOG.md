@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.1] - 2026-05-12
+
+### ✨ Added
+- **Automated Table Refresh**:
+    - Implemented automatic data synchronization that triggers a refetch of the Subscribers and Mailing List tables as soon as a bulk import job status transitions to `Completed`.
+- **Targeted History Filtering**:
+    - Enhanced the Import History modal on the Mailing List detail page to automatically filter jobs by the specific `mailing_list_ids`, ensuring users only see relevant import logs.
+
+### 🛠️ Refactor & Enhancements
+- **API & Hook Optimization**:
+    - Updated `fetchBulkJobs` and `useBulkJobs` to support multi-dimensional filtering via `mailing_list_ids` query parameters.
+- **UI Localization**:
+    - Updated auto-refresh interval labels to English for consistency with the global UI (e.g., "Off", "Very Fast", "Medium").
+
 ## [1.20.0] - 2026-05-11
 
 ### ✨ Added

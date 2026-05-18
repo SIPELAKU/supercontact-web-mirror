@@ -2,8 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
-// Hapus import framer-motion karena ganti pakai CSS
-// import { m } from "framer-motion"; 
+import { Box, Container, Typography } from "@mui/material";
+import { strings } from "@/lib/utils/strings"; 
 
 const LogoCard = ({ logo, index }: { logo: string; index: number }) => (
   <div
@@ -104,13 +104,23 @@ export const ClientLogos = () => {
   const row3 = [...logosRow3, ...logosRow3];
 
   return (
-    <section className="w-full py-12 md:py-20 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 mb-8 md:mb-16 text-center">
-        <h5 className="font-bold text-xl md:text-2xl text-blue-900 mb-2">
-          Dipercaya oleh Perusahaan Terdepan
-        </h5>
-        <p className="text-gray-500 text-sm md:text-base">Mitra teknologi yang tumbuh bersama kami</p>
-      </div>
+    <Box sx={{ bgcolor: "#F7F7F9", py: { xs: 6, md: 10 } }} overflow="hidden">
+      <Container maxWidth="lg">
+        {/* Header Section */}
+        <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 4 } }}>
+          <Typography variant="h4" sx={{
+              fontWeight: 800,
+              color: "rgba(38, 43, 67, 0.9)",
+              mb: 2,
+              fontSize: { xs: '1.75rem', md: '24px' }
+          }}>
+              {strings.trusted_by_title}
+          </Typography>
+          <Typography variant="body1" sx={{ color: "rgba(38, 43, 67, 0.9)", maxWidth: "700px", mx: "auto", px: 2, fontSize: { xs: '1rem', md: '16px' } }}>
+              {strings.trusted_by_subtitle}
+          </Typography>
+        </Box>
+      </Container>
 
       {/* Masking Gradient agar logo terlihat memudar di kiri kanan */}
       <div className="relative w-full flex flex-col gap-4 md:gap-8 mask-gradient">
@@ -143,6 +153,6 @@ export const ClientLogos = () => {
         </div>
 
       </div>
-    </section>
+    </Box>
   );
 };

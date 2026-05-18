@@ -7,71 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.2] - 2026-05-18
+
+### 🛠️ Refactor & Enhancements
+
+- **Infinite Scroll Client Logos**:
+  - Replaced legacy `framer-motion` implementation with high-performance CSS animations configured directly in Tailwind CSS v4 `@theme`.
+  - Added seamless `--animate-scroll-left` and `--animate-scroll-right` infinite marquee animations.
+  - Added `@utility pause-on-hover` to temporarily freeze the scrolling track when hovered.
+  - Added `@utility mask-gradient` with cross-browser `mask-image` gradient to smoothly fade out logo tracks on the left and right edges.
+
 ## [1.20.1] - 2026-05-12
 
 ### ✨ Added
+
 - **Automated Table Refresh**:
-    - Implemented automatic data synchronization that triggers a refetch of the Subscribers and Mailing List tables as soon as a bulk import job status transitions to `Completed`.
+  - Implemented automatic data synchronization that triggers a refetch of the Subscribers and Mailing List tables as soon as a bulk import job status transitions to `Completed`.
 - **Targeted History Filtering**:
-    - Enhanced the Import History modal on the Mailing List detail page to automatically filter jobs by the specific `mailing_list_ids`, ensuring users only see relevant import logs.
+  - Enhanced the Import History modal on the Mailing List detail page to automatically filter jobs by the specific `mailing_list_ids`, ensuring users only see relevant import logs.
 
 ### 🛠️ Refactor & Enhancements
+
 - **API & Hook Optimization**:
-    - Updated `fetchBulkJobs` and `useBulkJobs` to support multi-dimensional filtering via `mailing_list_ids` query parameters.
+  - Updated `fetchBulkJobs` and `useBulkJobs` to support multi-dimensional filtering via `mailing_list_ids` query parameters.
 - **UI Localization**:
-    - Updated auto-refresh interval labels to English for consistency with the global UI (e.g., "Off", "Very Fast", "Medium").
+  - Updated auto-refresh interval labels to English for consistency with the global UI (e.g., "Off", "Very Fast", "Medium").
 
 ## [1.20.0] - 2026-05-11
 
 ### ✨ Added
+
 - **Dynamic Import Monitoring**:
-    - **Custom Refresh Intervals**: Added a dropdown to the Import History modal to control the auto-refresh speed (Manual, 2s, 5s, 10s, 30s).
-    - **Persistence**: Refetch settings are now saved in `localStorage` and uniquely identified by page/target context.
+  - **Custom Refresh Intervals**: Added a dropdown to the Import History modal to control the auto-refresh speed (Manual, 2s, 5s, 10s, 30s).
+  - **Persistence**: Refetch settings are now saved in `localStorage` and uniquely identified by page/target context.
 - **Enhanced Message Reporting**:
-    - **Bulleted List Display**: Bulk job messages are now rendered as a clean bulleted list for better readability of multi-line logs.
-    - **Immersive Tooltips**: Implemented a scrollable tooltip on hover for long message lists, featuring truncation and a gradient fade-out in the table cell.
+  - **Bulleted List Display**: Bulk job messages are now rendered as a clean bulleted list for better readability of multi-line logs.
+  - **Immersive Tooltips**: Implemented a scrollable tooltip on hover for long message lists, featuring truncation and a gradient fade-out in the table cell.
 - **Mailing List UX Parity**:
-    - **History Access**: Added "Import History" access to the Mailing List detail page, allowing users to track mailing-list-specific jobs.
+  - **History Access**: Added "Import History" access to the Mailing List detail page, allowing users to track mailing-list-specific jobs.
 
 ### 🐞 Fixed
+
 - **Hydration Synchronization**: Resolved a bug where the UI refresh interval would drift or default incorrectly due to SSR/CSR state mismatch.
 - **Polling Stability**: Added a mounting guard to prevent background polling from starting before the client environment is fully initialized.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Universal Modal**: Refactored `ImportHistoryModal` to be fully reusable across different modules with target-based filtering.
 - **Type Accuracy**: Updated `BulkJob` interface to support plural `messages` array for complex job reporting.
 
 ## [1.19.1] - 2026-05-11
 
 ### ✨ Added
+
 - **Mailing List Search Enhancements**:
-    - Added `search` query parameter support for Mailing List Campaigns API.
-    - Integrated debounced search for campaigns within the Mailing List detail page.
+  - Added `search` query parameter support for Mailing List Campaigns API.
+  - Integrated debounced search for campaigns within the Mailing List detail page.
 
 ### 🛠️ Refactor & Enhancements
+
 - **UI Performance & Transitions**:
-    - Implemented `keepPreviousData` in mailing list hooks to prevent full-page refreshes during search and pagination.
-    - Refined loading state logic to maintain table visibility during refetches while showing subtle background indicators.
-    - Removed redundant client-side filtering for campaigns, optimizing data flow.
+  - Implemented `keepPreviousData` in mailing list hooks to prevent full-page refreshes during search and pagination.
+  - Refined loading state logic to maintain table visibility during refetches while showing subtle background indicators.
+  - Removed redundant client-side filtering for campaigns, optimizing data flow.
 
 ## [1.19.0] - 2026-05-09
 
 ### ✨ Added
-- **Asynchronous Bulk Import System**: 
-    - Migrated subscriber import to an asynchronous background processing model for better scalability.
-    - Implemented a modern success summary popup with detailed statistics (Created, Skipped, Failed).
+
+- **Asynchronous Bulk Import System**:
+  - Migrated subscriber import to an asynchronous background processing model for better scalability.
+  - Implemented a modern success summary popup with detailed statistics (Created, Skipped, Failed).
 - **Import History & Monitoring**:
-    - **New Modal**: "Import History" modal to track the progress and status of all bulk import jobs.
-    - **Real-time Updates**: Integrated 5-second polling to ensure job progress and status transitions are reflected instantly without page refresh.
+  - **New Modal**: "Import History" modal to track the progress and status of all bulk import jobs.
+  - **Real-time Updates**: Integrated 5-second polling to ensure job progress and status transitions are reflected instantly without page refresh.
 - **Job Control Actions**:
-    - **Interactive Actions**: Added ability to `Stop`, `Continue`, `Rollback`, and `Replay` bulk jobs directly from the history table.
-    - **Dynamic UI**: Action buttons are dynamically rendered based on the job's state machine (e.g., Stop only for processing jobs, Replay for failed jobs).
+  - **Interactive Actions**: Added ability to `Stop`, `Continue`, `Rollback`, and `Replay` bulk jobs directly from the history table.
+  - **Dynamic UI**: Action buttons are dynamically rendered based on the job's state machine (e.g., Stop only for processing jobs, Replay for failed jobs).
 - **Frontend Data Chunking**:
-    - **Auto-Splitting**: Implemented automatic data chunking (10,000 rows per batch) to circumvent server-side payload limits and prevent 500 errors.
-    - **Part Tracking**: Large imports are now split into parts (e.g., "Part 1/3") with aggregated success notifications.
-    - **UI Guidance**: Added an info alert in the import preview when data exceeds the batch limit.
+  - **Auto-Splitting**: Implemented automatic data chunking (10,000 rows per batch) to circumvent server-side payload limits and prevent 500 errors.
+  - **Part Tracking**: Large imports are now split into parts (e.g., "Part 1/3") with aggregated success notifications.
+  - **UI Guidance**: Added an info alert in the import preview when data exceeds the batch limit.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Subscriber Toolbar**: Improved responsiveness for action buttons (Add Subscriber, Import, History) to prevent wrapping on smaller screens.
 - **Type Safety**: Updated `BulkJob` type definitions to support the complex status flow (Queued, Processing, Rollback, etc.).
 - **Data Synchronization**: Added intelligent refetch delays after import submission to ensure UI consistency with asynchronous backend state.
@@ -79,55 +98,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.18.4] - 2026-05-08
 
 ### 🐞 Fixed
+
 - **Autocomplete Input**: Resolved multiple issues in `AddDealModal`, including the inability to clear selections, disappearing values during search, and potential crashes in the comparison logic.
 - **Modal UX**: Integrated Focus Mode into the Edit Campaign modal and enabled vertical scrolling (overflow-y) for improved content visibility.
-
 
 ## [1.18.3] - 2026-05-07
 
 ### ✨ Added
+
 - **Standardized API Error Handling**:
-    - **New Component**: `ApiErrorDisplay` for rendering structured field-level validation errors.
-    - **Fullscreen Error View**: Added a modal view for large error lists (e.g., bulk import failures) with professional formatting and field name cleanup.
+  - **New Component**: `ApiErrorDisplay` for rendering structured field-level validation errors.
+  - **Fullscreen Error View**: Added a modal view for large error lists (e.g., bulk import failures) with professional formatting and field name cleanup.
 - **Campaign Visual Builder Enhancements**:
-    - **Focus Mode (Zen Mode)**: Added an immersive editing mode that hides the modal header and footer to maximize space for the Visual Builder.
-    - **Quick Action Bar**: Integrated a floating header in Focus Mode with Subject/SMTP reference and "Save as Draft" / "Create & Send" shortcuts.
+  - **Focus Mode (Zen Mode)**: Added an immersive editing mode that hides the modal header and footer to maximize space for the Visual Builder.
+  - **Quick Action Bar**: Integrated a floating header in Focus Mode with Subject/SMTP reference and "Save as Draft" / "Create & Send" shortcuts.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Pipeline Module UX**:
-    - **Pre-fetching Options**: Updated `AddDealModal` to pre-fetch contacts and products immediately on open, removing the need to type before seeing the list.
-    - **Persistent Search**: Improved autocomplete behavior to retain the full list when search input is cleared.
+  - **Pre-fetching Options**: Updated `AddDealModal` to pre-fetch contacts and products immediately on open, removing the need to type before seeing the list.
+  - **Persistent Search**: Improved autocomplete behavior to retain the full list when search input is cleared.
 - **Visual Polish**:
-    - Removed redundant dividers and borders in the Campaign Editor's Focus Mode for a seamless, distraction-free UI.
-    - Standardized error message formatting across Email Marketing modules.
+  - Removed redundant dividers and borders in the Campaign Editor's Focus Mode for a seamless, distraction-free UI.
+  - Standardized error message formatting across Email Marketing modules.
 
 ### 🐞 Fixed
+
 - **TypeScript Type Safety**: Resolved union type mismatch errors (`string | any[]`) in campaign and subscriber modals.
 - **JSX Architecture**: Fixed structural nesting and syntax errors in the Campaign Modal related to the new conditional rendering logic.
 - **Editor Responsiveness**: Fixed height constraints in `EmailTabbedEditor` to ensure it correctly fills the screen in all display modes.
 
-
 ## [1.18.2] - 2026-04-21
 
 ### Fix
+
 - **Smart Capture (Lead Magnets) Module Expansion**:
-    - **Row Click Navigation**: Fixed the issue where clicking on a row in the Lead Magnets table was not navigating to the detail or edit page.
-    - **Edit Button**: Removed the edit button from the Lead Magnets table as it was not needed.
-    - **Wiring Conversions Column**: Wiring conversions column to the Lead Magnets table to display the number of conversions.
+  - **Row Click Navigation**: Fixed the issue where clicking on a row in the Lead Magnets table was not navigating to the detail or edit page.
+  - **Edit Button**: Removed the edit button from the Lead Magnets table as it was not needed.
+  - **Wiring Conversions Column**: Wiring conversions column to the Lead Magnets table to display the number of conversions.
 
 ## [1.18.1] - 2026-04-20
 
 ### ✨ Added
+
 - **Smart Capture (Lead Magnets) Module Expansion**:
-    - **Mail Sender Selection**: Added mail sender selection to the Smart Capture creation form.
-    - **Mail Sender Management**: Added mail sender management to the Smart Capture detail page.
+  - **Mail Sender Selection**: Added mail sender selection to the Smart Capture creation form.
+  - **Mail Sender Management**: Added mail sender management to the Smart Capture detail page.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Modular Component Architecture**: Refactored all Smart Capture creation tabs to be data-aware and reusable, enabling a shared codebase between Lead Magnet creation and editing workflows.
 - **Cross-Component Navigation**: Integrated specialized row actions and preview triggers that bridge the gap between admin management and public-facing assets.
 - **Visual Polish**: Applied premium SaaS aesthetics to the public magnet page, including micro-animations, glassmorphism effects, and secure data handling indicators.
 
 ### 📁 Created Files
+
 - `components/smart-capture/detail/SmartCaptureDetailClient.tsx`
 - `components/smart-capture/edit/EditSmartCaptureClient.tsx`
 - `components/smart-capture/public/PublicMagnetClient.tsx`
@@ -137,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/smart-capture/detail/sections/CapturedLeadsTable.tsx`
 
 ### 📁 Modified Files
+
 - `components/layout/AuthenticatedLayout.tsx`
 - `components/smart-capture/LeadMagnetsTable.tsx`
 - `components/smart-capture/create/RewardSetupTab.tsx`
@@ -147,19 +173,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.18.0] - 2026-04-20
 
 ### ✨ Added
+
 - **Smart Capture (Lead Magnets) Module Expansion**:
-    - **Performance Dashboard**: Integrated a comprehensive detail page with real-time performance analytics including total views, validated leads count, and conversion rate tracking.
-    - **Public Landing Page**: Deployed a high-conversion, mobile-optimized public landing page at `/m/[id]` featuring dynamic forms and instant reward delivery success states.
-    - **Edit Wizard**: Implemented a full multi-tab editing experience (`Reward`, `Form`, `Hook`, `Share`) allowing users to modify existing lead magnets seamlessly.
-    - **Capture Leads Analytics**: Added a dedicated "Captured Leads" table within the detail view utilizing the standardized `SuperTable` for easy data management.
-    - **Public Access Logic**: Configured the application shell to allow bypass of authentication for magnet landing pages, ensuring prospects can access forms immediately.
+  - **Performance Dashboard**: Integrated a comprehensive detail page with real-time performance analytics including total views, validated leads count, and conversion rate tracking.
+  - **Public Landing Page**: Deployed a high-conversion, mobile-optimized public landing page at `/m/[id]` featuring dynamic forms and instant reward delivery success states.
+  - **Edit Wizard**: Implemented a full multi-tab editing experience (`Reward`, `Form`, `Hook`, `Share`) allowing users to modify existing lead magnets seamlessly.
+  - **Capture Leads Analytics**: Added a dedicated "Captured Leads" table within the detail view utilizing the standardized `SuperTable` for easy data management.
+  - **Public Access Logic**: Configured the application shell to allow bypass of authentication for magnet landing pages, ensuring prospects can access forms immediately.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Modular Component Architecture**: Refactored all Smart Capture creation tabs to be data-aware and reusable, enabling a shared codebase between Lead Magnet creation and editing workflows.
 - **Cross-Component Navigation**: Integrated specialized row actions and preview triggers that bridge the gap between admin management and public-facing assets.
 - **Visual Polish**: Applied premium SaaS aesthetics to the public magnet page, including micro-animations, glassmorphism effects, and secure data handling indicators.
 
 ### 📁 Created Files
+
 - `app/smart-capture/detail/[id]/page.tsx`
 - `app/smart-capture/edit/[id]/page.tsx`
 - `app/m/[id]/page.tsx`
@@ -172,6 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/smart-capture/detail/sections/CapturedLeadsTable.tsx`
 
 ### 📁 Modified Files
+
 - `components/layout/AuthenticatedLayout.tsx`
 - `components/smart-capture/LeadMagnetsTable.tsx`
 - `components/smart-capture/create/RewardSetupTab.tsx`
@@ -182,19 +212,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.17.0] - 2026-04-15
 
 ### ✨ Added
+
 - **Smart Capture (Lead Magnets) Module Expansion**:
-    - **Performance Dashboard**: Integrated a comprehensive detail page with real-time performance analytics including total views, validated leads count, and conversion rate tracking.
-    - **Public Landing Page**: Deployed a high-conversion, mobile-optimized public landing page at `/m/[id]` featuring dynamic forms and instant reward delivery success states.
-    - **Edit Wizard**: Implemented a full multi-tab editing experience (`Reward`, `Form`, `Hook`, `Share`) allowing users to modify existing lead magnets seamlessly.
-    - **Capture Leads Analytics**: Added a dedicated "Captured Leads" table within the detail view utilizing the standardized `SuperTable` for easy data management.
-    - **Public Access Logic**: Configured the application shell to allow bypass of authentication for magnet landing pages, ensuring prospects can access forms immediately.
+  - **Performance Dashboard**: Integrated a comprehensive detail page with real-time performance analytics including total views, validated leads count, and conversion rate tracking.
+  - **Public Landing Page**: Deployed a high-conversion, mobile-optimized public landing page at `/m/[id]` featuring dynamic forms and instant reward delivery success states.
+  - **Edit Wizard**: Implemented a full multi-tab editing experience (`Reward`, `Form`, `Hook`, `Share`) allowing users to modify existing lead magnets seamlessly.
+  - **Capture Leads Analytics**: Added a dedicated "Captured Leads" table within the detail view utilizing the standardized `SuperTable` for easy data management.
+  - **Public Access Logic**: Configured the application shell to allow bypass of authentication for magnet landing pages, ensuring prospects can access forms immediately.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Modular Component Architecture**: Refactored all Smart Capture creation tabs to be data-aware and reusable, enabling a shared codebase between Lead Magnet creation and editing workflows.
 - **Cross-Component Navigation**: Integrated specialized row actions and preview triggers that bridge the gap between admin management and public-facing assets.
 - **Visual Polish**: Applied premium SaaS aesthetics to the public magnet page, including micro-animations, glassmorphism effects, and secure data handling indicators.
 
 ### 📁 Created Files
+
 - `app/smart-capture/detail/[id]/page.tsx`
 - `app/smart-capture/edit/[id]/page.tsx`
 - `app/m/[id]/page.tsx`
@@ -207,6 +240,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/smart-capture/detail/sections/CapturedLeadsTable.tsx`
 
 ### 📁 Modified Files
+
 - `components/layout/AuthenticatedLayout.tsx`
 - `components/smart-capture/LeadMagnetsTable.tsx`
 - `components/smart-capture/create/RewardSetupTab.tsx`
@@ -217,21 +251,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.16.0] - 2026-04-10
 
 ### ✨ Added
+
 - **"Save As" Bulk Operation**: Implemented a powerful cross-entity migration feature that allows users to bulk-save Contacts, Subscribers, or Recipients as alternative target types.
 - **Cross-Entity Targets**: Simplified data management by allowing entities to coexist as multiple types (Contact, Subscriber, and Recipient) without record duplication.
 - **Reusable SaveAsModal**: Developed a modular modal component that dynamically adapts its options based on the source page (e.g., hiding the "Contact" option when saving from the Contacts page).
 - **Green UI Action**: Introduced a new "success" (green) color variant for `AppButton` and applied it to the "Save As" action across all relevant tables for better visual distinction.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Global Table Integration**: Unified the bulk actions toolbar in `ContactTable`, `SubscribersTable`, and `RecipientsTable` to include the functional "Save As" trigger.
 - **Localization Polish**: Standardized technical descriptions within the Save As workflow from Bahasa Indonesia to English for professional consistency.
 - **API Versioning Integration**: New endpoints (`/api/v1/.../save-as`) implemented across all marketing modules with support for both `contact_ids` and `recipient_ids` payloads.
 - **Auth Context Integration**: Secured CRM migration operations by integrating `useAuth` into the modal workflow, ensuring only authenticated tokens are used for cross-entity operations.
 
 ### 📁 Created Files
+
 - `components/modal/SaveAsModal.tsx`
 
 ### 📁 Modified Files
+
 - `lib/api/contacts.ts`
 - `lib/api/email-marketing/subscribers.ts`
 - `lib/api/whatsapp-marketing.ts`
@@ -243,12 +281,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.8] - 2026-04-10
 
 ### 🛠️ Refactor & Enhancements
+
 - **Price Page**: Updated the price page to remove some features which are not available yet.
 - **Login Page**: Change language from Bahasa Indonesia to English.
 - **Error Page**: Change language from Bahasa Indonesia to English.
 - **Not Found Page**: Change language from Bahasa Indonesia to English.
 
 ### 📁 Modified Files
+
 - `components/price/PricingCards.tsx`
 - `app/auth/login/page.tsx`
 - `app/error/page.tsx`
@@ -257,20 +297,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.7] - 2026-04-09
 
 ### ✨ Added
+
 - **Premium Subscription UI**: Completely redesigned the "My Subscription" interface with a modern 2-card layout (Free Trial & Exclusive) featuring premium SaaS aesthetics.
 - **Active Plan Indicators**: Added dynamic "ACTIVE" badges with pulse animations and card scaling effects to highlight the current active subscription.
 - **WhatsApp Sales Integration**: Integrated WhatsApp-based call-to-actions for all plan upgrades with brand-consistent styling (#25D366).
 
 ### 🛠️ Refactor & Enhancements
+
 - **Admin Settings Migration**: Moved Omnichannel account management from the general settings page to a centralized Admin area (`Admin > WhatsApp Accounts` and `Admin > Email Accounts`).
 - **Sidebar Restructuring**: Updated the main navigation sidebar to reflect the new centralized account management structure under the Admin section.
 - **Codebase Hardening**: Optimized the `SubscriptionClient` component by cleaning up dynamic API falls-back and standardizing layout structures.
 
 ### 🐛 Fixed
+
 - **JSX Syntax Stability**: Resolved critical build errors related to "Unexpected token" and "JSX element has no corresponding closing tag" in the subscription module.
 - **TypeScript Type Safety**: Fixed prop-type mismatches in MUI Buttons and resolved literal type comparison errors for `currentPlan` detection.
 
 ### 📁 Modified Files
+
 - `components/subscription/SubscriptionClient.tsx`
 - `components/layout/Sidebar.tsx`
 - `app/admin/whatsapp-accounts/page.tsx`
@@ -280,31 +324,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.6] - 2026-04-09
 
 ### ✨ Added
+
 - **Duplicate Broadcast Functionality**: Added a "Duplicate" button to the Broadcast Table and Edit Broadcast modal, allowing users to clone existing campaigns.
 
 ### 🛠️ Refactor & Enhancements
+
 - **UI Polish**: Updated the "Broadcast Details & Statistics" modal to hide the Template ID field for better UX.
 
 ### 📁 Modified Files
+
 - `components/whatsapp-marketing/broadcasting-wa/BroadcastingWAClient.tsx`
 - `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
 
 ## [1.15.5] - 2026-04-08
 
 ### ✨ Added
+
 - **WhatsApp Recipient Management Tab**: Enhanced the "Add New Recipient" modal to support "Buat Manual" and "Import dari Kontak" tabs natively, ensuring UI consistency with Email Marketing.
 - **Broadcast Group Assignment**: Added a robust Multiple Select Autocomplete input to assign imported/manual contacts seamlessly directly into active Broadcast Groups.
 - **Dynamic Stats Independent Reload**: The WhatsApp Broadcasting "View Details & Statistics" modal now fetches real-time isolated data via `useBroadcastDetail` (`/api/v1/broadcasts/{broadcast_id}`) with an inline "Reload Data" button for immediate campaign status sync without page reloads.
 - **Error Status Transparency**: Injected a direct `Error Message` column into the Broadcast Recipients status table that prominently highlights message delivery failures or unmapped variables.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Global Contacts Bypass**: Integrated the `include_all` parameter across WhatsApp Marketing and Email Marketing contact importation hooks to securely fetch unfiltered global contacts (bypassing the `is_contact` default query limit).
 - **Template Builder Polish**: Enforced a `read-only` (disabled) state on the "Template Language" dropdown selection specifically during Edit mode, safeguarding core template properties post-creation.
 
 ### 🐛 Fixed
+
 - **TypeScript Strict Data Parsing**: Remedied the `Type 'Element' is not assignable to type 'string'` error generated in customized `AppAutocomplete` implementations and secured the `activeBroadcast` prop pipeline against uninitialized null-state errors in the detailed statistics view.
 
 ### 📁 Modified Files
+
 - `lib/hooks/useContacts.ts`
 - `lib/hooks/useBroadcasts.ts`
 - `lib/api/contacts.ts`
@@ -318,67 +369,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.4] - 2026-04-08
 
 ### ✨ Added
+
 - **WhatsApp Message Preview**: Integrated a real-time WhatsApp-style mockup in both "Broadcast Details" and "Edit Broadcast" modals, allowing users to visualize how templates and dynamic variables will appear to recipients.
 - **Pending Status Support**: Added visual support for the `pending` recipient status in the broadcast statistics table with a dedicated warning indicator.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Broadcast Detail Layout**: Redesigned the "Broadcast Details & Statistics" modal into a modern 2-column layout (Statistics/Info on the left, Message Preview on the right) with the recipient status table positioned at the bottom.
 - **Edit Broadcast UI Sync**: Refactored the "Edit Broadcast" modal to achieve 100% parity with t1he "Create Broadcast" experience, including full support for Individual Contacts vs. Broadcast Groups and automated variable mapping.
-- **API Versioning & Standardization**: 
+- **API Versioning & Standardization**:
   - Migrated Broadcast Recipient fetching to the versioned `/api/v1` endpoint.
   - Updated the Broadcast update method to use **`PUT`** for backend consistency.
-- **UI Refinements**: 
+- **UI Refinements**:
   - Replaced underscores with spaces in labels (e.g., "Recipient Source") within the detail view for better readability.
   - Simplified the main Broadcast Table by hiding row selection checkboxes.
 - **Cache Synchronization**: Implemented React Query invalidation to automatically refresh the recipient list in the statistics modal after editing a contact.
 
 ### 📁 Modified Files
+
 - `lib/api/whatsapp-marketing.ts`
 - `components/whatsapp-marketing/broadcasting-wa/modals/EditBroadcastModal.tsx`
 - `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`
 - `components/whatsapp-marketing/broadcasting-wa/BroadcastingWATable.tsx`
 
-
 ## [1.15.3] - 2026-04-08
 
 ### 🛠️ Refactor & Enhancements
+
 - **TrustedBy Testimonials**: Updated the "Trusted By" carousel with real-world Indonesian corporate data, featuring executives from various industries.
 - **Content Optimization**: Refined and trimmed testimonial text across all cards to ensure all UI elements (logos, 5-star ratings, names, and roles) remain perfectly visible within fixed-height containers.
 - **Logo Visibility & Fixes**: Implemented dark-mode variants for light background visibility and resolved broken asset issues by sourcing verified image URLs directly from official company websites.
 
 ### 📁 Modified Files
+
 - `components/layout/TrustedBy.tsx`
 
 ## [1.15.2] - 2026-04-07
 
 ### ✨ Added
+
 - **Official Company Logos**: Replaced AI-generated placeholders with official logos for PT Sigap, PT Kansai Paint, PT Sunson Textile, PT Woori Consulting, and PT Megacon to ensure brand authenticity.
 - **Logo Asset Management**: Created a dedicated `public/assets/logos/` directory to store high-quality official corporate assets for improved stability and performance.
 
 ### 🛠️ Refactor & Enhancements
+
 - **TrustedBy Testimonials**: Updated the "Trusted By" carousel with real-world Indonesian corporate data, featuring executives from various industries.
 - **Content Optimization**: Refined and trimmed testimonial text across all cards to ensure all UI elements (logos, 5-star ratings, names, and roles) remain perfectly visible within fixed-height containers.
 - **Logo Visibility & Fixes**: Implemented dark-mode variants for light background visibility and resolved broken asset issues by sourcing verified image URLs directly from official company websites.
 
 ### 📁 Modified Files
+
 - `package.json`
 - `components/layout/TrustedBy.tsx`
 
 ## [1.15.1] - 2026-04-06
 
 ### ✨ Added
+
 - **WhatsApp Marketing Recipients**: Simplified the recipient creation and update payloads by removing the redundant `recipient_type` field and standardizing the data structure for single and bulk operations.
 - **Row-level Navigation**: Enhanced the Broadcast Templates table by enabling direct navigation to the detail page upon clicking a table row, improving the interaction flow.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Template Table Interaction**: Added a visual hover effect (underline) to campaign names and removed the redundant "Edit" button from the action column.
 - **Navigation UX**: Updated the "Back" button in the template detail view to use a text variant with an arrow icon for a cleaner, more consistent interface.
 - **Form Focus Stability**: Fixed a focus loss issue in the template creation form where inputs would unmount on every keystroke by refactoring sub-components to the top level.
 
 ### 🐛 Fixed
+
 - **Product Price Formatting**: Fixed a bug in the product edit modal where backend prices with decimal points (e.g., `10000.00`) were incorrectly formatted as `1.000.000` instead of `10.000`.
 
 ### 📁 Modified Files
+
 - `lib/types/whatsapp-marketing.ts`
 - `components/whatsapp-marketing/recipients/AddRecipientModal.tsx`
 - `components/whatsapp-marketing/recipients/ImportWaRecipientModal.tsx`
@@ -390,19 +452,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.0] - 2026-04-02
 
 ### ✨ Added
+
 - **Broadcast Template Features**: Implemented core enhancements and visual refinements for the WhatsApp Broadcast Template module.
 - **Inline Variable Samples**: Implemented direct editing of variable sample values (e.g., {{1}}) within the template creation and detail forms.
 - **Character Counters**: Added real-time character count display (e.g., 50/1600) for WhatsApp template body fields in read-only mode.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Read-only Visual Overhaul**: Refined the "Content Configuration" section in template details with externalized labels, light-gray backgrounds, and muted borders for a professional disabled look.
 - **Automatic Name Sanitization**: Updated the template name field to automatically convert spaces to underscores and enforce lowercase alphanumeric characters during input.
 - **Dialog System Update**: Enhanced custom `DialogContent`, `DialogTitle`, and `DialogFooter` wrappers to properly forward the `sx` prop and other standard MUI attributes, resolving persistent TypeScript errors.
 
 ### 🐛 Fixed
+
 - **Responsive Layout Overlap**: Fixed a layout bug in `GeneralInfoDetail` where long SID strings and template names would overlap in multi-column views on smaller screens using `word-break: break-word`.
 
 ### 📁 Modified Files
+
 - `components/ui/dialog.tsx`
 - `components/ui/app-input.tsx`
 - `components/ui/app-textarea.tsx`
@@ -416,6 +482,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.0] - 2026-04-01
 
 ### ✨ Added
+
 - **WhatsApp Group Broadcast Detail**: Implemented a comprehensive detail page for WhatsApp groups with dual-tab navigation.
 - **Recipient Management**: Added a dedicated "Recipients" tab with server-side pagination, search, and "Import/Add" functionality directly within the group context.
 - **Campaign Statistics**: Added a "Broadcast (campaign) sent" tab listing all sent broadcasts with aggregated delivery stats (Sent, Delivered, Read, Failed).
@@ -424,16 +491,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Contextual Imports**: Enhanced `AddRecipientModal` and `ImportWaRecipientModal` to support `target: 'broadcast_group'`, ensuring imported contacts are automatically linked to the active group.
 
 ### 🛠️ Refactor & Enhancements
+
 - **Hook Optimization**: Updated `useGroupBroadcasts` for improved cache invalidation and state synchronization across the broadcasting module.
 - **API Harmonization**: Updated delete API integration to follow the bulk deletion pattern (IDs in request body) across the broadcasting module.
 
 ### 🐛 Fixed
+
 - **State Update Warning**: Fixed a React error "Cannot update a component while rendering a different component" in `GroupBroadcastingTable` by wrapping notification logic in `useEffect`.
 
 ### 📁 Created Files
+
 - `components/whatsapp-marketing/group-broadcasting/modals/ViewBroadcastCampaignStatsModal.tsx`
 
 ### 📁 Modified Files
+
 - `lib/types/whatsapp-marketing.ts`
 - `lib/hooks/useGroupBroadcasts.ts`
 - `components/whatsapp-marketing/group-broadcasting/GroupBroadcastingTable.tsx`
@@ -445,26 +516,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.13.2] - 2026-03-31
 
 ### 🛠️ Refactor & Enhancements
+
 - **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
 
 ### 📁 Modified Files
+
 - `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
 - `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
 
 ## [1.13.1] - 2026-03-30
 
 ### ✨ Added
+
 - **SMTP Selection in Campaigns**: Menambahkan dropdown pemilihan SMTP (Brevo vs Custom Mail Server) pada modal Add/Edit Campaign.
 - **SMTP Tracking Warning**: Menambahkan alert informatif saat menggunakan SMTP eksternal bahwa fitur tracking (delivery, opens, clicks, bounces) tidak tersedia.
 - **Improved SMTP Labels**: Format label SMTP server kini menampilkan `Name (From Email)` untuk kejelasan dan kemudahan identifikasi.
 - **Recipient Status in Contacts**: Menambahkan field `is_recipient` pada model `Contact` dan menampilkan status "Recipient" berdampingan dengan "Subscribed" menggunakan Chip pada preview tabel Contact.
 
 ### 🛠️ Refactor & Enhancements
+
 - **AppSelect Disabled Styling**: Memperbarui styling `AppSelect` saat dalam keadaan `disabled` (background abu-abu, menonaktifkan hover border) agar representasi visual lebih akurat.
 - **Campaign Payload Harmonization**: Menyesuaikan pengiriman payload `mail_server_id` (menggunakan `null` untuk opsi Brevo) dan mengkondisikan `mail_sender_id` hanya jika Brevo dipilih.
 - **Contact Property Renaming**: Mengubah property `is_subscribed` menjadi `is_subscriber` pada model `Contact` untuk konsistensi penamaan dengan entitas subscriber.
 
 ### 📁 Modified Files
+
 - `lib/types/email-marketing.ts`
 - `lib/models/types.ts`
 - `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
@@ -475,10 +551,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.13.0] - 2026-03-30
 
 ### ✨ Added
+
 - **Mail Server Sender Email**: Menambahkan field `from_email` pada konfigurasi Mail Server (Add/Edit Modal). Ini memisahkan username SMTP dengan alamat email pengirim yang muncul di pesan.
 - **Email Validation**: Menambahkan validasi pada field `from_email` untuk memastikan alamat email mengandung karakter `@`.
 
 ### 📁 Modified Files
+
 - `lib/models/types.ts`
 - `components/admin/mail-servers/AddMailServerModal.tsx`
 - `components/admin/mail-servers/EditMailServerModal.tsx`
@@ -486,11 +564,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.12.1] - 2026-03-27
 
 ### 🐛 Fixed
+
 - **Mail Server Validation**: Menghapus validasi email pada username field di Add/Edit Mail Server modal. Server akan melakukan validasi email saat testing koneksi.
 
 ## [1.12.0] - 2026-03-26
 
 ### ✨ Added
+
 - **Campaign Duplication**: Implementasi fitur cloning campaign (single & bulk) dengan suffix `(duplicate)` dan status default `draft`. API: `POST /api/v1/campaigns/duplicate`.
 - **Subscriber Duplication**: Implementasi fitur cloning subscriber (single & bulk) berdasarkan `contact_ids`. API: `POST /api/v1/subscribers/duplicate`.
 - **Contact Duplication**: Implementasi fitur cloning global contact (single & bulk) dengan `contact_ids`. Email & phone number dikosongkan pada hasil clone untuk menghindari unique constraint conflicts. API: `POST /api/v1/contacts/duplicate`.
@@ -498,18 +578,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AppButton - White Color**: Menambahkan varian warna `white` pada komponen `AppButton`.
 
 ### 🛠️ Refactor & Enhancements
+
 - **BulkActionsBar Styling**: Memperbarui warna teks dan icon pada `BulkActionsBar` agar lebih kontras menggunakan `primary.contrastText`.
 - **Duplicate Bulk Action**: Menambahkan tombol duplikasi pada toolbar aksi massal di `CampaignsTable`, `SubscribersTable`, dan `ContactTable`.
 
 ### 🐛 Fixed
+
 - **API Error Handling**: Memperbarui parsing error pada API client agar dapat menampilkan detail validasi dari server (e.g. `smtp_username` invalid) alih-alih hanya pesan generic "Invalid request data".
 - **SubscribersTable Bulk Variant**: Mengubah variant tombol bulk duplicate dari `outline` ke `primary` dan bulk delete ke `danger` untuk konsistensi UI.
 
 ### 📁 Created Files
+
 - `lib/api/email-marketing/subscribers.ts` (Modified with `duplicateSubscribers`)
 - `lib/api/contacts.ts` (Modified with `duplicateContacts`)
 
 ### 📁 Modified Files
+
 - `lib/api/email-marketing/campaigns.ts`
 - `lib/api/mail-servers.ts`
 - `lib/api/index.ts`
@@ -529,15 +613,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.2] - 2026-03-18
 
 ### ✨ Added
+
 - **ContactTable → SuperTable**: manualPagination, client-side filter (Name/Email/Phone text filter, Position & Company select faceted), globalFilter search toggle, export Excel/CSV loop pagination, renderRowActions (Eye preview + Edit + Delete), renderBulkActions sequential loop per ID, Add Contact + Import toolbar mobile responsive (Import: border biru icon-only, Add: bg biru icon-only), Preview Dialog popup info lengkap, autoResetPageIndex: false
 - **✅ Semua 12 tabel selesai dimigrasi ke SuperTable!**
 
 ### 🐛 Fixed
+
 - **ContactTable — Bulk delete**: Ganti endpoint DELETE /contacts dengan body contact_ids (500 error) ke sequential loop deleteContact per ID. Menampilkan successCount/failCount informatif. Contact linked ke resource lain (FOREIGN_KEY_VIOLATION) akan di-skip dengan pesan error yang jelas.
 - **ContactTable — Filter tidak berfungsi**: Root cause: manualFiltering: true membuat MRT tidak menjalankan client-side filter. Fix: hapus manualFiltering: true, tambah filterVariant text pada Name/Email/Phone, filterVariant select pada Position/Company.
 - **ContactTable — Mobile buttons**: Import dan Add Contact button disesuaikan dengan pattern SubscribersTable (Import: border biru icon-only, Add: bg solid biru icon-only di mobile view).
 
 ### 📁 Modified Files
+
 - `components/contact/ContactTable.tsx`
 - `components/contact/ContactClient.tsx`
 - `components/contact/columns.tsx` [NEW]
@@ -547,6 +634,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.1] - 2026-03-17
 
 ### 🐛 Fixed
+
 - **LeadDataTable — Infinite loop**: Fixed runtime error `Maximum update depth exceeded` saat pertama kali filter. Root cause: MRT `autoResetPageIndex` reset pageIndex setiap kali data/filter berubah dan trigger setState loop tanpa henti. Fix: `autoResetPageIndex: false` ditambahkan ke SuperTable core (types.ts + useTableConfig.tsx).
 - **LeadDataTable — Filter pindah ke SuperTable**: LeadFilters custom component dihapus dari parent, diganti columnFilters SuperTable: Status (select), Source (select), Assigned To (select), Last Contacted (date-range). Kanban View tetap sync via onStateChange + shared filteredLeads useMemo di lead-management.tsx.
 - **LeadDataTable — Search toggle**: `globalFilterAlwaysVisible: false` agar search bar toggle show/hide via icon kaca pembesar seperti tabel lain, bukan selalu tampil.
@@ -554,6 +642,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LeadDataTable — handleTableStateChange**: Tambahkan useRef + JSON.stringify deep comparison agar setState hanya dipanggil jika columnFilters benar-benar berubah nilainya.
 
 ### 📁 Modified Files
+
 - `components/lead-management/lead-management-table/data-table.tsx`
 - `components/lead-management/lead-management-table/columns.tsx`
 - `components/lead-management/lead-management.tsx`
@@ -564,6 +653,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.0] - 2026-03-17
 
 ### ✨ Added
+
 - **Industry Solution Pages**: Developed a full suite of marketing landing pages for **Sales, Customer Service, Marketing, Human Resource,** and **Operations** industries at `/solusi/[industry]`.
 - **Dynamic Industry Components**: Implemented custom sections (`Hero`, `Challenges`, `Solutions`, `ImpactCTA`) for each industry with optimized "Glassmorphism" UI and interactive mockups.
 - **Automated WhatsApp Links**: Integrated `getWhatsAppLink` utility across all solution Hero and CTA buttons to trigger context-aware WhatsApp messages.
@@ -572,6 +662,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Navigation**: Updated `SolutionMenu.tsx` (Desktop & Mobile) to include direct links to the newly created industry solution modules.
 
 ### 📁 Created Files
+
 - `app/solusi/sales/page.tsx`
 - `app/solusi/customer-service/page.tsx`
 - `app/solusi/marketing/page.tsx`
@@ -584,6 +675,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/solusi/operasional/*`
 
 ### 📁 Modified Files
+
 - `lib/utils/strings.ts`
 - `components/home/SolutionMenu.tsx`
 - `components/layout/AuthenticatedLayout.tsx`
@@ -591,6 +683,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.7] - 2026-03-17
 
 ### ✨ Added
+
 - **CompanyTable → SuperTable**: manualPagination,
   manualSorting, manualFiltering, globalFilter search,
   server-side filter Industry & Location (multi-select array),
@@ -601,11 +694,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mobile responsive toolbar
 
 ### 🐛 Fixed
+
 - **SubscribersTable**: mobile buttons Import dan Add
   styling disesuaikan referensi CampaignsTable
   (Import: border biru text biru, Add: bg solid biru text putih)
 
 ### 📁 Modified Files
+
 - components/omnichannel/company/company-table/CompanyTable.tsx
 - components/omnichannel/CompanyIntelligenceClient.tsx
 - components/email-marketing/subscribers/SubscribersTable.tsx
@@ -615,8 +710,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.6] - 2026-03-17
 
 ### 🐛 Fixed
+
 - **CompanyTable — filterValue.some crash**: Fixed runtime crash
-  `TypeError: filterValue.some is not a function` pada MRT_SelectCheckbox. 
+  `TypeError: filterValue.some is not a function` pada MRT_SelectCheckbox.
   Root cause: columnFilters di-restore dari URL sebagai string bukan array.
 
 - **useUrlSync.ts — Array serialization**: Serialize & deserialize
@@ -645,6 +741,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Location. MRT v3 auto-set filterFn dari filterVariant.
 
 ### 📁 Modified Files
+
 - components/omnichannel/company/company-table/CompanyTable.tsx
 - components/omnichannel/CompanyIntelligenceClient.tsx
 - components/ui/super-table/hooks/useUrlSync.ts
@@ -653,19 +750,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.5] - 2026-03-17
 
 ### ✨ Added
+
 - **DepartmentsTableMember → SuperTable**: manualPagination,
-  server-side filter Position & Status, bulk delete 
+  server-side filter Position & Status, bulk delete
   sequential, export Excel/CSV loop pagination,
   fix status badge dari hardcoded ke dynamic API value,
   AddMemberButton di toolbar
 
 ### 📁 Modified Files
+
 - components/organization/departments-table/DepartmentsTableMember.tsx
 - app/organization/[id]/page.tsx
 
 ## [1.10.4] - 2026-03-17
 
 ### ✨ Added
+
 - **DepartmentsTableList → SuperTable**: manualPagination,
   server-side filter Department (hardcoded select) &
   Branch (dynamic dari API), bulk delete sequential,
@@ -673,19 +773,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   row click navigation, mobile responsive
 
 ### 📁 Modified Files
+
 - components/organization/departments-table/DepartmentsTableList.tsx
 - components/organization/OrganizationClient.tsx
 
 ## [1.10.3] - 2026-03-17
 
 ### ✨ Added
+
 - **QuotationTable → SuperTable**: manualPagination,
   client-side status filter (Accepted/Pending/Rejected),
-  date range filter server-side, export Excel/CSV 
+  date range filter server-side, export Excel/CSV
   loop pagination, accessorFn Rupiah formatting,
   mobile responsive toolbar
 
 ### 📁 Modified Files
+
 - components/quotation/QuotationTable.tsx
 - components/quotation/QuotationClient.tsx
 - lib/store/quotation/index.ts
@@ -693,32 +796,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.10.2] - 2026-03-16
 
 ### ✨ Added
+
 - **CampaignsTable → SuperTable**: manualPagination,
   client-side status filter (Draft/In Queue/Sending/
-  Sent/Canceled), bulk delete dengan skip otomatis 
+  Sent/Canceled), bulk delete dengan skip otomatis
   untuk non-Draft, export Excel/CSV loop pagination,
   mobile responsive toolbar
 
 ### 📁 Modified Files
+
 - components/email-marketing/campaigns/CampaignsTable.tsx
 - components/email-marketing/campaigns/CampaignsClient.tsx
 
 ## [1.10.1] - 2026-03-16
 
 ### ✨ Added
+
 - **TableListUsers → SuperTable**: manualPagination,
-  server-side filter Position & Status, dynamic 
+  server-side filter Position & Status, dynamic
   position options, bulk delete sequential,
   export loop pagination, Print PDF toolbar,
   mobile responsive
 
 ### 📁 Modified Files
+
 - components/users/users-table/TableListUsers.tsx
 - components/users/UsersClient.tsx
 
 ## [1.10.0] - 2026-03-16
 
 ### ✨ Added
+
 - **SuperTable Core**: Komponen tabel universal dengan dukungan manualPagination, columnFilters, export Excel/CSV, bulk actions, dan urlSync
 - **RolesTable → SuperTable**: Server-side pagination & search, export loop pagination, facetedValues, urlSync, densityToggle, fullScreenToggle
 - **TicketTable → SuperTable**: Column filters per kolom (Priority/Status select, Agent UUID dropdown), bulk delete sequential dengan progress toast, export loop pagination, mobile responsive toolbar
@@ -726,12 +834,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Demo Page /demo/super-table**: Integration checklist, filter variants demo, accessorFn formatting demo, bulk delete demo, server-side simulation
 
 ### 🐛 Fixed
+
 - Generic constraint TData diubah dari Record<string,unknown> ke object untuk kompatibilitas semua TypeScript interface
 - Double pagination dihapus dari RolesTable dan TicketTable
 - Export kosong karena Authorization header tidak terkirim ke API
 - Export 422 error karena limit melebihi batas backend
 
 #### 📁 Modified Files
+
 - components/roles/RolesClient.tsx
 - components/roles/roles-table/RolesTable.tsx
 - components/roles/roles-button-open-modal/AddRoleButton.tsx
@@ -748,6 +858,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - app/demo/super-table/page.tsx
 
 #### 📁 Created Files
+
 - (tidak ada file baru, hanya modifikasi)
 
 ---
@@ -823,6 +934,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Showcased candidate database management and mass communication via WhatsApp Broadcast.
 
 #### 🏗️ Global Navigation & Layout
+
 - **Solution Menu**: Updated the `SolutionMenu` component to include the new industry solution pages.
 - **Authenticated Layout**: Configured all new solution routes in the `AuthenticatedLayout` to ensure public accessibility and consistent UI.
 
@@ -867,8 +979,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app/data-intelligence/industry-leaders/results/page.tsx`
 - `lib/api/company-intelligence.ts`
 
-
-
 ## [1.9.4] - 2026-03-11
 
 ### Detail Versi 1.9.4
@@ -903,7 +1013,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.9.3] - 2026-03-10
 
-
 ### Detail Versi 1.9.3
 
 #### ✨ Enhancements - Data Governance & Destructive Actions
@@ -932,7 +1041,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app/email-marketing/mailing-lists/[id]/page.tsx`
 
 ## [1.9.2] - 2026-03-10
-
 
 ### Detail Versi 1.9.1
 
@@ -993,7 +1101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/layout/AuthenticatedLayout.tsx`
 - `lib/utils/strings.ts`
 
-
 ## [1.9.0] - 2026-03-08
 
 ### Detail Versi 1.9.0
@@ -1009,7 +1116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `INDUSTRY_TAXONOMY` with multi-level sector classifications.
   - Implemented `GEOGRAPHIC_TAXONOMY` covering all Indonesian provinces and cities.
   - Added normalization helpers to standardize user input for CRM and Campaign data.
-- **Testing & Quality Assurance**: 
+- **Testing & Quality Assurance**:
   - Created a high-volume **Mock Data Generator** for stress-testing campaign listings with 500+ records.
   - Implemented a functional **Validation Test Suite** to ensure draft/send logic integrity.
 
@@ -1038,8 +1145,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/email-marketing/campaigns/modals/AddCampaignModal.tsx`
 - `components/email-marketing/campaigns/modals/EditCampaignModal.tsx`
 - `lib/types/email-marketing.ts`
-
-
 
 ## [1.8.35] - 2026-03-06
 
@@ -1126,17 +1231,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/lead-management/lead-detail-modal.tsx`
 - `components/contact/modal/EditContactModal.tsx`
 
-
 ## [1.8.32] - 2026-03-06
+
 ### Detail Versi 1.8.32
+
 #### ✨ Enhancements
+
 - **Pricing Page**: Added a new pricing trial component and a localization utility with various pricing-related strings.
+
 #### 📁 Files Modified
+
 - `components/price/PricingTrial.tsx` [NEW]
 - `lib/utils/strings.ts`
+
 ## [1.8.31] - 2026-03-05
+
 ### Detail Versi 1.8.31
+
 #### ✨ Omnichannel Enhancements & Dynamic Channels
+
 - **Unified Contacts API**: Refactored the Omnichannel Contact listing to use the new `/omnichannels/inbox/contacts` API via the `useOmnichannelContacts` hook. This provides unified access to contact details, dynamic channel availability, latest conversations, and unread counts.
 - **Dynamic Channel Selection**: Chat mode toggles (WhatsApp and Email) in the Chat Header now appear dynamically based on the contact's `channel_types`.
 - **Intelligent Conversation Routing**: Switching tabs automatically looks up and mounts the existing conversation ID for that specific channel type referencing the `useInbox` hook.
@@ -1145,26 +1258,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Email Sync Actions**: Added "Refresh" (24h sync) and "Full Sync" action buttons safely tucked in the Contact Sidebar for quick inbox synchronization without cluttering the chat view.
 - **Responsive Layout**: Re-engineered the chat interface for smaller screens. The Chat Header correctly wraps, and the Contact Details column transforms into a sliding overlay drawer with a backdrop on laptop sizes (`< xl` breakpoint).
 - **UI & Sentiment Polish**: Surfaced `sentiment_label` at the top of the chat header. Softened the read tick icon color and unified outbound message bubbles to use the primary brand blue (`#5479EE`).
+
 #### 📁 Files Modified
+
 - `components/omnichannel/OmnichannelClient.tsx`
 - `components/omnichannel/MessageList.tsx`
 - `lib/api/omnichannel.ts`
 - `lib/hooks/useOmnichannel.ts`
 - `lib/types/omnichannel.ts`
+
 ## [1.8.30] - 2026-03-05
+
 ### Detail Versi 1.8.30
+
 #### ✨ Enhancements
+
 - **Add Lead - Contact Picker**: The Name autocomplete dropdown in the "Add New Lead" form now shows a maximum of 10 results. When more results are available, a "Show More" link appears at the bottom that opens a full Contact Picker dialog with a searchable, paginated table (Name, Email, Phone, Company columns) for easier contact selection.
+
 #### 🐛 Bug Fixes
+
 - **Add Lead - Null Safety**: Fixed a crash in the contact search filter when contacts have null email or company values, which caused the autocomplete dropdown to silently break and show no results.
+
 #### 📁 Files Modified
+
 - `components/lead-management/ContactPickerDialog.tsx` [NEW]
 - `components/lead-management/add-lead-form.tsx`
+
 ## [1.8.29] - 2026-03-04
+
 ### Detail Versi 1.8.29
+
 #### 🐛 Bug Fixes
+
 - **Dashboard Sales Funnel**: Fixed an issue where the Sales Funnel chart would appear completely blank (no axes or labels) if the backend returned an object containing an `items` array instead of a direct array, or if it returned an empty dataset. The chart data mapping now safely extracts the items array and always fills all 6 funnel stages (Prospect, Qualified, Negotiation, Proposal, Closed - Won, Closed - Lost) with zero-counts when no data is present, ensuring the chart structure always renders properly.
+
 #### 📁 Files Modified
+
 - `components/dashboard/DashboardClient.tsx`
 
 ## [1.8.28] - 2026-03-04
@@ -1234,6 +1363,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.25
 
 #### 🐛 Bug Fixes
+
 - **Contact Import - Name Only Required**: Fixed the 'Import Contacts' button disabled state logic to only require the Name field to be valid, previously it mistakenly required both Name and Email data to be present.
 
 #### 📁 Files Modified
@@ -1443,6 +1573,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses `/api/proxy/contacts/bulk` endpoint
 
 #### 🐛 Bug Fixes
+
 - **Google Fonts**: Removed all Poppins font imports to fix build timeout issues on restricted networks
 - **Localization**: Created custom LocalizedStrings implementation to replace react-localization dependency
 
@@ -1598,9 +1729,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.6
 
 #### 🎫 Support Tickets
+
 - **Modal Confirmation Fixes**: Adjusted the behavior of the confirmation popup in the Add Ticket and Edit Ticket modals. Clicking the "Cancel" button now immediately closes the modal without a prompt, while clicking on the backdrop (shadow area) or pressing Escape retains the confirmation popup to prevent accidental data loss.
 
 #### 📁 Files Modified
+
 - `components/support/tickets/modals/AddTicketModal.tsx`
 - `components/support/tickets/modals/EditTicketModal.tsx`
 
@@ -1609,6 +1742,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.5
 
 #### Subscription & Billing
+
 - **Midtrans Billing Integration**: Implemented API endpoints for fetching billing plans (`GET /billings/plans`), fetching current billing status (`GET /billings/current`), and initiating plan checkouts (`POST /billings/checkout`) inside `lib/api/billings.ts`.
 - **Dynamic Subscription UI**: Replaced static pricing tiers with real billing plans fetched from the backend. The active plan and cycle end date are now dynamically displayed. The "Upgrade" action will trigger the `checkoutBillingPlan` endpoint and redirect users to the Midtrans snap page.
 - **Menu Relocation**: Moved the "My Subscription" / "Subscription / Billing" navigation link from the top-right profile dropdown menu to the main left `Sidebar` under the **ADMIN** section for better visibility.
@@ -1652,6 +1786,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Detail Versi 1.8.2
 
 #### 🎯 Individual Intelligence - Person Refinement
+
 - **Person-based Grid**: Refactored the display logic to flatten the API response, ensuring every key person from a company is shown as an individual, selectable card.
 - **Design Restoration**: Restored the original "Company Title" layout while maintaining a unique card per person, preserving visual consistency with existing designs.
 - **Standardized UI**: Switched the selection checkbox to use the `AppInput` component for consistency with the rest of the application.
@@ -1723,7 +1858,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Redundant Call Fix**: Resolved an issue where the API was being called three times on page load by stabilizing authentication and search debouncer dependencies.
 - **Memoized Auth**: Wrapped `getToken` in `useCallback` within `AuthContext` to prevent cascading re-renders in consumer components.
 
-####  Files Modified
+#### Files Modified
 
 - `components/intelligence-individual/IndividualClient.tsx`
 - `components/intelligence-individual/IndividualCard.tsx`
@@ -1884,7 +2019,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### ✨ New Features & Improvements
 
-- **Omnichannel Chat**: Added in-app image attachments preview with Next.js `Image`. Clicking on a chat image now seamlessly opens a full-screen lightbox modal instead of opening in a new tab. 
+- **Omnichannel Chat**: Added in-app image attachments preview with Next.js `Image`. Clicking on a chat image now seamlessly opens a full-screen lightbox modal instead of opening in a new tab.
 - **Next Config**: Whitelisted `vercel-storage.com` in `next.config.mjs` to support Next image optimization for message attachments.
 
 #### 📁 Files Modified
@@ -1964,7 +2099,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Conversation view polls every 5 seconds for new messages
     - Supports webhook-based message delivery from WhatsApp/Email
 
-- **Account Management**: 
+- **Account Management**:
   - Connect WhatsApp accounts via Twilio integration (phone number, account SID, auth token)
   - Connect Email accounts with Gmail IMAP/SMTP support (email, app password, display name)
   - Account list with delete functionality and confirmation modal
@@ -2000,6 +2135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sidebar Cleanup**: Removed unused Power icon import from Sidebar component
 
 #### 📁 Files Modified
+
 - `components/modal/AddContact.tsx`
 - `components/modal/EditContact.tsx`
 - `components/layout/Sidebar.tsx`
@@ -2489,6 +2625,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed alignment styling issues to ensure visual consistency.
 
 #### 📁 Files Modified
+
 - `components/admin/mail-servers/MailServerClient.tsx`
 - `components/organization/departments-table/DepartmentsTableList.tsx`
 
@@ -2674,6 +2811,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/layout/Topbar.tsx` - Dynamic unread count fetching.
 - `app/api/proxy/[...path]/route.ts` - Env variable alignment.
 - `next.config.mjs` - Proxy rewrite stability fix.
+
 ## [1.6.0] - 2026-02-12
 
 ### Detail Versi 1.6.0
@@ -2768,8 +2906,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `components/ui/app-datepicker.tsx`
 
 ---
-## [1.5.1] - 2026-02-10
 
+## [1.5.1] - 2026-02-10
 
 ### Detail Versi 1.5.1
 
@@ -3047,16 +3185,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhance error and notification messages with React node support, improved multi-line formatting, and user-friendly field labels.
 
 ---
+
 ## [1.3.2] - 2026-02-02
 
 ### Detail Versi 1.3.2
 
 #### 🚀 Lead Management Stability & Restructuring
+
 - **Stability Fix**: Resolved "Maximum update depth exceeded" crash and "status.toLowerCase is not a function" error by lifting filter state and implementing memoized filtering.
 - **Unified Card Layout**: Integrated Filters, View Mode toggles (Table/Kanban), and "Add Lead" button into a single, cohesive card structure.
 - **Improved Performance**: Refactored `LeadFilters` into a pure controlled component to eliminate redundant re-renders.
 
 #### 🎨 Support Ticket UI & UX Standardization
+
 - **Refined Layout**: Migrated the Ticket Management page to a card-based structure with a unified search/action toolbar and MUI `TablePagination`.
 - **High-Fidelity Modals**:
   - Enforced a strictly compliant **22px bold** title design for Add/Edit Ticket modals.
@@ -3066,6 +3207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Mapping Fix**: Resolved the "Unassigned" agent bug by correctly mapping nested `assigned_agent` objects and displaying human-readable `ticket_code` (e.g., `TKT-005`).
 
 #### 🎨 General UI Standardization
+
 - **Header Color Sync**: Globally standardized table header backgrounds to `bg-[#EEF2FD]!` across all modules.
 - **Table Refinement**: Applied the standard 24px padding and consistent border styling to the Contact Management table.
 
@@ -3074,6 +3216,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.1] - 2026-02-02
 
 ### Changed
+
 - Standardized table UI across the application (Leads, Quotations, Products, Email Marketing, and Contacts) with consistent 24px padding and margins.
 - Improved table containers with standardized borders and rounded corners.
 - Fixed Ticket Management background and assigned agent identification.
@@ -3186,6 +3329,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.4] - 2026-01-27
 
 ### Detail Versi 1.2.4
+
 #### ✨ Lead Management Enhancements & Validation
 
 - **Comprehensive Validation:**
@@ -3535,6 +3679,7 @@ Then uncomment the real API calls and remove the mock data imports.
 ## [0.5.1] - 2026-01-14
 
 ### Detail Versi 0.5.1
+
 #### ♻️ Refactor Add Contact Modal
 
 - **Deskripsi:**
@@ -3604,6 +3749,7 @@ Then uncomment the real API calls and remove the mock data imports.
 ### Detail Versi 0.2.0
 
 #### 🎨 UI/UX Enhancement
+
 - **Profile Page Revamp:**
   - **New Dashboard UI:** Implementasi halaman profile baru dengan desain dashboard modern, cover image, dan ringkasan informasi user.
   - **Responsive Design:** Penyesuaian layout untuk tampilan mobile dan desktop yang konsisten.

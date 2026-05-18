@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.3] - 2026-05-18
+
+### 🛠️ Refactor & Enhancements
+
+- **Client Logos Layout Alignment & Full-Width Viewport**:
+  - Restructured `ClientLogos` component to match the visual design and typography of `TrustedBy` using MUI `Box`, `Container`, and `Typography` elements.
+  - Linked the title and subtitle texts to the shared localizations (`strings.trusted_by_title` and `strings.trusted_by_subtitle`).
+  - Constrained the header layout inside `<Container maxWidth="lg">` while allowing the infinite marquee track to sit outside the boundary, rendering at full-width viewport.
+
 ## [1.20.2] - 2026-05-18
 
 ### 🛠️ Refactor & Enhancements

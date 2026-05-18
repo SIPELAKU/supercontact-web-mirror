@@ -12,6 +12,7 @@ import Productivity from "./Productivity";
 import TrustedBy from "../layout/TrustedBy";
 import FAQ from "../layout/FAQ";
 import CTA from "../layout/CTA";
+import { ClientLogos } from "../ui/ClientLogos";
 
 export default function HomeClient() {
   const { isAuthenticated, loading } = useAuth();
@@ -52,7 +53,8 @@ export default function HomeClient() {
           <Productivity />
         </FadeIn>
         <FadeIn direction="up" delay={0.3} fullWidth>
-          <TrustedBy />
+          {/* <TrustedBy /> */}
+          <ClientLogos />
         </FadeIn>
         <FadeIn direction="up" delay={0.4} fullWidth>
           <FAQ />

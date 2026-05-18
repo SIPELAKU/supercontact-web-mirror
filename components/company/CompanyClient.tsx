@@ -12,6 +12,7 @@ import CompanyHero from './CompanyHero';
 import CompanyVision from './CompanyVision';
 import TrustedBy from '../layout/TrustedBy';
 import { bgcolor } from '@mui/system';
+import { ClientLogos } from '../ui/ClientLogos';
 
 
 export const CompanyClient = () => {
@@ -25,7 +26,8 @@ export const CompanyClient = () => {
                 <CompanyVision />
 
                 {/* Reusing TrustedBy Section */}
-                <TrustedBy />
+                {/* <TrustedBy /> */}
+                <ClientLogos />
 
                 {/* <Box sx={{ pt: 10, bgcolor: '#F5F5F5' }}>
                     <CompanyHelp />

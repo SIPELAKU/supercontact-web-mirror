@@ -59,7 +59,7 @@ const checklistItems: { ok: boolean; text: string; why: string }[] = [
     { ok: false, text: "Jangan pakai display:flex / display:grid untuk layout", why: "Tidak didukung reliable oleh client email manapun" },
     { ok: false, text: "Jangan pakai backdrop-filter, CSS custom properties, position:fixed", why: "Fitur CSS modern ini tidak dikenal rendering engine email" },
     { ok: false, text: "Jangan andalkan <style> block untuk sesuatu yang kritikal", why: "Banyak client membuang <style> sepenuhnya" },
-    { ok: false, text: "Jangan tempel section \"Custom HTML\" berisi flex/grid buatan sendiri", why: "Ini persis penyebab insiden template rusak sebelumnya" },
+    { ok: false, text: "Jangan tempel section \"Custom HTML\" berisi flex/grid buatan sendiri", why: "Bagian ini tidak ikut ter-konversi otomatis oleh builder ke format email-safe" },
 ];
 
 export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplateGuideDialogProps) {
@@ -117,7 +117,7 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
 
                 <SectionTitle>Layout: Table, Bukan Flexbox/Grid</SectionTitle>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Contoh nyata dari insiden yang pernah terjadi — header dengan logo di kiri dan badge di kanan.
+                    Contoh umum: header dengan logo di kiri dan badge di kanan.
                 </Typography>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>

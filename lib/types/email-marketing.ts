@@ -156,6 +156,7 @@ export interface Campaign {
   subject: string;
   html_content: string;
   status: string;
+  failure_reason?: string | null;
   total_target: number;
   recipient_source: string;
   mailing_list_ids?: string[];
@@ -214,10 +215,10 @@ export interface CreateCampaignData {
 
 export interface UpdateCampaignData {
   recipient_source?: 'mailing_list' | 'subscriber';
-  editor_type: 'simple_editor' | 'visual_builder';
-  subject: string;
+  editor_type?: 'simple_editor' | 'visual_builder';
+  subject?: string;
   html_content?: string;
-  action: 'send' | 'draft';
+  action: 'send' | 'draft' | 'stop';
   contact_ids?: string[];
   mailing_list_ids?: string[];
   mail_sender_id?: string;

@@ -15,7 +15,7 @@ import AddCampaignModal from '@/components/email-marketing/campaigns/modals/AddC
 import EditCampaignModal from '@/components/email-marketing/campaigns/modals/EditCampaignModal';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import PageHeader from '@/components/ui/page-header';
-import { useDeleteCampaign, useCampaigns, useDuplicateCampaigns } from '@/lib/hooks/useCampaigns';
+import { useDeleteCampaign, useCampaigns, useDuplicateCampaigns, useUpdateCampaign } from '@/lib/hooks/useCampaigns';
 import { fetchCampaigns } from '@/lib/api';
 import { Campaign } from '@/lib/types/email-marketing';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
@@ -33,8 +33,10 @@ export default function CampaignsClient() {
   const { token } = useAuth();
   const deleteMutation = useDeleteCampaign();
   const duplicateMutation = useDuplicateCampaigns();
+  const updateMutation = useUpdateCampaign();
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkDuplicating, setIsBulkDuplicating] = useState(false);
+  const [resendingCampaignId, setResendingCampaignId] = useState<string | null>(null);
 
   // SuperTable State Hook
   const [tableState, setTableState] = useState({
@@ -164,6 +166,22 @@ export default function CampaignsClient() {
     }
   };
 
+  const handleResend = async (campaign: Campaign) => {
+    setResendingCampaignId(campaign.id);
+    try {
+      await updateMutation.mutateAsync({
+        campaignId: campaign.id,
+        data: { action: 'send' },
+      });
+      notify.success(`Campaign "${campaign.subject}" has been queued for resending.`);
+      forceRefetch();
+    } catch (err: any) {
+      handleError(err, "Resend Campaign");
+    } finally {
+      setResendingCampaignId(null);
+    }
+  };
+
   const handleBulkDuplicate = async (
     selectedCampaigns: Campaign[],
     clearSelection: () => void
@@ -248,6 +266,8 @@ export default function CampaignsClient() {
         onDelete={handleDeleteRequest}
         onView={handleView}
         onDuplicate={handleDuplicate}
+        onResend={handleResend}
+        resendingCampaignId={resendingCampaignId}
         onBulkDelete={handleBulkDelete}
         onBulkDuplicate={handleBulkDuplicate}
         isBulkDeleting={isBulkDeleting}
@@ -288,6 +308,8 @@ export default function CampaignsClient() {
         open={isViewModalOpen}
         onClose={handleCloseModals}
         campaign={selectedCampaign}
+        onResend={handleResend}
+        isResending={!!selectedCampaign && resendingCampaignId === selectedCampaign.id}
       />
 
       <ConfirmationPopup

@@ -2,6 +2,7 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import {
+    Alert,
     Box,
     Chip,
     Dialog,
@@ -27,6 +28,8 @@ interface ViewCampaignStatsModalProps {
     open: boolean;
     onClose: () => void;
     campaign: Campaign | null;
+    onResend?: (campaign: Campaign) => void;
+    isResending?: boolean;
 }
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: number | string, icon: any, color: string }) => (
@@ -65,7 +68,7 @@ const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: n
     </Paper>
 );
 
-const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsModalProps) => {
+const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending }: ViewCampaignStatsModalProps) => {
     const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(campaign);
     const [tableState, setTableState] = useState({
         pageIndex: 0,
@@ -232,6 +235,12 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                                     </Box>
                                 </Box>
 
+                                {currentCampaign.status.toLowerCase() === 'failed' && currentCampaign.failure_reason && (
+                                    <Alert severity="error" variant="outlined">
+                                        {currentCampaign.failure_reason}
+                                    </Alert>
+                                )}
+
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
                                         <StatCard
@@ -336,6 +345,15 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign }: ViewCampaignStatsMo
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2 }}>
+                    {currentCampaign.status.toLowerCase() === 'failed' && onResend && (
+                        <AppButton
+                            onClick={() => onResend(currentCampaign)}
+                            disabled={isResending}
+                            variantStyle="primary"
+                        >
+                            {isResending ? 'Resending...' : 'Resend Campaign'}
+                        </AppButton>
+                    )}
                     <AppButton onClick={onClose} variantStyle="outline">
                         Close
                     </AppButton>

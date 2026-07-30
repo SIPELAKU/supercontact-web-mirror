@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Box, Chip } from "@mui/material";
+import { Box, Chip, Tooltip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Campaign } from "@/lib/types/email-marketing";
-import { DeleteButton, EditButton, ViewButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, ViewButton, DuplicateButton, ResendButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 
@@ -24,9 +24,11 @@ interface CampaignsTableProps {
   isBulkDeleting?: boolean;
   isBulkDuplicating?: boolean;
   onDuplicate?: (campaign: Campaign) => void;
+  onResend?: (campaign: Campaign) => void;
+  resendingCampaignId?: string | null;
 }
 
-const getStatusChip = (status: string) => {
+const getStatusChip = (status: string, failureReason?: string | null) => {
   const statusLower = status.toLowerCase();
   switch (statusLower) {
     case 'draft': return <Chip label="Draft" color="default" size="small" />;
@@ -37,6 +39,16 @@ const getStatusChip = (status: string) => {
     case 'done': return <Chip label="Sent" color="success" size="small" />;
     case 'canceled':
     case 'cancelled': return <Chip label="Canceled" color="error" size="small" />;
+    case 'failed': {
+      const chip = <Chip label="Failed" color="error" size="small" />;
+      return failureReason ? (
+        <Tooltip title={failureReason} arrow>
+          <span>{chip}</span>
+        </Tooltip>
+      ) : (
+        chip
+      );
+    }
     default: return <Chip label={status} size="small" />;
   }
 };
@@ -57,6 +69,8 @@ export default function CampaignsTable({
   isBulkDeleting,
   isBulkDuplicating,
   onDuplicate,
+  onResend,
+  resendingCampaignId,
 }: CampaignsTableProps) {
   const columns = useMemo<MRT_ColumnDef<Campaign>[]>(() => [
     {
@@ -80,7 +94,7 @@ export default function CampaignsTable({
       filterVariant: "select",
       filterSelectOptions: ['Draft', 'In Queue', 'Sending', 'Sent', 'Canceled'],
       enableSorting: false,
-      Cell: ({ row }) => getStatusChip(row.original.status),
+      Cell: ({ row }) => getStatusChip(row.original.status, row.original.failure_reason),
     },
     {
       id: "sent_at",
@@ -119,10 +133,18 @@ export default function CampaignsTable({
           row.original.status.toLowerCase() === 'draft' ||
           row.original.status.toLowerCase() === 'in_queue' ||
           row.original.status.toLowerCase() === 'queued';
+        const isFailed = row.original.status.toLowerCase() === 'failed';
 
         return (
           <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
             {onView && <ViewButton onClick={() => onView(row.original)} />}
+            {isFailed && onResend && (
+              <ResendButton
+                onClick={() => onResend(row.original)}
+                isLoading={resendingCampaignId === row.original.id}
+                customTitle="Resend"
+              />
+            )}
             <EditButton
               onClick={() => onEdit(row.original)}
               disabled={!canEditOrDelete}
@@ -143,7 +165,7 @@ export default function CampaignsTable({
         );
       },
     },
-  ], [onDelete, onEdit, onView, onDuplicate]);
+  ], [onDelete, onEdit, onView, onDuplicate, onResend, resendingCampaignId]);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">

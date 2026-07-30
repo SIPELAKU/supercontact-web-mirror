@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.4] - 2026-07-30
+
+### ✨ Features
+
+- **Campaign Failure Reason & Resend**:
+  - Campaign type now carries `failure_reason` from the API; shown as a tooltip on the "Failed" status chip in the campaigns table (which previously had no dedicated styling for that status) and as an error banner in the campaign stats modal.
+  - Added a Resend action (table row + stats modal) for campaigns in `Failed` status, calling the update-campaign endpoint with `{action: 'send'}` to requeue delivery without recreating the campaign.
+
 ## [1.20.3] - 2026-05-18
 
 ### 🛠️ Refactor & Enhancements

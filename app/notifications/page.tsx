@@ -6,7 +6,6 @@ import PageHeader from "@/components/ui/page-header";
 import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { format, isToday, isYesterday } from "date-fns";
-import { useRouter } from "next/navigation";
 
 interface Notification {
     id: string;
@@ -30,7 +29,6 @@ const badgeStyle: Record<string, string> = {
 
 
 export default function NotificationPage() {
-    const router = useRouter();
     const { getToken, isAuthenticated } = useAuth();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -109,7 +107,9 @@ export default function NotificationPage() {
 
         const route = getNotificationRoute(notif);
         if (route) {
-            router.push(route);
+            // Full page navigation (not router.push) - guarantees a fresh mount of
+            // the target page even when already on it.
+            window.location.href = route;
         }
     };
 

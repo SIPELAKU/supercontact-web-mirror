@@ -7,7 +7,6 @@ import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead,
 import { useAuth } from "@/lib/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface NotificationProps {
   open: boolean;
@@ -16,7 +15,6 @@ interface NotificationProps {
 
 export default function Notification({ open, onClose }: NotificationProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const { getToken, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -96,7 +94,11 @@ export default function Notification({ open, onClose }: NotificationProps) {
     const route = getNotificationRoute(notif);
     if (route) {
       onClose();
-      router.push(route);
+      // Full page navigation (not router.push) - guarantees a fresh mount of
+      // the target page even when already on it (e.g. clicking a different
+      // conversation notification while already on /omnichannel), instead of
+      // depending on client-side state re-syncing to a changed query param.
+      window.location.href = route;
     }
   };
 

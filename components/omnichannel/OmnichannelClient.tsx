@@ -29,7 +29,7 @@ import {
     Paperclip,
     Settings
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -59,6 +59,7 @@ import RichTextToolbar from "../email-marketing/campaigns/RichTextToolbar";
 
 export default function OmnichannelClient() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { getToken } = useAuth();
     const [selectedContact, setSelectedContact] = useState<OmnichannelContact | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -124,6 +125,17 @@ export default function OmnichannelClient() {
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const { data: conversation, isLoading: isLoadingConversation } = useConversation(activeConversationId || "");
 
+    // Deep-link support: ?conversation=<id> (used by the notification panel to jump
+    // straight to a conversation). This page only exposes conversations through the
+    // contact list on the left, so we resolve the conversation's contact identifier,
+    // search for it, then select it exactly like a normal manual click would.
+    const [pendingDeepLinkConversationId, setPendingDeepLinkConversationId] = useState<string | null>(
+        () => searchParams.get("conversation")
+    );
+    const { data: deepLinkConversation, isError: isDeepLinkConversationError } = useConversation(
+        pendingDeepLinkConversationId || ""
+    );
+
     // Mutations
     const sendMessageMutation = useSendMessage();
     const deleteConversationMutation = useDeleteConversation();
@@ -186,6 +198,40 @@ export default function OmnichannelClient() {
             }
         }
     };
+
+    // Deep-link step 1: once the target conversation loads, search contacts by its
+    // identifier so the owning contact surfaces in the (possibly paginated) list.
+    useEffect(() => {
+        if (!pendingDeepLinkConversationId) return;
+        if (isDeepLinkConversationError) {
+            setPendingDeepLinkConversationId(null);
+            return;
+        }
+        if (!deepLinkConversation) return;
+        const identifier = deepLinkConversation.contact_identifier || deepLinkConversation.external_contact_identifier;
+        if (identifier && identifier !== searchTerm) {
+            setSearchTerm(identifier);
+        }
+    }, [pendingDeepLinkConversationId, deepLinkConversation, isDeepLinkConversationError]);
+
+    // Deep-link step 2: once the matching contact appears in the search results,
+    // select it exactly like a manual click - this drives the same effect that
+    // resolves activeConversationId, so left/center/right panels all populate
+    // through the normal flow instead of a one-off standalone page.
+    useEffect(() => {
+        // Wait until step 1 has actually narrowed the search - otherwise the
+        // "exactly one result" fallback below could match against the
+        // default/unfiltered contact list before the identifier search runs.
+        if (!pendingDeepLinkConversationId || !searchTerm) return;
+        const match =
+            filteredContacts.find(
+                (c: OmnichannelContact) => c.latest_conversation_id === pendingDeepLinkConversationId
+            ) || (filteredContacts.length === 1 ? filteredContacts[0] : undefined);
+        if (match) {
+            handleSelectContact(match);
+            setPendingDeepLinkConversationId(null);
+        }
+    }, [filteredContacts, pendingDeepLinkConversationId, searchTerm]);
 
     const handleCreateContact = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -51,7 +51,11 @@ export interface UnreadCountResponse {
 export function getNotificationRoute(notif: NotificationData): string | null {
     switch (notif.entity_type) {
         case "omnichannel_conversation":
-            return notif.entity_id ? `/omnichannel/conversations/${notif.entity_id}` : null;
+            // Route into the main omnichannel workspace (left: contacts, center:
+            // conversation, right: contact details) rather than the standalone
+            // /omnichannel/conversations/[id] page, which only renders the message
+            // thread on its own with no contact list or details panel.
+            return notif.entity_id ? `/omnichannel?conversation=${notif.entity_id}` : null;
         case "chat_message":
             return "/inbox";
         case "ticket":

@@ -72,7 +72,7 @@ export {
 
 // Notifications API
 export {
-    fetchNotifications, fetchUnreadCount, markNotificationAsRead, markAllNotificationsAsRead, type NotificationData, type NotificationsResponse, type UnreadCountResponse
+    fetchNotifications, fetchUnreadCount, markNotificationAsRead, markAllNotificationsAsRead, getNotificationRoute, type NotificationData, type NotificationsResponse, type UnreadCountResponse
 } from './notifications';
 
 // WhatsApp Marketing API

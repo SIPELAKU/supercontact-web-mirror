@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.6] - 2026-07-31
+
+### 🐛 Bug Fixes
+
+- **Notification Click Navigation**: Clicking a notification (both the dropdown panel and the full `/notifications` page) now actually navigates to the relevant page instead of only marking it as read - covers omnichannel conversations, internal chat, tickets, pipeline, and leads.
+- **Omnichannel Conversation Routing**: Notification clicks for omnichannel conversations now land in the actual three-panel workspace (`/omnichannel`, contacts + conversation + details) instead of a bare standalone conversation page.
+- **Omnichannel Conversation Resolution**: Fixed the center panel not loading a conversation when it wasn't among the 20 most recent in the default inbox listing (affects both deep-linked and search-selected contacts).
+- **Omnichannel Channel Tab Switching**: Fixed the Email tab showing WhatsApp messages for contacts with both channels - conversation matching is now scoped to the active WhatsApp/Email tab, with a safety-net guard against ever displaying the wrong channel's messages.
+- **Notification Navigation Reliability**: Switched notification clicks to a full page navigation instead of client-side routing, guaranteeing a fresh page state on every click regardless of the currently open page.
+
 ## [1.20.5] - 2026-07-31
 
 ### 📝 Documentation

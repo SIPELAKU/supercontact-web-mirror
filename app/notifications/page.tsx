@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import BannerDashboard from "@/components/ui/banner-dashboard"
 import PageHeader from "@/components/ui/page-header";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { format, isToday, isYesterday } from "date-fns";
 
@@ -91,18 +91,25 @@ export default function NotificationPage() {
     };
 
     const handleNotificationClick = async (notif: NotificationData) => {
-        if (notif.is_read) return;
-
-        try {
-            const token = await getToken();
-            const res = await markNotificationAsRead(token, notif.id);
-            if (res.success) {
-                setNotifications((prev) => prev.map((n) =>
-                    n.id === notif.id ? { ...n, is_read: true } : n
-                ));
+        if (!notif.is_read) {
+            try {
+                const token = await getToken();
+                const res = await markNotificationAsRead(token, notif.id);
+                if (res.success) {
+                    setNotifications((prev) => prev.map((n) =>
+                        n.id === notif.id ? { ...n, is_read: true } : n
+                    ));
+                }
+            } catch (err) {
+                console.error("Failed to mark notification as read:", err);
             }
-        } catch (err) {
-            console.error("Failed to mark notification as read:", err);
+        }
+
+        const route = getNotificationRoute(notif);
+        if (route) {
+            // Full page navigation (not router.push) - guarantees a fresh mount of
+            // the target page even when already on it.
+            window.location.href = route;
         }
     };
 

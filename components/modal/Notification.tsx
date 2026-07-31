@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AppButton } from "../ui/app-button";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -89,6 +89,19 @@ export default function Notification({ open, onClose }: NotificationProps) {
     }
   };
 
+  const handleNotificationClick = (notif: NotificationData) => {
+    handleMarkRead(notif.id);
+    const route = getNotificationRoute(notif);
+    if (route) {
+      onClose();
+      // Full page navigation (not router.push) - guarantees a fresh mount of
+      // the target page even when already on it (e.g. clicking a different
+      // conversation notification while already on /omnichannel), instead of
+      // depending on client-side state re-syncing to a changed query param.
+      window.location.href = route;
+    }
+  };
+
   if (!mounted || !open) return null;
 
   return createPortal(
@@ -130,7 +143,7 @@ export default function Notification({ open, onClose }: NotificationProps) {
                   description={notif.description}
                   time={formatTime(notif.created_at)}
                   isRead={notif.is_read}
-                  onClick={() => handleMarkRead(notif.id)}
+                  onClick={() => handleNotificationClick(notif)}
                 />
               ))}
             </>

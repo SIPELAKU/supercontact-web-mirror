@@ -37,6 +37,35 @@ export interface UnreadCountResponse {
 }
 
 // ============================================
+// Navigation
+// ============================================
+
+/**
+ * Maps a notification's entity_type to where clicking it should navigate.
+ * Some entity types (task, note) don't have a standalone detail route in
+ * this app today - they only exist inside a contact's detail page - and the
+ * notification payload doesn't carry the parent contact_id needed to build
+ * that link, so those are intentionally left unmapped (returns null, no
+ * navigation) rather than guessing a wrong URL.
+ */
+export function getNotificationRoute(notif: NotificationData): string | null {
+    switch (notif.entity_type) {
+        case "omnichannel_conversation":
+            return notif.entity_id ? `/omnichannel/conversations/${notif.entity_id}` : null;
+        case "chat_message":
+            return "/inbox";
+        case "ticket":
+            return "/support/tickets";
+        case "pipeline":
+            return "/sales/pipeline";
+        case "lead":
+            return "/lead-management";
+        default:
+            return null;
+    }
+}
+
+// ============================================
 // Functions
 // ============================================
 

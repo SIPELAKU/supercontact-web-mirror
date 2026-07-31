@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import BannerDashboard from "@/components/ui/banner-dashboard"
 import PageHeader from "@/components/ui/page-header";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { format, isToday, isYesterday } from "date-fns";
+import { useRouter } from "next/navigation";
 
 interface Notification {
     id: string;
@@ -29,6 +30,7 @@ const badgeStyle: Record<string, string> = {
 
 
 export default function NotificationPage() {
+    const router = useRouter();
     const { getToken, isAuthenticated } = useAuth();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -91,18 +93,23 @@ export default function NotificationPage() {
     };
 
     const handleNotificationClick = async (notif: NotificationData) => {
-        if (notif.is_read) return;
-
-        try {
-            const token = await getToken();
-            const res = await markNotificationAsRead(token, notif.id);
-            if (res.success) {
-                setNotifications((prev) => prev.map((n) =>
-                    n.id === notif.id ? { ...n, is_read: true } : n
-                ));
+        if (!notif.is_read) {
+            try {
+                const token = await getToken();
+                const res = await markNotificationAsRead(token, notif.id);
+                if (res.success) {
+                    setNotifications((prev) => prev.map((n) =>
+                        n.id === notif.id ? { ...n, is_read: true } : n
+                    ));
+                }
+            } catch (err) {
+                console.error("Failed to mark notification as read:", err);
             }
-        } catch (err) {
-            console.error("Failed to mark notification as read:", err);
+        }
+
+        const route = getNotificationRoute(notif);
+        if (route) {
+            router.push(route);
         }
     };
 

@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AppButton } from "../ui/app-button";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, NotificationData } from "@/lib/api";
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface NotificationProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface NotificationProps {
 
 export default function Notification({ open, onClose }: NotificationProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const { getToken, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
@@ -89,6 +91,15 @@ export default function Notification({ open, onClose }: NotificationProps) {
     }
   };
 
+  const handleNotificationClick = (notif: NotificationData) => {
+    handleMarkRead(notif.id);
+    const route = getNotificationRoute(notif);
+    if (route) {
+      onClose();
+      router.push(route);
+    }
+  };
+
   if (!mounted || !open) return null;
 
   return createPortal(
@@ -130,7 +141,7 @@ export default function Notification({ open, onClose }: NotificationProps) {
                   description={notif.description}
                   time={formatTime(notif.created_at)}
                   isRead={notif.is_read}
-                  onClick={() => handleMarkRead(notif.id)}
+                  onClick={() => handleNotificationClick(notif)}
                 />
               ))}
             </>

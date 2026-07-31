@@ -29,7 +29,7 @@ import {
     Paperclip,
     Settings
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -59,6 +59,7 @@ import RichTextToolbar from "../email-marketing/campaigns/RichTextToolbar";
 
 export default function OmnichannelClient() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { getToken } = useAuth();
     const [selectedContact, setSelectedContact] = useState<OmnichannelContact | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -124,6 +125,25 @@ export default function OmnichannelClient() {
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const { data: conversation, isLoading: isLoadingConversation } = useConversation(activeConversationId || "");
 
+    // Deep-link support: ?conversation=<id> (used by the notification panel to jump
+    // straight to a conversation). This page only exposes conversations through the
+    // contact list on the left, so we resolve the conversation's contact identifier,
+    // search for it, then select it exactly like a normal manual click would.
+    const conversationParam = searchParams.get("conversation");
+    const [pendingDeepLinkConversationId, setPendingDeepLinkConversationId] = useState<string | null>(null);
+    const { data: deepLinkConversation, isError: isDeepLinkConversationError } = useConversation(
+        pendingDeepLinkConversationId || ""
+    );
+
+    // Re-arm the resolver whenever the URL's conversation param actually changes -
+    // e.g. clicking a different notification while already on this page (the page
+    // stays mounted, so a mount-only initializer would miss this).
+    useEffect(() => {
+        if (conversationParam) {
+            setPendingDeepLinkConversationId(conversationParam);
+        }
+    }, [conversationParam]);
+
     // Mutations
     const sendMessageMutation = useSendMessage();
     const deleteConversationMutation = useDeleteConversation();
@@ -150,16 +170,34 @@ export default function OmnichannelClient() {
     // Auto-select conversation when chatMode or selectedContact changes
     useEffect(() => {
         if (selectedContact && inboxData && Array.isArray(inboxData)) {
-            const contactIdentifier = selectedContact.phone_number || selectedContact.email;
+            // Must match the identifier for the currently active channel tab -
+            // e.g. selectedContact.phone_number unconditionally would keep
+            // matching (or falling back to) the WhatsApp conversation even
+            // while the Email tab is selected, for any contact that has both.
+            const contactIdentifier = chatMode === "email" ? selectedContact.email : selectedContact.phone_number;
 
             const existingConv = (inboxData as any[]).find((c: any) =>
-                c.contact_identifier === contactIdentifier ||
-                c.external_contact_identifier === contactIdentifier ||
-                c.contact_id === selectedContact.contact_id
+                (contactIdentifier && (
+                    c.contact_identifier === contactIdentifier ||
+                    c.external_contact_identifier === contactIdentifier
+                )) ||
+                (c.contact_id === selectedContact.contact_id && c.channel_type === chatMode)
             );
 
             if (existingConv) {
                 setActiveConversationId(existingConv.id);
+            } else if (selectedContact.latest_conversation_id && selectedContact.channel_types.length === 1) {
+                // inboxData is capped to the default /inbox page (limit=20, most
+                // recent first) - a contact whose conversation isn't in that
+                // window (e.g. selected via search, or deep-linked from a
+                // notification) would otherwise silently resolve to no
+                // conversation at all. Fall back to the contact's own known
+                // latest conversation id instead of giving up - but only when
+                // there's a single channel, since latest_conversation_id isn't
+                // channel-specific and could belong to the other channel for a
+                // multi-channel contact (the guard effect below double-checks
+                // this once the conversation itself loads).
+                setActiveConversationId(selectedContact.latest_conversation_id);
             } else {
                 setActiveConversationId(null);
             }
@@ -167,6 +205,15 @@ export default function OmnichannelClient() {
             setActiveConversationId(null);
         }
     }, [chatMode, selectedContact, inboxData]);
+
+    // Safety net: if the resolved conversation's channel doesn't match the
+    // active tab (can happen via the latest_conversation_id fallback above),
+    // clear it instead of leaving the wrong channel's messages on screen.
+    useEffect(() => {
+        if (conversation && conversation.channel_type !== chatMode) {
+            setActiveConversationId(null);
+        }
+    }, [conversation, chatMode]);
 
     // Mark conversation as read when it's opened and has unread messages
     useEffect(() => {
@@ -186,6 +233,40 @@ export default function OmnichannelClient() {
             }
         }
     };
+
+    // Deep-link step 1: once the target conversation loads, search contacts by its
+    // identifier so the owning contact surfaces in the (possibly paginated) list.
+    useEffect(() => {
+        if (!pendingDeepLinkConversationId) return;
+        if (isDeepLinkConversationError) {
+            setPendingDeepLinkConversationId(null);
+            return;
+        }
+        if (!deepLinkConversation) return;
+        const identifier = deepLinkConversation.contact_identifier || deepLinkConversation.external_contact_identifier;
+        if (identifier && identifier !== searchTerm) {
+            setSearchTerm(identifier);
+        }
+    }, [pendingDeepLinkConversationId, deepLinkConversation, isDeepLinkConversationError]);
+
+    // Deep-link step 2: once the matching contact appears in the search results,
+    // select it exactly like a manual click - this drives the same effect that
+    // resolves activeConversationId, so left/center/right panels all populate
+    // through the normal flow instead of a one-off standalone page.
+    useEffect(() => {
+        // Wait until step 1 has actually narrowed the search - otherwise the
+        // "exactly one result" fallback below could match against the
+        // default/unfiltered contact list before the identifier search runs.
+        if (!pendingDeepLinkConversationId || !searchTerm) return;
+        const match =
+            filteredContacts.find(
+                (c: OmnichannelContact) => c.latest_conversation_id === pendingDeepLinkConversationId
+            ) || (filteredContacts.length === 1 ? filteredContacts[0] : undefined);
+        if (match) {
+            handleSelectContact(match);
+            setPendingDeepLinkConversationId(null);
+        }
+    }, [filteredContacts, pendingDeepLinkConversationId, searchTerm]);
 
     const handleCreateContact = async (e: React.FormEvent) => {
         e.preventDefault();

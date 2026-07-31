@@ -129,12 +129,20 @@ export default function OmnichannelClient() {
     // straight to a conversation). This page only exposes conversations through the
     // contact list on the left, so we resolve the conversation's contact identifier,
     // search for it, then select it exactly like a normal manual click would.
-    const [pendingDeepLinkConversationId, setPendingDeepLinkConversationId] = useState<string | null>(
-        () => searchParams.get("conversation")
-    );
+    const conversationParam = searchParams.get("conversation");
+    const [pendingDeepLinkConversationId, setPendingDeepLinkConversationId] = useState<string | null>(null);
     const { data: deepLinkConversation, isError: isDeepLinkConversationError } = useConversation(
         pendingDeepLinkConversationId || ""
     );
+
+    // Re-arm the resolver whenever the URL's conversation param actually changes -
+    // e.g. clicking a different notification while already on this page (the page
+    // stays mounted, so a mount-only initializer would miss this).
+    useEffect(() => {
+        if (conversationParam) {
+            setPendingDeepLinkConversationId(conversationParam);
+        }
+    }, [conversationParam]);
 
     // Mutations
     const sendMessageMutation = useSendMessage();

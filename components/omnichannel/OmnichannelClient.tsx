@@ -170,23 +170,33 @@ export default function OmnichannelClient() {
     // Auto-select conversation when chatMode or selectedContact changes
     useEffect(() => {
         if (selectedContact && inboxData && Array.isArray(inboxData)) {
-            const contactIdentifier = selectedContact.phone_number || selectedContact.email;
+            // Must match the identifier for the currently active channel tab -
+            // e.g. selectedContact.phone_number unconditionally would keep
+            // matching (or falling back to) the WhatsApp conversation even
+            // while the Email tab is selected, for any contact that has both.
+            const contactIdentifier = chatMode === "email" ? selectedContact.email : selectedContact.phone_number;
 
             const existingConv = (inboxData as any[]).find((c: any) =>
-                c.contact_identifier === contactIdentifier ||
-                c.external_contact_identifier === contactIdentifier ||
-                c.contact_id === selectedContact.contact_id
+                (contactIdentifier && (
+                    c.contact_identifier === contactIdentifier ||
+                    c.external_contact_identifier === contactIdentifier
+                )) ||
+                (c.contact_id === selectedContact.contact_id && c.channel_type === chatMode)
             );
 
             if (existingConv) {
                 setActiveConversationId(existingConv.id);
-            } else if (selectedContact.latest_conversation_id) {
+            } else if (selectedContact.latest_conversation_id && selectedContact.channel_types.length === 1) {
                 // inboxData is capped to the default /inbox page (limit=20, most
                 // recent first) - a contact whose conversation isn't in that
                 // window (e.g. selected via search, or deep-linked from a
                 // notification) would otherwise silently resolve to no
                 // conversation at all. Fall back to the contact's own known
-                // latest conversation id instead of giving up.
+                // latest conversation id instead of giving up - but only when
+                // there's a single channel, since latest_conversation_id isn't
+                // channel-specific and could belong to the other channel for a
+                // multi-channel contact (the guard effect below double-checks
+                // this once the conversation itself loads).
                 setActiveConversationId(selectedContact.latest_conversation_id);
             } else {
                 setActiveConversationId(null);
@@ -195,6 +205,15 @@ export default function OmnichannelClient() {
             setActiveConversationId(null);
         }
     }, [chatMode, selectedContact, inboxData]);
+
+    // Safety net: if the resolved conversation's channel doesn't match the
+    // active tab (can happen via the latest_conversation_id fallback above),
+    // clear it instead of leaving the wrong channel's messages on screen.
+    useEffect(() => {
+        if (conversation && conversation.channel_type !== chatMode) {
+            setActiveConversationId(null);
+        }
+    }, [conversation, chatMode]);
 
     // Mark conversation as read when it's opened and has unread messages
     useEffect(() => {

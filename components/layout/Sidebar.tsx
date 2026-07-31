@@ -172,7 +172,7 @@ const menuData: MenuSection[] = [
             name: "Target Customer",
             path: "/data-intelligence/industry-leaders",
           },
-          { name: "Company", path: "/data-intelligence/company-intelligence" },
+          { name: "My Target Companies", path: "/data-intelligence/company-intelligence" },
           { name: "Individual", path: "/data-intelligence/individual" },
         ],
       },

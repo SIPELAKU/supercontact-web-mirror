@@ -57,14 +57,16 @@ export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeo
         <Divider />
 
         {/* Footer */}
-        <div className="p-5 text-center">
-          <button
-            onClick={() => router.push(viewAllHref || "/omnichannel/company-intelligence/key-people/1")}
-            className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline"
-          >
-            View All Employees
-          </button>
-        </div>
+        {viewAllHref && (
+          <div className="p-5 text-center">
+            <button
+              onClick={() => router.push(viewAllHref)}
+              className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline"
+            >
+              View All Employees
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

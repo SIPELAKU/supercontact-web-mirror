@@ -16,7 +16,7 @@ export default function IndustryFilterSection({
         <div className="space-y-3">
             <AppAutocomplete
                 multiple
-                label="Industri"
+                label="Industry"
                 options={INDUSTRY_OPTIONS}
                 value={selectedIndustries}
                 onChange={(event, newValue) => {

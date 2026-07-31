@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/ui/page-header";
 import IndustryFilterSection from "@/components/data-intelligence/IndustryFilterSection";
@@ -12,54 +12,12 @@ import {
     FilterCriteria,
     DEFAULT_FILTER_CRITERIA,
 } from "@/lib/types/IndustryLeader";
-import { industryLeadersCompanies } from "@/lib/data/industry-leaders-companies";
 
 export default function IndustryLeadersPage() {
     const router = useRouter();
     const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>(
         DEFAULT_FILTER_CRITERIA
     );
-
-    // Calculate estimated count based on filters
-    const estimatedCount = useMemo(() => {
-        return industryLeadersCompanies.filter((company) => {
-            // Industry filter
-            const matchesIndustry =
-                filterCriteria.industries.length === 0 ||
-                filterCriteria.industries.some((industry) =>
-                    company.industries.some(
-                        (companyIndustry) =>
-                            companyIndustry.toLowerCase() === industry.toLowerCase()
-                    )
-                );
-
-            // Location filter
-            const matchesLocation =
-                filterCriteria.locations.length === 0 ||
-                filterCriteria.locations.some(
-                    (location) =>
-                        company.location.toLowerCase().includes(location.toLowerCase()) ||
-                        location.toLowerCase().includes(company.location.toLowerCase())
-                );
-
-            // Employee range filter
-            const matchesEmployees =
-                company.employees >= filterCriteria.employeeRange.min &&
-                company.employees <= filterCriteria.employeeRange.max;
-
-            // Financial status filter
-            const matchesFinancialStatus =
-                filterCriteria.financialStatuses.length === 0 ||
-                filterCriteria.financialStatuses.includes(company.financialStatus);
-
-            return (
-                matchesIndustry &&
-                matchesLocation &&
-                matchesEmployees &&
-                matchesFinancialStatus
-            );
-        }).length;
-    }, [filterCriteria]);
 
     const handleViewResults = () => {
         // Clear cached results when performing a new search
@@ -89,7 +47,7 @@ export default function IndustryLeadersPage() {
                     {/* Core Criteria Section */}
                     <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
                         <h2 className="mb-6 text-xl font-bold text-gray-900">
-                            1. Kriteria Utama (Core Criteria)
+                            1. Core Criteria
                         </h2>
 
                         <div className="space-y-6">
@@ -123,7 +81,7 @@ export default function IndustryLeadersPage() {
                     {/* Financial Status Section */}
                     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
                         <h2 className="mb-6 text-xl font-bold text-gray-900">
-                            2. Status Finansial & Bisnis
+                            2. Financial & Business Status
                         </h2>
 
                         <FinancialStatusFilter
@@ -139,7 +97,6 @@ export default function IndustryLeadersPage() {
                 <div className="lg:col-span-1">
                     <FilterSummaryCard
                         filterCriteria={filterCriteria}
-                        estimatedCount={estimatedCount}
                         onViewResults={handleViewResults}
                     />
                 </div>

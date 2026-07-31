@@ -7,14 +7,14 @@ import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppSelect } from "@/components/ui/app-select";
 import { INDUSTRY_OPTIONS } from "@/lib/data/company-intelligence-options";
 import { useAuth } from "@/lib/context/AuthContext";
-import { fetchIndustryLeaders } from "@/lib/api/company-intelligence";
-import { IndustryLeadersGroup, IndustryLeader } from "@/lib/types/company-intelligence";
+import { fetchMyTopCompanies } from "@/lib/api/company-intelligence";
+import { MyTopCompaniesGroup, MyTopCompany } from "@/lib/types/company-intelligence";
 import { Loader2 } from "lucide-react";
 
-export default function IndustryLeadersContent() {
+export default function MyTopCompaniesContent() {
     const { getToken } = useAuth();
     const [selectedIndustry, setSelectedIndustry] = useState<string>("");
-    const [industryGroups, setIndustryGroups] = useState<IndustryLeadersGroup[]>([]);
+    const [industryGroups, setIndustryGroups] = useState<MyTopCompaniesGroup[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -23,11 +23,11 @@ export default function IndustryLeadersContent() {
         setError("");
         try {
             const token = await getToken();
-            const data = await fetchIndustryLeaders(token, selectedIndustry || undefined);
+            const data = await fetchMyTopCompanies(token, selectedIndustry || undefined);
             setIndustryGroups(data);
         } catch (err: any) {
-            console.error("Failed to fetch industry leaders:", err);
-            setError(err.message || "Failed to fetch industry leaders");
+            console.error("Failed to fetch my top companies:", err);
+            setError(err.message || "Failed to fetch my top companies");
         } finally {
             setIsLoading(false);
         }
@@ -98,7 +98,7 @@ export default function IndustryLeadersContent() {
                     ))}
                     {industryGroups.length === 0 && !isLoading && (
                         <Typography variant="body1" color="text.secondary" textAlign="center" py={8}>
-                            No industry leaders found.
+                            No top companies found.
                         </Typography>
                     )}
                 </Box>
@@ -107,7 +107,7 @@ export default function IndustryLeadersContent() {
     );
 }
 
-function LeaderCard({ leader, industryLabel }: { leader: IndustryLeader; industryLabel: string }) {
+function LeaderCard({ leader, industryLabel }: { leader: MyTopCompany; industryLabel: string }) {
     // Determine crown color based on rank
     const crownColor = leader.rank === 1 ? "#FFD700" : leader.rank === 2 ? "#C0C0C0" : "#CD7F32";
 

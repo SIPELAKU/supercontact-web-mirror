@@ -63,45 +63,22 @@ export const IndividualClient = () => {
         );
     }, [individuals]);
 
-    // Client-side paginated slice of flattened people
-    const paginatedPeople = useMemo(() => {
-        const start = page * rowsPerPage;
-        return allPeople.slice(start, start + rowsPerPage);
-    }, [allPeople, page, rowsPerPage]);
-
     const fetchIndividuals = useCallback(async () => {
         setIsLoading(true);
         setError("");
         try {
             const token = await getToken();
-            let allData: IndividualIntelligenceItem[] = [];
-            let currentPage = 1;
-            let totalFromApi = 0;
+            const params = {
+                industry: selectedIndustries.join(","),
+                location: selectedLocation || undefined,
+                search: debouncedSearchQuery || undefined,
+                page: page + 1,
+                limit: rowsPerPage,
+            };
 
-            // Fetch all pages (API max limit is 100)
-            while (true) {
-                const params = {
-                    industry: selectedIndustries.join(","),
-                    location: selectedLocation || undefined,
-                    search: debouncedSearchQuery || undefined,
-                    page: currentPage,
-                    limit: 100,
-                };
-
-                const data = await getIndividualIntelligence(token, params);
-                const pageData = data.data || [];
-                allData = [...allData, ...pageData];
-                totalFromApi = data.meta.total;
-
-                // Stop if we've fetched all companies
-                if (allData.length >= totalFromApi || pageData.length < 100) {
-                    break;
-                }
-                currentPage++;
-            }
-
-            setIndividuals(allData);
-            setTotalCount(totalFromApi);
+            const data = await getIndividualIntelligence(token, params);
+            setIndividuals(data.data || []);
+            setTotalCount(data.meta.total);
         } catch (err: any) {
             console.error("Failed to fetch individual intelligence:", err);
             const message = handleError(err, "Fetch Individual Intelligence");
@@ -111,7 +88,7 @@ export const IndividualClient = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [getToken, selectedIndustries, selectedLocation, debouncedSearchQuery]);
+    }, [getToken, selectedIndustries, selectedLocation, debouncedSearchQuery, page, rowsPerPage]);
 
     useEffect(() => {
         if (!authLoading) {
@@ -191,7 +168,7 @@ export const IndividualClient = () => {
             <PageHeader
                 title="Individual"
                 breadcrumbs={[
-                    { label: "Data Inteligence" },
+                    { label: "Data Intelligence" },
                     { label: "Individual" }
                 ]}
             />
@@ -280,7 +257,7 @@ export const IndividualClient = () => {
                 </div>
             ) : allPeople.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {paginatedPeople.map((item) => (
+                    {allPeople.map((item) => (
                         <IndividualCard
                             key={item.person.id}
                             person={item.person}
@@ -303,7 +280,7 @@ export const IndividualClient = () => {
                 <TablePagination
                     rowsPerPageOptions={[10, 25, 50]}
                     component="div"
-                    count={allPeople.length}
+                    count={totalCount}
                     rowsPerPage={rowsPerPage}
                     page={page}
                     onPageChange={handleChangePage}

@@ -6,25 +6,21 @@ import { FilterCriteria } from "@/lib/types/IndustryLeader";
 
 interface FilterSummaryCardProps {
     filterCriteria: FilterCriteria;
-    estimatedCount: number;
     onViewResults: () => void;
 }
 
 export default function FilterSummaryCard({
     filterCriteria,
-    estimatedCount,
     onViewResults,
 }: FilterSummaryCardProps) {
     return (
         <div className="sticky top-6 rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-            {/* ESTIMASI HASIL section removed */}
-
             <div className="space-y-4">
                 {/* Industry Summary */}
                 {filterCriteria.industries.length > 0 && (
                     <div>
                         <h4 className="mb-2 text-sm font-semibold text-gray-700">
-                            Industri
+                            Industry
                         </h4>
                         <p className="text-sm text-gray-600">
                             {filterCriteria.industries.join(", ")}
@@ -35,7 +31,7 @@ export default function FilterSummaryCard({
                 {/* Location Summary */}
                 {filterCriteria.locations.length > 0 && (
                     <div>
-                        <h4 className="mb-2 text-sm font-semibold text-gray-700">Lokasi</h4>
+                        <h4 className="mb-2 text-sm font-semibold text-gray-700">Location</h4>
                         <p className="text-sm text-gray-600">
                             {filterCriteria.locations.join(", ")}
                         </p>
@@ -45,7 +41,7 @@ export default function FilterSummaryCard({
                 {/* Employee Range Summary */}
                 <div>
                     <h4 className="mb-2 text-sm font-semibold text-gray-700">
-                        Karyawan
+                        Employees
                     </h4>
                     <p className="text-sm text-gray-600">
                         {filterCriteria.employeeRange.min} -{" "}
@@ -57,7 +53,7 @@ export default function FilterSummaryCard({
                 {filterCriteria.financialStatuses.length > 0 && (
                     <div>
                         <h4 className="mb-2 text-sm font-semibold text-gray-700">
-                            Finansial
+                            Financial Status
                         </h4>
                         <p className="text-sm text-gray-600">
                             {filterCriteria.financialStatuses.join(", ")}
@@ -73,7 +69,7 @@ export default function FilterSummaryCard({
                     endIcon={<ArrowRight size={20} />}
                     onClick={onViewResults}
                 >
-                    Temukan Perusahaan
+                    Find Companies
                 </AppButton>
             </div>
         </div>

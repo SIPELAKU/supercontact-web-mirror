@@ -19,7 +19,7 @@ export interface CompanyIntelligenceItem {
     industry: string;
     location: string;
     employee_count: number;
-    revenue: string;
+    revenue: number | null;
     financial_status: string;
     status?: string;
     source: string;
@@ -44,7 +44,7 @@ export interface CompanyIntelligenceProfileResponse {
     industry: string;
     location: string;
     employee_count: number;
-    revenue: string;
+    revenue: number | null;
     financial_status: string;
     source: string;
     match_score: number;
@@ -90,7 +90,7 @@ export interface MyTargetCompaniesResponse {
     data: CompanyIntelligenceItem[];
 }
 
-export interface IndustryLeader {
+export interface MyTopCompany {
     rank: number;
     company_id: string;
     name: string;
@@ -103,15 +103,15 @@ export interface IndustryLeader {
     enriched: boolean;
 }
 
-export interface IndustryLeadersGroup {
+export interface MyTopCompaniesGroup {
     industry: string;
-    leaders: IndustryLeader[];
+    leaders: MyTopCompany[];
 }
 
-export interface IndustryLeadersResponse {
+export interface MyTopCompaniesResponse {
     success: boolean;
     data: {
-        data: IndustryLeadersGroup[];
+        data: MyTopCompaniesGroup[];
     };
     error: string | null;
 }

@@ -75,7 +75,7 @@ export default function CompanyResultCard({
                     </div>
                     <div className="flex items-center gap-1">
                         <Users size={16} />
-                        <span>{company.employees} Karyawan</span>
+                        <span>{company.employees} Employees</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <DollarSign size={16} />
@@ -109,7 +109,7 @@ export default function CompanyResultCard({
                         variantStyle="primary"
                         onClick={() => onViewProfile(company.id)}
                     >
-                        Lihat Profil
+                        View Profile
                     </AppButton>
                     <AppButton
                         variantStyle="outline"

@@ -44,7 +44,7 @@ export default function FinancialStatusFilter({
                     />
                 </svg>
                 <h3 className="text-base font-semibold text-gray-800">
-                    Status Finansial (Sesuai Referensi)
+                    Financial Status (Reference-Based)
                 </h3>
             </div>
 

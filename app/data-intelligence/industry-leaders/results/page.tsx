@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Plus, Search, Save } from "lucide-react";
+import { ArrowLeft, Upload, Search, Save } from "lucide-react";
 import { Checkbox } from "@mui/material";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
@@ -109,7 +109,7 @@ export default function IndustryLeadersResultsPage() {
                 name: item.name || "Unknown Company",
                 location: item.location,
                 employees: item.employee_count,
-                revenue: item.revenue || "N/A",
+                revenue: item.revenue != null ? String(item.revenue) : "N/A",
                 financialStatus: item.financial_status as FinancialStatus,
                 industries: [item.industry],
                 source: item.source,
@@ -241,14 +241,14 @@ export default function IndustryLeadersResultsPage() {
                             )}
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    Hasil Pencarian
+                                    Search Results
                                 </h2>
                                 <p className="mt-1 text-sm text-gray-600">
-                                    Ditemukan{" "}
+                                    Found{" "}
                                     <span className="font-semibold text-gray-900">
-                                        {companies.length} Perusahaan
+                                        {companies.length} Companies
                                     </span>{" "}
-                                    {searchQuery && `dari ${totalCount} total`}
+                                    {searchQuery && `of ${totalCount} total`}
                                     {selectedCompanyIds.length > 0 && (
                                         <span className="ml-2 text-[#5479EE]">
                                             ({selectedCompanyIds.length} selected)
@@ -268,9 +268,6 @@ export default function IndustryLeadersResultsPage() {
                                     {isBulkSaving ? "Saving..." : `Save Selected (${selectedCompanyIds.length})`}
                                 </AppButton>
                             )}
-                            <AppButton variantStyle="primary" startIcon={<Plus size={18} />}>
-                                Add Company
-                            </AppButton>
                         </div>
                     </div>
 

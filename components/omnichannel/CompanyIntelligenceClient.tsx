@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { getMyTargetCompanies, deleteTargetCompany } from "@/lib/api/company-intelligence";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { CompanyIntelligenceItem, MyTargetCompaniesSummary } from "@/lib/types/company-intelligence";
-import IndustryLeadersContent from "./IndustryLeadersContent";
+import MyTopCompaniesContent from "./MyTopCompaniesContent";
 import { SuperTableState } from "@/components/ui/super-table";
 
 interface CompanyIntelligenceClientProps {
@@ -33,7 +33,7 @@ export default function CompanyIntelligenceClient({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [summary, setSummary] = useState<MyTargetCompaniesSummary | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "leaders">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "top-companies">("dashboard");
 
   // ===== TABLE STATE (driven by SuperTable) ===== //
   const [tableState, setTableState] = useState({
@@ -249,15 +249,15 @@ export default function CompanyIntelligenceClient({
             </span>
           </div>
           <div
-            className={`pb-4 px-1 cursor-pointer ${activeTab === "leaders" ? "border-b-2 border-blue-600" : ""
+            className={`pb-4 px-1 cursor-pointer ${activeTab === "top-companies" ? "border-b-2 border-blue-600" : ""
               }`}
-            onClick={() => setActiveTab("leaders")}
+            onClick={() => setActiveTab("top-companies")}
           >
             <span
-              className={`${activeTab === "leaders" ? "text-blue-600" : "text-gray-500"
+              className={`${activeTab === "top-companies" ? "text-blue-600" : "text-gray-500"
                 } font-medium hover:text-gray-700`}
             >
-              Industry Leaders
+              Top Companies
             </span>
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function CompanyIntelligenceClient({
           />
         </>
       ) : (
-        <IndustryLeadersContent />
+        <MyTopCompaniesContent />
       )}
 
       {/* Hidden printable table */}

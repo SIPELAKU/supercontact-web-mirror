@@ -230,16 +230,16 @@ export async function getMyTargetCompany(
     return json?.data;
 }
 
-export async function fetchIndustryLeaders(
+export async function fetchMyTopCompanies(
     token: string,
     industry?: string
-): Promise<import("@/lib/types/company-intelligence").IndustryLeadersGroup[]> {
+): Promise<import("@/lib/types/company-intelligence").MyTopCompaniesGroup[]> {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
     const query = new URLSearchParams();
     if (industry) query.append("industry", industry);
 
     const res = await fetchWithTimeout(
-        `${baseUrl}/company-intelligence/industry-leaders?${query.toString()}`,
+        `${baseUrl}/company-intelligence/my-top-companies?${query.toString()}`,
         {
             method: "GET",
             headers: {
@@ -257,7 +257,7 @@ export async function fetchIndustryLeaders(
 
     if (!res.ok || json?.success === false) {
         const message =
-            json?.error?.message || json?.message || "Failed to fetch industry leaders";
+            json?.error?.message || json?.message || "Failed to fetch my top companies";
         throw new Error(message);
     }
 

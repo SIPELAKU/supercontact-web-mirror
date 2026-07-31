@@ -180,6 +180,14 @@ export default function OmnichannelClient() {
 
             if (existingConv) {
                 setActiveConversationId(existingConv.id);
+            } else if (selectedContact.latest_conversation_id) {
+                // inboxData is capped to the default /inbox page (limit=20, most
+                // recent first) - a contact whose conversation isn't in that
+                // window (e.g. selected via search, or deep-linked from a
+                // notification) would otherwise silently resolve to no
+                // conversation at all. Fall back to the contact's own known
+                // latest conversation id instead of giving up.
+                setActiveConversationId(selectedContact.latest_conversation_id);
             } else {
                 setActiveConversationId(null);
             }

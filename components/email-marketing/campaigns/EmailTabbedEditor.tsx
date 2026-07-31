@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
-import { Box, Tabs, Tab, Typography, Stack } from "@mui/material";
-import { Edit3, Layout } from "lucide-react";
+import { Box, Tabs, Tab, Typography, Stack, Tooltip, IconButton } from "@mui/material";
+import { Edit3, Layout, BookOpen } from "lucide-react";
 import EmailEditor, { EditorRef } from "react-email-editor";
 import RichTextToolbar from "./RichTextToolbar";
+import EmailTemplateGuideDialog from "./EmailTemplateGuideDialog";
 
 interface EmailTabbedEditorProps {
     value: string;
@@ -25,6 +26,7 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
     ref
 ) => {
     const [activeTab, setActiveTab] = useState(0);
+    const [isGuideOpen, setGuideOpen] = useState(false);
     const editorRef = useRef<any>(null);
     const contentEditableRef = useRef<HTMLDivElement>(null);
     const [internalHtml, setInternalHtml] = useState(value);
@@ -173,7 +175,7 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
             borderRadius: "8px", 
             overflow: "hidden" 
         }}>
-            <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "#f9fafb" }}>
+            <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Tabs value={activeTab} onChange={handleTabChange} aria-label="email editor tabs">
                     <Tab
                         icon={<Edit3 size={18} />}
@@ -188,7 +190,13 @@ const EmailTabbedEditor = forwardRef<EmailTabbedEditorRef, EmailTabbedEditorProp
                         sx={{ textTransform: "none", minHeight: 48 }}
                     />
                 </Tabs>
+                <Tooltip title="Panduan Template Email Aman">
+                    <IconButton size="small" onClick={() => setGuideOpen(true)} sx={{ mr: 1.5 }}>
+                        <BookOpen size={18} />
+                    </IconButton>
+                </Tooltip>
             </Box>
+            <EmailTemplateGuideDialog open={isGuideOpen} onClose={() => setGuideOpen(false)} />
 
             <Box sx={{ 
                 p: 0, 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.5] - 2026-07-31
+
+### 📝 Documentation
+
+- **Email Template Guide in Editor**: Added a "Panduan Template Email Aman" guide dialog accessible from the campaign HTML editor (Simple Editor and Visual Builder tabs), covering table-based layout patterns, safe vs. risky CSS, image/gradient guidance, and a pre-send testing checklist for anyone authoring campaign email content.
+
 ## [1.20.4] - 2026-07-30
 
 ### ✨ Features

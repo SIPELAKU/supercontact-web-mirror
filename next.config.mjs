@@ -68,6 +68,13 @@ const nextConfig = {
         destination: '/data-intelligence/companies?tab=lists&list=:id',
         permanent: false,
       },
+      // D3: the standalone org-chart drill-down page was folded into the
+      // Company 360 profile's "People & Org" tab.
+      {
+        source: '/data-intelligence/company/:id/org-chart',
+        destination: '/data-intelligence/company/:id?tab=people-org',
+        permanent: false,
+      },
     ];
   },
   //comment utk dev purpose need to be reverted back

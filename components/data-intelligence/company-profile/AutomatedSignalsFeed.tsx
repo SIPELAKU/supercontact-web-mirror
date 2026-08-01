@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { formatDistanceToNow } from "date-fns";
+import { AppButton } from "@/components/ui/app-button";
 
 // Read-only counterpart to components/omnichannel/company/detail-company/
 // RecentSignals.tsx (which is a manually-curated "Add Signal" feed for the
@@ -26,7 +28,12 @@ interface AutomatedSignalsFeedProps {
     isLoading?: boolean;
 }
 
+const PAGE_SIZE = 10;
+
 export default function AutomatedSignalsFeed({ signals, isLoading }: AutomatedSignalsFeedProps) {
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const visibleSignals = signals.slice(0, visibleCount);
+
     return (
         <Card className="rounded-2xl! shadow-lg!">
             <CardContent className="p-6!">
@@ -40,35 +47,47 @@ export default function AutomatedSignalsFeed({ signals, isLoading }: AutomatedSi
                         scheduled re-checks (website updates, headcount changes, new locations).
                     </Typography>
                 ) : (
-                    <div className="mt-6 space-y-5">
-                        {signals.slice(0, 5).map((item, index) => (
-                            <div key={item.id} className="flex items-start justify-between gap-4">
-                                <div className="flex gap-3">
-                                    <div className="relative mt-1">
-                                        <span className="block h-2.5 w-2.5 rounded-full bg-blue-500" />
-                                        {index !== signals.slice(0, 5).length - 1 && (
-                                            <span className="absolute left-1/2 top-3 h-10 w-0.5 -translate-x-1/2 bg-slate-200" />
-                                        )}
+                    <>
+                        <div className="mt-6 space-y-5">
+                            {visibleSignals.map((item, index) => (
+                                <div key={item.id} className="flex items-start justify-between gap-4">
+                                    <div className="flex gap-3">
+                                        <div className="relative mt-1">
+                                            <span className="block h-2.5 w-2.5 rounded-full bg-blue-500" />
+                                            {index !== visibleSignals.length - 1 && (
+                                                <span className="absolute left-1/2 top-3 h-10 w-0.5 -translate-x-1/2 bg-slate-200" />
+                                            )}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Typography className="text-sm! font-semibold!">{item.title}</Typography>
+                                            {item.description && (
+                                                <Typography className="text-xs! text-slate-600!">{item.description}</Typography>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <Typography className="text-sm! font-semibold!">{item.title}</Typography>
-                                        {item.description && (
-                                            <Typography className="text-xs! text-slate-600!">{item.description}</Typography>
-                                        )}
-                                    </div>
+                                    <Typography className="whitespace-nowrap text-[10px]! text-slate-400!">
+                                        {(() => {
+                                            try {
+                                                return formatDistanceToNow(new Date(item.detectedAt), { addSuffix: true });
+                                            } catch {
+                                                return item.detectedAt;
+                                            }
+                                        })()}
+                                    </Typography>
                                 </div>
-                                <Typography className="whitespace-nowrap text-[10px]! text-slate-400!">
-                                    {(() => {
-                                        try {
-                                            return formatDistanceToNow(new Date(item.detectedAt), { addSuffix: true });
-                                        } catch {
-                                            return item.detectedAt;
-                                        }
-                                    })()}
-                                </Typography>
+                            ))}
+                        </div>
+                        {signals.length > visibleCount && (
+                            <div className="mt-5 text-center">
+                                <AppButton
+                                    variantStyle="outline"
+                                    onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                                >
+                                    Load more
+                                </AppButton>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
             </CardContent>
         </Card>

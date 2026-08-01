@@ -1,15 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Box, Tabs, Tab } from "@mui/material";
+import { CheckCircle2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard } from "@/components/omnichannel";
 import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge";
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
-import ProvenanceDrawer from "./ProvenanceDrawer";
-import OrgChartCard from "./OrgChartCard";
+import ProvenanceList from "./ProvenanceList";
+import OrgChartSection from "./OrgChartSection";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
 import { fetchNotifications } from "@/lib/api/notifications";
@@ -22,6 +24,9 @@ interface CompanyProfile360ClientProps {
     source: ProfileSource;
 }
 
+type ProfileTab = "overview" | "people-org" | "signals" | "sources";
+const VALID_TABS: ProfileTab[] = ["overview", "people-org", "signals", "sources"];
+
 function formatRevenue(revenue: number | null): string {
     if (revenue == null) return "Unknown";
     return `Rp ${revenue.toLocaleString("id-ID")}`;
@@ -30,13 +35,24 @@ function formatRevenue(revenue: number | null): string {
 export default function CompanyProfile360Client({ id, source }: CompanyProfile360ClientProps) {
     const { getToken } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [profile, setProfile] = useState<CompanyProfile360 | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    // Separate from profile.source==="saved" - flips true the moment a
+    // Save to CRM call succeeds this session, so the button doesn't just
+    // silently vanish with no lasting confirmation (which used to make an
+    // accidental double-save possible).
+    const [isSaved, setIsSaved] = useState(false);
     const [signals, setSignals] = useState<AutomatedSignal[]>([]);
     const [isLoadingSignals, setIsLoadingSignals] = useState(false);
-    const [provenanceOpen, setProvenanceOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<ProfileTab>(() => {
+        const requested = searchParams.get("tab") as ProfileTab | null;
+        // Honors the redirect from the retired standalone org-chart route
+        // (?tab=people-org) and makes every tab independently deep-linkable.
+        return requested && VALID_TABS.includes(requested) ? requested : "overview";
+    });
 
     const loadProfile = useCallback(async () => {
         setIsLoading(true);
@@ -45,6 +61,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
             const token = await getToken();
             const data = await fetchCompanyProfile360(token, id, source);
             setProfile(data);
+            setIsSaved(data.source === "saved");
         } catch (err: any) {
             console.error("Failed to load company profile:", err);
             setError(err?.message || "Failed to load company profile.");
@@ -75,7 +92,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                 const res = await fetchNotifications(token, {
                     entityType: "organization",
                     entityId: organizationId,
-                    limit: 20,
+                    limit: 50,
                 });
                 if (cancelled) return;
                 setSignals(
@@ -105,12 +122,18 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
             const token = await getToken();
             await saveCompanyToCrm(token, profile.cacheId);
             notify.success("Company saved to CRM successfully!");
+            setIsSaved(true);
         } catch (err: any) {
             console.error("Failed to save to CRM:", err);
             notify.error(err?.message || "Failed to save company to CRM");
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleTabChange = (tab: ProfileTab) => {
+        setActiveTab(tab);
+        router.replace(`/data-intelligence/company/${id}?source=${source}&tab=${tab}`, { scroll: false });
     };
 
     if (isLoading) {
@@ -131,7 +154,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     </p>
                     <AppButton
                         variantStyle="primary"
-                        onClick={() => router.push("/data-intelligence/industry-leaders")}
+                        onClick={() => router.push("/data-intelligence/companies?tab=discover")}
                         className="mt-4"
                     >
                         Back to Company Search
@@ -158,7 +181,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                 title={profile.name}
                 breadcrumbs={[
                     { label: "Data Intelligence" },
-                    { label: "Company Search", href: "/data-intelligence/industry-leaders" },
+                    { label: "Company Search", href: "/data-intelligence/companies?tab=discover" },
                     { label: profile.name },
                 ]}
             />
@@ -166,14 +189,13 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
             <div className="flex flex-wrap items-center gap-3">
                 <ConfidenceBadge tier={profile.confidenceTier} />
                 <GoogleAttributionTag source={profile.providerSource} />
-                <button
-                    onClick={() => setProvenanceOpen(true)}
-                    className="text-xs font-medium text-[#5479EE] hover:underline"
-                >
-                    View data sources
-                </button>
                 <div className="ml-auto">
-                    {profile.source === "search" && (
+                    {isSaved ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
+                            <CheckCircle2 size={14} />
+                            Saved to CRM
+                        </span>
+                    ) : (
                         <AppButton variantStyle="primary" onClick={handleSaveToCrm} isLoading={isSaving}>
                             Save to CRM
                         </AppButton>
@@ -181,14 +203,33 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                 </div>
             </div>
 
-            <ProvenanceDrawer
-                open={provenanceOpen}
-                onClose={() => setProvenanceOpen(false)}
-                fieldProvenance={profile.fieldProvenance}
-            />
+            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, val) => handleTabChange(val)}
+                    sx={{
+                        "& .MuiTab-root": {
+                            textTransform: "none",
+                            fontWeight: 500,
+                            fontSize: "14px",
+                            minWidth: "auto",
+                            padding: "10px 4px",
+                            marginRight: "28px",
+                            color: "#6B7280",
+                        },
+                        "& .Mui-selected": { color: "#5479EE!important" },
+                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
+                    }}
+                >
+                    <Tab label="Overview" value="overview" disableRipple />
+                    <Tab label="People & Org" value="people-org" disableRipple />
+                    <Tab label="Signals" value="signals" disableRipple />
+                    <Tab label="Sources" value="sources" disableRipple />
+                </Tabs>
+            </Box>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="space-y-6 lg:col-span-2">
+            {activeTab === "overview" && (
+                <div className="space-y-6">
                     <CompanyAbout
                         isLoading={false}
                         companyName={profile.name}
@@ -203,24 +244,6 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <CompanyDetailStats stats={stats} />
                     </div>
-
-                    <AutomatedSignalsFeed signals={signals} isLoading={isLoadingSignals} />
-                </div>
-
-                <div className="space-y-6">
-                    <CompanyKeyPeopleCard
-                        isLoading={false}
-                        people={profile.keyPeople.map((person) => ({
-                            id: person.id || person.name,
-                            name: person.name,
-                            title: person.role || "",
-                        }))}
-                    />
-
-                    <OrgChartCard
-                        organizationId={profile.organizationId}
-                        viewAllHref={`/data-intelligence/company/${id}/org-chart?source=${source}`}
-                    />
 
                     {profile.subsidiaries.length > 0 && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
@@ -240,7 +263,36 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                         </div>
                     )}
                 </div>
-            </div>
+            )}
+
+            {activeTab === "people-org" && (
+                <div className="space-y-6">
+                    <CompanyKeyPeopleCard
+                        isLoading={false}
+                        people={profile.keyPeople.map((person) => ({
+                            id: person.id || person.name,
+                            name: person.name,
+                            title: person.role || "",
+                        }))}
+                    />
+                    <div>
+                        <h3 className="mb-4 text-xs font-bold uppercase tracking-wide text-gray-400">
+                            Organization Chart
+                        </h3>
+                        <p className="mb-4 text-sm text-gray-500">
+                            People grouped by seniority tier, inferred from their recorded title - not a
+                            reporting-line graph.
+                        </p>
+                        <OrgChartSection organizationId={profile.organizationId} />
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "signals" && (
+                <AutomatedSignalsFeed signals={signals} isLoading={isLoadingSignals} />
+            )}
+
+            {activeTab === "sources" && <ProvenanceList fieldProvenance={profile.fieldProvenance} />}
         </div>
     );
 }

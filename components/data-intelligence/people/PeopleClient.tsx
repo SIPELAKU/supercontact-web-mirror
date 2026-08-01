@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Chip } from "@mui/material";
-import { Save as SaveIcon, Users } from "lucide-react";
+import { Save as SaveIcon, Users, Mail, Phone, Linkedin } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
@@ -30,6 +30,9 @@ interface PersonRow {
     companyId: string;
     companyName: string;
     industry: string;
+    email: string | null;
+    phone: string | null;
+    linkedinUrl: string | null;
 }
 
 const SENIORITY_LABELS: Record<string, string> = {
@@ -86,6 +89,9 @@ export default function PeopleClient() {
                     companyId: company.crm_company_id || "",
                     companyName: company.company_name,
                     industry: company.industry || "",
+                    email: person.email || null,
+                    phone: person.phone || null,
+                    linkedinUrl: person.linkedin_url || null,
                 }))
             );
             setRows(flattened);
@@ -179,6 +185,54 @@ export default function PeopleClient() {
                         )}
                     </div>
                 ),
+            },
+            {
+                id: "contact",
+                header: "Contact",
+                enableColumnFilter: false,
+                enableSorting: false,
+                Cell: ({ row }) => {
+                    const { email, phone, linkedinUrl } = row.original;
+                    if (!email && !phone && !linkedinUrl) {
+                        return <span className="text-xs text-gray-400">-</span>;
+                    }
+                    return (
+                        <div className="flex flex-col gap-0.5 text-xs">
+                            {email && (
+                                <a
+                                    href={`mailto:${email}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
+                                >
+                                    <Mail size={12} className="shrink-0 text-gray-400" />
+                                    <span className="truncate">{email}</span>
+                                </a>
+                            )}
+                            {phone && (
+                                <a
+                                    href={`tel:${phone}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
+                                >
+                                    <Phone size={12} className="shrink-0 text-gray-400" />
+                                    <span className="truncate">{phone}</span>
+                                </a>
+                            )}
+                            {linkedinUrl && (
+                                <a
+                                    href={linkedinUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
+                                >
+                                    <Linkedin size={12} className="shrink-0 text-gray-400" />
+                                    <span className="truncate">LinkedIn</span>
+                                </a>
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: "companyName",

@@ -75,6 +75,13 @@ const nextConfig = {
         destination: '/data-intelligence/company/:id?tab=people-org',
         permanent: false,
       },
+      // D4: Individual -> People (renamed, reworked from a card grid into
+      // a table with company backlinks and a seniority signal).
+      {
+        source: '/data-intelligence/individual',
+        destination: '/data-intelligence/people',
+        permanent: false,
+      },
     ];
   },
   //comment utk dev purpose need to be reverted back

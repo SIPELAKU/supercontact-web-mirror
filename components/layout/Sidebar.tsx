@@ -172,7 +172,11 @@ const menuData: MenuSection[] = [
           // "Companies" workspace (Discover/Saved/Lists tabs) - was 3
           // separate destinations for what's conceptually one task.
           { name: "Companies", path: "/data-intelligence/companies" },
-          { name: "Individual", path: "/data-intelligence/individual" },
+          // D4: renamed from "Individual" - reworked from a flat card grid
+          // (company info repeated on every card, zero links back to the
+          // company) into a table with company backlinks and a seniority
+          // signal already computed server-side (C1) but unused until now.
+          { name: "People", path: "/data-intelligence/people" },
           { name: "Compliance", path: "/data-intelligence/compliance/suppression" },
           // Integrations' own duplicate link (into ADMIN > Settings) was
           // removed here - it's still reachable from there, and this entry

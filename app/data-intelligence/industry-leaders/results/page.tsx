@@ -113,6 +113,7 @@ export default function IndustryLeadersResultsPage() {
                 financialStatus: item.financial_status as FinancialStatus,
                 industries: [item.industry],
                 source: item.source,
+                confidenceTier: item.confidence_tier,
                 matchPercentage: item.match_score,
                 description: item.description,
                 website: item.domain || undefined,

@@ -226,6 +226,7 @@ const menuData: MenuSection[] = [
           { name: "Mail Server", path: "/admin/mail-servers" },
           { name: "WhatsApp Account", path: "/admin/whatsapp-accounts" },
           { name: "Email Account", path: "/admin/email-accounts" },
+          { name: "Integrations", path: "/admin/integrations" },
         ],
       },
     ],

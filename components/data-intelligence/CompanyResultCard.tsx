@@ -4,6 +4,7 @@ import { MapPin, Users, DollarSign, TrendingUp, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { IndustryLeaderCompany } from "@/lib/types/IndustryLeader";
 import { Checkbox } from "@mui/material";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 
 interface CompanyResultCardProps {
     company: IndustryLeaderCompany;
@@ -89,6 +90,7 @@ export default function CompanyResultCard({
                         <Globe size={16} />
                         <span>Source : {company.source}</span>
                     </div>
+                    <ConfidenceBadge tier={company.confidenceTier} />
                 </div>
 
                 {/* Industry Tags */}

@@ -13,6 +13,7 @@ import {
 } from "@/lib/api/company-intelligence";
 import { CompanyIntelligenceProfileResponse } from "@/lib/types/company-intelligence";
 import { notify } from "@/lib/notifications";
+import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge";
 
 export default function CompanyProfilePage() {
     const params = useParams();
@@ -208,6 +209,7 @@ export default function CompanyProfilePage() {
                                     {company.source}
                                 </span>
                             </div>
+                            <ConfidenceBadge tier={company.confidence_tier} />
                         </div>
 
                         {/* Strategic Badge */}

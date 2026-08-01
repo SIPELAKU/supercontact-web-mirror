@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-08-01
+
+### ✨ Features
+
+- **Integrations Settings**: New "Integrations" page under Admin → Settings where a company can plug in their own Google Maps or Groq (LLM) API key instead of relying on the shared platform key - includes test-connection with a live status/log view, mirroring the existing Mail Server settings UX.
+- **Confidence Badges**: Search results, the company profile page, and the company table now show a confidence badge (Verified / High / Medium / Low / Manually Added) indicating how much to trust a given result - e.g. Google Maps results are marked "Verified", an AI-inferred result with no confirmed domain is marked "Low Confidence".
+
 ## [1.21.0] - 2026-07-31
 
 ### ✨ Features

@@ -197,6 +197,61 @@ export type TestConnectionResponse = {
     details?: any;
   };
 };
+
+export type IntegrationProvider = "google_maps" | "llm_groq" | "llm_openai" | "llm_anthropic" | "social_firmographic";
+
+export interface Integration {
+  id: string;
+  company_id: string;
+  provider: IntegrationProvider;
+  status: "Active" | "Inactive" | "Error";
+  config?: Record<string, any> | null;
+  api_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type IntegrationListResponse = {
+  success: boolean;
+  data: {
+    providers: Integration[];
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export type IntegrationResponse = {
+  success: boolean;
+  data: Integration;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
+
+export interface IntegrationConnectionLog {
+  id: string;
+  company_data_provider_id: string;
+  is_success: boolean;
+  message: string;
+  error_code?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type IntegrationConnectionLogResponse = {
+  success: boolean;
+  data: IntegrationConnectionLog | null;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+};
 export type SmartCaptureStatus = "Draft" | "Active" | "Inactive" | "Archived";
 export type SmartCaptureTarget = "email" | "whatsapp";
 

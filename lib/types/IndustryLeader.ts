@@ -7,6 +7,7 @@ export type IndustryLeaderCompany = {
     financialStatus: FinancialStatus;
     industries: string[];
     source: string;
+    confidenceTier?: string | null;
     matchPercentage?: number;
     description?: string;
     website?: string;

@@ -23,6 +23,7 @@ export interface CompanyIntelligenceItem {
     financial_status: string;
     status?: string;
     source: string;
+    confidence_tier?: string | null;
     match_score: number;
     raw_data: any | null;
     created_at: string;
@@ -47,6 +48,7 @@ export interface CompanyIntelligenceProfileResponse {
     revenue: number | null;
     financial_status: string;
     source: string;
+    confidence_tier?: string | null;
     match_score: number;
     raw_data: any | null;
     created_at: string;

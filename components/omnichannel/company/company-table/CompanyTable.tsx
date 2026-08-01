@@ -42,6 +42,18 @@ const getDynamicChipStyle = (label: string): SxProps<Theme> => {
   if (label.toLowerCase() === "enriching")
     return { ...BASE_CHIP_STYLE, backgroundColor: "#FFF7E0", color: "#D97706" };
 
+  // Special-case confidence tiers, matching ConfidenceBadge's colors.
+  if (label.toLowerCase() === "verified")
+    return { ...BASE_CHIP_STYLE, backgroundColor: "#E2F8E8", color: "#1D8F4E" };
+  if (label.toLowerCase() === "high confidence")
+    return { ...BASE_CHIP_STYLE, backgroundColor: "#DDF7FF", color: "#1C93B8" };
+  if (label.toLowerCase() === "medium confidence")
+    return { ...BASE_CHIP_STYLE, backgroundColor: "#FFF3D1", color: "#D0941F" };
+  if (label.toLowerCase() === "low confidence")
+    return { ...BASE_CHIP_STYLE, backgroundColor: "#F3F4F6", color: "#6B7280" };
+  if (label.toLowerCase() === "manually added")
+    return { ...BASE_CHIP_STYLE, backgroundColor: "#E8E4FF", color: "#6A5BF7" };
+
   let hash = 0;
   for (let i = 0; i < label.length; i++) {
     hash = label.charCodeAt(i) + ((hash << 5) - hash);
@@ -49,6 +61,14 @@ const getDynamicChipStyle = (label: string): SxProps<Theme> => {
   const index = Math.abs(hash) % colors.length;
 
   return { ...BASE_CHIP_STYLE, ...colors[index] };
+};
+
+const CONFIDENCE_TIER_LABELS: Record<string, string> = {
+  verified: "Verified",
+  high: "High Confidence",
+  medium: "Medium Confidence",
+  low: "Low Confidence",
+  manual: "Manually Added",
 };
 
 // ── Props ─────────────────────────────────────────────────
@@ -146,6 +166,18 @@ export default function CompanyTable({
         ],
         Cell: ({ row }) => {
           const label = row.original.status || row.original.financial_status || "N/A";
+          return <Chip label={label} sx={getDynamicChipStyle(label)} />;
+        },
+      },
+      {
+        id: "confidence_tier",
+        accessorFn: (row) => row.confidence_tier || "",
+        header: "Confidence",
+        enableColumnFilter: false,
+        Cell: ({ row }) => {
+          const tier = row.original.confidence_tier;
+          if (!tier || !CONFIDENCE_TIER_LABELS[tier]) return <>-</>;
+          const label = CONFIDENCE_TIER_LABELS[tier];
           return <Chip label={label} sx={getDynamicChipStyle(label)} />;
         },
       },

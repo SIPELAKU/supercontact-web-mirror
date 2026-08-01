@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Search, Save } from "lucide-react";
+import { ArrowLeft, Upload, Search, Save, AlertCircle, SearchX } from "lucide-react";
 import { Checkbox } from "@mui/material";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
+import { EmptyState } from "@/components/ui/empty-state";
 import CompanyResultCard from "@/components/data-intelligence/CompanyResultCard";
 import {
     FilterCriteria,
@@ -296,16 +297,17 @@ export default function IndustryLeadersResultsPage() {
                     {isLoading ? (
                         <div className="py-12 text-center text-gray-500">Loading companies...</div>
                     ) : error ? (
-                        <div className="py-12 text-center text-red-500">{error}</div>
+                        <EmptyState
+                            icon={AlertCircle}
+                            title="Couldn't load companies"
+                            description={error}
+                        />
                     ) : companies.length === 0 ? (
-                        <div className="py-12 text-center">
-                            <p className="text-lg text-gray-500">
-                                No companies found matching your criteria
-                            </p>
-                            <p className="mt-2 text-sm text-gray-400">
-                                Try adjusting your filters or search query
-                            </p>
-                        </div>
+                        <EmptyState
+                            icon={SearchX}
+                            title="No companies found matching your criteria"
+                            description="Try adjusting your filters or search query."
+                        />
                     ) : (
                         <div className="space-y-4">
                             {companies.map((company) => (

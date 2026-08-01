@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-import { Plus, Radar, ListChecks } from "lucide-react";
+import { Plus, Radar, ListChecks, Building2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useConfirmation } from "@/components/ui/confirm-modal";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import {
     useCompanyList,
@@ -26,15 +28,24 @@ export default function CompanyListDetailPage() {
     const members = membersResponse?.data || [];
     const removeMemberMutation = useRemoveCompanyListMember();
     const [openAdd, setOpenAdd] = useState(false);
+    const { showConfirmation } = useConfirmation();
 
-    const handleRemove = async (crmCompanyId: string, name: string) => {
-        if (!confirm(`Remove "${name}" from this list?`)) return;
-        try {
-            await removeMemberMutation.mutateAsync({ id: listId, crmCompanyId });
-            notify.success("Removed", { description: `"${name}" removed from the list.` });
-        } catch (err: any) {
-            notify.error("Error", { description: handleError(err, "Remove Member") });
-        }
+    const handleRemove = (crmCompanyId: string, name: string) => {
+        showConfirmation({
+            type: "delete",
+            title: "Remove from List",
+            message: `Remove "${name}" from this list?`,
+            confirmText: "Remove",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                try {
+                    await removeMemberMutation.mutateAsync({ id: listId, crmCompanyId });
+                    notify.success("Removed", { description: `"${name}" removed from the list.` });
+                } catch (err: any) {
+                    notify.error("Error", { description: handleError(err, "Remove Member") });
+                }
+            },
+        });
     };
 
     if (isListLoading || !list) {
@@ -54,6 +65,17 @@ export default function CompanyListDetailPage() {
                     { label: "Lists", href: "/data-intelligence/lists" },
                     { label: list.name },
                 ]}
+                actions={
+                    list.list_type === "static" ? (
+                        <AppButton
+                            onClick={() => setOpenAdd(true)}
+                            variantStyle="primary"
+                            startIcon={<Plus size={16} />}
+                        >
+                            Add Companies
+                        </AppButton>
+                    ) : undefined
+                }
             />
 
             <div className="flex items-center gap-2">
@@ -72,19 +94,28 @@ export default function CompanyListDetailPage() {
             )}
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-6 min-h-[300px]">
-                <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 pt-5">
+                <section className="px-6 pt-5">
                     <p className="text-sm text-gray-500">{members.length} compan{members.length === 1 ? "y" : "ies"}</p>
-                    {list.list_type === "static" && (
-                        <AppButton
-                            onClick={() => setOpenAdd(true)}
-                            variantStyle="primary"
-                            startIcon={<Plus size={16} />}
-                        >
-                            Add Companies
-                        </AppButton>
-                    )}
                 </section>
 
+                {!isMembersLoading && members.length === 0 ? (
+                    <div className="mx-6 mb-6">
+                        <EmptyState
+                            icon={Building2}
+                            title="No companies yet"
+                            description={
+                                list.list_type === "dynamic"
+                                    ? "No companies match this list's filter yet."
+                                    : "No companies in this list yet."
+                            }
+                            action={
+                                list.list_type === "static"
+                                    ? { label: "Add Companies", onClick: () => setOpenAdd(true), icon: <Plus size={16} /> }
+                                    : undefined
+                            }
+                        />
+                    </div>
+                ) : (
                 <div className="mx-6 mb-6 overflow-x-auto rounded-lg border border-gray-200">
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
@@ -100,16 +131,6 @@ export default function CompanyListDetailPage() {
                                 <TableRow>
                                     <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
                                         <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : members.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                                        <p className="text-gray-500">
-                                            {list.list_type === "dynamic"
-                                                ? "No companies match this list's filter yet."
-                                                : "No companies in this list yet."}
-                                        </p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -132,6 +153,7 @@ export default function CompanyListDetailPage() {
                         </TableBody>
                     </Table>
                 </div>
+                )}
             </div>
 
             <AddToListModal

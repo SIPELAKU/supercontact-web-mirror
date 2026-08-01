@@ -55,7 +55,7 @@ export default function MyTopCompaniesContent() {
             >
                 <TrendingUp className="text-blue-600" size={20} />
                 <Typography variant="body2" color="blue.800">
-                    <Box component="span" fontWeight="bold">Analysis logic :</Box> Leader are determind automatically by comparing the <Box component="span" fontWeight="bold">Employee Count</Box> of "Completed" companies in the main table. Add new companies to see this change!
+                    <Box component="span" fontWeight="bold">Analysis logic:</Box> Leaders are determined automatically by comparing the <Box component="span" fontWeight="bold">Employee Count</Box> of "Completed" companies in the main table. Add new companies to see this change.
                 </Typography>
             </Paper>
 

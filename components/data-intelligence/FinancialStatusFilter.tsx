@@ -8,7 +8,7 @@ interface FinancialStatusFilterProps {
 }
 
 const STATUS_OPTIONS: FinancialStatus[] = [
-    "Profitabel",
+    "Profitable",
     "Series A",
     "Series B",
     "Series C",

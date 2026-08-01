@@ -2,11 +2,13 @@
 
 import React, { useMemo } from "react";
 import { Box, Chip, SxProps, Theme } from "@mui/material";
+import { Building2 } from "lucide-react";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // ── Chip Styling ──────────────────────────────────────────
 
@@ -77,6 +79,9 @@ interface CompanyTableProps {
   companies: CompanyIntelligenceItem[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<CompanyIntelligenceItem[]>;
@@ -92,6 +97,9 @@ export default function CompanyTable({
   companies,
   isLoading,
   isError,
+  errorMessage,
+  emptyStateTitle,
+  emptyStateDescription,
   rowCount = 0,
   onStateChange,
   onExportRequest,
@@ -209,6 +217,14 @@ export default function CompanyTable({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage ?? "Failed to load companies. Please try again."}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Building2}
+            title={emptyStateTitle ?? "No companies found"}
+            description={emptyStateDescription ?? "Try adjusting your filters or search query."}
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}

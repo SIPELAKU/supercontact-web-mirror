@@ -5,9 +5,10 @@ import { IndividualCard } from './IndividualCard';
 import { AppAutocomplete } from '../ui/app-autocomplete';
 import { AppInput } from '../ui/app-input';
 import { AppButton } from '../ui/app-button';
-import { Search, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Loader2, AlertCircle, Users } from 'lucide-react';
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from '@/lib/data/company-intelligence-options';
 import PageHeader from '../ui/page-header';
+import { EmptyState } from '../ui/empty-state';
 import { TablePagination, Alert, CircularProgress } from '@mui/material';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getIndividualIntelligence, saveContactsToCrm } from '@/lib/api/company-intelligence';
@@ -269,10 +270,12 @@ export const IndividualClient = () => {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center min-h-100 border border-dashed border-gray-200 rounded-xl bg-gray-50">
-                    <p className="text-gray-500 font-medium">No individuals found.</p>
-                    <p className="text-sm text-gray-400 mt-1">Try adjusting your filters or search query.</p>
-                </div>
+                <EmptyState
+                    icon={Users}
+                    title="No individuals found"
+                    description="Try adjusting your filters or search query."
+                    className="min-h-100"
+                />
             )}
 
             {/* Pagination */}

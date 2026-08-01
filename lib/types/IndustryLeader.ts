@@ -15,7 +15,7 @@ export type IndustryLeaderCompany = {
     phone?: string;
 };
 
-export type FinancialStatus = "IPO" | "Profitabel" | "Series A" | "Series B" | "Series C";
+export type FinancialStatus = "IPO" | "Profitable" | "Series A" | "Series B" | "Series C";
 
 export type FilterCriteria = {
     industries: string[];
@@ -53,7 +53,7 @@ export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
 };
 
 export const FINANCIAL_STATUS_OPTIONS: FinancialStatus[] = [
-    "Profitabel",
+    "Profitable",
     "Series A",
     "Series B",
     "Series C",

@@ -13,6 +13,7 @@ export default function PageHeader({
   imageWidth = 160,
   imageHeight = 160,
   className,
+  actions,
 }: PageHeaderProps) {
   return (
     <div
@@ -57,17 +58,22 @@ export default function PageHeader({
           )}
         </div>
 
-        {/* Optional Image - only shown if explicitly provided via props */}
-        {image && (
-          <div className="hidden sm:block">
-            <Image
-              src={image}
-              width={imageWidth}
-              height={imageHeight}
-              alt="Header illustration"
-              className="object-contain"
-            />
-          </div>
+        {/* actions takes precedence over the illustration image - a header
+            shows one or the other, not both. */}
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-3">{actions}</div>
+        ) : (
+          image && (
+            <div className="hidden sm:block">
+              <Image
+                src={image}
+                width={imageWidth}
+                height={imageHeight}
+                alt="Header illustration"
+                className="object-contain"
+              />
+            </div>
+          )
         )}
       </div>
     </div>

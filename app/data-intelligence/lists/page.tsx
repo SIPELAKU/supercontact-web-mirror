@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-import { Plus, Radar, ListChecks } from "lucide-react";
+import { Plus, Radar, ListChecks, ListPlus } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useConfirmation } from "@/components/ui/confirm-modal";
 import { useCompanyLists, useDeleteCompanyList } from "@/lib/hooks/useCompanyLists";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -18,15 +20,24 @@ export default function CompanyListsPage() {
     const lists = response?.data || [];
     const [openCreate, setOpenCreate] = useState(false);
     const deleteListMutation = useDeleteCompanyList();
+    const { showConfirmation } = useConfirmation();
 
-    const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Delete list "${name}"? This cannot be undone.`)) return;
-        try {
-            await deleteListMutation.mutateAsync(id);
-            notify.success("List Deleted", { description: `"${name}" has been deleted.` });
-        } catch (err: any) {
-            notify.error("Error", { description: handleError(err, "Delete List") });
-        }
+    const handleDelete = (id: string, name: string) => {
+        showConfirmation({
+            type: "delete",
+            title: "Delete List",
+            message: `Are you sure you want to delete "${name}"? This cannot be undone.`,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                try {
+                    await deleteListMutation.mutateAsync(id);
+                    notify.success("List Deleted", { description: `"${name}" has been deleted.` });
+                } catch (err: any) {
+                    notify.error("Error", { description: handleError(err, "Delete List") });
+                }
+            },
+        });
     };
 
     return (
@@ -34,14 +45,7 @@ export default function CompanyListsPage() {
             <PageHeader
                 title="Lists"
                 breadcrumbs={[{ label: "Data Intelligence" }, { label: "Lists" }]}
-            />
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-6 min-h-[300px]">
-                <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 pt-5">
-                    <p className="max-w-lg text-sm text-gray-500">
-                        Save companies into static lists you curate manually, or dynamic lists that
-                        auto-refresh from a saved search filter.
-                    </p>
+                actions={
                     <AppButton
                         onClick={() => setOpenCreate(true)}
                         variantStyle="primary"
@@ -49,9 +53,28 @@ export default function CompanyListsPage() {
                     >
                         Create List
                     </AppButton>
+                }
+            />
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-6 min-h-[300px]">
+                <section className="px-6 pt-5">
+                    <p className="max-w-lg text-sm text-gray-500">
+                        Save companies into static lists you curate manually, or dynamic lists that
+                        auto-refresh from a saved search filter.
+                    </p>
                 </section>
 
-                <div className="mx-6 mb-6 overflow-x-auto rounded-lg border border-gray-200">
+                {!isLoading && lists.length === 0 ? (
+                    <div className="mx-6 mb-6">
+                        <EmptyState
+                            icon={ListPlus}
+                            title="No lists yet"
+                            description="Create a list to start organizing companies you care about."
+                            action={{ label: "Create List", onClick: () => setOpenCreate(true), icon: <Plus size={16} /> }}
+                        />
+                    </div>
+                ) : (
+                    <div className="mx-6 mb-6 overflow-x-auto rounded-lg border border-gray-200">
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
                             <TableRow className="bg-[#EEF2FD]!">
@@ -66,12 +89,6 @@ export default function CompanyListsPage() {
                                 <TableRow>
                                     <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
                                         <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : lists.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                                        <p className="text-gray-500">No lists yet - create one to get started.</p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -109,7 +126,8 @@ export default function CompanyListsPage() {
                             )}
                         </TableBody>
                     </Table>
-                </div>
+                    </div>
+                )}
             </div>
 
             <CreateListModal open={openCreate} onClose={() => setOpenCreate(false)} onSuccess={() => refetch()} />

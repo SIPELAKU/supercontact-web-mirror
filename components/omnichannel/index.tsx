@@ -7,14 +7,6 @@ export { default as RecentActivityCompany } from "./company/activity/RecentActiv
 export { default as CompanyStats } from "./company/CompanyStats";
 
 // =======================
-// Company – Table
-// =======================
-export { default as CompanyTable } from "./company/company-table/CompanyTable";
-export { default as CompanyTableDataNotFound } from "./company/company-table/CompanyTableDataNotFound";
-export { default as CompanyTableError } from "./company/company-table/CompanyTableError";
-export { default as CompanyTableSkeleton } from "./company/company-table/CompanyTableSkeleton";
-
-// =======================
 // Company – Detail
 // =======================
 export { default as CompanyAbout } from "./company/detail-company/CompanyAbout";

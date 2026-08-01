@@ -25,6 +25,12 @@ export type FilterCriteria = {
         max: number;
     };
     financialStatuses: FinancialStatus[];
+    // Reachability + trust filters (B1) - mirrors the backend's
+    // has_phone/has_domain/min_confidence/exclude_saved search params.
+    hasPhone: boolean;
+    hasDomain: boolean;
+    minConfidence: string | null;
+    excludeSaved: boolean;
 };
 
 export type LocationOption = {
@@ -40,6 +46,10 @@ export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
         max: 1000,
     },
     financialStatuses: [],
+    hasPhone: false,
+    hasDomain: false,
+    minConfidence: null,
+    excludeSaved: false,
 };
 
 export const FINANCIAL_STATUS_OPTIONS: FinancialStatus[] = [

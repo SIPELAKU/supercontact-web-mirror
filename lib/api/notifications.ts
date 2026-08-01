@@ -74,10 +74,19 @@ export function getNotificationRoute(notif: NotificationData): string | null {
 // ============================================
 
 /**
- * Fetch list of notifications
+ * Fetch list of notifications, optionally scoped to a single entity (e.g.
+ * B4's automated signals feed, filtered to one Organization's alerts).
  */
-export async function fetchNotifications(token: string): Promise<NotificationsResponse> {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/notifications`;
+export async function fetchNotifications(
+    token: string,
+    options?: { entityType?: string; entityId?: string; limit?: number }
+): Promise<NotificationsResponse> {
+    const params = new URLSearchParams();
+    if (options?.entityType) params.set("entity_type", options.entityType);
+    if (options?.entityId) params.set("entity_id", options.entityId);
+    if (options?.limit) params.set("limit", String(options.limit));
+    const qs = params.toString();
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/notifications${qs ? `?${qs}` : ""}`;
 
     try {
         const res = await fetchWithTimeout(url, {

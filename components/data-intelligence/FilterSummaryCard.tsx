@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { FilterCriteria } from "@/lib/types/IndustryLeader";
+import { TIER_LABELS } from "@/components/data-intelligence/ConfidenceBadge";
 
 interface FilterSummaryCardProps {
     filterCriteria: FilterCriteria;
@@ -57,6 +58,29 @@ export default function FilterSummaryCard({
                         </h4>
                         <p className="text-sm text-gray-600">
                             {filterCriteria.financialStatuses.join(", ")}
+                        </p>
+                    </div>
+                )}
+
+                {/* Reachability & Confidence Summary */}
+                {(filterCriteria.hasPhone ||
+                    filterCriteria.hasDomain ||
+                    filterCriteria.excludeSaved ||
+                    filterCriteria.minConfidence) && (
+                    <div>
+                        <h4 className="mb-2 text-sm font-semibold text-gray-700">
+                            Reachability &amp; Trust
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                            {[
+                                filterCriteria.hasPhone && "Has Phone Number",
+                                filterCriteria.hasDomain && "Has Website",
+                                filterCriteria.excludeSaved && "Exclude Already Saved",
+                                filterCriteria.minConfidence &&
+                                    `Min. ${TIER_LABELS[filterCriteria.minConfidence] ?? filterCriteria.minConfidence}`,
+                            ]
+                                .filter(Boolean)
+                                .join(", ")}
                         </p>
                     </div>
                 )}

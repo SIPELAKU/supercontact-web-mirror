@@ -169,11 +169,14 @@ const menuData: MenuSection[] = [
         icon: DataIntelligenceIcon,
         children: [
           {
-            name: "Target Customer",
+            name: "Company Search",
             path: "/data-intelligence/industry-leaders",
           },
-          { name: "My Target Companies", path: "/data-intelligence/company-intelligence" },
+          { name: "Saved Companies", path: "/data-intelligence/company-intelligence" },
           { name: "Individual", path: "/data-intelligence/individual" },
+          { name: "Lists", path: "/data-intelligence/lists" },
+          { name: "Compliance", path: "/data-intelligence/compliance/suppression" },
+          { name: "Integrations", path: "/admin/integrations" },
         ],
       },
       {

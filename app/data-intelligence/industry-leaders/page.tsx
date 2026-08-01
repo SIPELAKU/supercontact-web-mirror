@@ -7,6 +7,8 @@ import IndustryFilterSection from "@/components/data-intelligence/IndustryFilter
 import LocationFilterSection from "@/components/data-intelligence/LocationFilterSection";
 import EmployeeRangeFilter from "@/components/data-intelligence/EmployeeRangeFilter";
 import FinancialStatusFilter from "@/components/data-intelligence/FinancialStatusFilter";
+import ReachabilityFilter from "@/components/data-intelligence/ReachabilityFilter";
+import ConfidenceFilter from "@/components/data-intelligence/ConfidenceFilter";
 import FilterSummaryCard from "@/components/data-intelligence/FilterSummaryCard";
 import {
     FilterCriteria,
@@ -34,10 +36,10 @@ export default function IndustryLeadersPage() {
             {/* Header with gradient background */}
             {/* Header */}
             <PageHeader
-                title="Target Customer"
+                title="Company Search"
                 breadcrumbs={[
                     { label: "Data Intelligence" },
-                    { label: "Target Customer" },
+                    { label: "Company Search" },
                 ]}
             />
 
@@ -79,7 +81,7 @@ export default function IndustryLeadersPage() {
                     </div>
 
                     {/* Financial Status Section */}
-                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+                    <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
                         <h2 className="mb-6 text-xl font-bold text-gray-900">
                             2. Financial & Business Status
                         </h2>
@@ -90,6 +92,36 @@ export default function IndustryLeadersPage() {
                                 setFilterCriteria({ ...filterCriteria, financialStatuses })
                             }
                         />
+                    </div>
+
+                    {/* Reachability & Confidence Section */}
+                    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+                        <h2 className="mb-6 text-xl font-bold text-gray-900">
+                            3. Reachability &amp; Trust
+                        </h2>
+
+                        <div className="space-y-6">
+                            <ReachabilityFilter
+                                hasPhone={filterCriteria.hasPhone}
+                                hasDomain={filterCriteria.hasDomain}
+                                excludeSaved={filterCriteria.excludeSaved}
+                                onChange={({ hasPhone, hasDomain, excludeSaved }) =>
+                                    setFilterCriteria({
+                                        ...filterCriteria,
+                                        hasPhone,
+                                        hasDomain,
+                                        excludeSaved,
+                                    })
+                                }
+                            />
+
+                            <ConfidenceFilter
+                                minConfidence={filterCriteria.minConfidence}
+                                onChange={(minConfidence) =>
+                                    setFilterCriteria({ ...filterCriteria, minConfidence })
+                                }
+                            />
+                        </div>
                     </div>
                 </div>
 

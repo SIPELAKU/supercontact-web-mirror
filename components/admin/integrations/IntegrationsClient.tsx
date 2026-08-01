@@ -15,12 +15,20 @@ import EditIntegrationModal from "./EditIntegrationModal";
 import DeleteIntegrationModal from "./DeleteIntegrationModal";
 import ConnectionStatusModal from "./ConnectionStatusModal";
 
+// B6: pluggable adapter stubs - schema-reserved (see AVAILABLE_PROVIDERS
+// below, which deliberately excludes these) but no client is wired up yet.
+// Shown here so it's clear these are planned, not simply missing.
+const COMING_SOON_PROVIDERS: IntegrationProvider[] = ["ahu_oss_npwp", "whatsapp_business", "meta_graph"];
+
 export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
     google_maps: "Google Maps",
     llm_groq: "LLM (Groq)",
     llm_openai: "LLM (OpenAI)",
     llm_anthropic: "LLM (Anthropic)",
     social_firmographic: "Social / Firmographic",
+    ahu_oss_npwp: "AHU / OSS / NPWP (Gov. Registry)",
+    whatsapp_business: "WhatsApp Business",
+    meta_graph: "Meta Graph (Facebook/Instagram)",
 };
 
 // Providers a tenant can actually configure today - the rest are reserved in
@@ -202,6 +210,25 @@ export const IntegrationsClient = () => {
                         </TableBody>
                     </Table>
                 </div>
+
+                <section className="px-6 pb-6">
+                    <h3 className="text-xs font-bold uppercase text-gray-400 mb-3">Coming Soon</h3>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {COMING_SOON_PROVIDERS.map((provider) => (
+                            <div
+                                key={provider}
+                                className="rounded-lg border border-dashed border-gray-200 px-4 py-3"
+                            >
+                                <span className="text-sm font-medium text-gray-500">
+                                    {PROVIDER_LABELS[provider]}
+                                </span>
+                                <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                                    Coming Soon
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             </div>
 
             <AddIntegrationModal

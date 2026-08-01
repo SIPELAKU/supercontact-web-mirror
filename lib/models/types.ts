@@ -198,7 +198,18 @@ export type TestConnectionResponse = {
   };
 };
 
-export type IntegrationProvider = "google_maps" | "llm_groq" | "llm_openai" | "llm_anthropic" | "social_firmographic";
+export type IntegrationProvider =
+    | "google_maps"
+    | "llm_groq"
+    | "llm_openai"
+    | "llm_anthropic"
+    | "social_firmographic"
+    // B6: pluggable adapter stubs - reserved in the schema, no client wired
+    // up yet (see supercontact-api's app/clients/{ahu_oss_npwp,
+    // whatsapp_business,meta_graph}_client.py).
+    | "ahu_oss_npwp"
+    | "whatsapp_business"
+    | "meta_graph";
 
 export interface Integration {
   id: string;

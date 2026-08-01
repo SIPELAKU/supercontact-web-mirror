@@ -97,6 +97,10 @@ export default function IndustryLeadersResultsPage() {
                 employee_min: filterCriteria.employeeRange.min,
                 employee_max: filterCriteria.employeeRange.max,
                 financial_status: filterCriteria.financialStatuses,
+                has_phone: filterCriteria.hasPhone || undefined,
+                has_domain: filterCriteria.hasDomain || undefined,
+                min_confidence: filterCriteria.minConfidence || undefined,
+                exclude_saved: filterCriteria.excludeSaved || undefined,
                 limit: 100,
                 q: "", // No search query for initial fetch
             };
@@ -111,12 +115,16 @@ export default function IndustryLeadersResultsPage() {
                 employees: item.employee_count,
                 revenue: item.revenue != null ? String(item.revenue) : "N/A",
                 financialStatus: item.financial_status as FinancialStatus,
-                industries: [item.industry],
+                // item.industry is genuinely nullable (backend: Optional[str]) despite
+                // the old non-null type annotation - wrapping a null/undefined value in
+                // an array rendered a broken chip in CompanyResultCard's industries.map().
+                industries: item.industry ? [item.industry] : [],
                 source: item.source,
                 confidenceTier: item.confidence_tier,
                 matchPercentage: item.match_score,
                 description: item.description,
                 website: item.domain || undefined,
+                phone: item.phone || undefined,
             }));
 
             setAllCompanies(mappedCompanies);
@@ -144,8 +152,7 @@ export default function IndustryLeadersResultsPage() {
     }, [fetchCompanies]);
 
     const handleViewProfile = (id: string) => {
-        // Navigate to industry leaders profile page
-        router.push(`/data-intelligence/industry-leaders/profile/${id}`);
+        router.push(`/data-intelligence/company/${id}?source=search`);
     };
 
     const handleSaveToCRM = async (id: string) => {
@@ -202,7 +209,7 @@ export default function IndustryLeadersResultsPage() {
                 title="Search Results"
                 breadcrumbs={[
                     { label: "Data Intelligence" },
-                    { label: "Target Customer" },
+                    { label: "Company Search" },
                     { label: "Results" },
                 ]}
             />

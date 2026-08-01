@@ -6,7 +6,12 @@ interface ConfidenceBadgeProps {
     tier?: ConfidenceTier | null;
 }
 
-const TIER_LABELS: Record<string, string> = {
+// Ascending trust order - mirrors the backend's CONFIDENCE_TIERS_ASCENDING
+// (app/schemas/company_intelligence.py), shared with ConfidenceFilter so the
+// filter's "minimum tier" options stay in sync with what the badge can show.
+export const CONFIDENCE_TIERS_ASCENDING = ["low", "medium", "high", "verified", "manual"];
+
+export const TIER_LABELS: Record<string, string> = {
     verified: "Verified",
     high: "High Confidence",
     medium: "Medium Confidence",

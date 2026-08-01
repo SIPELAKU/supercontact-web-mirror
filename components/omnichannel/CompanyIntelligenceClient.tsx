@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Printer } from "lucide-react";
-import { CompanyStats, CompanyTable } from "@/components/omnichannel";
+import { CompanyStats } from "@/components/omnichannel";
+import CompanyTable from "@/components/data-intelligence/company-table/CompanyTable";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "../ui/app-button";
 import { notify } from "@/lib/notifications";
@@ -212,7 +213,7 @@ export default function CompanyIntelligenceClient({
   const componentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: "My Target Companies",
+    documentTitle: "Saved Companies",
   });
 
   const printableColumns = [
@@ -227,9 +228,9 @@ export default function CompanyIntelligenceClient({
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       {/* Header */}
       <PageHeader
-        title="My Target Companies"
+        title="Saved Companies"
         breadcrumbs={
-          breadcrumbs || [{ label: "Data Intelligence" }, { label: "My Target Companies" }]
+          breadcrumbs || [{ label: "Data Intelligence" }, { label: "Saved Companies" }]
         }
       />
 
@@ -257,7 +258,7 @@ export default function CompanyIntelligenceClient({
               className={`${activeTab === "top-companies" ? "text-blue-600" : "text-gray-500"
                 } font-medium hover:text-gray-700`}
             >
-              Top Companies
+              Top Companies in My Industry
             </span>
           </div>
         </div>
@@ -280,9 +281,7 @@ export default function CompanyIntelligenceClient({
             onDelete={handleDelete}
             onBulkDelete={handleBulkDelete}
             onRowClick={(row) =>
-              router.push(
-                `/data-intelligence/industry-leaders/profile/${row.id}?type=target`
-              )
+              router.push(`/data-intelligence/company/${row.id}?source=saved`)
             }
             renderTopLeftToolbar={() => (
               <>
@@ -321,7 +320,7 @@ export default function CompanyIntelligenceClient({
       <div style={{ display: "none" }}>
         <PrintableTable
           ref={componentRef}
-          title="My Target Companies"
+          title="Saved Companies"
           columns={printableColumns}
           data={companies}
         />

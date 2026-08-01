@@ -6,8 +6,6 @@ import { Building2 } from "lucide-react";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
-import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // ── Chip Styling ──────────────────────────────────────────
@@ -82,13 +80,33 @@ interface CompanyTableProps {
   errorMessage?: string;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
+  emptyStateAction?: { label: string; onClick: () => void; icon?: React.ReactNode };
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<CompanyIntelligenceItem[]>;
-  onDelete?: (id: string) => void;
-  onBulkDelete?: (ids: string[], clearSelection: () => void) => void;
   onRowClick?: (row: CompanyIntelligenceItem) => void;
   renderTopLeftToolbar?: () => React.ReactNode;
+  /** Distinct per table instance so SuperTable's urlSync/savedFilters
+   * (namespaced "{tableId}_*") don't collide when Discover/Saved/Lists
+   * each render their own CompanyTable within the same workspace page. */
+  tableId?: string;
+  /** Custom action buttons in the row's right-most column - callers decide
+   * what "acting on a row" means here (Save to CRM on Discover, Delete on
+   * Saved, Remove on a list) rather than this component assuming Delete. */
+  renderRowActions?: (row: CompanyIntelligenceItem) => React.ReactNode;
+  /** Passed straight through to SuperTable - same reasoning as
+   * renderRowActions, generalized for bulk/selected-rows actions. */
+  renderBulkActions?: (params: {
+    selectedRows: CompanyIntelligenceItem[];
+    clearSelection: () => void;
+  }) => React.ReactNode;
+  /** The Companies workspace (D2) drives Industry/Location filtering from
+   * its own left-side facet rail, not SuperTable's per-column filter
+   * popovers - set false there so the two filter UIs don't coexist. */
+  enableColumnFilters?: boolean;
+  /** 'none' hides the selection checkboxes/bulk-actions bar entirely -
+   * used on the Lists tab, which has no bulk action to select rows for. */
+  rowSelection?: "none" | "single" | "multi";
 }
 
 // ── Component ─────────────────────────────────────────────
@@ -100,13 +118,17 @@ export default function CompanyTable({
   errorMessage,
   emptyStateTitle,
   emptyStateDescription,
+  emptyStateAction,
   rowCount = 0,
   onStateChange,
   onExportRequest,
-  onDelete,
-  onBulkDelete,
   onRowClick,
   renderTopLeftToolbar,
+  tableId = "companies-table",
+  renderRowActions,
+  renderBulkActions,
+  enableColumnFilters = true,
+  rowSelection = "multi",
 }: CompanyTableProps) {
   const columns = useMemo<MRT_ColumnDef<CompanyIntelligenceItem>[]>(
     () => [
@@ -131,6 +153,7 @@ export default function CompanyTable({
       {
         accessorKey: "industry",
         header: "Industry",
+        enableColumnFilter: enableColumnFilters,
         filterVariant: "multi-select",
         filterSelectOptions: INDUSTRY_OPTIONS,
         Cell: ({ row }) => (
@@ -143,6 +166,7 @@ export default function CompanyTable({
       {
         accessorKey: "location",
         header: "Location",
+        enableColumnFilter: enableColumnFilters,
         filterVariant: "multi-select",
         filterSelectOptions: LOCATION_OPTIONS,
         Cell: ({ row }) => <>{row.original.location || "N/A"}</>,
@@ -195,20 +219,19 @@ export default function CompanyTable({
         enableColumnFilter: false,
         enableSorting: false,
         size: 80,
-        Cell: ({ row }) => (
-          <Box onClick={(e) => e.stopPropagation()}>
-            <DeleteButton onClick={() => onDelete?.(row.original.id)} />
-          </Box>
-        ),
+        Cell: ({ row }) =>
+          renderRowActions ? (
+            <Box onClick={(e) => e.stopPropagation()}>{renderRowActions(row.original)}</Box>
+          ) : null,
       },
     ],
-    [onDelete]
+    [renderRowActions, enableColumnFilters]
   );
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
       <SuperTable<CompanyIntelligenceItem>
-        tableId="companies-table"
+        tableId={tableId}
         data={companies}
         columns={columns}
         rowCount={rowCount}
@@ -223,41 +246,24 @@ export default function CompanyTable({
             icon={Building2}
             title={emptyStateTitle ?? "No companies found"}
             description={emptyStateDescription ?? "Try adjusting your filters or search query."}
+            action={emptyStateAction}
           />
         )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}
         renderTopLeftToolbar={renderTopLeftToolbar}
-        renderBulkActions={
-          onBulkDelete
-            ? ({ selectedRows, clearSelection }) => (
-                <AppButton
-                  variantStyle="danger"
-                  onClick={() =>
-                    onBulkDelete(
-                      selectedRows.map(
-                        (r) => (r as CompanyIntelligenceItem).id
-                      ),
-                      clearSelection
-                    )
-                  }
-                >
-                  {`Delete (${selectedRows.length})`}
-                </AppButton>
-              )
-            : undefined
-        }
+        renderBulkActions={renderBulkActions}
         initialState={{
           columnFilters: [],
         }}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          columnFilters: enableColumnFilters,
           sorting: true,
           urlSync: true,
-          rowSelection: "multi",
+          rowSelection,
           export: { excel: true, csv: true },
           densityToggle: true,
           fullScreenToggle: true,

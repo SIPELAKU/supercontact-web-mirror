@@ -168,15 +168,16 @@ const menuData: MenuSection[] = [
         name: "Data Intelligence",
         icon: DataIntelligenceIcon,
         children: [
-          {
-            name: "Company Search",
-            path: "/data-intelligence/industry-leaders",
-          },
-          { name: "Saved Companies", path: "/data-intelligence/company-intelligence" },
+          // D2: Company Search, Saved Companies, and Lists merged into one
+          // "Companies" workspace (Discover/Saved/Lists tabs) - was 3
+          // separate destinations for what's conceptually one task.
+          { name: "Companies", path: "/data-intelligence/companies" },
           { name: "Individual", path: "/data-intelligence/individual" },
-          { name: "Lists", path: "/data-intelligence/lists" },
           { name: "Compliance", path: "/data-intelligence/compliance/suppression" },
-          { name: "Integrations", path: "/admin/integrations" },
+          // Integrations' own duplicate link (into ADMIN > Settings) was
+          // removed here - it's still reachable from there, and this entry
+          // never actually helped orientation (the page itself has no
+          // breadcrumb back to Data Intelligence either way).
         ],
       },
       {

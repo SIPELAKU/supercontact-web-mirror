@@ -13,40 +13,25 @@ interface CreateListModalProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    // D2: the Companies workspace always holds live Discover-tab filter
+    // state in memory (it doesn't get cleared switching tabs), so a Dynamic
+    // list is created from whatever's actually on screen right now - no
+    // more depending on sessionStorage from a previous page visit.
+    currentFilter?: CompanyIntelligenceSearchPayload | null;
+    defaultListType?: "static" | "dynamic";
 }
 
-// A dynamic list needs a real filter to re-run - reuse whatever the user
-// last searched with on the Company Search page (sessionStorage) rather
-// than duplicating the whole filter form inside this modal.
-function readLastSearchFilter(): CompanyIntelligenceSearchPayload | null {
-    if (typeof window === "undefined") return null;
-    const raw = sessionStorage.getItem("industryLeadersFilter");
-    if (!raw) return null;
-    try {
-        const criteria = JSON.parse(raw);
-        return {
-            industries: criteria.industries || [],
-            locations: criteria.locations || [],
-            employee_min: criteria.employeeRange?.min ?? 0,
-            employee_max: criteria.employeeRange?.max ?? 0,
-            financial_status: criteria.financialStatuses || [],
-            has_phone: criteria.hasPhone || undefined,
-            has_domain: criteria.hasDomain || undefined,
-            min_confidence: criteria.minConfidence || undefined,
-            exclude_saved: criteria.excludeSaved || undefined,
-            limit: 100,
-        };
-    } catch {
-        return null;
-    }
-}
-
-export default function CreateListModal({ open, onClose, onSuccess }: CreateListModalProps) {
+export default function CreateListModal({
+    open,
+    onClose,
+    onSuccess,
+    currentFilter = null,
+    defaultListType = "static",
+}: CreateListModalProps) {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [listType, setListType] = useState<"static" | "dynamic">("static");
     const [isLoading, setIsLoading] = useState(false);
-    const [lastFilter, setLastFilter] = useState<CompanyIntelligenceSearchPayload | null>(null);
 
     const createListMutation = useCreateCompanyList();
 
@@ -54,19 +39,18 @@ export default function CreateListModal({ open, onClose, onSuccess }: CreateList
         if (open) {
             setName("");
             setDescription("");
-            setListType("static");
-            setLastFilter(readLastSearchFilter());
+            setListType(defaultListType);
         }
-    }, [open]);
+    }, [open, defaultListType]);
 
     const handleSubmit = async () => {
         if (!name.trim()) {
             notify.warning("Validation Error", { description: "Please enter a list name." });
             return;
         }
-        if (listType === "dynamic" && !lastFilter) {
+        if (listType === "dynamic" && !currentFilter) {
             notify.warning("Validation Error", {
-                description: "Run a search on Company Search first, then create a dynamic list from those filters.",
+                description: "Switch to the Discover tab, set up your filters, then save them as a list.",
             });
             return;
         }
@@ -77,7 +61,7 @@ export default function CreateListModal({ open, onClose, onSuccess }: CreateList
                 name: name.trim(),
                 description: description.trim() || undefined,
                 list_type: listType,
-                filter_criteria: listType === "dynamic" ? lastFilter! : undefined,
+                filter_criteria: listType === "dynamic" ? currentFilter! : undefined,
             });
             notify.success("List Created", { description: `"${name.trim()}" has been created.` });
             onSuccess();
@@ -158,9 +142,9 @@ export default function CreateListModal({ open, onClose, onSuccess }: CreateList
                         </div>
                         {listType === "dynamic" && (
                             <p className="text-xs text-gray-500">
-                                {lastFilter
-                                    ? "This list will use the filters from your last Company Search."
-                                    : "No recent search filter found - run a search on Company Search first."}
+                                {currentFilter
+                                    ? "This list will use your current Discover filters."
+                                    : "No active Discover filters - switch to the Discover tab and set some up first."}
                             </p>
                         )}
                     </div>

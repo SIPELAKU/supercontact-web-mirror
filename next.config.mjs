@@ -37,6 +37,39 @@ const nextConfig = {
       },
     ];
   },
+  // D2 (Data Intelligence UI/UX revamp): Company Search, its Results page,
+  // Saved Companies, and the Lists index/detail pages were merged into one
+  // "Companies" workspace (Discover/Saved/Lists tabs). Old bookmarks/links
+  // still resolve instead of 404ing.
+  async redirects() {
+    return [
+      {
+        source: '/data-intelligence/industry-leaders',
+        destination: '/data-intelligence/companies?tab=discover',
+        permanent: false,
+      },
+      {
+        source: '/data-intelligence/industry-leaders/results',
+        destination: '/data-intelligence/companies?tab=discover',
+        permanent: false,
+      },
+      {
+        source: '/data-intelligence/company-intelligence',
+        destination: '/data-intelligence/companies?tab=saved',
+        permanent: false,
+      },
+      {
+        source: '/data-intelligence/lists',
+        destination: '/data-intelligence/companies?tab=lists',
+        permanent: false,
+      },
+      {
+        source: '/data-intelligence/lists/:id',
+        destination: '/data-intelligence/companies?tab=lists&list=:id',
+        permanent: false,
+      },
+    ];
+  },
   //comment utk dev purpose need to be reverted back
   async rewrites() {
     const backendUrl = process.env.BACKEND_URL;

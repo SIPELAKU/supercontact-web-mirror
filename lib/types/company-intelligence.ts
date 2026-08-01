@@ -162,28 +162,3 @@ export interface MyTargetCompaniesResponse {
     data: CompanyIntelligenceItem[];
 }
 
-export interface MyTopCompany {
-    rank: number;
-    company_id: string;
-    name: string;
-    revenue: number;
-    employee_count: number;
-    employee_range: string;
-    market_position: string;
-    description: string;
-    location: string;
-    enriched: boolean;
-}
-
-export interface MyTopCompaniesGroup {
-    industry: string;
-    leaders: MyTopCompany[];
-}
-
-export interface MyTopCompaniesResponse {
-    success: boolean;
-    data: {
-        data: MyTopCompaniesGroup[];
-    };
-    error: string | null;
-}

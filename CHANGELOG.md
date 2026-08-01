@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.1] - 2026-08-02
+
+### 🐛 Fix
+
+- **Google Maps Attribution**: Search results and the company profile page now show a "via Google" tag whenever a result's data came from Google Maps, as required by Google Maps Platform's terms of use. Added `GoogleAttributionTag`, wired in next to the existing confidence badge.
+
 ## [1.22.0] - 2026-08-01
 
 ### ✨ Features

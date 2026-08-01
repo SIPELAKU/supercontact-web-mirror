@@ -14,6 +14,7 @@ import {
 import { CompanyIntelligenceProfileResponse } from "@/lib/types/company-intelligence";
 import { notify } from "@/lib/notifications";
 import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge";
+import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 
 export default function CompanyProfilePage() {
     const params = useParams();
@@ -210,6 +211,7 @@ export default function CompanyProfilePage() {
                                 </span>
                             </div>
                             <ConfidenceBadge tier={company.confidence_tier} />
+                            <GoogleAttributionTag source={company.source} />
                         </div>
 
                         {/* Strategic Badge */}

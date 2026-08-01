@@ -5,6 +5,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { IndustryLeaderCompany } from "@/lib/types/IndustryLeader";
 import { Checkbox } from "@mui/material";
 import { ConfidenceBadge } from "./ConfidenceBadge";
+import { GoogleAttributionTag } from "./GoogleAttributionTag";
 
 interface CompanyResultCardProps {
     company: IndustryLeaderCompany;
@@ -91,6 +92,7 @@ export default function CompanyResultCard({
                         <span>Source : {company.source}</span>
                     </div>
                     <ConfidenceBadge tier={company.confidenceTier} />
+                    <GoogleAttributionTag source={company.source} />
                 </div>
 
                 {/* Industry Tags */}

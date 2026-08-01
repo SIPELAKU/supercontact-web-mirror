@@ -9,6 +9,7 @@ import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge"
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
 import ProvenanceDrawer from "./ProvenanceDrawer";
+import OrgChartCard from "./OrgChartCard";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
 import { fetchNotifications } from "@/lib/api/notifications";
@@ -214,6 +215,11 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                             name: person.name,
                             title: person.role || "",
                         }))}
+                    />
+
+                    <OrgChartCard
+                        organizationId={profile.organizationId}
+                        viewAllHref={`/data-intelligence/company/${id}/org-chart?source=${source}`}
                     />
 
                     {profile.subsidiaries.length > 0 && (

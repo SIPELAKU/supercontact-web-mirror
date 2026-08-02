@@ -56,7 +56,9 @@ export interface Contact {
       created_at: string,
       updated_at: string
     }
-  ]
+  ],
+  mailing_lists?: { id: string; name: string }[],
+  broadcast_groups?: { id: string; name: string }[],
 }
 export interface Task {
   id: string;

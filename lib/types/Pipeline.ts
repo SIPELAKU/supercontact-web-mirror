@@ -99,4 +99,8 @@ export interface PageHeaderProps {
   imageWidth?: number;
   imageHeight?: number;
   className?: string;
+  /** Primary action(s) for the page (e.g. a "Create" button), rendered
+   * top-right of the header next to the title. Takes precedence over
+   * `image` when both are supplied - a header shows one or the other. */
+  actions?: React.ReactNode;
 }

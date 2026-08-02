@@ -7,28 +7,16 @@ export { default as RecentActivityCompany } from "./company/activity/RecentActiv
 export { default as CompanyStats } from "./company/CompanyStats";
 
 // =======================
-// Company – Table
-// =======================
-export { default as CompanyTable } from "./company/company-table/CompanyTable";
-export { default as CompanyTableDataNotFound } from "./company/company-table/CompanyTableDataNotFound";
-export { default as CompanyTableError } from "./company/company-table/CompanyTableError";
-export { default as CompanyTableSkeleton } from "./company/company-table/CompanyTableSkeleton";
-
-// =======================
 // Company – Detail
 // =======================
-export { default as AiIntelligenceSummary } from "./company/detail-company/AiIntelligenceSummary";
 export { default as CompanyAbout } from "./company/detail-company/CompanyAbout";
 export { default as CompanyDetailStats } from "./company/detail-company/CompanyDetailStats";
 export { default as OrganizationStructureCard } from "./company/detail-company/OrganizationStructureCard";
 export { default as RecentSignals } from "./company/detail-company/RecentSignals";
 export { default as CompanyDocumentsCard } from "./company/detail-company/CompanyDocumentsCard";
-export { default as SimiliarCompaniesCard } from "./company/detail-company/SimiliarCompaniesCard";
-export { default as SimiliarCompaniesCardSkeleton } from "./company/detail-company/SimiliarCompaniesCardSkeleton";
 
 export { default as CompanyKeyPeopleCard } from "./company/detail-company/KeyPeopleCard";
 export { default as CompanyKeyPeopleCardSkeleton } from "./company/detail-company/KeyPeopleCardSkeleton";
-export { default as CompanyRecentActivity } from "./company/detail-company/RecentActivityDetailCompany";
 
 // =======================
 // Company – Filter

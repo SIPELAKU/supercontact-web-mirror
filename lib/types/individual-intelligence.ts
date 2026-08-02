@@ -5,6 +5,12 @@ export interface KeyPerson {
     group: string;
     lastupdate: string;
     avatar_url?: string; // Added for UI if available, though not in spec
+    // Only populated when this entry is backed by a real Person record
+    // (see backend's CompanyCrmService._get_key_people_for_row) - null for
+    // entries still only sourced from the legacy raw_data.key_people blob.
+    email?: string | null;
+    phone?: string | null;
+    linkedin_url?: string | null;
 }
 
 export interface IndividualIntelligenceItem {

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.1] - 2026-08-02
+
+### 🐛 Fix
+
+- **Google Maps Attribution**: Search results and the company profile page now show a "via Google" tag whenever a result's data came from Google Maps, as required by Google Maps Platform's terms of use. Added `GoogleAttributionTag`, wired in next to the existing confidence badge.
+
+## [1.22.0] - 2026-08-01
+
+### ✨ Features
+
+- **Integrations Settings**: New "Integrations" page under Admin → Settings where a company can plug in their own Google Maps or Groq (LLM) API key instead of relying on the shared platform key - includes test-connection with a live status/log view, mirroring the existing Mail Server settings UX.
+- **Confidence Badges**: Search results, the company profile page, and the company table now show a confidence badge (Verified / High / Medium / Low / Manually Added) indicating how much to trust a given result - e.g. Google Maps results are marked "Verified", an AI-inferred result with no confirmed domain is marked "Low Confidence".
+
+## [1.21.0] - 2026-07-31
+
+### ✨ Features
+
+- **"My Top Companies"**: Renamed the "Industry Leaders" tab inside My Target Companies to "My Top Companies", now calling the renamed `/company-intelligence/my-top-companies` API — avoids confusion with the separate, market-wide "Industry Leaders" search flow which keeps its existing name and route.
+
+### 🐛 Bug Fixes
+
+- **Individual Page Pagination**: Replaced the client-side "fetch every page from the API, then paginate in the browser" approach with real server-side pagination. Previously, opening the Individual page issued a full sweep of every matching page (100 rows at a time) before showing a single card — now it fetches exactly one page per interaction.
+- **`revenue` Field Type**: Fixed the `revenue` field on `CompanyIntelligenceItem`/`CompanyIntelligenceProfileResponse` from `string` to `number | null` to match what the API actually returns; updated the one dependent mapper to convert explicitly instead of relying on incidental type coercion.
+- **Dead Navigation Links**: Fixed/removed hardcoded `.../1` navigation links left over from a duplicate mockup page tree, including a "View All Employees" link that no longer had a real destination.
+
+### 🧹 Cleanup
+
+- **Removed Duplicate & Mockup Pages**: Deleted the duplicate `/omnichannel/company-intelligence` route tree and three unreachable mockup detail pages (company, activity, key-people) that only ever rendered hardcoded "Acme Inc." placeholder data, along with the card components and mock data files that existed solely to feed them.
+- **Removed Dead UI**: Removed a non-functional "Add Company" button (no handler; redundant with the existing per-row and bulk save-to-CRM actions) and a fake client-side "estimated result count" computed against a small hardcoded mock array that could never match real results.
+- **Naming Consistency**: Renamed the sidebar nav label "Company" to "My Target Companies" to match the page's own title; fixed a "Data Inteligence" typo; removed an unused, zero-importer sidebar nav config file.
+- **Language Consistency**: Normalized mixed Indonesian/English copy across the Target Customer search/filter/results flow to English, matching the dominant convention used elsewhere in the app.
+
 ## [1.20.6] - 2026-07-31
 
 ### 🐛 Bug Fixes

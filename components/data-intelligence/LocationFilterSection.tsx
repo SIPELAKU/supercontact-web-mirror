@@ -16,7 +16,7 @@ export default function LocationFilterSection({
         <div className="space-y-3">
             <AppAutocomplete
                 multiple
-                label="Lokasi"
+                label="Location"
                 options={LOCATION_OPTIONS}
                 value={selectedLocations}
                 onChange={(event, newValue) => {

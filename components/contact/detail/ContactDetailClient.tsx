@@ -19,12 +19,13 @@ import { ContactNotes } from "./sections/ContactNotes";
 import { ContactTasks } from "./sections/ContactTasks";
 import { ContactEmailTab } from "./sections/ContactEmailTab";
 import { ContactWhatsAppTab } from "./sections/ContactWhatsAppTab";
+import { ContactConversationsTab } from "./sections/ContactConversationsTab";
 
 // Mock data for tags since API wasnt provided for it
 const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
 
-type ProfileTab = "overview" | "activity" | "email" | "whatsapp";
-const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp"];
+type ProfileTab = "overview" | "activity" | "email" | "whatsapp" | "conversations";
+const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp", "conversations"];
 
 export const ContactDetailClient = () => {
     const params = useParams();
@@ -190,6 +191,7 @@ export const ContactDetailClient = () => {
                     <Tab label="Activity" value="activity" disableRipple />
                     <Tab label="Email" value="email" disableRipple />
                     <Tab label="WhatsApp" value="whatsapp" disableRipple />
+                    <Tab label="Conversations" value="conversations" disableRipple />
                 </Tabs>
             </Box>
 
@@ -234,6 +236,10 @@ export const ContactDetailClient = () => {
                     token={token}
                     onChanged={reloadData}
                 />
+            )}
+
+            {activeTab === "conversations" && (
+                <ContactConversationsTab conversations={contact.conversations || []} />
             )}
 
             <EditContactModal

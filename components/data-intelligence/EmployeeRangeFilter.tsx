@@ -25,7 +25,7 @@ export default function EmployeeRangeFilter({
             <div className="flex items-center gap-2">
                 <Users className="text-[#5479EE]" size={24} />
                 <h3 className="text-base font-semibold text-gray-800">
-                    Jumlah Karyawan ({min} - {max})
+                    Employee Count ({min} - {max})
                 </h3>
             </div>
 

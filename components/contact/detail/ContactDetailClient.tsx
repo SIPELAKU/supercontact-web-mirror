@@ -1,32 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Contact, Note, Task } from "@/lib/models/types";
-import { ArrowLeftIcon } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import AddTaskModal from "@/components/contact/modal/AddTaskModal";
 import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
 import { useAuth } from "@/lib/context/AuthContext";
-import { AppButton } from "@/components/ui/app-button";
-import { Box, CircularProgress, Divider } from "@mui/material";
+import { CircularProgress, Box, Tab, Tabs } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
+import PageHeader from "@/components/ui/page-header";
 
 import { ContactHeader } from "./sections/ContactHeader";
 import { ContactInfo } from "./sections/ContactInfo";
 import { ContactTags } from "./sections/ContactTags";
 import { ContactNotes } from "./sections/ContactNotes";
 import { ContactTasks } from "./sections/ContactTasks";
+import { ContactEmailTab } from "./sections/ContactEmailTab";
+import { ContactWhatsAppTab } from "./sections/ContactWhatsAppTab";
+import { ContactConversationsTab } from "./sections/ContactConversationsTab";
 
 // Mock data for tags since API wasnt provided for it
 const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
 
+type ProfileTab = "overview" | "activity" | "email" | "whatsapp" | "conversations";
+const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp", "conversations"];
+
 export const ContactDetailClient = () => {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const id = params.id as string;
     const { token } = useAuth();
+
+    const [activeTab, setActiveTab] = useState<ProfileTab>(() => {
+        const fromUrl = searchParams.get("tab") as ProfileTab | null;
+        return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : "overview";
+    });
 
     const [contact, setContact] = useState<Contact | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
@@ -71,7 +82,16 @@ export const ContactDetailClient = () => {
         if (id) {
             reloadData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
+
+    const handleTabChange = useCallback(
+        (tab: ProfileTab) => {
+            setActiveTab(tab);
+            router.replace(`/contact/detail/${id}?tab=${tab}`, { scroll: false });
+        },
+        [id, router]
+    );
 
     const handleSaveNote = async (noteText: string) => {
         setisloadingCreateNote(true);
@@ -141,40 +161,86 @@ export const ContactDetailClient = () => {
     }
 
     return (
-        <div className="w-full flex flex-col gap-6 p-4 md:p-8 bg-gray-50 min-h-screen">
-            <Box className="w-fit">
-                <AppButton
-                    onClick={() => router.back()}
-                    variantStyle="outline"
-                    color="primary"
-                    startIcon={<ArrowLeftIcon />}
-                >
-                    Back
-                </AppButton>
-            </Box>
-            <Divider />
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-8 space-y-6">
+            <PageHeader
+                title={contact.name}
+                breadcrumbs={[{ label: "Contacts", href: "/contact" }, { label: contact.name }]}
+            />
 
             <ContactHeader contact={contact} onEdit={() => setOpenEdit(true)} />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {/* Left Column: Details, Tags, Tasks */}
-                <div className="flex flex-col gap-6 md:col-span-2">
-                    <ContactInfo contact={contact} />
-                    <ContactTags tags={MOCK_TAGS} />
-                </div>
+            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, val) => handleTabChange(val)}
+                    sx={{
+                        "& .MuiTab-root": {
+                            textTransform: "none",
+                            fontWeight: 500,
+                            fontSize: "14px",
+                            minWidth: "auto",
+                            padding: "10px 4px",
+                            marginRight: "28px",
+                            color: "#6B7280",
+                        },
+                        "& .Mui-selected": { color: "#5479EE!important" },
+                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
+                    }}
+                >
+                    <Tab label="Overview" value="overview" disableRipple />
+                    <Tab label="Activity" value="activity" disableRipple />
+                    <Tab label="Email" value="email" disableRipple />
+                    <Tab label="WhatsApp" value="whatsapp" disableRipple />
+                    <Tab label="Conversations" value="conversations" disableRipple />
+                </Tabs>
+            </Box>
 
-                {/* Right Column: Notes & Activity */}
-                <div className="flex flex-col gap-6 md:col-span-2">
+            {activeTab === "overview" && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="flex flex-col gap-6 md:col-span-2">
+                        <ContactInfo contact={contact} />
+                    </div>
+                    <div className="flex flex-col gap-6 md:col-span-2">
+                        <ContactTags tags={MOCK_TAGS} />
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "activity" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ContactNotes
                         contactName={contact.name}
                         notes={notes}
                         onSaveNote={handleSaveNote}
                         isSaving={isloadingCreateNote}
                     />
+                    <ContactTasks tasks={tasks} onAddTask={handleCreateTask} />
                 </div>
-            </div>
+            )}
 
-            <ContactTasks tasks={tasks} onAddTask={handleCreateTask} />
+            {activeTab === "email" && token && (
+                <ContactEmailTab
+                    contactId={id}
+                    isSubscriber={contact.is_subscriber}
+                    mailingLists={contact.mailing_lists || []}
+                    token={token}
+                    onChanged={reloadData}
+                />
+            )}
+
+            {activeTab === "whatsapp" && token && (
+                <ContactWhatsAppTab
+                    contactId={id}
+                    isRecipient={contact.is_recipient}
+                    broadcastGroups={contact.broadcast_groups || []}
+                    token={token}
+                    onChanged={reloadData}
+                />
+            )}
+
+            {activeTab === "conversations" && (
+                <ContactConversationsTab conversations={contact.conversations || []} />
+            )}
 
             <EditContactModal
                 open={openEdit}

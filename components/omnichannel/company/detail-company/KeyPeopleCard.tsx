@@ -5,8 +5,10 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
+import { Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CompanyKeyPeopleCardSkeleton } from "../..";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface KeyPeopleCardProps {
   isLoading: boolean;
@@ -39,6 +41,14 @@ export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeo
 
         {/* List */}
         <div className="px-5 py-3">
+          {peopleList.length === 0 && (
+            <EmptyState
+              icon={Users}
+              title="No key people yet"
+              description="Key people show up here once they're found or added."
+              className="rounded-none border-none bg-transparent py-6"
+            />
+          )}
           {peopleList.map((person, index) => (
             <div key={person.id}>
               <div className="flex items-center gap-3 py-3">
@@ -57,14 +67,16 @@ export default function KeyPeopleCard({ isLoading, people, viewAllHref }: KeyPeo
         <Divider />
 
         {/* Footer */}
-        <div className="p-5 text-center">
-          <button
-            onClick={() => router.push(viewAllHref || "/omnichannel/company-intelligence/key-people/1")}
-            className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline"
-          >
-            View All Employees
-          </button>
-        </div>
+        {viewAllHref && (
+          <div className="p-5 text-center">
+            <button
+              onClick={() => router.push(viewAllHref)}
+              className="cursor-pointer text-xs font-medium text-[#5479EE] hover:underline"
+            >
+              View All Employees
+            </button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

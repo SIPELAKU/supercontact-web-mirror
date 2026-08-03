@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { Subscriber } from "@/lib/types/email-marketing";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider } from "@mui/material";
-import { X, Mail, Phone, Building2, MapPin, Briefcase, Calendar } from "lucide-react";
+import { X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, UserRound } from "lucide-react";
 
 interface SubscriberPreviewPopupProps {
     subscriber: Subscriber | null;
@@ -54,9 +55,19 @@ export const SubscriberPreviewPopup = ({ subscriber, onClose }: SubscriberPrevie
                                 )}
                             </div>
                         </div>
-                        <IconButton onClick={onClose} size="small">
-                            <X size={20} />
-                        </IconButton>
+                        <div className="flex items-center gap-1">
+                            <IconButton
+                                component={Link}
+                                href={`/contact/detail/${subscriber.id}?tab=email`}
+                                size="small"
+                                title="View full contact profile"
+                            >
+                                <UserRound size={18} />
+                            </IconButton>
+                            <IconButton onClick={onClose} size="small">
+                                <X size={20} />
+                            </IconButton>
+                        </div>
                     </DialogTitle>
 
                     <DialogContent sx={{ px: 3, pb: 3 }}>

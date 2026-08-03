@@ -7,6 +7,7 @@ export type IndustryLeaderCompany = {
     financialStatus: FinancialStatus;
     industries: string[];
     source: string;
+    confidenceTier?: string | null;
     matchPercentage?: number;
     description?: string;
     website?: string;
@@ -14,7 +15,7 @@ export type IndustryLeaderCompany = {
     phone?: string;
 };
 
-export type FinancialStatus = "IPO" | "Profitabel" | "Series A" | "Series B" | "Series C";
+export type FinancialStatus = "IPO" | "Profitable" | "Series A" | "Series B" | "Series C";
 
 export type FilterCriteria = {
     industries: string[];
@@ -24,6 +25,12 @@ export type FilterCriteria = {
         max: number;
     };
     financialStatuses: FinancialStatus[];
+    // Reachability + trust filters (B1) - mirrors the backend's
+    // has_phone/has_domain/min_confidence/exclude_saved search params.
+    hasPhone: boolean;
+    hasDomain: boolean;
+    minConfidence: string | null;
+    excludeSaved: boolean;
 };
 
 export type LocationOption = {
@@ -39,10 +46,14 @@ export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
         max: 1000,
     },
     financialStatuses: [],
+    hasPhone: false,
+    hasDomain: false,
+    minConfidence: null,
+    excludeSaved: false,
 };
 
 export const FINANCIAL_STATUS_OPTIONS: FinancialStatus[] = [
-    "Profitabel",
+    "Profitable",
     "Series A",
     "Series B",
     "Series C",

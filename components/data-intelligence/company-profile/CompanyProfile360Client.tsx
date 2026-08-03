@@ -12,6 +12,7 @@ import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttri
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
 import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
+import SocialLookupModal from "./SocialLookupModal";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
 import { fetchNotifications } from "@/lib/api/notifications";
@@ -47,6 +48,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
     const [isSaved, setIsSaved] = useState(false);
     const [signals, setSignals] = useState<AutomatedSignal[]>([]);
     const [isLoadingSignals, setIsLoadingSignals] = useState(false);
+    const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<ProfileTab>(() => {
         const requested = searchParams.get("tab") as ProfileTab | null;
         // Honors the redirect from the retired standalone org-chart route
@@ -189,7 +191,16 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
             <div className="flex flex-wrap items-center gap-3">
                 <ConfidenceBadge tier={profile.confidenceTier} />
                 <GoogleAttributionTag source={profile.providerSource} />
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-3">
+                    {profile.cacheId && (
+                        <AppButton
+                            variantStyle="outline"
+                            color="gray"
+                            onClick={() => setIsSocialModalOpen(true)}
+                        >
+                            Look Up Facebook/Instagram
+                        </AppButton>
+                    )}
                     {isSaved ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
                             <CheckCircle2 size={14} />
@@ -202,6 +213,15 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     )}
                 </div>
             </div>
+
+            {profile.cacheId && (
+                <SocialLookupModal
+                    open={isSocialModalOpen}
+                    onClose={() => setIsSocialModalOpen(false)}
+                    onSuccess={loadProfile}
+                    cacheId={profile.cacheId}
+                />
+            )}
 
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                 <Tabs
@@ -244,6 +264,26 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <CompanyDetailStats stats={stats} />
                     </div>
+
+                    {profile.social && (
+                        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+                            <h4 className="mb-4 text-xs font-bold uppercase text-gray-400">
+                                Facebook / Instagram
+                            </h4>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-700">
+                                {profile.social.category && <span>{profile.social.category}</span>}
+                                {profile.social.follower_count != null && (
+                                    <span>{profile.social.follower_count.toLocaleString("id-ID")} followers</span>
+                                )}
+                                {profile.social.is_verified && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                                        <CheckCircle2 size={12} />
+                                        Verified
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {profile.subsidiaries.length > 0 && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">

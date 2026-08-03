@@ -18,7 +18,7 @@ import ConnectionStatusModal from "./ConnectionStatusModal";
 // B6: pluggable adapter stubs - schema-reserved (see AVAILABLE_PROVIDERS
 // below, which deliberately excludes these) but no client is wired up yet.
 // Shown here so it's clear these are planned, not simply missing.
-const COMING_SOON_PROVIDERS: IntegrationProvider[] = ["ahu_oss_npwp", "whatsapp_business", "meta_graph"];
+const COMING_SOON_PROVIDERS: IntegrationProvider[] = ["ahu_oss_npwp", "whatsapp_business"];
 
 export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
     google_maps: "Google Maps",
@@ -34,7 +34,7 @@ export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
 // Providers a tenant can actually configure today - the rest are reserved in
 // the schema for later so they can ship without a migration, but have no
 // client wired up yet.
-export const AVAILABLE_PROVIDERS: IntegrationProvider[] = ["google_maps", "llm_groq"];
+export const AVAILABLE_PROVIDERS: IntegrationProvider[] = ["google_maps", "llm_groq", "meta_graph"];
 
 export const IntegrationsClient = () => {
     const { data: response, isLoading, isError, error, refetch } = useIntegrations();

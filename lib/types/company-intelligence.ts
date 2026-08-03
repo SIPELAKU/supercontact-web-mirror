@@ -1,3 +1,11 @@
+export interface CompanySocialInfo {
+    category: string | null;
+    follower_count: number | null;
+    is_verified: boolean | null;
+    page_url: string;
+    checked_at: string;
+}
+
 export interface CompanyIntelligenceSearchPayload {
     industries: string[];
     locations: string[];
@@ -107,6 +115,7 @@ export interface TargetCompanyDetailResponse {
     field_provenance: Record<string, { source?: string; collected_at?: string; method?: string; confidence?: string }> | null;
     key_people: any[];
     subsidiaries: any[];
+    social: CompanySocialInfo | null;
     created_at: string;
     updated_at: string;
 }
@@ -142,6 +151,7 @@ export interface CompanyProfile360 {
     fieldProvenance: TargetCompanyDetailResponse["field_provenance"];
     keyPeople: Array<{ id?: string; name: string; role?: string }>;
     subsidiaries: any[];
+    social: CompanySocialInfo | null;
     createdAt: string;
 }
 

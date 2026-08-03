@@ -4,6 +4,7 @@ import {
     CompanyIntelligenceSearchPayload,
     CompanyIntelligenceSearchResult,
     CompanyIntelligenceProfileResponse,
+    CompanySocialInfo,
     SaveToCrmResponse,
 } from "@/lib/types/company-intelligence";
 
@@ -89,6 +90,37 @@ export async function saveCompanyToCrm(
     if (!res.ok || json?.success === false) {
         const message =
             json?.error?.message || json?.message || "Failed to save company to CRM";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function enrichCompanySocial(
+    token: string,
+    cacheId: string,
+    pageNameOrUrl: string
+): Promise<CompanySocialInfo> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/${cacheId}/enrich-social`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ page_name_or_url: pageNameOrUrl }),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to look up Facebook/Instagram Page";
         throw new Error(message);
     }
 

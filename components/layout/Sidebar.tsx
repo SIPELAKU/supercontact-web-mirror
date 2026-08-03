@@ -177,6 +177,7 @@ const menuData: MenuSection[] = [
           // company) into a table with company backlinks and a seniority
           // signal already computed server-side (C1) but unused until now.
           { name: "People", path: "/data-intelligence/people" },
+          { name: "ICP Builder", path: "/data-intelligence/icp" },
           { name: "Compliance", path: "/data-intelligence/compliance/suppression" },
           // Integrations' own duplicate link (into ADMIN > Settings) was
           // removed here - it's still reachable from there, and this entry

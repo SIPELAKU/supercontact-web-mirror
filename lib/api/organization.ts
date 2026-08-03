@@ -50,6 +50,7 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         fieldProvenance: (data as any).field_provenance ?? null,
         keyPeople: normalizeKeyPeople(rawData.key_people),
         subsidiaries: Array.isArray(rawData.subsidiaries) ? rawData.subsidiaries : [],
+        social: rawData.social && typeof rawData.social === "object" ? rawData.social : null,
         createdAt: data.created_at,
     };
 }
@@ -64,6 +65,7 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         id: data.id,
         source: "saved",
         crmCompanyId: data.id,
+        cacheId: data.company_intelligence_id ?? undefined,
         organizationId: data.organization_id ?? null,
         name: data.name,
         email: data.email,
@@ -80,6 +82,7 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         fieldProvenance: data.field_provenance,
         keyPeople: normalizeKeyPeople(data.key_people),
         subsidiaries: Array.isArray(data.subsidiaries) ? data.subsidiaries : [],
+        social: data.social ?? null,
         createdAt: data.created_at,
     };
 }

@@ -122,6 +122,11 @@ const AddIntegrationModal: React.FC<AddIntegrationModalProps> = ({
                             onChange={(e) => setApiKey(e.target.value)}
                             placeholder="Paste your API key"
                         />
+                        {provider === "meta_graph" && (
+                            <p className="text-xs text-gray-500">
+                                Paste a long-lived Facebook/Instagram Page Access Token.
+                            </p>
+                        )}
                     </div>
 
                     {provider === "llm_groq" && (

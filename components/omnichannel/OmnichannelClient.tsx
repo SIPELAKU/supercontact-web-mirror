@@ -27,7 +27,8 @@ import {
     Quote,
     Trash,
     Paperclip,
-    Settings
+    Settings,
+    UserRound
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
@@ -1003,9 +1004,18 @@ export default function OmnichannelClient() {
                     <div className="absolute right-0 top-0 bottom-0 z-20 xl:relative xl:z-auto w-80 rounded-2xl border border-gray-200 bg-white flex flex-col shrink-0 animate-in slide-in-from-right duration-300 shadow-xl xl:shadow-none h-full">
                         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                             <h3 className="font-bold text-gray-900 text-lg uppercase tracking-wider">Contact Details</h3>
-                            <button className="xl:hidden p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50" onClick={() => setIsSidebarOpen(false)}>
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    className="p-2 text-gray-400 hover:text-primary rounded-lg hover:bg-gray-50"
+                                    title="View full contact profile"
+                                    onClick={() => router.push(`/contact/detail/${selectedContact.contact_id}?tab=conversations`)}
+                                >
+                                    <UserRound className="w-4 h-4" />
+                                </button>
+                                <button className="xl:hidden p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50" onClick={() => setIsSidebarOpen(false)}>
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             <DetailItem label="Name" value={selectedContact.display_name} icon={<UserPlus className="w-4 h-4" />} />

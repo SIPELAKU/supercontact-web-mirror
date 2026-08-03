@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useConversation, useMarkAsRead, useDeleteConversation } from "@/lib/hooks/useOmnichannel";
-import { ArrowLeft, Trash2, CheckCheck, Mail, MessageCircle, Loader2 } from "lucide-react";
+import { useConversation, useMarkAsRead, useDeleteConversation, useCreateTicketFromConversation } from "@/lib/hooks/useOmnichannel";
+import { ArrowLeft, Trash2, CheckCheck, Mail, MessageCircle, Loader2, Ticket as TicketIcon } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import MessageList from "./MessageList";
@@ -20,6 +20,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
   const { data: conversation, isLoading, error } = useConversation(conversationId);
   const markAsReadMutation = useMarkAsRead();
   const deleteConversationMutation = useDeleteConversation();
+  const createTicketMutation = useCreateTicketFromConversation();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   // Auto-mark as read when conversation loads
@@ -35,6 +36,18 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
       notify.success("Marked as Read", { description: "Conversation has been marked as read." });
     } catch (error: any) {
       const message = handleError(error, "Mark as Read");
+      notify.error("Error", { description: message });
+    }
+  };
+
+  const handleCreateTicket = async () => {
+    try {
+      const res = await createTicketMutation.mutateAsync(conversationId);
+      const ticketId = res?.data?.id;
+      notify.success("Ticket Created", { description: "A new ticket was created from this conversation." });
+      if (ticketId) router.push(`/support/tickets/${ticketId}`);
+    } catch (error: any) {
+      const message = handleError(error, "Create Ticket");
       notify.error("Error", { description: message });
     }
   };
@@ -109,6 +122,17 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
           </div>
 
           <div className="flex items-center gap-2">
+            <AppButton
+              variantStyle="outline"
+              color="gray"
+              size="small"
+              onClick={handleCreateTicket}
+              disabled={createTicketMutation.isPending}
+            >
+              <TicketIcon size={16} className="mr-2" />
+              {createTicketMutation.isPending ? "Creating..." : "Create Ticket"}
+            </AppButton>
+
             {conversation.unread_count > 0 && (
               <AppButton
                 variantStyle="outline"

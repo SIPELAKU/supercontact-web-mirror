@@ -21,6 +21,7 @@ import {
   fetchConversation,
   deleteConversation,
   markAsRead,
+  createTicketFromConversation,
   sendMessage,
   uploadMedia,
   OmnichannelContact,
@@ -174,6 +175,17 @@ export function useDeleteConversation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+    },
+  });
+}
+
+export function useCreateTicketFromConversation() {
+  const { token } = useAuth();
+
+  return useMutation({
+    mutationFn: (conversationId: string) => {
+      if (!token) throw new Error('No authentication token');
+      return createTicketFromConversation(token, conversationId);
     },
   });
 }

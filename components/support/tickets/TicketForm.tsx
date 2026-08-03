@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import { Ticket } from "@/lib/types/Ticket";
 import { AppButton } from "@/components/ui/app-button";
+import TicketCategorySelect from "./TicketCategorySelect";
+import TicketTagsInput from "./TicketTagsInput";
+import TicketCustomFieldsPanel from "./TicketCustomFieldsPanel";
 
 interface TicketFormProps {
     initialData?: Ticket | null;
@@ -28,7 +31,10 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             priority: initialData?.priority || "",
             status: initialData?.status || "",
             assigned_agent_id: initialData?.assigned_agent_id || "",
-        }
+            category_id: initialData?.category_id || null,
+            tags: initialData?.tags?.map((t) => t.name) || [],
+            custom_fields: initialData?.custom_fields || {},
+        } as any
     });
 
     const [agentSearch, setAgentSearch] = useState("");
@@ -72,6 +78,9 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             setValue("priority", initialData.priority);
             setValue("status", initialData.status);
             setValue("assigned_agent_id", initialData.assigned_agent_id || "");
+            setValue("category_id" as any, initialData.category_id || null);
+            setValue("tags" as any, initialData.tags?.map((t) => t.name) || []);
+            setValue("custom_fields" as any, initialData.custom_fields || {});
         }
     }, [initialData, setValue]);
 
@@ -184,6 +193,40 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     )}
                 />
             </div>
+
+            <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Category</Label>
+                    <Controller
+                        name={"category_id" as any}
+                        control={control}
+                        render={({ field }) => (
+                            <TicketCategorySelect value={field.value} onChange={field.onChange} />
+                        )}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Tags</Label>
+                    <Controller
+                        name={"tags" as any}
+                        control={control}
+                        render={({ field }) => (
+                            <TicketTagsInput value={field.value || []} onChange={field.onChange} />
+                        )}
+                    />
+                </div>
+            </div>
+
+            <Controller
+                name={"custom_fields" as any}
+                control={control}
+                render={({ field }) => (
+                    <TicketCustomFieldsPanel
+                        values={field.value || {}}
+                        onChange={(key, value) => field.onChange({ ...(field.value || {}), [key]: value })}
+                    />
+                )}
+            />
 
             <div className="flex justify-end gap-3 mt-6">
                 <AppButton variantStyle="outline" onClick={onCancel}>

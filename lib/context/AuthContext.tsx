@@ -2,7 +2,7 @@
 
 import { cookieUtils } from '@/lib/utils/cookies';
 import { fetchProfile, ProfileData } from '@/lib/api';
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -12,6 +12,8 @@ interface AuthContextType {
   userPlanName: string | null;
   userPlanExpiresAt: string | null;
   userProfile: ProfileData | null;
+  permissions: string[];
+  hasPermission: (name: string) => boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
@@ -142,6 +144,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
+  // Derived from userProfile.permissions - not its own piece of state, so it
+  // always stays in sync with whatever reloadProfile() last fetched.
+  const permissions = useMemo(() => userProfile?.permissions ?? [], [userProfile]);
+
+  const hasPermission = useCallback(
+    (name: string): boolean => {
+      if (permissions.includes(name)) return true;
+      // Legacy fallback: the pre-granular-permissions flat "tickets" string
+      // satisfies any tickets:* check, mirroring the backend's own
+      // legacy-OR-fallback so a custom (non-system) role isn't silently
+      // broken by this rollout.
+      if (name.startsWith("tickets:") && permissions.includes("tickets")) return true;
+      return false;
+    },
+    [permissions]
+  );
+
   const getToken = useCallback(async (): Promise<string> => {
     if (token) {
       return token;
@@ -174,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, userPlanName, userPlanExpiresAt, userProfile, login, logout, loading, getToken, reloadProfile }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, userRole, userCompany, userPlanName, userPlanExpiresAt, userProfile, permissions, hasPermission, login, logout, loading, getToken, reloadProfile }}>
       {children}
     </AuthContext.Provider>
   );

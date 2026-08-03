@@ -202,7 +202,10 @@ const menuData: MenuSection[] = [
       {
         name: "Support",
         icon: HelpCircle,
-        children: [{ name: "Tickets", path: "/support/tickets" }],
+        children: [
+          { name: "Tickets", path: "/support/tickets" },
+          { name: "Ticket Dashboard", path: "/support/tickets/dashboard" },
+        ],
       },
     ],
   },
@@ -236,6 +239,7 @@ const menuData: MenuSection[] = [
           { name: "WhatsApp Account", path: "/admin/whatsapp-accounts" },
           { name: "Email Account", path: "/admin/email-accounts" },
           { name: "Integrations", path: "/admin/integrations" },
+          { name: "Ticket Settings", path: "/admin/ticket-settings" },
         ],
       },
     ],

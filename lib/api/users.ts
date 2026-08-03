@@ -49,6 +49,7 @@ export interface ProfileData {
   state?: string;
   timezone?: string;
   zip_code?: string;
+  permissions?: string[];
 }
 
 export interface ProfileResponse {

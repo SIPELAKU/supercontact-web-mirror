@@ -252,6 +252,28 @@ export async function deleteConversation(token: string, conversationId: string):
   }
 }
 
+export async function createTicketFromConversation(token: string, conversationId: string): Promise<any> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/create-ticket`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to create ticket from conversation');
+  }
+
+  return json;
+}
+
 export async function markAsRead(token: string, conversationId: string): Promise<void> {
   const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/read`, {
     method: 'PATCH',

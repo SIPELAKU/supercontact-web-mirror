@@ -1,6 +1,6 @@
 // lib/api/tickets.ts
 import { fetchWithTimeout } from "./api-client";
-import { CreateTicketDTO, SingleTicketResponse, TicketResponse, UpdateTicketDTO } from "@/lib/types/Ticket";
+import { CreateTicketDTO, SingleTicketResponse, TicketLink, TicketPriority, TicketResponse, TicketStatus, UpdateTicketDTO } from "@/lib/types/Ticket";
 
 // Helper to construct full URL
 function getFullUrl(path: string): string {
@@ -113,6 +113,139 @@ export async function deleteTicket(token: string, id: string): Promise<any> {
         },
     });
     return await handleResponse(res, "Failed to delete ticket");
+}
+
+export interface TicketBulkActionResponse {
+    succeeded: string[];
+    failed: { id: string; reason: string }[];
+}
+
+export async function bulkDeleteTickets(token: string, ticketIds: string[]): Promise<{ data: TicketBulkActionResponse }> {
+    const url = getFullUrl("/tickets/bulk-delete");
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ticket_ids: ticketIds }),
+    });
+    return handleResponse(res, "Failed to bulk delete tickets");
+}
+
+export async function bulkUpdateTickets(
+    token: string,
+    ticketIds: string[],
+    data: { status?: TicketStatus; priority?: TicketPriority; category_id?: string | null }
+): Promise<{ data: TicketBulkActionResponse }> {
+    const url = getFullUrl("/tickets/bulk-update");
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ticket_ids: ticketIds, ...data }),
+    });
+    return handleResponse(res, "Failed to bulk update tickets");
+}
+
+export async function bulkAssignTickets(
+    token: string,
+    ticketIds: string[],
+    assignedAgentId: string
+): Promise<{ data: TicketBulkActionResponse }> {
+    const url = getFullUrl("/tickets/bulk-assign");
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ticket_ids: ticketIds, assigned_agent_id: assignedAgentId }),
+    });
+    return handleResponse(res, "Failed to bulk assign tickets");
+}
+
+export interface TicketViewer {
+    user: { id: string; fullname: string; email: string };
+    last_seen_at: string;
+}
+
+export async function sendTicketViewerHeartbeat(token: string, ticketId: string): Promise<any> {
+    const url = getFullUrl(`/tickets/${ticketId}/viewers/heartbeat`);
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    return handleResponse(res, "Failed to send ticket viewer heartbeat");
+}
+
+export async function fetchTicketViewers(token: string, ticketId: string): Promise<{ data: { data: TicketViewer[] } }> {
+    const url = getFullUrl(`/tickets/${ticketId}/viewers`);
+    const res = await fetchWithTimeout(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    return handleResponse(res, "Failed to load ticket viewers");
+}
+
+export async function mergeTicket(
+    token: string,
+    ticketId: string,
+    duplicateTicketId: string
+): Promise<SingleTicketResponse> {
+    const url = getFullUrl(`/tickets/${ticketId}/merge`);
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ duplicate_ticket_id: duplicateTicketId }),
+    });
+    return handleResponse(res, "Failed to merge ticket");
+}
+
+export async function createTicketLink(
+    token: string,
+    ticketId: string,
+    linkedTicketId: string
+): Promise<any> {
+    const url = getFullUrl(`/tickets/${ticketId}/links`);
+    const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ linked_ticket_id: linkedTicketId }),
+    });
+    return handleResponse(res, "Failed to link ticket");
+}
+
+export async function fetchTicketLinks(
+    token: string,
+    ticketId: string
+): Promise<{ data: { data: TicketLink[] } }> {
+    const url = getFullUrl(`/tickets/${ticketId}/links`);
+    const res = await fetchWithTimeout(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    return handleResponse(res, "Failed to load linked tickets");
+}
+
+export async function deleteTicketLink(token: string, ticketId: string, linkId: string): Promise<any> {
+    const url = getFullUrl(`/tickets/${ticketId}/links/${linkId}`);
+    const res = await fetchWithTimeout(url, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    return handleResponse(res, "Failed to remove ticket link");
 }
 
 export async function fetchAssignableAgents(token: string, search?: string): Promise<any> {

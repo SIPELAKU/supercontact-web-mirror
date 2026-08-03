@@ -4,13 +4,21 @@ import { useState, useRef } from "react";
 import { Plus, Printer } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { TicketTable } from "@/components/support/tickets/TicketTable";
-import { useTickets, useDeleteTicket } from "@/lib/hooks/useTickets";
+import {
+    useTickets,
+    useDeleteTicket,
+    useBulkDeleteTickets,
+    useBulkAssignTickets,
+    useBulkUpdateTickets,
+} from "@/lib/hooks/useTickets";
+import { TicketStatus } from "@/lib/types/Ticket";
 import { AddTicketModal } from "@/components/support/tickets/modals/AddTicketModal";
 import { EditTicketModal } from "@/components/support/tickets/modals/EditTicketModal";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { Ticket } from "@/lib/types/Ticket";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
+import { usePermission } from "@/lib/hooks/usePermission";
 
 
 import { useReactToPrint } from "react-to-print";
@@ -20,9 +28,10 @@ import { SuperTableState } from "@/components/ui/super-table";
 
 export default function TicketManagementPage() {
     const { token } = useAuth();
+    const { can } = usePermission();
+    const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
-    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const componentRef = useRef<HTMLDivElement>(null);
 
     // ===== TABLE STATE (Driven by SuperTable) ===== //
@@ -53,6 +62,9 @@ export default function TicketManagementPage() {
     );
 
     const deleteMutation = useDeleteTicket();
+    const bulkDeleteMutation = useBulkDeleteTickets();
+    const bulkAssignMutation = useBulkAssignTickets();
+    const bulkUpdateMutation = useBulkUpdateTickets();
 
     const tickets = ticketData?.data?.tickets || [];
     const totalTickets = ticketData?.data?.total || 0;
@@ -77,37 +89,56 @@ export default function TicketManagementPage() {
     };
 
     const handleBulkDelete = async (selectedTickets: Ticket[], clearSelection: () => void) => {
-        console.log("handleBulkDelete dipanggil");
-        console.log("Jumlah tiket:", selectedTickets.length);
-        console.log("deleteMutation:", deleteMutation);
-        console.log("mutateAsync:", deleteMutation?.mutateAsync);
-
-        setIsBulkDeleting(true);
-        let successCount = 0;
-        let failCount = 0;
-        
-        for (const ticket of selectedTickets) {
-            try {
-                console.log("Mencoba hapus ticket:", ticket.id);
-                await deleteMutation.mutateAsync(ticket.id);
-                console.log("Berhasil hapus:", ticket.id);
-                successCount++;
-            } catch (error: any) {
-                console.error("Gagal hapus ticket:", ticket.id);
-                console.error("Error detail:", error);
-                console.error("Error message:", error?.message);
-                failCount++;
+        try {
+            const res = await bulkDeleteMutation.mutateAsync(selectedTickets.map((t) => t.id));
+            const { succeeded, failed } = res.data;
+            clearSelection();
+            if (succeeded.length > 0) {
+                notify.success("Success", { description: `${succeeded.length} tiket berhasil dihapus` });
             }
+            if (failed.length > 0) {
+                notify.error("Error", { description: `${failed.length} tiket gagal dihapus` });
+            }
+        } catch (error: any) {
+            notify.error("Error", { description: error?.message || "Gagal menghapus tiket" });
         }
-        
-        setIsBulkDeleting(false);
-        clearSelection();
-        
-        if (successCount > 0) {
-            notify.success("Success", { description: `${successCount} tiket berhasil dihapus` });
+    };
+
+    const handleBulkAssign = async (selectedTickets: Ticket[], agentId: string, clearSelection: () => void) => {
+        try {
+            const res = await bulkAssignMutation.mutateAsync({
+                ticketIds: selectedTickets.map((t) => t.id),
+                assignedAgentId: agentId,
+            });
+            const { succeeded, failed } = res.data;
+            clearSelection();
+            if (succeeded.length > 0) {
+                notify.success("Success", { description: `${succeeded.length} tiket berhasil ditugaskan` });
+            }
+            if (failed.length > 0) {
+                notify.error("Error", { description: `${failed.length} tiket gagal ditugaskan` });
+            }
+        } catch (error: any) {
+            notify.error("Error", { description: error?.message || "Gagal menugaskan tiket" });
         }
-        if (failCount > 0) {
-            notify.error("Error", { description: `${failCount} tiket gagal dihapus` });
+    };
+
+    const handleBulkStatusChange = async (selectedTickets: Ticket[], status: TicketStatus, clearSelection: () => void) => {
+        try {
+            const res = await bulkUpdateMutation.mutateAsync({
+                ticketIds: selectedTickets.map((t) => t.id),
+                data: { status },
+            });
+            const { succeeded, failed } = res.data;
+            clearSelection();
+            if (succeeded.length > 0) {
+                notify.success("Success", { description: `${succeeded.length} tiket berhasil diperbarui` });
+            }
+            if (failed.length > 0) {
+                notify.error("Error", { description: `${failed.length} tiket gagal diperbarui` });
+            }
+        } catch (error: any) {
+            notify.error("Error", { description: error?.message || "Gagal memperbarui tiket" });
         }
     };
 
@@ -197,17 +228,23 @@ export default function TicketManagementPage() {
                     onEdit={handleEdit}
                     onDelete={handleDeleteClick}
                     onBulkDelete={handleBulkDelete}
-                    isBulkDeleting={isBulkDeleting}
+                    isBulkDeleting={bulkDeleteMutation.isPending}
+                    onBulkAssign={handleBulkAssign}
+                    isBulkAssigning={bulkAssignMutation.isPending}
+                    onBulkStatusChange={handleBulkStatusChange}
+                    isBulkChangingStatus={bulkUpdateMutation.isPending}
                     renderTopLeftToolbar={() => (
                         <>
                             {/* Desktop */}
                             <div className="hidden md:flex gap-2">
-                                <AppButton
-                                    onClick={() => setIsAddModalOpen(true)}
-                                    startIcon={<Plus size={16} />}
-                                >
-                                    Add Ticket
-                                </AppButton>
+                                {canWrite && (
+                                    <AppButton
+                                        onClick={() => setIsAddModalOpen(true)}
+                                        startIcon={<Plus size={16} />}
+                                    >
+                                        Add Ticket
+                                    </AppButton>
+                                )}
                                 <AppButton
                                     variantStyle="outline"
                                     onClick={handlePrint}
@@ -219,12 +256,14 @@ export default function TicketManagementPage() {
 
                             {/* Mobile — icon only, ukuran w-9 h-9 */}
                             <div className="flex md:hidden gap-2">
-                                <button
-                                    onClick={() => setIsAddModalOpen(true)}
-                                    className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
-                                >
-                                    <Plus size={16} />
-                                </button>
+                                {canWrite && (
+                                    <button
+                                        onClick={() => setIsAddModalOpen(true)}
+                                        className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                )}
                                 <button
                                     onClick={handlePrint}
                                     className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"

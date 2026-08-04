@@ -28,7 +28,8 @@ import {
     Trash,
     Paperclip,
     Settings,
-    UserRound
+    UserRound,
+    Ticket as TicketIcon
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
@@ -46,7 +47,8 @@ import {
     useMarkAsRead,
     useUploadMedia,
     useOmnichannelContacts,
-    useRefreshEmail
+    useRefreshEmail,
+    useCreateTicketFromConversation
 } from "@/lib/hooks/useOmnichannel";
 import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
@@ -151,6 +153,7 @@ export default function OmnichannelClient() {
     const markAsReadMutation = useMarkAsRead();
     const uploadMediaMutation = useUploadMedia();
     const refreshEmailMutation = useRefreshEmail();
+    const createTicketMutation = useCreateTicketFromConversation();
 
     // New Contact Form State
     const [newContact, setNewContact] = useState<ContactReq>({
@@ -417,6 +420,18 @@ export default function OmnichannelClient() {
             notify.success("Conversation deleted");
         } catch (error) {
             notify.error(handleError(error, "Delete Conversation"));
+        }
+    };
+
+    const handleCreateTicket = async () => {
+        if (!activeConversationId) return;
+        try {
+            const res = await createTicketMutation.mutateAsync(activeConversationId);
+            const ticketId = res?.data?.id;
+            notify.success("Ticket Created", { description: "A new ticket was created from this conversation." });
+            if (ticketId) router.push(`/support/tickets/${ticketId}`);
+        } catch (error) {
+            notify.error("Error", { description: handleError(error, "Create Ticket") });
         }
     };
 
@@ -711,6 +726,14 @@ export default function OmnichannelClient() {
                                 </div>
                                 {/* Button Header */}
                                 <div className="flex items-center justify-end w-full lg:w-auto gap-2 mt-2 lg:mt-0">
+                                    <button
+                                        onClick={handleCreateTicket}
+                                        className="p-2 border border-gray-200 text-gray-400 hover:text-primary hover:bg-gray-50 hover:border-gray-50 rounded-lg transition-all"
+                                        title="Create ticket from this conversation"
+                                        disabled={!activeConversationId || createTicketMutation.isPending}
+                                    >
+                                        {createTicketMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <TicketIcon className="w-4 h-4" />}
+                                    </button>
                                     <button
                                         onClick={handleDeleteConversation}
                                         className="p-2 border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-50 rounded-lg transition-all"

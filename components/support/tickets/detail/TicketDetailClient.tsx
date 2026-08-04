@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { notify } from "@/lib/notifications";
 import { useTicket, useDeleteTicket } from "@/lib/hooks/useTickets";
+import { useConversation } from "@/lib/hooks/useOmnichannel";
 import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
 import { useUploadTicketAttachments, useDeleteTicketAttachment } from "@/lib/hooks/useTicketAttachments";
 import { TicketPriorityBadge, TicketStatusBadge } from "../TicketBadges";
@@ -56,6 +57,12 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     });
 
     const ticket = data?.data;
+
+    // Lifted up from TicketConversationPanel so the Activity tab knows the
+    // channel type without requiring a visit to the Conversation tab first -
+    // React Query dedupes against the same cache key, so this costs nothing
+    // extra once the Conversation tab is also visited.
+    const { data: conversation } = useConversation(ticket?.source_conversation_id || "");
 
     const fieldLabelByKey = useMemo(() => {
         const defs = customFieldDefs?.data?.data || [];
@@ -318,7 +325,13 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                 </div>
             )}
 
-            {activeTab === "activity" && <TicketCommentThread ticketId={id} />}
+            {activeTab === "activity" && (
+                <TicketCommentThread
+                    ticketId={id}
+                    channelType={conversation?.channel_type}
+                    customerName={ticket.customer_name}
+                />
+            )}
 
             {activeTab === "conversation" && (
                 <TicketConversationPanel conversationId={ticket.source_conversation_id} />

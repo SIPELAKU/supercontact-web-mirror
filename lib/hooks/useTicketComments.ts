@@ -8,7 +8,7 @@ import {
     deleteTicketComment,
 } from "@/lib/api/ticket-comments";
 
-export function useTicketComments(ticketId: string) {
+export function useTicketComments(ticketId: string, options?: { live?: boolean }) {
     const { getToken } = useAuth();
 
     return useQuery({
@@ -19,6 +19,11 @@ export function useTicketComments(ticketId: string) {
             return fetchTicketComments(token, ticketId);
         },
         enabled: !!ticketId,
+        // Only poll when the ticket has a linked WhatsApp/email conversation -
+        // that's the only case a customer reply can land here without a
+        // manual refresh. Avoids needless polling on every other ticket.
+        refetchInterval: options?.live ? 8000 : undefined,
+        refetchOnWindowFocus: options?.live ? true : undefined,
     });
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Paperclip, X } from "lucide-react";
+import { Loader2, Paperclip, X, MessageCircle, Mail } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -17,16 +17,18 @@ import { TicketCommentItem } from "./TicketCommentItem";
 
 interface TicketCommentThreadProps {
     ticketId: string;
+    channelType?: "whatsapp" | "email" | null;
+    customerName?: string;
 }
 
-export function TicketCommentThread({ ticketId }: TicketCommentThreadProps) {
+export function TicketCommentThread({ ticketId, channelType, customerName }: TicketCommentThreadProps) {
     const { userProfile } = useAuth();
     const { can } = usePermission();
     const { showConfirmation } = useConfirmation();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const canModerate = can(["tickets:delete", "tickets"]);
 
-    const { data, isLoading } = useTicketComments(ticketId);
+    const { data, isLoading } = useTicketComments(ticketId, { live: !!channelType });
     const createMutation = useCreateTicketComment(ticketId);
     const updateMutation = useUpdateTicketComment(ticketId);
     const deleteMutation = useDeleteTicketComment(ticketId);
@@ -91,12 +93,18 @@ export function TicketCommentThread({ ticketId }: TicketCommentThreadProps) {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setReplyMode("public")}
-                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${replyMode === "public"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${replyMode === "public"
                                     ? "bg-blue-100 text-blue-700"
                                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                                 }`}
                         >
-                            Public Reply
+                            {channelType === "whatsapp" && <MessageCircle size={12} />}
+                            {channelType === "email" && <Mail size={12} />}
+                            {channelType === "whatsapp"
+                                ? "Reply via WhatsApp"
+                                : channelType === "email"
+                                    ? "Reply via Email"
+                                    : "Public Reply"}
                         </button>
                         <button
                             onClick={() => setReplyMode("internal")}
@@ -108,6 +116,11 @@ export function TicketCommentThread({ ticketId }: TicketCommentThreadProps) {
                             Internal Note
                         </button>
                     </div>
+                    {channelType && replyMode === "public" && (
+                        <p className="text-xs text-gray-400">
+                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : "email"}.
+                        </p>
+                    )}
                     <textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}
@@ -172,6 +185,7 @@ export function TicketCommentThread({ ticketId }: TicketCommentThreadProps) {
                             <TicketCommentItem
                                 comment={comment}
                                 canModify={comment.author?.id === userProfile?.id || canModerate}
+                                customerName={customerName}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
                             />

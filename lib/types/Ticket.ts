@@ -55,6 +55,9 @@ export interface TicketComment {
     created_at: string;
     updated_at: string;
     attachments: TicketAttachment[];
+    source_message_id?: string | null;
+    delivery_status?: string | null;
+    is_customer_reply?: boolean;
 }
 
 export interface Ticket {

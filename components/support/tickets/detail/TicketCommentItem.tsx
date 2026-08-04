@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Pencil, Trash2, Lock } from "lucide-react";
+import { Pencil, Trash2, Lock, AlertTriangle } from "lucide-react";
 import { TicketComment } from "@/lib/types/Ticket";
 import { AppButton } from "@/components/ui/app-button";
 import { TicketAttachmentList } from "./TicketAttachmentList";
@@ -19,16 +19,20 @@ const getInitials = (name: string) =>
 interface TicketCommentItemProps {
     comment: TicketComment;
     canModify: boolean;
+    customerName?: string;
     onEdit: (commentId: string, body: string) => Promise<void> | void;
     onDelete: (commentId: string) => void;
 }
 
-export function TicketCommentItem({ comment, canModify, onEdit, onDelete }: TicketCommentItemProps) {
+export function TicketCommentItem({ comment, canModify, customerName, onEdit, onDelete }: TicketCommentItemProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(comment.body);
 
     const isInternal = comment.is_internal_note;
-    const authorName = comment.author?.fullname || "Unknown";
+    const authorName = comment.is_customer_reply
+        ? customerName || "Customer"
+        : comment.author?.fullname || "Unknown";
+    const deliveryFailed = comment.delivery_status === "failed";
 
     const handleSave = async () => {
         if (!draft.trim()) return;
@@ -57,6 +61,15 @@ export function TicketCommentItem({ comment, canModify, onEdit, onDelete }: Tick
                         )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        {deliveryFailed && (
+                            <span
+                                className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600"
+                                title="This reply could not be delivered to the customer"
+                            >
+                                <AlertTriangle size={10} />
+                                Failed to deliver
+                            </span>
+                        )}
                         <span
                             className="text-xs text-gray-500"
                             title={new Date(comment.created_at).toLocaleString()}

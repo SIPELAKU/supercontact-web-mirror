@@ -18,9 +18,10 @@ export default function WhatsAppAccountsPage() {
       />
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 min-h-[500px]">
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect WhatsApp Account</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect a WhatsApp Number</h2>
           <p className="text-sm text-gray-600 mb-6">
-            Connect your WhatsApp Business account via Twilio to manage conversations.
+            Connect a WhatsApp Business number via Twilio to manage conversations. Connect
+            multiple numbers to give each department or branch its own line.
           </p>
           <ConnectWhatsAppForm />
         </div>

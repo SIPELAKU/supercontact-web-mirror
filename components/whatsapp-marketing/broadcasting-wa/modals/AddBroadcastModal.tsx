@@ -23,9 +23,11 @@ import { useCreateBroadcast } from '@/lib/hooks/useBroadcasts';
 import { useBroadcastTemplates, useBroadcastTemplateDetail } from '@/lib/hooks/useBroadcastTemplates';
 import { useWaRecipients } from '@/lib/hooks/useWaRecipients';
 import { useGroupBroadcasts } from '@/lib/hooks/useGroupBroadcasts';
+import { useAccounts } from '@/lib/hooks/useOmnichannel';
 import { notify } from '@/lib/notifications';
 import { BroadcastTemplate, WaRecipient, GroupBroadcast, BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
 import MessagePreview from '../../templates/create/MessagePreview';
+import AccountSelect from '@/components/omnichannel/AccountSelect';
 
 interface AddBroadcastModalProps {
   open: boolean;
@@ -35,6 +37,7 @@ interface AddBroadcastModalProps {
 export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalProps) {
   // Form State
   const [name, setName] = useState('');
+  const [accountId, setAccountId] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [recipientSource, setRecipientSource] = useState<'recipient' | 'broadcast_group'>('recipient');
   const [selectedContacts, setSelectedContacts] = useState<WaRecipient[]>([]);
@@ -45,10 +48,26 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
   // API Hooks
   const createMutation = useCreateBroadcast();
-  const { data: templatesData, isLoading: isLoadingTemplates } = useBroadcastTemplates({ page: 1, limit: 100 });
+  const { data: waAccounts } = useAccounts('whatsapp');
+  const accounts = waAccounts || [];
+  // Templates belong to a specific WhatsApp account - wait for a resolved
+  // account before fetching so companies with 2+ accounts don't hit the
+  // backend's "specify account_id" 400 with an empty picker still showing.
+  const { data: templatesData, isLoading: isLoadingTemplates } = useBroadcastTemplates(
+    { page: 1, limit: 100, account_id: accountId || undefined },
+    { enabled: !!accountId }
+  );
   const { data: templateDetailData, isLoading: isLoadingTemplateDetail } = useBroadcastTemplateDetail(templateId);
   const { data: recipientsData, isLoading: isLoadingRecipients } = useWaRecipients({ recipient_type: 'whatsapp', page: 1, limit: 1000 });
   const { data: groupsData, isLoading: isLoadingGroups } = useGroupBroadcasts({ page: 1, limit: 1000 });
+
+  // Auto-pick when there's exactly one WhatsApp account, so single-account
+  // companies never see an extra required step.
+  useEffect(() => {
+    if (accounts.length === 1 && !accountId) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
 
   const templates = templatesData?.data?.templates || [];
   const allContacts = recipientsData?.data?.recipients || [];
@@ -75,6 +94,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
   const handleClose = () => {
     setName('');
+    setAccountId(accounts.length === 1 ? accounts[0].id : '');
     setTemplateId('');
     setRecipientSource('recipient');
     setSelectedContacts([]);
@@ -87,11 +107,15 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
   const validateForm = (action: 'send' | 'draft') => {
     if (!name.trim()) return 'Broadcast name is required';
+    if (accounts.length > 1 && !accountId) return 'Choose which WhatsApp account this broadcast sends from';
     if (recipientSource === 'recipient' && selectedContacts.length === 0) return 'At least one contact must be selected';
     if (recipientSource === 'broadcast_group' && selectedGroups.length === 0) return 'At least one broadcast group must be selected';
 
     if (action === 'send') {
       if (!templateId) return 'Template is required for sending';
+      if (selectedTemplate && selectedTemplate.whatsapp_approval_status !== 'Approved') {
+        return `This template's WhatsApp approval status is '${selectedTemplate.whatsapp_approval_status}', not 'Approved' - it cannot be sent yet.`;
+      }
 
       // Check for missing variables
       for (const v of templateVariables) {
@@ -119,6 +143,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
     const payload = {
       name: name.trim(),
+      account_id: accountId || undefined,
       template_id: templateId || null,
       action,
       recipient_source: recipientSource,
@@ -201,6 +226,22 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
                     onChange={(e) => setName(e.target.value)}
                   />
                 </Grid>
+                {accounts.length > 1 && (
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      Send From <span style={{ color: 'red' }}>*</span>
+                    </Typography>
+                    <AccountSelect
+                      accounts={accounts}
+                      value={accountId}
+                      onChange={(id) => {
+                        setAccountId(id);
+                        setTemplateId('');
+                      }}
+                      placeholder="Choose a WhatsApp account"
+                    />
+                  </Grid>
+                )}
                 <Grid item xs={12} md={6}>
                   <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                     Select Template {createMutation.isPending && <CircularProgress size={16} sx={{ ml: 1 }} />}
@@ -215,10 +256,17 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
                     }}
                     options={templates.map(t => ({
                       value: t.id,
-                      label: `${t.friendly_name} (${t.language})`
+                      label: t.whatsapp_approval_status === 'Approved'
+                        ? `${t.friendly_name} (${t.language})`
+                        : `${t.friendly_name} (${t.language}) — ${t.whatsapp_approval_status}`,
+                      disabled: t.whatsapp_approval_status !== 'Approved',
                     }))}
-                    placeholder={isLoadingTemplates ? "Loading templates..." : "Choose a template"}
-                    disabled={isLoadingTemplates}
+                    placeholder={
+                      !accountId
+                        ? "Choose an account first"
+                        : isLoadingTemplates ? "Loading templates..." : "Choose a template"
+                    }
+                    disabled={isLoadingTemplates || !accountId}
                   />
                 </Grid>
               </Grid>

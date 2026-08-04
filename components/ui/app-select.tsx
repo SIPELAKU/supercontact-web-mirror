@@ -17,7 +17,7 @@ const INPUT_BG = "#FAFAF6";
 interface AppSelectProps extends Omit<SelectProps, "label"> {
   label?: string;
   placeholder?: string;
-  options: { value: string | number; label: React.ReactNode }[];
+  options: { value: string | number; label: React.ReactNode; disabled?: boolean }[];
   containerClassName?: string;
   isBgWhite?: boolean;
   height?: string;
@@ -138,7 +138,7 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
             ref={ref}
           >
             {options.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
                 {option.label}
               </MenuItem>
             ))}

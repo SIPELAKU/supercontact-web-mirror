@@ -10,21 +10,30 @@ import { AppButton } from '@/components/ui/app-button';
 import { notify } from '@/lib/notifications';
 import {
   useBroadcastTemplateDetail,
-  useUpdateBroadcastTemplate
+  useUpdateBroadcastTemplate,
+  useRequestTemplateApproval,
 } from '@/lib/hooks/useBroadcastTemplates';
 import GeneralInfoDetail from './GeneralInfoDetail';
 import GeneralInfoCard from '../create/GeneralInfoCard';
 import TemplateFormContent from '../create/TemplateFormContent';
 import MessagePreview from '../create/MessagePreview';
 import AddVariableSamplesModal from '../create/AddVariableSamplesModal';
-import { BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
-import { ArrowLeft } from 'lucide-react';
+import { AppSelect } from '@/components/ui/app-select';
+import { BroadcastTemplateType, BroadcastTemplateCategory } from '@/lib/types/whatsapp-marketing';
+import { ArrowLeft, Send } from 'lucide-react';
+
+const APPROVAL_CATEGORY_OPTIONS: { value: BroadcastTemplateCategory; label: string }[] = [
+  { value: 'Marketing', label: 'Marketing' },
+  { value: 'Utility', label: 'Utility' },
+  { value: 'Authentication', label: 'Authentication' },
+];
 
 export default function TemplateDetailClient() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { data, isLoading, isError, refetch } = useBroadcastTemplateDetail(id);
   const updateMutation = useUpdateBroadcastTemplate();
+  const requestApprovalMutation = useRequestTemplateApproval();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +43,7 @@ export default function TemplateDetailClient() {
   const [editLanguage, setEditLanguage] = useState('');
   const [editTypeData, setEditTypeData] = useState<any>({});
   const [editVariables, setEditVariables] = useState<Record<string, string>>({});
+  const [editCategory, setEditCategory] = useState<BroadcastTemplateCategory | ''>('');
 
   const template = data?.data;
   const activeType = template ? (Object.keys(template.types)[0] as BroadcastTemplateType) : undefined;
@@ -54,8 +64,16 @@ export default function TemplateDetailClient() {
       setEditLanguage(template.language);
       setEditTypeData(template.types);
       setEditVariables(template.variables || {});
+      setEditCategory(template.whatsapp_category || '');
     }
   }, [template]);
+
+  // Submitting for approval only makes sense before it's been submitted, or
+  // after WhatsApp rejected it - not while it's mid-review or already final.
+  const canSubmitForApproval = template
+    ? template.whatsapp_approval_status === 'Not submitted' ||
+      template.whatsapp_approval_status === 'Rejected'
+    : false;
 
   const handleFormDataChange = (newData: any) => {
     if (!activeType) return;
@@ -105,6 +123,21 @@ export default function TemplateDetailClient() {
       setIsModalOpen(true);
     } else {
       handleSave();
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (!editCategory) {
+      notify.error('Choose a category before submitting for approval');
+      return;
+    }
+    try {
+      await requestApprovalMutation.mutateAsync({ id, whatsapp_category: editCategory });
+      notify.success('Template submitted for WhatsApp approval');
+      setIsEditing(false);
+      refetch();
+    } catch (err: any) {
+      notify.error(err.message || 'Failed to submit template for approval');
     }
   };
 
@@ -160,14 +193,36 @@ export default function TemplateDetailClient() {
                   />
                 )}
 
-                <Box sx={{ pt: 2, display: 'flex', gap: 2 }}>
+                {canSubmitForApproval && (
+                  <Box sx={{ maxWidth: 320 }}>
+                    <AppSelect
+                      label="WhatsApp category"
+                      placeholder="Choose a category"
+                      options={APPROVAL_CATEGORY_OPTIONS}
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value as BroadcastTemplateCategory)}
+                    />
+                  </Box>
+                )}
+
+                <Box sx={{ pt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   <AppButton
                     variantStyle="primary"
                     onClick={onPreSave}
                     disabled={updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? 'Saving...' : 'Save and Submit'}
+                    {updateMutation.isPending ? 'Saving...' : 'Save'}
                   </AppButton>
+                  {canSubmitForApproval && (
+                    <AppButton
+                      variantStyle="soft"
+                      startIcon={<Send size={16} />}
+                      onClick={handleSubmitForApproval}
+                      disabled={requestApprovalMutation.isPending}
+                    >
+                      {requestApprovalMutation.isPending ? 'Submitting...' : 'Submit for Approval'}
+                    </AppButton>
+                  )}
                   <AppButton
                     variantStyle="outline"
                     onClick={() => setIsEditing(false)}
@@ -180,6 +235,7 @@ export default function TemplateDetailClient() {
               <GeneralInfoDetail
                 template={template}
                 onEdit={() => setIsEditing(true)}
+                onSynced={refetch}
               />
             )}
 

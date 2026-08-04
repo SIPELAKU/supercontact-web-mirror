@@ -1,28 +1,40 @@
 // components/whatsapp-marketing/templates/create/CreateTemplateClient.tsx
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stack, Grid, Box } from '@mui/material';
+import { Stack, Grid, Box, Typography } from '@mui/material';
 import PageHeader from '@/components/ui/page-header';
 import { AppButton } from '@/components/ui/app-button';
 import { notify } from '@/lib/notifications';
 import { useCreateBroadcastTemplate } from '@/lib/hooks/useBroadcastTemplates';
+import { useAccounts } from '@/lib/hooks/useOmnichannel';
 import GeneralInfoCard from './GeneralInfoCard';
 import ContentTypeSelector from './ContentTypeSelector';
 import TemplateFormContent from './TemplateFormContent';
 import MessagePreview from './MessagePreview';
 import AddVariableSamplesModal from './AddVariableSamplesModal';
+import AccountSelect from '@/components/omnichannel/AccountSelect';
 import { BroadcastTemplateType, CreateBroadcastTemplateData } from '@/lib/types/whatsapp-marketing';
 
 export default function CreateTemplateClient() {
   const router = useRouter();
   const mutation = useCreateBroadcastTemplate();
+  const { data: waAccounts } = useAccounts('whatsapp');
+  const accounts = waAccounts || [];
 
   // Basic info state
   const [name, setName] = useState('');
   const [language, setLanguage] = useState('en');
+  const [accountId, setAccountId] = useState('');
   const [selectedType, setSelectedType] = useState<BroadcastTemplateType>('twilio/text');
+
+  // Auto-pick when there's exactly one WhatsApp account.
+  useEffect(() => {
+    if (accounts.length === 1 && !accountId) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
 
   // Dynamic form state
   const [typeData, setTypeData] = useState<Record<BroadcastTemplateType, any>>({
@@ -55,6 +67,10 @@ export default function CreateTemplateClient() {
       notify.error('Template name is required');
       return;
     }
+    if (!accountId) {
+      notify.error('Choose which WhatsApp account this template belongs to');
+      return;
+    }
 
     // Capture standard variables if no samples provided
     const finalVariables: Record<string, string> = { ...variables };
@@ -68,6 +84,7 @@ export default function CreateTemplateClient() {
     }
 
     const payload: CreateBroadcastTemplateData = {
+      account_id: accountId,
       friendly_name: name,
       language: language,
       variables: finalVariables,
@@ -88,6 +105,10 @@ export default function CreateTemplateClient() {
   const onPreCreate = () => {
     if (!name) {
       notify.error('Template name is required');
+      return;
+    }
+    if (!accountId) {
+      notify.error('Choose which WhatsApp account this template belongs to');
       return;
     }
     if (hasVariables) {
@@ -112,6 +133,19 @@ export default function CreateTemplateClient() {
         {/* Left Column - Forms */}
         <Grid item xs={12} md={7} lg={8}>
           <Stack spacing={3}>
+            {accounts.length > 1 && (
+              <Box sx={{ maxWidth: 360 }}>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  WhatsApp Account <span style={{ color: 'red' }}>*</span>
+                </Typography>
+                <AccountSelect
+                  accounts={accounts}
+                  value={accountId}
+                  onChange={setAccountId}
+                  placeholder="Choose a WhatsApp account"
+                />
+              </Box>
+            )}
             <GeneralInfoCard
               name={name}
               language={language}

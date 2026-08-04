@@ -58,6 +58,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { CircularProgress } from "@mui/material";
 import MessageList from "./MessageList";
+import AccountSelect from "./AccountSelect";
 import RichTextToolbar from "../email-marketing/campaigns/RichTextToolbar";
 
 export default function OmnichannelClient() {
@@ -123,6 +124,13 @@ export default function OmnichannelClient() {
     const { data: inboxData } = useInbox(chatMode);
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
+    // Which account a NEW conversation sends from, for companies with more
+    // than one connected account for the active channel (chatMode).
+    const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+    const channelAccounts = useMemo(
+        () => (accounts || []).filter((a: any) => a.channel_type === chatMode),
+        [accounts, chatMode]
+    );
 
     // Selected conversation data
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -209,6 +217,13 @@ export default function OmnichannelClient() {
             setActiveConversationId(null);
         }
     }, [chatMode, selectedContact, inboxData]);
+
+    // Reset the account picker when switching channel/contact - auto-pick
+    // when exactly one account matches so single-account companies never see
+    // an extra required click, same as before this picker existed.
+    useEffect(() => {
+        setSelectedAccountId(channelAccounts.length === 1 ? channelAccounts[0].id : "");
+    }, [chatMode, selectedContact, channelAccounts]);
 
     // Safety net: if the resolved conversation's channel doesn't match the
     // active tab (can happen via the latest_conversation_id fallback above),
@@ -336,9 +351,13 @@ export default function OmnichannelClient() {
                 // Create new conversation first
                 if (!selectedContact) return;
 
-                const accountId = accounts?.find((a: any) => a.channel_type === chatMode)?.id;
+                const accountId = selectedAccountId || channelAccounts[0]?.id;
                 if (!accountId) {
                     notify.error(`No active ${chatMode} account found`);
+                    return;
+                }
+                if (channelAccounts.length > 1 && !selectedAccountId) {
+                    notify.error(`Choose which ${chatMode} account to send from`);
                     return;
                 }
 
@@ -712,6 +731,16 @@ export default function OmnichannelClient() {
                                                         Email
                                                     </button>
                                                     {/* )} */}
+                                                </div>
+                                            )}
+                                            {!activeConversationId && isChannelSelected && channelAccounts.length > 1 && (
+                                                <div className="w-full max-w-xs">
+                                                    <AccountSelect
+                                                        accounts={channelAccounts}
+                                                        value={selectedAccountId}
+                                                        onChange={setSelectedAccountId}
+                                                        placeholder={`Send from which ${chatMode} number?`}
+                                                    />
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-3 ml-2">

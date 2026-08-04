@@ -13,6 +13,7 @@ import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-a
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 import { Stack } from '@mui/material';
 import { Trash2 } from 'lucide-react';
+import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
 
 interface BroadcastTemplatesTableProps {
   templates: BroadcastTemplate[];
@@ -67,6 +68,14 @@ const BroadcastTemplatesTable = ({
           const typeKeys = Object.keys(types);
           return typeKeys.length > 0 ? typeKeys[0].charAt(0).toUpperCase() + typeKeys[0].slice(1) : '-';
         },
+      },
+      {
+        accessorKey: 'whatsapp_approval_status',
+        header: 'Approval Status',
+        filterVariant: 'text',
+        Cell: ({ row }) => (
+          <TemplateApprovalStatusBadge status={row.original.whatsapp_approval_status} />
+        ),
       },
       {
         accessorKey: 'created_at',

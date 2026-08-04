@@ -7,6 +7,8 @@ import type {
   BroadcastTemplatesResponse,
   DuplicateBroadcastTemplatesData,
   BroadcastTemplateDetailResponse,
+  BroadcastTemplateApprovalResponse,
+  BroadcastTemplateCategory,
 } from '@/lib/types/whatsapp-marketing';
 
 // ---------------------------------------------------------------------------
@@ -22,6 +24,7 @@ async function fetchBroadcastTemplates(
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
   if (params.search) query.set('search', params.search);
+  if (params.account_id) query.set('account_id', params.account_id);
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates?${query.toString()}`;
 
@@ -141,7 +144,10 @@ async function bulkDeleteBroadcastTemplates(
 // Hooks
 // ---------------------------------------------------------------------------
 
-export function useBroadcastTemplates(params: BroadcastTemplatesParams) {
+export function useBroadcastTemplates(
+  params: BroadcastTemplatesParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery<BroadcastTemplatesResponse>({
     queryKey: ['broadcast-templates', params],
     queryFn: () => {
@@ -149,6 +155,7 @@ export function useBroadcastTemplates(params: BroadcastTemplatesParams) {
       if (!token) throw new Error('No authentication token');
       return fetchBroadcastTemplates(token, params);
     },
+    enabled: options?.enabled,
   });
 }
 
@@ -287,6 +294,89 @@ export function useUpdateBroadcastTemplate() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return updateBroadcastTemplate(token, id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Approval: submit + manual status refresh
+// ---------------------------------------------------------------------------
+
+async function requestTemplateApproval(
+  token: string,
+  id: string,
+  whatsapp_category: BroadcastTemplateCategory
+): Promise<{ success: boolean; data: BroadcastTemplateApprovalResponse }> {
+  const res = await fetchWithTimeout(
+    `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates/${id}/approval`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ whatsapp_category }),
+    }
+  );
+
+  const json = await res.json();
+  if (res.status === 401) throw new Error('UNAUTHORIZED');
+  if (!res.ok || !json.success) {
+    throw new Error(json.error?.message || json.message || 'Failed to submit template for approval');
+  }
+  return json;
+}
+
+export function useRequestTemplateApproval() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { success: boolean; data: BroadcastTemplateApprovalResponse },
+    Error,
+    { id: string; whatsapp_category: BroadcastTemplateCategory }
+  >({
+    mutationFn: ({ id, whatsapp_category }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return requestTemplateApproval(token, id, whatsapp_category);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });
+    },
+  });
+}
+
+async function syncTemplateApprovalStatus(
+  token: string,
+  id: string
+): Promise<{ success: boolean; data: any }> {
+  const res = await fetchWithTimeout(
+    `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates/${id}/sync-status`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  const json = await res.json();
+  if (res.status === 401) throw new Error('UNAUTHORIZED');
+  if (!res.ok || !json.success) {
+    throw new Error(json.error?.message || json.message || 'Failed to refresh approval status');
+  }
+  return json;
+}
+
+export function useSyncTemplateApprovalStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ success: boolean; data: any }, Error, string>({
+    mutationFn: (id) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return syncTemplateApprovalStatus(token, id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });

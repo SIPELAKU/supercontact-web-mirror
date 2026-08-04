@@ -270,6 +270,24 @@ export interface GroupBroadcastCampaignsResponse {
   };
 }
 
+export type BroadcastTemplateApprovalStatus =
+  | 'Not submitted'
+  | 'Received'
+  | 'Pending'
+  | 'Approved'
+  | 'Rejected'
+  | 'Paused'
+  | 'Disabled';
+
+export type BroadcastTemplateCategory = 'Marketing' | 'Utility' | 'Authentication';
+
+export type BroadcastChannel =
+  | 'WhatsApp business initiated'
+  | 'WhatsApp user initiated'
+  | 'RCS'
+  | 'SMS'
+  | 'Facebook Messenger';
+
 export interface BroadcastTemplate {
   id: string;
   provider_content_sid: string;
@@ -277,8 +295,20 @@ export interface BroadcastTemplate {
   language: string;
   variables: Record<string, any>;
   types: Record<string, any>;
+  whatsapp_approval_status: BroadcastTemplateApprovalStatus;
+  whatsapp_category: BroadcastTemplateCategory | null;
+  whatsapp_rejection_reason: string | null;
+  channel_eligibility: BroadcastChannel[];
   created_at: string;
   updated_at: string;
+}
+
+export interface BroadcastTemplateApprovalResponse {
+  id: string;
+  provider_content_sid: string;
+  friendly_name: string;
+  whatsapp_category: BroadcastTemplateCategory;
+  whatsapp_approval_status: BroadcastTemplateApprovalStatus;
 }
 
 export interface BroadcastTemplatesParams {

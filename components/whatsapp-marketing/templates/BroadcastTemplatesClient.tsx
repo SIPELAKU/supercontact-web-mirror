@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Box,
   Dialog,
   DialogActions,
   DialogContent,
@@ -48,7 +49,7 @@ export default function BroadcastTemplatesClient() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data, isLoading, refetch } = useBroadcastTemplates({
+  const { data, isLoading, isError, refetch } = useBroadcastTemplates({
     page,
     limit,
     search: debouncedSearch || undefined,
@@ -125,16 +126,23 @@ export default function BroadcastTemplatesClient() {
         ]}
       />
 
-      <BroadcastTemplatesTable
-        templates={templates}
-        isLoading={isLoading}
-        totalCount={totalCount}
-        onStateChange={handleStateChange}
-        onCreate={handleCreate}
-        onEdit={handleEdit}
-        onDuplicate={handleDuplicate}
-        onDeleteRequest={handleDeleteRequest}
-      />
+      {isError ? (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="error">Failed to load broadcast templates.</Typography>
+          <AppButton onClick={() => refetch()} sx={{ mt: 2 }}>Try Again</AppButton>
+        </Box>
+      ) : (
+        <BroadcastTemplatesTable
+          templates={templates}
+          isLoading={isLoading}
+          totalCount={totalCount}
+          onStateChange={handleStateChange}
+          onCreate={handleCreate}
+          onEdit={handleEdit}
+          onDuplicate={handleDuplicate}
+          onDeleteRequest={handleDeleteRequest}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

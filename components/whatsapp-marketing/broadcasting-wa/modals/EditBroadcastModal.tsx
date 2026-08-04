@@ -114,6 +114,9 @@ export default function EditBroadcastModal({ open, onClose, broadcast }: EditBro
 
     if (action === 'send') {
       if (!templateId) return 'Template is required for sending';
+      if (selectedTemplate && selectedTemplate.whatsapp_approval_status !== 'Approved') {
+        return `This template's WhatsApp approval status is '${selectedTemplate.whatsapp_approval_status}', not 'Approved' - it cannot be sent yet.`;
+      }
       for (const v of templateVariables) {
         if (!variables[v]?.trim()) {
           return `Variable {{${v}}} is required`;
@@ -233,7 +236,10 @@ export default function EditBroadcastModal({ open, onClose, broadcast }: EditBro
                     }}
                     options={templates.map(t => ({
                       value: t.id,
-                      label: `${t.friendly_name} (${t.language})`
+                      label: t.whatsapp_approval_status === 'Approved'
+                        ? `${t.friendly_name} (${t.language})`
+                        : `${t.friendly_name} (${t.language}) — ${t.whatsapp_approval_status}`,
+                      disabled: t.whatsapp_approval_status !== 'Approved',
                     }))}
                     placeholder={isLoadingTemplates ? "Loading templates..." : "Choose a template"}
                     disabled={isLoadingTemplates}

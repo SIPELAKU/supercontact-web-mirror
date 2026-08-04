@@ -1,6 +1,7 @@
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import { ConfirmationProvider } from "@/components/ui/confirm-modal";
 import { AuthProvider } from "@/lib/context/AuthContext";
+import { NotificationsProvider } from "@/lib/context/NotificationsContext";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
 import type React from "react";
 import { Toaster } from "react-hot-toast";
@@ -84,11 +85,13 @@ export default function RootLayout({
         <MuiLocalizationProvider>
           <ConfirmationProvider>
             <AuthProvider>
-              <ReactQueryProvider>
-                <LanguageProvider>
-                  <AuthenticatedLayout>{children}</AuthenticatedLayout>
-                </LanguageProvider>
-              </ReactQueryProvider>
+              <NotificationsProvider>
+                <ReactQueryProvider>
+                  <LanguageProvider>
+                    <AuthenticatedLayout>{children}</AuthenticatedLayout>
+                  </LanguageProvider>
+                </ReactQueryProvider>
+              </NotificationsProvider>
             </AuthProvider>
           </ConfirmationProvider>
         </MuiLocalizationProvider>

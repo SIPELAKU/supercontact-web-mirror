@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import BannerDashboard from "@/components/ui/banner-dashboard"
 import PageHeader from "@/components/ui/page-header";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
+import { fetchNotifications, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useNotifications } from "@/lib/context/NotificationsContext";
+import { notify } from "@/lib/notifications";
 import { format, isToday, isYesterday } from "date-fns";
 
 interface Notification {
@@ -30,8 +32,10 @@ const badgeStyle: Record<string, string> = {
 
 export default function NotificationPage() {
     const { getToken, isAuthenticated } = useAuth();
+    const { markRead, markAllRead } = useNotifications();
     const [notifications, setNotifications] = useState<NotificationData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [onlyUnread, setOnlyUnread] = useState(false);
 
     useEffect(() => {
@@ -39,6 +43,7 @@ export default function NotificationPage() {
             if (!isAuthenticated) return;
             try {
                 setLoading(true);
+                setError(false);
                 const token = await getToken();
                 const res = await fetchNotifications(token);
                 if (res.success) {
@@ -46,6 +51,8 @@ export default function NotificationPage() {
                 }
             } catch (err) {
                 console.error("Failed to load notifications:", err);
+                setError(true);
+                notify.error("Failed to load notifications", { description: "Please try again." });
             } finally {
                 setLoading(false);
             }
@@ -80,28 +87,22 @@ export default function NotificationPage() {
 
     const markAllAsRead = async () => {
         try {
-            const token = await getToken();
-            const res = await markAllNotificationsAsRead(token);
-            if (res.success) {
-                setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-            }
+            await markAllRead();
+            setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
         } catch (err) {
-            console.error("Failed to mark all as read:", err);
+            notify.error("Failed to mark all as read", { description: "Please try again." });
         }
     };
 
     const handleNotificationClick = async (notif: NotificationData) => {
         if (!notif.is_read) {
             try {
-                const token = await getToken();
-                const res = await markNotificationAsRead(token, notif.id);
-                if (res.success) {
-                    setNotifications((prev) => prev.map((n) =>
-                        n.id === notif.id ? { ...n, is_read: true } : n
-                    ));
-                }
+                await markRead(notif.id);
+                setNotifications((prev) => prev.map((n) =>
+                    n.id === notif.id ? { ...n, is_read: true } : n
+                ));
             } catch (err) {
-                console.error("Failed to mark notification as read:", err);
+                notify.error("Failed to mark notification as read", { description: "Please try again." });
             }
         }
 
@@ -110,7 +111,9 @@ export default function NotificationPage() {
             // Full page navigation (not router.push) - guarantees a fresh mount of
             // the target page even when already on it.
             window.location.href = route;
+            return;
         }
+        notify.info("This notification type can't be opened directly yet.");
     };
 
     return (
@@ -147,6 +150,16 @@ export default function NotificationPage() {
             {loading ? (
                 <div className="flex justify-center items-center py-20">
                     <p className="text-gray-500">Loading notifications...</p>
+                </div>
+            ) : error ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed">
+                    <p className="text-red-500">Couldn't load notifications.</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-2 text-sm text-indigo-600 hover:underline"
+                    >
+                        Try again
+                    </button>
                 </div>
             ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed">

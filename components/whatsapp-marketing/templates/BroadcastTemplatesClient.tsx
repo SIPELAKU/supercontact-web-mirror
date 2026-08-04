@@ -24,11 +24,24 @@ import {
   useDeleteBroadcastTemplate,
   useBulkDeleteBroadcastTemplates,
 } from '@/lib/hooks/useBroadcastTemplates';
+import { useAccounts } from '@/lib/hooks/useOmnichannel';
 import BroadcastTemplatesTable from './BroadcastTemplatesTable';
+import AccountSelect from '@/components/omnichannel/AccountSelect';
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 
 export default function BroadcastTemplatesClient() {
   const router = useRouter();
+
+  const { data: waAccounts } = useAccounts('whatsapp');
+  const accounts = waAccounts || [];
+  const [accountId, setAccountId] = useState('');
+
+  // Auto-pick when there's exactly one WhatsApp account.
+  useEffect(() => {
+    if (accounts.length === 1 && !accountId) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
 
   // Pagination & search state
   const [page, setPage] = useState(1);
@@ -49,11 +62,15 @@ export default function BroadcastTemplatesClient() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data, isLoading, isError, refetch } = useBroadcastTemplates({
-    page,
-    limit,
-    search: debouncedSearch || undefined,
-  });
+  const { data, isLoading, isError, refetch } = useBroadcastTemplates(
+    {
+      page,
+      limit,
+      search: debouncedSearch || undefined,
+      account_id: accountId || undefined,
+    },
+    { enabled: !!accountId }
+  );
 
   const templates = data?.data?.templates || [];
   const totalCount = data?.data?.total || 0;
@@ -125,6 +142,23 @@ export default function BroadcastTemplatesClient() {
           { label: 'Broadcast Template' },
         ]}
       />
+
+      {accounts.length > 1 && (
+        <Box sx={{ maxWidth: 360 }}>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            WhatsApp Account
+          </Typography>
+          <AccountSelect
+            accounts={accounts}
+            value={accountId}
+            onChange={(id) => {
+              setAccountId(id);
+              setPage(1);
+            }}
+            placeholder="Choose a WhatsApp account"
+          />
+        </Box>
+      )}
 
       {isError ? (
         <Box sx={{ p: 4, textAlign: 'center' }}>

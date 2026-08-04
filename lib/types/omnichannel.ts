@@ -65,6 +65,8 @@ export interface ConnectWhatsAppRequest {
   phone_number: string;
   twilio_account_sid: string;
   twilio_auth_token: string;
+  branch?: string;
+  display_name?: string;
 }
 
 export interface ConnectEmailRequest {

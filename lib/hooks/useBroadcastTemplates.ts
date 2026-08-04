@@ -24,6 +24,7 @@ async function fetchBroadcastTemplates(
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
   if (params.search) query.set('search', params.search);
+  if (params.account_id) query.set('account_id', params.account_id);
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates?${query.toString()}`;
 
@@ -143,7 +144,10 @@ async function bulkDeleteBroadcastTemplates(
 // Hooks
 // ---------------------------------------------------------------------------
 
-export function useBroadcastTemplates(params: BroadcastTemplatesParams) {
+export function useBroadcastTemplates(
+  params: BroadcastTemplatesParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery<BroadcastTemplatesResponse>({
     queryKey: ['broadcast-templates', params],
     queryFn: () => {
@@ -151,6 +155,7 @@ export function useBroadcastTemplates(params: BroadcastTemplatesParams) {
       if (!token) throw new Error('No authentication token');
       return fetchBroadcastTemplates(token, params);
     },
+    enabled: options?.enabled,
   });
 }
 

@@ -47,3 +47,17 @@ export function WhatsAppStatusBadge({ status }: WhatsAppStatusBadgeProps) {
     </Badge>
   );
 }
+
+interface BranchBadgeProps {
+  branch: string;
+}
+export function BranchBadge({ branch }: BranchBadgeProps) {
+  return (
+    <Badge
+      className="rounded-full px-3 py-1 font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none"
+      variant="secondary"
+    >
+      {branch}
+    </Badge>
+  );
+}

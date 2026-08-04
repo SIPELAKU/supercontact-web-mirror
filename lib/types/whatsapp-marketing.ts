@@ -165,6 +165,7 @@ export interface GroupBroadcastDetailResponse {
 
 export interface CreateBroadcastData {
   name: string;
+  account_id?: string;
   template_id: string | null;
   action: 'send' | 'draft';
   recipient_source: 'recipient' | 'broadcast_group';
@@ -175,6 +176,7 @@ export interface CreateBroadcastData {
 
 export interface UpdateBroadcastData {
   name?: string;
+  account_id?: string;
   template_id?: string | null;
   action?: 'send' | 'draft';
   recipient_source?: 'recipient' | 'broadcast_group';
@@ -290,6 +292,7 @@ export type BroadcastChannel =
 
 export interface BroadcastTemplate {
   id: string;
+  account_id: string;
   provider_content_sid: string;
   friendly_name: string;
   language: string;
@@ -315,6 +318,7 @@ export interface BroadcastTemplatesParams {
   page?: number;
   limit?: number;
   search?: string;
+  account_id?: string;
 }
 
 export interface BroadcastTemplatesResponse {
@@ -364,6 +368,7 @@ export type BroadcastTemplateType =
   | 'whatsapp/flows';
 
 export interface CreateBroadcastTemplateData {
+  account_id: string;
   friendly_name: string;
   language: string;
   variables?: Record<string, string>;

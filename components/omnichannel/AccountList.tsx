@@ -7,7 +7,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
-import { ActiveStatusBadge, WhatsAppStatusBadge } from "@/components/omnichannel/AccountStatusBadges";
+import { ActiveStatusBadge, WhatsAppStatusBadge, BranchBadge } from "@/components/omnichannel/AccountStatusBadges";
 
 interface AccountListProps {
   channelType?: 'whatsapp' | 'email';
@@ -85,8 +85,11 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
                 </div>
                 
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h3 className="font-semibold text-gray-900">{account.display_name}</h3>
+                    {account.branch && (
+                      <BranchBadge branch={account.branch} />
+                    )}
                     <ActiveStatusBadge isActive={account.is_active} />
                     {account.channel_type === 'whatsapp' && (
                       <WhatsAppStatusBadge status={account.whatsapp_status} />

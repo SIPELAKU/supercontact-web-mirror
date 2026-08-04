@@ -37,7 +37,7 @@ const ConnectWhatsAppForm: React.FC<ConnectWhatsAppFormProps> = ({ onSuccess }) 
     try {
       await connectWhatsAppMutation.mutateAsync(formData);
       notify.success("WhatsApp Connected", { description: "WhatsApp account has been connected successfully." });
-      
+
       // Reset form
       setFormData({
         phone_number: "",
@@ -47,6 +47,12 @@ const ConnectWhatsAppForm: React.FC<ConnectWhatsAppFormProps> = ({ onSuccess }) 
 
       if (onSuccess) onSuccess();
     } catch (error: any) {
+      if (error?.error?.code === "CHANNEL_ALREADY_EXISTS") {
+        notify.error("WhatsApp Already Connected", {
+          description: "You already have a WhatsApp number connected — delete it below to connect a different one.",
+        });
+        return;
+      }
       const message = handleError(error, "Connect WhatsApp");
       notify.error("Error", { description: message });
     }
@@ -82,7 +88,17 @@ const ConnectWhatsAppForm: React.FC<ConnectWhatsAppFormProps> = ({ onSuccess }) 
             placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             disabled={connectWhatsAppMutation.isPending}
           />
-          <p className="text-xs text-gray-500">Your Twilio Account SID from the Twilio Console</p>
+          <p className="text-xs text-gray-500">
+            Your Twilio Account SID from the{" "}
+            <a
+              href="https://console.twilio.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Twilio Console
+            </a>
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -98,7 +114,17 @@ const ConnectWhatsAppForm: React.FC<ConnectWhatsAppFormProps> = ({ onSuccess }) 
             placeholder="••••••••••••••••••••••••••••••••"
             disabled={connectWhatsAppMutation.isPending}
           />
-          <p className="text-xs text-gray-500">Your Twilio Auth Token from the Twilio Console</p>
+          <p className="text-xs text-gray-500">
+            Your Twilio Auth Token from the{" "}
+            <a
+              href="https://console.twilio.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Twilio Console
+            </a>
+          </p>
         </div>
       </div>
 

@@ -2,16 +2,19 @@
 
 import React, { useState } from "react";
 import { useAccounts, useDeleteAccount } from "@/lib/hooks/useOmnichannel";
-import { Loader2, Trash2, Mail, MessageCircle, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Trash2, Mail, MessageCircle } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { ActiveStatusBadge, WhatsAppStatusBadge } from "@/components/omnichannel/AccountStatusBadges";
 
 interface AccountListProps {
   channelType?: 'whatsapp' | 'email';
 }
 
+// Shares a query key (and therefore a cache entry) with any other useAccounts(channelType)
+// call for the same channelType, e.g. the whatsapp-accounts page's own fetch — no prop drilling needed.
 const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
   const { data: accounts, isLoading, error } = useAccounts(channelType);
   const deleteAccountMutation = useDeleteAccount();
@@ -84,16 +87,9 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900">{account.display_name}</h3>
-                    {account.is_active ? (
-                      <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                        <CheckCircle size={12} />
-                        Active
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
-                        <XCircle size={12} />
-                        Inactive
-                      </span>
+                    <ActiveStatusBadge isActive={account.is_active} />
+                    {account.channel_type === 'whatsapp' && (
+                      <WhatsAppStatusBadge status={account.whatsapp_status} />
                     )}
                   </div>
                   

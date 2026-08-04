@@ -1,18 +1,21 @@
 // Omnichannel Types
 
+export type WhatsAppApprovalStatus = 'pending_approval' | 'approved' | 'rejected';
+
 export interface Account {
   id: string;
+  company_id: string;
+  user_id: string;
   channel_type: 'whatsapp' | 'email';
   channel_identifier: string;
   display_name: string;
+  branch: string | null;
+  whatsapp_status: WhatsAppApprovalStatus | null;
+  imap_host?: string | null;
+  imap_port?: number | null;
+  smtp_host?: string | null;
+  smtp_port?: number | null;
   is_active: boolean;
-  metadata: {
-    twilio_account_sid?: string;
-    imap_host?: string;
-    imap_port?: number;
-    smtp_host?: string;
-    smtp_port?: number;
-  };
   created_at: string;
   updated_at: string;
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { Box, Typography, Grid, Paper, Stack, Divider, Chip, CircularProgress, Button } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { CreditCard, CheckCircle2, Zap, LayoutDashboard } from "lucide-react";
@@ -72,10 +72,10 @@ export default function SubscriptionClient() {
 
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-12 space-y-8">
-            <PageHeader
+            <SettingsPageHeader
                 title="My Subscription"
                 description="Manage your billing, plans, and active subscriptions."
-                breadcrumbs={[{ label: "Dashboard", href: "/" }, { label: "Subscription" }]}
+                breadcrumbs={[{ label: "Settings", href: "/settings" }, { label: "Billing" }]}
             />
 
             {isLoading ? (

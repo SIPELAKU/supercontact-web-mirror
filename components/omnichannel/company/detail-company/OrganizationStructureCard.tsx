@@ -11,7 +11,7 @@ interface OrganizationStructureCardProps {
 
 export default function OrganizationStructureCard({
   departmentsCount,
-  viewAllHref = "/organization",
+  viewAllHref = "/settings/organization",
 }: OrganizationStructureCardProps) {
   return (
     <Card className="rounded-2xl! shadow-lg!">

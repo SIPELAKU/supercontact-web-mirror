@@ -11,7 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { LogOut, Mail, SquareUserRound, Building2, CreditCard } from "lucide-react";
+import { LogOut, Mail, SquareUserRound, Building2 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
 
@@ -61,7 +61,7 @@ const ProfileDropdown = () => {
         }}
       >
         <Avatar
-          src={userProfile?.avatar || userProfile?.avatar_url || userProfile?.avatar_initial || "/assets/profile-icon.png"}
+          src={userProfile?.avatar || userProfile?.avatar_url || undefined}
           alt="profile"
           sx={{ width: 35, height: 35, bgcolor: "#5479EE", color: "#fff" }}
         >

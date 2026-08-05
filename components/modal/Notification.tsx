@@ -1,96 +1,79 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
+import { Menu } from "@mui/material";
 import { AppButton } from "../ui/app-button";
-import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead, getNotificationRoute, NotificationData } from "@/lib/api";
+import { fetchNotifications, getNotificationRoute, NotificationData } from "@/lib/api";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useNotifications } from "@/lib/context/NotificationsContext";
+import { notify } from "@/lib/notifications";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
 interface NotificationProps {
+  anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;
 }
 
-export default function Notification({ open, onClose }: NotificationProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+export default function Notification({ anchorEl, open, onClose }: NotificationProps) {
   const { getToken, isAuthenticated } = useAuth();
-  const [mounted, setMounted] = useState(false);
+  const { markRead, markAllRead, lastPushAt } = useNotifications();
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (!open || !isAuthenticated) return;
-      try {
-        setLoading(true);
-        const token = await getToken();
-        const res = await fetchNotifications(token);
-        if (res.success) {
-          setNotifications(res.data);
-        }
-      } catch (err) {
-        console.error("Failed to load notifications:", err);
-      } finally {
-        setLoading(false);
+  const loadNotifications = async () => {
+    if (!isAuthenticated) return;
+    try {
+      setLoading(true);
+      setError(false);
+      const token = await getToken();
+      const res = await fetchNotifications(token);
+      if (res.success) {
+        setNotifications(res.data);
       }
-    };
-
-    loadNotifications();
-  }, [open, isAuthenticated, getToken]);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+      setError(true);
+      notify.error("Failed to load notifications", { description: "Please try again." });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (open) loadNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isAuthenticated]);
 
-  // close when click outside
+  // A real-time push arrived while the dropdown is open - refetch so the
+  // list reflects it instead of only the header badge count.
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, onClose]);
+    if (open && lastPushAt) loadNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastPushAt]);
 
   const handleMarkAllRead = async () => {
     try {
-      const token = await getToken();
-      const res = await markAllNotificationsAsRead(token);
-      if (res.success) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-      }
+      await markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
-      console.error("Failed to mark all as read:", err);
+      notify.error("Failed to mark all as read", { description: "Please try again." });
     }
   };
 
   const handleMarkRead = async (id: string) => {
     try {
-      const token = await getToken();
-      const res = await markNotificationAsRead(token, id);
-      if (res.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-        );
-      }
+      await markRead(id);
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+      notify.error("Failed to mark notification as read", { description: "Please try again." });
     }
   };
 
   const handleNotificationClick = (notif: NotificationData) => {
-    handleMarkRead(notif.id);
+    if (!notif.is_read) handleMarkRead(notif.id);
     const route = getNotificationRoute(notif);
     if (route) {
       onClose();
@@ -99,68 +82,81 @@ export default function Notification({ open, onClose }: NotificationProps) {
       // conversation notification while already on /omnichannel), instead of
       // depending on client-side state re-syncing to a changed query param.
       window.location.href = route;
+      return;
     }
+    notify.info("This notification type can't be opened directly yet.");
   };
 
-  if (!mounted || !open) return null;
+  const unreadInList = notifications.filter((n) => !n.is_read).length;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[1300]">
-      {/* overlay */}
-      <div className="absolute inset-0 bg-black/20" />
-
-      {/* modal */}
-      <div
-        ref={modalRef}
-        className="absolute right-4 top-16 w-[360px] max-w-[calc(100vw-2rem)] rounded-xl bg-white shadow-xl border overflow-hidden"
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-sm">Notifications</h2>
-          </div>
-          {notifications.filter(n => !n.is_read).length > 0 && (
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
-              {notifications.filter(n => !n.is_read).length} New
-            </span>
-          )}
-        </div>
-
-        {/* content */}
-        <div className="max-h-[70vh] overflow-y-auto">
-          {loading ? (
-            <div className="p-8 text-center text-sm text-gray-500">Loading notifications...</div>
-          ) : notifications.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-500">No notifications yet</div>
-          ) : (
-            <>
-              <SectionLabel label="Recent" action="Mark All as Read" onAction={handleMarkAllRead} />
-              {notifications.map((notif) => (
-                <NotificationItem
-                  key={notif.id}
-                  tag={notif.type || "Update"}
-                  tagColor={getTagColor(notif.type)}
-                  title={notif.title}
-                  description={notif.description}
-                  time={formatTime(notif.created_at)}
-                  isRead={notif.is_read}
-                  onClick={() => handleNotificationClick(notif)}
-                />
-              ))}
-            </>
-          )}
-        </div>
-
-        {/* footer */}
-        <div className="p-3 border-t">
-          <Link href={"/notifications"}>
-            <AppButton onClick={() => onClose()} className="w-full">
-              View All Notifications
-            </AppButton>
-          </Link>
-        </div>
+  return (
+    <Menu
+      anchorEl={anchorEl}
+      open={open}
+      onClose={onClose}
+      anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      transformOrigin={{ horizontal: "right", vertical: "top" }}
+      MenuListProps={{ sx: { p: 0 } }}
+      slotProps={{
+        paper: {
+          "aria-label": "Notifications",
+          sx: {
+            width: 360,
+            maxWidth: "calc(100vw - 2rem)",
+            borderRadius: 3,
+            overflow: "hidden",
+          },
+        },
+      }}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b">
+        <h2 className="font-semibold text-sm">Notifications</h2>
+        {unreadInList > 0 && (
+          <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">
+            {unreadInList} New
+          </span>
+        )}
       </div>
-    </div>,
-    document.body
+
+      <div className="max-h-[70vh] overflow-y-auto">
+        {loading ? (
+          <div className="p-8 text-center text-sm text-gray-500">Loading notifications...</div>
+        ) : error ? (
+          <div className="p-8 text-center text-sm text-red-500">
+            Couldn't load notifications.
+            <button onClick={loadNotifications} className="block mx-auto mt-2 text-indigo-600 hover:underline">
+              Try again
+            </button>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-500">No notifications yet</div>
+        ) : (
+          <>
+            <SectionLabel label="Recent" action="Mark All as Read" onAction={handleMarkAllRead} />
+            {notifications.map((notif) => (
+              <NotificationItem
+                key={notif.id}
+                tag={notif.type || "Update"}
+                tagColor={getTagColor(notif.type)}
+                title={notif.title}
+                description={notif.description}
+                time={formatTime(notif.created_at)}
+                isRead={notif.is_read}
+                onClick={() => handleNotificationClick(notif)}
+              />
+            ))}
+          </>
+        )}
+      </div>
+
+      <div className="p-3 border-t">
+        <Link href={"/notifications"}>
+          <AppButton onClick={() => onClose()} className="w-full">
+            View All Notifications
+          </AppButton>
+        </Link>
+      </div>
+    </Menu>
   );
 }
 
@@ -193,15 +189,18 @@ function NotificationItem({
   return (
     <div
       onClick={onClick}
-      className={`px-4 py-3 border-b last:border-b-0 cursor-pointer ${isRead ? 'opacity-70' : 'bg-blue-50/30 hover:bg-gray-50'}`}
+      className={`relative px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${isRead ? "bg-white" : "bg-indigo-50/40"}`}
     >
+      {!isRead && (
+        <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+      )}
       <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mb-2 ${tagColor}`}>
         {tag}
       </span>
-      {/* <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{title}</p> */}
-      {description && <p className={`text-sm ${isRead ? 'font-normal' : 'font-semibold'} text-gray-800`}>{description}</p>}
+      <p className={`text-sm ${isRead ? "font-normal" : "font-semibold"} text-gray-800 pr-4`}>{title}</p>
+      {description && <p className="text-sm text-gray-500 mt-0.5 pr-4">{description}</p>}
       <p className="text-xs text-gray-400 mt-1">{time}</p>
-    </div >
+    </div>
   );
 }
 

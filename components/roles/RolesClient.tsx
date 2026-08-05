@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import useRoles from "@/lib/hooks/useRoles";
 import { AddRoleButton, RolesTable } from "@/components/roles";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { handleError } from "@/lib/utils/errorHandler";
 import { notify } from "@/lib/notifications";
 import { SuperTableState } from "@/components/ui/super-table";
@@ -79,10 +79,10 @@ export default function RolesClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       {/* Header (Standalone Mobile-Friendly) */}
-      <PageHeader
+      <SettingsPageHeader
         title="Roles & Permissions"
         breadcrumbs={[
-          { label: "User Management" },
+          { label: "Settings", href: "/settings" },
           { label: "Roles & Permissions" },
         ]}
       />

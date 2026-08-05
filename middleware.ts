@@ -9,12 +9,10 @@ const PROTECTED_ROUTES_PREFIX = [
     '/inbox',
     '/lead-management',
     '/omnichannel',
-    '/organization',
     '/profile',
     '/sales',
+    '/settings',
     '/support',
-    '/users',
-    '/roles'
 ];
 
 const AUTH_ROUTES = [

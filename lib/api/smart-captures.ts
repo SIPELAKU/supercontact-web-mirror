@@ -372,6 +372,63 @@ export async function saveAsSubmissions(
 }
 
 /**
+ * Resend the email for a single failed submission.
+ */
+export async function resendSmartCaptureSubmission(
+  token: string,
+  smartCaptureId: string,
+  submissionId: string
+): Promise<any> {
+  try {
+    const url = getFullUrl(
+      `/smart-captures/${smartCaptureId}/submissions/${submissionId}/resend`
+    );
+
+    const res = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        'Accept': 'application/json'
+      },
+    });
+
+    return await handleResponse(res, "Failed to resend submission email");
+  } catch (error: any) {
+    logger.error("resendSmartCaptureSubmission error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete one or more submissions (captured leads) for a smart capture.
+ */
+export async function deleteSmartCaptureSubmissions(
+  token: string,
+  smartCaptureId: string,
+  submissionIds: string[]
+): Promise<any> {
+  try {
+    const url = getFullUrl(`/smart-captures/${smartCaptureId}/submissions`);
+
+    const res = await fetchWithTimeout(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ submission_ids: submissionIds }),
+    });
+
+    return await handleResponse(res, "Failed to delete submissions");
+  } catch (error: any) {
+    logger.error("deleteSmartCaptureSubmissions error:", error);
+    throw error;
+  }
+}
+
+/**
  * Update smart capture status using the specialized bulk endpoint.
  */
 export async function updateSmartCaptureStatus(

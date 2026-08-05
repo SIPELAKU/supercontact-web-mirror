@@ -1,10 +1,14 @@
 // lib/hooks/useSmartCaptureSubmissions.ts
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SmartCaptureSubmissionsResponse } from "@/lib/models/types";
 import Cookies from 'js-cookie';
-import { fetchSmartCaptureSubmissions } from "../api/smart-captures";
+import {
+  fetchSmartCaptureSubmissions,
+  resendSmartCaptureSubmission,
+  deleteSmartCaptureSubmissions,
+} from "../api/smart-captures";
 
 export function useSmartCaptureSubmissions(id: string, params: {
   page?: number;
@@ -26,5 +30,39 @@ export function useSmartCaptureSubmissions(id: string, params: {
     staleTime: 1000 * 30, // 30 seconds cache
     refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useResendSmartCaptureSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ smartCaptureId, submissionId }: { smartCaptureId: string; submissionId: string }) => {
+      const token = Cookies.get('access_token');
+      if (!token) {
+        throw new Error('No authentication token');
+      }
+      return resendSmartCaptureSubmission(token, smartCaptureId, submissionId);
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["smart-capture-submissions", variables.smartCaptureId] });
+    },
+  });
+}
+
+export function useDeleteSmartCaptureSubmissions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ smartCaptureId, submissionIds }: { smartCaptureId: string; submissionIds: string[] }) => {
+      const token = Cookies.get('access_token');
+      if (!token) {
+        throw new Error('No authentication token');
+      }
+      return deleteSmartCaptureSubmissions(token, smartCaptureId, submissionIds);
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["smart-capture-submissions", variables.smartCaptureId] });
+    },
   });
 }

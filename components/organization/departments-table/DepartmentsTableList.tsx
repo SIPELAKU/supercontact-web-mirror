@@ -45,7 +45,7 @@ export default function DepartmentsTableList({
       filterSelectOptions: ["Marketing", "Sales", "Customer Support", "Human Resources"],
       columnFilterModeOptions: undefined,
       Cell: ({ row }) => (
-        <Link href={`/organization/${row.original.id}`}>
+        <Link href={`/settings/organization/${row.original.id}`}>
           <span className="font-medium hover:underline">
             {row.original.department}
           </span>

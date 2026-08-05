@@ -8,7 +8,7 @@ import {
   DepartmentsTableList,
   EditDepartmentsModal,
 } from "@/components/organization";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { DepartmentsType } from "@/lib/types/Departments";
 import { AppButton } from "@/components/ui/app-button";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -166,11 +166,11 @@ export default function OrganizationClient() {
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
-      <PageHeader
+      <SettingsPageHeader
         title="Organization Structure"
         breadcrumbs={[
-          { label: "User Management" },
-          { label: "Organization Structure" },
+          { label: "Settings", href: "/settings" },
+          { label: "Organization" },
         ]}
       />
 

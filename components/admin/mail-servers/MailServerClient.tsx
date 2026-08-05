@@ -5,7 +5,7 @@ import { handleError } from '@/lib/utils/errorHandler';
 import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { AppInput } from '@/components/ui/app-input';
-import PageHeader from '@/components/ui/page-header';
+import SettingsPageHeader from '@/components/settings/SettingsPageHeader';
 import { Switch } from '@/components/ui/switch';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import { useMailServers, useTestMailServerConnection, useUpdateMailServerStatus } from '@/lib/hooks/useMailServers';
@@ -149,12 +149,12 @@ export const MailServerClient = () => {
 
     return (
         <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-            <PageHeader
+            <SettingsPageHeader
                 title="Mail Servers"
                 breadcrumbs={[
-                    { label: "Dashboard", href: "/dashboard" },
-                    { label: "Admin" },
-                    { label: "Mail Servers" }
+                    { label: "Settings", href: "/settings" },
+                    { label: "Email" },
+                    { label: "Servers" }
                 ]}
             />
 

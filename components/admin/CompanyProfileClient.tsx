@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 
 import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box, IconButton } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
@@ -267,10 +267,10 @@ export default function CompanyProfileClient() {
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
-      <PageHeader
+      <SettingsPageHeader
         title={company.name}
         breadcrumbs={[
-          { label: "Dashboard", href: "/" },
+          { label: "Settings", href: "/settings" },
           { label: "Company Profile" }
         ]}
       />
@@ -308,12 +308,12 @@ export default function CompanyProfileClient() {
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
           <OrganizationStructureCard
             departmentsCount={departmentsCount}
-            viewAllHref="/organization"
+            viewAllHref="/settings/organization"
           />
           <CompanyKeyPeopleCard
             isLoading={isLoading}
             people={keyPeopleList}
-            viewAllHref="/admin/company-profile/key-people"
+            viewAllHref="/settings/general/company/key-people"
           />
         </div>
       </div>

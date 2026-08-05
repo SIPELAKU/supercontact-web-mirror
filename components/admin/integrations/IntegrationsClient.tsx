@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AppButton } from "@/components/ui/app-button";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useIntegrations, useTestIntegrationConnection } from "@/lib/hooks/useIntegrations";
 import { Integration, IntegrationProvider } from "@/lib/models/types";
@@ -90,11 +90,10 @@ export const IntegrationsClient = () => {
 
     return (
         <div className="w-full flex flex-col gap-4 p-4 md:p-8">
-            <PageHeader
+            <SettingsPageHeader
                 title="Integrations"
                 breadcrumbs={[
-                    { label: "Dashboard", href: "/dashboard" },
-                    { label: "Admin" },
+                    { label: "Settings", href: "/settings" },
                     { label: "Integrations" },
                 ]}
             />

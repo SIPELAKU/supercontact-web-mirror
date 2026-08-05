@@ -2,14 +2,13 @@
 
 import { useSidebar } from "@/lib/context/SidebarContext";
 import { usePermission } from "@/lib/hooks/usePermission";
+import { ALL_SETTINGS_PERMISSIONS } from "@/lib/config/settingsNav";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@mui/material";
 import {
   BarChart3,
-  Building2,
   ChevronDown,
   Contact,
-  CreditCard,
   Database,
   FileText,
   HelpCircle,
@@ -19,7 +18,6 @@ import {
   MessageCircle,
   Settings,
   TrendingUp,
-  User,
   Target,
 } from "lucide-react";
 import Image from "next/image";
@@ -156,34 +154,18 @@ const menuData: MenuSection[] = [
     title: "ADMIN",
     items: [
       {
-        name: "Company Profile",
-        icon: Building2,
-        path: "/admin/company-profile",
-      },
-      {
-        name: "User Control",
-        icon: User,
-        children: [
-          { name: "User", path: "/users", permission: "manage_users" },
-          { name: "Roles & Permissions", path: "/roles", permission: "role_permissions" },
-          { name: "Organization Structure", path: "/organization", permission: "departments" },
-        ],
-      },
-      {
-        name: "Billing",
-        icon: CreditCard,
-        path: "/subscription",
-      },
-      {
+        // Replaces the old 4-entry ADMIN section (Company Profile, User
+        // Control, Billing, Settings) now that all of those live under the
+        // centralized Settings Center (/settings/*). Gated on the union of
+        // every permission used anywhere inside Settings (ALL_SETTINGS_PERMISSIONS)
+        // so this link disappears entirely for a user who can't access any
+        // of it, rather than leading to a near-empty settings sub-nav -
+        // per-item filtering still happens correctly one level deeper,
+        // inside SettingsSidebar itself.
         name: "Settings",
         icon: Settings,
-        children: [
-          { name: "Mail Server", path: "/admin/mail-servers", permission: "mail_servers:read" },
-          { name: "WhatsApp Account", path: "/admin/whatsapp-accounts", permission: "omnichannel:setup" },
-          { name: "Email Account", path: "/admin/email-accounts", permission: "mail_senders" },
-          { name: "Integrations", path: "/admin/integrations", permission: "integrations:read" },
-          { name: "Ticket Settings", path: "/admin/ticket-settings", permission: "tickets:config:manage" },
-        ],
+        path: "/settings",
+        permission: ALL_SETTINGS_PERMISSIONS,
       },
     ],
   },

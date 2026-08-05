@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Card } from "@mui/material";
-import PageHeader from "@/components/ui/page-header";
+import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import { useManagedUsers, useDeleteManagedUser } from "@/lib/hooks/useManagedUser";
@@ -185,9 +185,9 @@ export default function UsersClient() {
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
-      <PageHeader
+      <SettingsPageHeader
         title="Manage User"
-        breadcrumbs={[{ label: "User Management" }, { label: "Manage User" }]}
+        breadcrumbs={[{ label: "Settings", href: "/settings" }, { label: "Users" }]}
       />
 
       {/* Card Statistik */}

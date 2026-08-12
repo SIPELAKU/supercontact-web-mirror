@@ -3,13 +3,11 @@
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function TravelImpactCta() {
     useLanguage();
-    const pathname = usePathname();
 
     const metrics = [
         { val: strings.travel_impact1_val, desc: strings.travel_impact1_desc, color: '#3854D6' },
@@ -70,7 +68,9 @@ export default function TravelImpactCta() {
                         </Typography>
                         <Button
                             variant="contained"
-                            onClick={() => { trackCtaClick('solusi/tour-travel', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                            component={Link}
+                            href="/register"
+                            onClick={() => trackCtaClick('solusi/tour-travel', 'impact_cta')}
                             sx={{
                                 bgcolor: 'white',
                                 color: '#3854D6',

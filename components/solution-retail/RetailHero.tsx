@@ -6,13 +6,11 @@ import { strings } from "@/lib/utils/strings";
 import PersonIcon from '@mui/icons-material/Person';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function RetailHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -78,7 +76,9 @@ export default function RetailHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/ritel', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/ritel', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

@@ -3,16 +3,14 @@
 import { Box, Container, Typography, Stack, Button, Grid, Paper } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import MoodIcon from '@mui/icons-material/Mood';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 export default function CSHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -76,7 +74,9 @@ export default function CSHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/customer-service', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/customer-service', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',
@@ -93,8 +93,11 @@ export default function CSHero() {
                             >
                                 {strings.sol_cs_hero_btn1}
                             </Button>
-                            {/* <Button
+                            <Button
                                 variant="outlined"
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/customer-service', 'hero_demo_cta')}
                                 sx={{
                                     color: 'white',
                                     borderColor: 'rgba(255, 255, 255, 0.5)',
@@ -113,7 +116,7 @@ export default function CSHero() {
                                 }}
                             >
                                 {strings.sol_cs_hero_btn2}
-                            </Button> */}
+                            </Button>
                         </Stack>
                     </Grid>
 

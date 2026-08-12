@@ -4,13 +4,11 @@ import { Box, Container, Typography, Button, Paper } from "@mui/material";
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function LogisticsHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -75,7 +73,9 @@ export default function LogisticsHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/logistik', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/logistik', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

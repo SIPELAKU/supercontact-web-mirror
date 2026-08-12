@@ -3,13 +3,11 @@
 import { Box, Container, Typography, Grid, Stack, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function CSImpactCTA() {
     useLanguage();
-    const pathname = usePathname();
 
     const impacts = [
         {
@@ -112,7 +110,9 @@ export default function CSImpactCTA() {
                     </Typography>
                     <Button
                         variant="contained"
-                        onClick={() => { trackCtaClick('solusi/customer-service', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                        component={Link}
+                        href="/register"
+                        onClick={() => trackCtaClick('solusi/customer-service', 'impact_cta')}
                         sx={{
                             bgcolor: 'white',
                             color: '#3854D6',

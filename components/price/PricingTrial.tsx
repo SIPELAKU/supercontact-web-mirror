@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box, Typography, Button, Container, Grid } from '@mui/material';
 import Image from 'next/image';
+import Link from 'next/link';
 import { strings } from '@/lib/utils/strings';
 import { AppButton } from '../ui/app-button';
-import { NO_WA } from '@/lib/constants/constants';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 const PricingTrial = () => {
@@ -46,11 +46,9 @@ const PricingTrial = () => {
                             <AppButton
                                 variantStyle="primary"
                                 size="medium"
-                                onClick={() => {
-                                    trackCtaClick('price', 'trial_banner_cta');
-                                    const message = encodeURIComponent(strings.trial_wa_interest_msg)
-                                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank')
-                                }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('price', 'trial_banner_cta')}
                             >
                                 {strings.trial_button}
                             </AppButton>

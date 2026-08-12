@@ -3,9 +3,8 @@
 import { Box, Container, Typography, Stack, Button, Grid, Paper, LinearProgress } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 import PeopleIcon from '@mui/icons-material/People';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PaymentsIcon from '@mui/icons-material/Payments';
@@ -14,7 +13,6 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 export default function HRHero() {
     useLanguage();
-    const pathname = usePathname();
 
     const categories = [
         { label: strings.sol_hr_hero_mock_cat1, value: 45, icon: <PaymentsIcon sx={{ fontSize: 16, color: '#22C55E' }} />, color: '#22C55E' },
@@ -83,7 +81,9 @@ export default function HRHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/human-resource', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/human-resource', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#5D7FFF',
@@ -98,8 +98,11 @@ export default function HRHero() {
                             >
                                 {strings.sol_hr_hero_btn1}
                             </Button>
-                            {/* <Button
+                            <Button
                                 variant="outlined"
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/human-resource', 'hero_demo_cta')}
                                 sx={{
                                     color: 'white',
                                     borderColor: 'rgba(255, 255, 255, 0.5)',
@@ -118,7 +121,7 @@ export default function HRHero() {
                                 }}
                             >
                                 {strings.sol_hr_hero_btn2}
-                            </Button> */}
+                            </Button>
                         </Stack>
                     </Grid>
 

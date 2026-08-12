@@ -3,14 +3,12 @@
 import { Box, Container, Typography, Stack, Button, Grid, Paper } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 import ComputerIcon from '@mui/icons-material/Computer';
 
 export default function ITSaaSHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -76,7 +74,9 @@ export default function ITSaaSHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/it-saas', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/it-saas', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

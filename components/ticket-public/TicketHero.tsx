@@ -7,13 +7,11 @@ import CheckIcon from '@mui/icons-material/Check';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 
 export default function TicketHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -77,7 +75,9 @@ export default function TicketHero() {
 
                         <Button
                             variant="contained"
-                            onClick={() => { trackCtaClick('produk/ticket', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                            component={Link}
+                            href="/register"
+                            onClick={() => trackCtaClick('produk/ticket', 'hero_cta')}
                             sx={{
                                 bgcolor: 'white',
                                 color: '#3854D6',

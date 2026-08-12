@@ -4,13 +4,10 @@ import { Box, Container, Typography, Stack, Button } from "@mui/material";
 import Link from "next/link";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function IntCTA() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -30,8 +27,10 @@ export default function IntCTA() {
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
                     <Button
+                        component={Link}
+                        href="/register"
                         variant="contained"
-                        onClick={() => { trackCtaClick('solusi/integrasi-sales-marketing', 'final_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                        onClick={() => trackCtaClick('solusi/integrasi-sales-marketing', 'final_cta')}
                         sx={{
                             bgcolor: 'white',
                             color: '#3854D6',

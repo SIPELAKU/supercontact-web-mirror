@@ -3,9 +3,8 @@
 import { Box, Container, Typography, Stack, Button, Grid, Paper, LinearProgress } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -14,7 +13,6 @@ import LanguageIcon from '@mui/icons-material/Language';
 
 export default function MarketingHero() {
     useLanguage();
-    const pathname = usePathname();
 
     const sources = [
         { label: "WA Blast", value: 65, icon: <WhatsAppIcon sx={{ fontSize: 16, color: '#22C55E' }} />, color: '#22C55E' },
@@ -83,7 +81,9 @@ export default function MarketingHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/marketing', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

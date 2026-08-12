@@ -4,13 +4,11 @@ import { Box, Container, Typography, Button, Paper } from "@mui/material";
 import HotelIcon from '@mui/icons-material/Hotel';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 
 export default function HotelHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -75,7 +73,9 @@ export default function HotelHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/perhotelan', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                component={Link}
+                                href="/register"
+                                onClick={() => trackCtaClick('solusi/perhotelan', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

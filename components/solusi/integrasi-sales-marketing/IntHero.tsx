@@ -4,8 +4,6 @@ import { Box, Container, Typography, Stack, Button, Grid, Breadcrumbs } from "@m
 import Link from "next/link";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
 import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
@@ -15,7 +13,6 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 export default function IntHero() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -95,8 +92,10 @@ export default function IntHero() {
 
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
                             <Button
+                                component={Link}
+                                href="/register"
                                 variant="contained"
-                                onClick={() => { trackCtaClick('solusi/integrasi-sales-marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                                onClick={() => trackCtaClick('solusi/integrasi-sales-marketing', 'hero_cta')}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#3854D6',

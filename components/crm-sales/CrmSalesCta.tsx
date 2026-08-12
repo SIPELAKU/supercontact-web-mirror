@@ -3,13 +3,11 @@
 import { Box, Container, Typography, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function CrmSalesCta() {
     useLanguage();
-    const pathname = usePathname();
 
     return (
         <Box
@@ -49,9 +47,11 @@ export default function CrmSalesCta() {
                 </Typography>
 
                 <Button
+                    component={Link}
+                    href="/register"
                     variant="contained"
                     size="large"
-                    onClick={() => { trackCtaClick('produk/crm-sales', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                    onClick={() => trackCtaClick('produk/crm-sales', 'impact_cta')}
                     sx={{
                         bgcolor: 'white',
                         color: '#3854D6',

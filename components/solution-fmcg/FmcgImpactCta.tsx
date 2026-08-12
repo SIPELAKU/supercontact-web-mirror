@@ -3,13 +3,11 @@
 import { Box, Container, Typography, Grid, Button } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { usePathname } from "next/navigation";
-import { getWhatsAppLink } from "@/lib/utils/wa-link";
 import { trackCtaClick } from '@/lib/analytics/events';
+import Link from 'next/link';
 
 export default function FmcgImpactCta() {
     useLanguage();
-    const pathname = usePathname();
 
     const metrics = [
         { val: strings.fmcg_impact1_val, desc: strings.fmcg_impact1_desc },
@@ -107,7 +105,9 @@ export default function FmcgImpactCta() {
                     </Typography>
                     <Button
                         variant="contained"
-                        onClick={() => { trackCtaClick('solusi/fmcg', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
+                        component={Link}
+                        href="/register"
+                        onClick={() => trackCtaClick('solusi/fmcg', 'impact_cta')}
                         sx={{
                             bgcolor: 'white',
                             color: '#3854D6',

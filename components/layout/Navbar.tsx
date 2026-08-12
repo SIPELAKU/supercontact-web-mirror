@@ -82,6 +82,7 @@ const Navbar = () => {
     { label: strings.product, path: '#' },
     { label: strings.price, path: '/price' },
     { label: strings.solution, path: '#' },
+    { label: strings.blog, path: '/blog' },
     // { label: strings.company, path: '/company' }
   ];
 

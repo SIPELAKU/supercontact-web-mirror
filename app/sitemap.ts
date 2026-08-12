@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { blogArticles } from '@/content/blog/registry';
 
 const BASE_URL = 'https://www.smartsales.id';
 
@@ -26,7 +27,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { url: `${BASE_URL}/`, changeFrequency: 'weekly', priority: 1 },
         { url: `${BASE_URL}/company`, changeFrequency: 'monthly', priority: 0.6 },
         { url: `${BASE_URL}/price`, changeFrequency: 'weekly', priority: 0.9 },
+        { url: `${BASE_URL}/blog`, changeFrequency: 'weekly', priority: 0.7 },
     ];
+
+    const blog: MetadataRoute.Sitemap = blogArticles
+        .filter((a) => !a.slug.startsWith('_'))
+        .map((article) => ({
+            url: `${BASE_URL}/blog/${article.slug}`,
+            changeFrequency: 'monthly',
+            priority: 0.65,
+        }));
 
     const produk: MetadataRoute.Sitemap = produkRoutes.map((slug) => ({
         url: `${BASE_URL}/produk/${slug}`,
@@ -40,5 +50,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: slug === 'integrasi-sales-marketing' ? 0.85 : 0.8,
     }));
 
-    return [...staticRoutes, ...produk, ...solusi];
+    return [...staticRoutes, ...produk, ...solusi, ...blog];
 }

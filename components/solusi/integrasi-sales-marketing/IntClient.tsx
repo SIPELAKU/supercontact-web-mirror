@@ -14,6 +14,7 @@ import IntTrust from './IntTrust';
 import IntComparison from './IntComparison';
 import IntFAQ from './IntFAQ';
 import IntCTA from './IntCTA';
+import IntRelatedArticles from './IntRelatedArticles';
 
 export default function IntClient() {
     return (
@@ -29,6 +30,7 @@ export default function IntClient() {
             <IntComparison />
             <IntFAQ />
             <IntCTA />
+            <IntRelatedArticles />
             <Footer />
         </Box>
     );

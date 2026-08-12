@@ -1,6 +1,10 @@
+'use client';
+
 import React from 'react';
-import { Box, Typography, Button, Container } from '@mui/material';
+import { Box, Typography, Button, Container, Stack } from '@mui/material';
+import Link from 'next/link';
 import { strings } from '@/lib/utils/strings';
+import { trackCtaClick } from '@/lib/analytics/events';
 
 const CompanyHero = () => {
     return (
@@ -46,26 +50,52 @@ const CompanyHero = () => {
                 >
                     {strings.company_hero_desc}
                 </Typography>
-                <Button
-                    href="https://solvera.id/hubungi-kami"
-                    target="_blank"
-                    variant="contained"
-                    size="large"
-                    sx={{
-                        bgcolor: 'white',
-                        color: '#4264D0',
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        px: 5,
-                        py: 1.8,
-                        '&:hover': {
-                            bgcolor: '#f8f9fa'
-                        }
-                    }}
-                >
-                    {strings.company_contact_btn}
-                </Button>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+                    <Button
+                        component={Link}
+                        href="/register"
+                        onClick={() => trackCtaClick('company', 'hero_cta')}
+                        variant="contained"
+                        size="large"
+                        sx={{
+                            bgcolor: 'white',
+                            color: '#4264D0',
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            px: 5,
+                            py: 1.8,
+                            '&:hover': {
+                                bgcolor: '#f8f9fa'
+                            }
+                        }}
+                    >
+                        {strings.company_hero_btn1}
+                    </Button>
+                    <Button
+                        component={Link}
+                        href="/solusi/integrasi-sales-marketing"
+                        variant="outlined"
+                        size="large"
+                        sx={{
+                            color: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                            px: 5,
+                            py: 1.8,
+                            borderWidth: '2px',
+                            '&:hover': {
+                                borderColor: 'white',
+                                bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                borderWidth: '2px'
+                            }
+                        }}
+                    >
+                        {strings.company_hero_btn2}
+                    </Button>
+                </Stack>
             </Container>
         </Box>
     );

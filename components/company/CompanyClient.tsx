@@ -6,12 +6,9 @@ import Footer from '@/components/layout/Footer';
 
 import { Box } from '@mui/material';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import CTA from '../layout/CTA';
-import CompanyHelp from './CompanyHelp';
+import CompanyCTA from './CompanyCTA';
 import CompanyHero from './CompanyHero';
 import CompanyVision from './CompanyVision';
-import TrustedBy from '../layout/TrustedBy';
-import { bgcolor } from '@mui/system';
 import { ClientLogos } from '../ui/ClientLogos';
 
 
@@ -24,17 +21,10 @@ export const CompanyClient = () => {
             <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: 8, sm: 8, md: 4, lg: 6 }}>
                 <CompanyHero />
                 <CompanyVision />
-
-                {/* Reusing TrustedBy Section */}
-                {/* <TrustedBy /> */}
                 <ClientLogos />
 
-                {/* <Box sx={{ pt: 10, bgcolor: '#F5F5F5' }}>
-                    <CompanyHelp />
-                </Box> */}
-
-                <Box sx={{ pt: 10, bgcolor: '#F5F5F5' }}>
-                    <CTA />
+                <Box sx={{ pt: 10 }}>
+                    <CompanyCTA />
                 </Box>
             </Box>
 

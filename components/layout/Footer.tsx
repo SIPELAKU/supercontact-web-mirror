@@ -145,7 +145,7 @@ const Footer = () => {
                             <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
                                 <GoogleIcon fontSize="small" />
                             </IconButton> */}
-                            <Link href="https://www.instagram.com/supercontact.id/" underline="none" target="_blank">
+                            <Link href="https://www.instagram.com/smartsales.id/" underline="none" target="_blank">
                                 <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
                                     <Instagram fontSize="small" />
                                 </IconButton>

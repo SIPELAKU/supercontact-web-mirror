@@ -158,21 +158,22 @@ export const strings = createLocalizedStrings({
 
         // Web Page
         // Company Page
-        company_hero_title: "Your Strategic Partner in Digital Transformation",
-        company_hero_desc: "Solvera Indonesia is an innovative information technology company. We are your strategic partner in navigating the digital era, providing innovative technology solutions and expert consultation for sustainable business growth.",
-        company_contact_btn: "Contact Us",
+        company_hero_title: "The Platform That Unites Your Sales, Marketing, and Customer Support Teams",
+        company_hero_desc: "SmartSales is an integrated CRM, sales, marketing, and customer support platform for businesses in Indonesia, built by Solvera Indonesia — an established digital transformation partner. We exist to make sure every lead reaches your sales team before it's lost.",
+        company_hero_btn1: "Get Started Free",
+        company_hero_btn2: "See Our Solutions",
 
-        company_vision_title: "We believe technology is the key to your business growth.",
-        company_vision_subtitle: "Solvera helps businesses adapt and thrive in the digital era with innovative solutions and effective implementation.",
+        company_vision_title: "We believe the right CRM is the key to your business growth.",
+        company_vision_subtitle: "SmartSales helps sales, marketing, and support teams work from one shared system — so no lead falls through the cracks.",
         company_vis_label: "VISION",
-        company_vis_text: "Realizing inclusive and collaborative digital transformation to drive B2B economic growth and open new opportunities for mutual success. We are committed to providing technology solutions that empower businesses and communities through strategic partnerships.",
+        company_vis_text: "To be the integrated CRM platform of choice for businesses in Indonesia, unifying sales, marketing, and customer support in one system — so no lead is ever lost to scattered tools or disconnected teams.",
         company_mis_label: "MISSION",
-        company_mis_text: "Building a sustainable digital future in Indonesia as a reliable and innovative technology partner. We are committed to supporting strong and sustainable business growth, and creating meaningful employment opportunities through integrated technology solutions.",
+        company_mis_text: "To close the gap between marketing and sales teams for every business in Indonesia with a multi-tenant CRM that's easy to implement, integrates with WhatsApp Business API and email, and is backed by a responsive support team.",
 
-        company_help_title: "Still need help?",
-        company_help_subtitle: "Our specialists are always happy to help.\nContact us during standard business hours or email us 24/7 and we'll get back to you.",
-        company_btn_community: "Visit Our Community",
-        company_btn_contact: "Contact Us",
+        company_cta_title: "Ready to unite your sales and marketing teams?",
+        company_cta_desc: "Start with SmartSales today, or explore how our platform solves the lead-handoff problem for teams like yours.",
+        company_cta_btn: "Get Started Free",
+        company_cta_btn2: "View Pricing",
 
 
         // Hero Section
@@ -1523,21 +1524,22 @@ export const strings = createLocalizedStrings({
 
         // Halaman Web
         // Halaman Perusahaan
-        company_hero_title: "Mitra Strategis Anda Dalam Transformasi Digital",
-        company_hero_desc: "Solvera Indonesia adalah perusahaan inovatif di bidang teknologi informasi. Kami adalah mitra strategis Anda dalam mengarungi era digital, menyediakan solusi teknologi inovatif dan konsultasi ahli untuk pertumbuhan bisnis yang berkelanjutan.",
-        company_contact_btn: "Hubungi Kami",
+        company_hero_title: "Platform yang Menyatukan Tim Sales, Marketing, dan Customer Support Anda",
+        company_hero_desc: "SmartSales adalah platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia, dibangun oleh Solvera Indonesia — mitra transformasi digital yang telah berpengalaman. Kami hadir agar setiap leads sampai ke tim sales Anda sebelum sempat hilang.",
+        company_hero_btn1: "Mulai Gratis",
+        company_hero_btn2: "Lihat Solusi Kami",
 
-        company_vision_title: "Kami yakin teknologi adalah kunci pertumbuhan bisnis Anda.",
-        company_vision_subtitle: "Solvera membantu bisnis beradaptasi dan berkembang di era digital dengan solusi inovatif dan implementasi yang efektif.",
+        company_vision_title: "Kami yakin CRM yang tepat adalah kunci pertumbuhan bisnis Anda.",
+        company_vision_subtitle: "SmartSales membantu tim sales, marketing, dan support bekerja dalam satu sistem yang sama — sehingga tidak ada leads yang tercecer.",
         company_vis_label: "VISI",
-        company_vis_text: "Mewujudkan transformasi digital yang inklusif dan kolaboratif untuk mendorong pertumbuhan ekonomi B2B dan membuka peluang baru bagi kesuksesan bersama. Kami berkomitmen menyediakan solusi teknologi yang memberdayakan bisnis dan komunitas melalui kemitraan strategis.",
+        company_vis_text: "Menjadi platform CRM terintegrasi pilihan utama bagi bisnis di Indonesia, menyatukan sales, marketing, dan customer support dalam satu sistem — sehingga tidak ada leads yang hilang karena tools yang tercecer atau tim yang tidak terhubung.",
         company_mis_label: "MISI",
-        company_mis_text: "Membangun masa depan digital yang berkelanjutan di Indonesia sebagai mitra teknologi yang Andal dan inovatif. Kami berkomitmen mendukung pertumbuhan bisnis yang kuat dan berkelanjutan, serta menciptakan peluang kerja yang berarti melalui solusi teknologi terintegrasi.",
+        company_mis_text: "Menutup celah antara tim marketing dan sales di setiap bisnis Indonesia melalui CRM multi-tenant yang mudah diimplementasikan, terintegrasi dengan WhatsApp Business API dan email, serta didukung tim support yang responsif.",
 
-        company_help_title: "Masih butuh bantuan?",
-        company_help_subtitle: "Spesialis kami selalu senang membantu.\nHubungi kami selama jam kerja standar atau kirim email kepada kami 24/7 dan kami akan menghubungi Anda kembali.",
-        company_btn_community: "Kunjungi Komunitas Kami",
-        company_btn_contact: "Hubungi Kami",
+        company_cta_title: "Siap menyatukan tim sales dan marketing Anda?",
+        company_cta_desc: "Mulai dengan SmartSales hari ini, atau pelajari bagaimana platform kami menyelesaikan masalah serah-terima leads untuk tim seperti Anda.",
+        company_cta_btn: "Mulai Gratis",
+        company_cta_btn2: "Lihat Harga",
 
         // Hero Section
         hero_title: "Aplikasi CRM, Chat & Call Center untuk tingkatkan penjualan dan pelayanan bisnis",

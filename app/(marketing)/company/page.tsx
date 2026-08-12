@@ -9,7 +9,7 @@ const OG_IMAGE = ogImageUrl({ title: 'Tentang Kami', category: 'Tentang Kami' })
 export const metadata: Metadata = {
     title: "Tentang Kami",
     description:
-        "SmartSales adalah platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia. Kenali tim dan misi kami.",
+        "SmartSales adalah platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia, dibangun oleh Solvera Indonesia. Kenali visi dan misi kami.",
     alternates: {
         canonical: PAGE_URL,
     },
@@ -28,8 +28,35 @@ export const metadata: Metadata = {
     },
 };
 
+const aboutPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: "Tentang SmartSales",
+    url: PAGE_URL,
+    mainEntity: {
+        "@type": "Organization",
+        name: "SmartSales",
+        url: "https://www.smartsales.id",
+        logo: "https://www.smartsales.id/assets/sc-icon-512.png",
+        description:
+            "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia, dibangun oleh Solvera Indonesia.",
+        areaServed: "ID",
+        sameAs: [
+            "https://www.instagram.com/smartsales.id/",
+            "https://www.linkedin.com/company/smartsales-indonesia/",
+        ],
+    },
+};
+
 export default function CompanyPage() {
     return (
-        <CompanyClient />
+        <>
+            <script
+                id="company-schema"
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageSchema) }}
+            />
+            <CompanyClient />
+        </>
     );
 }

@@ -75,7 +75,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
         publisher: {
             '@type': 'Organization',
             name: 'SmartSales',
-            logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/sc-logo-primary.svg` },
+            logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/sc-icon-512.png`, width: 512, height: 512 },
         },
         mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
     };

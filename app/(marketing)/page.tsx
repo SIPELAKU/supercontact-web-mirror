@@ -40,7 +40,7 @@ const organizationSchema = {
   "@type": "Organization",
   name: "SmartSales",
   url: "https://www.smartsales.id",
-  logo: "https://www.smartsales.id/assets/sc-logo-primary.svg",
+  logo: "https://www.smartsales.id/assets/sc-icon-512.png",
   description:
     "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia.",
   areaServed: "ID",

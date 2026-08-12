@@ -1,11 +1,6 @@
-import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
-import { ConfirmationProvider } from "@/components/ui/confirm-modal";
 import { AuthProvider } from "@/lib/context/AuthContext";
-import { NotificationsProvider } from "@/lib/context/NotificationsContext";
-import ReactQueryProvider from "@/lib/ReactQueryProvider";
 import type React from "react";
 import { Toaster } from "react-hot-toast";
-import { MuiLocalizationProvider } from "@/components/providers/MuiLocalizationProvider";
 import "./globals.css";
 import { Metadata } from "next";
 import { Poppins } from "next/font/google";
@@ -72,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         {/* Preload critical SVG icons */}
         <link
@@ -94,24 +89,16 @@ export default function RootLayout({
       >
         <GoogleAnalytics />
         <Toaster
-          position="top-right" 
+          position="top-right"
           containerStyle={{
             zIndex: 100000,
           }}
         />
-        <MuiLocalizationProvider>
-          <ConfirmationProvider>
-            <AuthProvider>
-              <NotificationsProvider>
-                <ReactQueryProvider>
-                  <LanguageProvider>
-                    <AuthenticatedLayout>{children}</AuthenticatedLayout>
-                  </LanguageProvider>
-                </ReactQueryProvider>
-              </NotificationsProvider>
-            </AuthProvider>
-          </ConfirmationProvider>
-        </MuiLocalizationProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

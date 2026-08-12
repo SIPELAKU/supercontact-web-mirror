@@ -1,4 +1,4 @@
-import TravelClient from '../../../components/solution-travel/TravelClient';
+import TravelClient from '@/components/solution-travel/TravelClient';
 import { Metadata } from 'next';
 import { ogImageUrl } from '@/lib/utils/og-image';
 

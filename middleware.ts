@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const PROTECTED_ROUTES_PREFIX = [
     '/analytics',
+    '/contact',
     '/dashboard',
     '/data-intelligence',
     '/email-marketing',

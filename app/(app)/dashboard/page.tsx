@@ -1,5 +1,5 @@
 import DashboardClient from "@/components/dashboard/DashboardClient";
-import PageHeader from "../../components/ui/page-header";
+import PageHeader from "@/components/ui/page-header";
 
 export default function MainDashboard() {
   return (

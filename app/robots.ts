@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/smart-capture',
                 '/smart-capture/',
                 '/support/',
-                '/contact/detail/',
+                '/contact',
                 '/login',
                 '/register',
                 '/forgot-password',

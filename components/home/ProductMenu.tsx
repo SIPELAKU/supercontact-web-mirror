@@ -104,7 +104,7 @@ const ProductMenu = ({ isMobile }: ProductMenuProps) => {
                         {strings.product_menu_omnichannel}
                     </Typography>
                     <Stack spacing={1}>
-                        <Link href="produk/omnichannel" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <Link href="/produk/omnichannel" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <MenuItem icon={<HubIcon />} title={strings.pm_omni_omni} desc={strings.pm_omni_omni_desc} />
                         </Link>
                         {/* <MenuItem icon={<InstagramIcon />} title={strings.pm_omni_ig} desc={strings.pm_omni_ig_desc} /> */}

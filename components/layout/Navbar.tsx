@@ -14,6 +14,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useTheme } from '@mui/material/styles';
 import LanguageIcon from '@mui/icons-material/Language';
 import { usePathname, useRouter } from 'next/navigation';
@@ -115,10 +116,10 @@ const Navbar = () => {
         }}
       >
         {/* Desktop Logo */}
-        <Box sx={{ display: { xs: 'none', md: 'block', }, cursor: 'pointer' }} onClick={() => router.push('/')}>
+        <Box component={Link} href="/" sx={{ display: { xs: 'none', md: 'block', }, cursor: 'pointer' }}>
           <Image
             src="/assets/sc-logo-primary.svg"
-            alt="Logo Desktop"
+            alt="SmartSales"
             width={150}
             height={150}
           />
@@ -194,10 +195,9 @@ const Navbar = () => {
                     return (
                       <MenuItem
                         key={item.label}
-                        onClick={() => {
-                          router.push(item.path);
-                          handleCloseNavMenu();
-                        }}
+                        component={Link}
+                        href={item.path}
+                        onClick={handleCloseNavMenu}
                         sx={{
                           py: 2,
                           px: 2,
@@ -246,10 +246,10 @@ const Navbar = () => {
           </Box>
 
           {/* Mobile Logo Center */}
-          <Box sx={{ cursor: 'pointer' }} onClick={() => router.push('/')}>
+          <Box component={Link} href="/" sx={{ cursor: 'pointer' }}>
             <Image
               src="/assets/sc-logo-primary.svg"
-              alt="Logo Mobile"
+              alt="SmartSales"
               width={150}
               height={150}
             />
@@ -374,7 +374,8 @@ const Navbar = () => {
             return (
               <Button
                 key={item.label}
-                onClick={() => router.push(item.path)}
+                component={Link}
+                href={item.path}
                 sx={{
                   my: 2,
                   display: 'block',

@@ -17,11 +17,15 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const setLanguage = (lang: Language) => {
         strings.setLanguage(lang);
         setLanguageState(lang);
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = lang;
+        }
     };
 
     // Initialize language
     React.useEffect(() => {
         strings.setLanguage(language);
+        document.documentElement.lang = language;
     }, []);
 
     return (

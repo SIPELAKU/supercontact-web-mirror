@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import LogisticsHero from "./LogisticsHero";
 import LogisticsChallenges from "./LogisticsChallenges";
 import LogisticsSolutions from "./LogisticsSolutions";
+import LogisticsComparison from "./LogisticsComparison";
+import LogisticsFAQ from "./LogisticsFAQ";
 import LogisticsImpactCta from "./LogisticsImpactCta";
 import { Box } from "@mui/material";
 
@@ -16,6 +18,8 @@ export default function LogisticsClient() {
                 <LogisticsHero />
                 <LogisticsChallenges />
                 <LogisticsSolutions />
+                <LogisticsComparison />
+                <LogisticsFAQ />
                 <LogisticsImpactCta />
             </Box>
             <Footer />

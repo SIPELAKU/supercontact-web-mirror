@@ -6,6 +6,8 @@ import Footer from "@/components/layout/Footer";
 import CrmSalesHero from "./CrmSalesHero";
 import CrmSalesFeatures from "./CrmSalesFeatures";
 import CrmSalesWhyChoose from "./CrmSalesWhyChoose";
+import CrmSalesComparison from "./CrmSalesComparison";
+import CrmSalesFAQ from "./CrmSalesFAQ";
 import CrmSalesCta from "./CrmSalesCta";
 
 export default function CrmSalesClient() {
@@ -16,8 +18,9 @@ export default function CrmSalesClient() {
                 <CrmSalesHero />
                 <CrmSalesFeatures />
                 <CrmSalesWhyChoose />
+                <CrmSalesComparison />
+                <CrmSalesFAQ />
                 <CrmSalesCta />
-                {/* Additional sections for CRM Sales can be added here in the future */}
             </main>
             <Footer />
         </Box>

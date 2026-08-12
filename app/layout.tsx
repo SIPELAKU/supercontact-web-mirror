@@ -13,28 +13,38 @@ import { LanguageProvider } from "@/lib/context/LanguageContext";
 
 // SEO Metadata
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.smartsales.id"),
   title: {
     template: "%s | SmartSales",
-    default: "SmartSales - Sales Management Platform",
+    default: "SmartSales - Platform CRM, Sales, Marketing & Customer Support Terintegrasi",
   },
   description:
-    "Platform manajemen penjualan dan CRM komprehensif untuk meningkatkan produktivitas tim sales Anda.",
+    "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia. Multi-tenant, custom build, satu sistem untuk seluruh tim Anda.",
   keywords: [
     "CRM",
     "Sales Management",
     "Lead Management",
     "Email Marketing",
     "Omnichannel",
+    "WhatsApp Business API",
+    "CRM Indonesia",
+    "software CRM",
   ],
   authors: [{ name: "SmartSales Team" }],
   openGraph: {
-    title: "SmartSales - Sales Management Platform",
+    title: "SmartSales - Platform CRM, Sales, Marketing & Customer Support Terintegrasi",
     description:
-      "Platform manajemen penjualan dan CRM komprehensif untuk meningkatkan produktivitas tim sales Anda.",
-    url: "https://smartsales.id",
+      "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia. Multi-tenant, custom build, satu sistem untuk seluruh tim Anda.",
+    url: "https://www.smartsales.id",
     siteName: "SmartSales",
     locale: "id_ID",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SmartSales - Platform CRM, Sales, Marketing & Customer Support Terintegrasi",
+    description:
+      "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia.",
   },
   robots: {
     index: true,

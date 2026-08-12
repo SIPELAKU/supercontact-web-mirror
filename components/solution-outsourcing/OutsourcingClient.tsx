@@ -6,6 +6,8 @@ import { Box } from '@mui/material';
 import OutsourcingHero from './OutsourcingHero';
 import OutsourcingChallenges from './OutsourcingChallenges';
 import OutsourcingSolutions from './OutsourcingSolutions';
+import OutsourcingComparison from './OutsourcingComparison';
+import OutsourcingFAQ from './OutsourcingFAQ';
 import OutsourcingImpactCta from './OutsourcingImpactCta';
 import Footer from '../layout/Footer';
 
@@ -16,6 +18,8 @@ export default function OutsourcingClient() {
             <OutsourcingHero />
             <OutsourcingChallenges />
             <OutsourcingSolutions />
+            <OutsourcingComparison />
+            <OutsourcingFAQ />
             <OutsourcingImpactCta />
             <Footer />
         </Box>

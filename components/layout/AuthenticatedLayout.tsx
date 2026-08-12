@@ -39,7 +39,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     pathname?.startsWith('/solusi/customer-service') ||
     pathname?.startsWith('/solusi/marketing') ||
     pathname?.startsWith('/solusi/human-resource') ||
-    pathname?.startsWith('/solusi/operasional');
+    pathname?.startsWith('/solusi/operasional') ||
+    pathname?.startsWith('/solusi/integrasi-sales-marketing');
 
   // Redirect unauthenticated users to login (except for auth routes)
   useEffect(() => {
@@ -47,6 +48,20 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       router.push('/login');
     }
   }, [isAuthenticated, loading, isAuthRoute, router]);
+
+  // Public routes render immediately, without waiting on the client-side auth
+  // check — they don't need auth state and must stay crawlable/SSR-visible
+  // (waiting on `loading` here meant every public page's initial HTML was
+  // just a spinner, since `loading` only resolves after hydration).
+  if (isAuthRoute) {
+    const showWhatsAppButton = !isAuthenticated && (pathname === '/' || pathname === '/company' || pathname === '/price');
+    return (
+      <main className="min-h-screen">
+        {children}
+        {showWhatsAppButton && <WhatsAppFloatingButton />}
+      </main>
+    );
+  }
 
   if (loading) {
     return (
@@ -57,24 +72,11 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   }
 
   // If user is not authenticated and not on auth route, show loading while redirecting
-  if (!isAuthenticated && !isAuthRoute) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
-    );
-  }
-
-  // Only show WhatsApp button on specific routes and when not authenticated
-  const showWhatsAppButton = !isAuthenticated && (pathname === '/' || pathname === '/company' || pathname === '/price');
-
-  // If on auth routes, don't show sidebar/topbar
-  if (isAuthRoute) {
-    return (
-      <main className="min-h-screen">
-        {children}
-        {showWhatsAppButton && <WhatsAppFloatingButton />}
-      </main>
     );
   }
 

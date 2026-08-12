@@ -7,6 +7,8 @@ import { Box } from '@mui/material';
 import CSHero from './CSHero';
 import CSChallenges from './CSChallenges';
 import CSSolutions from './CSSolutions';
+import CSComparison from './CSComparison';
+import CSFAQ from './CSFAQ';
 import CSImpactCTA from './CSImpactCTA';
 
 export default function CSClient() {
@@ -16,6 +18,8 @@ export default function CSClient() {
             <CSHero />
             <CSChallenges />
             <CSSolutions />
+            <CSComparison />
+            <CSFAQ />
             <CSImpactCTA />
             <Footer />
         </Box>

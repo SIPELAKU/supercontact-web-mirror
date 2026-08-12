@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import CrmServicesHero from "./CrmServicesHero";
 import CrmServicesFeatures from "./CrmServicesFeatures";
 import CrmServicesWhyChoose from "./CrmServicesWhyChoose";
+import CrmServicesComparison from "./CrmServicesComparison";
+import CrmServicesFAQ from "./CrmServicesFAQ";
 import CrmServicesCta from "./CrmServicesCta";
 
 export default function CrmServicesClient() {
@@ -15,6 +17,8 @@ export default function CrmServicesClient() {
                 <CrmServicesHero />
                 <CrmServicesFeatures />
                 <CrmServicesWhyChoose />
+                <CrmServicesComparison />
+                <CrmServicesFAQ />
                 <CrmServicesCta />
             </main>
             <Footer />

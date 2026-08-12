@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import OmniHero from "./OmniHero";
 import OmniIntegration from "./OmniIntegration";
 import OmniCollaboration from "./OmniCollaboration";
+import OmniComparison from "./OmniComparison";
+import OmniFAQ from "./OmniFAQ";
 import OmniCta from "./OmniCta";
 
 export default function OmniPublicClient() {
@@ -15,6 +17,8 @@ export default function OmniPublicClient() {
                 <OmniHero />
                 <OmniIntegration />
                 <OmniCollaboration />
+                <OmniComparison />
+                <OmniFAQ />
                 <OmniCta />
             </main>
             <Footer />

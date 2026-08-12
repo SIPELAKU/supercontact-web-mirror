@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import TicketHero from "./TicketHero";
 import TicketFeatures from "./TicketFeatures";
 import TicketIntegration from "./TicketIntegration";
+import TicketComparison from "./TicketComparison";
+import TicketFAQ from "./TicketFAQ";
 import TicketCta from "./TicketCta";
 
 export default function TicketPublicClient() {
@@ -15,6 +17,8 @@ export default function TicketPublicClient() {
                 <TicketHero />
                 <TicketFeatures />
                 <TicketIntegration />
+                <TicketComparison />
+                <TicketFAQ />
                 <TicketCta />
             </main>
             <Footer />

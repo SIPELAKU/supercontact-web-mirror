@@ -6,6 +6,8 @@ import Footer from '@/components/layout/Footer';
 import FmcgHero from './FmcgHero';
 import FmcgChallenges from './FmcgChallenges';
 import FmcgSolutions from './FmcgSolutions';
+import FmcgComparison from './FmcgComparison';
+import FmcgFAQ from './FmcgFAQ';
 import FmcgImpactCta from './FmcgImpactCta';
 import { Box } from '@mui/material';
 
@@ -16,6 +18,8 @@ export default function FmcgClient() {
             <FmcgHero />
             <FmcgChallenges />
             <FmcgSolutions />
+            <FmcgComparison />
+            <FmcgFAQ />
             <FmcgImpactCta />
             <Footer />
         </Box>

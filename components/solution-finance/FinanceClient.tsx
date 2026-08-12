@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import FinanceHero from "./FinanceHero";
 import FinanceChallenges from "./FinanceChallenges";
 import FinanceSolutions from "./FinanceSolutions";
+import FinanceComparison from "./FinanceComparison";
+import FinanceFAQ from "./FinanceFAQ";
 import FinanceImpactCta from "./FinanceImpactCta";
 
 export default function FinanceClient() {
@@ -15,6 +17,8 @@ export default function FinanceClient() {
                 <FinanceHero />
                 <FinanceChallenges />
                 <FinanceSolutions />
+                <FinanceComparison />
+                <FinanceFAQ />
                 <FinanceImpactCta />
             </main>
             <Footer />

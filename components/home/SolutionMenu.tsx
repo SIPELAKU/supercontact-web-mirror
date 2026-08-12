@@ -29,6 +29,7 @@ import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import PeopleIcon from '@mui/icons-material/People';
 import CachedIcon from '@mui/icons-material/Cached'; // For "Operational" / Cycle
+import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import Link from 'next/link';
 
@@ -174,6 +175,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                             <Grid item xs={12}>
                                 <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
                                     <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                                </Link>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <Link href="/solusi/integrasi-sales-marketing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                    <MenuItem icon={<SyncAltIcon />} title={strings.sol_role_intmkt} desc={strings.sol_role_intmkt_desc} />
                                 </Link>
                             </Grid>
                         </Grid>
@@ -337,6 +343,11 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                         <Grid item xs={4}>
                             <Link href="/solusi/operasional" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <MenuItem icon={<CachedIcon />} title={strings.sol_role_ops} desc={strings.sol_role_ops_desc} />
+                            </Link>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Link href="/solusi/integrasi-sales-marketing" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <MenuItem icon={<SyncAltIcon />} title={strings.sol_role_intmkt} desc={strings.sol_role_intmkt_desc} />
                             </Link>
                         </Grid>
                     </Grid>

@@ -27,6 +27,8 @@ export const getWhatsAppLink = (pathname: string): string => {
     message = "Halo, saya tertarik untuk mencoba solusi Outsourcing di Smartsales.";
   } else if (pathname.includes('/solusi/it-saas')) {
     message = "Halo, saya tertarik untuk mencoba solusi IT & SaaS di Smartsales.";
+  } else if (pathname.includes('/solusi/integrasi-sales-marketing')) {
+    message = "Halo, saya tertarik untuk mencoba solusi Integrasi Sales & Marketing di Smartsales.";
   }
 
   const encodedMessage = encodeURIComponent(message);

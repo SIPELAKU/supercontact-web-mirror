@@ -51,6 +51,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: "UMr64HslfYMY_DURvFqKqNWgUfzd9xiLySIyWmpk4yg",
+  },
 };
 
 const poppins = Poppins({

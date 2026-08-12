@@ -119,7 +119,7 @@ export default function HotelFAQ() {
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#597CFF', fontWeight: 800, letterSpacing: 2, display: 'block' }}
+                        sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2, display: 'block' }}
                     >
                         {t.badge}
                     </Typography>
@@ -154,14 +154,20 @@ export default function HotelFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{ px: 3, py: 1 }}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
                             >
                                 <Typography sx={{ fontWeight: 700, color: '#1E293B', fontSize: '1rem' }}>
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                            <AccordionDetails
+                                sx={{ px: 3, pb: 3 }}
+                                id={`faq-panel-${index}`}
+                                aria-labelledby={`faq-summary-${index}`}
+                            >
                                 <Typography sx={{ color: '#64748B', lineHeight: 1.7, fontSize: '0.95rem' }}>
                                     {item.a}
                                 </Typography>

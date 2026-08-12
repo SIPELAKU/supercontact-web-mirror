@@ -17,7 +17,7 @@ export default function RetailHero() {
     return (
         <Box
             sx={{
-                bgcolor: '#597CFF',
+                bgcolor: '#3854D6',
                 pt: { xs: 12, md: 20 },
                 pb: { xs: 10, md: 15 },
                 color: 'white',
@@ -43,7 +43,7 @@ export default function RetailHero() {
                             }}
                         >
                             <Box sx={{ bgcolor: 'white', borderRadius: '4px', p: 0.2, display: 'flex' }}>
-                                <StoreIcon sx={{ fontSize: 16, color: '#597CFF' }} />
+                                <StoreIcon sx={{ fontSize: 16, color: '#3854D6' }} />
                             </Box>
                             <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
                                 {strings.retail_hero_badge}
@@ -81,7 +81,7 @@ export default function RetailHero() {
                                 onClick={() => { trackCtaClick('solusi/ritel', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
-                                    color: '#597CFF',
+                                    color: '#3854D6',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,

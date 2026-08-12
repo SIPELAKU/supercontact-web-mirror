@@ -16,12 +16,16 @@ const LABELS = {
         breadcrumbBlog: 'Blog',
         relatedTitle: 'Artikel Terkait',
         faqTitle: 'Pertanyaan Terkait',
+        by: 'Oleh',
+        updated: 'Diperbarui',
     },
     en: {
         breadcrumbHome: 'Home',
         breadcrumbBlog: 'Blog',
         relatedTitle: 'Related Articles',
         faqTitle: 'Related Questions',
+        by: 'By',
+        updated: 'Updated',
     },
 };
 
@@ -63,7 +67,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                     <Chip
                         label={article.category[language]}
                         size="small"
-                        sx={{ bgcolor: '#EEF2FF', color: '#597CFF', fontWeight: 700, mb: 3 }}
+                        sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700, mb: 3 }}
                     />
 
                     <Typography
@@ -74,7 +78,10 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                     </Typography>
 
                     <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                        {formatDate(article.publishedDate, language)}
+                        {t.by} {article.author[language]} · {formatDate(article.publishedDate, language)}
+                        {article.updatedDate && article.updatedDate !== article.publishedDate
+                            ? ` · ${t.updated} ${formatDate(article.updatedDate, language)}`
+                            : ''}
                     </Typography>
 
                     <Typography variant="body1" sx={{ fontSize: '1.125rem', color: '#475569', lineHeight: 1.7, mt: 3 }}>
@@ -165,7 +172,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                         endIcon={<ArrowForwardIcon />}
                         sx={{
                             bgcolor: 'white',
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             px: 4,
                             py: 1.5,

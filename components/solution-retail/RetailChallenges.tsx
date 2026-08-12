@@ -44,7 +44,7 @@ export default function RetailChallenges() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 800,
                             letterSpacing: 1.5,
                             mb: 2,

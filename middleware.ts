@@ -6,6 +6,7 @@ const PROTECTED_ROUTES_PREFIX = [
     '/contact',
     '/dashboard',
     '/data-intelligence',
+    '/demo',
     '/email-marketing',
     '/inbox',
     '/lead-management',

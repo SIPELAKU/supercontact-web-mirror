@@ -4,6 +4,7 @@ import { Box, Container, Typography, Table, TableBody, TableCell, TableContainer
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 const COPY = {
     id: {
@@ -105,13 +106,14 @@ export default function CSComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -150,7 +152,7 @@ export default function CSComparison() {
                             <TableRow sx={{ bgcolor: '#F8FAFC' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '0.875rem' }}>{t.colAspect}</TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '0.875rem' }}>{t.colManual}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#597CFF', fontSize: '0.875rem' }}>{t.colSmartSales}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#3854D6', fontSize: '0.875rem' }}>{t.colSmartSales}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -192,5 +194,7 @@ export default function CSComparison() {
                 </Typography>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

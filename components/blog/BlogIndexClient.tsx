@@ -81,7 +81,7 @@ export default function BlogIndexClient() {
                                 <Chip
                                     label={article.category[language]}
                                     size="small"
-                                    sx={{ bgcolor: '#EEF2FF', color: '#597CFF', fontWeight: 700, mb: 2 }}
+                                    sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700, mb: 2 }}
                                 />
                                 <Typography variant="h6" component="h2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
                                     {article.h1[language]}

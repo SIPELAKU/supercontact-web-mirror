@@ -15,6 +15,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -104,13 +105,14 @@ export default function LogisticsComparison() {
     const copy = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "background.paper" }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: "center", mb: { xs: 6, md: 8 }, maxWidth: "800px", mx: "auto" }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: "#597CFF",
+                            color: "#3854D6",
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -205,7 +207,7 @@ export default function LogisticsComparison() {
                                     </TableCell>
                                     <TableCell sx={{ verticalAlign: "top", bgcolor: "#F5F7FF" }}>
                                         <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-                                            <CheckCircleIcon sx={{ color: "#597CFF", fontSize: 18, mt: "2px", flexShrink: 0 }} />
+                                            <CheckCircleIcon sx={{ color: "#3854D6", fontSize: 18, mt: "2px", flexShrink: 0 }} />
                                             <Typography sx={{ color: "#334155", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 500 }}>
                                                 {row.smartsales}
                                             </Typography>
@@ -218,5 +220,7 @@ export default function LogisticsComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

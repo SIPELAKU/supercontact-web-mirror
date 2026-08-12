@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Lead Management',
         en: 'Lead Management Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-06-18',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Cara Menghitung Revenue yang Hilang Akibat Leads Tidak Di-follow Up',
         en: 'How to Calculate Revenue Lost to Unfollowed Leads',

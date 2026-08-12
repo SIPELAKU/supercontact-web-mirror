@@ -142,7 +142,7 @@ export default function OutsourcingFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -185,16 +185,16 @@ export default function OutsourcingFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
-                                aria-controls={`panel${index}-content`}
-                                id={`panel${index}-header`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
                                 sx={{ px: 3, py: 1 }}
                             >
                                 <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>
                                     {faq.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                            <AccordionDetails id={`faq-panel-${index}`} aria-labelledby={`faq-summary-${index}`} sx={{ px: 3, pb: 3 }}>
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {faq.a}
                                 </Typography>

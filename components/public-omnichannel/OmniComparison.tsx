@@ -4,6 +4,7 @@ import { Box, Container, Typography, Table, TableBody, TableCell, TableContainer
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import InfoIcon from "@mui/icons-material/Info";
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -89,10 +90,11 @@ export default function OmniComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "white" }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: "center", mb: 6 }}>
-                    <Typography variant="overline" sx={{ color: "#597CFF", fontWeight: 700, letterSpacing: 1.5, mb: 2, display: "block" }}>
+                    <Typography variant="overline" sx={{ color: "#3854D6", fontWeight: 700, letterSpacing: 1.5, mb: 2, display: "block" }}>
                         {t.badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: "2rem", md: "2.5rem" }, color: "#0F172A" }}>
@@ -106,7 +108,7 @@ export default function OmniComparison() {
                             <TableRow sx={{ bgcolor: "#F8FAFC" }}>
                                 <TableCell sx={{ fontWeight: 800, color: "#0F172A" }}></TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: "#64748B" }}>{t.col1}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: "#597CFF" }}>{t.col2}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: "#3854D6" }}>{t.col2}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -154,5 +156,7 @@ export default function OmniComparison() {
                 </Grid>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

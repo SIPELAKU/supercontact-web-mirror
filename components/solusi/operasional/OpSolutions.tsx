@@ -47,7 +47,7 @@ export default function OpSolutions() {
         <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: { xs: 8, md: 12 }, textAlign: 'center' }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 800, letterSpacing: 2 }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2 }}>
                         {strings.sol_op_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -57,7 +57,7 @@ export default function OpSolutions() {
 
                 {/* Section 1: Tasks */}
                 <SolutionItem
-                    icon={<MapIcon sx={{ color: '#597CFF' }} />}
+                    icon={<MapIcon sx={{ color: '#3854D6' }} />}
                     title={strings.sol_op_sol1_title}
                     desc={strings.sol_op_sol1_desc}
                     bullets={[strings.sol_op_sol1_li1, strings.sol_op_sol1_li2, strings.sol_op_sol1_li3]}
@@ -91,7 +91,7 @@ export default function OpSolutions() {
                 {/* Section 2: WhatsApp Alerts */}
                 <SolutionItem
                     reverse
-                    icon={<ChatBubbleOutlineIcon sx={{ color: '#597CFF' }} />}
+                    icon={<ChatBubbleOutlineIcon sx={{ color: '#3854D6' }} />}
                     title={strings.sol_op_sol2_title}
                     desc={strings.sol_op_sol2_desc}
                     bullets={[strings.sol_op_sol2_li1, strings.sol_op_sol2_li2]}
@@ -123,7 +123,7 @@ export default function OpSolutions() {
 
                 {/* Section 3: Ticketing */}
                 <SolutionItem
-                    icon={<ReportProblemIcon sx={{ color: '#597CFF' }} />}
+                    icon={<ReportProblemIcon sx={{ color: '#3854D6' }} />}
                     title={strings.sol_op_sol3_title}
                     desc={strings.sol_op_sol3_desc}
                     bullets={[strings.sol_op_sol3_li1, strings.sol_op_sol3_li2]}

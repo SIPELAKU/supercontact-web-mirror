@@ -41,7 +41,7 @@ export default function OpChallenges() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 800,
                             letterSpacing: 2,
                             display: 'block'

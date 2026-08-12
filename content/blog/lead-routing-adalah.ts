@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Lead Management',
         en: 'Lead Management Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-06-25',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Apa itu Lead Routing dan Kenapa Bisnis Anda Membutuhkannya',
         en: 'What Is Lead Routing and Why Your Business Needs It',

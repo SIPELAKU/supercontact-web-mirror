@@ -19,7 +19,7 @@ export default function TicketHero() {
         <Box
             sx={{
                 width: '100%',
-                bgcolor: '#597CFF', // Standard blue
+                bgcolor: '#3854D6', // Standard blue
                 pt: { xs: 12, md: 16 },
                 pb: { xs: 10, md: 16 },
                 position: 'relative',
@@ -80,7 +80,7 @@ export default function TicketHero() {
                             onClick={() => { trackCtaClick('produk/ticket', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                             sx={{
                                 bgcolor: 'white',
-                                color: '#597CFF',
+                                color: '#3854D6',
                                 fontWeight: 700,
                                 px: 4,
                                 py: 1.5,

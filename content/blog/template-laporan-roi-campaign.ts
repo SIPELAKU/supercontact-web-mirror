@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Marketing & ROI',
         en: 'Marketing & ROI Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-08-04',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Template Laporan ROI Campaign Marketing ke Sales',
         en: 'ROI Campaign Report Template: Marketing to Sales',

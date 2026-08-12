@@ -7,6 +7,7 @@ const article: BlogArticle = {
         en: 'Lead Management Guide',
     },
     publishedDate: '2026-08-12',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Cara Migrasi Data Spreadsheet ke CRM Tanpa Kehilangan Data',
         en: 'How to Migrate Spreadsheet Data to a CRM Without Losing Data',

@@ -39,7 +39,7 @@ export default function IntRelatedArticles() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {t.badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -69,7 +69,7 @@ export default function IntRelatedArticles() {
                                 <Chip
                                     label={article.category[language]}
                                     size="small"
-                                    sx={{ bgcolor: '#EEF2FF', color: '#597CFF', fontWeight: 700, mb: 2 }}
+                                    sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700, mb: 2 }}
                                 />
                                 <Typography sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>
                                     {article.h1[language]}

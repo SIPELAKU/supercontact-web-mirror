@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Lead Management',
         en: 'Lead Management Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-08-08',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: '7 Kesalahan Integrasi Sales Marketing yang Bikin Leads Hilang',
         en: '7 Sales-Marketing Integration Mistakes That Lose You Leads',
@@ -78,8 +79,8 @@ const article: BlogArticle = {
         {
             type: 'callout',
             text: {
-                id: 'Contoh ilustrasi: 200 leads/bulan × 30% tidak pernah di-follow up × rata-rata nilai closing Rp2.000.000 × close rate tim sales 15% ≈ Rp18.000.000 potensi pendapatan hilang per bulan. Angka ini hanya ilustrasi — ganti dengan data bisnis Anda sendiri untuk melihat dampak sebenarnya.',
-                en: 'Illustrative example: 200 leads/month × 30% never followed up × average deal size Rp2,000,000 × 15% sales close rate ≈ Rp18,000,000 in potential lost revenue every month. This is only an example — replace the numbers with your own business data to see the real impact.',
+                id: 'Contoh ilustrasi: 300 leads/bulan × 20% tidak pernah di-follow up × rata-rata nilai closing Rp1.800.000 × close rate tim sales 25% ≈ Rp27.000.000 potensi pendapatan hilang per bulan. Angka ini hanya ilustrasi — ganti dengan data bisnis Anda sendiri untuk melihat dampak sebenarnya.',
+                en: 'Illustrative example: 300 leads/month × 20% never followed up × average deal size Rp1,800,000 × 25% sales close rate ≈ Rp27,000,000 in potential lost revenue every month. This is only an example — replace the numbers with your own business data to see the real impact.',
             },
         },
         {

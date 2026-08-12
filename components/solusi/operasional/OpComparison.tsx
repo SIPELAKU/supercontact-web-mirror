@@ -4,6 +4,7 @@ import { Box, Container, Typography, Stack, TableContainer, Table, TableHead, Ta
 import { useLanguage } from "@/lib/context/LanguageContext";
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 const COPY = {
     id: {
@@ -93,12 +94,13 @@ export default function OpComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: { xs: 6, md: 8 }, textAlign: 'center' }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#597CFF', fontWeight: 800, letterSpacing: 2, display: 'block' }}
+                        sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2, display: 'block' }}
                     >
                         {t.badge}
                     </Typography>
@@ -173,5 +175,7 @@ export default function OpComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

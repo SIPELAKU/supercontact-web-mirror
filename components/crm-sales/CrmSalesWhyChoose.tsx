@@ -84,7 +84,7 @@ export default function CrmSalesWhyChoose() {
                         <Paper
                             elevation={12}
                             sx={{
-                                bgcolor: '#597CFF', // Standard blue from hero image, matching reference 2
+                                bgcolor: '#3854D6', // Standard blue from hero image, matching reference 2
                                 borderRadius: '24px',
                                 p: { xs: 3, md: 5 },
                                 color: 'white',

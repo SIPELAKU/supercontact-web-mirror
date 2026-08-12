@@ -24,7 +24,7 @@ export default function IntFramework() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_fw_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A', maxWidth: '800px', mx: 'auto' }}>
@@ -59,7 +59,7 @@ export default function IntFramework() {
                                 >
                                     0{index + 1}
                                 </Typography>
-                                <Box sx={{ color: '#597CFF', mb: 2 }}>{step.icon}</Box>
+                                <Box sx={{ color: '#3854D6', mb: 2 }}>{step.icon}</Box>
                                 <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 800, mb: 1, color: '#0F172A' }}>
                                     {step.title}
                                 </Typography>

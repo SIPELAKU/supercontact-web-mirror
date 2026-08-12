@@ -14,7 +14,7 @@ export default function TicketCta() {
     return (
         <Box
             sx={{
-                bgcolor: '#597CFF', // Standard blue
+                bgcolor: '#3854D6', // Standard blue
                 py: { xs: 8, md: 12 },
                 position: 'relative',
                 overflow: 'hidden'
@@ -53,7 +53,7 @@ export default function TicketCta() {
                     onClick={() => { trackCtaClick('produk/ticket', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                     sx={{
                         bgcolor: 'white',
-                        color: '#597CFF',
+                        color: '#3854D6',
                         fontWeight: 700,
                         px: 4,
                         py: 1.5,

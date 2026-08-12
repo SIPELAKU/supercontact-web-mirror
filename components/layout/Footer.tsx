@@ -20,7 +20,7 @@ import StoreButton from '../ui/StoreButton';
 
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import { Instagram } from '@mui/icons-material';
+import Instagram from '@mui/icons-material/Instagram';
 
 const Footer = () => {
     useLanguage();

@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Lead Management',
         en: 'Lead Management Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-07-09',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Cara Menentukan SLA Follow Up Leads untuk Tim Sales',
         en: 'How to Set a Lead Follow-Up SLA for Your Sales Team',
@@ -121,8 +122,8 @@ const article: BlogArticle = {
         {
             type: 'callout',
             text: {
-                id: 'Contoh ilustrasi: jika tim Anda menerima 200 leads/bulan dan 30% di antaranya tidak pernah di-follow up sesuai SLA, dengan rata-rata nilai deal Rp2.000.000 dan close rate 15%, potensi pendapatan yang hilang bisa mencapai sekitar Rp18.000.000 per bulan (200 × 30% × Rp2.000.000 × 15%). Angka ini hanya ilustrasi — ganti dengan data bisnis Anda sendiri untuk melihat dampak nyatanya.',
-                en: 'Illustrative example: if your team receives 200 leads/month and 30% of them never get followed up within SLA, with an average deal size of Rp2,000,000 and a 15% close rate, the potential lost revenue could reach roughly Rp18,000,000 per month (200 × 30% × Rp2,000,000 × 15%). This figure is only an illustration — replace it with your own business data to see the real impact.',
+                id: 'Contoh ilustrasi: jika tim Anda menerima 250 leads/bulan dan 35% di antaranya tidak pernah di-follow up sesuai SLA, dengan rata-rata nilai deal Rp2.500.000 dan close rate 18%, potensi pendapatan yang hilang bisa mencapai sekitar Rp39.375.000 per bulan (250 × 35% × Rp2.500.000 × 18%). Angka ini hanya ilustrasi — ganti dengan data bisnis Anda sendiri untuk melihat dampak nyatanya.',
+                en: 'Illustrative example: if your team receives 250 leads/month and 35% of them never get followed up within SLA, with an average deal size of Rp2,500,000 and an 18% close rate, the potential lost revenue could reach roughly Rp39,375,000 per month (250 × 35% × Rp2,500,000 × 18%). This figure is only an illustration — replace it with your own business data to see the real impact.',
             },
         },
         {

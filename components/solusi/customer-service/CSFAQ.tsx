@@ -55,8 +55,8 @@ const COPY = {
                 a: "Untuk kebutuhan inbox dan tiket dasar, tim Anda umumnya sudah bisa mulai memakai SmartSales dalam hitungan hari setelah saluran WhatsApp Business, Instagram, dan Email terhubung. Kebutuhan integrasi tambahan akan didiskusikan sesuai kompleksitasnya saat onboarding."
             },
             {
-                q: "Apakah tersedia uji coba gratis sebelum berlangganan?",
-                a: "Tersedia. Anda bisa memulai uji coba gratis untuk mencoba langsung fitur inbox, tiket, dan Quick Replies sebelum memutuskan berlangganan."
+                q: "Apakah tim CS kami bisa mencoba sistem tiket dan inbox terpadu ini secara gratis dulu?",
+                a: "Bisa. Kami menyediakan periode uji coba gratis agar tim CS Anda bisa langsung merasakan alur eskalasi tiket, Auto-Routing, dan Quick Replies pada kasus nyata sebelum memutuskan berlangganan."
             }
         ]
     },
@@ -110,8 +110,8 @@ const COPY = {
                 a: "For basic inbox and ticketing needs, your team can typically start using SmartSales within days once your WhatsApp Business, Instagram, and Email channels are connected. Additional integration needs are scoped during onboarding based on complexity."
             },
             {
-                q: "Is a free trial available before subscribing?",
-                a: "Yes. You can start a free trial to try the inbox, ticketing, and Quick Replies features directly before deciding to subscribe."
+                q: "Can our CS team test the ticketing and unified inbox setup before we commit?",
+                a: "Yes. We offer a free trial period so your CS team can run real escalation flows, Auto-Routing, and Quick Replies through their own cases before deciding to subscribe."
             }
         ]
     }
@@ -128,7 +128,7 @@ export default function CSFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -169,7 +169,9 @@ export default function CSFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: 3,
                                     py: 1,
@@ -180,7 +182,10 @@ export default function CSFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                            <AccordionDetails
+                                id={`faq-panel-${index}`}
+                                aria-labelledby={`faq-summary-${index}`}
+                                sx={{ px: 3, pb: 3, pt: 0 }}>
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {item.a}
                                 </Typography>

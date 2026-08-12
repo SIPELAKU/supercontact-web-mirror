@@ -4,6 +4,7 @@ import { Box, Container, Typography, Stack, Table, TableBody, TableCell, TableCo
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 const COPY = {
     id: {
@@ -95,12 +96,13 @@ export default function HotelComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#597CFF', fontWeight: 800, letterSpacing: 2, display: 'block' }}
+                        sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2, display: 'block' }}
                     >
                         {t.badge}
                     </Typography>
@@ -187,5 +189,7 @@ export default function HotelComparison() {
                 </Typography>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

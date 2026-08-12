@@ -162,14 +162,16 @@ export default function HRFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{ px: 3, py: 1 }}
                             >
                                 <Typography sx={{ fontWeight: 700, color: '#1E293B', fontSize: '1rem' }}>
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3 }}>
+                            <AccordionDetails id={`faq-panel-${index}`} aria-labelledby={`faq-summary-${index}`} sx={{ px: 3, pb: 3 }}>
                                 <Typography sx={{ color: '#64748B', lineHeight: 1.7, fontSize: '0.95rem' }}>
                                     {item.a}
                                 </Typography>

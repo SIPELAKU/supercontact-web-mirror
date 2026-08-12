@@ -34,7 +34,7 @@ export default function IntCTA() {
                         onClick={() => { trackCtaClick('solusi/integrasi-sales-marketing', 'final_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                         sx={{
                             bgcolor: 'white',
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

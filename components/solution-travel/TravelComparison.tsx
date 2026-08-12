@@ -4,6 +4,7 @@ import { Box, Container, Typography, Table, TableBody, TableCell, TableContainer
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -95,13 +96,14 @@ export default function TravelComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 }, maxWidth: '760px', mx: 'auto' }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -139,7 +141,7 @@ export default function TravelComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#597CFF' }}>
+                            <TableRow sx={{ bgcolor: '#3854D6' }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', border: 'none' }}>
                                     {t.colAspect}
                                 </TableCell>
@@ -186,5 +188,7 @@ export default function TravelComparison() {
                 </Typography>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

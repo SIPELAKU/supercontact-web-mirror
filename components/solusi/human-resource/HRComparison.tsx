@@ -4,6 +4,7 @@ import { Box, Container, Typography, Stack, Table, TableBody, TableCell, TableCo
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 const COPY = {
     id: {
@@ -95,6 +96,7 @@ export default function HRComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
@@ -187,5 +189,7 @@ export default function HRComparison() {
                 </Typography>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

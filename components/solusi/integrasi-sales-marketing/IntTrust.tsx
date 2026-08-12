@@ -7,6 +7,7 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import HubIcon from '@mui/icons-material/Hub';
 import LockIcon from '@mui/icons-material/Lock';
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 export default function IntTrust() {
     useLanguage();
@@ -19,10 +20,11 @@ export default function IntTrust() {
     ];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_trust_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -40,7 +42,7 @@ export default function IntTrust() {
                                         borderRadius: '14px',
                                         bgcolor: 'white',
                                         border: '1px solid #E2E8F0',
-                                        color: '#597CFF',
+                                        color: '#3854D6',
                                         display: 'flex',
                                         flexShrink: 0,
                                     }}
@@ -61,5 +63,7 @@ export default function IntTrust() {
                 </Grid>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

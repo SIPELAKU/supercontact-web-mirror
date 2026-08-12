@@ -37,7 +37,7 @@ export default function IntProblem() {
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}
+                        sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}
                     >
                         {strings.sol_int_problem_badge}
                     </Typography>

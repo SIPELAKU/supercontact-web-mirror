@@ -44,7 +44,7 @@ export default function RetailImpactCta() {
                                         variant="h2"
                                         sx={{
                                             fontWeight: 800,
-                                            color: '#597CFF',
+                                            color: '#3854D6',
                                             mb: 1.5,
                                             fontSize: { xs: '2rem', md: '3.5rem' }
                                         }}
@@ -73,7 +73,7 @@ export default function RetailImpactCta() {
             {/* Final CTA Section - Full Width Blue Banner */}
             <Box
                 sx={{
-                    bgcolor: '#597CFF',
+                    bgcolor: '#3854D6',
                     py: { xs: 8, md: 12 },
                     textAlign: 'center',
                     color: 'white',
@@ -110,7 +110,7 @@ export default function RetailImpactCta() {
                         onClick={() => { trackCtaClick('solusi/ritel', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                         sx={{
                             bgcolor: 'white',
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             px: 5,
                             py: 1.8,

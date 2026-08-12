@@ -22,7 +22,7 @@ export default function HotelSolutions() {
                 {lists.map((item, index) => (
                     <ListItem key={index} sx={{ px: 0, py: 1.5, alignItems: 'flex-start' }}>
                         <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                            <CheckCircleOutlineIcon sx={{ color: '#597CFF' }} />
+                            <CheckCircleOutlineIcon sx={{ color: '#3854D6' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary={item}
@@ -38,7 +38,7 @@ export default function HotelSolutions() {
         <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 }, maxWidth: '800px', mx: 'auto' }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
                         {strings.hotel_sol_badge}
                     </Typography>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 800, color: '#111827', fontSize: { xs: '2rem', md: '2.75rem' } }}>

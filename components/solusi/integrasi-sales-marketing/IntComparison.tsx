@@ -21,7 +21,7 @@ export default function IntComparison() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_comp_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -35,7 +35,7 @@ export default function IntComparison() {
                             <TableRow sx={{ bgcolor: '#F8FAFC' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A' }}></TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>{strings.sol_int_comp_col1}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#597CFF' }}>{strings.sol_int_comp_col2}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#3854D6' }}>{strings.sol_int_comp_col2}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

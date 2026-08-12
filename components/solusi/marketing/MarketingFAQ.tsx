@@ -51,8 +51,8 @@ const COPY = {
                 a: "Bisa. Karena SmartSales dibangun dengan pendekatan custom build, kebutuhan khusus seperti template pesan, struktur tag segmentasi, atau laporan funnel tertentu dapat didiskusikan dan disesuaikan dengan tim kami."
             },
             {
-                q: "Apakah tersedia uji coba gratis sebelum berlangganan?",
-                a: "Tersedia. Anda bisa memulai uji coba gratis untuk mencoba langsung fitur inbox, broadcast, dan pelacakan funnel sebelum memutuskan berlangganan."
+                q: "Bisakah tim Marketing mencoba fitur broadcast dan segmentasi sebelum berlangganan?",
+                a: "Bisa. Kami menyediakan masa uji coba gratis khusus untuk tim Marketing agar Anda bisa langsung mencoba mengirim broadcast WhatsApp/Email, membuat segmen kontak dengan Custom Tags, dan melihat laporan funnel campaign sebelum memutuskan berlangganan."
             }
         ]
     },
@@ -102,8 +102,8 @@ const COPY = {
                 a: "Yes. Because SmartSales is built with a custom-build approach, specific needs like message templates, segmentation tag structures, or particular funnel reports can be discussed and adapted with our team."
             },
             {
-                q: "Is a free trial available before subscribing?",
-                a: "Yes. You can start a free trial to try the inbox, broadcast, and funnel-tracking features directly before deciding to subscribe."
+                q: "Can the Marketing team try the broadcast and segmentation features before subscribing?",
+                a: "Yes. We offer a free trial period tailored for Marketing teams so you can send a WhatsApp/Email broadcast, build a contact segment with Custom Tags, and check the campaign funnel report before deciding to subscribe."
             }
         ]
     }
@@ -120,7 +120,7 @@ export default function MarketingFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -161,7 +161,9 @@ export default function MarketingFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: 3,
                                     py: 1,
@@ -172,7 +174,10 @@ export default function MarketingFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                            <AccordionDetails
+                                id={`faq-panel-${index}`}
+                                aria-labelledby={`faq-summary-${index}`}
+                                sx={{ px: 3, pb: 3, pt: 0 }}>
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {item.a}
                                 </Typography>

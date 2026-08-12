@@ -15,6 +15,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -104,13 +105,14 @@ export default function FinanceComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 }, maxWidth: '800px', mx: 'auto' }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -195,5 +197,7 @@ export default function FinanceComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

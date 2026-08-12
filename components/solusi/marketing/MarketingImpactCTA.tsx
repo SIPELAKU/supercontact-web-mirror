@@ -54,7 +54,7 @@ export default function MarketingImpactCTA() {
                                         variant="h2"
                                         sx={{
                                             fontWeight: 800,
-                                            color: '#597CFF',
+                                            color: '#3854D6',
                                             fontSize: { xs: '1.75rem', md: '2.5rem' },
                                             lineHeight: 1.2,
                                             wordBreak: 'break-word',
@@ -118,7 +118,7 @@ export default function MarketingImpactCTA() {
                         onClick={() => { trackCtaClick('solusi/marketing', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                         sx={{
                             bgcolor: 'white',
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

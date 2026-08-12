@@ -84,7 +84,7 @@ const Navbar = () => {
     { label: strings.price, path: '/price' },
     { label: strings.solution, path: '#' },
     { label: strings.blog, path: '/blog' },
-    // { label: strings.company, path: '/company' }
+    { label: strings.company, path: '/company' },
   ];
 
   const isActive = (path: string) => pathname === path;
@@ -264,6 +264,8 @@ const Navbar = () => {
                 <React.Fragment key={item.label}>
                   <Button
                     onClick={handleClickProduct}
+                    aria-haspopup="true"
+                    aria-expanded={openProduct}
                     sx={{
                       my: 2,
                       display: 'flex',
@@ -320,6 +322,8 @@ const Navbar = () => {
                 <React.Fragment key={item.label}>
                   <Button
                     onClick={handleClickSolution}
+                    aria-haspopup="true"
+                    aria-expanded={openSolution}
                     sx={{
                       my: 2,
                       display: 'flex',

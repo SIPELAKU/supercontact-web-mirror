@@ -50,10 +50,17 @@ export default function IntFAQ() {
                             bgcolor: 'white',
                         }}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            id={`faq-summary-${index}`}
+                            aria-controls={`faq-panel-${index}`}
+                        >
                             <Typography sx={{ fontWeight: 700, color: '#0F172A' }}>{faq.q}</Typography>
                         </AccordionSummary>
-                        <AccordionDetails>
+                        <AccordionDetails
+                            id={`faq-panel-${index}`}
+                            aria-labelledby={`faq-summary-${index}`}
+                        >
                             <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.7 }}>
                                 {faq.a}
                             </Typography>

@@ -43,7 +43,7 @@ export default function HRImpactCTA() {
                                         variant="h2"
                                         sx={{
                                             fontWeight: 800,
-                                            color: '#597CFF',
+                                            color: '#3854D6',
                                             fontSize: { xs: '2.5rem', md: '3.5rem' }
                                         }}
                                     >
@@ -104,7 +104,7 @@ export default function HRImpactCTA() {
                         onClick={() => { trackCtaClick('solusi/human-resource', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                         sx={{
                             bgcolor: 'white',
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

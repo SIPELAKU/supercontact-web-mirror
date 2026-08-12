@@ -46,6 +46,7 @@ const breadcrumbSchema = {
             '@type': 'ListItem',
             position: 2,
             name: 'Omnichannel',
+            item: PAGE_URL,
         },
     ],
 };

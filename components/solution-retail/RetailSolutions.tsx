@@ -18,7 +18,7 @@ export default function RetailSolutions() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 800,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -55,7 +55,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol1_li1, strings.retail_sol1_li2, strings.retail_sol1_li3].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#597CFF', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}
@@ -76,7 +76,7 @@ export default function RetailSolutions() {
                                 <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.6, fontWeight: 600 }}>
                                     {strings.retail_sol1_mock_history}
                                     <br />
-                                    <Typography component="span" sx={{ color: '#597CFF', fontWeight: 800 }}>Rp 2.450.000</Typography>
+                                    <Typography component="span" sx={{ color: '#3854D6', fontWeight: 800 }}>Rp 2.450.000</Typography>
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -113,7 +113,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol2_li1, strings.retail_sol2_li2].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#597CFF', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}
@@ -136,7 +136,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol3_li1, strings.retail_sol3_li2].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#597CFF', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}

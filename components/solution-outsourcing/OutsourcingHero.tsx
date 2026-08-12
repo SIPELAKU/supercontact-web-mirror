@@ -41,7 +41,7 @@ export default function OutsourcingHero() {
                             }}
                         >
                             <Box sx={{ bgcolor: 'white', borderRadius: '4px', p: 0.2, display: 'flex' }}>
-                                <GroupsIcon sx={{ fontSize: 16, color: '#597CFF' }} />
+                                <GroupsIcon sx={{ fontSize: 16, color: '#3854D6' }} />
                             </Box>
                             <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
                                 {strings.out_hero_badge}
@@ -79,7 +79,7 @@ export default function OutsourcingHero() {
                                 onClick={() => { trackCtaClick('solusi/outsourcing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
-                                    color: '#597CFF',
+                                    color: '#3854D6',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,

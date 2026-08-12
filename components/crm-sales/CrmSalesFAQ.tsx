@@ -112,7 +112,7 @@ export default function CrmSalesFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -165,7 +165,9 @@ export default function CrmSalesFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: { xs: 2.5, md: 3 },
                                     py: 1,
@@ -178,7 +180,7 @@ export default function CrmSalesFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>
+                            <AccordionDetails id={`faq-panel-${index}`} aria-labelledby={`faq-summary-${index}`} sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>
                                 <Typography sx={{ color: 'text.secondary', lineHeight: 1.7, fontSize: '0.95rem' }}>
                                     {item.a}
                                 </Typography>

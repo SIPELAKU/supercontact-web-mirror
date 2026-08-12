@@ -9,6 +9,12 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Keeps icon-library imports tree-shaken per-icon instead of pulling in
+  // the full barrel module when a component imports from the package root.
+  experimental: {
+    optimizePackageImports: ['@mui/icons-material', 'lucide-react'],
+  },
+
   // 3. Image optimization settings
   images: {
     dangerouslyAllowSVG: true,

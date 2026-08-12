@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan CRM & Sales',
         en: 'CRM & Sales Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-07-23',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Spreadsheet vs CRM: Kapan Bisnis Anda Perlu Upgrade',
         en: 'Spreadsheet vs CRM: When Should Your Business Upgrade?',

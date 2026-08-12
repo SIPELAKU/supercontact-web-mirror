@@ -15,7 +15,7 @@ export default function CSSolutions() {
         <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: '#F8FAFC' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 10 }}>
-                    <Typography variant="overline" sx={{ color: '#597CFF', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_cs_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>

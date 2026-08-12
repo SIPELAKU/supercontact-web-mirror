@@ -15,6 +15,7 @@ import {
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -102,13 +103,14 @@ export default function CrmServicesComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 }, maxWidth: '700px', mx: 'auto' }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -186,14 +188,14 @@ export default function CrmServicesComparison() {
                                     sx={{
                                         fontWeight: 800,
                                         fontSize: '0.95rem',
-                                        color: '#597CFF',
+                                        color: '#3854D6',
                                         bgcolor: '#EEF2FF',
                                         borderBottom: '1px solid',
                                         borderColor: 'divider'
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <CheckCircleRoundedIcon sx={{ fontSize: 18, color: '#597CFF' }} />
+                                        <CheckCircleRoundedIcon sx={{ fontSize: 18, color: '#3854D6' }} />
                                         {t.colSmartSales}
                                     </Box>
                                 </TableCell>
@@ -248,5 +250,7 @@ export default function CrmServicesComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

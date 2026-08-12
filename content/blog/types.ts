@@ -15,6 +15,8 @@ export interface BlogArticle {
     slug: string;
     category: Localized<string>;
     publishedDate: string;
+    updatedDate?: string;
+    author: Localized<string>;
     title: Localized<string>;
     description: Localized<string>;
     h1: Localized<string>;

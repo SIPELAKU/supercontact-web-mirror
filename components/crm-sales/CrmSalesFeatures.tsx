@@ -15,7 +15,7 @@ export default function CrmSalesFeatures() {
 
     const features = [
         {
-            icon: <ViewKanbanOutlinedIcon sx={{ fontSize: 32, color: '#597CFF' }} />,
+            icon: <ViewKanbanOutlinedIcon sx={{ fontSize: 32, color: '#3854D6' }} />,
             iconBg: '#EEF2FF',
             title: strings.crm_sales_feat_1_title,
             desc: strings.crm_sales_feat_1_desc
@@ -48,7 +48,7 @@ export default function CrmSalesFeatures() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,

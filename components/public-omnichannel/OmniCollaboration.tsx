@@ -94,7 +94,7 @@ export default function OmniCollaboration() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: '#597CFF'
+                                            color: '#3854D6'
                                         }}>
                                             {item.icon}
                                         </Box>

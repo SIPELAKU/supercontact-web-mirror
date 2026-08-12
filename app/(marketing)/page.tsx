@@ -44,6 +44,10 @@ const organizationSchema = {
   description:
     "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia.",
   areaServed: "ID",
+  sameAs: [
+    "https://www.instagram.com/smartsales.id/",
+    "https://www.linkedin.com/company/smartsales-indonesia/",
+  ],
 };
 
 const websiteSchema = {

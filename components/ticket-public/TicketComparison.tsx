@@ -15,6 +15,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useLanguage } from "@/lib/context/LanguageContext";
+import { ClientLogos } from "@/components/ui/ClientLogos";
 
 const COPY = {
     id: {
@@ -56,13 +57,14 @@ export default function TicketComparison() {
     const t = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -110,7 +112,7 @@ export default function TicketComparison() {
                                 <TableCell
                                     sx={{
                                         fontWeight: 800,
-                                        color: '#597CFF',
+                                        color: '#3854D6',
                                         fontSize: '0.95rem',
                                         py: 2.5,
                                         bgcolor: 'rgba(89, 124, 255, 0.06)',
@@ -160,5 +162,7 @@ export default function TicketComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

@@ -47,8 +47,8 @@ const COPY = {
                 a: "Detail paket dan harga tersedia di halaman Harga kami. Silakan kunjungi halaman /price untuk melihat pilihan paket yang sesuai dengan jumlah staf lapangan dan kebutuhan modul Anda."
             },
             {
-                q: "Apakah tersedia uji coba gratis sebelum berlangganan?",
-                a: "Tersedia. Anda bisa memulai uji coba gratis atau konsultasi langsung dengan tim kami terlebih dahulu untuk melihat apakah alur penugasan lapangan, notifikasi WhatsApp, dan ticketing di SmartSales sesuai dengan kebutuhan operasional Anda."
+                q: "Bisakah kami mencoba fitur dispatch dan Control Tower dulu sebelum berlangganan?",
+                a: "Bisa. Kami menyediakan periode uji coba gratis dengan data tim lapangan Anda sendiri, sehingga Anda bisa langsung merasakan bagaimana Check-in GPS, notifikasi dispatch WhatsApp, dan eskalasi tiket insiden berjalan pada kondisi operasional harian Anda sebelum memutuskan berlangganan."
             }
         ]
     },
@@ -94,8 +94,8 @@ const COPY = {
                 a: "Plan and pricing details are on our Pricing page. Visit /price to see the plan options that fit your number of field staff and module needs."
             },
             {
-                q: "Is a free trial available before subscribing?",
-                a: "Yes. You can start a free trial or talk directly with our team first to see whether the field assignment, WhatsApp notification, and ticketing workflow in SmartSales fits your operational needs."
+                q: "Can we try the dispatch and Control Tower features before subscribing?",
+                a: "Yes. We offer a free trial period using your own field team's data, so you can see firsthand how GPS check-in, WhatsApp dispatch notifications, and incident ticket escalation perform under your daily operations before committing to a plan."
             }
         ]
     }
@@ -112,7 +112,7 @@ export default function OpFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -153,7 +153,9 @@ export default function OpFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: 3,
                                     py: 1,
@@ -164,7 +166,11 @@ export default function OpFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                            <AccordionDetails
+                                id={`faq-panel-${index}`}
+                                aria-labelledby={`faq-summary-${index}`}
+                                sx={{ px: 3, pb: 3, pt: 0 }}
+                            >
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {item.a}
                                 </Typography>

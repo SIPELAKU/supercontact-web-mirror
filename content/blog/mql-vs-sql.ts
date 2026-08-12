@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Lead Management',
         en: 'Lead Management Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-07-16',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'MQL vs SQL: Cara Membedakan dan Kenapa Sering Jadi Konflik',
         en: 'MQL vs SQL: How to Tell Them Apart (and Why They Clash)',

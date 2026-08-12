@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Omnichannel',
         en: 'Omnichannel Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-07-30',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Integrasi WhatsApp Business API dengan CRM: Cara Kerjanya',
         en: 'WhatsApp Business API + CRM Integration: How It Works',

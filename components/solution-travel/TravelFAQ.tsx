@@ -51,8 +51,8 @@ const COPY = {
                 a: "Bisa. SmartSales bersifat multi-tenant dan dibangun dengan pendekatan custom build, sehingga tahapan pipeline, tag segmentasi paket, hingga alur eskalasi tiket reschedule bisa disesuaikan dengan proses yang sudah berjalan di bisnis Anda."
             },
             {
-                q: "Apakah tersedia uji coba gratis sebelum berlangganan?",
-                a: "Tersedia. Anda bisa memulai uji coba gratis atau konsultasi langsung dengan tim kami untuk melihat apakah alur pemesanan paket dan penanganan reschedule di SmartSales sesuai dengan kebutuhan bisnis travel Anda."
+                q: "Bisakah kami mencoba dulu alur pemesanan paket dan tiket handling sebelum berlangganan?",
+                a: "Bisa. Kami menyediakan periode uji coba gratis di mana tim agen travel Anda bisa langsung menjajal pipeline pemesanan paket, tag segmentasi Umrah/Haji vs domestik/internasional, hingga eskalasi tiket reschedule menggunakan skenario booking nyata sebelum memutuskan berlangganan."
             }
         ]
     },
@@ -102,8 +102,8 @@ const COPY = {
                 a: "Yes. SmartSales is multi-tenant and built with a custom-build approach, so pipeline stages, package segmentation tags, and reschedule-ticket escalation flows can be adapted to the process already running in your business."
             },
             {
-                q: "Is a free trial available before subscribing?",
-                a: "Yes. You can start a free trial or consult directly with our team to see whether SmartSales' booking and reschedule-handling flow fits your travel business's needs."
+                q: "Can we test the package booking and reschedule-handling flow before subscribing?",
+                a: "Yes. We offer a free trial period where your travel team can try the package booking pipeline, Umrah/Hajj vs domestic/international segmentation tags, and reschedule-ticket escalation firsthand using real booking scenarios before deciding to subscribe."
             }
         ]
     }
@@ -120,7 +120,7 @@ export default function TravelFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -161,7 +161,9 @@ export default function TravelFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: 3,
                                     py: 1,
@@ -172,7 +174,11 @@ export default function TravelFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                            <AccordionDetails
+                                id={`faq-panel-${index}`}
+                                aria-labelledby={`faq-summary-${index}`}
+                                sx={{ px: 3, pb: 3, pt: 0 }}
+                            >
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {item.a}
                                 </Typography>

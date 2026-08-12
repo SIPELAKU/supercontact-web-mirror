@@ -14,7 +14,7 @@ export default function CrmSalesCta() {
     return (
         <Box
             sx={{
-                bgcolor: '#597CFF', // Matching the blue theme
+                bgcolor: '#3854D6', // Matching the blue theme
                 py: { xs: 8, md: 10 },
                 color: 'white',
                 textAlign: 'center'
@@ -54,7 +54,7 @@ export default function CrmSalesCta() {
                     onClick={() => { trackCtaClick('produk/crm-sales', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                     sx={{
                         bgcolor: 'white',
-                        color: '#597CFF',
+                        color: '#3854D6',
                         fontWeight: 600,
                         px: 4,
                         py: 1.5,

@@ -6,7 +6,8 @@ const article: BlogArticle = {
         id: 'Panduan Audit Leads',
         en: 'Lead Audit Guide',
     },
-    publishedDate: '2026-08-12',
+    publishedDate: '2026-07-02',
+    author: { id: 'Tim SmartSales', en: 'SmartSales Team' },
     title: {
         id: 'Checklist Audit Kebocoran Leads untuk Bisnis Anda',
         en: 'Lead Leakage Audit Checklist for Your Business',
@@ -95,8 +96,8 @@ const article: BlogArticle = {
         {
             type: 'callout',
             text: {
-                id: 'Contoh ilustrasi (ganti dengan angka bisnis Anda sendiri): 200 leads/bulan × 30% tidak di-follow up × Rp2.000.000 rata-rata nilai transaksi × 15% close rate ≈ Rp18.000.000 potensi revenue yang hilang setiap bulan. Ini bukan angka rata-rata industri — hanya contoh cara pakai formulanya.',
-                en: 'Illustrative example (swap in your own business numbers): 200 leads/month × 30% not followed up × Rp2,000,000 average deal size × 15% close rate ≈ Rp18,000,000 in potential lost revenue every month. This isn\'t an industry-average figure — it\'s just an example of how to use the formula.',
+                id: 'Contoh ilustrasi (ganti dengan angka bisnis Anda sendiri): 150 leads/bulan × 25% tidak di-follow up × Rp3.000.000 rata-rata nilai transaksi × 20% close rate ≈ Rp22.500.000 potensi revenue yang hilang setiap bulan. Ini bukan angka rata-rata industri — hanya contoh cara pakai formulanya.',
+                en: 'Illustrative example (swap in your own business numbers): 150 leads/month × 25% not followed up × Rp3,000,000 average deal size × 20% close rate ≈ Rp22,500,000 in potential lost revenue every month. This isn\'t an industry-average figure — it\'s just an example of how to use the formula.',
             },
         },
         {

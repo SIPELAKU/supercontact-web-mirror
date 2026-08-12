@@ -30,8 +30,16 @@ export default function IntHero() {
         >
             <Container maxWidth="lg">
                 <Breadcrumbs
-                    separator={<NavigateNextIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.6)' }} />}
-                    sx={{ mb: 5, '& a, & p': { color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' } }}
+                    separator={<NavigateNextIcon fontSize="small" sx={{ color: 'white' }} />}
+                    sx={{
+                        display: 'inline-flex',
+                        mb: 5,
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: '8px',
+                        bgcolor: 'rgba(0, 0, 0, 0.2)',
+                        '& a, & p': { color: 'white', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' },
+                    }}
                 >
                     <Link href="/">{strings.sol_int_breadcrumb_home}</Link>
                     <Typography component="span" sx={{ color: 'white !important', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -91,7 +99,7 @@ export default function IntHero() {
                                 onClick={() => { trackCtaClick('solusi/integrasi-sales-marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
-                                    color: '#597CFF',
+                                    color: '#3854D6',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,
@@ -155,7 +163,7 @@ export default function IntHero() {
                                     </Box>
                                 </Stack>
                                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0F7FF' }}>
-                                    <EmailIcon sx={{ color: '#597CFF' }} />
+                                    <EmailIcon sx={{ color: '#3854D6' }} />
                                     <Box sx={{ flexGrow: 1 }}>
                                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Email Campaign</Typography>
                                         <Typography variant="caption" sx={{ color: '#64748B' }}>Balasan → masuk ke pipeline sales</Typography>

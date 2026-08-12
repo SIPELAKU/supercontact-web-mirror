@@ -51,6 +51,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
     }
 
     const pageUrl = `${BASE_URL}/blog/${article.slug}`;
+    const image = ogImageUrl({ title: article.h1.id, category: article.category.id });
 
     const breadcrumbSchema = {
         '@context': 'https://schema.org',
@@ -58,7 +59,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Beranda', item: `${BASE_URL}/` },
             { '@type': 'ListItem', position: 2, name: 'Blog', item: `${BASE_URL}/blog` },
-            { '@type': 'ListItem', position: 3, name: article.h1.id },
+            { '@type': 'ListItem', position: 3, name: article.h1.id, item: pageUrl },
         ],
     };
 
@@ -67,9 +68,10 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
         '@type': 'Article',
         headline: article.h1.id,
         description: article.description.id,
+        image: [image],
         datePublished: article.publishedDate,
-        dateModified: article.publishedDate,
-        author: { '@type': 'Organization', name: 'SmartSales' },
+        dateModified: article.updatedDate ?? article.publishedDate,
+        author: { '@type': 'Organization', name: article.author.id },
         publisher: {
             '@type': 'Organization',
             name: 'SmartSales',

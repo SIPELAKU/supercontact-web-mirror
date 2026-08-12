@@ -89,7 +89,7 @@ export default function OpHero() {
                                     onClick={() => { trackCtaClick('solusi/operasional', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                     sx={{
                                         bgcolor: 'white',
-                                        color: '#597CFF',
+                                        color: '#3854D6',
                                         fontWeight: 800,
                                         px: 4,
                                         py: 2,

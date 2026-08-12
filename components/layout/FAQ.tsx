@@ -133,12 +133,15 @@ const FAQ = () => {
                                 >
                                     <AccordionSummary
                                         expandIcon={<ExpandMoreIcon />}
-                                        aria-controls={`panel${index}bh-content`}
-                                        id={`panel${index}bh-header`}
+                                        id={`faq-summary-${index}`}
+                                        aria-controls={`faq-panel-${index}`}
                                     >
                                         <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>{faq.question}</Typography>
                                     </AccordionSummary>
-                                    <AccordionDetails>
+                                    <AccordionDetails
+                                        id={`faq-panel-${index}`}
+                                        aria-labelledby={`faq-summary-${index}`}
+                                    >
                                         <Typography variant="body1" sx={{ color: '#666' }}>{faq.answer}</Typography>
                                     </AccordionDetails>
                                 </Accordion>

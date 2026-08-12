@@ -16,6 +16,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { ClientLogos } from '@/components/ui/ClientLogos';
 
 const COPY = {
     id: {
@@ -125,13 +126,14 @@ export default function OutsourcingComparison() {
     const copy = COPY[language];
 
     return (
+        <>
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -175,7 +177,7 @@ export default function OutsourcingComparison() {
                                 <TableCell sx={{ fontWeight: 800, color: '#94A3B8', fontSize: '0.9rem', py: 2.5 }}>
                                     {copy.colManual}
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#597CFF', fontSize: '0.9rem', py: 2.5 }}>
+                                <TableCell sx={{ fontWeight: 800, color: '#3854D6', fontSize: '0.9rem', py: 2.5 }}>
                                     {copy.colSmart}
                                 </TableCell>
                             </TableRow>
@@ -211,5 +213,7 @@ export default function OutsourcingComparison() {
                 </TableContainer>
             </Container>
         </Box>
+        <ClientLogos />
+        </>
     );
 }

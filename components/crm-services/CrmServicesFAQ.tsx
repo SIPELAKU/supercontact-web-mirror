@@ -51,8 +51,8 @@ const COPY = {
                 a: "Detail paket dan harga tersedia di halaman Harga kami. Silakan kunjungi /price untuk melihat pilihan paket yang sesuai dengan jumlah agen dan channel yang Anda butuhkan."
             },
             {
-                q: "Apakah tersedia uji coba gratis sebelum berlangganan?",
-                a: "Tersedia. Anda bisa memulai uji coba gratis untuk mencoba langsung fitur ticketing, SLA, dan Quick Replies sebelum memutuskan berlangganan."
+                q: "Bisakah tim CS kami mencoba sistem tiket ini sebelum berlangganan?",
+                a: "Bisa. Kami menyediakan uji coba gratis agar tim CS Anda dapat langsung merasakan alur tiket WhatsApp, Instagram, dan Email, pengaturan SLA, serta penggunaan Quick Replies di lingkungan nyata sebelum memutuskan berlangganan."
             },
             {
                 q: "Bisakah CRM Services digabung dengan modul CRM Sales atau Omnichannel lain?",
@@ -106,8 +106,8 @@ const COPY = {
                 a: "Plan and pricing details are on our Pricing page. Visit /price to see the plan options that fit the number of agents and channels you need."
             },
             {
-                q: "Is a free trial available before subscribing?",
-                a: "Yes. You can start a free trial to try the ticketing, SLA, and Quick Replies features directly before deciding to subscribe."
+                q: "Can our CS team try this ticketing system before subscribing?",
+                a: "Yes. We offer a free trial so your CS team can experience the WhatsApp, Instagram, and Email ticket flow, SLA setup, and Quick Replies firsthand in a real environment before committing to a subscription."
             },
             {
                 q: "Can CRM Services be combined with the CRM Sales or Omnichannel modules?",
@@ -128,7 +128,7 @@ export default function CrmServicesFAQ() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#597CFF',
+                            color: '#3854D6',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -170,7 +170,9 @@ export default function CrmServicesFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#597CFF' }} />}
+                                id={`faq-summary-${index}`}
+                                aria-controls={`faq-panel-${index}`}
+                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
                                 sx={{
                                     px: 3,
                                     py: 1,
@@ -181,7 +183,7 @@ export default function CrmServicesFAQ() {
                                     {item.q}
                                 </Typography>
                             </AccordionSummary>
-                            <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                            <AccordionDetails id={`faq-panel-${index}`} aria-labelledby={`faq-summary-${index}`} sx={{ px: 3, pb: 3, pt: 0 }}>
                                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.7 }}>
                                     {item.a}
                                 </Typography>

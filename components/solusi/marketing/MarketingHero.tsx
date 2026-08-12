@@ -86,7 +86,7 @@ export default function MarketingHero() {
                                 onClick={() => { trackCtaClick('solusi/marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
-                                    color: '#597CFF',
+                                    color: '#3854D6',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,

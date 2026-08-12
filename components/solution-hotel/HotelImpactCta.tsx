@@ -12,10 +12,10 @@ export default function HotelImpactCta() {
     const pathname = usePathname();
 
     const metrics = [
-        { val: strings.hotel_impact1_val, desc: strings.hotel_impact1_desc, color: '#597CFF' },
-        { val: strings.hotel_impact2_val, desc: strings.hotel_impact2_desc, color: '#597CFF' },
-        { val: strings.hotel_impact3_val, desc: strings.hotel_impact3_desc, color: '#597CFF' },
-        { val: strings.hotel_impact4_val, desc: strings.hotel_impact4_desc, color: '#597CFF' }
+        { val: strings.hotel_impact1_val, desc: strings.hotel_impact1_desc, color: '#3854D6' },
+        { val: strings.hotel_impact2_val, desc: strings.hotel_impact2_desc, color: '#3854D6' },
+        { val: strings.hotel_impact3_val, desc: strings.hotel_impact3_desc, color: '#3854D6' },
+        { val: strings.hotel_impact4_val, desc: strings.hotel_impact4_desc, color: '#3854D6' }
     ];
 
     return (
@@ -52,7 +52,7 @@ export default function HotelImpactCta() {
             </Box>
 
             {/* CTA Section - Solid Blue Banner */}
-            <Box sx={{ bgcolor: '#597CFF', py: { xs: 10, md: 14 } }}>
+            <Box sx={{ bgcolor: '#3854D6', py: { xs: 10, md: 14 } }}>
                 <Container maxWidth="md">
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography
@@ -73,7 +73,7 @@ export default function HotelImpactCta() {
                             onClick={() => { trackCtaClick('solusi/perhotelan', 'impact_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                             sx={{
                                 bgcolor: 'white',
-                                color: '#597CFF',
+                                color: '#3854D6',
                                 fontWeight: 800,
                                 px: { xs: 4, md: 6 },
                                 py: { xs: 1.5, md: 2 },

@@ -1428,6 +1428,7 @@ export const strings = createLocalizedStrings({
         price: "Harga",
         solution: "Solusi",
         blog: "Blog",
+        company: "Tentang Kami",
         SmartSales_web: "SmartSales web",
         login: "Masuk",
         sign_in: "Masuk",

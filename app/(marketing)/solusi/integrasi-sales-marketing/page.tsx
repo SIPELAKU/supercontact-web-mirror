@@ -49,6 +49,7 @@ const breadcrumbSchema = {
             '@type': 'ListItem',
             position: 2,
             name: 'Integrasi Sales & Marketing',
+            item: PAGE_URL,
         },
     ],
 };

@@ -33,7 +33,7 @@ export default function OmniHero() {
         <Box
             sx={{
                 width: '100%',
-                bgcolor: '#597CFF', // Standard blue from the image
+                bgcolor: '#3854D6', // Standard blue from the image
                 pt: { xs: 12, md: 16 },
                 pb: { xs: 10, md: 16 },
                 position: 'relative',
@@ -95,7 +95,7 @@ export default function OmniHero() {
                                 onClick={() => { trackCtaClick('produk/omnichannel', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
-                                    color: '#597CFF',
+                                    color: '#3854D6',
                                     fontWeight: 700,
                                     px: 4,
                                     py: 1.5,

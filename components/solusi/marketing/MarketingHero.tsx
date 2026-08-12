@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -82,7 +83,7 @@ export default function MarketingHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                onClick={() => { trackCtaClick('solusi/marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

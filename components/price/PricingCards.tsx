@@ -4,6 +4,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { strings } from '@/lib/utils/strings';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { NO_WA } from '@/lib/constants/constants';
+import { trackCtaClick } from '@/lib/analytics/events';
 
 const PlanCard = ({
     title,
@@ -172,6 +173,7 @@ const PlanCard = ({
                     size="large"
                     fullWidth
                     onClick={() => {
+                        trackCtaClick('price', `plan_${title}`);
                         const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, title));
                         window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                     }}

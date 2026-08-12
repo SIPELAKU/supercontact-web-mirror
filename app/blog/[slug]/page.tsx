@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import BlogArticleTemplate from '@/components/blog/BlogArticleTemplate';
 import { blogArticles, getArticleBySlug } from '@/content/blog/registry';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const BASE_URL = 'https://www.smartsales.id';
 
@@ -16,6 +17,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     }
 
     const pageUrl = `${BASE_URL}/blog/${article.slug}`;
+    const image = ogImageUrl({ title: article.h1.id, category: article.category.id });
 
     return {
         title: article.title.id,
@@ -31,11 +33,13 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
             locale: 'id_ID',
             type: 'article',
             publishedTime: article.publishedDate,
+            images: [{ url: image, width: 1200, height: 630 }],
         },
         twitter: {
             card: 'summary_large_image',
             title: article.title.id,
             description: article.description.id,
+            images: [image],
         },
     };
 }
@@ -69,7 +73,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
         publisher: {
             '@type': 'Organization',
             name: 'SmartSales',
-            logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/sc-logo.png` },
+            logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/sc-logo-primary.svg` },
         },
         mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
     };

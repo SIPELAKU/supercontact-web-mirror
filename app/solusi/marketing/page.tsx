@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import MarketingClient from '@/components/solusi/marketing/MarketingClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/marketing';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Tim Marketing', category: 'Solusi Marketing' });
 
 export const metadata: Metadata = {
   title: 'Solusi CRM untuk Tim Marketing - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi CRM untuk Tim Marketing | SmartSales',
     description: 'Kirim campaign WhatsApp & Email blast, kelola balasan pelanggan dalam satu inbox, dan lacak ROI marketing hingga transaksi tim Sales dengan SmartSales.',
+    images: [OG_IMAGE],
   },
 };
 

@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 import { CompanyClient } from "@/components/company/CompanyClient";
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = "https://www.smartsales.id/company";
+
+const OG_IMAGE = ogImageUrl({ title: 'Tentang Kami', category: 'Tentang Kami' });
 
 export const metadata: Metadata = {
     title: "Tentang Kami",
@@ -18,6 +21,10 @@ export const metadata: Metadata = {
         siteName: "SmartSales",
         locale: "id_ID",
         type: "website",
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
+    },
+    twitter: {
+        images: [OG_IMAGE],
     },
 };
 

@@ -1,10 +1,13 @@
 import { Metadata } from 'next';
 import OmniPublicClient from '@/components/public-omnichannel/OmniPublicClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/produk/omnichannel';
 const PAGE_TITLE = 'Omnichannel WhatsApp, Instagram & Email | SmartSales';
 const PAGE_DESC =
     'Kelola pesan WhatsApp Business API, Instagram DM, dan Email dalam satu inbox. Routing otomatis ke agen, ubah chat jadi tiket atau pipeline sales sekali klik.';
+
+const OG_IMAGE = ogImageUrl({ title: 'Omnichannel WhatsApp, Instagram & Email', category: 'Produk' });
 
 export const metadata: Metadata = {
     title: PAGE_TITLE,
@@ -19,11 +22,13 @@ export const metadata: Metadata = {
         siteName: 'SmartSales',
         locale: 'id_ID',
         type: 'website',
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: 'summary_large_image',
         title: PAGE_TITLE,
         description: PAGE_DESC,
+        images: [OG_IMAGE],
     },
 };
 

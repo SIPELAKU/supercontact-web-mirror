@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 import PeopleIcon from '@mui/icons-material/People';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PaymentsIcon from '@mui/icons-material/Payments';
@@ -82,7 +83,7 @@ export default function HRHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                onClick={() => { trackCtaClick('solusi/human-resource', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#5D7FFF',

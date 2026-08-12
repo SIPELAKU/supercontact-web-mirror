@@ -12,6 +12,7 @@ import { strings } from "@/lib/utils/strings";
 import { SearchIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 
 // Custom icons for the mockup
 
@@ -91,7 +92,7 @@ export default function OmniHero() {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             <Button
                                 variant="contained"
-                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                onClick={() => { trackCtaClick('produk/omnichannel', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

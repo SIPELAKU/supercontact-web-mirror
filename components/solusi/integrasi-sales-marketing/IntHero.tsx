@@ -6,6 +6,7 @@ import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -87,7 +88,7 @@ export default function IntHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
                             <Button
                                 variant="contained"
-                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                onClick={() => { trackCtaClick('solusi/integrasi-sales-marketing', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

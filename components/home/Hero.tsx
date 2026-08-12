@@ -18,6 +18,7 @@ import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { NO_WA } from '@/lib/constants/constants';
+import { trackCtaClick } from '@/lib/analytics/events';
 
 const Hero = () => {
     useLanguage();
@@ -71,6 +72,7 @@ const Hero = () => {
                                 size="large"
                                 startIcon={<WhatsAppIcon />}
                                 onClick={() => {
+                                    trackCtaClick('home', 'hero_cta');
                                     const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
                                     window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
                                 }}

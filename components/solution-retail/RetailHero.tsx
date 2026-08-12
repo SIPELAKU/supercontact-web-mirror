@@ -8,6 +8,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 
 export default function RetailHero() {
     useLanguage();
@@ -77,7 +78,7 @@ export default function RetailHero() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                             <Button
                                 variant="contained"
-                                onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                onClick={() => { trackCtaClick('solusi/ritel', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#597CFF',

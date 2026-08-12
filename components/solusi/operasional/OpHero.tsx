@@ -5,6 +5,7 @@ import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { usePathname } from "next/navigation";
 import { getWhatsAppLink } from "@/lib/utils/wa-link";
+import { trackCtaClick } from '@/lib/analytics/events';
 import HandymanIcon from '@mui/icons-material/Handyman';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import GppMaybeIcon from '@mui/icons-material/GppMaybe';
@@ -85,7 +86,7 @@ export default function OpHero() {
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                                 <Button
                                     variant="contained"
-                                    onClick={() => window.open(getWhatsAppLink(pathname), '_blank')}
+                                    onClick={() => { trackCtaClick('solusi/operasional', 'hero_cta'); window.open(getWhatsAppLink(pathname), '_blank'); }}
                                     sx={{
                                         bgcolor: 'white',
                                         color: '#597CFF',

@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import CrmServicesClient from '@/components/crm-services/CrmServicesClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/produk/crm-services';
+
+const OG_IMAGE = ogImageUrl({ title: 'CRM Services: Ticketing & SLA Pelanggan', category: 'Produk' });
 
 export const metadata: Metadata = {
     title: 'CRM Services: Ticketing & SLA Pelanggan | SmartSales',
@@ -18,12 +21,14 @@ export const metadata: Metadata = {
         siteName: 'SmartSales',
         locale: 'id_ID',
         type: 'website',
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'CRM Services SmartSales - Ticketing, SLA & Quick Replies',
         description:
             'Kelola komplain WhatsApp, Instagram, dan Email dalam satu sistem tiket. Atur SLA otomatis dan Quick Replies untuk tim CS Anda.',
+        images: [OG_IMAGE],
     },
 };
 

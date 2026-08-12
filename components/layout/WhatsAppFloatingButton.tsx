@@ -4,9 +4,11 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { strings } from '@/lib/utils/strings';
+import { trackCtaClick } from '@/lib/analytics/events';
 
 const WhatsAppFloatingButton = () => {
     const handleWhatsAppClick = () => {
+        trackCtaClick('floating_button', 'whatsapp_widget');
         const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
         window.open(`https://wa.me/?text=${message}`, '_blank');
     };

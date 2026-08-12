@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import ITSaaSClient from '@/components/solution-it-saas/ITSaaSClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/it-saas';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM & Helpdesk untuk Perusahaan IT', category: 'Solusi IT & SaaS' });
 
 export const metadata: Metadata = {
   title: 'Solusi CRM & Helpdesk untuk Perusahaan IT - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi CRM & Helpdesk IT/SaaS | SmartSales',
     description: 'Kelola pipeline sales B2B, helpdesk WhatsApp, dan penugasan bug dalam satu sistem untuk perusahaan IT & SaaS. Coba gratis, tanpa komitmen di awal.',
+    images: [OG_IMAGE],
   },
 };
 

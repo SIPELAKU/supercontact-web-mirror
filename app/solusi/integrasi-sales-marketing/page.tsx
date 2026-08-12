@@ -1,7 +1,13 @@
 import { Metadata } from 'next';
 import IntClient from '@/components/solusi/integrasi-sales-marketing/IntClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/integrasi-sales-marketing';
+
+const OG_IMAGE = ogImageUrl({
+    title: 'Integrasi Sales & Marketing: Solusi Agar Leads Tidak Hilang',
+    category: 'Solusi Integrasi',
+});
 
 export const metadata: Metadata = {
     title: 'Integrasi Sales & Marketing: Solusi Agar Leads Tidak Hilang',
@@ -18,12 +24,14 @@ export const metadata: Metadata = {
         siteName: 'SmartSales',
         locale: 'id_ID',
         type: 'website',
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Integrasi Sales & Marketing: Solusi Agar Leads Tidak Hilang | SmartSales',
         description:
             'Leads dari marketing sering tidak di-follow up sales? Pelajari kerangka integrasi sales-marketing dan lihat cara SmartSales menyatukan keduanya dalam satu CRM.',
+        images: [OG_IMAGE],
     },
 };
 

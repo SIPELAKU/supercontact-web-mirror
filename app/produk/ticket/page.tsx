@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import TicketPublicClient from '@/components/ticket-public/TicketPublicClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/produk/ticket';
+
+const OG_IMAGE = ogImageUrl({ title: 'Ticket Creation dari Chat', category: 'Produk' });
 
 export const metadata: Metadata = {
     title: 'Ticket Creation dari Chat - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
         siteName: 'SmartSales',
         locale: 'id_ID',
         type: 'website',
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Ticket Creation dari Chat | SmartSales',
         description: 'Ubah chat pelanggan jadi tiket tugas terlacak lengkap dengan status, eskalasi antar tim, dan SLA. Tidak ada lagi keluhan yang tenggelam di kolom chat.',
+        images: [OG_IMAGE],
     },
 };
 

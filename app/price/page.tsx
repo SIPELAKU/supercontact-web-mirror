@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 import { PriceClient } from "@/components/price/PriceClient";
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = "https://www.smartsales.id/price";
+
+const OG_IMAGE = ogImageUrl({ title: 'Paket Harga CRM, Sales & Omnichannel', category: 'Harga' });
 
 export const metadata: Metadata = {
     title: "Paket Harga CRM, Sales & Omnichannel",
@@ -18,6 +21,10 @@ export const metadata: Metadata = {
         siteName: "SmartSales",
         locale: "id_ID",
         type: "website",
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
+    },
+    twitter: {
+        images: [OG_IMAGE],
     },
 };
 

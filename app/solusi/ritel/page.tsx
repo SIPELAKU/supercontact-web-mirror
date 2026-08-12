@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import RetailClient from '@/components/solution-retail/RetailClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/ritel';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Toko Ritel', category: 'Solusi Ritel' });
 
 export const metadata: Metadata = {
   title: 'Solusi CRM untuk Toko Ritel - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi CRM untuk Toko Ritel | SmartSales',
     description: 'Kelola database member, broadcast promo via WhatsApp, dan klaim garansi toko ritel Anda dalam satu sistem. Coba gratis, tanpa komitmen di awal.',
+    images: [OG_IMAGE],
   },
 };
 

@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import FmcgClient from '@/components/solution-fmcg/FmcgClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/fmcg';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Distribusi FMCG', category: 'Solusi FMCG' });
 
 export const metadata: Metadata = {
   title: 'Solusi CRM Distribusi FMCG - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi CRM Distribusi FMCG | SmartSales',
     description: 'Kelola order via WhatsApp, canvassing sales lapangan, dan retur barang FMCG dalam satu sistem. Coba gratis, tanpa komitmen di awal.',
+    images: [OG_IMAGE],
   },
 };
 

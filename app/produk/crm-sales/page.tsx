@@ -2,8 +2,11 @@
 
 import { Metadata } from "next";
 import CrmSalesClient from "@/components/crm-sales/CrmSalesClient";
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = "https://www.smartsales.id/produk/crm-sales";
+
+const OG_IMAGE = ogImageUrl({ title: 'CRM Sales - Pipeline, Follow-Up & Analitik Sales', category: 'Produk' });
 
 export const metadata: Metadata = {
     title: "CRM Sales - Pipeline, Follow-Up & Analitik Sales",
@@ -20,12 +23,14 @@ export const metadata: Metadata = {
         siteName: "SmartSales",
         locale: "id_ID",
         type: "website",
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: "summary_large_image",
         title: "CRM Sales | SmartSales",
         description:
             "Kelola pipeline penjualan, otomatisasi follow-up, dan pantau performa tim sales dalam satu platform CRM terintegrasi WhatsApp Business API.",
+        images: [OG_IMAGE],
     },
 };
 

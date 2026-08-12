@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import CSClient from '@/components/solusi/customer-service/CSClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/customer-service';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Tim Customer Service', category: 'Solusi Customer Service' });
 
 export const metadata: Metadata = {
   title: 'Solusi CRM untuk Tim Customer Service - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi CRM untuk Tim Customer Service | SmartSales',
     description: 'Satukan chat WhatsApp, Instagram, dan Email dalam satu inbox, kelola tiket keluhan dengan SLA, dan percepat balasan dengan Quick Replies bersama SmartSales.',
+    images: [OG_IMAGE],
   },
 };
 

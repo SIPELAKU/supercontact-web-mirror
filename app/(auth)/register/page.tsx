@@ -3,6 +3,7 @@
 
 import { RegisterData, registerUser } from "@/lib/api";
 import { handleError } from "@/lib/utils/errorHandler";
+import { trackSignUp } from "@/lib/analytics/events";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -82,6 +83,7 @@ export default function RegisterPage() {
       const response = await registerUser(registerData);
 
       if (response.success) {
+        trackSignUp();
         // Registration successful - redirect to email verification page with email
         router.push(`/email-verification?email=${encodeURIComponent(email)}`);
       } else {

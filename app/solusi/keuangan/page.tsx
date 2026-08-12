@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import FinanceClient from '@/components/solution-finance/FinanceClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://www.smartsales.id/solusi/keuangan';
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Bank, Koperasi & Multifinance', category: 'Solusi Keuangan' });
 
 export const metadata: Metadata = {
     title: 'Solusi CRM untuk Bank, Koperasi & Multifinance - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
         siteName: 'SmartSales',
         locale: 'id_ID',
         type: 'website',
+        images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Solusi CRM untuk Bank, Koperasi & Multifinance | SmartSales',
         description: 'Kelola prospek kredit bank, koperasi, dan multifinance dalam satu sistem CRM. Follow-up otomatis via WhatsApp API, tanpa spreadsheet. Coba gratis 14 hari.',
+        images: [OG_IMAGE],
     },
 };
 

@@ -1,7 +1,10 @@
 import { Metadata } from 'next';
 import HRClient from '@/components/solusi/human-resource/HRClient';
+import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = "https://www.smartsales.id/solusi/human-resource";
+
+const OG_IMAGE = ogImageUrl({ title: 'Solusi Tim Human Resource', category: 'Solusi Human Resource' });
 
 export const metadata: Metadata = {
   title: 'Solusi Tim Human Resource - SmartSales',
@@ -16,11 +19,13 @@ export const metadata: Metadata = {
     siteName: 'SmartSales',
     locale: 'id_ID',
     type: 'website',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Solusi Tim Human Resource | SmartSales',
     description: 'Kelola feedback karyawan secara profesional. Satukan setiap pertanyaan internal dan proses rekrutmen dalam satu sistem terpusat.',
+    images: [OG_IMAGE],
   },
 };
 

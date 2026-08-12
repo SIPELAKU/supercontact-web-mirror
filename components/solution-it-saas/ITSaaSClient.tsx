@@ -7,6 +7,8 @@ import { Box } from '@mui/material';
 import ITSaaSHero from './ITSaaSHero';
 import ITSaaSChallenges from './ITSaaSChallenges';
 import ITSaaSSolutions from './ITSaaSSolutions';
+import ITSaaSComparison from './ITSaaSComparison';
+import ITSaaSFAQ from './ITSaaSFAQ';
 import ITSaaSImpactCta from './ITSaaSImpactCta';
 
 export default function ITSaaSClient() {
@@ -16,6 +18,8 @@ export default function ITSaaSClient() {
             <ITSaaSHero />
             <ITSaaSChallenges />
             <ITSaaSSolutions />
+            <ITSaaSComparison />
+            <ITSaaSFAQ />
             <ITSaaSImpactCta />
             <Footer />
         </Box>

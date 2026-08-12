@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import HotelHero from "./HotelHero";
 import HotelChallenges from "./HotelChallenges";
 import HotelSolutions from "./HotelSolutions";
+import HotelComparison from "./HotelComparison";
+import HotelFAQ from "./HotelFAQ";
 import HotelImpactCta from "./HotelImpactCta";
 
 export default function HotelClient() {
@@ -15,6 +17,8 @@ export default function HotelClient() {
                 <HotelHero />
                 <HotelChallenges />
                 <HotelSolutions />
+                <HotelComparison />
+                <HotelFAQ />
                 <HotelImpactCta />
             </main>
             <Footer />

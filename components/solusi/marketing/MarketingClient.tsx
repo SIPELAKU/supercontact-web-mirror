@@ -8,6 +8,8 @@ import MarketingHero from './MarketingHero';
 import MarketingChallenges from './MarketingChallenges';
 import MarketingSolutions from './MarketingSolutions';
 import MarketingImpactCTA from './MarketingImpactCTA';
+import MarketingComparison from './MarketingComparison';
+import MarketingFAQ from './MarketingFAQ';
 
 export default function MarketingClient() {
     return (
@@ -16,6 +18,8 @@ export default function MarketingClient() {
             <MarketingHero />
             <MarketingChallenges />
             <MarketingSolutions />
+            <MarketingComparison />
+            <MarketingFAQ />
             <MarketingImpactCTA />
             <Footer />
         </Box>

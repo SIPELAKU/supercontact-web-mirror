@@ -5,6 +5,8 @@ import Footer from "@/components/layout/Footer";
 import TravelHero from "./TravelHero";
 import TravelChallenges from "./TravelChallenges";
 import TravelSolutions from "./TravelSolutions";
+import TravelComparison from "./TravelComparison";
+import TravelFAQ from "./TravelFAQ";
 import TravelImpactCta from "./TravelImpactCta";
 
 export default function TravelClient() {
@@ -15,6 +17,8 @@ export default function TravelClient() {
                 <TravelHero />
                 <TravelChallenges />
                 <TravelSolutions />
+                <TravelComparison />
+                <TravelFAQ />
                 <TravelImpactCta />
             </main>
             <Footer />

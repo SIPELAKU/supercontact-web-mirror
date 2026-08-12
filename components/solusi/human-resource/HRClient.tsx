@@ -7,6 +7,8 @@ import { Box } from '@mui/material';
 import HRHero from './HRHero';
 import HRChallenges from './HRChallenges';
 import HRSolutions from './HRSolutions';
+import HRComparison from './HRComparison';
+import HRFAQ from './HRFAQ';
 import HRImpactCTA from './HRImpactCTA';
 
 export default function HRClient() {
@@ -16,6 +18,8 @@ export default function HRClient() {
             <HRHero />
             <HRChallenges />
             <HRSolutions />
+            <HRComparison />
+            <HRFAQ />
             <HRImpactCTA />
             <Footer />
         </Box>

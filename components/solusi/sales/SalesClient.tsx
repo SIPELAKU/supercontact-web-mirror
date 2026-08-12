@@ -7,6 +7,8 @@ import { Box } from '@mui/material';
 import SalesHero from './SalesHero';
 import SalesChallenges from './SalesChallenges';
 import SalesSolutions from './SalesSolutions';
+import SalesComparison from './SalesComparison';
+import SalesFAQ from './SalesFAQ';
 import SalesImpactCTA from './SalesImpactCTA';
 
 export default function SalesClient() {
@@ -16,6 +18,8 @@ export default function SalesClient() {
             <SalesHero />
             <SalesChallenges />
             <SalesSolutions />
+            <SalesComparison />
+            <SalesFAQ />
             <SalesImpactCTA />
             <Footer />
         </Box>

@@ -8,7 +8,7 @@ import Image from "next/image";
 
 interface MessageListProps {
   messages: Message[];
-  channelType: 'whatsapp' | 'email';
+  channelType: 'whatsapp' | 'email' | 'web_widget';
 }
 
 const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Paperclip, X, MessageCircle, Mail } from "lucide-react";
+import { Loader2, Paperclip, X, MessageCircle, Mail, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { useConfirmation } from "@/components/ui/confirm-modal";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -17,7 +17,7 @@ import { TicketCommentItem } from "./TicketCommentItem";
 
 interface TicketCommentThreadProps {
     ticketId: string;
-    channelType?: "whatsapp" | "email" | null;
+    channelType?: "whatsapp" | "email" | "web_widget" | null;
     customerName?: string;
 }
 
@@ -100,11 +100,14 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                         >
                             {channelType === "whatsapp" && <MessageCircle size={12} />}
                             {channelType === "email" && <Mail size={12} />}
+                            {channelType === "web_widget" && <Globe size={12} />}
                             {channelType === "whatsapp"
                                 ? "Reply via WhatsApp"
                                 : channelType === "email"
                                     ? "Reply via Email"
-                                    : "Public Reply"}
+                                    : channelType === "web_widget"
+                                        ? "Reply via Website Chat"
+                                        : "Public Reply"}
                         </button>
                         <button
                             onClick={() => setReplyMode("internal")}
@@ -118,7 +121,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                     </div>
                     {channelType && replyMode === "public" && (
                         <p className="text-xs text-gray-400">
-                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : "email"}.
+                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : channelType === "web_widget" ? "the website chat" : "email"}.
                         </p>
                     )}
                     <textarea

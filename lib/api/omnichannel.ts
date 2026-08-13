@@ -6,6 +6,9 @@ import {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectEmailRequest,
+  ConnectWebWidgetRequest,
+  WebWidgetConfig,
+  UpdateWebWidgetConfigRequest,
   CreateConversationRequest,
   MediaUploadResponse,
   OmnichannelContact,
@@ -20,6 +23,9 @@ export type {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectEmailRequest,
+  ConnectWebWidgetRequest,
+  WebWidgetConfig,
+  UpdateWebWidgetConfigRequest,
   CreateConversationRequest,
   MediaUploadResponse,
   OmnichannelContact,
@@ -114,6 +120,70 @@ export async function connectEmail(token: string, data: ConnectEmailRequest): Pr
 
   if (!res.ok) {
     throw json || new Error('Failed to connect email account');
+  }
+
+  return json.data || json;
+}
+
+export async function connectWebWidget(token: string, data: ConnectWebWidgetRequest): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/web-widget`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to connect Web Widget account');
+  }
+
+  return json.data || json;
+}
+
+export async function fetchWebWidgetConfig(token: string, accountId: string): Promise<WebWidgetConfig> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/${accountId}/web-widget-config`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch Web Widget config');
+  }
+
+  return json.data || json;
+}
+
+export async function updateWebWidgetConfig(token: string, accountId: string, data: UpdateWebWidgetConfigRequest): Promise<WebWidgetConfig> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/${accountId}/web-widget-config`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update Web Widget config');
   }
 
   return json.data || json;

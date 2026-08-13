@@ -8,6 +8,7 @@
 import {
   Building2,
   CreditCard,
+  Globe,
   Mail,
   MessageCircle,
   Network,
@@ -47,6 +48,13 @@ export const settingsNav: SettingsRegistry = [
     title: "WhatsApp",
     icon: MessageCircle,
     path: "/settings/whatsapp",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "web-widget",
+    title: "Web Widget",
+    icon: Globe,
+    path: "/settings/web-widget",
     permission: "omnichannel:setup",
   },
   {

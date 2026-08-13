@@ -9,7 +9,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 
 interface MessageInputProps {
   conversationId: string;
-  channelType: 'whatsapp' | 'email';
+  channelType: 'whatsapp' | 'email' | 'web_widget';
   onMessageSent?: () => void;
 }
 

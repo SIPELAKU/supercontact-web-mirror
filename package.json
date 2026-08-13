@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port=3100",
-    "build": "next build",
+    "build:widget": "node scripts/build-widget.mjs",
+    "build": "npm run build:widget && next build",
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
@@ -77,6 +78,7 @@
     "@types/node": "^20.19.30",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "esbuild": "^0.28.2",
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
     "tailwindcss": "^4",

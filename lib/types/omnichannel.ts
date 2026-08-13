@@ -6,7 +6,7 @@ export interface Account {
   id: string;
   company_id: string;
   user_id: string;
-  channel_type: 'whatsapp' | 'email';
+  channel_type: 'whatsapp' | 'email' | 'web_widget';
   channel_identifier: string;
   display_name: string;
   branch: string | null;
@@ -23,7 +23,7 @@ export interface Account {
 export interface Conversation {
   id: string;
   account_id: string;
-  channel_type: 'whatsapp' | 'email';
+  channel_type: 'whatsapp' | 'email' | 'web_widget';
   contact_name?: string;
   contact_identifier?: string;
   external_contact_name?: string;
@@ -78,6 +78,26 @@ export interface ConnectEmailRequest {
   smtp_host: 'smtp.gmail.com';
   smtp_port: 587;
 }
+
+export interface ConnectWebWidgetRequest {
+  display_name: string;
+}
+
+export interface WebWidgetConfig {
+  id: string;
+  account_id: string;
+  title: string;
+  greeting_message: string;
+  brand_color: string;
+  allowed_domains: string[];
+  is_widget_enabled: boolean;
+  auto_create_ticket: boolean;
+  enable_ai_triage: boolean;
+  business_hours_calendar_id?: string | null;
+  offline_message?: string | null;
+}
+
+export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;
 
 export interface CreateConversationRequest {
   account_id: string;

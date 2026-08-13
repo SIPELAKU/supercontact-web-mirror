@@ -9,10 +9,16 @@ import {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectEmailRequest,
+  ConnectWebWidgetRequest,
+  WebWidgetConfig,
+  UpdateWebWidgetConfigRequest,
   CreateConversationRequest,
   fetchAccounts,
   connectWhatsApp,
   connectEmail,
+  connectWebWidget,
+  fetchWebWidgetConfig,
+  updateWebWidgetConfig,
   deleteAccount,
   refreshEmail,
   fetchInbox,
@@ -83,6 +89,52 @@ export function useConnectEmail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+export function useConnectWebWidget() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ConnectWebWidgetRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return connectWebWidget(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+export function useWebWidgetConfig(accountId?: string) {
+  const { token } = useAuth();
+  return useQuery<WebWidgetConfig, Error>({
+    queryKey: ['omnichannels', 'web-widget-config', accountId],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      if (!accountId) throw new Error('No account id');
+      return fetchWebWidgetConfig(token, accountId);
+    },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+    enabled: !!token && !!accountId,
+  });
+}
+
+export function useUpdateWebWidgetConfig(accountId?: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateWebWidgetConfigRequest) => {
+      if (!token) throw new Error('No authentication token');
+      if (!accountId) throw new Error('No account id');
+      return updateWebWidgetConfig(token, accountId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'web-widget-config', accountId] });
     },
   });
 }

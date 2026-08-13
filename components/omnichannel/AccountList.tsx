@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAccounts, useDeleteAccount } from "@/lib/hooks/useOmnichannel";
-import { Loader2, Trash2, Mail, MessageCircle } from "lucide-react";
+import { Loader2, Trash2, Mail, MessageCircle, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -10,7 +10,7 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { ActiveStatusBadge, WhatsAppStatusBadge, BranchBadge } from "@/components/omnichannel/AccountStatusBadges";
 
 interface AccountListProps {
-  channelType?: 'whatsapp' | 'email';
+  channelType?: 'whatsapp' | 'email' | 'web_widget';
 }
 
 // Shares a query key (and therefore a cache entry) with any other useAccounts(channelType)
@@ -79,6 +79,8 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
                 <div className="p-3 bg-gray-100 rounded-lg">
                   {account.channel_type === 'whatsapp' ? (
                     <MessageCircle className="text-green-600" size={24} />
+                  ) : account.channel_type === 'web_widget' ? (
+                    <Globe className="text-indigo-600" size={24} />
                   ) : (
                     <Mail className="text-blue-600" size={24} />
                   )}

@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useInbox } from "@/lib/hooks/useOmnichannel";
-import { Loader2, Mail, MessageCircle } from "lucide-react";
+import { Loader2, Mail, MessageCircle, Globe } from "lucide-react";
 
 interface InboxListProps {
   channelType?: string;
@@ -77,6 +77,8 @@ const InboxList: React.FC<InboxListProps> = ({ channelType, status }) => {
             <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
               {conversation.channel_type === 'whatsapp' ? (
                 <MessageCircle className="text-green-600" size={20} />
+              ) : conversation.channel_type === 'web_widget' ? (
+                <Globe className="text-indigo-600" size={20} />
               ) : (
                 <Mail className="text-blue-600" size={20} />
               )}
@@ -106,7 +108,9 @@ const InboxList: React.FC<InboxListProps> = ({ channelType, status }) => {
               </p>
 
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span className="capitalize">{conversation.channel_type}</span>
+                <span className="capitalize">
+                  {conversation.channel_type === 'web_widget' ? 'Website Chat' : conversation.channel_type}
+                </span>
                 <span>•</span>
                 <span>{conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : 'Just now'}</span>
                 <span>•</span>

@@ -1,5 +1,10 @@
 import MarketingShell from "@/components/layout/MarketingShell";
+import ReactQueryProvider from "@/lib/ReactQueryProvider";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
-    return <MarketingShell>{children}</MarketingShell>;
+    return (
+        <ReactQueryProvider>
+            <MarketingShell>{children}</MarketingShell>
+        </ReactQueryProvider>
+    );
 }

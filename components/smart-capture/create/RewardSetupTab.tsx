@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Upload, X, File as FileIcon, Loader2, Eye } from 'lucide-react';
 import Cookies from 'js-cookie';
 
@@ -7,6 +7,8 @@ import { AppSelect } from '@/components/ui/app-select';
 import { SmartCaptureCreateReq, SmartCaptureFile } from '@/lib/models/types';
 import { uploadSmartCaptureFiles, deleteSmartCaptureFiles } from '@/lib/api';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
+import { useAuth } from '@/lib/context/AuthContext';
+import { buildGroupedMailSenderOptions } from '@/lib/utils/mailSenderOptions';
 import { notify } from '@/lib/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AddMailSenderDialog from '@/components/email-marketing/campaigns/modals/AddMailSenderDialog';
@@ -28,8 +30,13 @@ export default function RewardSetupTab({
   const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { userProfile } = useAuth();
   const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
   const mailSenders = mailSendersData?.data?.mail_senders || [];
+  const mailSenderOptions = useMemo(
+    () => buildGroupedMailSenderOptions(mailSenders, userProfile?.id, formData.mail_sender_id),
+    [mailSenders, userProfile?.id, formData.mail_sender_id]
+  );
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -97,10 +104,7 @@ export default function RewardSetupTab({
             placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
             value={formData.mail_sender_id || ''}
             onChange={(e) => updateFormData({ mail_sender_id: e.target.value as string })}
-            options={mailSenders.map(sender => ({
-              value: sender.id,
-              label: `${sender.name} (${sender.email})`
-            }))}
+            options={mailSenderOptions}
             isBgWhite
           />
         </div>

@@ -3,10 +3,12 @@
 import { useState } from "react";
 import {
     Alert,
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
+    FormControlLabel,
     Stack,
     Typography,
 } from "@mui/material";
@@ -26,6 +28,7 @@ export default function AddMailSenderDialog({ open, onClose, onSuccess }: AddMai
     const [step, setStep] = useState<1 | 2>(1);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [isPersonal, setIsPersonal] = useState(false);
     const [otp, setOtp] = useState("");
     const [createdMailSenderId, setCreatedMailSenderId] = useState<string | null>(null);
     const [error, setError] = useState("");
@@ -38,6 +41,7 @@ export default function AddMailSenderDialog({ open, onClose, onSuccess }: AddMai
         setStep(1);
         setName("");
         setEmail("");
+        setIsPersonal(false);
         setOtp("");
         setCreatedMailSenderId(null);
         setCreatedMailSender(null);
@@ -60,6 +64,7 @@ export default function AddMailSenderDialog({ open, onClose, onSuccess }: AddMai
             const response = await createMutation.mutateAsync({
                 name: name.trim(),
                 email: email.trim(),
+                is_personal: isPersonal,
             });
             setCreatedMailSenderId(response.data.id);
             setCreatedMailSender(response.data);
@@ -132,6 +137,24 @@ export default function AddMailSenderDialog({ open, onClose, onSuccess }: AddMai
                                 error={Boolean(error && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))}
                             />
                         </div>
+
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={isPersonal}
+                                    onChange={(e) => setIsPersonal(e.target.checked)}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0}>
+                                    <Typography variant="body2">This is my personal sender</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Only you can select it when sending campaigns or lead magnets - teammates won&apos;t see it in their sender list.
+                                    </Typography>
+                                </Stack>
+                            }
+                            sx={{ alignItems: 'flex-start', mt: -1 }}
+                        />
                     </Stack>
                 ) : (
                     <Stack spacing={3} sx={{ mt: 1 }}>

@@ -19,6 +19,7 @@ export interface MailSender {
     is_enabled: boolean;
     is_default: boolean;
     is_system_mail_sender: boolean;
+    user_id: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -37,6 +38,7 @@ export interface MailSendersResponse {
 export interface CreateMailSenderData {
     name: string;
     email: string;
+    is_personal?: boolean;
 }
 
 export interface CreateMailSenderResponse {

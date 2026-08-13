@@ -39,6 +39,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { notify } from '@/lib/notifications';
 import EmailTabbedEditor, { EmailTabbedEditorRef } from '../EmailTabbedEditor';
 import { useMailSenders } from '@/lib/hooks/useMailSenders';
+import { useAuth } from '@/lib/context/AuthContext';
+import { buildGroupedMailSenderOptions } from '@/lib/utils/mailSenderOptions';
 import AddMailSenderDialog from './AddMailSenderDialog';
 import MailSenderManager from './MailSenderManager';
 import RecipientSourceSelector from './RecipientSourceSelector';
@@ -71,6 +73,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const [isFocusMode, setIsFocusMode] = useState(false);
 
   const updateMutation = useUpdateCampaign();
+  const { userProfile } = useAuth();
   const { data: mailingListsData } = useMailingLists();
   const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers(subscriberPage, subscriberLimit, subscriberSearch);
   const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
@@ -79,6 +82,10 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || [];
   const mailSenders = mailSendersData?.data?.mail_senders || [];
+  const mailSenderOptions = useMemo(
+    () => buildGroupedMailSenderOptions(mailSenders, userProfile?.id, selectedMailSender),
+    [mailSenders, userProfile?.id, selectedMailSender]
+  );
   const mailServers = mailServersData?.data?.mail_servers || [];
   const totalSubscribers = subscribersData?.data?.total || 0;
   const totalSubscriberPages = Math.ceil(totalSubscribers / subscriberLimit);
@@ -350,10 +357,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                       placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
                       value={selectedMailSender}
                       onChange={(e) => setSelectedMailSender(e.target.value as string)}
-                      options={mailSenders.map(sender => ({
-                        value: sender.id,
-                        label: `${sender.name} (${sender.email})`
-                      }))}
+                      options={mailSenderOptions}
                       isBgWhite
                       error={Boolean(error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
                       helperText={error && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}

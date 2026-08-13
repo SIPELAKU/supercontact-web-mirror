@@ -12,6 +12,7 @@ import {
   ConnectWebWidgetRequest,
   WebWidgetConfig,
   UpdateWebWidgetConfigRequest,
+  UpdateAccountRequest,
   CreateConversationRequest,
   fetchAccounts,
   connectWhatsApp,
@@ -20,6 +21,8 @@ import {
   fetchWebWidgetConfig,
   updateWebWidgetConfig,
   deleteAccount,
+  updateAccount,
+  reactivateAccount,
   refreshEmail,
   fetchInbox,
   fetchOmnichannelContacts,
@@ -35,13 +38,18 @@ import {
 } from "../api/omnichannel";
 
 // Account Management Hooks
-export function useAccounts(channelType?: string) {
+// includeInactive defaults to false so every existing caller (new-conversation
+// picker, broadcast/template senders, etc) keeps only seeing usable accounts -
+// pass true only from management UIs (AccountList) that need to show/reactivate
+// deleted ones. Included in the query key so the two variants get separate cache
+// entries instead of one clobbering the other.
+export function useAccounts(channelType?: string, includeInactive?: boolean) {
   const { token } = useAuth();
   return useQuery<Account[], Error>({
-    queryKey: ['omnichannels', 'accounts', channelType],
+    queryKey: ['omnichannels', 'accounts', channelType, includeInactive],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchAccounts(token, channelType);
+      return fetchAccounts(token, channelType, includeInactive);
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,
@@ -147,6 +155,36 @@ export function useDeleteAccount() {
     mutationFn: (accountId: string) => {
       if (!token) throw new Error('No authentication token');
       return deleteAccount(token, accountId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+export function useUpdateAccount() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ accountId, data }: { accountId: string; data: UpdateAccountRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return updateAccount(token, accountId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+export function useReactivateAccount() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (accountId: string) => {
+      if (!token) throw new Error('No authentication token');
+      return reactivateAccount(token, accountId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });

@@ -9,6 +9,7 @@ import {
   ConnectWebWidgetRequest,
   WebWidgetConfig,
   UpdateWebWidgetConfigRequest,
+  UpdateAccountRequest,
   CreateConversationRequest,
   MediaUploadResponse,
   OmnichannelContact,
@@ -26,6 +27,7 @@ export type {
   ConnectWebWidgetRequest,
   WebWidgetConfig,
   UpdateWebWidgetConfigRequest,
+  UpdateAccountRequest,
   CreateConversationRequest,
   MediaUploadResponse,
   OmnichannelContact,
@@ -35,9 +37,10 @@ export type {
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
 
 // Account Management
-export async function fetchAccounts(token: string, channelType?: string): Promise<Account[]> {
+export async function fetchAccounts(token: string, channelType?: string, includeInactive?: boolean): Promise<Account[]> {
   const params = new URLSearchParams();
   if (channelType) params.append('channel_type', channelType);
+  if (includeInactive) params.append('include_inactive', 'true');
 
   const res = await fetchWithTimeout(`${API_BASE}/accounts?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -206,6 +209,50 @@ export async function deleteAccount(token: string, accountId: string): Promise<v
   if (!res.ok) {
     throw json || new Error('Failed to delete account');
   }
+}
+
+export async function updateAccount(token: string, accountId: string, data: UpdateAccountRequest): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/${accountId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update account');
+  }
+
+  return json.data || json;
+}
+
+export async function reactivateAccount(token: string, accountId: string): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/${accountId}/reactivate`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to reactivate account');
+  }
+
+  return json.data || json;
 }
 
 export async function refreshEmail(token: string, fullSync: boolean): Promise<void> {

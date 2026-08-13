@@ -83,6 +83,11 @@ export interface ConnectWebWidgetRequest {
   display_name: string;
 }
 
+export interface UpdateAccountRequest {
+  display_name?: string;
+  branch?: string;
+}
+
 export interface WebWidgetConfig {
   id: string;
   account_id: string;

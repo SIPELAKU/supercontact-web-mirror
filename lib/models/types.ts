@@ -280,6 +280,7 @@ export interface LogStats {
   opened: number;
   clicked: number;
   bounced: number;
+  simulated: number;
 }
 
 export interface SmartCapture {

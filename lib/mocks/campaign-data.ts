@@ -52,6 +52,7 @@ export const generateMockCampaign = (id: number): Campaign => {
       opened: isSent ? Math.floor(Math.random() * 500) : 0,
       clicked: isSent ? Math.floor(Math.random() * 100) : 0,
       bounced: isSent ? Math.floor(Math.random() * 20) : 0,
+      simulated: 0,
     },
     created_at: new Date(Date.now() - 2000000000).toISOString(),
     updated_at: new Date().toISOString()

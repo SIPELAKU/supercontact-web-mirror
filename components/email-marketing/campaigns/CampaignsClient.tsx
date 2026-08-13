@@ -162,7 +162,7 @@ export default function CampaignsClient() {
       notify.success(`Campaign "${campaign.subject}" duplicated successfully.`);
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Duplicate Campaign");
+      notify.error(handleError(err, "Duplicate Campaign"));
     }
   };
 
@@ -176,7 +176,7 @@ export default function CampaignsClient() {
       notify.success(`Campaign "${campaign.subject}" has been queued for resending.`);
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Resend Campaign");
+      notify.error(handleError(err, "Resend Campaign"));
     } finally {
       setResendingCampaignId(null);
     }
@@ -194,7 +194,7 @@ export default function CampaignsClient() {
       clearSelection();
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Bulk Duplicate Campaigns");
+      notify.error(handleError(err, "Bulk Duplicate Campaigns"));
     } finally {
       setIsBulkDuplicating(false);
     }

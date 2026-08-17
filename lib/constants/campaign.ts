@@ -39,7 +39,7 @@ export const DEFAULT_CAMPAIGN_CONFIG = {
 
 export const CAMPAIGN_ERROR_MESSAGES = {
   SUBJECT_REQUIRED: "Subject is required.",
-  SENDER_REQUIRED: "Please select a Mail Sender.",
+  SENDER_REQUIRED: "Please select an SMTP server.",
   CONTENT_REQUIRED: "Email content is required.",
   MAILING_LIST_REQUIRED: "Please select at least one mailing list.",
   SUBSCRIBER_REQUIRED: "Please select at least one subscriber.",

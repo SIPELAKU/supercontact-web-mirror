@@ -302,6 +302,7 @@ export interface SmartCapture {
   created_at: string;
   updated_at: string;
   mail_sender_id?: string;
+  mail_server_id?: string;
   files?: SmartCaptureFile[];
   form_fields?: FormField[];
   log_stats?: LogStats;
@@ -359,6 +360,7 @@ export interface SmartCaptureCreateReq {
   content_template?: string;
   file_ids?: string[];
   mail_sender_id?: string;
+  mail_server_id?: string;
   form_fields?: FormField[];
 }
 

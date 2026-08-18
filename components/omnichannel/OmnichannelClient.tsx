@@ -86,11 +86,14 @@ export default function OmnichannelClient() {
     };
 
     // Contacts data - left panel's channel category filter (All/WhatsApp/
-    // Email) is server-side, so recency ordering stays correct per category.
+    // Email) and last-activity time window (all/1d/1w/1m) are server-side,
+    // so recency ordering stays correct per category.
     const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email">("all");
+    const [listTimeFilter, setListTimeFilter] = useState<number>(0); // 0 = all time, else days
     const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
         searchTerm,
-        listChannelFilter === "all" ? undefined : listChannelFilter
+        listChannelFilter === "all" ? undefined : listChannelFilter,
+        listTimeFilter || undefined
     );
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
@@ -441,6 +444,8 @@ export default function OmnichannelClient() {
                     onSearchChange={setSearchTerm}
                     channelFilter={listChannelFilter}
                     onChannelFilterChange={setListChannelFilter}
+                    timeFilter={listTimeFilter}
+                    onTimeFilterChange={setListTimeFilter}
                     selectedContactId={selectedContact?.contact_id}
                     onSelectContact={handleSelectContact}
                     onRefresh={() => handleRefreshEmail(false)}

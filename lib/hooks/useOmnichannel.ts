@@ -66,17 +66,17 @@ export function useAccounts(channelType?: string, includeInactive?: boolean) {
   });
 }
 
-export function useOmnichannelContacts(q?: string, channelType?: string) {
+export function useOmnichannelContacts(q?: string, channelType?: string, activeWithinDays?: number) {
   const { token } = useAuth();
   return useQuery<OmnichannelContactsResponse, Error>({
-    // channelType is part of the key so All/WhatsApp/Email views cache
-    // independently - useOmnichannelRealtime's setQueriesData partial-match
-    // on the ['omnichannels','inbox','contacts'] prefix still reaches every
-    // variant.
-    queryKey: ['omnichannels', 'inbox', 'contacts', q, channelType ?? 'all'],
+    // channelType/activeWithinDays are part of the key so each filter combo
+    // caches independently - useOmnichannelRealtime's setQueriesData
+    // partial-match on the ['omnichannels','inbox','contacts'] prefix still
+    // reaches every variant.
+    queryKey: ['omnichannels', 'inbox', 'contacts', q, channelType ?? 'all', activeWithinDays ?? 0],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchOmnichannelContacts(token, q, channelType);
+      return fetchOmnichannelContacts(token, q, channelType, activeWithinDays);
     },
     staleTime: 1000 * 30, // 30 seconds
     // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy

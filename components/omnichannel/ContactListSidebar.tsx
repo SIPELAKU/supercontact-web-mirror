@@ -21,6 +21,9 @@ interface ContactListSidebarProps {
     onSearchChange: (term: string) => void;
     channelFilter: ContactListChannelFilter;
     onChannelFilterChange: (filter: ContactListChannelFilter) => void;
+    // Last-activity window in days; 0 = all time.
+    timeFilter: number;
+    onTimeFilterChange: (days: number) => void;
     selectedContactId?: string;
     onSelectContact: (contact: OmnichannelContact) => void;
     onRefresh: () => void;
@@ -44,6 +47,13 @@ const CHANNEL_FILTERS: { value: ContactListChannelFilter; label: string }[] = [
     { value: "email", label: "Email" },
 ];
 
+const TIME_FILTERS: { value: number; label: string; title: string }[] = [
+    { value: 0, label: "All time", title: "No time filter" },
+    { value: 1, label: "1D", title: "Active in the last day" },
+    { value: 7, label: "1W", title: "Active in the last week" },
+    { value: 30, label: "1M", title: "Active in the last month" },
+];
+
 export default function ContactListSidebar({
     contacts,
     isLoading,
@@ -51,6 +61,8 @@ export default function ContactListSidebar({
     onSearchChange,
     channelFilter,
     onChannelFilterChange,
+    timeFilter,
+    onTimeFilterChange,
     selectedContactId,
     onSelectContact,
     onRefresh,
@@ -91,6 +103,25 @@ export default function ContactListSidebar({
                             className={cn(
                                 "flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-colors",
                                 channelFilter === filter.value
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            {filter.label}
+                        </button>
+                    ))}
+                </div>
+                {/* Last-activity window - also server-side, composes with the
+                    channel filter above. */}
+                <div className="flex gap-1 rounded-full bg-gray-100 p-1">
+                    {TIME_FILTERS.map((filter) => (
+                        <button
+                            key={filter.value}
+                            onClick={() => onTimeFilterChange(filter.value)}
+                            title={filter.title}
+                            className={cn(
+                                "flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-colors",
+                                timeFilter === filter.value
                                     ? "bg-white text-gray-900 shadow-sm"
                                     : "text-gray-500 hover:text-gray-700"
                             )}

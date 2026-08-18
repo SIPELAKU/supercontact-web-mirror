@@ -113,10 +113,11 @@ export async function fetchAccounts(token: string, channelType?: string, include
   return Array.isArray(data) ? data : [];
 }
 
-export async function fetchOmnichannelContacts(token: string, q?: string, channelType?: string): Promise<OmnichannelContactsResponse> {
+export async function fetchOmnichannelContacts(token: string, q?: string, channelType?: string, activeWithinDays?: number): Promise<OmnichannelContactsResponse> {
   const params = new URLSearchParams();
   if (q) params.append('q', q);
   if (channelType) params.append('channel_type', channelType);
+  if (activeWithinDays) params.append('active_within_days', String(activeWithinDays));
 
   const res = await fetchWithTimeout(`${API_BASE}/inbox/contacts?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

@@ -85,8 +85,13 @@ export default function OmnichannelClient() {
         }
     };
 
-    // Contacts data
-    const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(searchTerm);
+    // Contacts data - left panel's channel category filter (All/WhatsApp/
+    // Email) is server-side, so recency ordering stays correct per category.
+    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email">("all");
+    const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
+        searchTerm,
+        listChannelFilter === "all" ? undefined : listChannelFilter
+    );
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
     // Which account a NEW conversation sends from, for multi-account companies.
@@ -434,6 +439,8 @@ export default function OmnichannelClient() {
                     isLoading={isLoadingContacts}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
+                    channelFilter={listChannelFilter}
+                    onChannelFilterChange={setListChannelFilter}
                     selectedContactId={selectedContact?.contact_id}
                     onSelectContact={handleSelectContact}
                     onRefresh={() => handleRefreshEmail(false)}

@@ -66,13 +66,17 @@ export function useAccounts(channelType?: string, includeInactive?: boolean) {
   });
 }
 
-export function useOmnichannelContacts(q?: string) {
+export function useOmnichannelContacts(q?: string, channelType?: string) {
   const { token } = useAuth();
   return useQuery<OmnichannelContactsResponse, Error>({
-    queryKey: ['omnichannels', 'inbox', 'contacts', q],
+    // channelType is part of the key so All/WhatsApp/Email views cache
+    // independently - useOmnichannelRealtime's setQueriesData partial-match
+    // on the ['omnichannels','inbox','contacts'] prefix still reaches every
+    // variant.
+    queryKey: ['omnichannels', 'inbox', 'contacts', q, channelType ?? 'all'],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchOmnichannelContacts(token, q);
+      return fetchOmnichannelContacts(token, q, channelType);
     },
     staleTime: 1000 * 30, // 30 seconds
     // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, UserPlus, X, Loader2, Flame } from "lucide-react";
+import { Search, UserPlus, X, Loader2, Flame, Mail, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -12,11 +12,15 @@ import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
 import { CircularProgress } from "@mui/material";
 
+export type ContactListChannelFilter = "all" | "whatsapp" | "email";
+
 interface ContactListSidebarProps {
     contacts: OmnichannelContact[];
     isLoading: boolean;
     searchTerm: string;
     onSearchChange: (term: string) => void;
+    channelFilter: ContactListChannelFilter;
+    onChannelFilterChange: (filter: ContactListChannelFilter) => void;
     selectedContactId?: string;
     onSelectContact: (contact: OmnichannelContact) => void;
     onRefresh: () => void;
@@ -34,11 +38,19 @@ interface ContactListSidebarProps {
 // new-contact form toggle, and the contact list itself. Hidden on mobile
 // once a contact is selected so column 2 (the conversation) gets the full
 // screen - mirrors components/inbox/ChatSidebar.tsx's `md:` pattern.
+const CHANNEL_FILTERS: { value: ContactListChannelFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "whatsapp", label: "WhatsApp" },
+    { value: "email", label: "Email" },
+];
+
 export default function ContactListSidebar({
     contacts,
     isLoading,
     searchTerm,
     onSearchChange,
+    channelFilter,
+    onChannelFilterChange,
     selectedContactId,
     onSelectContact,
     onRefresh,
@@ -68,6 +80,24 @@ export default function ContactListSidebar({
                         className="flex-1"
                         isBgWhite
                     />
+                </div>
+                {/* Channel category tabs - server-side filter, so recency
+                    ordering stays correct within each category. */}
+                <div className="flex gap-1 rounded-full bg-gray-100 p-1">
+                    {CHANNEL_FILTERS.map((filter) => (
+                        <button
+                            key={filter.value}
+                            onClick={() => onChannelFilterChange(filter.value)}
+                            className={cn(
+                                "flex-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-colors",
+                                channelFilter === filter.value
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-gray-500 hover:text-gray-700"
+                            )}
+                        >
+                            {filter.label}
+                        </button>
+                    ))}
                 </div>
                 {!isNewContactOpen && contacts.length > 0 && (
                     <AppButton
@@ -198,10 +228,22 @@ export default function ContactListSidebar({
                     </div>
                 ) : contacts.length > 0 ? (
                     <div className="divide-y divide-gray-50">
-                        {contacts.map((contact: OmnichannelContact) => {
+                        {contacts.map((contact: OmnichannelContact, index: number) => {
+                            // The API orders active conversations first (by
+                            // recency), then contacts with no conversation yet
+                            // - surface that grouping with one divider at the
+                            // boundary instead of leaving it implicit.
+                            const isFirstWithoutConversation =
+                                !contact.last_message_at &&
+                                (index === 0 || !!contacts[index - 1]?.last_message_at);
                             return (
+                                <React.Fragment key={contact.contact_id}>
+                                {isFirstWithoutConversation && (
+                                    <div className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50/60">
+                                        No conversations yet
+                                    </div>
+                                )}
                                 <div
-                                    key={contact.contact_id}
                                     onClick={() => onSelectContact(contact)}
                                     className={cn(
                                         "p-4 cursor-pointer transition-all hover:bg-gray-200 group flex items-start gap-3 border-b border-gray-50",
@@ -242,14 +284,23 @@ export default function ContactListSidebar({
                                             <p className="text-xs text-gray-500 truncate flex-1">
                                                 {contact.last_message_preview || contact.primary_identifier || "No contact info"}
                                             </p>
-                                            {contact.unread_count > 0 && (
-                                                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white shadow-sm">
-                                                    {contact.unread_count > 99 ? '99+' : contact.unread_count}
-                                                </span>
-                                            )}
+                                            <span className="ml-2 flex items-center gap-1 shrink-0">
+                                                {contact.channel_types?.includes("whatsapp") && (
+                                                    <MessageCircle className="w-3 h-3 text-emerald-500" />
+                                                )}
+                                                {contact.channel_types?.includes("email") && (
+                                                    <Mail className="w-3 h-3 text-blue-400" />
+                                                )}
+                                                {contact.unread_count > 0 && (
+                                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white shadow-sm">
+                                                        {contact.unread_count > 99 ? '99+' : contact.unread_count}
+                                                    </span>
+                                                )}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
+                                </React.Fragment>
                             );
                         })}
                     </div>

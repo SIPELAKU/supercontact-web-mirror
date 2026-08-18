@@ -14,6 +14,7 @@ import {
   UpdateWebWidgetConfigRequest,
   UpdateAccountRequest,
   CreateConversationRequest,
+  OmnichannelContactInboxDetail,
   fetchAccounts,
   connectWhatsApp,
   connectEmail,
@@ -24,7 +25,7 @@ import {
   updateAccount,
   reactivateAccount,
   refreshEmail,
-  fetchInbox,
+  fetchContactInboxDetail,
   fetchOmnichannelContacts,
   createConversation,
   fetchConversation,
@@ -33,8 +34,16 @@ import {
   createTicketFromConversation,
   sendMessage,
   uploadMedia,
+  assignConversation,
+  setConversationTags,
+  createConversationNote,
+  fetchConversationTags,
   OmnichannelContact,
   OmnichannelContactsResponse,
+  AssignConversationRequest,
+  SetConversationTagsRequest,
+  CreateConversationNoteRequest,
+  ConversationTagsResponse,
 } from "../api/omnichannel";
 
 // Account Management Hooks
@@ -66,7 +75,10 @@ export function useOmnichannelContacts(q?: string) {
       return fetchOmnichannelContacts(token, q);
     },
     staleTime: 1000 * 30, // 30 seconds
-    refetchOnWindowFocus: false,
+    // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy
+    // path, this just backstops missed/dropped pushes.
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
     enabled: !!token,
   });
 }
@@ -208,18 +220,23 @@ export function useRefreshEmail() {
 }
 
 // Inbox Hooks
-export function useInbox(channelType?: string, status?: string) {
+export function useContactInboxDetail(contactKey: string | null) {
   const { token } = useAuth();
-  return useQuery<Conversation[], Error>({
-    queryKey: ['omnichannels', 'inbox', channelType, status],
-    queryFn: () => {
+  return useQuery<OmnichannelContactInboxDetail | null, Error>({
+    queryKey: ['omnichannels', 'inbox', 'contact-detail', contactKey],
+    queryFn: async () => {
       if (!token) throw new Error('No authentication token');
-      return fetchInbox(token, channelType, status);
+      if (!contactKey) return null;
+      try {
+        return await fetchContactInboxDetail(token, contactKey);
+      } catch {
+        // 404 = the contact has no omnichannel conversations yet - render
+        // zero counts rather than an error state.
+        return null;
+      }
     },
-    staleTime: 1000 * 10,
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-    enabled: !!token,
+    staleTime: 1000 * 30,
+    enabled: !!token && !!contactKey,
   });
 }
 
@@ -248,7 +265,9 @@ export function useConversation(conversationId: string) {
       return fetchConversation(token, conversationId);
     },
     staleTime: 1000 * 5,
-    refetchInterval: 5000,
+    // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy
+    // path, this just backstops missed/dropped pushes.
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
     enabled: !!token && !!conversationId,
   });
@@ -293,6 +312,69 @@ export function useMarkAsRead() {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
     },
+  });
+}
+
+export function useAssignConversation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: AssignConversationRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return assignConversation(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+      // Assignment also shows up on the inbox list row (OmnichannelContact.assigned_user_*).
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox', 'contacts'] });
+    },
+  });
+}
+
+export function useSetConversationTags() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: SetConversationTagsRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return setConversationTags(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+    },
+  });
+}
+
+export function useCreateConversationNote() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: CreateConversationNoteRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return createConversationNote(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+    },
+  });
+}
+
+// Conversation tag catalog (suggestions for the tag picker) - company-wide,
+// not conversation-scoped, so it gets its own top-level query key.
+export function useConversationTags() {
+  const { token } = useAuth();
+  return useQuery<ConversationTagsResponse, Error>({
+    queryKey: ['omnichannels', 'conversation-tags'],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchConversationTags(token);
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token,
   });
 }
 

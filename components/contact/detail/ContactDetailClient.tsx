@@ -231,6 +231,7 @@ export const ContactDetailClient = () => {
             {activeTab === "whatsapp" && token && (
                 <ContactWhatsAppTab
                     contactId={id}
+                    contactName={contact.name}
                     isRecipient={contact.is_recipient}
                     broadcastGroups={contact.broadcast_groups || []}
                     token={token}
@@ -239,7 +240,7 @@ export const ContactDetailClient = () => {
             )}
 
             {activeTab === "conversations" && (
-                <ContactConversationsTab conversations={contact.conversations || []} />
+                <ContactConversationsTab contactId={id} contactName={contact.name} />
             )}
 
             <EditContactModal

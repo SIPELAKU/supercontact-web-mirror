@@ -14,6 +14,15 @@ import {
   MediaUploadResponse,
   OmnichannelContact,
   OmnichannelContactsResponse,
+  OmnichannelContactTimelineResponse,
+  OmnichannelContactInboxDetail,
+  AssignConversationRequest,
+  SetConversationTagsRequest,
+  CreateConversationNoteRequest,
+  CreateConversationTagRequest,
+  ConversationTagsResponse,
+  ConversationTag,
+  ConversationNote,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -32,9 +41,52 @@ export type {
   MediaUploadResponse,
   OmnichannelContact,
   OmnichannelContactsResponse,
+  OmnichannelContactTimelineResponse,
+  OmnichannelContactInboxDetail,
+  AssignConversationRequest,
+  SetConversationTagsRequest,
+  CreateConversationNoteRequest,
+  CreateConversationTagRequest,
+  ConversationTagsResponse,
+  ConversationTag,
+  ConversationNote,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
+// Conversation tag catalog is its own top-level resource (not nested under
+// /omnichannels) - mirrors /ticket-tags' relationship to /tickets, see
+// lib/api/ticket-tags.ts.
+const TAGS_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannel-conversation-tags`;
+
+// Contact-centric merged timeline - used to disambiguate which conversation
+// belongs to the active chatMode tab for a contact with more than one
+// channel (e.g. WhatsApp + Email), since `latest_conversation_id` on
+// `OmnichannelContact` isn't channel-specific.
+export async function fetchContactTimeline(
+  token: string,
+  contactKey: string,
+  channelType?: string
+): Promise<OmnichannelContactTimelineResponse> {
+  const params = new URLSearchParams();
+  if (channelType) params.append('channel_type', channelType);
+
+  const res = await fetchWithTimeout(
+    `${API_BASE}/inbox/contacts/${encodeURIComponent(contactKey)}/timeline?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch contact timeline');
+  }
+
+  return json.data || json;
+}
 
 // Account Management
 export async function fetchAccounts(token: string, channelType?: string, includeInactive?: boolean): Promise<Account[]> {
@@ -277,14 +329,14 @@ export async function refreshEmail(token: string, fullSync: boolean): Promise<vo
 }
 
 // Inbox
-export async function fetchInbox(token: string, channelType?: string, status?: string): Promise<Conversation[]> {
-  const params = new URLSearchParams();
-  if (channelType) params.append('channel_type', channelType);
-  if (status) params.append('status', status);
-
-  const res = await fetchWithTimeout(`${API_BASE}/inbox?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function fetchContactInboxDetail(
+  token: string,
+  contactKey: string
+): Promise<OmnichannelContactInboxDetail> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/inbox/contacts/${encodeURIComponent(contactKey)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
   const json = await res.json();
 
@@ -293,16 +345,10 @@ export async function fetchInbox(token: string, channelType?: string, status?: s
   }
 
   if (!res.ok) {
-    throw json || new Error('Failed to fetch inbox');
+    throw json || new Error('Failed to fetch contact inbox detail');
   }
 
-  // Handle different response structures
-  const data = json.data || json;
-  // Check if data has a conversations property
-  if (data.conversations && Array.isArray(data.conversations)) {
-    return data.conversations;
-  }
-  return Array.isArray(data) ? data : [];
+  return json.data || json;
 }
 
 export async function createConversation(token: string, data: CreateConversationRequest): Promise<Conversation> {
@@ -408,6 +454,138 @@ export async function markAsRead(token: string, conversationId: string): Promise
   if (!res.ok) {
     throw json || new Error('Failed to mark as read');
   }
+}
+
+export async function assignConversation(token: string, conversationId: string, data: AssignConversationRequest): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/assign`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to assign conversation');
+  }
+
+  return json.data || json;
+}
+
+export async function setConversationTags(token: string, conversationId: string, data: SetConversationTagsRequest): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/tags`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update conversation tags');
+  }
+
+  return json.data || json;
+}
+
+export async function createConversationNote(token: string, conversationId: string, data: CreateConversationNoteRequest): Promise<ConversationNote> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/notes`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to add conversation note');
+  }
+
+  return json.data || json;
+}
+
+// Conversation Tags Catalog (company-wide, not conversation-scoped)
+export async function fetchConversationTags(token: string): Promise<ConversationTagsResponse> {
+  const res = await fetchWithTimeout(TAGS_BASE, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch conversation tags');
+  }
+
+  return json.data || json;
+}
+
+export async function createConversationTag(token: string, data: CreateConversationTagRequest): Promise<ConversationTag> {
+  const res = await fetchWithTimeout(TAGS_BASE, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to create conversation tag');
+  }
+
+  return json.data || json;
+}
+
+export async function deleteConversationTag(token: string, tagId: string): Promise<any> {
+  const res = await fetchWithTimeout(`${TAGS_BASE}/${tagId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to delete conversation tag');
+  }
+
+  return json.data || json;
 }
 
 // Messages

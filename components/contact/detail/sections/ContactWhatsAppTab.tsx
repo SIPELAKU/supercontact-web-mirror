@@ -8,9 +8,11 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { fetchWithTimeout } from "@/lib/api/api-client";
 import { useCreateWaRecipient } from "@/lib/hooks/useWaRecipients";
 import type { GroupBroadcast, GroupBroadcastsResponse } from "@/lib/types/whatsapp-marketing";
+import { ContactChannelChat } from "./ContactChannelChat";
 
 interface ContactWhatsAppTabProps {
     contactId: string;
+    contactName?: string;
     isRecipient: boolean;
     broadcastGroups: { id: string; name: string }[];
     token: string;
@@ -46,6 +48,7 @@ async function deleteRecipientFromBroadcastGroup(
 
 export const ContactWhatsAppTab = ({
     contactId,
+    contactName,
     isRecipient,
     broadcastGroups,
     token,
@@ -103,6 +106,17 @@ export const ContactWhatsAppTab = ({
 
     return (
         <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-gray-700">Conversation</h3>
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                    <ContactChannelChat
+                        contactId={contactId}
+                        contactName={contactName}
+                        channelType="whatsapp"
+                    />
+                </div>
+            </div>
+
             <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-500">Recipient status</span>
                 <span

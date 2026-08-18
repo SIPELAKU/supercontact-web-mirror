@@ -58,6 +58,45 @@ export interface Message {
 
 export interface ConversationWithMessages extends Conversation {
   messages: Message[];
+  assigned_user_fullname?: string;
+  tags: ConversationTag[];
+  notes: ConversationNote[];
+}
+
+// Conversation assignment/tags/notes (Phase 3)
+export interface ConversationTag {
+  id: string;
+  company_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface ConversationNote {
+  id: string;
+  conversation_id: string;
+  user_fullname: string;
+  note: string;
+  created_at: string;
+}
+
+export interface AssignConversationRequest {
+  assigned_user_id: string | null;
+}
+
+export interface SetConversationTagsRequest {
+  tags: string[];
+}
+
+export interface CreateConversationNoteRequest {
+  note: string;
+}
+
+export interface CreateConversationTagRequest {
+  name: string;
+}
+
+export interface ConversationTagsResponse {
+  tags: ConversationTag[];
 }
 
 // Request Types
@@ -143,6 +182,8 @@ export interface OmnichannelContact {
   subject?: string;
   is_frequent: boolean;
   frequent_message_count?: number;
+  assigned_user_id?: string;
+  assigned_user_fullname?: string;
 }
 
 export interface OmnichannelContactsResponse {
@@ -150,4 +191,69 @@ export interface OmnichannelContactsResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+// Contact-centric merged timeline (`GET /inbox/contacts/{contact_key}/timeline`).
+// Used to disambiguate which conversation belongs to the active chatMode tab
+// for a contact that has more than one channel (e.g. WhatsApp + Email).
+export interface OmnichannelContactTimelineConversation {
+  conversation_id: string;
+  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  status: 'open' | 'closed' | 'archived';
+  subject?: string;
+  external_contact_identifier: string;
+  external_contact_name?: string;
+  sentiment_label?: string;
+  sentiment_score?: number;
+  sentiment_model?: string;
+  sentiment_status_message?: string;
+  last_message_at?: string;
+  last_message_preview?: string;
+  unread_count: number;
+}
+
+export interface OmnichannelContactTimelineMessage {
+  id: string;
+  conversation_id: string;
+  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  direction: 'inbound' | 'outbound';
+  sender_identifier: string;
+  content: string;
+  content_type?: string;
+  media_url?: string;
+  external_message_id?: string;
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  sent_at: string;
+  created_at: string;
+  subject?: string;
+  external_contact_identifier: string;
+  external_contact_name?: string;
+  attachments?: any[];
+}
+
+export interface OmnichannelContactTimelineResponse {
+  inbox_key: string;
+  contact_id?: string;
+  conversations: OmnichannelContactTimelineConversation[];
+  messages: OmnichannelContactTimelineMessage[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface OmnichannelContactInboxDetail {
+  inbox_key: string;
+  contact_id?: string;
+  is_unknown: boolean;
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  company?: string;
+  position?: string;
+  address?: string;
+  channel_types: ('whatsapp' | 'email' | 'web_widget')[];
+  unread_count: number;
+  open_conversation_count: number;
+  latest_conversation_id?: string;
+  last_message_at?: string;
 }

@@ -208,12 +208,22 @@ export const CapturedLeadsTable = () => {
         enableColumnFilter: false,
         Cell: ({ row }) => {
           const submission = row.original;
-          const isFailed = (submission.email_status || '').toLowerCase() === 'failed';
+          const emailStatus = (submission.email_status || '').toLowerCase();
+          const isFailed = emailStatus === 'failed';
+          // A pending older than 30 minutes is an orphaned delivery (its
+          // in-process send task was killed by an API restart and nothing
+          // will ever move it) - the backend accepts resends for it, so
+          // surface the same button. Mirrors STALE_PENDING_RESEND_THRESHOLD
+          // in smart_capture_service.py.
+          const isStalePending =
+            emailStatus === 'pending' &&
+            !!submission.captured_at &&
+            Date.now() - new Date(submission.captured_at).getTime() > 30 * 60 * 1000;
           return (
             <div className="flex items-center gap-1">
-              {isFailed && (
+              {(isFailed || isStalePending) && (
                 <ResendButton
-                  customTitle="Resend email"
+                  customTitle={isStalePending ? 'Delivery stuck in pending - resend email' : 'Resend email'}
                   isLoading={resendingSubmissionId === submission.id}
                   onClick={() => handleResend(submission)}
                 />

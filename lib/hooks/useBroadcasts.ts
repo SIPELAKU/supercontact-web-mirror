@@ -20,14 +20,16 @@ export function useBroadcasts(
   page: number = 1,
   limit: number = 10,
   search?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
 ) {
   return useQuery({
-    queryKey: ['broadcasts', page, limit, search, status],
+    queryKey: ['broadcasts', page, limit, search, status, sortBy, sortOrder],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchBroadcasts(token, page, limit, search, status);
+      return fetchBroadcasts(token, page, limit, search, status, sortBy, sortOrder);
     },
   });
 }

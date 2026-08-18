@@ -23,7 +23,7 @@ import {
     Typography
 } from '@mui/material';
 import { format } from 'date-fns';
-import { ArrowLeft, Filter, Search, Upload, Plus, Eye } from 'lucide-react';
+import { ArrowLeft, Search, Upload, Plus, Eye } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
@@ -79,6 +79,18 @@ const GroupBroadcastDetailPage = () => {
     const groupBroadcast = detailData?.data;
     const recipients = groupBroadcast?.recipients?.recipients || [];
     const totalRecipients = groupBroadcast?.recipients?.total || 0;
+
+    // INTERIM: the /broadcast-groups/{id} recipients endpoint does not support a
+    // `search` param yet, so the Recipients-tab search filters client-side over
+    // the currently loaded page only. Switch to a server `search` param once the
+    // backend supports it.
+    const recipientSearch = debouncedSearch.trim().toLowerCase();
+    const visibleRecipients = activeTab === 0 && recipientSearch
+        ? recipients.filter((r) =>
+            [r.name, r.email, r.phone_number, r.company]
+                .some((v) => (v || '').toLowerCase().includes(recipientSearch))
+        )
+        : recipients;
 
     const campaigns = campaignsData?.data?.broadcasts || [];
     const totalCampaigns = campaignsData?.data?.total || 0;
@@ -157,13 +169,6 @@ const GroupBroadcastDetailPage = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
                 <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flex: 1 }}>
-                        <AppButton
-                            variantStyle="soft"
-                            startIcon={<Filter size={18} />}
-                            sx={{ height: '42px', px: 2.5 }}
-                        >
-                            Filters
-                        </AppButton>
                         <TextField
                             size="small"
                             placeholder={activeTab === 0 ? "Search..." : "Search campaigns..."}
@@ -229,7 +234,7 @@ const GroupBroadcastDetailPage = () => {
                                                     <CircularProgress size={30} />
                                                 </TableCell>
                                             </TableRow>
-                                        ) : recipients.length === 0 ? (
+                                        ) : visibleRecipients.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                                                     <Typography variant="body2" color="text.secondary">
@@ -238,7 +243,7 @@ const GroupBroadcastDetailPage = () => {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            recipients.map((recipient) => (
+                                            visibleRecipients.map((recipient) => (
                                                 <TableRow key={recipient.id} hover>
                                                     <TableCell sx={{ py: 2 }}>{recipient.name || '-'}</TableCell>
                                                     <TableCell sx={{ py: 2 }}>{recipient.email || '-'}</TableCell>

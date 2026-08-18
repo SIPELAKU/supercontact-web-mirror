@@ -137,6 +137,7 @@ export default function BroadcastingWATable({
         manualFiltering={true}
         manualPagination={true}
         manualSorting={true}
+        initialState={{ sorting: [{ id: "created_at", desc: true }] }}
         isLoading={isLoading}
         isError={isError}
         onStateChange={onStateChange}

@@ -2,7 +2,7 @@
 
 import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import Cookies from 'js-cookie';
 
@@ -27,23 +27,18 @@ export default function SubscribersClient() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Server-side pagination & search state
+  // Server-side pagination, search & sorting state
+  // (search is already debounced by SuperTable — no extra debounce layer here)
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1); // Reset to first page on search
-    }, 500);
+  const sort = sorting[0];
+  const sortBy = sort?.id;
+  const sortOrder: 'asc' | 'desc' | undefined = sort ? (sort.desc ? 'desc' : 'asc') : undefined;
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const { data, isLoading, refetch } = useSubscribers(page, limit, debouncedSearch);
+  const { data, isLoading, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
 
   const subscribers = data?.data?.contacts || [];
   const totalCount = data?.data?.total || 0;
@@ -131,13 +126,18 @@ export default function SubscribersClient() {
   };
 
   // Handle state changes from SuperTable
-  const handleStateChange = useCallback((state: { page: number; limit: number; search: string }) => {
-    if (state.page !== page) setPage(state.page);
+  const handleStateChange = useCallback((state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => {
+    const searchChanged = state.search !== searchQuery;
+    if (searchChanged) setSearchQuery(state.search);
     if (state.limit !== limit) {
       setLimit(state.limit);
       setPage(1);
+    } else if (searchChanged) {
+      setPage(1); // Reset to first page on search
+    } else if (state.page !== page) {
+      setPage(state.page);
     }
-    if (state.search !== searchQuery) setSearchQuery(state.search);
+    setSorting(state.sorting || []);
   }, [page, limit, searchQuery]);
 
   // Export handler: loop pagination to fetch all data
@@ -151,7 +151,7 @@ export default function SubscribersClient() {
       let totalPages = 1;
 
       do {
-        const result = await fetchSubscribers(token, currentPage, 50, debouncedSearch || undefined);
+        const result = await fetchSubscribers(token, currentPage, 50, searchQuery || undefined, sortBy, sortOrder);
 
         const items = result?.data?.contacts || [];
         const total = result?.data?.total || 0;
@@ -168,7 +168,7 @@ export default function SubscribersClient() {
 
       return [];
     }
-  }, [debouncedSearch]);
+  }, [searchQuery, sortBy, sortOrder]);
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">

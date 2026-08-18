@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { notify } from '@/lib/notifications';
 import PageHeader from '@/components/ui/page-header';
@@ -29,11 +29,12 @@ import ImportWaRecipientModal from './ImportWaRecipientModal';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
 
 export default function RecipientsClient() {
-  // Pagination & search state
+  // Pagination, search & sorting state
+  // (limit matches the table's default pageSize of 10)
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(5);
+  const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
 
   // Modal / confirm state
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -44,20 +45,16 @@ export default function RecipientsClient() {
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
+  const sort = sorting[0];
 
   const { data, isLoading, refetch } = useWaRecipients({
     recipient_type: 'whatsapp',
     page,
     limit,
-    search: debouncedSearch || undefined,
+    search: searchQuery || undefined,
+    sort_by: sort?.id as import('@/lib/types/whatsapp-marketing').WaRecipientSortBy | undefined,
+    sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
   });
 
   const recipients = data?.data?.recipients || [];
@@ -134,13 +131,18 @@ export default function RecipientsClient() {
   };
 
   const handleStateChange = useCallback(
-    (state: { page: number; limit: number; search: string }) => {
-      if (state.page !== page) setPage(state.page);
+    (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => {
+      const searchChanged = state.search !== searchQuery;
+      if (searchChanged) setSearchQuery(state.search);
       if (state.limit !== limit) {
         setLimit(state.limit);
         setPage(1);
+      } else if (searchChanged) {
+        setPage(1); // Reset to first page on search
+      } else if (state.page !== page) {
+        setPage(state.page);
       }
-      if (state.search !== searchQuery) setSearchQuery(state.search);
+      setSorting(state.sorting || []);
     },
     [page, limit, searchQuery]
   );

@@ -69,13 +69,20 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
           </p>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <AppButton onClick={onClose} variantStyle="outline" color="primary">
+            <AppButton
+              onClick={onClose}
+              variantStyle="outline"
+              color="primary"
+              disabled={deleteContactMutation.isPending}
+            >
               Cancel
             </AppButton>
             <AppButton
               onClick={handleSubmit}
               variantStyle="danger"
               color="danger"
+              disabled={deleteContactMutation.isPending}
+              isLoading={deleteContactMutation.isPending}
             >
               Delete Contact
             </AppButton>

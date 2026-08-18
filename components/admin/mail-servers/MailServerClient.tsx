@@ -28,8 +28,22 @@ export const MailServerClient = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 500);
 
+    // Reset to first page whenever the (server-side) search term changes
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedSearch]);
+
+    // Filters (operator popover stays client-side; when active we fetch the whole
+    // set so the filter applies to ALL rows, not just the current page)
+    const [filters, setFilters] = useState<any[]>([]);
+    const hasActiveFilters = filters.some((f) => f.columnId && f.operator);
+
     // Data fetching
-    const { data: response, isLoading, isError, error, refetch } = useMailServers(page + 1, rowsPerPage, debouncedSearch);
+    const { data: response, isLoading, isError, error, refetch } = useMailServers(
+        hasActiveFilters ? 1 : page + 1,
+        hasActiveFilters ? 1000 : rowsPerPage,
+        debouncedSearch
+    );
     const mailServers = (response?.data?.mail_servers || []).filter(item => !item.is_system_mail_server);
     const totalCount = response?.data?.total || 0;
 
@@ -51,9 +65,6 @@ export const MailServerClient = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [serverToDelete, setServerToDelete] = useState<MailServer | null>(null);
 
-    // Filters
-    const [filters, setFilters] = useState<any[]>([]);
-
     const allColumns = [
         { id: "selection", label: "Selection" },
         { id: "name", label: "Nama" },
@@ -64,7 +75,8 @@ export const MailServerClient = () => {
         { id: "action", label: "Aksi" },
     ];
 
-    // Filter Logic (Client-side for now, as API only supports basic search)
+    // Filter Logic (client-side operator popover; applied to the full fetched set
+    // because pagination switches to client-side while filters are active)
     const filteredData = mailServers.filter((item) => {
         if (filters.length === 0) return true;
 
@@ -91,9 +103,22 @@ export const MailServerClient = () => {
         });
     });
 
+    // While filters are active, paginate the filtered set client-side
+    const displayCount = hasActiveFilters ? filteredData.length : totalCount;
+    const visibleData = hasActiveFilters
+        ? filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+        : filteredData;
+
+    const handleApplyFilters = (newFilters: any[]) => {
+        setFilters(newFilters);
+        setPage(0);
+        setSelected([]);
+    };
+
+    // Select-all scopes to the filtered rows (not the raw page)
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            setSelected(mailServers.map((item) => item.id));
+            setSelected(filteredData.map((item) => item.id));
         } else {
             setSelected([]);
         }
@@ -165,7 +190,7 @@ export const MailServerClient = () => {
                             columns={allColumns.filter(
                                 (c) => c.id !== "selection" && c.id !== "action"
                             )}
-                            onApply={setFilters}
+                            onApply={handleApplyFilters}
                         />
                         <div className="flex items-center relative w-full md:w-64">
                             <AppInput
@@ -196,7 +221,8 @@ export const MailServerClient = () => {
                                 <TableCell padding="checkbox" sx={{ pl: 3 }}>
                                     <Checkbox
                                         color="primary"
-                                        checked={mailServers.length > 0 && selected.length === mailServers.length}
+                                        checked={filteredData.length > 0 && selected.length === filteredData.length}
+                                        indeterminate={selected.length > 0 && selected.length < filteredData.length}
                                         onChange={handleSelectAll}
                                     />
                                 </TableCell>
@@ -216,14 +242,14 @@ export const MailServerClient = () => {
                                         <CircularProgress />
                                     </TableCell>
                                 </TableRow>
-                            ) : filteredData.length === 0 ? (
+                            ) : visibleData.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
                                         <p className="text-gray-500">No mail servers found.</p>
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredData.map((item) => (
+                                visibleData.map((item) => (
                                     <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: '#f9fafb' } }}>
                                         <TableCell padding="checkbox" sx={{ pl: 3 }}>
                                             <Checkbox
@@ -325,7 +351,7 @@ export const MailServerClient = () => {
                     <TablePagination
                         rowsPerPageOptions={[5, 10, 25, 50]}
                         component="div"
-                        count={totalCount}
+                        count={displayCount}
                         rowsPerPage={rowsPerPage}
                         page={page}
                         onPageChange={handleChangePage}

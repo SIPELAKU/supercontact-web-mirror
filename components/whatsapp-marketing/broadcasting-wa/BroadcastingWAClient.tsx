@@ -39,6 +39,7 @@ export default function BroadcastingWAClient() {
     pageSize: 10,
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [{ id: "created_at", desc: true }] as { id: string; desc: boolean }[],
   });
 
   const handleTableStateChange = (state: SuperTableState) => {
@@ -47,6 +48,7 @@ export default function BroadcastingWAClient() {
       pageSize: state.pagination.pageSize,
       globalFilter: state.globalFilter,
       columnFilters: state.columnFilters || [],
+      sorting: state.sorting || [],
     });
   };
 
@@ -60,12 +62,19 @@ export default function BroadcastingWAClient() {
   const searchParam = tableState.globalFilter || "";
   const statusParam = getFilterValue("status") || undefined;
 
+  // Server-side sorting (sort_by/sort_order contract)
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: 'asc' | 'desc' | undefined = sortParam
+    ? (sortParam.desc ? 'desc' : 'asc')
+    : undefined;
+
   // React Query Fetcher (Main Table Data)
   const {
     data: broadcastsResponse,
     isLoading,
     isError,
-  } = useBroadcasts(pageParam, limitParam, searchParam, statusParam);
+  } = useBroadcasts(pageParam, limitParam, searchParam, statusParam, sortByParam, sortOrderParam);
 
   const totalCount = broadcastsResponse?.data?.total || 0;
   const broadcasts = broadcastsResponse?.data?.broadcasts || [];

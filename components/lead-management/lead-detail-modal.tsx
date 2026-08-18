@@ -15,6 +15,7 @@ import { Autocomplete, Paper, TextField, createTheme, ThemeProvider } from "@mui
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { logger } from "../../lib/utils/logger";
+import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
 import ContactPickerDialog from "./ContactPickerDialog";
 
@@ -294,7 +295,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       logger.info("Lead updated successfully!", { leadId: lead.id });
 
       // Show success message
-      alert("Lead updated successfully!");
+      notify.success("Lead updated successfully!");
     } catch (error: any) {
       logger.error("Error updating lead", {
         leadId: lead.id,
@@ -317,7 +318,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         ? "Session expired. Please login again."
         : `Failed to update lead: ${error.message}`;
 
-      alert(errorMessage);
+      notify.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

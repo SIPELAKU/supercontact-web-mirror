@@ -312,6 +312,13 @@ export default function PeopleClient() {
                     tableId="people-table"
                     data={rows}
                     columns={columns}
+                    // NOTE: the /company-intelligence/individual endpoint paginates by
+                    // COMPANY (meta.total = companies with key_people) while each table row
+                    // is a PERSON. rowCount must stay company-based so the page count math
+                    // (ceil(total/limit)) matches the server's company pagination; the
+                    // "of N" label is therefore companies, not people. A true people total
+                    // needs a backend meta field (deferred - not in the sort_by/sort_order
+                    // contract).
                     rowCount={totalCompanies}
                     manualFiltering
                     manualPagination

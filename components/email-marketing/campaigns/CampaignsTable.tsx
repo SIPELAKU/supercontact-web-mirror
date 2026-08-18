@@ -114,6 +114,9 @@ export default function CampaignsTable({
       accessorKey: "user_fullname",
       header: "Created By",
       enableColumnFilter: false,
+      // Creator comes from the joined User (selectinload, not a join) -
+      // the backend can't sort by it, so don't offer a lying sort arrow.
+      enableSorting: false,
       Cell: ({ row }) => <span>{row.original.user_fullname || 'N/A'}</span>,
     },
     {

@@ -15,7 +15,8 @@ import {
 import { ChevronRight, Plus, Copy, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { notify } from '@/lib/notifications';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent, MouseEvent } from 'react';
+import Pagination from '@/components/ui/pagination';
 
 interface GroupBroadcastingTableProps {
   onAdd: () => void;
@@ -26,9 +27,13 @@ interface GroupBroadcastingTableProps {
 }
 
 const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRequest }: GroupBroadcastingTableProps) => {
-  const { data, isLoading, error } = useGroupBroadcasts();
+  // Server-side pagination (page is 0-indexed for the MUI paginator)
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const { data, isLoading, error } = useGroupBroadcasts({ page: page + 1, limit: rowsPerPage });
   const duplicateMutation = useDuplicateGroupBroadcasts();
-  
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -38,6 +43,23 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
   }, [error]);
 
   const broadcasts = data?.data?.broadcast_groups || [];
+  const totalCount = data?.data?.total || 0;
+
+  const handlePageChange = (
+    _event: MouseEvent<HTMLButtonElement> | null,
+    newPage: number,
+  ) => {
+    setPage(newPage);
+    setSelectedIds([]);
+  };
+
+  const handleRowsPerPageChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+    setSelectedIds([]);
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -78,7 +100,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
             indeterminate={isSomeSelected && !allSelected}
             onChange={(e) => handleSelectAll(e.target.checked)}
           />
-          <Typography variant="h6">Group Broadcasts ({broadcasts.length})</Typography>
+          <Typography variant="h6">Group Broadcasts ({totalCount})</Typography>
           {isSomeSelected && (
             <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
               <AppButton
@@ -166,6 +188,18 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
               </Box>
             </Paper>
           ))
+        )}
+
+        {totalCount > 0 && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Pagination
+              count={totalCount}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleRowsPerPageChange}
+            />
+          </Box>
         )}
       </Box>
     </Box>

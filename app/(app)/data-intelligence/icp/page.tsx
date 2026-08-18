@@ -9,17 +9,20 @@ import { useDeleteIcpProfile, useIcpProfiles } from "@/lib/hooks/useIcpProfiles"
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { Loader2, Trash2 } from "lucide-react";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function IcpBuilderPage() {
     const [isCreating, setIsCreating] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
     const { data, isLoading } = useIcpProfiles({ page: 1, limit: 50 });
     const deleteMutation = useDeleteIcpProfile();
 
-    const handleDelete = async (id: string, name: string) => {
-        if (!confirm(`Delete "${name}"? The generated list will not be deleted.`)) return;
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("ICP profile deleted");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: handleError(error, "Delete ICP Profile") });
         }
@@ -77,7 +80,7 @@ export default function IcpBuilderPage() {
                                             {profile.name}
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(profile.id, profile.name)}
+                                            onClick={() => setDeleteTarget({ id: profile.id, name: profile.name })}
                                             className="text-gray-300 hover:text-red-500"
                                             aria-label="Delete ICP profile"
                                         >
@@ -97,6 +100,18 @@ export default function IcpBuilderPage() {
                     )}
                 </>
             )}
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete ICP Profile"
+                description={`Delete "${deleteTarget?.name ?? ""}"? The generated list will not be deleted.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2 } from "lucide-react";
 import router from "next/router";
 import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
@@ -70,7 +69,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [isLoadiNg, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
@@ -339,12 +338,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 Cancel
               </AppButton>
 
-              <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
-                {isLoadiNg ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "Save Contact"
-                )}
+              <AppButton onClick={handleSubmit} disabled={isLoading} isLoading={isLoading}>
+                Save Contact
               </AppButton>
             </div>
           </div>

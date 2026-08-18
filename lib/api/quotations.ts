@@ -125,6 +125,30 @@ export async function updateQuotation(token: string, quotationId: string, formDa
 }
 
 /**
+ * Delete a quotation by ID (permanent).
+ */
+export async function deleteQuotation(quotationId: string): Promise<any> {
+    try {
+        logger.info("Making DELETE request to delete quotation", { id: quotationId });
+
+        const res = await api.delete(`/quotations/${quotationId}`);
+
+        return res.data;
+    } catch (error: any) {
+        logger.error("deleteQuotation error:", error);
+
+        // Handle axios error format
+        if (error.response?.data) {
+            const message = error.response.data.message || error.response.data.error?.message || "Failed to delete quotation";
+            const err: any = new Error(message);
+            err.details = error.response.data.error?.details;
+            throw err;
+        }
+        throw error;
+    }
+}
+
+/**
  * Send quotation email with PDF attachment.
  */
 export async function sendQuotationEmail(

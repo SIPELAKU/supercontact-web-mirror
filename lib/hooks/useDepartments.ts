@@ -23,7 +23,9 @@ const useDepartments = (
   filters: {
     department?: string;
     branch?: string;
-  } = {}
+  } = {},
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ) => {
   const queryClient = useQueryClient();
   const { token } = useAuth();
@@ -34,10 +36,10 @@ const useDepartments = (
     isError,
     error,
   } = useQuery({
-    queryKey: ["departments", page, rowsPerPage, searchQuery, filters?.department, filters?.branch],
+    queryKey: ["departments", page, rowsPerPage, searchQuery, filters?.department, filters?.branch, sortBy, sortOrder],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchDepartments(token, page + 1, rowsPerPage, searchQuery, filters.department, filters.branch);
+      return fetchDepartments(token, page + 1, rowsPerPage, searchQuery, filters.department, filters.branch, sortBy, sortOrder);
     },
     enabled: !!token,
     refetchOnWindowFocus: false,
@@ -110,14 +112,16 @@ export function useDepartmentMembers(
   filters?: {
     position?: string;
     status?: string;
-  }
+  },
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ) {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ["department-members", id, page, limit, search, filters?.position, filters?.status],
+    queryKey: ["department-members", id, page, limit, search, filters?.position, filters?.status, sortBy, sortOrder],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchDepartmentMembers(token, id, page + 1, limit, search, filters?.position, filters?.status);
+      return fetchDepartmentMembers(token, id, page + 1, limit, search, filters?.position, filters?.status, sortBy, sortOrder);
     },
     enabled: !!token && !!id,
   });

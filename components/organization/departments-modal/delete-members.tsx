@@ -1,9 +1,8 @@
 "use client";
 
 import { AppButton } from "@/components/ui/app-button";
-import { deleteMember } from "@/lib/api/departments";
 import { useAuth } from "@/lib/context/AuthContext";
-import useDepartments, { useDeleteMember } from "@/lib/hooks/useDepartments";
+import { useDeleteMember } from "@/lib/hooks/useDepartments";
 import { notify } from "@/lib/notifications";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -27,6 +26,7 @@ export default function DeleteMemberDialog({
   const handleClose = () => setOpen(false);
   const { token } = useAuth();
   const router = useRouter();
+  const deleteMutation = useDeleteMember(departmentId, memberId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +39,7 @@ export default function DeleteMemberDialog({
           router.push("/login");
           return;
         }
-        useDeleteMember(departmentId, memberId);
+        await deleteMutation.mutateAsync();
         notify.success("Member deleted successfully");
         handleClose();
       } catch (error) {
@@ -78,10 +78,16 @@ export default function DeleteMemberDialog({
             variantStyle="outline"
             type="reset"
             onClick={() => setOpen(false)}
+            disabled={deleteMutation.isPending}
           >
             Cancel
           </AppButton>
-          <AppButton variantStyle="danger" type="submit">
+          <AppButton
+            variantStyle="danger"
+            type="submit"
+            disabled={deleteMutation.isPending}
+            isLoading={deleteMutation.isPending}
+          >
             Delete Member
           </AppButton>
         </DialogActions>

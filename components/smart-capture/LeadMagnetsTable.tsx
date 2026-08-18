@@ -17,6 +17,7 @@ import {
 } from '@/lib/hooks/useSmartCaptures';
 import { notify } from '@/lib/notifications';
 import { BulkUpdateStatusModal } from '../modal/BulkUpdateStatusModal';
+import { ConfirmationPopup } from '../ui/confirmation-popup';
 
 export interface LeadMagnet extends Partial<SmartCapture> {
   id: string;
@@ -147,6 +148,7 @@ const LeadMagnetsTable = ({
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; clearSelection?: () => void } | null>(null);
 
   const handleDuplicate = (ids: string[], clearSelection?: () => void) => {
     duplicateMutate(ids, {
@@ -159,12 +161,17 @@ const LeadMagnetsTable = ({
   };
 
   const handleDelete = (ids: string[], clearSelection?: () => void) => {
-    if (!window.confirm(`Are you sure you want to delete ${ids.length} item(s)? This action cannot be undone.`)) return;
+    setDeleteTarget({ ids, clearSelection });
+  };
 
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const { ids, clearSelection } = deleteTarget;
     deleteMutate(ids, {
       onSuccess: () => {
         notify.success(`Successfully deleted ${ids.length} item(s)`);
         if (clearSelection) clearSelection();
+        setDeleteTarget(null);
       },
       onError: (err: any) => notify.error(err.message || "Failed to delete")
     });
@@ -327,6 +334,17 @@ const LeadMagnetsTable = ({
         onSuccess={() => {
           if (clearSelectionFn) clearSelectionFn();
         }}
+      />
+      <ConfirmationPopup
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={`Delete ${deleteTarget?.ids.length ?? 0} item(s)?`}
+        description={`Are you sure you want to delete ${deleteTarget?.ids.length ?? 0} item(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </>
   );

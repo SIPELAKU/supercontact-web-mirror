@@ -40,6 +40,7 @@ export default function TicketManagementPage() {
         pageSize: 10,
         globalFilter: "",
         columnFilters: [] as { id: string; value: unknown }[],
+        sorting: [{ id: "updated_at", desc: true }] as { id: string; desc: boolean }[],
     });
 
     // Confirmation Hook
@@ -51,6 +52,13 @@ export default function TicketManagementPage() {
         return filter ? (filter.value as string) : "";
     };
 
+    // Server-side sorting (sort_by/sort_order contract)
+    const sortParam = tableState.sorting[0];
+    const sortByParam = sortParam?.id;
+    const sortOrderParam: "asc" | "desc" | undefined = sortParam
+        ? (sortParam.desc ? "desc" : "asc")
+        : undefined;
+
     // Data Fetching
     const { data: ticketData, isLoading, isError } = useTickets(
         tableState.pageIndex + 1, // API is 1-indexed
@@ -58,7 +66,9 @@ export default function TicketManagementPage() {
         tableState.globalFilter,
         getFilterValue("status"),
         getFilterValue("priority"),
-        getFilterValue("assigned_agent")
+        getFilterValue("assigned_agent"),
+        sortByParam,
+        sortOrderParam
     );
 
     const deleteMutation = useDeleteTicket();
@@ -148,6 +158,7 @@ export default function TicketManagementPage() {
             pageSize: state.pagination.pageSize,
             globalFilter: state.globalFilter,
             columnFilters: state.columnFilters,
+            sorting: state.sorting || [],
         });
     };
 
@@ -171,6 +182,10 @@ export default function TicketManagementPage() {
                 if (status) urlParams.set("status", status);
                 if (priority) urlParams.set("priority", priority);
                 if (agentId) urlParams.set("assigned_agent_id", agentId);
+                if (sortByParam) {
+                    urlParams.set("sort_by", sortByParam);
+                    urlParams.set("sort_order", sortOrderParam ?? "asc");
+                }
                 
                 const response = await fetch(
                     `/api/proxy/tickets?${urlParams.toString()}`,

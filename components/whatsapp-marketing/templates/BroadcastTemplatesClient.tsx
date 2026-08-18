@@ -44,29 +44,20 @@ export default function BroadcastTemplatesClient() {
   }, [accounts, accountId]);
 
   // Pagination & search state
+  // (search is already debounced by SuperTable — no extra debounce layer here)
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Confirmation state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
   const { data, isLoading, isError, refetch } = useBroadcastTemplates(
     {
       page,
       limit,
-      search: debouncedSearch || undefined,
+      search: searchQuery || undefined,
       account_id: accountId || undefined,
     },
     { enabled: !!accountId }
@@ -81,12 +72,16 @@ export default function BroadcastTemplatesClient() {
 
   const handleStateChange = useCallback(
     (state: { page: number; limit: number; search: string }) => {
-      if (state.page !== page) setPage(state.page);
+      const searchChanged = state.search !== searchQuery;
+      if (searchChanged) setSearchQuery(state.search);
       if (state.limit !== limit) {
         setLimit(state.limit);
         setPage(1);
+      } else if (searchChanged) {
+        setPage(1); // Reset to first page on search
+      } else if (state.page !== page) {
+        setPage(state.page);
       }
-      if (state.search !== searchQuery) setSearchQuery(state.search);
     },
     [page, limit, searchQuery]
   );

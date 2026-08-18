@@ -146,6 +146,7 @@ export default function ProductTable({
                 )}
                 manualPagination={true}
                 manualFiltering={true}
+                manualSorting={true}
                 features={{
                     sorting: true,
                     globalFilter: true,

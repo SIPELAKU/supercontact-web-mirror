@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { format } from "date-fns";
 import QuotationHeader from "@/components/quotation/QuotationHeader";
 import QuotationTable from "@/components/quotation/QuotationTable";
@@ -11,6 +11,9 @@ import { AppButton } from "@/components/ui/app-button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { deleteQuotation } from "@/lib/api/quotations";
+import { handleError } from "@/lib/utils/errorHandler";
 
 export default function QuotationClient() {
   const router = useRouter();
@@ -29,15 +32,6 @@ export default function QuotationClient() {
     setDateRangeFilter // To handle Date Range Filter externally if mapped
   } = useGetQuotationstore();
 
-  const [tableState, setTableState] = useState({
-    pagination: {
-      pageIndex: 0,
-      pageSize: 10,
-    },
-    globalFilter: "",
-    columnFilters: [] as { id: string; value: unknown }[]
-  });
-
   // Initial fetch on mount
   useEffect(() => {
     fetchQuotations({
@@ -48,37 +42,36 @@ export default function QuotationClient() {
   }, []);
 
   const handleTableStateChange = useCallback((newState: SuperTableState) => {
-    setTableState({
-      pagination: {
-        pageIndex: newState.pagination.pageIndex,
-        pageSize: newState.pagination.pageSize,
-      },
-      globalFilter: newState.globalFilter,
-      columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[]
-    });
-    
     // Date extract untuk dipass ke API (fetchQuotations)
     const dateFilterValue = newState.columnFilters.find((f: any) => f.id === "expire_date")?.value as [Date | null, Date | null] | undefined;
-    
+
     let date_from: string | undefined = undefined;
     let date_to: string | undefined = undefined;
-    
+
     if (dateFilterValue) {
       if (dateFilterValue[0]) date_from = format(dateFilterValue[0], 'yyyy-MM-dd');
       if (dateFilterValue[1]) date_to = format(dateFilterValue[1], 'yyyy-MM-dd');
     }
 
+    // Status filter (server-side; backend accepts status/quotation_status)
+    const statusFilterValue = newState.columnFilters.find((f) => f.id === "quotation_status")?.value as string | undefined;
+
+    // Sorting (server-side; sort_by/sort_order contract)
+    const sort = newState.sorting?.[0];
+
     // Trigger API fetch with combined payload params
-    // Cast any pada fetchQuotations jika index.ts tidak expose date_from di tipenya
-    (fetchQuotations as any)({
+    fetchQuotations({
         page: newState.pagination.pageIndex + 1,
         limit: newState.pagination.pageSize,
         search: newState.globalFilter,
         date_from,
-        date_to
+        date_to,
+        status: statusFilterValue && statusFilterValue !== "" ? statusFilterValue : "all",
+        sort_by: sort?.id,
+        sort_order: sort ? (sort.desc ? "desc" : "asc") : undefined,
     });
 
-  }, [setPage, setLimit, setSearchQuery, fetchQuotations]);
+  }, [fetchQuotations]);
 
 
   const handleExportRequest = async (params: any): Promise<Quotation[]> => {
@@ -116,17 +109,6 @@ export default function QuotationClient() {
     }
   };
 
-  // Client-Side Status Filter Logic
-  const statusFilter = tableState.columnFilters
-    .find((f: {id: string; value: unknown}) => f.id === 'quotation_status')
-    ?.value as string | undefined;
-
-  const filteredQuotations = useMemo(() => {
-    const all = listQuotations || [];
-    if (!statusFilter || statusFilter === '') return all;
-    return all.filter(q => q.quotation_status === statusFilter);
-  }, [listQuotations, statusFilter]);
-
   const handleOpenAddForm = () => {
     router.push("/sales/quotation/add");
   };
@@ -140,9 +122,30 @@ export default function QuotationClient() {
     router.push(`/sales/quotation/${quotation.id}`);
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<Quotation | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDelete = (quotation: Quotation) => {
-     // TODO: Implement deletion when API and store are ready for Quotation
-     notify.info(`Delete module for Quotation ${quotation.quotation_number} is not fully integrated yet!`);
+    setDeleteTarget(quotation);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteQuotation(deleteTarget.id);
+      notify.success(`Quotation ${deleteTarget.quotation_number} deleted`);
+      setDeleteTarget(null);
+      // Refresh the current page of results
+      fetchQuotations({
+        page: pagination.page,
+        limit: pagination.limit,
+      });
+    } catch (err: any) {
+      notify.error("Error", { description: handleError(err, "Delete Quotation") });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -150,7 +153,7 @@ export default function QuotationClient() {
       <QuotationHeader />
       
       <QuotationTable 
-         quotations={filteredQuotations}
+         quotations={listQuotations || []}
          isLoading={loading}
          isError={!!error}
          rowCount={pagination.total}
@@ -180,6 +183,18 @@ export default function QuotationClient() {
              </div>
            </>
          )}
+      />
+
+      <ConfirmationPopup
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Quotation"
+        description={`Are you sure you want to delete quotation ${deleteTarget?.quotation_number ?? ""}? This action is permanent and cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

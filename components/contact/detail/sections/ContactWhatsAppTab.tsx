@@ -9,6 +9,7 @@ import { fetchWithTimeout } from "@/lib/api/api-client";
 import { useCreateWaRecipient } from "@/lib/hooks/useWaRecipients";
 import type { GroupBroadcast, GroupBroadcastsResponse } from "@/lib/types/whatsapp-marketing";
 import { ContactChannelChat } from "./ContactChannelChat";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface ContactWhatsAppTabProps {
     contactId: string;
@@ -58,6 +59,7 @@ export const ContactWhatsAppTab = ({
     const [loadingOptions, setLoadingOptions] = useState(false);
     const [selected, setSelected] = useState<GroupBroadcast | null>(null);
     const [removingId, setRemovingId] = useState<string | null>(null);
+    const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
     const createRecipient = useCreateWaRecipient();
 
     const joinedIds = useMemo(() => new Set(broadcastGroups.map((g) => g.id)), [broadcastGroups]);
@@ -91,11 +93,14 @@ export const ContactWhatsAppTab = ({
         }
     };
 
-    const handleRemove = async (group: { id: string; name: string }) => {
+    const handleConfirmRemove = async () => {
+        if (!removeTarget) return;
+        const group = removeTarget;
         setRemovingId(group.id);
         try {
             await deleteRecipientFromBroadcastGroup(token, group.id, contactId);
             notify.success("Removed", { description: `Removed from "${group.name}".` });
+            setRemoveTarget(null);
             onChanged();
         } catch (err) {
             notify.error("Error", { description: handleError(err, "Remove from Broadcast Group") });
@@ -145,7 +150,7 @@ export const ContactWhatsAppTab = ({
                                 component="a"
                                 href={`/whatsapp-marketing/group-broadcasting/${group.id}`}
                                 clickable
-                                onDelete={() => handleRemove(group)}
+                                onDelete={() => setRemoveTarget(group)}
                                 deleteIcon={
                                     removingId === group.id ? undefined : <X size={14} />
                                 }
@@ -181,6 +186,18 @@ export const ContactWhatsAppTab = ({
                     {createRecipient.isPending ? "Adding..." : "Add"}
                 </AppButton>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!removeTarget}
+                onClose={() => setRemoveTarget(null)}
+                onConfirm={handleConfirmRemove}
+                title="Remove from Broadcast Group"
+                description={`Remove this contact from "${removeTarget?.name ?? ""}"? They will no longer receive broadcasts sent to this group.`}
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={removingId === removeTarget?.id}
+            />
         </div>
     );
 };

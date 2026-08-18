@@ -34,7 +34,7 @@ import { format }
 import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus, History } from 'lucide-react';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const MailingListDetailPage = () => {
     const params = useParams();
@@ -42,15 +42,8 @@ const MailingListDetailPage = () => {
     const listId = String(params.id);
 
     const [activeTab, setActiveTab] = useState(0);
+    // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
 
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
@@ -60,13 +53,13 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
-    const { data: mailingListData, isLoading, isFetching, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
+    const { data: mailingListData, isLoading, isFetching, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? searchQuery : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
     const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
     const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? debouncedSearch : undefined, activeTab === 1);
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? searchQuery : undefined, activeTab === 1);
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
@@ -240,13 +233,16 @@ const MailingListDetailPage = () => {
                         isFetching={isFetching}
                         rowCount={totalSubscribers}
                         manualPagination={true}
+                        manualFiltering={true}
                         onStateChange={(state) => {
-                            if (state.pagination) {
+                            const searchChanged = state.globalFilter !== undefined && state.globalFilter !== searchQuery;
+                            if (searchChanged) {
+                                setSearchQuery(state.globalFilter);
+                                setSubscriberPage(0); // Reset to first page on search
+                                setSubscriberRowsPerPage(state.pagination?.pageSize ?? subscriberRowsPerPage);
+                            } else if (state.pagination) {
                                 setSubscriberPage(state.pagination.pageIndex);
                                 setSubscriberRowsPerPage(state.pagination.pageSize);
-                            }
-                            if (state.globalFilter !== undefined) {
-                                setSearchQuery(state.globalFilter);
                             }
                         }}
                         features={{
@@ -339,13 +335,16 @@ const MailingListDetailPage = () => {
                         isFetching={isFetchingCampaigns}
                         rowCount={totalCampaigns}
                         manualPagination={true}
+                        manualFiltering={true}
                         onStateChange={(state) => {
-                            if (state.pagination) {
+                            const searchChanged = state.globalFilter !== undefined && state.globalFilter !== searchQuery;
+                            if (searchChanged) {
+                                setSearchQuery(state.globalFilter);
+                                setCampaignPage(0); // Reset to first page on search
+                                setCampaignRowsPerPage(state.pagination?.pageSize ?? campaignRowsPerPage);
+                            } else if (state.pagination) {
                                 setCampaignPage(state.pagination.pageIndex);
                                 setCampaignRowsPerPage(state.pagination.pageSize);
-                            }
-                            if (state.globalFilter !== undefined) {
-                                setSearchQuery(state.globalFilter);
                             }
                         }}
                         features={{

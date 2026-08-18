@@ -7,6 +7,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketSlaPolicies,
     useCreateTicketSlaPolicy,
@@ -45,6 +46,7 @@ export default function SlaPolicySettingsTab() {
     const [firstResponseMinutes, setFirstResponseMinutes] = useState("60");
     const [resolutionMinutes, setResolutionMinutes] = useState("480");
     const [calendarId, setCalendarId] = useState("");
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
         setName("");
@@ -82,10 +84,12 @@ export default function SlaPolicySettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("SLA policy removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -209,7 +213,7 @@ export default function SlaPolicySettingsTab() {
                                     <TableCell>{formatMinutes(policy.resolution_target_minutes)}</TableCell>
                                     <TableCell align="right">
                                         <button
-                                            onClick={() => handleDelete(policy.id)}
+                                            onClick={() => setDeleteTarget({ id: policy.id, name: policy.name })}
                                             className="text-gray-300 hover:text-red-500"
                                             aria-label="Delete SLA policy"
                                         >
@@ -222,6 +226,18 @@ export default function SlaPolicySettingsTab() {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete SLA Policy"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

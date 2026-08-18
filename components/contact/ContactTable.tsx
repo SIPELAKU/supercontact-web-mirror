@@ -73,6 +73,7 @@ export const ContactTable = ({
   return (
     <>
       <SuperTable<Contact>
+        tableId="contacts-table"
         data={data}
         columns={contactColumns}
         isLoading={isLoading}
@@ -80,6 +81,8 @@ export const ContactTable = ({
         errorMessage={errorMessage}
         rowCount={rowCount}
         manualPagination={true}
+        manualFiltering={true}
+        manualSorting={true}
         autoResetPageIndex={false}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}

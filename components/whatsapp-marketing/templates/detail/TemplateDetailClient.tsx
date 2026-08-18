@@ -267,13 +267,14 @@ export default function TemplateDetailClient() {
         onOpenChange={setIsModalOpen}
         formData={activeFormData}
         initialSamples={editVariables}
-        onSave={(samples: Record<string, string>) => {
+        isSaving={updateMutation.isPending}
+        onSave={async (samples: Record<string, string>) => {
+          await handleSave(samples);
           setIsModalOpen(false);
-          handleSave(samples);
         }}
-        onSaveWithoutSamples={() => {
+        onSaveWithoutSamples={async () => {
+          await handleSave();
           setIsModalOpen(false);
-          handleSave();
         }}
       />
     </div>

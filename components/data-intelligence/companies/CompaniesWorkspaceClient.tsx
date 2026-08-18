@@ -146,6 +146,7 @@ export default function CompaniesWorkspaceClient() {
         try {
             const token = await getToken();
             const payload = filterCriteriaToPayload(filterCriteria, {
+                page: discoverTableState.pagination.pageIndex + 1,
                 limit: discoverTableState.pagination.pageSize,
                 q: discoverTableState.globalFilter || "",
             });

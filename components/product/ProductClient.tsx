@@ -10,17 +10,24 @@ import { AppButton } from "@/components/ui/app-button";
 import { Plus } from "lucide-react";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function ProductClient() {
-  const { listProduct, loading, pagination, setPage, setLimit, setSearchQuery, setEditId, deleteProduct, fetchProduct } = useGetProductStore();
+  const { listProduct, loading, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, fetchProduct } = useGetProductStore();
   const { token } = useAuth();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  const prevStateRef = useRef({
+  const prevStateRef = useRef<{
+    page: number;
+    limit: number;
+    search: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  }>({
     page: 1,
-    limit: 10, 
+    limit: 10,
     search: ""
   });
 
@@ -59,12 +66,36 @@ export default function ProductClient() {
       fetchProduct({ search: newSearch, page: 1 });
       return;
     }
-  }, [setLimit, setPage, setSearchQuery, fetchProduct]);
+
+    // Server-side sorting (sort_by/sort_order contract)
+    const sort = state.sorting?.[0];
+    const newSortBy = sort?.id;
+    const newSortOrder: "asc" | "desc" | undefined = sort
+      ? (sort.desc ? "desc" : "asc")
+      : undefined;
+    if (prev.sortBy !== newSortBy || prev.sortOrder !== newSortOrder) {
+      prevStateRef.current = { ...prev, sortBy: newSortBy, sortOrder: newSortOrder };
+      setSort(newSortBy, newSortOrder);
+      fetchProduct({ sort_by: newSortBy, sort_order: newSortOrder });
+      return;
+    }
+  }, [setLimit, setPage, setSearchQuery, setSort, fetchProduct]);
+
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    products: Product[];
+    clearSelection: () => void;
+  } | null>(null);
 
   const handleBulkDelete = async (
     selectedProducts: Product[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ products: selectedProducts, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { products: selectedProducts, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -87,8 +118,9 @@ export default function ProductClient() {
     }
     
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
-    
+
     if (successCount > 0) {
       notify.success(`${successCount} produk berhasil dihapus`);
     }
@@ -177,6 +209,17 @@ export default function ProductClient() {
          renderTopLeftToolbar={renderTopLeftToolbar}
          onBulkDelete={handleBulkDelete}
          isBulkDeleting={isBulkDeleting}
+      />
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.products.length ?? 0} product(s)?`}
+        description="The selected products will be permanently deleted. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
       />
     </div>
   );

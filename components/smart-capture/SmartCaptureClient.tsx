@@ -13,12 +13,22 @@ import { Tabs, Tab, Box, Badge, Chip } from '@mui/material';
 
 export default function SmartCaptureClient() {
   const [tabIndex, setTabIndex] = useState(0);
-  const [params, setParams] = useState({
+  const [params, setParams] = useState<{
+    page: number;
+    limit: number;
+    search: string;
+    status: string;
+    target: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+  }>({
     page: 1,
     limit: 10,
     search: '',
     status: '',
     target: '',
+    sort_by: undefined,
+    sort_order: undefined,
   });
 
   // Query for Active campaigns
@@ -34,11 +44,14 @@ export default function SmartCaptureClient() {
   });
 
   const handleStateChange = (state: SuperTableState) => {
+    const sort = state.sorting?.[0];
     setParams((prev) => ({
       ...prev,
       page: state.pagination.pageIndex + 1,
       limit: state.pagination.pageSize,
       search: state.globalFilter,
+      sort_by: sort?.id,
+      sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
     }));
   };
 

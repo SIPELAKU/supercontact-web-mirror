@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketCategories,
     useCreateTicketCategory,
@@ -19,6 +20,7 @@ export default function CategoriesSettingsTab() {
     const deleteMutation = useDeleteTicketCategory();
 
     const [newName, setNewName] = useState("");
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const handleAdd = async () => {
         if (!newName.trim()) {
@@ -34,10 +36,12 @@ export default function CategoriesSettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("Category removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -95,7 +99,7 @@ export default function CategoriesSettingsTab() {
                                     <TableCell>{c.name}</TableCell>
                                     <TableCell align="right">
                                         <button
-                                            onClick={() => handleDelete(c.id)}
+                                            onClick={() => setDeleteTarget({ id: c.id, name: c.name })}
                                             className="text-gray-300 hover:text-red-500"
                                             aria-label="Delete category"
                                         >
@@ -108,6 +112,18 @@ export default function CategoriesSettingsTab() {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Category"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

@@ -59,16 +59,35 @@ export const ContactClient = () => {
     // --- Current table state from SuperTable ---
     const currentPageRef = useRef(0);
     const currentPageSizeRef = useRef(10);
+    const currentSearchRef = useRef("");
+    const currentSortByRef = useRef<string | undefined>(undefined);
+    const currentSortOrderRef = useRef<"asc" | "desc" | undefined>(undefined);
 
-    const loadData = useCallback(async (page: number, pageSize: number) => {
+    const loadData = useCallback(async (
+        page: number,
+        pageSize: number,
+        search?: string,
+        sortBy?: string,
+        sortOrder?: "asc" | "desc",
+    ) => {
         setLoading(true);
         setError(null);
         try {
             const token = await getToken();
             if (!token) throw new Error("No authentication token");
 
+            const params = new URLSearchParams({
+                page: String(page + 1),
+                limit: String(pageSize),
+            });
+            if (search) params.set("search", search);
+            if (sortBy) {
+                params.set("sort_by", sortBy);
+                params.set("sort_order", sortOrder ?? "asc");
+            }
+
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${page + 1}&limit=${pageSize}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/contacts?${params.toString()}`,
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -99,19 +118,34 @@ export const ContactClient = () => {
         loadData(0, 10);
     }, [loadData]);
 
-    // --- SuperTable State Change Handler (pagination only, filters are client-side) ---
+    // --- SuperTable State Change Handler (server-side pagination + search + sorting) ---
     const handleStateChange = useCallback((state: SuperTableState) => {
-        const newPage = state.pagination?.pageIndex ?? 0;
         const newPageSize = state.pagination?.pageSize ?? 10;
+        const newSearch = state.globalFilter ?? "";
+        const sort = state.sorting?.[0];
+        const newSortBy = sort?.id;
+        const newSortOrder: "asc" | "desc" | undefined = sort
+            ? (sort.desc ? "desc" : "asc")
+            : undefined;
 
-        // Only refetch if pagination params actually changed
+        const searchChanged = newSearch !== currentSearchRef.current;
+        // Reset to first page when the search term changes
+        const newPage = searchChanged ? 0 : (state.pagination?.pageIndex ?? 0);
+
+        // Only refetch if server-side params actually changed
         if (
             newPage !== currentPageRef.current ||
-            newPageSize !== currentPageSizeRef.current
+            newPageSize !== currentPageSizeRef.current ||
+            searchChanged ||
+            newSortBy !== currentSortByRef.current ||
+            newSortOrder !== currentSortOrderRef.current
         ) {
             currentPageRef.current = newPage;
             currentPageSizeRef.current = newPageSize;
-            loadData(newPage, newPageSize);
+            currentSearchRef.current = newSearch;
+            currentSortByRef.current = newSortBy;
+            currentSortOrderRef.current = newSortOrder;
+            loadData(newPage, newPageSize, newSearch, newSortBy, newSortOrder);
         }
     }, [loadData]);
 
@@ -159,7 +193,13 @@ export const ContactClient = () => {
 
     // --- Reload helper ---
     const reloadCurrentPage = useCallback(() => {
-        loadData(currentPageRef.current, currentPageSizeRef.current);
+        loadData(
+            currentPageRef.current,
+            currentPageSizeRef.current,
+            currentSearchRef.current,
+            currentSortByRef.current,
+            currentSortOrderRef.current,
+        );
     }, [loadData]);
 
     // --- Handlers ---

@@ -21,6 +21,7 @@ import {
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { SuperTableState } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface FormattedMember {
   id: string;
@@ -47,6 +48,7 @@ export default function DetailDepartments() {
     pagination: { pageIndex: 0, pageSize: 10 },
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[],
   });
 
   // Extract filters from SuperTable state
@@ -54,6 +56,17 @@ export default function DetailDepartments() {
     .find((f) => f.id === "position")?.value as string | undefined;
   const statusFilter = tableState.columnFilters
     .find((f) => f.id === "status")?.value as string | undefined;
+
+  // Server-side sorting: map table column ids to backend field names
+  const MEMBER_SORT_KEYS: Record<string, string> = {
+    user: "name", // backend member whitelist key for the joined User.fullname
+    id_employee: "employee_code",
+  };
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam ? (MEMBER_SORT_KEYS[sortParam.id] ?? sortParam.id) : undefined;
+  const sortOrderParam: "asc" | "desc" | undefined = sortParam
+    ? (sortParam.desc ? "desc" : "asc")
+    : undefined;
 
   // React Query Hooks
   const { data: departmentResponse, isLoading: isLoadingDept } =
@@ -72,7 +85,9 @@ export default function DetailDepartments() {
     {
       position: positionFilter || undefined,
       status: statusFilter || undefined,
-    }
+    },
+    sortByParam,
+    sortOrderParam
   );
 
   const deleteMutation = useDeleteMember(id, ""); // memberId is required in hook params for React Query key, but the mutation actually takes args if not supplied in hook or we can just use regular hook. The hook is useDeleteMember(deptId, memberId) which is suboptimal for bulk.
@@ -104,14 +119,26 @@ export default function DetailDepartments() {
       },
       globalFilter: newState.globalFilter,
       columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+      sorting: (newState.sorting || []) as { id: string; desc: boolean }[],
     });
   }, []);
 
   // Bulk Delete
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    members: FormattedMember[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedMembers: FormattedMember[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ members: selectedMembers, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { members: selectedMembers, clearSelection } = bulkDeleteTarget;
     if (!token) return;
     setIsBulkDeleting(true);
     let successCount = 0;
@@ -137,6 +164,7 @@ export default function DetailDepartments() {
     }
 
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
 
     if (successCount > 0) {
@@ -311,6 +339,18 @@ export default function DetailDepartments() {
           memberId={memberId}
         />
       )}
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Remove ${bulkDeleteTarget?.members.length ?? 0} member(s)?`}
+        description="The selected members will be removed from this department. This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
+      />
     </div>
   );
 }

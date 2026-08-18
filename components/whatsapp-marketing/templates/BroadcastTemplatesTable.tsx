@@ -97,6 +97,7 @@ const BroadcastTemplatesTable = ({
       rowCount={totalCount}
       isLoading={isLoading}
       manualPagination={true}
+      manualFiltering={true}
       onStateChange={(state) => {
         onStateChange({
           page: state.pagination.pageIndex + 1,

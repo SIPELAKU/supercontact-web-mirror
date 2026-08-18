@@ -6,6 +6,7 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useBusinessHours,
     useCreateBusinessHours,
@@ -34,6 +35,7 @@ export default function BusinessHoursSettingsTab() {
     const [timezone, setTimezone] = useState("Asia/Jakarta");
     const [isDefault, setIsDefault] = useState(false);
     const [weeklyHours, setWeeklyHours] = useState<Record<string, WeekdayHours>>(DEFAULT_WEEKLY_HOURS);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
         setEditingId(null);
@@ -84,10 +86,12 @@ export default function BusinessHoursSettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("Calendar removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -247,7 +251,7 @@ export default function BusinessHoursSettingsTab() {
                                                 <Pencil size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(calendar.id)}
+                                                onClick={() => setDeleteTarget({ id: calendar.id, name: calendar.name })}
                                                 className="text-gray-300 hover:text-red-500"
                                                 aria-label="Delete calendar"
                                             >
@@ -261,6 +265,18 @@ export default function BusinessHoursSettingsTab() {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Calendar"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? SLA policies using this calendar will fall back to 24/7.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

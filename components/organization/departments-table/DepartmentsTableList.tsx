@@ -67,6 +67,9 @@ export default function DepartmentsTableList({
       accessorFn: (row) => row.manager?.fullname || "-",
       header: "Manager",
       enableColumnFilter: false,
+      // Manager/member metadata is resolved in a separate post-query on
+      // the backend - not sortable server-side, so no sort arrow.
+      enableSorting: false,
       Cell: ({ row }) =>
         row.original.manager === null ? (
           <span>-</span>
@@ -88,11 +91,13 @@ export default function DepartmentsTableList({
       accessorKey: "manager_code",
       header: "Manager ID",
       enableColumnFilter: false,
+      enableSorting: false,
     },
     {
       accessorKey: "member_count",
       header: "Member Count",
       enableColumnFilter: false,
+      enableSorting: false,
       muiTableBodyCellProps: { align: "center" },
       muiTableHeadCellProps: { align: "center" },
     },

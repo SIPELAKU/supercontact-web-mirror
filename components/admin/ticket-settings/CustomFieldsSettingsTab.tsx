@@ -7,6 +7,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketCustomFields,
     useCreateTicketCustomField,
@@ -33,6 +34,7 @@ export default function CustomFieldsSettingsTab() {
     const [fieldType, setFieldType] = useState<TicketCustomFieldType>("text");
     const [selectOptions, setSelectOptions] = useState("");
     const [isRequired, setIsRequired] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
     const handleAdd = async () => {
         if (!fieldKey.trim() || !label.trim()) {
@@ -65,10 +67,12 @@ export default function CustomFieldsSettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("Custom field removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -175,7 +179,7 @@ export default function CustomFieldsSettingsTab() {
                                     <TableCell>{def.is_required ? "Yes" : "No"}</TableCell>
                                     <TableCell align="right">
                                         <button
-                                            onClick={() => handleDelete(def.id)}
+                                            onClick={() => setDeleteTarget({ id: def.id, label: def.label })}
                                             className="text-gray-300 hover:text-red-500"
                                             aria-label="Delete custom field"
                                         >
@@ -188,6 +192,18 @@ export default function CustomFieldsSettingsTab() {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Custom Field"
+                description={`Are you sure you want to delete "${deleteTarget?.label ?? ""}"? Existing values for this field will no longer be validated.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

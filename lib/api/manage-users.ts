@@ -7,7 +7,9 @@ export async function fetchManagedUsers(
   limit: number,
   search?: string,
   position?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ): Promise<ManageUserResponse> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -16,6 +18,10 @@ export async function fetchManagedUsers(
   if (search) params.append("search", search);
   if (position) params.append("position", position);
   if (status) params.append("status", status);
+  if (sortBy) {
+    params.append("sort_by", sortBy);
+    params.append("sort_order", sortOrder ?? "asc");
+  }
 
   const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/manage-users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

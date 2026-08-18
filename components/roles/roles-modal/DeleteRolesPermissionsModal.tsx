@@ -79,6 +79,7 @@ export default function DeleteRolesPermissionsModal({
             color="danger"
             type="reset"
             onClick={() => setOpen(false)}
+            disabled={isDeleting}
           >
             Cancel
           </AppButton>
@@ -87,8 +88,9 @@ export default function DeleteRolesPermissionsModal({
             color="danger"
             type="submit"
             disabled={isDeleting}
+            isLoading={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete Role"}
+            Delete Role
           </AppButton>
         </DialogActions>
       </form>

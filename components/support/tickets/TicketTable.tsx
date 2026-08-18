@@ -117,6 +117,9 @@ export function TicketTable({
             },
             {
                 id: "assigned_agent", // Filter is using this string
+                // Agent name lives on the joined User (selectinload, not a
+                // join) - backend can't sort by it, so no sort arrow.
+                enableSorting: false,
                 accessorFn: (row: Ticket) => row.assigned_agent?.fullname || "Unassigned",
                 header: "Assigned Agent",
                 filterVariant: "select",
@@ -166,6 +169,7 @@ export function TicketTable({
 
     return (
         <SuperTable<Ticket>
+            tableId="tickets-table"
             columns={columns}
             data={tickets || []}
             isLoading={isLoading}
@@ -242,6 +246,8 @@ export function TicketTable({
             )}
             manualPagination={true}
             manualFiltering={true}
+            manualSorting={true}
+            initialState={{ sorting: [{ id: "updated_at", desc: true }] }}
             features={{
                 sorting: true,
                 globalFilter: true,

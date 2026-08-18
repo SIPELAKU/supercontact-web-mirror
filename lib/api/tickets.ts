@@ -38,7 +38,9 @@ export async function fetchTickets(
     search?: string,
     status?: string,
     priority?: string,
-    agentId?: string
+    agentId?: string,
+    sortBy?: string,
+    sortOrder?: "asc" | "desc"
 ): Promise<TicketResponse> {
     const queryParams = new URLSearchParams({
         page: String(page),
@@ -49,6 +51,10 @@ export async function fetchTickets(
     if (status && status !== "Select Status") queryParams.append("status", status);
     if (priority && priority !== "Select Priority") queryParams.append("priority", priority);
     if (agentId && agentId !== "Select Agent") queryParams.append("assigned_agent_id", agentId);
+    if (sortBy) {
+        queryParams.append("sort_by", sortBy);
+        queryParams.append("sort_order", sortOrder ?? "asc");
+    }
 
     const url = getFullUrl(`/tickets?${queryParams.toString()}`);
 

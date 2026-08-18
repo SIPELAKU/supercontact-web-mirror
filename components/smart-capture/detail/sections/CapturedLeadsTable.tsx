@@ -40,7 +40,13 @@ export const CapturedLeadsTable = () => {
   const params = useParams();
   const id = params.id as string;
 
-  const [tableParams, setTableParams] = useState({
+  const [tableParams, setTableParams] = useState<{
+    page: number;
+    limit: number;
+    search: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+  }>({
     page: 1,
     limit: 10,
     search: '',
@@ -108,11 +114,14 @@ export const CapturedLeadsTable = () => {
   };
 
   const handleStateChange = (state: SuperTableState) => {
+    const sort = state.sorting?.[0];
     setTableParams((prev) => ({
       ...prev,
       page: state.pagination.pageIndex + 1,
       limit: state.pagination.pageSize,
       search: state.globalFilter || '',
+      sort_by: sort?.id,
+      sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
     }));
   };
 

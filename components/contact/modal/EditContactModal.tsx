@@ -76,6 +76,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -164,6 +165,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       custom_fields: Object.keys(customFields).length > 0 ? customFields : undefined,
     };
 
+    setIsSubmitting(true);
     try {
       const token = await getToken();
 
@@ -205,6 +207,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       notify.error("Error", {
         description: message,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -364,13 +368,20 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
             </div>
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
-              <AppButton onClick={handleClose} variantStyle="outline" color="primary">
+              <AppButton
+                onClick={handleClose}
+                variantStyle="outline"
+                color="primary"
+                disabled={isSubmitting}
+              >
                 Cancel
               </AppButton>
               <AppButton
                 onClick={handleSubmit}
                 variantStyle="primary"
                 color="primary"
+                disabled={isSubmitting}
+                isLoading={isSubmitting}
               >
                 Update Contact
               </AppButton>

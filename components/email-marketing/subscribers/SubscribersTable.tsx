@@ -24,7 +24,7 @@ interface SubscribersTableProps {
   onImportHistory: () => void;
   onDeleteAllRequest: () => void;
   onExportRequest?: (params: any) => Promise<Subscriber[]>;
-  onStateChange: (state: { page: number; limit: number; search: string }) => void;
+  onStateChange: (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => void;
   onDuplicate?: (ids: string[]) => void;
   isDuplicating?: boolean;
   onSuccess?: () => void;
@@ -92,13 +92,14 @@ const SubscribersTable = ({
         rowCount={totalCount}
         isLoading={isLoading}
         manualPagination={true}
-        manualSorting={false}
-        manualFiltering={false}
+        manualSorting={true}
+        manualFiltering={true}
         onStateChange={(state) => {
           onStateChange({
             page: state.pagination.pageIndex + 1,
             limit: state.pagination.pageSize,
             search: state.globalFilter || '',
+            sorting: state.sorting || [],
           });
         }}
         onExportRequest={onExportRequest}

@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { Contact } from "@/lib/models/types";
 import { deleteContact } from "@/lib/api/contacts";
 import { useAuth } from "@/lib/context/AuthContext";
-import { CircularProgress } from "@mui/material";
+import { AppButton } from "@/components/ui/app-button";
 
 interface DeleteContactModalProps {
   open: boolean;
@@ -86,27 +86,23 @@ const DeleteMultipleContactModal: React.FC<DeleteContactModalProps> = ({
           </p>
 
           <div className="flex justify-end gap-3 mt-8 font-medium">
-            <button
+            <AppButton
               onClick={onClose}
+              variantStyle="outline"
+              color="danger"
               disabled={isDeleting}
-              className="cursor-pointer px-5 py-3 rounded-lg text-[#FF4D49] border-[#FF4D49] border disabled:opacity-50"
             >
               Cancel
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               onClick={handleSubmit}
+              variantStyle="danger"
+              color="danger"
               disabled={isDeleting}
-              className="cursor-pointer px-6 py-3 rounded-lg bg-[#FF4D49] text-white hover:bg-[#e04440] transition-colors disabled:opacity-50 flex items-center gap-2"
+              isLoading={isDeleting}
             >
-              {isDeleting ? (
-                <>
-                  <CircularProgress size={16} color="inherit" />
-                  Deleting...
-                </>
-              ) : (
-                `Delete ${selected.length} Contact${selected.length > 1 ? "s" : ""}`
-              )}
-            </button>
+              {`Delete ${selected.length} Contact${selected.length > 1 ? "s" : ""}`}
+            </AppButton>
           </div>
         </div>
       </div>

@@ -17,6 +17,7 @@ import {
     ChatMessage,
     NewChatUser
 } from "@/lib/api/chat";
+import { notify } from "@/lib/notifications";
 
 export type UIMessage = ChatMessage & { isPending?: boolean; localPreviewUrl?: string };
 
@@ -340,7 +341,7 @@ export function useChat() {
             recordingTimerRef.current = setInterval(() => setRecordingDuration(prev => prev + 1), 1000);
         } catch (err) {
             console.error("Failed to start recording", err);
-            alert("Could not access microphone.");
+            notify.error("Could not access microphone.");
         }
     };
 

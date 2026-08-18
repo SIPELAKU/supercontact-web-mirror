@@ -29,13 +29,24 @@ export interface UpdateSubscriberData {
 // Functions
 // ============================================
 
-export async function fetchSubscribers(token: string, page: number = 1, limit: number = 10, search?: string): Promise<SubscribersResponse> {
+export async function fetchSubscribers(
+  token: string,
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+): Promise<SubscribersResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
   if (search) {
     queryParams.append('search', search);
+  }
+  if (sortBy) {
+    queryParams.append('sort_by', sortBy);
+    queryParams.append('sort_order', sortOrder ?? 'asc');
   }
   const url = `${process.env.NEXT_PUBLIC_API_URL}/subscribers?${queryParams.toString()}`;
 

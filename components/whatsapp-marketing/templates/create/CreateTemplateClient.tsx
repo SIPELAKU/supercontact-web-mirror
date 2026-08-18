@@ -200,13 +200,14 @@ export default function CreateTemplateClient() {
         onOpenChange={setIsModalOpen}
         formData={activeFormData}
         initialSamples={variables}
-        onSave={(samples: Record<string, string>) => {
+        isSaving={mutation.isPending}
+        onSave={async (samples: Record<string, string>) => {
+          await handleCreate(samples);
           setIsModalOpen(false);
-          handleCreate(samples);
         }}
-        onSaveWithoutSamples={() => {
+        onSaveWithoutSamples={async () => {
+          await handleCreate();
           setIsModalOpen(false);
-          handleCreate();
         }}
       />
     </div>

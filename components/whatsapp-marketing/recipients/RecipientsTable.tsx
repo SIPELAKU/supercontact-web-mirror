@@ -23,7 +23,7 @@ interface RecipientsTableProps {
   onDeleteRequest: (ids: string[]) => void;
   onDeleteAll?: () => void;
   onDuplicate?: (ids: string[], target: string) => void;
-  onStateChange: (state: { page: number; limit: number; search: string }) => void;
+  onStateChange: (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => void;
   isDuplicating?: boolean;
   onSuccess?: () => void;
 }
@@ -88,13 +88,14 @@ const RecipientsTable = ({
         rowCount={totalCount}
         isLoading={isLoading}
         manualPagination={true}
-        manualSorting={false}
-        manualFiltering={false}
+        manualSorting={true}
+        manualFiltering={true}
         onStateChange={(state) => {
           onStateChange({
             page: state.pagination.pageIndex + 1,
             limit: state.pagination.pageSize,
             search: state.globalFilter || '',
+            sorting: state.sorting || [],
           });
         }}
         initialState={{

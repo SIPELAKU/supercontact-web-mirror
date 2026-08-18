@@ -24,6 +24,7 @@ import { SuperTableState } from "@/components/ui/super-table";
 import { fetchManagedUsers } from "@/lib/api/manage-users";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function UsersClient() {
   const { token } = useAuth();
@@ -53,7 +54,8 @@ export default function UsersClient() {
     pageIndex: 0,
     pageSize: 10,
     globalFilter: "",
-    columnFilters: [] as { id: string; value: unknown }[]
+    columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[]
   });
 
   const handleTableStateChange = (state: SuperTableState) => {
@@ -61,7 +63,8 @@ export default function UsersClient() {
       pageIndex: state.pagination.pageIndex,
       pageSize: state.pagination.pageSize,
       globalFilter: state.globalFilter,
-      columnFilters: state.columnFilters || []
+      columnFilters: state.columnFilters || [],
+      sorting: state.sorting || []
     });
   };
 
@@ -84,13 +87,20 @@ export default function UsersClient() {
   })();
   const statusFilter = getFilterValue("status") || undefined;
 
+  // Server-side sorting (sort_by/sort_order contract)
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: "asc" | "desc" | undefined = sortParam
+    ? (sortParam.desc ? "desc" : "asc")
+    : undefined;
+
   // React Query Fetcher (Main Table Data)
   const {
     data: usersResponse,
     isLoading,
     isError,
     error,
-  } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter);
+  } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter, sortByParam, sortOrderParam);
 
   // Error Handling
   useEffect(() => {
@@ -125,12 +135,14 @@ export default function UsersClient() {
     // We fetch without arbitrary limit restrictions to export everything reflecting current filters
     do {
       const resp = await fetchManagedUsers(
-        token, 
-        currentPage, 
+        token,
+        currentPage,
         1000, // Safe large chunk threshold
-        searchParam, 
-        positionFilter, 
-        statusFilter
+        searchParam,
+        positionFilter,
+        statusFilter,
+        sortByParam,
+        sortOrderParam
       );
       
       if (!resp.success) {
@@ -148,10 +160,21 @@ export default function UsersClient() {
     return allData;
   };
 
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    users: ManageUser[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedUsers: ManageUser[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ users: selectedUsers, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { users: selectedUsers, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -166,8 +189,9 @@ export default function UsersClient() {
     }
     
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
-    
+
     if (successCount > 0) {
       notify.success(`${successCount} user berhasil dihapus`);
     }
@@ -291,6 +315,18 @@ export default function UsersClient() {
           columns={printableColumns}
         />
       </div>
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.users.length ?? 0} user(s)?`}
+        description="The selected users will be permanently deleted. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
+      />
     </div>
   );
 }

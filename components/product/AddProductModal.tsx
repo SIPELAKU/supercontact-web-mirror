@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
-import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 
@@ -387,8 +386,9 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             color="primary"
                             onClick={handleSave}
                             disabled={loading}
+                            isLoading={loading}
                         >
-                            {loading ? <Spinner /> : id ? "Update Product" : "Save Product"}
+                            {id ? "Update Product" : "Save Product"}
                         </AppButton>
                     </div>
                 </DialogContent>

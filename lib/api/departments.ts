@@ -15,7 +15,9 @@ export async function fetchDepartments(
   limit: number,
   search?: string,
   department?: string,
-  branch?: string
+  branch?: string,
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ): Promise<{ success: boolean; data: ResponseDepartmentsType; error: string | null }> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -24,6 +26,10 @@ export async function fetchDepartments(
   if (search) params.append("search", search);
   if (department) params.append("department", department);
   if (branch) params.append("branch", branch);
+  if (sortBy) {
+    params.append("sort_by", sortBy);
+    params.append("sort_order", sortOrder ?? "asc");
+  }
 
   const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -78,7 +84,9 @@ export async function fetchDepartmentMembers(
   limit: number,
   search?: string,
   position?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ): Promise<DepartmentMembersResponse> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -87,6 +95,10 @@ export async function fetchDepartmentMembers(
   if (search) params.append("search", search);
   if (position) params.append("position", position);
   if (status) params.append("status", status);
+  if (sortBy) {
+    params.append("sort_by", sortBy);
+    params.append("sort_order", sortOrder ?? "asc");
+  }
 
   const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/departments/${departmentId}/members?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

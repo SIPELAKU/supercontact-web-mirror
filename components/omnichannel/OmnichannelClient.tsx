@@ -29,7 +29,8 @@ import {
     Paperclip,
     Settings,
     UserRound,
-    Ticket as TicketIcon
+    Ticket as TicketIcon,
+    Flame
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
@@ -639,7 +640,17 @@ export default function OmnichannelClient() {
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex justify-between items-start">
-                                                    <h4 className="font-bold text-gray-900 truncate text-sm">{contact.display_name}</h4>
+                                                    <div className="flex items-center gap-1 min-w-0">
+                                                        <h4 className="font-bold text-gray-900 truncate text-sm">{contact.display_name}</h4>
+                                                        {contact.is_frequent && (
+                                                            <span
+                                                                className="inline-flex items-center shrink-0"
+                                                                title={`Frequent contact — ${contact.frequent_message_count ?? 0} messages in the last 30 days`}
+                                                            >
+                                                                <Flame className="w-3 h-3 text-orange-500" />
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {contact.last_message_at && (
                                                         <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
                                                             {formatDistanceToNow(new Date(contact.last_message_at), { addSuffix: false })

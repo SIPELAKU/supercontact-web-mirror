@@ -141,6 +141,8 @@ export interface OmnichannelContact {
   last_message_at?: string;
   last_message_preview?: string;
   subject?: string;
+  is_frequent: boolean;
+  frequent_message_count?: number;
 }
 
 export interface OmnichannelContactsResponse {

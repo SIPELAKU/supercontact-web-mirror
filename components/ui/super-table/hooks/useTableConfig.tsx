@@ -41,13 +41,13 @@ export function useTableConfig<TData extends object>(
     densityToggle = false,
     fullScreenToggle = false,
     pagination = true,
+    pageSizeOptions = [10, 25, 50, 100],
     rowSelection = 'none',
     inlineEditing = false,
     maxHeight = '70vh',
     stickyHeader = true,
 
     // Filtering Defaults
-    smartFilterVariants = true,
     facetedValues = true,
     filterSwitching = true,
     popoverFilters = false,
@@ -101,6 +101,14 @@ export function useTableConfig<TData extends object>(
       },
     },
 
+    // ─── Row Identity ────────────────
+    // ID baris stabil (bukan index) supaya selection tidak "nempel" ke
+    // baris lain saat pindah halaman pada manualPagination.
+    getRowId: (originalRow, index) =>
+      props.getRowId
+        ? props.getRowId(originalRow, index)
+        : String((originalRow as { id?: string | number }).id ?? index),
+
     // ─── Server-Side Handling ────────
     manualPagination: props.manualPagination,
     rowCount: props.rowCount,
@@ -121,8 +129,14 @@ export function useTableConfig<TData extends object>(
     enableDensityToggle: densityToggle,
     enableFullScreenToggle: fullScreenToggle,
     enablePagination: pagination,
+    enableStickyHeader: stickyHeader,
     enableRowSelection: rowSelection !== 'none',
     enableSelectAll: rowSelection === 'multi',
+
+    // ─── Pagination UI ───────────────
+    muiPaginationProps: {
+      rowsPerPageOptions: pageSizeOptions,
+    },
 
     // ─── Filter Specific Handling ─────
     enableFacetedValues: facetedValues,

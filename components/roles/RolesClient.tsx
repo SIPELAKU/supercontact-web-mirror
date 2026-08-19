@@ -20,7 +20,7 @@ export default function RolesClient() {
   });
 
   // ===== FETCHING API ===== //
-  const { roles, isLoading, isError, error } = useRoles(
+  const { roles, isLoading, isError, error, refetch } = useRoles(
     tableState.pageIndex + 1, // API index starts at 1
     tableState.pageSize,
     tableState.globalFilter
@@ -92,6 +92,8 @@ export default function RolesClient() {
         roles={roles?.roles || []}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={error || undefined}
+        onRetry={() => refetch()}
         rowCount={roles?.total || 0}
         onStateChange={handleTableStateChange}
         onExportRequest={handleExportRequest}

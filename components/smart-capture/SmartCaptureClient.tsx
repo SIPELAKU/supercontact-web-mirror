@@ -32,13 +32,13 @@ export default function SmartCaptureClient() {
   });
 
   // Query for Active campaigns
-  const { data: activeRes, isLoading: activeLoading, isFetching: activeFetching } = useSmartCaptures({
+  const { data: activeRes, isLoading: activeLoading, isFetching: activeFetching, isError: activeError, error: activeErrorObj, refetch: refetchActive } = useSmartCaptures({
     ...params,
     status: 'Active'
   });
 
   // Query for Inactive campaigns (Draft + Inactive)
-  const { data: inactiveRes, isLoading: inactiveLoading, isFetching: inactiveFetching } = useSmartCaptures({
+  const { data: inactiveRes, isLoading: inactiveLoading, isFetching: inactiveFetching, isError: inactiveError, error: inactiveErrorObj, refetch: refetchInactive } = useSmartCaptures({
     ...params,
     status: ['Draft', 'Inactive']
   });
@@ -66,6 +66,9 @@ export default function SmartCaptureClient() {
   const currentData = tabIndex === 0 ? activeRes : inactiveRes;
   const currentLoading = tabIndex === 0 ? activeLoading : inactiveLoading;
   const currentFetching = tabIndex === 0 ? activeFetching : inactiveFetching;
+  const currentIsError = tabIndex === 0 ? activeError : inactiveError;
+  const currentError = tabIndex === 0 ? activeErrorObj : inactiveErrorObj;
+  const currentRefetch = tabIndex === 0 ? refetchActive : refetchInactive;
 
   const stats = currentData?.data?.stats;
   const totalViews = stats?.total_views || 0;
@@ -190,6 +193,9 @@ export default function SmartCaptureClient() {
           rowCount={currentData?.data?.total || 0}
           isLoading={currentLoading}
           isFetching={currentFetching}
+          isError={currentIsError}
+          errorMessage={currentError instanceof Error ? currentError.message : undefined}
+          onRetry={() => currentRefetch()}
           onStateChange={handleStateChange}
           initialState={{
             pagination: {

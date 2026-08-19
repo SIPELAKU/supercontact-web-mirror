@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress, Switch } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Switch } from "@mui/material";
+import { Plus, Trash2, Zap } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
@@ -17,6 +19,7 @@ import {
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import {
     TicketAutomationAction,
+    TicketAutomationRule,
     TicketAutomationTriggerType,
     TicketConditionClause,
     TicketConditionOp,
@@ -65,7 +68,7 @@ function emptyAction(): TicketAutomationAction {
 }
 
 export default function AutomationRulesSettingsTab() {
-    const { data, isLoading } = useTicketAutomationRules();
+    const { data, isLoading, isError, refetch } = useTicketAutomationRules();
     const rules = data?.data?.data || [];
     const { data: agentsData } = useAssignableAgents();
     const agentOptions = ((agentsData?.data || agentsData || []) as any[]).map((a) => ({
@@ -129,16 +132,38 @@ export default function AutomationRulesSettingsTab() {
         }
     };
 
-    const handleConfirmDelete = async () => {
-        if (!deleteTarget) return;
-        try {
-            await deleteMutation.mutateAsync(deleteTarget.id);
-            notify.success("Automation rule removed");
-            setDeleteTarget(null);
-        } catch (error: any) {
-            notify.error("Error", { description: error.message });
-        }
-    };
+    const columns = useMemo<MRT_ColumnDef<TicketAutomationRule>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                id: "trigger",
+                accessorFn: (row) =>
+                    row.trigger_type === "on_create" ? "On Create" : "On Update",
+                header: "Trigger",
+            },
+            {
+                accessorKey: "priority",
+                header: "Priority",
+            },
+            {
+                id: "enabled",
+                accessorFn: (row) => (row.is_enabled ? "Yes" : "No"),
+                header: "Enabled",
+                Cell: ({ row }) => (
+                    <Switch
+                        checked={row.original.is_enabled}
+                        onChange={(e) => handleToggleEnabled(row.original.id, e.target.checked)}
+                        size="small"
+                    />
+                ),
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -305,67 +330,46 @@ export default function AutomationRulesSettingsTab() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Trigger</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Priority</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Enabled</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : rules.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No automation rules configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            rules.map((rule) => (
-                                <TableRow key={rule.id} hover>
-                                    <TableCell>{rule.name}</TableCell>
-                                    <TableCell>
-                                        {rule.trigger_type === "on_create" ? "On Create" : "On Update"}
-                                    </TableCell>
-                                    <TableCell>{rule.priority}</TableCell>
-                                    <TableCell>
-                                        <Switch
-                                            checked={rule.is_enabled}
-                                            onChange={(e) => handleToggleEnabled(rule.id, e.target.checked)}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => setDeleteTarget({ id: rule.id, name: rule.name })}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete rule"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketAutomationRule>
+                tableId="ticket-automation-rules-table"
+                columns={columns}
+                data={rules}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load automation rules. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <button
+                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                        className="text-gray-300 hover:text-red-500"
+                        aria-label="Delete rule"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Zap}
+                        title="No automation rules configured yet"
+                        description="Rules you add run automatically when tickets are created or updated."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
 
             <ConfirmationPopup
                 isOpen={!!deleteTarget}
                 onClose={() => setDeleteTarget(null)}
-                onConfirm={handleConfirmDelete}
+                onConfirm={async () => {
+                    if (!deleteTarget) return;
+                    try {
+                        await deleteMutation.mutateAsync(deleteTarget.id);
+                        notify.success("Automation rule removed");
+                        setDeleteTarget(null);
+                    } catch (error: any) {
+                        notify.error("Error", { description: error.message });
+                    }
+                }}
                 title="Delete Automation Rule"
                 description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
                 confirmText="Delete"

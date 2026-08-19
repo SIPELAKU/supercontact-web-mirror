@@ -14,4 +14,3 @@ export { default as EditPermissionsModal } from "./roles-modal/EditPermissionsMo
 export { default as RolesTable } from "./roles-table/RolesTable";
 export { default as RolesTableDataNotFound } from "./roles-table/RolesTableDataNotFound";
 export { default as RolesTableError } from "./roles-table/RolesTableError";
-export { default as RolesTableSkeleton } from "./roles-table/RolesTableSkeleton";

@@ -20,7 +20,6 @@ export { default as DepartementTableFilter } from "./departments-table/Departmen
 
 export { default as DepartmentsTableDataNotFound } from "./departments-table/DepartmentsTableNotFound";
 export { default as DeparmentsTableError } from "./departments-table/DepartmentsTableError";
-export { default as DepartementTableSkeleton } from "./departments-table/DepartmentsTableSkeleton";
 
 export { default as DepartementTableMember } from "./departments-table/DepartmentsTableMember";
 

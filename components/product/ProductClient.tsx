@@ -13,7 +13,7 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function ProductClient() {
-  const { listProduct, loading, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, fetchProduct } = useGetProductStore();
+  const { listProduct, loading, error, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, fetchProduct } = useGetProductStore();
   const { token } = useAuth();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -203,6 +203,10 @@ export default function ProductClient() {
       <ProductTable 
          products={listProduct}
          isLoading={loading}
+         isError={!!error}
+         errorMessage={error || undefined}
+         onRetry={() => fetchProduct()}
+         onAdd={() => setIsAddModalOpen(true)}
          rowCount={pagination.total}
          onStateChange={handleTableStateChange}
          onExportRequest={handleExportRequest}

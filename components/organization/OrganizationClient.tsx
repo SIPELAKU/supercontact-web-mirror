@@ -56,7 +56,7 @@ export default function OrganizationClient() {
     : undefined;
 
   // Fetch departments with React Query
-  const { departments, total, isLoading, isError, error, deleteDepartment } = useDepartments(
+  const { departments, total, isLoading, isError, error, refetch, deleteDepartment } = useDepartments(
     tableState.pagination.pageIndex,
     tableState.pagination.pageSize,
     tableState.globalFilter,
@@ -206,6 +206,9 @@ export default function OrganizationClient() {
         departments={departments}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={error || undefined}
+        onRetry={() => refetch()}
+        onAdd={() => setOpenAddMobile(true)}
         rowCount={total}
         branchOptions={branchOptions}
         onStateChange={handleTableStateChange}

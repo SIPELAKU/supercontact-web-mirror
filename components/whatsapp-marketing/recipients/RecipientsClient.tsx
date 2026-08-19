@@ -48,7 +48,7 @@ export default function RecipientsClient() {
   // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
   const sort = sorting[0];
 
-  const { data, isLoading, refetch } = useWaRecipients({
+  const { data, isLoading, isError, error, refetch } = useWaRecipients({
     recipient_type: 'whatsapp',
     page,
     limit,
@@ -160,6 +160,9 @@ export default function RecipientsClient() {
       <RecipientsTable
         recipients={recipients}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetch()}
         totalCount={totalCount}
         onAdd={handleOpenAddModal}
         onImport={() => setImportModalOpen(true)}

@@ -156,6 +156,9 @@ export default function QuotationClient() {
          quotations={listQuotations || []}
          isLoading={loading}
          isError={!!error}
+         errorMessage={error || undefined}
+         onRetry={() => fetchQuotations()}
+         onAdd={handleOpenAddForm}
          rowCount={pagination.total}
          onStateChange={handleTableStateChange}
          onExportRequest={handleExportRequest}

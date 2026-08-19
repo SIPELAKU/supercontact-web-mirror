@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Timer, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/lib/hooks/useTicketSlaPolicies";
 import { useTicketCategories } from "@/lib/hooks/useTicketCategories";
 import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
-import { TicketSlaPriority } from "@/lib/types/TicketSettings";
+import { TicketSlaPolicy, TicketSlaPriority } from "@/lib/types/TicketSettings";
 
 const PRIORITY_OPTIONS: { value: TicketSlaPriority; label: string }[] = [
     { value: "High", label: "High" },
@@ -30,7 +31,7 @@ function formatMinutes(minutes: number): string {
 }
 
 export default function SlaPolicySettingsTab() {
-    const { data, isLoading } = useTicketSlaPolicies();
+    const { data, isLoading, isError, refetch } = useTicketSlaPolicies();
     const policies = data?.data?.data || [];
     const { data: categoriesData } = useTicketCategories();
     const categories = categoriesData?.data?.data || [];
@@ -94,6 +95,39 @@ export default function SlaPolicySettingsTab() {
             notify.error("Error", { description: error.message });
         }
     };
+
+    const columns = useMemo<MRT_ColumnDef<TicketSlaPolicy>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                id: "priority",
+                accessorFn: (row) => row.priority || "Any",
+                header: "Priority",
+            },
+            {
+                id: "category",
+                accessorFn: (row) =>
+                    categories.find((c) => c.id === row.category_id)?.name || "Any",
+                header: "Category",
+            },
+            {
+                id: "first_response",
+                accessorFn: (row) => row.first_response_target_minutes,
+                header: "First Response",
+                Cell: ({ row }) => <>{formatMinutes(row.original.first_response_target_minutes)}</>,
+            },
+            {
+                id: "resolution",
+                accessorFn: (row) => row.resolution_target_minutes,
+                header: "Resolution",
+                Cell: ({ row }) => <>{formatMinutes(row.original.resolution_target_minutes)}</>,
+            },
+        ],
+        [categories]
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -174,58 +208,32 @@ export default function SlaPolicySettingsTab() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Priority</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Category</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>First Response</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Resolution</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : policies.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No SLA policies configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            policies.map((policy) => (
-                                <TableRow key={policy.id} hover>
-                                    <TableCell>{policy.name}</TableCell>
-                                    <TableCell>{policy.priority || "Any"}</TableCell>
-                                    <TableCell>
-                                        {categories.find((c) => c.id === policy.category_id)?.name || "Any"}
-                                    </TableCell>
-                                    <TableCell>{formatMinutes(policy.first_response_target_minutes)}</TableCell>
-                                    <TableCell>{formatMinutes(policy.resolution_target_minutes)}</TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => setDeleteTarget({ id: policy.id, name: policy.name })}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete SLA policy"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketSlaPolicy>
+                tableId="ticket-sla-policies-table"
+                columns={columns}
+                data={policies}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load SLA policies. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <button
+                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                        className="text-gray-300 hover:text-red-500"
+                        aria-label="Delete SLA policy"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Timer}
+                        title="No SLA policies configured yet"
+                        description="Add response and resolution targets to track SLA compliance on tickets."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
 
             <ConfirmationPopup
                 isOpen={!!deleteTarget}

@@ -326,6 +326,10 @@ export default function PeopleClient() {
                     isLoading={isLoading}
                     isError={!!error}
                     errorMessage={error ?? "Failed to load people. Please try again."}
+                    onRetry={fetchPeople}
+                    // Rows are person-per-company flattenings with no `id` —
+                    // rowId is the stable per-row key for selection state.
+                    getRowId={(row) => row.rowId}
                     renderEmptyState={() => (
                         <EmptyState icon={Users} title="No people found" description="Try adjusting your filters or search query." />
                     )}

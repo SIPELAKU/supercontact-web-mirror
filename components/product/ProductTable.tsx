@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
@@ -10,11 +10,16 @@ import { useConfirmation } from "@/components/ui/confirm-modal";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package, Plus } from "lucide-react";
 
 export interface ProductTableProps {
     products: Product[];
     isLoading: boolean;
     isError?: boolean;
+    errorMessage?: string;
+    onRetry?: () => void;
+    onAdd?: () => void;
     rowCount?: number;
     onStateChange?: (state: SuperTableState) => void;
     onExportRequest?: (params: any) => Promise<Product[]>;
@@ -27,6 +32,9 @@ export default function ProductTable({
     products,
     isLoading,
     isError,
+    errorMessage,
+    onRetry,
+    onAdd,
     rowCount,
     onStateChange,
     onExportRequest,
@@ -124,7 +132,21 @@ export default function ProductTable({
                 data={products || []}
                 isLoading={isLoading}
                 isError={isError}
+                errorMessage={errorMessage}
+                onRetry={onRetry}
                 rowCount={rowCount}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Package}
+                        title="No products found"
+                        description="Add products to build your catalog and use them in quotations."
+                        action={
+                            onAdd
+                                ? { label: "Add Product", onClick: onAdd, icon: <Plus size={16} /> }
+                                : undefined
+                        }
+                    />
+                )}
                 onStateChange={onStateChange}
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}

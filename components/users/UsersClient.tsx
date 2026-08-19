@@ -100,6 +100,7 @@ export default function UsersClient() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter, sortByParam, sortOrderParam);
 
   // Error Handling
@@ -230,6 +231,9 @@ export default function UsersClient() {
             positionOptions={["All", ...allPositions]}
             isLoading={isLoading}
             isError={isError}
+            errorMessage={isError && error ? handleError(error, "Fetch Managed Users") : undefined}
+            onRetry={() => refetch()}
+            onAdd={() => setOpenAdd(true)}
             rowCount={totalCount}
             onStateChange={handleTableStateChange}
             onExportRequest={handleExportRequest}

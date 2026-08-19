@@ -22,7 +22,8 @@ import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
 import { useCampaignDetail, useCampaignSubscribers } from '@/lib/hooks/useCampaigns';
 import { Campaign, CampaignSubscriber } from '@/lib/types/email-marketing';
 import { format } from 'date-fns';
-import { Activity, FlaskConical, Mail, MousePointerClick, RefreshCcw } from 'lucide-react';
+import { Activity, FlaskConical, Mail, MousePointerClick, RefreshCcw, Users } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface ViewCampaignStatsModalProps {
     open: boolean;
@@ -339,6 +340,14 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
                                 columns={columns}
                                 rowCount={subscribersData?.data?.total || 0}
                                 isLoading={isLoadingSubscribers}
+                                onRetry={() => refetchSubscribers()}
+                                renderEmptyState={() => (
+                                    <EmptyState
+                                        icon={Users}
+                                        title="No subscribers"
+                                        description="No subscribers match this campaign yet."
+                                    />
+                                )}
                                 manualPagination={true}
                                 onStateChange={(state) => {
                                     setTableState({

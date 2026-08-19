@@ -14,7 +14,6 @@ export { default as TableFilterUsers } from "./users-table/TabelFilterUsers";
 
 export { default as UsersTableError } from "./users-table/UsersTableError";
 export { default as UsersTableNotFound } from "./users-table/UsersTableNotFound";
-export { default as UsersTableSkeleton } from "./users-table/UsersTableSkeleton";
 
 // ========= Card ==========
 export {default as CardStatUsers } from "./card-stat-user"

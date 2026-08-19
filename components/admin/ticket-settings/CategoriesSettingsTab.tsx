@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Tags, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { TicketCategory } from "@/lib/types/TicketSettings";
 import {
     useTicketCategories,
     useCreateTicketCategory,
@@ -14,7 +16,7 @@ import {
 } from "@/lib/hooks/useTicketCategories";
 
 export default function CategoriesSettingsTab() {
-    const { data, isLoading } = useTicketCategories();
+    const { data, isLoading, isError, refetch } = useTicketCategories();
     const categories = data?.data?.data || [];
     const createMutation = useCreateTicketCategory();
     const deleteMutation = useDeleteTicketCategory();
@@ -47,6 +49,16 @@ export default function CategoriesSettingsTab() {
         }
     };
 
+    const columns = useMemo<MRT_ColumnDef<TicketCategory>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+        ],
+        []
+    );
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
             <p className="text-sm text-gray-500">
@@ -70,48 +82,32 @@ export default function CategoriesSettingsTab() {
                 </AppButton>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : categories.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No categories configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            categories.map((c) => (
-                                <TableRow key={c.id} hover>
-                                    <TableCell>{c.name}</TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => setDeleteTarget({ id: c.id, name: c.name })}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete category"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketCategory>
+                tableId="ticket-categories-table"
+                columns={columns}
+                data={categories}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load ticket categories. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <button
+                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                        className="text-gray-300 hover:text-red-500"
+                        aria-label="Delete category"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Tags}
+                        title="No categories configured yet"
+                        description="Categories you add appear as a dropdown on every ticket."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
 
             <ConfirmationPopup
                 isOpen={!!deleteTarget}

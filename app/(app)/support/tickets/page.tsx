@@ -60,7 +60,7 @@ export default function TicketManagementPage() {
         : undefined;
 
     // Data Fetching
-    const { data: ticketData, isLoading, isError } = useTickets(
+    const { data: ticketData, isLoading, isError, refetch } = useTickets(
         tableState.pageIndex + 1, // API is 1-indexed
         tableState.pageSize,
         tableState.globalFilter,
@@ -237,6 +237,8 @@ export default function TicketManagementPage() {
                     tickets={tickets}
                     isLoading={isLoading}
                     isError={isError}
+                    onRetry={() => refetch()}
+                    onAdd={() => setIsAddModalOpen(true)}
                     rowCount={totalTickets}
                     onStateChange={handleTableStateChange}
                     onExportRequest={handleExportRequest}

@@ -1,4 +1,4 @@
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { Subscriber, Campaign } from "@/lib/types/email-marketing";
 import { format } from "date-fns";
 

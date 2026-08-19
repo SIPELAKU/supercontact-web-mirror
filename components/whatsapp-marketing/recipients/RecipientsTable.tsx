@@ -3,7 +3,8 @@
 
 import { useMemo, useState } from 'react';
 import { Box, Stack, IconButton, Tooltip } from '@mui/material';
-import { Plus, Trash2, Upload, Eye, Save } from 'lucide-react';
+import { Plus, Trash2, Upload, Eye, Save, MessageSquare } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
@@ -16,6 +17,9 @@ import { SaveAsModal } from "@/components/modal/SaveAsModal";
 interface RecipientsTableProps {
   recipients: WaRecipient[];
   isLoading: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   totalCount: number;
   onAdd: () => void;
   onImport: () => void;
@@ -31,6 +35,9 @@ interface RecipientsTableProps {
 const RecipientsTable = ({
   recipients,
   isLoading,
+  isError,
+  errorMessage,
+  onRetry,
   totalCount,
   onAdd,
   onImport,
@@ -87,6 +94,17 @@ const RecipientsTable = ({
         columns={columns}
         rowCount={totalCount}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={MessageSquare}
+            title="No recipients found"
+            description="Add recipients manually or import a list to start WhatsApp broadcasting."
+            action={{ label: "Add Recipient", onClick: onAdd, icon: <Plus size={16} /> }}
+          />
+        )}
         manualPagination={true}
         manualSorting={true}
         manualFiltering={true}

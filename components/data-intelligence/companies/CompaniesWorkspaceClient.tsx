@@ -323,6 +323,8 @@ export default function CompaniesWorkspaceClient() {
     const {
         data: membersResponse,
         isLoading: isMembersLoading,
+        isError: isMembersError,
+        error: membersError,
         refetch: refetchMembers,
     } = useCompanyListMembers(activeTab === "lists" ? selectedListId : null, { limit: 100 });
     const listMembers = (membersResponse?.data || []).map(memberToCompanyItem);
@@ -462,6 +464,7 @@ export default function CompaniesWorkspaceClient() {
                             isLoading={isDiscoverLoading}
                             isError={!!discoverError}
                             errorMessage={discoverError ?? undefined}
+                            onRetry={fetchDiscover}
                             emptyStateTitle="No companies found"
                             emptyStateDescription="Try adjusting your filters or search query."
                             rowCount={discoverTotal}
@@ -513,6 +516,7 @@ export default function CompaniesWorkspaceClient() {
                             isLoading={isSavedLoading}
                             isError={!!savedError}
                             errorMessage={savedError ?? undefined}
+                            onRetry={fetchSaved}
                             emptyStateTitle="No saved companies"
                             emptyStateDescription="Companies you save from Discover will show up here."
                             rowCount={savedTotal}
@@ -637,6 +641,9 @@ export default function CompaniesWorkspaceClient() {
                             tableId="companies-lists"
                             companies={listMembers}
                             isLoading={isMembersLoading}
+                            isError={isMembersError}
+                            errorMessage={membersError instanceof Error ? membersError.message : undefined}
+                            onRetry={() => refetchMembers()}
                             rowCount={listMembers.length}
                             enableColumnFilters={false}
                             rowSelection="none"

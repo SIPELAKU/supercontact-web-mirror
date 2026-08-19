@@ -77,6 +77,7 @@ export default function DetailDepartments() {
     isLoading: isLoadingMembers,
     isError: isErrorMembers,
     error: errorMembers,
+    refetch: refetchMembers,
   } = useDepartmentMembers(
     id,
     tableState.pagination.pageIndex,
@@ -283,6 +284,8 @@ export default function DetailDepartments() {
         members={members}
         isLoading={isLoadingMembers}
         isError={isErrorMembers}
+        errorMessage={errorMembers instanceof Error ? errorMembers.message : undefined}
+        onRetry={() => refetchMembers()}
         rowCount={totalItems}
         departmentId={id}
         onStateChange={handleTableStateChange}

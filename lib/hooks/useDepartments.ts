@@ -35,6 +35,7 @@ const useDepartments = (
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["departments", page, rowsPerPage, searchQuery, filters?.department, filters?.branch, sortBy, sortOrder],
     queryFn: () => {
@@ -82,6 +83,7 @@ const useDepartments = (
     isLoading,
     isError,
     error: isError ? (error instanceof Error ? error.message : "An error occurred") : null,
+    refetch,
     addDepartment: (data: CreateDepartmentData) => addDepartmentMutation.mutateAsync(data),
     updateDepartment: (id: string, data: UpdateDepartmentData) =>
       updateDepartmentMutation.mutateAsync({ id, data }),

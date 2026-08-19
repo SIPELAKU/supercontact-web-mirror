@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Chip } from '@mui/material';
-import { Calendar, Save, Trash2 } from 'lucide-react';
+import { Calendar, Save, Trash2, Inbox } from 'lucide-react';
 import { format } from 'date-fns';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table/types';
@@ -58,7 +59,7 @@ export const CapturedLeadsTable = () => {
   const [resendingSubmissionId, setResendingSubmissionId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
 
-  const { data: response, isLoading, isFetching, refetch } = useSmartCaptureSubmissions(id, tableParams);
+  const { data: response, isLoading, isFetching, isError, error, refetch } = useSmartCaptureSubmissions(id, tableParams);
   const resendMutation = useResendSmartCaptureSubmission();
   const deleteMutation = useDeleteSmartCaptureSubmissions();
 
@@ -266,6 +267,16 @@ export const CapturedLeadsTable = () => {
             rowCount={totalCount}
             isLoading={isLoading}
             isFetching={isFetching}
+            isError={isError}
+            errorMessage={error instanceof Error ? error.message : undefined}
+            onRetry={() => refetch()}
+            renderEmptyState={() => (
+              <EmptyState
+                icon={Inbox}
+                title="No captured leads yet"
+                description="Leads submitted through this magnet's form will appear here."
+              />
+            )}
             manualPagination={true}
             manualSorting={true}
             manualFiltering={true}

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { TicketMacro } from "@/lib/types/TicketSettings";
 import {
     useTicketMacros,
     useCreateTicketMacro,
@@ -29,7 +31,7 @@ const PRIORITY_OPTIONS = [
 ];
 
 export default function MacrosSettingsTab() {
-    const { data, isLoading } = useTicketMacros();
+    const { data, isLoading, isError, refetch } = useTicketMacros();
     const macros = data?.data?.data || [];
     const createMutation = useCreateTicketMacro();
     const deleteMutation = useDeleteTicketMacro();
@@ -75,6 +77,25 @@ export default function MacrosSettingsTab() {
             notify.error("Error", { description: error.message });
         }
     };
+
+    const columns = useMemo<MRT_ColumnDef<TicketMacro>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                accessorKey: "body_template",
+                header: "Reply Body",
+                Cell: ({ cell }) => (
+                    <div className="max-w-md truncate" title={cell.getValue<string>()}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+        ],
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -134,50 +155,32 @@ export default function MacrosSettingsTab() {
                 </AppButton>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Reply Body</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : macros.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No macros configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            macros.map((macro) => (
-                                <TableRow key={macro.id} hover>
-                                    <TableCell>{macro.name}</TableCell>
-                                    <TableCell className="max-w-md truncate">{macro.body_template}</TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => setDeleteTarget({ id: macro.id, name: macro.name })}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete macro"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketMacro>
+                tableId="ticket-macros-table"
+                columns={columns}
+                data={macros}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load macros. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <button
+                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                        className="text-gray-300 hover:text-red-500"
+                        aria-label="Delete macro"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={MessageSquare}
+                        title="No macros configured yet"
+                        description="Saved replies you add can be applied from any ticket in one click."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
 
             <ConfirmationPopup
                 isOpen={!!deleteTarget}

@@ -7,7 +7,8 @@ import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
 import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Users } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
@@ -16,6 +17,7 @@ interface ContactTableProps {
   isLoading: boolean;
   isError?: boolean;
   errorMessage?: string;
+  onRetry?: () => void;
   rowCount: number;
 
   onStateChange?: (state: SuperTableState) => void;
@@ -39,6 +41,7 @@ export const ContactTable = ({
   isLoading,
   isError,
   errorMessage,
+  onRetry,
   rowCount,
   onStateChange,
   onExportRequest,
@@ -79,7 +82,16 @@ export const ContactTable = ({
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage}
+        onRetry={onRetry}
         rowCount={rowCount}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Users}
+            title="No contacts found"
+            description="Add your first contact or import an existing list to get started."
+            action={{ label: "Add Contact", onClick: onOpenAdd, icon: <Plus size={16} /> }}
+          />
+        )}
         manualPagination={true}
         manualFiltering={true}
         manualSorting={true}

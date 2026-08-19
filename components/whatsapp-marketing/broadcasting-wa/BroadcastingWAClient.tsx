@@ -74,6 +74,8 @@ export default function BroadcastingWAClient() {
     data: broadcastsResponse,
     isLoading,
     isError,
+    error,
+    refetch,
   } = useBroadcasts(pageParam, limitParam, searchParam, statusParam, sortByParam, sortOrderParam);
 
   const totalCount = broadcastsResponse?.data?.total || 0;
@@ -168,6 +170,9 @@ export default function BroadcastingWAClient() {
         broadcasts={broadcasts}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={isError && error ? handleError(error, "Fetch Broadcasts") : undefined}
+        onRetry={() => refetch()}
+        onAdd={handleOpenAddModal}
         rowCount={totalCount}
         onStateChange={handleTableStateChange}
         onExportRequest={handleExportRequest}

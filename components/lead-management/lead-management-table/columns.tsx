@@ -24,7 +24,7 @@ export const sourceIcon: Record<LeadSource, React.ReactNode> = {
   "Manual Entry": <Image src={ManualEntry} alt={"manual-entry"} className="h-4 w-4" />,
 };
 
-import { MRT_ColumnDef } from "material-react-table"; // Added MRT Import
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 
 // Column definitions for MUI Table using SuperTable formatting
 export const leadColumns: MRT_ColumnDef<Lead>[] = [

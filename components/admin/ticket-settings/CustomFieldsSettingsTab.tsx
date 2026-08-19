@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ListChecks, Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
@@ -13,7 +14,7 @@ import {
     useCreateTicketCustomField,
     useDeleteTicketCustomField,
 } from "@/lib/hooks/useTicketCustomFields";
-import { TicketCustomFieldType } from "@/lib/types/TicketSettings";
+import { TicketCustomFieldDefinition, TicketCustomFieldType } from "@/lib/types/TicketSettings";
 
 const FIELD_TYPE_OPTIONS: { value: TicketCustomFieldType; label: string }[] = [
     { value: "text", label: "Text" },
@@ -24,7 +25,7 @@ const FIELD_TYPE_OPTIONS: { value: TicketCustomFieldType; label: string }[] = [
 ];
 
 export default function CustomFieldsSettingsTab() {
-    const { data, isLoading } = useTicketCustomFields();
+    const { data, isLoading, isError, refetch } = useTicketCustomFields();
     const definitions = data?.data?.data || [];
     const createMutation = useCreateTicketCustomField();
     const deleteMutation = useDeleteTicketCustomField();
@@ -77,6 +78,35 @@ export default function CustomFieldsSettingsTab() {
             notify.error("Error", { description: error.message });
         }
     };
+
+    const columns = useMemo<MRT_ColumnDef<TicketCustomFieldDefinition>[]>(
+        () => [
+            {
+                accessorKey: "label",
+                header: "Label",
+            },
+            {
+                accessorKey: "field_key",
+                header: "Key",
+                Cell: ({ cell }) => (
+                    <span className="font-mono text-xs">{cell.getValue<string>()}</span>
+                ),
+            },
+            {
+                accessorKey: "field_type",
+                header: "Type",
+                Cell: ({ cell }) => (
+                    <span className="capitalize">{cell.getValue<string>()}</span>
+                ),
+            },
+            {
+                id: "is_required",
+                accessorFn: (row) => (row.is_required ? "Yes" : "No"),
+                header: "Required",
+            },
+        ],
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -144,54 +174,32 @@ export default function CustomFieldsSettingsTab() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Label</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Key</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Type</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Required</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : definitions.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No custom fields configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            definitions.map((def) => (
-                                <TableRow key={def.id} hover>
-                                    <TableCell>{def.label}</TableCell>
-                                    <TableCell className="font-mono text-xs">{def.field_key}</TableCell>
-                                    <TableCell className="capitalize">{def.field_type}</TableCell>
-                                    <TableCell>{def.is_required ? "Yes" : "No"}</TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => setDeleteTarget({ id: def.id, label: def.label })}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete custom field"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketCustomFieldDefinition>
+                tableId="ticket-custom-fields-table"
+                columns={columns}
+                data={definitions}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load custom fields. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <button
+                        onClick={() => setDeleteTarget({ id: row.original.id, label: row.original.label })}
+                        className="text-gray-300 hover:text-red-500"
+                        aria-label="Delete custom field"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={ListChecks}
+                        title="No custom fields configured yet"
+                        description="Fields you define here appear on every ticket and are validated on save."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
 
             <ConfirmationPopup
                 isOpen={!!deleteTarget}

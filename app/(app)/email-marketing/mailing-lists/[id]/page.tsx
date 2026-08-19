@@ -31,7 +31,8 @@ import {
 } from '@mui/material';
 import { format }
     from 'date-fns';
-import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus, History } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Download, Eye, Mail, Search, Trash2, UserPlus, History } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -53,13 +54,13 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
-    const { data: mailingListData, isLoading, isFetching, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? searchQuery : undefined);
+    const { data: mailingListData, isLoading, isFetching, error, refetch } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? searchQuery : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
     const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
     const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? searchQuery : undefined, activeTab === 1);
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns, isError: isErrorCampaigns, error: errorCampaigns, refetch: refetchCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? searchQuery : undefined, activeTab === 1);
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
@@ -154,7 +155,9 @@ const MailingListDetailPage = () => {
     const filteredSubscribers = subscribers;
     const totalSubscribers = mailingList?.subscribers?.total || 0;
 
-    if (error) {
+    // Full-page fallback only for a hard initial failure — once the list is
+    // loaded, later query errors surface inside the tables (with Retry).
+    if (error && !mailingListData) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography color="error">Failed to load mailing list details</Typography>
@@ -227,10 +230,26 @@ const MailingListDetailPage = () => {
                 {/* Subscribers Tab */}
                 {activeTab === 0 && (
                     <SuperTable<Subscriber>
+                        tableId="mailing-list-subscribers-table"
                         data={subscribers}
                         columns={subscriberColumns}
                         isLoading={isLoading}
                         isFetching={isFetching}
+                        isError={!!error}
+                        errorMessage={error instanceof Error ? error.message : undefined}
+                        onRetry={() => refetch()}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={UserPlus}
+                                title="No subscribers in this list"
+                                description="Add subscribers or import a list to grow this mailing list."
+                                action={{
+                                    label: "Add Subscriber",
+                                    onClick: () => setShowAddSubscriberModal(true),
+                                    icon: <UserPlus size={16} />,
+                                }}
+                            />
+                        )}
                         rowCount={totalSubscribers}
                         manualPagination={true}
                         manualFiltering={true}
@@ -329,10 +348,21 @@ const MailingListDetailPage = () => {
                 {/* Campaigns Tab */}
                 {activeTab === 1 && (
                     <SuperTable<Campaign>
+                        tableId="mailing-list-campaigns-table"
                         data={campaigns}
                         columns={campaignColumns}
                         isLoading={isLoadingCampaigns}
                         isFetching={isFetchingCampaigns}
+                        isError={isErrorCampaigns}
+                        errorMessage={errorCampaigns instanceof Error ? errorCampaigns.message : undefined}
+                        onRetry={() => refetchCampaigns()}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={Mail}
+                                title="No campaigns sent to this list"
+                                description="Campaigns sent to this mailing list will appear here."
+                            />
+                        )}
                         rowCount={totalCampaigns}
                         manualPagination={true}
                         manualFiltering={true}

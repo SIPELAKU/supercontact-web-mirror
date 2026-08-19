@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Box, Stack, Chip, Tooltip, MenuItem, Select } from "@mui/material";
-import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw } from "lucide-react";
+import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw, History } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable } from "@/components/ui/super-table";
 import type { MRT_ColumnDef } from "@/components/ui/super-table/types";
 import { useBulkJobs, useActionBulkJob } from "@/lib/hooks/useSubscribers";
@@ -303,6 +304,14 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
           columns={columns}
           rowCount={totalCount}
           isLoading={isLoading || isFetching}
+          onRetry={() => refetch()}
+          renderEmptyState={() => (
+            <EmptyState
+              icon={History}
+              title="No import jobs yet"
+              description="Bulk import jobs and their progress will appear here."
+            />
+          )}
           manualPagination={true}
           manualSorting={false}
           manualFiltering={false}

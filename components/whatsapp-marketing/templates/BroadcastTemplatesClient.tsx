@@ -155,23 +155,20 @@ export default function BroadcastTemplatesClient() {
         </Box>
       )}
 
-      {isError ? (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="error">Failed to load broadcast templates.</Typography>
-          <AppButton onClick={() => refetch()} sx={{ mt: 2 }}>Try Again</AppButton>
-        </Box>
-      ) : (
-        <BroadcastTemplatesTable
-          templates={templates}
-          isLoading={isLoading}
-          totalCount={totalCount}
-          onStateChange={handleStateChange}
-          onCreate={handleCreate}
-          onEdit={handleEdit}
-          onDuplicate={handleDuplicate}
-          onDeleteRequest={handleDeleteRequest}
-        />
-      )}
+      {/* Error state renders inside the table (with Retry) — SuperTable owns it */}
+      <BroadcastTemplatesTable
+        templates={templates}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage="Failed to load broadcast templates."
+        onRetry={() => refetch()}
+        totalCount={totalCount}
+        onStateChange={handleStateChange}
+        onCreate={handleCreate}
+        onEdit={handleEdit}
+        onDuplicate={handleDuplicate}
+        onDeleteRequest={handleDeleteRequest}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>

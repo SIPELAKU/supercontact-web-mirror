@@ -265,6 +265,15 @@ export const ContactClient = () => {
                     isLoading={loading}
                     isError={!!error}
                     errorMessage={error || undefined}
+                    onRetry={() =>
+                        loadData(
+                            currentPageRef.current,
+                            currentPageSizeRef.current,
+                            currentSearchRef.current,
+                            currentSortByRef.current,
+                            currentSortOrderRef.current,
+                        )
+                    }
                     rowCount={totalCount}
                     onStateChange={handleStateChange}
                     onExportRequest={handleExportRequest}

@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { DeleteButton, DuplicateButton, EditButton } from '../ui/app-action-buttons-table';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw } from 'lucide-react';
+import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw, Magnet } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
 import {
   useUpdateSmartCaptureStatus,
@@ -33,6 +34,9 @@ interface LeadMagnetsTableProps {
   rowCount?: number;
   isLoading?: boolean;
   isFetching?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   onStateChange?: (state: SuperTableState) => void;
   initialState?: any;
 }
@@ -137,6 +141,9 @@ const LeadMagnetsTable = ({
   rowCount = 0,
   isLoading = false,
   isFetching = false,
+  isError,
+  errorMessage,
+  onRetry,
   onStateChange,
   initialState
 }: LeadMagnetsTableProps) => {
@@ -226,6 +233,21 @@ const LeadMagnetsTable = ({
         rowCount={rowCount}
         isLoading={isLoading}
         isFetching={isFetching || isDuplicating || isDeleting}
+        isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Magnet}
+            title="No lead magnets found"
+            description="Create a lead magnet to start capturing leads from your audience."
+            action={{
+              label: "Add Magnet",
+              onClick: () => router.push('/smart-capture/create'),
+              icon: <Plus size={16} />,
+            }}
+          />
+        )}
         manualPagination={true}
         manualSorting={true}
         manualFiltering={true}

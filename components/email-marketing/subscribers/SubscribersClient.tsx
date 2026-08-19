@@ -38,7 +38,7 @@ export default function SubscribersClient() {
   const sortBy = sort?.id;
   const sortOrder: 'asc' | 'desc' | undefined = sort ? (sort.desc ? 'desc' : 'asc') : undefined;
 
-  const { data, isLoading, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
+  const { data, isLoading, isError, error, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
 
   const subscribers = data?.data?.contacts || [];
   const totalCount = data?.data?.total || 0;
@@ -183,6 +183,9 @@ export default function SubscribersClient() {
       <SubscribersTable
         subscribers={subscribers}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetch()}
         totalCount={totalCount}
         onAdd={handleOpenAddModal}
         onEdit={handleOpenEditModal}

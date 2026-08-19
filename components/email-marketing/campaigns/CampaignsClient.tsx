@@ -80,6 +80,7 @@ export default function CampaignsClient() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useCampaigns(pageParam, limitParam, searchParam, statusParam, sortByParam, sortOrderParam);
 
   const filteredCampaigns = campaignsResponse?.data?.campaigns || [];
@@ -267,6 +268,9 @@ export default function CampaignsClient() {
         campaigns={filteredCampaigns}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={isError && error ? handleError(error, "Fetch Campaigns") : undefined}
+        onRetry={() => refetch()}
+        onAdd={handleOpenAddModal}
         rowCount={totalCount}
         onStateChange={handleTableStateChange}
         onExportRequest={handleExportRequest}

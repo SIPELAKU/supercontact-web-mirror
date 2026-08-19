@@ -1,107 +1,24 @@
 "use client";
 
-import { Box, Container, Typography, Button, Paper } from "@mui/material";
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import { Box, Typography, Button, Paper } from "@mui/material";
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import CheckIcon from '@mui/icons-material/Check';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { trackCtaClick } from '@/lib/analytics/events';
-import Link from 'next/link';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function TicketHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                bgcolor: '#3854D6', // Standard blue
-                pt: { xs: 12, md: 16 },
-                pb: { xs: 10, md: 16 },
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 8, alignItems: 'center' }}>
-
-                    {/* Left Side Info */}
-                    <Box sx={{ flex: 1, maxWidth: { xs: '100%', lg: '50%' } }}>
-                        {/* Badge */}
-                        <Box sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            bgcolor: 'rgba(0, 0, 0, 0.2)',
-                            px: 2,
-                            py: 0.75,
-                            borderRadius: '999px',
-                            mb: 3
-                        }}>
-                            <ConfirmationNumberIcon sx={{ color: 'white', fontSize: 16 }} />
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: '0.8rem' }}>
-                                {strings.ticket_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h2"
-                            component="h1"
-                            sx={{
-                                color: 'white',
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                lineHeight: 1.2,
-                                mb: 3
-                            }}
-                        >
-                            {strings.ticket_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                fontSize: { xs: '1rem', md: '1.125rem' },
-                                mb: 5,
-                                maxWidth: '95%',
-                                lineHeight: 1.6
-                            }}
-                        >
-                            {strings.ticket_hero_desc}
-                        </Typography>
-
-                        <Button
-                            variant="contained"
-                            component={Link}
-                            href="/register"
-                            onClick={() => trackCtaClick('produk/ticket', 'hero_cta')}
-                            sx={{
-                                bgcolor: 'white',
-                                color: '#3854D6',
-                                fontWeight: 700,
-                                px: 4,
-                                py: 1.5,
-                                borderRadius: '8px',
-                                textTransform: 'none',
-                                fontSize: '1rem',
-                                '&:hover': {
-                                    bgcolor: 'rgba(255, 255, 255, 0.9)'
-                                }
-                            }}
-                        >
-                            {strings.ticket_hero_btn}
-                        </Button>
-                    </Box>
-
-                    {/* Right Side Ticket Creation Mockup */}
-                    <TicketHeroVisual />
-
-                </Box>
-            </Container>
-        </Box>
+        <PageHero
+            badge={strings.hero_slide_badge_produk}
+            title={strings.ticket_hero_title}
+            description={strings.ticket_hero_desc}
+            trackSource="produk/ticket"
+            visual={<TicketHeroVisual />}
+        />
     );
 }
 

@@ -1,125 +1,30 @@
 "use client";
 
-import { Box, Container, Typography, Button, Paper } from "@mui/material";
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { Box, Typography, Paper } from "@mui/material";
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { trackCtaClick } from '@/lib/analytics/events';
-import Link from 'next/link';
+import { getWhatsAppLink } from '@/lib/utils/wa-link';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function FmcgHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                bgcolor: '#3854D6', // Standard blue
-                pt: { xs: 12, md: 16 },
-                pb: { xs: 10, md: 16 },
-                position: 'relative',
-                overflow: 'hidden'
+        <PageHero
+            badge={strings.formatString(strings.hero_slide_badge_solusi, strings.sol_ind_fmcg)}
+            title={strings.fmcg_hero_title}
+            description={strings.fmcg_hero_desc}
+            trackSource="solusi/fmcg"
+            secondaryCta={{
+                label: strings.fmcg_hero_btn_consult,
+                href: getWhatsAppLink('/solusi/fmcg'),
+                external: true,
+                icon: <WhatsAppIcon />,
+                trackLabel: 'hero_wa_cta',
             }}
-        >
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 8, alignItems: 'center' }}>
-
-                    {/* Left Side Info */}
-                    <Box sx={{ flex: 1, maxWidth: { xs: '100%', lg: '55%' } }}>
-                        {/* Badge */}
-                        <Box sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            bgcolor: 'rgba(0, 0, 0, 0.2)',
-                            px: 2,
-                            py: 0.75,
-                            borderRadius: '999px',
-                            mb: 3
-                        }}>
-                            <ShoppingCartIcon sx={{ color: 'white', fontSize: 16 }} />
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: '0.8rem' }}>
-                                {strings.fmcg_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h2"
-                            component="h1"
-                            sx={{
-                                color: 'white',
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                lineHeight: 1.2,
-                                mb: 3
-                            }}
-                        >
-                            {strings.fmcg_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                fontSize: { xs: '1rem', md: '1.125rem' },
-                                mb: 5,
-                                maxWidth: '95%',
-                                lineHeight: 1.6
-                            }}
-                        >
-                            {strings.fmcg_hero_desc}
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                            <Button
-                                variant="contained"
-                                component={Link}
-                                href="/register"
-                                onClick={() => trackCtaClick('solusi/fmcg', 'hero_cta')}
-                                sx={{
-                                    bgcolor: 'white',
-                                    color: '#3854D6',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        bgcolor: 'rgba(255, 255, 255, 0.9)'
-                                    }
-                                }}
-                            >
-                                {strings.fmcg_hero_btn_trial}
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                sx={{
-                                    borderColor: 'rgba(255,255,255,0.5)',
-                                    color: 'white',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        borderColor: 'white',
-                                        bgcolor: 'rgba(255,255,255,0.1)'
-                                    }
-                                }}
-                            >
-                                {strings.fmcg_hero_btn_consult}
-                            </Button>
-                        </Box>
-                    </Box>
-
-                    {/* Right Side Mockup */}
-                    <FmcgHeroVisual />
-
-                </Box>
-            </Container>
-        </Box>
+            visual={<FmcgHeroVisual />}
+        />
     );
 }
 

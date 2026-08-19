@@ -1,128 +1,25 @@
 "use client";
 
-import { Box, Container, Typography, Stack, Button, Grid, Paper, LinearProgress } from "@mui/material";
+import { Box, Typography, Stack, Grid, Paper, LinearProgress } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { trackCtaClick } from '@/lib/analytics/events';
-import Link from 'next/link';
-import CampaignIcon from '@mui/icons-material/Campaign';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import EmailIcon from '@mui/icons-material/Email';
 import LanguageIcon from '@mui/icons-material/Language';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function MarketingHero() {
     useLanguage();
 
-
     return (
-        <Box
-            sx={{
-                background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)',
-                pt: { xs: 12, md: 20 },
-                pb: { xs: 10, md: 15 },
-                color: 'white',
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            <Container maxWidth="lg">
-                <Grid container spacing={6} alignItems="center">
-                    <Grid item xs={12} md={6}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                bgcolor: 'rgba(255, 255, 255, 0.15)',
-                                px: 2,
-                                py: 0.8,
-                                borderRadius: '99px',
-                                mb: 4,
-                                border: '1px solid rgba(255, 255, 255, 0.2)'
-                            }}
-                        >
-                            <CampaignIcon sx={{ fontSize: 16, color: 'white' }} />
-                            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-                                {strings.sol_mkt_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h1"
-                            sx={{
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.75rem' },
-                                lineHeight: 1.1,
-                                mb: 3
-                            }}
-                        >
-                            {strings.sol_mkt_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                fontSize: '1.125rem',
-                                opacity: 0.9,
-                                mb: 5,
-                                lineHeight: 1.6,
-                                maxWidth: '540px'
-                            }}
-                        >
-                            {strings.sol_mkt_hero_desc}
-                        </Typography>
-
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                            <Button
-                                variant="contained"
-                                component={Link}
-                                href="/register"
-                                onClick={() => trackCtaClick('solusi/marketing', 'hero_cta')}
-                                sx={{
-                                    bgcolor: 'white',
-                                    color: '#3854D6',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.9)' }
-                                }}
-                            >
-                                {strings.sol_mkt_hero_btn1}
-                            </Button>
-                            {/* <Button
-                                variant="outlined"
-                                sx={{
-                                    color: 'white',
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '12px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    borderWidth: '2px',
-                                    '&:hover': {
-                                        borderColor: 'white',
-                                        bgcolor: 'rgba(255, 255, 255, 0.1)',
-                                        borderWidth: '2px'
-                                    }
-                                }}
-                            >
-                                {strings.sol_mkt_hero_btn2}
-                            </Button> */}
-                        </Stack>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                        <MarketingHeroVisual />
-                    </Grid>
-                </Grid>
-            </Container>
-        </Box>
+        <PageHero
+            badge={strings.formatString(strings.hero_slide_badge_solusi, strings.sol_role_marketing)}
+            title={strings.sol_mkt_hero_title}
+            description={strings.sol_mkt_hero_desc}
+            trackSource="solusi/marketing"
+            visual={<MarketingHeroVisual />}
+        />
     );
 }
 

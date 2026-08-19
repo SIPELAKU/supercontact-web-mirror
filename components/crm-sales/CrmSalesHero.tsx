@@ -1,124 +1,22 @@
 "use client";
 
-import { Box, Container, Typography, Button, Paper, Grid } from "@mui/material";
-import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import { Box, Typography, Paper, Grid } from "@mui/material";
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import { trackCtaClick } from '@/lib/analytics/events';
-import Link from 'next/link';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function CrmSalesHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                bgcolor: '#3854D6', // Standard blue from the image
-                pt: { xs: 12, md: 16 },
-                pb: { xs: 10, md: 16 },
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-                <Grid container spacing={6} alignItems="center">
-                    {/* Left Side Info */}
-                    <Grid item xs={12} md={6}>
-                        {/* Badge */}
-                        <Box sx={{
-                            display: 'inline-flex',
-                            bgcolor: 'rgba(0, 0, 0, 0.15)',
-                            px: 2,
-                            py: 0.75,
-                            borderRadius: '999px',
-                            mb: 3
-                        }}>
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: '0.8rem' }}>
-                                {strings.crm_sales_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h2"
-                            component="h1"
-                            sx={{
-                                color: 'white',
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                lineHeight: 1.2,
-                                mb: 3
-                            }}
-                        >
-                            {strings.crm_sales_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                fontSize: { xs: '1rem', md: '1.125rem' },
-                                mb: 5,
-                                maxWidth: '90%',
-                                lineHeight: 1.6
-                            }}
-                        >
-                            {strings.crm_sales_hero_desc}
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                            <Button
-                                variant="contained"
-                                component={Link}
-                                href="/register"
-                                onClick={() => trackCtaClick('produk/crm-sales', 'hero_cta')}
-                                sx={{
-                                    bgcolor: 'white',
-                                    color: '#3854D6',
-                                    fontWeight: 600,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        bgcolor: 'rgba(255, 255, 255, 0.9)'
-                                    }
-                                }}
-                            >
-                                {strings.crm_sales_btn_trial}
-                            </Button>
-                            {/* <Button
-                                variant="outlined"
-                                startIcon={<PlayCircleOutlineIcon />}
-                                sx={{
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        borderColor: 'white',
-                                        bgcolor: 'rgba(255, 255, 255, 0.1)'
-                                    }
-                                }}
-                            >
-                                {strings.crm_sales_btn_demo}
-                            </Button> */}
-                        </Box>
-                    </Grid>
-
-                    {/* Right Side Card Mockup */}
-                    <Grid item xs={12} md={6}>
-                        <CrmSalesHeroVisual />
-                    </Grid>
-                </Grid>
-            </Container>
-        </Box>
+        <PageHero
+            badge={strings.hero_slide_badge_produk}
+            title={strings.crm_sales_hero_title}
+            description={strings.crm_sales_hero_desc}
+            trackSource="produk/crm-sales"
+            visual={<CrmSalesHeroVisual />}
+        />
     );
 }
 

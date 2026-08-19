@@ -1,8 +1,6 @@
 "use client";
 
-import { Box, Container, Typography, Button, Paper, Avatar, InputBase, IconButton } from "@mui/material";
-import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import { Box, Typography, Button, Paper, Avatar, InputBase, IconButton } from "@mui/material";
 import CallIcon from '@mui/icons-material/Call';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import SendIcon from '@mui/icons-material/Send';
@@ -10,8 +8,7 @@ import AttachmentIcon from '@mui/icons-material/Attachment';
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { SearchIcon } from "lucide-react";
-import Link from "next/link";
-import { trackCtaClick } from '@/lib/analytics/events';
+import PageHero from '@/components/marketing/PageHero';
 
 // Custom icons for the mockup
 
@@ -28,116 +25,13 @@ export default function OmniHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                width: '100%',
-                bgcolor: '#3854D6', // Standard blue from the image
-                pt: { xs: 12, md: 16 },
-                pb: { xs: 10, md: 16 },
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 6, alignItems: 'center' }}>
-
-                    {/* Left Side Info */}
-                    <Box sx={{ flex: 1, maxWidth: { xs: '100%', lg: '50%' } }}>
-                        {/* Badge */}
-                        <Box sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            bgcolor: 'rgba(0, 0, 0, 0.15)',
-                            px: 2,
-                            py: 0.75,
-                            borderRadius: '999px',
-                            mb: 3
-                        }}>
-                            <ChatBubbleOutlineIcon sx={{ color: 'white', fontSize: 16 }} />
-                            <Typography variant="caption" sx={{ color: 'white', fontWeight: 600, fontSize: '0.8rem' }}>
-                                {strings.omni_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h2"
-                            component="h1"
-                            sx={{
-                                color: 'white',
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                lineHeight: 1.2,
-                                mb: 3
-                            }}
-                        >
-                            {strings.omni_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                fontSize: { xs: '1rem', md: '1.125rem' },
-                                mb: 5,
-                                maxWidth: '95%',
-                                lineHeight: 1.6
-                            }}
-                        >
-                            {strings.omni_hero_desc}
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                            <Button
-                                variant="contained"
-                                component={Link}
-                                href="/register"
-                                onClick={() => trackCtaClick('produk/omnichannel', 'hero_cta')}
-                                sx={{
-                                    bgcolor: 'white',
-                                    color: '#3854D6',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        bgcolor: 'rgba(255, 255, 255, 0.9)'
-                                    }
-                                }}
-                            >
-                                {strings.omni_hero_btn_trial}
-                            </Button>
-                            {/* <Button
-                                variant="outlined"
-                                startIcon={<PlayCircleOutlineIcon />}
-                                sx={{
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                                    color: 'white',
-                                    fontWeight: 600,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '8px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': {
-                                        borderColor: 'white',
-                                        bgcolor: 'rgba(255, 255, 255, 0.1)'
-                                    }
-                                }}
-                            >
-                                {strings.omni_hero_btn_demo}
-                            </Button> */}
-                        </Box>
-                    </Box>
-
-                    {/* Right Side Unified Inbox Mockup */}
-                    <OmniHeroVisual />
-
-                </Box>
-            </Container>
-        </Box>
+        <PageHero
+            badge={strings.hero_slide_badge_produk}
+            title={strings.omni_hero_title}
+            description={strings.omni_hero_desc}
+            trackSource="produk/omnichannel"
+            visual={<OmniHeroVisual />}
+        />
     );
 }
 

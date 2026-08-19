@@ -1,138 +1,26 @@
 "use client";
 
-import { Box, Container, Typography, Stack, Button, Grid, Paper, Chip, LinearProgress } from "@mui/material";
+import { Box, Typography, Stack, Grid, Paper, Chip, LinearProgress } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import Link from 'next/link';
-import { trackCtaClick } from '@/lib/analytics/events';
 import HandymanIcon from '@mui/icons-material/Handyman';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import GppMaybeIcon from '@mui/icons-material/GppMaybe';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import WarningIcon from '@mui/icons-material/Warning';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function OpHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                pt: { xs: 15, md: 20 },
-                pb: { xs: 10, md: 15 },
-                background: 'linear-gradient(135deg, #597CFF 0%, #7B99FF 100%)',
-                color: 'white',
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            {/* Decorative background circle */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: '-20%',
-                    right: '-10%',
-                    width: '600px',
-                    height: '600px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    filter: 'blur(100px)',
-                    zIndex: 0
-                }}
-            />
-
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-                <Grid container spacing={8} alignItems="center">
-                    <Grid item xs={12} md={6}>
-                        <Stack spacing={4}>
-                            <Box sx={{ display: 'flex' }}>
-                                <Chip
-                                    icon={<AutoFixHighIcon sx={{ fontSize: '1rem !important', color: 'white !important' }} />}
-                                    label={strings.sol_op_hero_badge}
-                                    sx={{
-                                        bgcolor: 'rgba(255,255,255,0.2)',
-                                        color: 'white',
-                                        fontWeight: 700,
-                                        backdropFilter: 'blur(10px)',
-                                        border: '1px solid rgba(255,255,255,0.3)',
-                                        px: 1
-                                    }}
-                                />
-                            </Box>
-                            <Typography
-                                variant="h1"
-                                sx={{
-                                    fontWeight: 800,
-                                    fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                    lineHeight: 1.1,
-                                    letterSpacing: '-0.02em'
-                                }}
-                            >
-                                {strings.sol_op_hero_title}
-                            </Typography>
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    fontSize: '1.125rem',
-                                    opacity: 0.9,
-                                    lineHeight: 1.6,
-                                    maxWidth: '500px'
-                                }}
-                            >
-                                {strings.sol_op_hero_desc}
-                            </Typography>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <Button
-                                    variant="contained"
-                                    component={Link}
-                                    href="/register"
-                                    onClick={() => trackCtaClick('solusi/operasional', 'hero_cta')}
-                                    sx={{
-                                        bgcolor: 'white',
-                                        color: '#3854D6',
-                                        fontWeight: 800,
-                                        px: 4,
-                                        py: 2,
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
-                                        textTransform: 'none',
-                                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.2)',
-                                        '&:hover': { bgcolor: '#F8FAFC' }
-                                    }}
-                                >
-                                    {strings.sol_op_hero_btn1}
-                                </Button>
-                                {/* <Button
-                                    variant="outlined"
-                                    sx={{
-                                        color: 'white',
-                                        borderColor: 'rgba(255,255,255,0.5)',
-                                        fontWeight: 700,
-                                        px: 4,
-                                        py: 2,
-                                        borderRadius: '12px',
-                                        fontSize: '1rem',
-                                        textTransform: 'none',
-                                        borderWidth: '2px',
-                                        '&:hover': {
-                                            borderColor: 'white',
-                                            bgcolor: 'rgba(255,255,255,0.1)',
-                                            borderWidth: '2px'
-                                        }
-                                    }}
-                                >
-                                    {strings.sol_op_hero_btn2}
-                                </Button> */}
-                            </Stack>
-                        </Stack>
-                    </Grid>
-
-                    <Grid item xs={12} md={6}>
-                        <OpHeroVisual />
-                    </Grid>
-                </Grid>
-            </Container>
-        </Box>
+        <PageHero
+            badge={strings.formatString(strings.hero_slide_badge_solusi, strings.sol_role_ops)}
+            title={strings.sol_op_hero_title}
+            description={strings.sol_op_hero_desc}
+            trackSource="solusi/operasional"
+            visual={<OpHeroVisual />}
+        />
     );
 }
 

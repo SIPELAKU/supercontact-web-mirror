@@ -1,127 +1,30 @@
 "use client";
 
-import { Box, Container, Typography, Stack, Button, Grid, Paper } from "@mui/material";
+import { Box, Typography, Stack, Grid, Paper } from "@mui/material";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
-import GroupsIcon from '@mui/icons-material/Groups';
-import { trackCtaClick } from '@/lib/analytics/events';
-import Link from 'next/link';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { getWhatsAppLink } from '@/lib/utils/wa-link';
+import PageHero from '@/components/marketing/PageHero';
 
 export default function OutsourcingHero() {
     useLanguage();
 
     return (
-        <Box
-            sx={{
-                background: 'linear-gradient(135deg, #597CFF 0%, #7B99FF 100%)',
-                pt: { xs: 12, md: 20 },
-                pb: { xs: 10, md: 15 },
-                color: 'white',
-                overflow: 'hidden',
-                position: 'relative'
+        <PageHero
+            badge={strings.formatString(strings.hero_slide_badge_solusi, strings.sol_ind_outsourcing)}
+            title={strings.out_hero_title}
+            description={strings.out_hero_desc}
+            trackSource="solusi/outsourcing"
+            secondaryCta={{
+                label: strings.out_hero_btn2,
+                href: getWhatsAppLink('/solusi/outsourcing'),
+                external: true,
+                icon: <WhatsAppIcon />,
+                trackLabel: 'hero_wa_cta',
             }}
-        >
-            <Container maxWidth="lg">
-                <Grid container spacing={6} alignItems="center">
-                    {/* Left: Text Content */}
-                    <Grid item xs={12} md={6}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                bgcolor: 'rgba(255, 255, 255, 0.15)',
-                                px: 2,
-                                py: 0.8,
-                                borderRadius: '99px',
-                                mb: 4,
-                                border: '1px solid rgba(255, 255, 255, 0.2)'
-                            }}
-                        >
-                            <Box sx={{ bgcolor: 'white', borderRadius: '4px', p: 0.2, display: 'flex' }}>
-                                <GroupsIcon sx={{ fontSize: 16, color: '#3854D6' }} />
-                            </Box>
-                            <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-                                {strings.out_hero_badge}
-                            </Typography>
-                        </Box>
-
-                        <Typography
-                            variant="h1"
-                            sx={{
-                                fontWeight: 800,
-                                fontSize: { xs: '2.5rem', md: '3.75rem' },
-                                lineHeight: 1.1,
-                                mb: 3
-                            }}
-                        >
-                            {strings.out_hero_title}
-                        </Typography>
-
-                        <Typography
-                            variant="body1"
-                            sx={{
-                                fontSize: '1.125rem',
-                                opacity: 0.9,
-                                mb: 5,
-                                lineHeight: 1.6,
-                                maxWidth: '540px'
-                            }}
-                        >
-                            {strings.out_hero_desc}
-                        </Typography>
-
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                            <Button
-                                variant="contained"
-                                component={Link}
-                                href="/register"
-                                onClick={() => trackCtaClick('solusi/outsourcing', 'hero_cta')}
-                                sx={{
-                                    bgcolor: 'white',
-                                    color: '#3854D6',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '12px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    '&:hover': { bgcolor: '#f0f0f0' }
-                                }}
-                            >
-                                {strings.out_hero_btn1}
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                sx={{
-                                    color: 'white',
-                                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '12px',
-                                    textTransform: 'none',
-                                    fontSize: '1rem',
-                                    borderWidth: '2px',
-                                    '&:hover': {
-                                        borderColor: 'white',
-                                        bgcolor: 'rgba(255, 255, 255, 0.1)',
-                                        borderWidth: '2px'
-                                    }
-                                }}
-                            >
-                                {strings.out_hero_btn2}
-                            </Button>
-                        </Stack>
-                    </Grid>
-
-                    {/* Right: Mockup Dashboard */}
-                    <Grid item xs={12} md={6}>
-                        <OutsourcingHeroVisual />
-                    </Grid>
-                </Grid>
-            </Container>
-        </Box>
+            visual={<OutsourcingHeroVisual />}
+        />
     );
 }
 

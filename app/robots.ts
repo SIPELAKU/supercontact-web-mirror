@@ -2,7 +2,9 @@ import type { MetadataRoute } from 'next';
 
 const BASE_URL = 'https://www.smartsales.id';
 
-const ALLOW = ['/', '/company', '/price', '/produk/', '/solusi/', '/blog', '/api/og'];
+// /register is deliberately allowed and indexable: it is the site's main
+// conversion target and is listed in the sitemap with its own metadata.
+const ALLOW = ['/', '/company', '/price', '/produk/', '/solusi/', '/blog', '/register', '/api/og'];
 
 const DISALLOW = [
     '/dashboard',
@@ -25,7 +27,6 @@ const DISALLOW = [
     '/support/',
     '/contact',
     '/login',
-    '/register',
     '/forgot-password',
     '/new-password',
     '/email-verification',

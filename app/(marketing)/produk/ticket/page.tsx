@@ -29,6 +29,30 @@ export const metadata: Metadata = {
     },
 };
 
+const softwareAppJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'SmartSales Ticket Creation',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: PAGE_URL,
+    description:
+        'Modul Ticket Creation SmartSales: ubah chat pelanggan menjadi tiket tugas terlacak lengkap dengan status, eskalasi antar tim, dan SLA.',
+    inLanguage: 'id-ID',
+    publisher: {
+        '@type': 'Organization',
+        name: 'SmartSales',
+        url: 'https://www.smartsales.id',
+    },
+    offers: {
+        '@type': 'Offer',
+        url: 'https://www.smartsales.id/price',
+        priceCurrency: 'IDR',
+        price: '0',
+        description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
+    },
+};
+
 const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -154,6 +178,10 @@ const faqJsonLd = {
 export default function PublicTicketPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

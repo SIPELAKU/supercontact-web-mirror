@@ -24,10 +24,41 @@ export const metadata: Metadata = {
         images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
     },
     twitter: {
+        card: "summary_large_image",
+        title: "Paket Harga | SmartSales",
+        description:
+            "Lihat paket harga SmartSales untuk CRM Sales, CRM Services, dan Omnichannel WhatsApp & Email. Coba gratis, tanpa komitmen di awal.",
         images: [OG_IMAGE],
     },
 };
 
+const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Beranda",
+            item: "https://www.smartsales.id/",
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: "Paket Harga",
+            item: PAGE_URL,
+        },
+    ],
+};
+
 export default function PricePage() {
-    return <PriceClient />;
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+            />
+            <PriceClient />
+        </>
+    );
 }

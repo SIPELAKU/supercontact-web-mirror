@@ -7,6 +7,7 @@ import {
     ChevronLeft,
     MessageCircle,
     Mail,
+    Globe,
     Loader2,
     Ticket as TicketIcon,
     Trash,
@@ -20,8 +21,8 @@ interface ConversationHeaderProps {
     conversation?: ConversationWithMessages;
     activeConversationId: string | null;
     isChannelSelected: boolean;
-    chatMode: "whatsapp" | "email";
-    onChatModeChange: (mode: "whatsapp" | "email") => void;
+    chatMode: "whatsapp" | "email" | "web_widget";
+    onChatModeChange: (mode: "whatsapp" | "email" | "web_widget") => void;
     channelAccounts: AccountSelectOption[];
     selectedAccountId: string;
     onAccountChange: (accountId: string) => void;
@@ -98,6 +99,21 @@ export default function ConversationHeader({
                                     <Mail className="w-3 h-3" />
                                     Email
                                 </button>
+                                {/* Website chat is visitor-initiated, so only
+                                    surface the toggle when this contact actually
+                                    has a web_widget conversation. */}
+                                {selectedContact.channel_types.includes("web_widget") && (
+                                    <button
+                                        onClick={() => onChatModeChange("web_widget")}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
+                                            chatMode === "web_widget" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
+                                        )}
+                                    >
+                                        <Globe className="w-3 h-3" />
+                                        Web Chat
+                                    </button>
+                                )}
                             </div>
                         )}
                         {!activeConversationId && isChannelSelected && channelAccounts.length > 1 && (

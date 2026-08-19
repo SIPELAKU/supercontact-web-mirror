@@ -47,8 +47,8 @@ interface ConversationPanelProps {
     activeConversationId: string | null;
     isChannelSelected: boolean;
     onStartChannel: (mode: "whatsapp" | "email") => void;
-    chatMode: "whatsapp" | "email";
-    onChatModeChange: (mode: "whatsapp" | "email") => void;
+    chatMode: "whatsapp" | "email" | "web_widget";
+    onChatModeChange: (mode: "whatsapp" | "email" | "web_widget") => void;
     channelAccounts: AccountSelectOption[];
     selectedAccountId: string;
     onAccountChange: (accountId: string) => void;
@@ -169,17 +169,24 @@ export default function ConversationPanel({
                     {/* Input Area */}
                     {(activeConversationId || isChannelSelected) && (
                         <div className="p-4 bg-white border-t border-gray-100">
-                            {chatMode === "whatsapp" ? (
-                                <WhatsAppComposer {...whatsapp} onSend={onSendMessage} />
-                            ) : (
+                            {chatMode === "email" ? (
                                 <EmailComposer
                                     {...email}
                                     toValue={selectedContact.email || ""}
                                     onSend={onSendMessage}
                                 />
+                            ) : (
+                                // WhatsApp and Web Chat both use the plain-text
+                                // composer (no subject/CC/HTML) - a website-chat
+                                // reply is a plain message like WhatsApp, not email.
+                                <WhatsAppComposer {...whatsapp} onSend={onSendMessage} />
                             )}
                             <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest font-medium">
-                                Sending via {chatMode === "whatsapp" ? "WhatsApp Business API" : "SMTP Relay"}
+                                Sending via {chatMode === "whatsapp"
+                                    ? "WhatsApp Business API"
+                                    : chatMode === "web_widget"
+                                        ? "Website Chat"
+                                        : "SMTP Relay"}
                             </p>
                         </div>
                     )}

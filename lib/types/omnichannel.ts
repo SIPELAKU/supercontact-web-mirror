@@ -174,7 +174,7 @@ export interface OmnichannelContact {
   phone_number?: string;
   company?: string;
   position?: string;
-  channel_types: ('email' | 'whatsapp')[];
+  channel_types: ('email' | 'whatsapp' | 'web_widget')[];
   unread_count: number;
   latest_conversation_id?: string;
   last_message_at?: string;

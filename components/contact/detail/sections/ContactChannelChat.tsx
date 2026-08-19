@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mail, MessageCircle, MessagesSquare, Send } from "lucide-react";
+import { Globe, Loader2, Mail, MessageCircle, MessagesSquare, Send } from "lucide-react";
 
 import MessageList from "@/components/omnichannel/MessageList";
 import MessageInput from "@/components/omnichannel/MessageInput";
@@ -23,7 +23,13 @@ import {
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
-type ChatChannel = "whatsapp" | "email";
+type ChatChannel = "whatsapp" | "email" | "web_widget";
+
+const CHANNEL_LABELS: Record<ChatChannel, string> = {
+    whatsapp: "WhatsApp",
+    email: "Email",
+    web_widget: "Web Chat",
+};
 
 interface ContactChannelChatProps {
     contactId: string;
@@ -77,7 +83,11 @@ export const ContactChannelChat = ({
     const availableChannels = useMemo(() => {
         const channels = new Set<ChatChannel>();
         conversations.forEach((c) => {
-            if (c.channel_type === "whatsapp" || c.channel_type === "email") {
+            if (
+                c.channel_type === "whatsapp" ||
+                c.channel_type === "email" ||
+                c.channel_type === "web_widget"
+            ) {
                 channels.add(c.channel_type);
             }
         });
@@ -133,7 +143,7 @@ export const ContactChannelChat = ({
                         <button
                             key={channel}
                             onClick={() => setSelectedChannel(channel)}
-                            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium capitalize ${
+                            className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
                                 channel === activeChannel
                                     ? "bg-[#EEF2FD] text-[#5479EE]"
                                     : "text-gray-500 hover:bg-gray-50"
@@ -141,10 +151,12 @@ export const ContactChannelChat = ({
                         >
                             {channel === "whatsapp" ? (
                                 <MessageCircle size={13} />
+                            ) : channel === "web_widget" ? (
+                                <Globe size={13} />
                             ) : (
                                 <Mail size={13} />
                             )}
-                            {channel}
+                            {CHANNEL_LABELS[channel]}
                         </button>
                     ))}
                 </div>

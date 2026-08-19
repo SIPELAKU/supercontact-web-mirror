@@ -35,7 +35,7 @@ export default function OmnichannelClient() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isNewContactOpen, setIsNewContactOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [chatMode, setChatMode] = useState<"whatsapp" | "email">("whatsapp");
+    const [chatMode, setChatMode] = useState<"whatsapp" | "email" | "web_widget">("whatsapp");
     const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -88,7 +88,7 @@ export default function OmnichannelClient() {
     // Contacts data - left panel's channel category filter (All/WhatsApp/
     // Email) and last-activity time window (all/1d/1w/1m) are server-side,
     // so recency ordering stays correct per category.
-    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email">("all");
+    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email" | "web_widget">("all");
     const [listTimeFilter, setListTimeFilter] = useState<number>(0); // 0 = all time, else days
     const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
         searchTerm,
@@ -294,7 +294,7 @@ export default function OmnichannelClient() {
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const content = chatMode === "whatsapp" ? inputText : emailHtmlContent;
+        const content = chatMode === "email" ? emailHtmlContent : inputText;
 
         if (!selectedFile && !content.trim() && content !== "<br>") return;
 
@@ -374,14 +374,15 @@ export default function OmnichannelClient() {
                         conversationId,
                         content: content,
                     });
-                    if (chatMode === "whatsapp") setInputText("");
-                    else {
+                    if (chatMode === "email") {
                         setEmailHtmlContent("");
                         if (emailEditorRef.current) emailEditorRef.current.innerHTML = "";
                         setEmailSubject("");
                         setEmailCc("");
                         setEmailBcc("");
                         setIsEmailComposerOpen(false);
+                    } else {
+                        setInputText("");
                     }
                 }
             }

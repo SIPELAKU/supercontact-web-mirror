@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, UserPlus, X, Loader2, Flame, Mail, MessageCircle } from "lucide-react";
+import { Search, UserPlus, X, Loader2, Flame, Mail, MessageCircle, Globe } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -12,7 +12,7 @@ import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
 import { CircularProgress } from "@mui/material";
 
-export type ContactListChannelFilter = "all" | "whatsapp" | "email";
+export type ContactListChannelFilter = "all" | "whatsapp" | "email" | "web_widget";
 
 interface ContactListSidebarProps {
     contacts: OmnichannelContact[];
@@ -45,6 +45,7 @@ const CHANNEL_FILTERS: { value: ContactListChannelFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "whatsapp", label: "WhatsApp" },
     { value: "email", label: "Email" },
+    { value: "web_widget", label: "Web Chat" },
 ];
 
 const TIME_FILTERS: { value: number; label: string; title: string }[] = [
@@ -321,6 +322,9 @@ export default function ContactListSidebar({
                                                 )}
                                                 {contact.channel_types?.includes("email") && (
                                                     <Mail className="w-3 h-3 text-blue-400" />
+                                                )}
+                                                {contact.channel_types?.includes("web_widget") && (
+                                                    <Globe className="w-3 h-3 text-indigo-500" />
                                                 )}
                                                 {contact.unread_count > 0 && (
                                                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-white shadow-sm">

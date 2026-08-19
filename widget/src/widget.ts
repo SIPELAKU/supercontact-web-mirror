@@ -143,12 +143,18 @@ interface ServerMessage {
   // Optional locale override on the embed <script data-locale="en"> tag.
   // Absent => "id" (default, tenants are Indonesian). Zero backend change.
   const localeAttr = (currentScript.getAttribute("data-locale") || "").trim().toLowerCase();
+  // Optional absolute WebSocket base on the embed <script data-ws-url="wss://..."> tag.
+  // Needed when data-api-url is a relative/same-origin path (e.g. a "/api/proxy"
+  // that only forwards REST, not WS upgrades): the derived ws base below would be
+  // an invalid relative WebSocket URL. When absent, derive ws base from apiUrl as
+  // before (correct for the standard absolute-URL tenant embed).
+  const wsUrlAttr = (currentScript.getAttribute("data-ws-url") || "").replace(/\/$/, "");
   if (!widgetKey || !apiUrl) {
     console.error("[SmartSales Widget] missing data-widget-key or data-api-url");
     return;
   }
 
-  const wsUrl = apiUrl.replace(/^http/, "ws");
+  const wsUrl = wsUrlAttr || apiUrl.replace(/^http/, "ws");
   const storageKey = `smartsales_widget_session_${widgetKey}`;
   const PING_INTERVAL_MS = 2 * 60 * 1000; // well under the server's 5-minute idle timeout
   // Reconnect backoff (item 2): exponential base 1s, cap 30s, full jitter.

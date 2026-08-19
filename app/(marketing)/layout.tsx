@@ -14,6 +14,9 @@ const WIDGET_KEY =
     process.env.NEXT_PUBLIC_WIDGET_KEY ||
     "JvwFQ6izkkdTfeOiEypVV2obyEGojC9mr-WeOiATP_0";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// REST goes through NEXT_PUBLIC_API_URL (a same-origin "/api/proxy" here, which
+// can't carry WS upgrades), so the widget needs the absolute WS base separately.
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -27,6 +30,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                     strategy="afterInteractive"
                     data-widget-key={WIDGET_KEY}
                     data-api-url={API_URL}
+                    {...(WS_URL ? { "data-ws-url": WS_URL } : {})}
                     data-locale="id"
                 />
             )}

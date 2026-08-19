@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { OmnichannelContact, ConversationWithMessages } from "@/lib/types/omnichannel";
 import AccountSelect, { AccountSelectOption } from "./AccountSelect";
+import { ConversationViewersIndicator } from "./ConversationViewersIndicator";
 
 interface ConversationHeaderProps {
     selectedContact: OmnichannelContact;
@@ -76,6 +77,9 @@ export default function ConversationHeader({
                             {conversation?.sentiment_label || "No Sentiment"}
                         </span>
                     </h3>
+                    {/* Conversation collision presence: other agents currently
+                        viewing this conversation (heartbeat-polled ~20s). */}
+                    <ConversationViewersIndicator conversationId={activeConversationId} />
                     <div className="flex flex-col items-start gap-1.5 mt-0.5">
                         {(activeConversationId || isChannelSelected) && (
                             <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-100">

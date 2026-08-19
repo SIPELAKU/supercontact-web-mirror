@@ -23,7 +23,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
-import ContactListSidebar from "./ContactListSidebar";
+import ContactListSidebar, { ContactListStatusFilter, ContactListPriorityFilter } from "./ContactListSidebar";
 import ConversationPanel from "./ConversationPanel";
 import ConversationDetailSidebar from "./ConversationDetailSidebar";
 
@@ -90,10 +90,17 @@ export default function OmnichannelClient() {
     // so recency ordering stays correct per category.
     const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email" | "web_widget">("all");
     const [listTimeFilter, setListTimeFilter] = useState<number>(0); // 0 = all time, else days
+    // Support Desk Phase 0 filters (all server-side).
+    const [listStatusFilter, setListStatusFilter] = useState<ContactListStatusFilter>("all");
+    const [listPriorityFilter, setListPriorityFilter] = useState<ContactListPriorityFilter>("all");
+    const [listAssignedToMe, setListAssignedToMe] = useState<boolean>(false);
     const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
         searchTerm,
         listChannelFilter === "all" ? undefined : listChannelFilter,
-        listTimeFilter || undefined
+        listTimeFilter || undefined,
+        listStatusFilter === "all" ? undefined : listStatusFilter,
+        listPriorityFilter === "all" ? undefined : listPriorityFilter,
+        listAssignedToMe || undefined
     );
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
@@ -447,6 +454,12 @@ export default function OmnichannelClient() {
                     onChannelFilterChange={setListChannelFilter}
                     timeFilter={listTimeFilter}
                     onTimeFilterChange={setListTimeFilter}
+                    statusFilter={listStatusFilter}
+                    onStatusFilterChange={setListStatusFilter}
+                    priorityFilter={listPriorityFilter}
+                    onPriorityFilterChange={setListPriorityFilter}
+                    assignedToMe={listAssignedToMe}
+                    onAssignedToMeChange={setListAssignedToMe}
                     selectedContactId={selectedContact?.contact_id}
                     onSelectContact={handleSelectContact}
                     onRefresh={() => handleRefreshEmail(false)}

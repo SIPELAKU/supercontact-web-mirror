@@ -23,6 +23,9 @@ import {
   ConversationTagsResponse,
   ConversationTag,
   ConversationNote,
+  SetConversationStatusRequest,
+  SetConversationPriorityRequest,
+  ConversationViewersResponse,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -50,6 +53,9 @@ export type {
   ConversationTagsResponse,
   ConversationTag,
   ConversationNote,
+  SetConversationStatusRequest,
+  SetConversationPriorityRequest,
+  ConversationViewersResponse,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
@@ -113,11 +119,22 @@ export async function fetchAccounts(token: string, channelType?: string, include
   return Array.isArray(data) ? data : [];
 }
 
-export async function fetchOmnichannelContacts(token: string, q?: string, channelType?: string, activeWithinDays?: number): Promise<OmnichannelContactsResponse> {
+export async function fetchOmnichannelContacts(
+  token: string,
+  q?: string,
+  channelType?: string,
+  activeWithinDays?: number,
+  status?: string,
+  priority?: string,
+  assignedToMe?: boolean
+): Promise<OmnichannelContactsResponse> {
   const params = new URLSearchParams();
   if (q) params.append('q', q);
   if (channelType) params.append('channel_type', channelType);
   if (activeWithinDays) params.append('active_within_days', String(activeWithinDays));
+  if (status) params.append('status', status);
+  if (priority) params.append('priority', priority);
+  if (assignedToMe) params.append('assigned_to_me', 'true');
 
   const res = await fetchWithTimeout(`${API_BASE}/inbox/contacts?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -479,6 +496,94 @@ export async function assignConversation(token: string, conversationId: string, 
   }
 
   return json.data || json;
+}
+
+export async function setConversationStatus(token: string, conversationId: string, data: SetConversationStatusRequest): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update conversation status');
+  }
+
+  return json.data || json;
+}
+
+export async function setConversationPriority(token: string, conversationId: string, data: SetConversationPriorityRequest): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/priority`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update conversation priority');
+  }
+
+  return json.data || json;
+}
+
+// Conversation collision presence (mirrors the ticket viewers heartbeat/poll
+// pair in lib/api/tickets.ts). Both are best-effort - the caller swallows
+// errors rather than surfacing a toast.
+export async function conversationViewerHeartbeat(token: string, conversationId: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/viewers/heartbeat`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to send conversation viewer heartbeat');
+  }
+}
+
+export async function getConversationViewers(token: string, conversationId: string): Promise<ConversationViewersResponse> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/viewers`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to load conversation viewers');
+  }
+
+  return json;
 }
 
 export async function setConversationTags(token: string, conversationId: string, data: SetConversationTagsRequest): Promise<ConversationWithMessages> {

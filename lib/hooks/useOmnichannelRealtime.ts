@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getUserIdFromToken } from "@/lib/utils/jwt";
-import { OmnichannelContact, OmnichannelContactsResponse } from "@/lib/types/omnichannel";
+import {
+  Conversation,
+  ConversationWithMessages,
+  OmnichannelContact,
+  OmnichannelContactsResponse,
+} from "@/lib/types/omnichannel";
 
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
@@ -22,6 +27,12 @@ interface OmnichannelConversationUpdatedPayload {
   last_message_at?: string;
   last_message_preview?: string;
   unread_count?: number;
+  // Support Desk Phase 0: status/priority mutations reuse this push, tagged
+  // with `reason` "status_changed" / "priority_changed" and carrying the new
+  // value so the open conversation can be patched optimistically.
+  reason?: string;
+  status?: Conversation["status"];
+  priority?: Conversation["priority"];
 }
 
 /**
@@ -106,6 +117,24 @@ export function useOmnichannelRealtime(activeConversationId: string | undefined)
         activeConversationIdRef.current &&
         data.conversation_id === activeConversationIdRef.current
       ) {
+        // status_changed / priority_changed carry the new value - patch the
+        // open conversation's cached record so the detail sidebar reflects it
+        // instantly, ahead of the invalidate below that pulls the authoritative
+        // record. (All other reasons just invalidate, as before.)
+        if (data.status !== undefined || data.priority !== undefined) {
+          queryClient.setQueryData<ConversationWithMessages | undefined>(
+            ["omnichannels", "conversations", activeConversationIdRef.current],
+            (old) =>
+              old
+                ? {
+                    ...old,
+                    ...(data.status !== undefined && { status: data.status }),
+                    ...(data.priority !== undefined && { priority: data.priority }),
+                  }
+                : old
+          );
+        }
+
         queryClient.invalidateQueries({
           queryKey: ["omnichannels", "conversations", activeConversationIdRef.current],
         });

@@ -2,6 +2,13 @@
 
 export type WhatsAppApprovalStatus = 'pending_approval' | 'approved' | 'rejected';
 
+// Full lifecycle status set that can appear on a conversation object.
+export type ConversationStatus = 'open' | 'closed' | 'solved' | 'archived' | 'snoozed';
+// Status values PATCH /conversations/{id}/status accepts from this UI.
+// (`snoozed` is set by the backend auto-snooze flow, not directly here.)
+export type SettableConversationStatus = 'open' | 'closed' | 'solved' | 'archived';
+export type ConversationPriority = 'low' | 'normal' | 'high' | 'urgent';
+
 export interface Account {
   id: string;
   company_id: string;
@@ -29,12 +36,25 @@ export interface Conversation {
   external_contact_name?: string;
   external_contact_identifier?: string;
   subject?: string;
-  status: 'open' | 'closed' | 'archived';
+  status: ConversationStatus;
+  priority?: ConversationPriority;
   unread_count: number;
   last_message_preview?: string;
   last_message_at?: string;
   created_at: string;
   updated_at?: string;
+  // Lifecycle timestamps (nullable - only set once the corresponding
+  // transition has happened). Added with the Support Desk Phase 0 status /
+  // priority / assignment work.
+  snoozed_until?: string | null;
+  closed_at?: string | null;
+  solved_at?: string | null;
+  archived_at?: string | null;
+  reopened_at?: string | null;
+  assigned_at?: string | null;
+  first_response_at?: string | null;
+  last_agent_response_at?: string | null;
+  last_customer_message_at?: string | null;
   sentiment_label?: "positive" | "negative" | "neutral";
   sentiment_model?: string;
   sentiment_score?: number;
@@ -81,6 +101,26 @@ export interface ConversationNote {
 
 export interface AssignConversationRequest {
   assigned_user_id: string | null;
+}
+
+// Status / priority controls (Support Desk Phase 0)
+export interface SetConversationStatusRequest {
+  status: SettableConversationStatus;
+}
+
+export interface SetConversationPriorityRequest {
+  priority: ConversationPriority;
+}
+
+// Conversation collision presence (mirrors the ticket viewers response;
+// excludes the caller).
+export interface ConversationViewer {
+  user: { id: string; fullname: string; email: string };
+  last_seen_at: string;
+}
+
+export interface ConversationViewersResponse {
+  data: { data: ConversationViewer[] };
 }
 
 export interface SetConversationTagsRequest {
@@ -199,7 +239,7 @@ export interface OmnichannelContactsResponse {
 export interface OmnichannelContactTimelineConversation {
   conversation_id: string;
   channel_type: 'whatsapp' | 'email' | 'web_widget';
-  status: 'open' | 'closed' | 'archived';
+  status: ConversationStatus;
   subject?: string;
   external_contact_identifier: string;
   external_contact_name?: string;

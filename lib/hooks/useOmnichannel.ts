@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -38,13 +39,20 @@ import {
   setConversationTags,
   createConversationNote,
   fetchConversationTags,
+  setConversationStatus,
+  setConversationPriority,
+  conversationViewerHeartbeat,
+  getConversationViewers,
   OmnichannelContact,
   OmnichannelContactsResponse,
   AssignConversationRequest,
   SetConversationTagsRequest,
   CreateConversationNoteRequest,
   ConversationTagsResponse,
+  SetConversationStatusRequest,
+  SetConversationPriorityRequest,
 } from "../api/omnichannel";
+import { ConversationViewer } from "../types/omnichannel";
 
 // Account Management Hooks
 // includeInactive defaults to false so every existing caller (new-conversation
@@ -66,17 +74,34 @@ export function useAccounts(channelType?: string, includeInactive?: boolean) {
   });
 }
 
-export function useOmnichannelContacts(q?: string, channelType?: string, activeWithinDays?: number) {
+export function useOmnichannelContacts(
+  q?: string,
+  channelType?: string,
+  activeWithinDays?: number,
+  status?: string,
+  priority?: string,
+  assignedToMe?: boolean
+) {
   const { token } = useAuth();
   return useQuery<OmnichannelContactsResponse, Error>({
-    // channelType/activeWithinDays are part of the key so each filter combo
-    // caches independently - useOmnichannelRealtime's setQueriesData
-    // partial-match on the ['omnichannels','inbox','contacts'] prefix still
-    // reaches every variant.
-    queryKey: ['omnichannels', 'inbox', 'contacts', q, channelType ?? 'all', activeWithinDays ?? 0],
+    // channelType/activeWithinDays/status/priority/assignedToMe are part of the
+    // key so each filter combo caches independently - useOmnichannelRealtime's
+    // setQueriesData partial-match on the ['omnichannels','inbox','contacts']
+    // prefix still reaches every variant.
+    queryKey: [
+      'omnichannels',
+      'inbox',
+      'contacts',
+      q,
+      channelType ?? 'all',
+      activeWithinDays ?? 0,
+      status ?? 'all',
+      priority ?? 'all',
+      assignedToMe ?? false,
+    ],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchOmnichannelContacts(token, q, channelType, activeWithinDays);
+      return fetchOmnichannelContacts(token, q, channelType, activeWithinDays, status, priority, assignedToMe);
     },
     staleTime: 1000 * 30, // 30 seconds
     // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy
@@ -349,6 +374,84 @@ export function useSetConversationTags() {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
     },
   });
+}
+
+export function useSetConversationStatus() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: SetConversationStatusRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return setConversationStatus(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+      // Status drives the inbox Status filter (server-side), so a change can
+      // move the row in/out of the currently filtered list - refresh it.
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+    },
+  });
+}
+
+export function useSetConversationPriority() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: SetConversationPriorityRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return setConversationPriority(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+      // Priority drives the inbox Priority filter (server-side) - refresh it.
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+    },
+  });
+}
+
+// Conversation collision presence. Heartbeat-polling (not a WS subscription),
+// mirroring lib/hooks/useTicketPresence.ts exactly: on each ~20s tick it POSTs
+// a heartbeat then GETs the current viewers (the response already excludes the
+// caller). Presence is best-effort, so errors are swallowed silently. Pass a
+// null conversationId (no conversation open) to idle the hook.
+const CONVERSATION_PRESENCE_INTERVAL_MS = 20000;
+
+export function useConversationViewers(conversationId: string | null) {
+  const { getToken } = useAuth();
+  const [viewers, setViewers] = useState<ConversationViewer[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!conversationId) {
+      setViewers([]);
+      return;
+    }
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        await conversationViewerHeartbeat(token, conversationId);
+        const res = await getConversationViewers(token, conversationId);
+        if (!cancelled) setViewers(res.data.data || []);
+      } catch {
+        // presence is best-effort, never surface an error toast for it
+      }
+    };
+
+    tick();
+    intervalRef.current = setInterval(tick, CONVERSATION_PRESENCE_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [conversationId, getToken]);
+
+  return { viewers };
 }
 
 export function useCreateConversationNote() {

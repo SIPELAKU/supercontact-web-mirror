@@ -24,10 +24,7 @@ type AddRoleProps = {
   setOpen: (open: boolean) => void;
 };
 
-import {
-  PERMISSIONS,
-  formatPermissionLabel,
-} from "@/lib/constants/permissions";
+import PermissionSelector from "./PermissionSelector";
 import { handleError } from "@/lib/utils/errorHandler";
 
 export default function AddRoleDialog({ open, setOpen }: AddRoleProps) {
@@ -134,31 +131,17 @@ export default function AddRoleDialog({ open, setOpen }: AddRoleProps) {
               >
                 Permission
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mt-3 ps-3">
-                {PERMISSIONS.map((permission) => (
-                  <div
-                    key={permission}
-                    className="flex items-center justify-between"
-                  >
-                    <h2 className={`text-sm text-[#374151] ${poppins.className}`}>
-                      {formatPermissionLabel(permission)}
-                    </h2>
-                    <AppInput
-                      type="checkbox"
-                      isBgWhite
-                      checked={permissions.includes(permission)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setPermissions([...permissions, permission]);
-                        } else {
-                          setPermissions(
-                            permissions.filter((p) => p !== permission),
-                          );
-                        }
-                      }}
-                    />
-                  </div>
-                ))}
+              <div className="mt-3">
+                <PermissionSelector
+                  selected={permissions}
+                  onToggle={(permission, checked) => {
+                    if (checked) {
+                      setPermissions([...permissions, permission]);
+                    } else {
+                      setPermissions(permissions.filter((p) => p !== permission));
+                    }
+                  }}
+                />
               </div>
             </div>
           </DialogContent>

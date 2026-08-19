@@ -9,10 +9,12 @@ import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
 import { ContactReq } from "@/lib/models/types";
-import { OmnichannelContact } from "@/lib/types/omnichannel";
+import { OmnichannelContact, ConversationStatus, ConversationPriority } from "@/lib/types/omnichannel";
 import { CircularProgress } from "@mui/material";
 
 export type ContactListChannelFilter = "all" | "whatsapp" | "email" | "web_widget";
+export type ContactListStatusFilter = "all" | ConversationStatus;
+export type ContactListPriorityFilter = "all" | ConversationPriority;
 
 interface ContactListSidebarProps {
     contacts: OmnichannelContact[];
@@ -24,6 +26,15 @@ interface ContactListSidebarProps {
     // Last-activity window in days; 0 = all time.
     timeFilter: number;
     onTimeFilterChange: (days: number) => void;
+    // Conversation lifecycle status filter (server-side).
+    statusFilter: ContactListStatusFilter;
+    onStatusFilterChange: (status: ContactListStatusFilter) => void;
+    // Conversation priority filter (server-side).
+    priorityFilter: ContactListPriorityFilter;
+    onPriorityFilterChange: (priority: ContactListPriorityFilter) => void;
+    // "Assigned to me" toggle (server-side).
+    assignedToMe: boolean;
+    onAssignedToMeChange: (assigned: boolean) => void;
     selectedContactId?: string;
     onSelectContact: (contact: OmnichannelContact) => void;
     onRefresh: () => void;
@@ -55,6 +66,23 @@ const TIME_FILTERS: { value: number; label: string; title: string }[] = [
     { value: 30, label: "1M", title: "Active in the last month" },
 ];
 
+const STATUS_FILTERS: { value: ContactListStatusFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "open", label: "Open" },
+    { value: "snoozed", label: "Snoozed" },
+    { value: "solved", label: "Solved" },
+    { value: "closed", label: "Closed" },
+    { value: "archived", label: "Archived" },
+];
+
+const PRIORITY_FILTERS: { value: ContactListPriorityFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "low", label: "Low" },
+    { value: "normal", label: "Normal" },
+    { value: "high", label: "High" },
+    { value: "urgent", label: "Urgent" },
+];
+
 export default function ContactListSidebar({
     contacts,
     isLoading,
@@ -64,6 +92,12 @@ export default function ContactListSidebar({
     onChannelFilterChange,
     timeFilter,
     onTimeFilterChange,
+    statusFilter,
+    onStatusFilterChange,
+    priorityFilter,
+    onPriorityFilterChange,
+    assignedToMe,
+    onAssignedToMeChange,
     selectedContactId,
     onSelectContact,
     onRefresh,
@@ -131,6 +165,60 @@ export default function ContactListSidebar({
                         </button>
                     ))}
                 </div>
+                {/* Status filter - server-side conversation lifecycle status.
+                    Wraps (6 options) so it stays readable in the narrow column. */}
+                <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pl-1">Status</span>
+                    <div className="flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1">
+                        {STATUS_FILTERS.map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={() => onStatusFilterChange(filter.value)}
+                                className={cn(
+                                    "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                                    statusFilter === filter.value
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700"
+                                )}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {/* Priority filter - server-side. */}
+                <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 pl-1">Priority</span>
+                    <div className="flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1">
+                        {PRIORITY_FILTERS.map((filter) => (
+                            <button
+                                key={filter.value}
+                                onClick={() => onPriorityFilterChange(filter.value)}
+                                className={cn(
+                                    "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                                    priorityFilter === filter.value
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700"
+                                )}
+                            >
+                                {filter.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {/* "Assigned to me" toggle - server-side. */}
+                <button
+                    onClick={() => onAssignedToMeChange(!assignedToMe)}
+                    aria-pressed={assignedToMe}
+                    className={cn(
+                        "w-full rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors border",
+                        assignedToMe
+                            ? "bg-primary/10 text-primary border-primary/30"
+                            : "bg-gray-100 text-gray-500 border-transparent hover:text-gray-700"
+                    )}
+                >
+                    {assignedToMe ? "Showing: Assigned to me" : "Assigned to me"}
+                </button>
                 {!isNewContactOpen && contacts.length > 0 && (
                     <AppButton
                         fullWidth

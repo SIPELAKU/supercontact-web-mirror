@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { AppButton } from "@/components/ui/app-button";
+import { AppSelect } from "@/components/ui/app-select";
 import { useUsers } from "@/lib/hooks/useUsers";
 import {
     useConversation,
@@ -15,10 +16,20 @@ import {
     useConversationTags,
     useSetConversationTags,
     useCreateConversationNote,
+    useSetConversationStatus,
+    useSetConversationPriority,
 } from "@/lib/hooks/useOmnichannel";
-import { OmnichannelContact, ConversationTag, ConversationNote } from "@/lib/types/omnichannel";
+import {
+    OmnichannelContact,
+    ConversationTag,
+    ConversationNote,
+    ConversationStatus,
+    SettableConversationStatus,
+    ConversationPriority,
+} from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import { cn } from "@/lib/utils";
 
 interface ConversationDetailSidebarProps {
     isOpen: boolean;
@@ -138,6 +149,8 @@ function ConversationDetailExtras({
                 currentUserId={selectedContact.assigned_user_id}
                 currentUserFullname={conversation?.assigned_user_fullname || selectedContact.assigned_user_fullname}
             />
+            <StatusSection conversationId={conversationId} status={conversation?.status} />
+            <PrioritySection conversationId={conversationId} priority={conversation?.priority} />
             <TagsSection conversationId={conversationId} tags={conversation?.tags || []} />
             <NotesSection conversationId={conversationId} notes={conversation?.notes || []} />
         </>
@@ -213,6 +226,119 @@ function AssignmentSection({
                 onInputChange={handleSearchChange}
                 loading={isLoadingUsers}
                 disabled={!conversationId || assignMutation.isPending}
+            />
+        </div>
+    );
+}
+
+// Conversation lifecycle controls. Close / Solve / Archive / Reopen all hit
+// PATCH /conversations/{id}/status; "Reopen" maps to status "open" (reopening
+// from a closed/solved/archived state). Follows AssignmentSection's
+// mutate-with-onError + hook-driven invalidation pattern.
+const STATUS_LABELS: Record<ConversationStatus, string> = {
+    open: "Open",
+    closed: "Closed",
+    solved: "Solved",
+    archived: "Archived",
+    snoozed: "Snoozed",
+};
+
+const STATUS_BADGE_STYLES: Record<ConversationStatus, string> = {
+    open: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    closed: "bg-gray-100 text-gray-600 border-gray-200",
+    solved: "bg-blue-50 text-blue-600 border-blue-100",
+    archived: "bg-amber-50 text-amber-600 border-amber-100",
+    snoozed: "bg-purple-50 text-purple-600 border-purple-100",
+};
+
+const STATUS_ACTIONS: { label: string; value: SettableConversationStatus }[] = [
+    { label: "Solve", value: "solved" },
+    { label: "Close", value: "closed" },
+    { label: "Archive", value: "archived" },
+    { label: "Reopen", value: "open" },
+];
+
+function StatusSection({ conversationId, status }: { conversationId: string | null; status?: ConversationStatus }) {
+    const statusMutation = useSetConversationStatus();
+    const current: ConversationStatus = status ?? "open";
+
+    const handleSetStatus = (next: SettableConversationStatus) => {
+        if (!conversationId) return;
+        statusMutation.mutate(
+            { conversationId, data: { status: next } },
+            {
+                onError: (error) => notify.error("Error", { description: handleError(error, "Update Status") }),
+            }
+        );
+    };
+
+    return (
+        <div className="space-y-2 pt-4 border-t border-gray-50">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
+                    Status
+                </div>
+                <span
+                    className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider",
+                        STATUS_BADGE_STYLES[current]
+                    )}
+                >
+                    {STATUS_LABELS[current]}
+                </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+                {STATUS_ACTIONS.map((action) => (
+                    <AppButton
+                        key={action.value}
+                        variantStyle="outline"
+                        color="gray"
+                        size="small"
+                        className="text-xs"
+                        disabled={!conversationId || statusMutation.isPending || current === action.value}
+                        onClick={() => handleSetStatus(action.value)}
+                    >
+                        {action.label}
+                    </AppButton>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Priority select (Low/Normal/High/Urgent) -> PATCH /conversations/{id}/priority.
+const PRIORITY_OPTIONS: { value: ConversationPriority; label: string }[] = [
+    { value: "low", label: "Low" },
+    { value: "normal", label: "Normal" },
+    { value: "high", label: "High" },
+    { value: "urgent", label: "Urgent" },
+];
+
+function PrioritySection({ conversationId, priority }: { conversationId: string | null; priority?: ConversationPriority }) {
+    const priorityMutation = useSetConversationPriority();
+    const current: ConversationPriority = priority ?? "normal";
+
+    const handleChange = (next: string) => {
+        if (!conversationId || next === current) return;
+        priorityMutation.mutate(
+            { conversationId, data: { priority: next as ConversationPriority } },
+            {
+                onError: (error) => notify.error("Error", { description: handleError(error, "Update Priority") }),
+            }
+        );
+    };
+
+    return (
+        <div className="space-y-2 pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">
+                Priority
+            </div>
+            <AppSelect
+                isBgWhite
+                options={PRIORITY_OPTIONS}
+                value={current}
+                onChange={(e) => handleChange(e.target.value as string)}
+                disabled={!conversationId || priorityMutation.isPending}
             />
         </div>
     );

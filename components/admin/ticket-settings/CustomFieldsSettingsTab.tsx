@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ListChecks, Plus, Trash2 } from "lucide-react";
+import { ListChecks, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
@@ -12,6 +12,7 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketCustomFields,
     useCreateTicketCustomField,
+    useUpdateTicketCustomField,
     useDeleteTicketCustomField,
 } from "@/lib/hooks/useTicketCustomFields";
 import { TicketCustomFieldDefinition, TicketCustomFieldType } from "@/lib/types/TicketSettings";
@@ -28,8 +29,10 @@ export default function CustomFieldsSettingsTab() {
     const { data, isLoading, isError, refetch } = useTicketCustomFields();
     const definitions = data?.data?.data || [];
     const createMutation = useCreateTicketCustomField();
+    const updateMutation = useUpdateTicketCustomField();
     const deleteMutation = useDeleteTicketCustomField();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [fieldKey, setFieldKey] = useState("");
     const [label, setLabel] = useState("");
     const [fieldType, setFieldType] = useState<TicketCustomFieldType>("text");
@@ -37,7 +40,25 @@ export default function CustomFieldsSettingsTab() {
     const [isRequired, setIsRequired] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
 
-    const handleAdd = async () => {
+    const resetForm = () => {
+        setEditingId(null);
+        setFieldKey("");
+        setLabel("");
+        setFieldType("text");
+        setSelectOptions("");
+        setIsRequired(false);
+    };
+
+    const handleEdit = (definition: TicketCustomFieldDefinition) => {
+        setEditingId(definition.id);
+        setFieldKey(definition.field_key);
+        setLabel(definition.label);
+        setFieldType(definition.field_type);
+        setSelectOptions((definition.select_options || []).join(", "));
+        setIsRequired(definition.is_required);
+    };
+
+    const handleSave = async () => {
         if (!fieldKey.trim() || !label.trim()) {
             notify.warning("Validation Error", { description: "Please fill in field key and label." });
             return;
@@ -46,23 +67,33 @@ export default function CustomFieldsSettingsTab() {
             notify.warning("Validation Error", { description: "Dropdown fields need at least one option." });
             return;
         }
+        const parsedOptions =
+            fieldType === "select"
+                ? selectOptions.split(",").map((o) => o.trim()).filter(Boolean)
+                : undefined;
         try {
-            await createMutation.mutateAsync({
-                field_key: fieldKey.trim(),
-                label: label.trim(),
-                field_type: fieldType,
-                select_options:
-                    fieldType === "select"
-                        ? selectOptions.split(",").map((o) => o.trim()).filter(Boolean)
-                        : undefined,
-                is_required: isRequired,
-            });
-            notify.success("Custom field added");
-            setFieldKey("");
-            setLabel("");
-            setFieldType("text");
-            setSelectOptions("");
-            setIsRequired(false);
+            if (editingId) {
+                // field_key and field_type are create-only in the backend PATCH schema.
+                await updateMutation.mutateAsync({
+                    id: editingId,
+                    data: {
+                        label: label.trim(),
+                        select_options: parsedOptions,
+                        is_required: isRequired,
+                    },
+                });
+                notify.success("Custom field updated");
+            } else {
+                await createMutation.mutateAsync({
+                    field_key: fieldKey.trim(),
+                    label: label.trim(),
+                    field_type: fieldType,
+                    select_options: parsedOptions,
+                    is_required: isRequired,
+                });
+                notify.success("Custom field added");
+            }
+            resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -123,6 +154,7 @@ export default function CustomFieldsSettingsTab() {
                         fullWidth
                         placeholder="order_id"
                         value={fieldKey}
+                        disabled={!!editingId}
                         onChange={(e) => setFieldKey(e.target.value)}
                     />
                 </div>
@@ -143,6 +175,7 @@ export default function CustomFieldsSettingsTab() {
                         fullWidth
                         value={fieldType}
                         options={FIELD_TYPE_OPTIONS}
+                        disabled={!!editingId}
                         onChange={(e) => setFieldType(e.target.value as TicketCustomFieldType)}
                     />
                 </div>
@@ -168,8 +201,17 @@ export default function CustomFieldsSettingsTab() {
                         />
                         Required
                     </label>
-                    <AppButton onClick={handleAdd} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                        Add
+                    {editingId && (
+                        <AppButton variantStyle="outline" onClick={resetForm}>
+                            Cancel
+                        </AppButton>
+                    )}
+                    <AppButton
+                        onClick={handleSave}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                        startIcon={editingId ? undefined : <Plus size={16} />}
+                    >
+                        {editingId ? "Save" : "Add"}
                     </AppButton>
                 </div>
             </div>
@@ -183,13 +225,22 @@ export default function CustomFieldsSettingsTab() {
                 errorMessage="Failed to load custom fields. Please try again."
                 onRetry={() => refetch()}
                 renderRowActions={({ row }) => (
-                    <button
-                        onClick={() => setDeleteTarget({ id: row.original.id, label: row.original.label })}
-                        className="text-gray-300 hover:text-red-500"
-                        aria-label="Delete custom field"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit custom field"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, label: row.original.label })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete custom field"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 )}
                 renderEmptyState={() => (
                     <EmptyState

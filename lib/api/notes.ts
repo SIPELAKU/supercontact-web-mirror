@@ -157,7 +157,7 @@ export async function updateNote(token: string, noteId: string, noteData: NoteDa
     }
 
     logger.apiResponse("/notes (PUT)", { status: res.status, response: json });
-    
+
     if (!res.ok) {
       logger.error(`Update note failed: ${res.status}`, {
         status: res.status,
@@ -167,10 +167,58 @@ export async function updateNote(token: string, noteId: string, noteData: NoteDa
       });
       throw new Error(json.message || json.error?.message || `Failed to update note (${res.status}: ${res.statusText})`);
     }
-    
+
     return json;
   } catch (error: any) {
     logger.error("Update note request failed", { error: error.message, url });
+    throw error;
+  }
+}
+
+export async function deleteNote(token: string, noteId: string): Promise<any> {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/notes/${noteId}`;
+
+  logger.info("Making DELETE request to delete note", {
+    url,
+    noteId
+  });
+
+  try {
+    const res = await fetchWithTimeout(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+    });
+
+    let json;
+    try {
+      json = await res.json();
+    } catch (parseError: any) {
+      logger.error("Failed to parse delete note response JSON", {
+        status: res.status,
+        statusText: res.statusText,
+        parseError: parseError.message
+      });
+      throw new Error(`Server returned invalid response (${res.status})`);
+    }
+
+    logger.apiResponse("/notes (DELETE)", { status: res.status, response: json });
+
+    if (!res.ok) {
+      logger.error(`Delete note failed: ${res.status}`, {
+        status: res.status,
+        statusText: res.statusText,
+        response: json,
+        url
+      });
+      throw new Error(json.message || json.error?.message || `Failed to delete note (${res.status}: ${res.statusText})`);
+    }
+
+    return json;
+  } catch (error: any) {
+    logger.error("Delete note request failed", { error: error.message, url });
     throw error;
   }
 }

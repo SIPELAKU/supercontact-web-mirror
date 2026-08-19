@@ -18,6 +18,9 @@ import PageHeader from "@/components/ui/page-header";
 import { Stack } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
 import { notify } from "@/lib/notifications";
+import { deleteNote } from "@/lib/api/notes";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 
 export default function NotesPage() {
   const { getToken } = useAuth();
@@ -29,6 +32,7 @@ export default function NotesPage() {
   const [dataNote, setDataNote] = useState<Note[]>([]);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
+  const { confirm, confirmationPopup } = useConfirmationPopup();
 
   const loadDataAgain = async () => {
     try {
@@ -64,6 +68,38 @@ export default function NotesPage() {
     setSelectedNote(item);
     setSelectedId(id);
     setOpenEdit(true);
+  }
+
+  function handleDelete(item: Note) {
+    confirm({
+      variant: "danger",
+      title: "Delete Note",
+      description: (
+        <>
+          Delete the note <span className="font-semibold">&quot;{item.title}&quot;</span>?
+          This action cannot be undone.
+        </>
+      ),
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          const token = await getToken();
+          if (!token) return;
+
+          await deleteNote(token, item.id);
+          notify.success("Note Deleted", {
+            description: "The note has been removed.",
+          });
+          await loadDataAgain();
+        } catch (error) {
+          const message = handleError(error, "Deleting note");
+          notify.error("Error", {
+            description: message,
+          });
+        }
+      },
+    });
   }
 
   useEffect(() => {
@@ -129,9 +165,14 @@ export default function NotesPage() {
       )}
       <Stack spacing={2}>
         {dataNote.map((item, i) => (
-          <button
+          <div
             onClick={() => handleEdit(item, item.id)}
             key={i}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleEdit(item, item.id);
+            }}
             className="drop-shadow-xl cursor-pointer"
           >
             <div className="flex justify-between rounded-md items-center p-4 border-l-8 border-[#6739EC] bg-white">
@@ -143,9 +184,17 @@ export default function NotesPage() {
                 <h1 className="font-semibold">{item?.title}</h1>
                 <div className="text-gray-500">{item?.content}</div>
               </div>
-              <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
+              <div className="flex items-center gap-2">
+                <div>{GetRelativeTime(item.reminder_date, item.reminder_time)}</div>
+                <DeleteButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
+                />
+              </div>
             </div>
-          </button>
+          </div>
         ))}
       </Stack>
 
@@ -162,6 +211,8 @@ export default function NotesPage() {
         onClose={() => setOpenEdit(false)}
         onSuccess={loadDataAgain}
       />
+
+      {confirmationPopup}
     </div>
   );
 }

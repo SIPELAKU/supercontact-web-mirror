@@ -13,11 +13,12 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function ProductClient() {
-  const { listProduct, loading, error, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, fetchProduct } = useGetProductStore();
+  const { listProduct, loading, error, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, duplicateProducts, fetchProduct } = useGetProductStore();
   const { token } = useAuth();
-  
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const prevStateRef = useRef<{
     page: number;
@@ -132,6 +133,26 @@ export default function ProductClient() {
     }
   };
 
+  // Mirrors ContactClient's handleDuplicate: POST /products/duplicate with
+  // { product_ids }, then refresh list + clear selection + toast.
+  const handleDuplicate = async (products: Product[], clearSelection?: () => void) => {
+    setIsDuplicating(true);
+    try {
+      const ids = products.map(p => p.id);
+      const result = await duplicateProducts(ids);
+      if (result.success) {
+        notify.success(`${products.length} product(s) duplicated successfully.`);
+        clearSelection?.();
+      } else {
+        notify.error(result.error || "Failed to duplicate product(s).");
+      }
+    } catch (err: any) {
+      notify.error(err.message || "Failed to duplicate product(s).");
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
   const handleExportRequest = async (params: { format: "csv" | "excel", currentState: SuperTableState }) => {
     try {
       const search = params.currentState.globalFilter;
@@ -213,6 +234,8 @@ export default function ProductClient() {
          renderTopLeftToolbar={renderTopLeftToolbar}
          onBulkDelete={handleBulkDelete}
          isBulkDeleting={isBulkDeleting}
+         onDuplicate={handleDuplicate}
+         isDuplicating={isDuplicating}
       />
       <ConfirmationPopup
         isOpen={!!bulkDeleteTarget}

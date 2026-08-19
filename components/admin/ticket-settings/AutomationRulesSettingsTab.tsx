@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Switch } from "@mui/material";
-import { Plus, Trash2, Zap } from "lucide-react";
+import { Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
@@ -80,6 +80,7 @@ export default function AutomationRulesSettingsTab() {
     const updateMutation = useUpdateTicketAutomationRule();
     const deleteMutation = useDeleteTicketAutomationRule();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [triggerType, setTriggerType] = useState<TicketAutomationTriggerType>("on_create");
     const [priority, setPriority] = useState("100");
@@ -88,11 +89,21 @@ export default function AutomationRulesSettingsTab() {
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
+        setEditingId(null);
         setName("");
         setTriggerType("on_create");
         setPriority("100");
         setConditions([emptyCondition()]);
         setActions([emptyAction()]);
+    };
+
+    const handleEdit = (rule: TicketAutomationRule) => {
+        setEditingId(rule.id);
+        setName(rule.name);
+        setTriggerType(rule.trigger_type);
+        setPriority(String(rule.priority));
+        setConditions((rule.conditions?.all || []).map((c) => ({ ...c })));
+        setActions((rule.actions || []).map((a) => ({ ...a })));
     };
 
     const updateCondition = (index: number, patch: Partial<TicketConditionClause>) => {
@@ -103,21 +114,35 @@ export default function AutomationRulesSettingsTab() {
         setActions((prev) => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)));
     };
 
-    const handleCreate = async () => {
+    const handleSave = async () => {
         if (!name.trim()) {
             notify.warning("Validation Error", { description: "Please enter a rule name." });
             return;
         }
         try {
-            await createMutation.mutateAsync({
-                name: name.trim(),
-                trigger_type: triggerType,
-                priority: Number(priority) || 100,
-                is_enabled: true,
-                conditions: { all: conditions },
-                actions,
-            });
-            notify.success("Automation rule added");
+            if (editingId) {
+                await updateMutation.mutateAsync({
+                    id: editingId,
+                    data: {
+                        name: name.trim(),
+                        trigger_type: triggerType,
+                        priority: Number(priority) || 100,
+                        conditions: { all: conditions },
+                        actions,
+                    },
+                });
+                notify.success("Automation rule updated");
+            } else {
+                await createMutation.mutateAsync({
+                    name: name.trim(),
+                    trigger_type: triggerType,
+                    priority: Number(priority) || 100,
+                    is_enabled: true,
+                    conditions: { all: conditions },
+                    actions,
+                });
+                notify.success("Automation rule added");
+            }
             resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
@@ -323,9 +348,18 @@ export default function AutomationRulesSettingsTab() {
                     </button>
                 </div>
 
-                <div className="flex justify-end">
-                    <AppButton onClick={handleCreate} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                        Add Rule
+                <div className="flex justify-end gap-2">
+                    {editingId && (
+                        <AppButton variantStyle="outline" onClick={resetForm}>
+                            Cancel
+                        </AppButton>
+                    )}
+                    <AppButton
+                        onClick={handleSave}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                        startIcon={editingId ? undefined : <Plus size={16} />}
+                    >
+                        {editingId ? "Save Changes" : "Add Rule"}
                     </AppButton>
                 </div>
             </div>
@@ -339,13 +373,22 @@ export default function AutomationRulesSettingsTab() {
                 errorMessage="Failed to load automation rules. Please try again."
                 onRetry={() => refetch()}
                 renderRowActions={({ row }) => (
-                    <button
-                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                        className="text-gray-300 hover:text-red-500"
-                        aria-label="Delete rule"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit rule"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete rule"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 )}
                 renderEmptyState={() => (
                     <EmptyState

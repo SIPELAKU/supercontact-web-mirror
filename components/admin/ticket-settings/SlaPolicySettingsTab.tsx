@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Timer, Trash2 } from "lucide-react";
+import { Pencil, Plus, Timer, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
@@ -12,6 +12,7 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketSlaPolicies,
     useCreateTicketSlaPolicy,
+    useUpdateTicketSlaPolicy,
     useDeleteTicketSlaPolicy,
 } from "@/lib/hooks/useTicketSlaPolicies";
 import { useTicketCategories } from "@/lib/hooks/useTicketCategories";
@@ -39,8 +40,10 @@ export default function SlaPolicySettingsTab() {
     const calendars = calendarsData?.data?.data || [];
 
     const createMutation = useCreateTicketSlaPolicy();
+    const updateMutation = useUpdateTicketSlaPolicy();
     const deleteMutation = useDeleteTicketSlaPolicy();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [priority, setPriority] = useState<TicketSlaPriority | "">("");
     const [categoryId, setCategoryId] = useState("");
@@ -50,6 +53,7 @@ export default function SlaPolicySettingsTab() {
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
+        setEditingId(null);
         setName("");
         setPriority("");
         setCategoryId("");
@@ -58,7 +62,17 @@ export default function SlaPolicySettingsTab() {
         setCalendarId("");
     };
 
-    const handleAdd = async () => {
+    const handleEdit = (policy: TicketSlaPolicy) => {
+        setEditingId(policy.id);
+        setName(policy.name);
+        setPriority(policy.priority || "");
+        setCategoryId(policy.category_id || "");
+        setFirstResponseMinutes(String(policy.first_response_target_minutes));
+        setResolutionMinutes(String(policy.resolution_target_minutes));
+        setCalendarId(policy.business_hours_calendar_id || "");
+    };
+
+    const handleSave = async () => {
         if (!name.trim()) {
             notify.warning("Validation Error", { description: "Please enter a policy name." });
             return;
@@ -69,16 +83,22 @@ export default function SlaPolicySettingsTab() {
             notify.warning("Validation Error", { description: "Targets must be positive numbers of minutes." });
             return;
         }
+        const payload = {
+            name: name.trim(),
+            priority: priority || null,
+            category_id: categoryId || null,
+            first_response_target_minutes: firstResponse,
+            resolution_target_minutes: resolution,
+            business_hours_calendar_id: calendarId || null,
+        };
         try {
-            await createMutation.mutateAsync({
-                name: name.trim(),
-                priority: priority || null,
-                category_id: categoryId || null,
-                first_response_target_minutes: firstResponse,
-                resolution_target_minutes: resolution,
-                business_hours_calendar_id: calendarId || null,
-            });
-            notify.success("SLA policy added");
+            if (editingId) {
+                await updateMutation.mutateAsync({ id: editingId, data: payload });
+                notify.success("SLA policy updated");
+            } else {
+                await createMutation.mutateAsync(payload);
+                notify.success("SLA policy added");
+            }
             resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
@@ -201,8 +221,17 @@ export default function SlaPolicySettingsTab() {
                             options={calendars.map((c) => ({ value: c.id, label: c.name }))}
                             onChange={(e) => setCalendarId(e.target.value as string)}
                         />
-                        <AppButton onClick={handleAdd} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                            Add
+                        {editingId && (
+                            <AppButton variantStyle="outline" onClick={resetForm}>
+                                Cancel
+                            </AppButton>
+                        )}
+                        <AppButton
+                            onClick={handleSave}
+                            disabled={createMutation.isPending || updateMutation.isPending}
+                            startIcon={editingId ? undefined : <Plus size={16} />}
+                        >
+                            {editingId ? "Save" : "Add"}
                         </AppButton>
                     </div>
                 </div>
@@ -217,13 +246,22 @@ export default function SlaPolicySettingsTab() {
                 errorMessage="Failed to load SLA policies. Please try again."
                 onRetry={() => refetch()}
                 renderRowActions={({ row }) => (
-                    <button
-                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                        className="text-gray-300 hover:text-red-500"
-                        aria-label="Delete SLA policy"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit SLA policy"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete SLA policy"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 )}
                 renderEmptyState={() => (
                     <EmptyState

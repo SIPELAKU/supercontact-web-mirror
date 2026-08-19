@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MessageSquare, Plus, Trash2 } from "lucide-react";
+import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
@@ -13,6 +13,7 @@ import { TicketMacro } from "@/lib/types/TicketSettings";
 import {
     useTicketMacros,
     useCreateTicketMacro,
+    useUpdateTicketMacro,
     useDeleteTicketMacro,
 } from "@/lib/hooks/useTicketMacros";
 
@@ -34,15 +35,33 @@ export default function MacrosSettingsTab() {
     const { data, isLoading, isError, refetch } = useTicketMacros();
     const macros = data?.data?.data || [];
     const createMutation = useCreateTicketMacro();
+    const updateMutation = useUpdateTicketMacro();
     const deleteMutation = useDeleteTicketMacro();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [bodyTemplate, setBodyTemplate] = useState("");
     const [statusChange, setStatusChange] = useState("");
     const [priorityChange, setPriorityChange] = useState("");
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    const handleAdd = async () => {
+    const resetForm = () => {
+        setEditingId(null);
+        setName("");
+        setBodyTemplate("");
+        setStatusChange("");
+        setPriorityChange("");
+    };
+
+    const handleEdit = (macro: TicketMacro) => {
+        setEditingId(macro.id);
+        setName(macro.name);
+        setBodyTemplate(macro.body_template);
+        setStatusChange(macro.field_changes?.status || "");
+        setPriorityChange(macro.field_changes?.priority || "");
+    };
+
+    const handleSave = async () => {
         if (!name.trim() || !bodyTemplate.trim()) {
             notify.warning("Validation Error", { description: "Please fill in name and reply body." });
             return;
@@ -52,16 +71,25 @@ export default function MacrosSettingsTab() {
         if (priorityChange) field_changes.priority = priorityChange;
 
         try {
-            await createMutation.mutateAsync({
-                name: name.trim(),
-                body_template: bodyTemplate.trim(),
-                field_changes,
-            });
-            notify.success("Macro added");
-            setName("");
-            setBodyTemplate("");
-            setStatusChange("");
-            setPriorityChange("");
+            if (editingId) {
+                await updateMutation.mutateAsync({
+                    id: editingId,
+                    data: {
+                        name: name.trim(),
+                        body_template: bodyTemplate.trim(),
+                        field_changes,
+                    },
+                });
+                notify.success("Macro updated");
+            } else {
+                await createMutation.mutateAsync({
+                    name: name.trim(),
+                    body_template: bodyTemplate.trim(),
+                    field_changes,
+                });
+                notify.success("Macro added");
+            }
+            resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -149,9 +177,18 @@ export default function MacrosSettingsTab() {
                 </div>
             </div>
 
-            <div className="flex justify-end">
-                <AppButton onClick={handleAdd} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                    Add Macro
+            <div className="flex justify-end gap-2">
+                {editingId && (
+                    <AppButton variantStyle="outline" onClick={resetForm}>
+                        Cancel
+                    </AppButton>
+                )}
+                <AppButton
+                    onClick={handleSave}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    startIcon={editingId ? undefined : <Plus size={16} />}
+                >
+                    {editingId ? "Save Changes" : "Add Macro"}
                 </AppButton>
             </div>
 
@@ -164,13 +201,22 @@ export default function MacrosSettingsTab() {
                 errorMessage="Failed to load macros. Please try again."
                 onRetry={() => refetch()}
                 renderRowActions={({ row }) => (
-                    <button
-                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                        className="text-gray-300 hover:text-red-500"
-                        aria-label="Delete macro"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit macro"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete macro"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 )}
                 renderEmptyState={() => (
                     <EmptyState

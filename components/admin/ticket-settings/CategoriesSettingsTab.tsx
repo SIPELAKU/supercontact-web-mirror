@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Tags, Trash2 } from "lucide-react";
+import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,6 +12,7 @@ import { TicketCategory } from "@/lib/types/TicketSettings";
 import {
     useTicketCategories,
     useCreateTicketCategory,
+    useUpdateTicketCategory,
     useDeleteTicketCategory,
 } from "@/lib/hooks/useTicketCategories";
 
@@ -19,20 +20,37 @@ export default function CategoriesSettingsTab() {
     const { data, isLoading, isError, refetch } = useTicketCategories();
     const categories = data?.data?.data || [];
     const createMutation = useCreateTicketCategory();
+    const updateMutation = useUpdateTicketCategory();
     const deleteMutation = useDeleteTicketCategory();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [newName, setNewName] = useState("");
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    const handleAdd = async () => {
+    const resetForm = () => {
+        setEditingId(null);
+        setNewName("");
+    };
+
+    const handleEdit = (category: TicketCategory) => {
+        setEditingId(category.id);
+        setNewName(category.name);
+    };
+
+    const handleSave = async () => {
         if (!newName.trim()) {
             notify.warning("Validation Error", { description: "Please enter a category name." });
             return;
         }
         try {
-            await createMutation.mutateAsync({ name: newName.trim() });
-            notify.success("Category added");
-            setNewName("");
+            if (editingId) {
+                await updateMutation.mutateAsync({ id: editingId, data: { name: newName.trim() } });
+                notify.success("Category updated");
+            } else {
+                await createMutation.mutateAsync({ name: newName.trim() });
+                notify.success("Category added");
+            }
+            resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
@@ -74,12 +92,17 @@ export default function CategoriesSettingsTab() {
                     onChange={(e) => setNewName(e.target.value)}
                 />
                 <AppButton
-                    onClick={handleAdd}
-                    disabled={createMutation.isPending}
-                    startIcon={<Plus size={16} />}
+                    onClick={handleSave}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    startIcon={editingId ? undefined : <Plus size={16} />}
                 >
-                    Add
+                    {editingId ? "Save" : "Add"}
                 </AppButton>
+                {editingId && (
+                    <AppButton variantStyle="outline" onClick={resetForm}>
+                        Cancel
+                    </AppButton>
+                )}
             </div>
 
             <SuperTable<TicketCategory>
@@ -91,13 +114,22 @@ export default function CategoriesSettingsTab() {
                 errorMessage="Failed to load ticket categories. Please try again."
                 onRetry={() => refetch()}
                 renderRowActions={({ row }) => (
-                    <button
-                        onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                        className="text-gray-300 hover:text-red-500"
-                        aria-label="Delete category"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit category"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete category"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 )}
                 renderEmptyState={() => (
                     <EmptyState

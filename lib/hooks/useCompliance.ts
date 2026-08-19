@@ -12,6 +12,7 @@ import {
 import {
     createDsrRequest,
     createSuppressionEntry,
+    deleteDsrRequest,
     deleteSuppressionEntry,
     fetchDsrRequests,
     fetchSuppressionEntries,
@@ -84,6 +85,21 @@ export function useCreateDsrRequest() {
         mutationFn: (data: CreateDsrRequestPayload) => {
             if (!token) throw new Error("No authentication token");
             return createDsrRequest(token, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["dsr-requests"] });
+        },
+    });
+}
+
+export function useDeleteDsrRequest() {
+    const { token } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => {
+            if (!token) throw new Error("No authentication token");
+            return deleteDsrRequest(token, id);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["dsr-requests"] });

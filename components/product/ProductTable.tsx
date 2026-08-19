@@ -5,7 +5,7 @@ import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
@@ -26,6 +26,8 @@ export interface ProductTableProps {
     renderTopLeftToolbar?: () => React.ReactNode;
     onBulkDelete?: (products: Product[], clearSelection: () => void) => Promise<void>;
     isBulkDeleting?: boolean;
+    onDuplicate?: (products: Product[], clearSelection?: () => void) => void;
+    isDuplicating?: boolean;
 }
 
 export default function ProductTable({
@@ -40,7 +42,9 @@ export default function ProductTable({
     onExportRequest,
     renderTopLeftToolbar,
     onBulkDelete,
-    isBulkDeleting
+    isBulkDeleting,
+    onDuplicate,
+    isDuplicating
 }: ProductTableProps) {
     const { setEditId, deleteProduct } = useGetProductStore();
     const { confirm, confirmationPopup } = useConfirmationPopup();
@@ -97,6 +101,9 @@ export default function ProductTable({
                                 setIsModalOpen(true);
                                 setEditId(product.id);
                             }} />
+                            {onDuplicate && (
+                                <DuplicateButton onClick={() => onDuplicate([product])} />
+                            )}
                             <DeleteButton onClick={() => {
                                 confirm({
                                     variant: "danger",
@@ -120,7 +127,7 @@ export default function ProductTable({
                 },
             },
         ],
-        [setEditId, deleteProduct, confirm]
+        [setEditId, deleteProduct, confirm, onDuplicate]
     );
 
     return (
@@ -152,20 +159,31 @@ export default function ProductTable({
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}
                 renderBulkActions={({ selectedRows, clearSelection }: { selectedRows: any[], clearSelection: () => void }) => (
-                    <AppButton 
-                        variantStyle="danger"
-                        disabled={isBulkDeleting}
-                        onClick={() => {
-                            if (onBulkDelete) {
-                                onBulkDelete(
-                                    selectedRows as Product[],
-                                    clearSelection
-                                );
-                            }
-                        }}
-                    >
-                        {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
-                    </AppButton>
+                    <div className="flex gap-2 items-center">
+                        {onDuplicate && (
+                            <AppButton
+                                variantStyle="primary"
+                                disabled={isDuplicating}
+                                onClick={() => onDuplicate(selectedRows as Product[], clearSelection)}
+                            >
+                                {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
+                            </AppButton>
+                        )}
+                        <AppButton
+                            variantStyle="danger"
+                            disabled={isBulkDeleting}
+                            onClick={() => {
+                                if (onBulkDelete) {
+                                    onBulkDelete(
+                                        selectedRows as Product[],
+                                        clearSelection
+                                    );
+                                }
+                            }}
+                        >
+                            {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
+                        </AppButton>
+                    </div>
                 )}
                 manualPagination={true}
                 manualFiltering={true}

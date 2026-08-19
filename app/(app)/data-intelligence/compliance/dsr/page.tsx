@@ -9,9 +9,10 @@ import { AppSelect } from "@/components/ui/app-select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import CreateDsrRequestModal from "@/components/data-intelligence/compliance/CreateDsrRequestModal";
-import { useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
+import { useDeleteDsrRequest, useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { DsrRequestItem, DsrRequestStatus } from "@/lib/types/compliance";
@@ -40,7 +41,26 @@ export default function DsrRequestsPage() {
     const requests = response?.data || [];
     const [openCreate, setOpenCreate] = useState(false);
     const updateStatus = useUpdateDsrRequestStatus();
+    const deleteRequest = useDeleteDsrRequest();
     const { confirm, confirmationPopup } = useConfirmationPopup();
+
+    const handleDelete = (id: string) => {
+        confirm({
+            variant: "danger",
+            title: "Delete Request",
+            description: "Delete this data subject request? This action cannot be undone.",
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                try {
+                    await deleteRequest.mutateAsync(id);
+                    notify.success("Deleted", { description: "Request removed." });
+                } catch (err: any) {
+                    notify.error("Error", { description: handleError(err, "Delete DSR Request") });
+                }
+            },
+        });
+    };
 
     const applyStatusChange = async (id: string, status: DsrRequestStatus) => {
         try {
@@ -173,6 +193,9 @@ export default function DsrRequestsPage() {
                         isError={isError}
                         errorMessage="Failed to load data subject requests. Please try again."
                         onRetry={() => refetch()}
+                        renderRowActions={({ row }) => (
+                            <DeleteButton onClick={() => handleDelete(row.original.id)} />
+                        )}
                         renderEmptyState={() => (
                             <EmptyState
                                 icon={FileClock}

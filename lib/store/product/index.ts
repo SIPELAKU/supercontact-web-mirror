@@ -76,6 +76,12 @@ interface GetState {
     validation?: ValidationItem[];
   }>;
 
+  duplicateProducts: (ids: string[]) => Promise<{
+    success: boolean;
+    error?: string;
+    validation?: ValidationItem[];
+  }>;
+
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
 }
@@ -260,6 +266,45 @@ export const useGetProductStore = create<GetState>((set, get) => ({
         error:
           axiosErr.message ??
           "Failed to delete product",
+      };
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  duplicateProducts: async (ids: string[]) => {
+    try {
+      set({ loading: true, error: null });
+
+      // Mirrors POST /contacts/duplicate: { product_ids } -> { total, created, products }
+      const res = await api.post(`/products/duplicate`, { product_ids: ids });
+
+      if (res.status === 200 || res.status === 201) {
+        await get().fetchProduct({
+          page: get().pagination.page,
+          limit: get().pagination.limit
+        });
+        return { success: true };
+      }
+
+      return { success: false, error: "Unexpected response" };
+
+    } catch (error) {
+
+      const axiosErr = error as AxiosError<any>;
+      if (axiosErr.response?.data?.error) {
+        const errorData = axiosErr.response.data.error;
+        return {
+          success: false,
+          error: typeof errorData === 'object' ? errorData.message : errorData,
+          validation: errorData.details,
+        };
+      }
+      return {
+        success: false,
+        error:
+          axiosErr.message ??
+          "Failed to duplicate products",
       };
     } finally {
       set({ loading: false });

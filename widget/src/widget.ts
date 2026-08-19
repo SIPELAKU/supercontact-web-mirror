@@ -27,11 +27,38 @@ interface StoredSession {
   conversation_id: string;
 }
 
+interface WidgetAttachment {
+  filename?: string | null;
+  content_type?: string | null;
+  media_url: string;
+  is_inline?: boolean;
+}
+
 interface WidgetMessage {
   id?: string;
   direction: "inbound" | "outbound";
   content: string;
   sent_at?: string;
+  media_url?: string | null;
+  attachments?: WidgetAttachment[];
+  // Client-only bookkeeping (never sent to the server):
+  client_message_id?: string; // idempotency key so a retry can't double-post
+  status?: "sending" | "sent" | "failed";
+  startCtx?: { visitor_name?: string; visitor_email?: string };
+}
+
+// Server-shaped message as returned by GET /public/widget/conversation and
+// the WS "message" frame. NOTE the direction inversion vs the widget UI:
+// the backend is company-centric (visitor = "inbound", agent = "outbound"),
+// but the visitor-facing bubble is visitor-centric (their own message =
+// "outbound"/right, an agent reply = "inbound"/left). fromServer() flips it.
+interface ServerMessage {
+  id?: string;
+  direction?: string;
+  content?: string;
+  sent_at?: string;
+  media_url?: string | null;
+  attachments?: WidgetAttachment[] | null;
 }
 
 (function () {
@@ -48,6 +75,10 @@ interface WidgetMessage {
   const wsUrl = apiUrl.replace(/^http/, "ws");
   const storageKey = `smartsales_widget_session_${widgetKey}`;
   const PING_INTERVAL_MS = 2 * 60 * 1000; // well under the server's 5-minute idle timeout
+  // Reconnect backoff (item 2): exponential base 1s, cap 30s, full jitter.
+  const RECONNECT_BASE_MS = 1000;
+  const RECONNECT_CAP_MS = 30000;
+  const WS_POLICY_CLOSE = 1008; // auth/origin/too-many rejection - do NOT loop
 
   function getSession(): StoredSession | null {
     try {
@@ -64,6 +95,37 @@ interface WidgetMessage {
     } catch {
       /* localStorage unavailable (private mode, etc) - session just won't persist across reloads */
     }
+  }
+
+  function genClientMessageId(): string {
+    try {
+      const c = (globalThis as { crypto?: Crypto }).crypto;
+      if (c && typeof c.randomUUID === "function") return c.randomUUID();
+    } catch {
+      /* fall through to the non-crypto fallback below */
+    }
+    return `cmid-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
+  function prefersReducedMotion(): boolean {
+    try {
+      return !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch {
+      return false;
+    }
+  }
+
+  // Flip company-centric server direction to visitor-centric UI direction.
+  function fromServer(m: ServerMessage): WidgetMessage {
+    return {
+      id: m.id,
+      direction: m.direction === "outbound" ? "inbound" : "outbound",
+      content: m.content || "",
+      sent_at: m.sent_at,
+      media_url: m.media_url ?? null,
+      attachments: m.attachments || [],
+      status: "sent",
+    };
   }
 
   async function apiFetch(path: string, options: RequestInit = {}) {
@@ -85,12 +147,23 @@ interface WidgetMessage {
     private session: StoredSession | null = getSession();
     private ws: WebSocket | null = null;
     private pingTimer: number | null = null;
+    private reconnectTimer: number | null = null;
+    private reconnectAttempts = 0;
+    private stoppedReconnect = false;
     private messages: WidgetMessage[] = [];
+    // ids of messages already incorporated from server/WS - dedupes a WS
+    // redelivery/echo and a history replay of an already-shown message.
+    private serverIds = new Set<string>();
     private isOpen = false;
+    private unreadCount = 0;
+    private titleFlashTimer: number | null = null;
+    private originalTitle = "";
 
     private bubbleEl!: HTMLButtonElement;
+    private badgeEl!: HTMLSpanElement;
     private panelEl!: HTMLDivElement;
     private bodyEl!: HTMLDivElement;
+    private statusEl!: HTMLDivElement;
     private formEl!: HTMLFormElement;
 
     constructor() {
@@ -111,17 +184,15 @@ interface WidgetMessage {
 
       this.render();
 
+      // Stop the title flash / (unread stays until the panel is opened) when
+      // the visitor returns to this tab.
+      window.addEventListener("focus", () => this.stopTitleFlash());
+
       if (this.session) {
-        try {
-          const conv = await apiFetch(`/public/widget/conversation`, {
-            headers: { Authorization: `Bearer ${this.session.visitor_token}` },
-          });
-          this.messages = conv.messages || [];
-          this.connectSocket();
-        } catch {
-          // stale/expired token - drop it, visitor starts a fresh conversation next time they chat
-          this.session = null;
-        }
+        // Load history immediately, then connect. connectSocket's onopen
+        // resyncs again to catch anything that arrived during the outage.
+        await this.resyncHistory();
+        this.connectSocket();
       }
     }
 
@@ -137,6 +208,13 @@ interface WidgetMessage {
           cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2147483000;
           display: flex; align-items: center; justify-content: center; font-size: 26px;
         }
+        .badge {
+          position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px;
+          padding: 0 5px; border-radius: 10px; background: #EF4444; color: #fff;
+          font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+          box-shadow: 0 0 0 2px #fff; display: none;
+        }
+        .badge.show { display: block; }
         .panel {
           position: fixed; bottom: 88px; right: 20px; width: 340px; max-width: calc(100vw - 40px);
           height: 480px; max-height: calc(100vh - 120px); background: #fff; border-radius: 12px;
@@ -146,10 +224,18 @@ interface WidgetMessage {
         .panel.open { display: flex; }
         .header { background: ${brand}; color: #fff; padding: 14px 16px; font-weight: 600; font-size: 15px; }
         .header p { margin: 2px 0 0; font-size: 12px; font-weight: 400; opacity: .85; }
+        .status { display: none; padding: 6px 12px; background: #F3F4F6; color: #6B7280; font-size: 11px; text-align: center; }
+        .status.show { display: block; }
         .body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #F9FAFB; }
         .msg { max-width: 80%; padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
         .msg.inbound { align-self: flex-start; background: #fff; border: 1px solid #E5E7EB; color: #111827; }
         .msg.outbound { align-self: flex-end; background: ${brand}; color: #fff; }
+        .msg.failed { opacity: .85; }
+        .msg .att-image { display: block; margin-top: 6px; }
+        .msg .att-image img { max-width: 100%; border-radius: 8px; display: block; }
+        .msg .att-file { display: inline-block; margin-top: 6px; font-size: 12px; text-decoration: underline; color: inherit; word-break: break-all; }
+        .retry { display: block; margin-top: 6px; background: none; border: none; padding: 0; cursor: pointer; font-size: 11px; font-weight: 600; color: #FCA5A5; text-align: left; }
+        .msg.inbound .retry { color: #DC2626; }
         .offline { padding: 10px 12px; background: #FEF3C7; color: #92400E; font-size: 12px; }
         form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-top: 1px solid #E5E7EB; }
         input, textarea { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; }
@@ -165,6 +251,10 @@ interface WidgetMessage {
       this.bubbleEl.setAttribute("aria-label", "Open chat");
       this.bubbleEl.textContent = "💬";
       this.bubbleEl.onclick = () => this.toggle();
+      this.badgeEl = document.createElement("span");
+      this.badgeEl.className = "badge";
+      this.badgeEl.setAttribute("aria-hidden", "true");
+      this.bubbleEl.appendChild(this.badgeEl);
       this.shadow.appendChild(this.bubbleEl);
 
       this.panelEl = document.createElement("div");
@@ -183,6 +273,14 @@ interface WidgetMessage {
       closeBtn.onclick = () => this.toggle();
       header.appendChild(closeBtn);
       this.panelEl.appendChild(header);
+
+      // Subtle connection-state line (item 2): only shown once we've given up
+      // reconnecting after an auth/policy close, so the visitor knows the
+      // live channel is down rather than silently swallowing agent replies.
+      this.statusEl = document.createElement("div");
+      this.statusEl.className = "status";
+      this.statusEl.textContent = "Disconnected - refresh to reconnect";
+      this.panelEl.appendChild(this.statusEl);
 
       if (!this.config!.is_within_business_hours && this.config!.offline_message) {
         const offline = document.createElement("div");
@@ -245,18 +343,42 @@ interface WidgetMessage {
       const message = (data.get("message") as string)?.trim();
       if (!message) return;
 
-      sendBtn.disabled = true;
+      const startCtx = !this.session
+        ? {
+            visitor_name: (data.get("visitor_name") as string) || undefined,
+            visitor_email: (data.get("visitor_email") as string) || undefined,
+          }
+        : undefined;
+
+      // Optimistic render with a fresh idempotency key. A retry re-POSTs the
+      // SAME client_message_id so the backend dedup makes it safe (item 4).
+      const msg: WidgetMessage = {
+        direction: "outbound",
+        content: message,
+        client_message_id: genClientMessageId(),
+        status: "sending",
+        startCtx,
+      };
+      this.messages.push(msg);
+      this.renderMessages();
+      form.reset();
+
+      await this.attemptSend(msg, sendBtn);
+    }
+
+    private async attemptSend(msg: WidgetMessage, sendBtn?: HTMLButtonElement) {
+      msg.status = "sending";
+      this.renderMessages();
+      if (sendBtn) sendBtn.disabled = true;
       try {
         if (!this.session) {
-          const visitorName = (data.get("visitor_name") as string) || undefined;
-          const visitorEmail = (data.get("visitor_email") as string) || undefined;
           const result = await apiFetch(`/public/widget/start`, {
             method: "POST",
             body: JSON.stringify({
               widget_key: widgetKey,
-              message,
-              visitor_name: visitorName,
-              visitor_email: visitorEmail,
+              message: msg.content,
+              visitor_name: msg.startCtx?.visitor_name,
+              visitor_email: msg.startCtx?.visitor_email,
               page_url: window.location.href,
             }),
           });
@@ -269,28 +391,105 @@ interface WidgetMessage {
           await apiFetch(`/public/widget/messages`, {
             method: "POST",
             headers: { Authorization: `Bearer ${this.session.visitor_token}` },
-            body: JSON.stringify({ content: message }),
+            body: JSON.stringify({ content: msg.content, client_message_id: msg.client_message_id }),
           });
         }
-        this.messages.push({ direction: "outbound", content: message });
-        this.renderMessages();
-        form.reset();
+        msg.status = "sent";
       } catch (e) {
         console.error("[SmartSales Widget] send failed", e);
+        msg.status = "failed";
       } finally {
-        sendBtn.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        this.renderMessages();
       }
+    }
+
+    private buildAttachmentEl(att: WidgetAttachment): HTMLElement | null {
+      const url = (att.media_url || "").trim();
+      if (!url) return null;
+      const ct = (att.content_type || "").toLowerCase();
+      const isImage = ct.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      if (isImage) {
+        link.className = "att-image";
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = att.filename || "attachment";
+        img.loading = "lazy";
+        link.appendChild(img);
+      } else {
+        link.className = "att-file";
+        link.textContent = `📎 ${att.filename || "Download attachment"}`;
+      }
+      return link;
     }
 
     private renderMessages() {
       this.bodyEl.innerHTML = "";
       for (const m of this.messages) {
         const el = document.createElement("div");
-        el.className = `msg ${m.direction}`;
-        el.textContent = m.content;
+        el.className = `msg ${m.direction}${m.status === "failed" ? " failed" : ""}`;
+
+        if (m.content) {
+          const text = document.createElement("div");
+          text.className = "msg-text";
+          text.textContent = m.content;
+          el.appendChild(text);
+        }
+
+        const media =
+          m.attachments && m.attachments.length
+            ? m.attachments
+            : m.media_url
+              ? [{ media_url: m.media_url } as WidgetAttachment]
+              : [];
+        for (const att of media) {
+          const attEl = this.buildAttachmentEl(att);
+          if (attEl) el.appendChild(attEl);
+        }
+
+        if (m.direction === "outbound" && m.status === "failed") {
+          const retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "retry";
+          retry.textContent = "Failed — tap to retry";
+          retry.onclick = () => void this.attemptSend(m);
+          el.appendChild(retry);
+        }
+
         this.bodyEl.appendChild(el);
       }
       this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
+    }
+
+    // Re-fetch full history and reconcile (item 3). Server state is
+    // authoritative for everything persisted; we keep only local outbound
+    // messages that are still in-flight or failed (not yet on the server),
+    // so agent messages that arrived during an outage show up without
+    // duplicating anything already rendered.
+    private async resyncHistory() {
+      if (!this.session) return;
+      try {
+        const conv = await apiFetch(`/public/widget/conversation`, {
+          headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+        });
+        const serverMsgs: WidgetMessage[] = (conv.messages || []).map(fromServer);
+        const pendingLocal = this.messages.filter(
+          (m) => m.direction === "outbound" && (m.status === "sending" || m.status === "failed"),
+        );
+        this.serverIds = new Set(
+          serverMsgs.filter((m): m is WidgetMessage & { id: string } => !!m.id).map((m) => m.id),
+        );
+        this.messages = [...serverMsgs, ...pendingLocal];
+        this.renderMessages();
+      } catch {
+        // Keep whatever is already rendered; a failed resync is non-fatal.
+      }
     }
 
     private connectSocket() {
@@ -300,10 +499,16 @@ interface WidgetMessage {
 
       socket.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse(event.data) as ServerMessage & { type?: string };
           if (data.type === "message") {
-            this.messages.push({ direction: "inbound", content: data.content });
+            // Dedupe redelivery/echo by id (item 3).
+            if (data.id && this.serverIds.has(data.id)) return;
+            if (data.id) this.serverIds.add(data.id);
+            const msg = fromServer(data);
+            this.messages.push(msg);
             this.renderMessages();
+            // Unread badge (item 6): only agent (inbound) frames, only while closed.
+            if (!this.isOpen && msg.direction === "inbound") this.incrementUnread();
           }
         } catch {
           /* ignore malformed frames */
@@ -311,22 +516,85 @@ interface WidgetMessage {
       };
 
       socket.onopen = () => {
+        this.reconnectAttempts = 0; // reset backoff on a successful open
+        this.setDisconnected(false);
         this.pingTimer = window.setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "ping" }));
         }, PING_INTERVAL_MS);
+        // Catch anything missed while the socket was down (item 3).
+        void this.resyncHistory();
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (this.pingTimer) window.clearInterval(this.pingTimer);
+        this.pingTimer = null;
         this.ws = null;
-        // simple reconnect - a visitor's tab can stay open far longer than any single WS connection lives
-        setTimeout(() => this.connectSocket(), 5000);
+        // Auth/origin/too-many-connections close: reconnecting can't fix it,
+        // so stop looping and show a subtle disconnected state (item 2).
+        if (event.code === WS_POLICY_CLOSE) {
+          this.stoppedReconnect = true;
+          this.setDisconnected(true);
+          return;
+        }
+        this.scheduleReconnect();
       };
+    }
+
+    private scheduleReconnect() {
+      if (this.stoppedReconnect || this.reconnectTimer) return;
+      // Exponential backoff with FULL jitter: delay in [0, min(cap, base*2^n)).
+      const ceiling = Math.min(RECONNECT_CAP_MS, RECONNECT_BASE_MS * Math.pow(2, this.reconnectAttempts));
+      const delay = Math.random() * ceiling;
+      this.reconnectAttempts++;
+      this.reconnectTimer = window.setTimeout(() => {
+        this.reconnectTimer = null;
+        this.connectSocket();
+      }, delay);
+    }
+
+    private setDisconnected(on: boolean) {
+      this.statusEl.classList.toggle("show", on);
+    }
+
+    private incrementUnread() {
+      this.unreadCount++;
+      this.badgeEl.textContent = this.unreadCount > 99 ? "99+" : String(this.unreadCount);
+      this.badgeEl.classList.add("show");
+      this.startTitleFlash();
+    }
+
+    private clearUnread() {
+      this.unreadCount = 0;
+      this.badgeEl.classList.remove("show");
+      this.badgeEl.textContent = "";
+      this.stopTitleFlash();
+    }
+
+    // Optional, tasteful title flash (item 6). Suppressed under
+    // prefers-reduced-motion, and it ALWAYS restores the host page's original
+    // <title> - this runs on arbitrary tenant sites, so it must leave no trace.
+    private startTitleFlash() {
+      if (prefersReducedMotion() || this.titleFlashTimer || document.hasFocus()) return;
+      this.originalTitle = document.title;
+      let alt = false;
+      this.titleFlashTimer = window.setInterval(() => {
+        document.title = alt ? this.originalTitle : "💬 New message";
+        alt = !alt;
+      }, 1200);
+    }
+
+    private stopTitleFlash() {
+      if (this.titleFlashTimer) {
+        window.clearInterval(this.titleFlashTimer);
+        this.titleFlashTimer = null;
+        if (this.originalTitle) document.title = this.originalTitle;
+      }
     }
 
     private toggle() {
       this.isOpen = !this.isOpen;
       this.panelEl.classList.toggle("open", this.isOpen);
+      if (this.isOpen) this.clearUnread();
     }
   }
 

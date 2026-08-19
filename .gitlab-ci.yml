@@ -118,25 +118,31 @@ deploy_staging:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI (lokal - shell runner tidak bisa npm i -g)
-    - npm install --no-save vercel
+    # Install Vercel CLI ke prefix terpisah - meng-install ke node_modules
+    # proyek mencemari dependency tree dan mematahkan vercel build
+    # (ENOENT @vercel/next server-launcher.js)
+    # Shell runner memakai ulang build dir - bersihkan node_modules yang
+    # mungkin tercemar dari run sebelumnya (vercel build install sendiri).
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
 
     # Pull konfigurasi Vercel project (env vars staging)
-    - npx vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
+    - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
 
     # vercel build hanya baca .env.preview.local, jadi copy dari staging
     - cp .vercel/.env.staging.local .vercel/.env.preview.local
 
     # Build menggunakan Vercel (env variables dari Vercel ikut)
-    - npx vercel build --token=$VERCEL_TOKEN
+    - vercel build --token=$VERCEL_TOKEN
 
     # Deploy sebagai preview (staging)
-    - DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN)
+    - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
     - echo "Preview URL → $DEPLOY_URL"
 
     # Alias ke domain staging
-    - npx vercel alias $DEPLOY_URL solvera-supercontact-staging.vercel.app --token=$VERCEL_TOKEN
-    - npx vercel alias $DEPLOY_URL staging.smartsales.id --token=$VERCEL_TOKEN
+    - vercel alias $DEPLOY_URL solvera-supercontact-staging.vercel.app --token=$VERCEL_TOKEN
+    - vercel alias $DEPLOY_URL staging.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Staging deployment selesai!"
@@ -187,18 +193,24 @@ deploy_prod:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI (lokal - shell runner tidak bisa npm i -g)
-    - npm install --no-save vercel
+    # Install Vercel CLI ke prefix terpisah - meng-install ke node_modules
+    # proyek mencemari dependency tree dan mematahkan vercel build
+    # (ENOENT @vercel/next server-launcher.js)
+    # Shell runner memakai ulang build dir - bersihkan node_modules yang
+    # mungkin tercemar dari run sebelumnya (vercel build install sendiri).
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
 
     # Pull konfigurasi Vercel project
-    - npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+    - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
     # Build menggunakan Vercel (env variables dari Vercel ikut)
-    - npx vercel build --prod --token=$VERCEL_TOKEN
+    - vercel build --prod --token=$VERCEL_TOKEN
 
     # Deploy ke production
-    - DEPLOY_URL=$(npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
-    - npx vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+    - vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Production deployment selesai!"

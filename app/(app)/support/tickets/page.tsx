@@ -14,7 +14,7 @@ import {
 import { TicketStatus } from "@/lib/types/Ticket";
 import { AddTicketModal } from "@/components/support/tickets/modals/AddTicketModal";
 import { EditTicketModal } from "@/components/support/tickets/modals/EditTicketModal";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { Ticket } from "@/lib/types/Ticket";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -44,7 +44,7 @@ export default function TicketManagementPage() {
     });
 
     // Confirmation Hook
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     // Helper to extract specific column filter value
     const getFilterValue = (id: string) => {
@@ -82,10 +82,10 @@ export default function TicketManagementPage() {
     // Handlers
     const handleEdit = (ticket: Ticket) => setEditingTicket(ticket);
     const handleDeleteClick = (ticket: Ticket) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Ticket",
-            message: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
+            description: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -313,6 +313,7 @@ export default function TicketManagementPage() {
                     columns={printableColumns}
                 />
             </div>
+            {confirmationPopup}
         </div>
     );
 }

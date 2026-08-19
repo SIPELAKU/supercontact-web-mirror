@@ -6,17 +6,17 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { styled, alpha } from "@mui/material/styles";
 
 // --- Colors Constants ---
-// Since no global theme was found, using these constants to ensure consistency.
-// These match Tailwind's blue-600 and red-500 roughly, as requested.
+// primary/danger mains + hovers come from the global MUI theme (lib/theme.ts);
+// the remaining shades are local constants.
 const COLORS = {
   primary: {
-    main: "#5479EE",
-    hover: "#3F66E0",
+    main: "#5479EE", // overridden by theme.palette.primary.main below
+    hover: "#3F66E0", // overridden by theme.palette.primary.dark below
     light: "#DDE4FC",
   },
   danger: {
-    main: "#EF4444",
-    hover: "#DC2626",
+    main: "#EF4444", // overridden by theme.palette.error.main below
+    hover: "#DC2626", // overridden by theme.palette.error.dark below
     light: "#FEF2F2",
   },
   gray: {
@@ -63,20 +63,25 @@ const StyledButton = styled(Button, {
   const isPrimary = customColor === "primary";
   const isGray = customColor === "gray";
   const isSuccess = customColor === "success";
+  // Consume the global theme for brand/danger colors.
+  const primaryMain = theme.palette.primary.main || COLORS.primary.main;
+  const primaryHover = theme.palette.primary.dark || COLORS.primary.hover;
+  const dangerMain = theme.palette.error.main || COLORS.danger.main;
+  const dangerHover = theme.palette.error.dark || COLORS.danger.hover;
   const mainColor = isPrimary
-    ? COLORS.primary.main
+    ? primaryMain
     : isGray
       ? COLORS.gray.main
       : isSuccess
         ? COLORS.success.main
-        : COLORS.danger.main;
+        : dangerMain;
   const hoverColor = isPrimary
-    ? COLORS.primary.hover
+    ? primaryHover
     : isGray
       ? COLORS.gray.hover
       : isSuccess
         ? COLORS.success.hover
-        : COLORS.danger.hover;
+        : dangerHover;
   const lightColor = isPrimary
     ? COLORS.primary.light
     : isGray
@@ -137,10 +142,10 @@ const StyledButton = styled(Button, {
     case "danger":
       return {
         ...contentStyle,
-        backgroundColor: COLORS.danger.main,
+        backgroundColor: dangerMain,
         color: "#ffffff",
         "&:hover": {
-          backgroundColor: COLORS.danger.hover,
+          backgroundColor: dangerHover,
         },
       };
 
@@ -148,7 +153,7 @@ const StyledButton = styled(Button, {
       return {
         ...contentStyle,
         backgroundColor: "transparent",
-        color: COLORS.primary.main, // Text variant typically primary color
+        color: primaryMain, // Text variant typically primary color
         padding: "6px 8px", // Slightly tighter for text links
         "&:hover": {
           textDecoration: "none", // Or 'underline' if requested, req says "underline or background very light"

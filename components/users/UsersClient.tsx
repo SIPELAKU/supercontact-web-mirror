@@ -11,11 +11,11 @@ import { useAuth } from "@/lib/context/AuthContext";
 import {
   AddUsersModal,
   CardStatUsers,
-  DeleteUserModal,
   DetailUsersModal,
   EditUsersModal,
   TableListUsers,
 } from "@/components/users";
+import { useRouter } from "next/navigation";
 
 // Fitur SuperTable
 import { AppButton } from "@/components/ui/app-button";
@@ -38,6 +38,32 @@ export default function UsersClient() {
 
   // Bulk Delete State & Hook
   const deleteMutation = useDeleteManagedUser();
+  const router = useRouter();
+
+  // Ported as-is from the deleted DeleteUserModal (users-modal/delete-users)
+  const handleConfirmDelete = async () => {
+    if (!selectedUser?.id) {
+      notify.error("Please select a user.");
+      return;
+    }
+    if (!token) {
+      notify.error("You are not authorized to delete this user.", {
+        description: "Please login first.",
+      });
+      router.push("/login");
+      return;
+    }
+    try {
+      await deleteMutation.mutateAsync(selectedUser.id);
+      notify.success("User deleted successfully");
+      setOpenDelete(false);
+    } catch (error: any) {
+      const message = handleError(error, "Delete Managed User");
+      notify.error("Failed to delete user: ", {
+        description: message,
+      });
+    }
+  };
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Printing Setup
@@ -287,10 +313,16 @@ export default function UsersClient() {
 
           <AddUsersModal open={openAdd} setOpen={setOpenAdd} />
 
-          <DeleteUserModal
-            open={openDelete}
-            setOpen={setOpenDelete}
-            managedUserId={selectedUser?.id}
+          <ConfirmationPopup
+            isOpen={openDelete}
+            onClose={() => setOpenDelete(false)}
+            onConfirm={handleConfirmDelete}
+            title="Are you sure you want to delete this user?"
+            description="This action is permanent and cannot be undone"
+            confirmText="Delete User"
+            cancelText="Cancel"
+            variant="danger"
+            isLoading={deleteMutation.isPending}
           />
 
           {selectedUser && (

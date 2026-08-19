@@ -6,7 +6,8 @@ import { Contact, Note, Task } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import AddTaskModal from "@/components/contact/modal/AddTaskModal";
-import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { useDeleteContact } from "@/lib/hooks/useContacts";
 import { useAuth } from "@/lib/context/AuthContext";
 import { CircularProgress, Box, Tab, Tabs } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -47,6 +48,7 @@ export const ContactDetailClient = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [openTaskModal, setOpenTaskModal] = useState(false);
     const [isloadingCreateNote, setisloadingCreateNote] = useState(false);
+    const deleteMutation = useDeleteContact();
 
     const fetchContact = async () => {
         try {
@@ -76,6 +78,19 @@ export const ContactDetailClient = () => {
         setLoading(true);
         await fetchContact();
         setLoading(false);
+    };
+
+    // Ported as-is from the deleted DeleteContactModal
+    const handleConfirmDelete = async () => {
+        if (!contact) return;
+        try {
+            await deleteMutation.mutateAsync(contact.id);
+            reloadData();
+            setOpenDelete(false);
+            notify.success("Contact deleted!");
+        } catch (err: any) {
+            notify.error(err.message || "Failed to delete contact");
+        }
     };
 
     useEffect(() => {
@@ -249,11 +264,15 @@ export const ContactDetailClient = () => {
                 onClose={() => setOpenEdit(false)}
                 onSuccess={reloadData}
             />
-            <DeleteContactModal
-                open={openDelete}
-                initialData={contact}
+            <ConfirmationPopup
+                isOpen={openDelete}
                 onClose={() => setOpenDelete(false)}
-                onSuccess={reloadData}
+                onConfirm={handleConfirmDelete}
+                title="Delete Contact"
+                description={`Are you sure you want to delete contact ${contact?.name ?? ""}?`}
+                confirmText="Delete Contact"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
             />
             <AddTaskModal
                 open={openTaskModal}

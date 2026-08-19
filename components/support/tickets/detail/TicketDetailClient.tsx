@@ -6,7 +6,7 @@ import { Box, Tabs, Tab } from "@mui/material";
 import { Pencil, Trash2, GitMerge, Link2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { notify } from "@/lib/notifications";
@@ -38,7 +38,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { can } = usePermission();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const canDelete = can(["tickets:delete", "tickets"]);
 
@@ -76,10 +76,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
 
     const handleDelete = () => {
         if (!ticket) return;
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Ticket",
-            message: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
+            description: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -103,10 +103,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     };
 
     const handleDeleteAttachment = (attachmentId: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove Attachment",
-            message: "Are you sure you want to remove this attachment?",
+            description: "Are you sure you want to remove this attachment?",
             confirmText: "Remove",
             onConfirm: async () => {
                 try {
@@ -340,6 +340,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
             <EditTicketModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} ticket={ticket} />
             <MergeTicketModal isOpen={isMergeOpen} onClose={() => setIsMergeOpen(false)} ticket={ticket} />
             <LinkTicketModal isOpen={isLinkOpen} onClose={() => setIsLinkOpen(false)} ticket={ticket} />
+            {confirmationPopup}
         </div>
     );
 }

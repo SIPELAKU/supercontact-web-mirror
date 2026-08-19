@@ -13,7 +13,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField
 } from '@mui/material';
 import { useState } from 'react';
 import { notify } from '@/lib/notifications';
@@ -106,7 +105,7 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

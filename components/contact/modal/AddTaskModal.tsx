@@ -209,7 +209,7 @@ export default function AddTaskModal({
           <div>
             <h2
               id="add-task-modal-title"
-              className="text-xl font-bold text-blue-600"
+              className="text-xl font-bold text-[#5479EE]"
             >
               Add Task
             </h2>
@@ -244,7 +244,7 @@ export default function AddTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-[#5479EE] focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all"
             />
           </div>
 
@@ -287,7 +287,7 @@ export default function AddTaskModal({
                 sx={{
                   width: "100%",
                   "& .MuiPickersDay-root.Mui-selected": {
-                    backgroundColor: "#2563eb", // blue-600
+                    backgroundColor: "#5479EE", // brand primary
                   },
                   "& .MuiPickersDay-root.Mui-selected:hover": {
                     backgroundColor: "#1d4ed8",
@@ -312,7 +312,7 @@ export default function AddTaskModal({
                   key={p}
                   onClick={() => setPriority(p)}
                   className={`px-4 py-2 rounded-md text-sm transition-colors border ${priority === p
-                    ? "bg-blue-50 text-blue-600 border-blue-600 font-medium"
+                    ? "bg-blue-50 text-[#5479EE] border-[#5479EE] font-medium"
                     : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
                     }`}
                 >
@@ -358,7 +358,7 @@ export default function AddTaskModal({
             <AppButton
               variantStyle="outline"
               onClick={onClose}
-              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              className="text-[#5479EE] border-blue-200 hover:bg-blue-50"
             >
               Cancel
             </AppButton>
@@ -366,7 +366,7 @@ export default function AddTaskModal({
               variantStyle="primary"
               onClick={handleSubmit}
               isLoading={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-[#5479EE] hover:bg-[#3F66E0] text-white"
             >
               {loading ? "Saving..." : "Save Task"}
             </AppButton>
@@ -385,7 +385,7 @@ export default function AddTaskModal({
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

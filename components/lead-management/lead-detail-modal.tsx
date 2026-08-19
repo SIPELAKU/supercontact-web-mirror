@@ -11,7 +11,11 @@ import { Contact, updateLead, UpdateLeadData, User } from "@/lib/api";
 import { useContacts } from "@/lib/hooks/useContacts";
 import { useUsers } from "@/lib/hooks/useUsers";
 import { Lead } from "@/lib/models/types";
-import { Autocomplete, Paper, TextField, createTheme, ThemeProvider } from "@mui/material";
+import { Paper, createTheme, ThemeProvider } from "@mui/material";
+import { AppInput } from "@/components/ui/app-input";
+import { AppSelect } from "@/components/ui/app-select";
+import { AppTextarea } from "@/components/ui/app-textarea";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { logger } from "../../lib/utils/logger";
@@ -352,8 +356,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               <div className="space-y-2 relative">
                 <Label className="text-sm font-medium text-gray-700">Name</Label>
                 <ThemeProvider theme={muiTheme}>
-                  <Autocomplete
+                  <AppAutocomplete<Contact, false, false, true>
                     freeSolo
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                     options={displayContacts}
                     filterOptions={(x) => x}
                     getOptionLabel={(option) => {
@@ -374,10 +381,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                     loading={isLoadingContacts}
                     onInputChange={handleContactSearchChange}
                     renderOption={(props, option) => (
-                      <li {...props} key={option.id}>
+                      <li {...props} key={typeof option === 'string' ? option : option.id}>
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{option.name}</span>
-                          {option.company && (
+                          <span className="font-medium text-gray-900">{typeof option === 'string' ? option : option.name}</span>
+                          {typeof option !== 'string' && option.company && (
                             <span className="text-sm text-gray-500">{option.company}</span>
                           )}
                         </div>
@@ -399,29 +406,9 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                         )}
                       </Paper>
                     )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Search existing contacts or enter new name"
-                        error={!!errors.name}
-                        helperText={errors.name || "Search by name, email, or company"}
-                        variant="outlined"
-                        fullWidth
-                      />
-                    )}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#d1d5db',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#9ca3af',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#5479EE',
-                        },
-                      },
-                    }}
+                    placeholder="Search existing contacts or enter new name"
+                    error={!!errors.name}
+                    helperText={errors.name || "Search by name, email, or company"}
                   />
                 </ThemeProvider>
               </div>
@@ -429,89 +416,109 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               {/* Email */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Email</Label>
-                <input
+                <AppInput
                   type="email"
                   placeholder="Enter email address"
                   value={form.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                  error={!!errors.email}
+                  helperText={errors.email}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
               {/* Phone */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
-                <input
+                <AppInput
                   type="text"
                   placeholder="Enter phone number"
                   value={form.phone_number}
                   onChange={(e) => updateField("phone_number", e.target.value)}
-                  className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
+                  error={!!errors.phone_number}
+                  helperText={errors.phone_number}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
               </div>
 
               {/* Company */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Company</Label>
-                <input
+                <AppInput
                   type="text"
                   placeholder="Enter company name"
                   value={form.company}
                   onChange={(e) => updateField("company", e.target.value)}
-                  className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.company ? 'border-red-500' : 'border-gray-300'}`}
+                  error={!!errors.company}
+                  helperText={errors.company}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.company && <p className="text-red-500 text-xs mt-1">{errors.company}</p>}
               </div>
 
               {/* Industry */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Industry</Label>
-                <select
+                <AppSelect
                   value={form.industry}
-                  onChange={(e) => updateField("industry", e.target.value)}
-                  className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.industry ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select Industry</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Customer Support">Customer Support</option>
-                  <option value="Logistics">Logistics</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="SaaS">SaaS</option>
-                </select>
-                {errors.industry && <p className="text-red-500 text-xs mt-1">{errors.industry}</p>}
+                  onChange={(e) => updateField("industry", e.target.value as string)}
+                  error={!!errors.industry}
+                  helperText={errors.industry}
+                  height="48px"
+                  rounded="8px"
+                  options={[
+                    { value: "", label: "Select Industry" },
+                    { value: "Healthcare", label: "Healthcare" },
+                    { value: "Customer Support", label: "Customer Support" },
+                    { value: "Logistics", label: "Logistics" },
+                    { value: "Manufacturing", label: "Manufacturing" },
+                    { value: "SaaS", label: "SaaS" },
+                  ]}
+                  placeholder="Select Industry"
+                  isBgWhite
+                />
               </div>
 
               {/* Company Size */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Company Size</Label>
-                <select
+                <AppSelect
                   value={form.companySize}
-                  onChange={(e) => updateField("companySize", e.target.value)}
-                  className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.companySize ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select Company Size</option>
-                  <option value="1-50 Employees">1 - 50 Employees</option>
-                  <option value="51-200 Employees">51 - 200 Employees</option>
-                  <option value="201+ Employees">201+ Employees</option>
-                  {/* <option value="501 - 1000 Employees">501-1000 Employees</option>
-                <option value="1000+ Employees">1000+ Karyawan</option> */}
-                </select>
-                {errors.companySize && <p className="text-red-500 text-xs mt-1">{errors.companySize}</p>}
+                  onChange={(e) => updateField("companySize", e.target.value as string)}
+                  error={!!errors.companySize}
+                  helperText={errors.companySize}
+                  height="48px"
+                  rounded="8px"
+                  options={[
+                    { value: "", label: "Select Company Size" },
+                    { value: "1-50 Employees", label: "1 - 50 Employees" },
+                    { value: "51-200 Employees", label: "51 - 200 Employees" },
+                    { value: "201+ Employees", label: "201+ Employees" },
+                  ]}
+                  placeholder="Select Company Size"
+                  isBgWhite
+                />
               </div>
 
               {/* Office Location */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Office Location</Label>
-                <input
+                <AppInput
                   type="text"
                   placeholder="Enter Office Location"
                   value={form.officeLocation}
                   onChange={(e) => updateField("officeLocation", e.target.value)}
-                  className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.officeLocation ? 'border-red-500' : 'border-gray-300'}`}
+                  error={!!errors.officeLocation}
+                  helperText={errors.officeLocation}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.officeLocation && <p className="text-red-500 text-xs mt-1">{errors.officeLocation}</p>}
               </div>
 
               {/* Lead Status */}
@@ -530,32 +537,40 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
               {/* Lead Source */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-700">Lead Source</Label>
-                <select
+                <AppSelect
                   value={form.leadSource}
-                  onChange={(e) => updateField("leadSource", e.target.value)}
-                  className={`w-full h-12 px-4 pr-10 bg-white border rounded-lg text-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none appearance-none transition-all bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')] bg-no-repeat bg-[right_12px_center] ${errors.leadSource ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">Select Lead Source</option>
-                  <option value="Manual Entry">Manual Entry</option>
-                  <option value="Web Form">Web Form</option>
-                  <option value="WhatsApp">WhatsApp</option>
-                </select>
-                {errors.leadSource && <p className="text-red-500 text-xs mt-1">{errors.leadSource}</p>}
+                  onChange={(e) => updateField("leadSource", e.target.value as string)}
+                  error={!!errors.leadSource}
+                  helperText={errors.leadSource}
+                  height="48px"
+                  rounded="8px"
+                  options={[
+                    { value: "", label: "Select Lead Source" },
+                    { value: "Manual Entry", label: "Manual Entry" },
+                    { value: "Web Form", label: "Web Form" },
+                    { value: "WhatsApp", label: "WhatsApp" },
+                  ]}
+                  placeholder="Select Lead Source"
+                  isBgWhite
+                />
               </div>
 
               {/* Assigned To with Autocomplete */}
               <div className="space-y-2 relative">
                 <Label className="text-sm font-medium text-gray-700">Assigned To</Label>
-                <input
+                <AppInput
                   type="text"
                   placeholder="Search and select user"
                   value={assignedToName}
                   onChange={(e) => handleAssignedToChange(e.target.value)}
                   onFocus={() => setShowUserDropdown(assignedToName.length > 0)}
                   onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
-                  className={`w-full h-12 px-4 bg-white border rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all ${errors.assignedTo ? 'border-red-500' : 'border-gray-300'}`}
+                  error={!!errors.assignedTo}
+                  helperText={errors.assignedTo}
+                  isBgWhite
+                  height="48px"
+                  rounded="8px"
                 />
-                {errors.assignedTo && <p className="text-red-500 text-xs mt-1">{errors.assignedTo}</p>}
 
                 {/* User Dropdown */}
                 {showUserDropdown && filteredUsers.length > 0 && (
@@ -592,12 +607,13 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
             {/* Notes */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Notes</Label>
-              <textarea
+              <AppTextarea
                 placeholder="Add any relevant notes here..."
                 value={form.notes}
                 onChange={(e) => updateField("notes", e.target.value)}
                 rows={4}
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none transition-all"
+                rounded="8px"
+                isBgWhite
               />
             </div>
 

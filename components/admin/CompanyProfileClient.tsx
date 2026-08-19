@@ -29,7 +29,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const DOT_COLOR_MAP: Record<string, string> = {
   green: "bg-green-500",
-  blue: "bg-blue-500",
+  blue: "bg-[#5479EE]",
   orange: "bg-orange-500",
 };
 

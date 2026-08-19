@@ -5,10 +5,8 @@ export { default as AddMemberButton } from "./departments-button/AddMemberButton
 // ========= Modals =========
 export { default as AddDepartmentsModal } from "./departments-modal/add-departments";
 export { default as EditDepartmentsModal } from "./departments-modal/edit-departments";
-export { default as DeleteDepartmentsModal } from "./departments-modal/delete-departments";
 
 export { default as AddMembersModal } from "./departments-modal/add-members";
-export { default as DeleteMembersModal } from "./departments-modal/delete-members";
 
 // ========= Card =========
 export { default as DepartmentsCardInfo } from "./departments-card/info-departments";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Loader2, Paperclip, X, MessageCircle, Mail, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { notify } from "@/lib/notifications";
@@ -24,7 +24,7 @@ interface TicketCommentThreadProps {
 export function TicketCommentThread({ ticketId, channelType, customerName }: TicketCommentThreadProps) {
     const { userProfile } = useAuth();
     const { can } = usePermission();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const canModerate = can(["tickets:delete", "tickets"]);
 
@@ -70,10 +70,10 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
     };
 
     const handleDelete = (commentId: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Comment",
-            message: "Are you sure you want to delete this comment? This action cannot be undone.",
+            description: "Are you sure you want to delete this comment? This action cannot be undone.",
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -196,6 +196,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                     ))}
                 </div>
             </div>
+            {confirmationPopup}
         </div>
     );
 }

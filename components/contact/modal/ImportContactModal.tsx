@@ -616,7 +616,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         description="This will cancel your import process."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>,
     document.body

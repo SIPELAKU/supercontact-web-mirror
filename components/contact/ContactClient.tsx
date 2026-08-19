@@ -4,19 +4,16 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/contact/modal/AddContactModal";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
-import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
 import { Contact } from "@/lib/models/types";
-import DeleteMultipleContactModal from "@/components/contact/modal/DeleteMultipleContactModal";
 import ImportContactModal from "@/components/contact/modal/ImportContactModal";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
 import { ContactTable } from "./ContactTable";
-import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts, useDuplicateContacts } from '@/lib/hooks/useContacts';
+import { useDeleteContact, useDeleteAllContacts, useDuplicateContacts } from '@/lib/hooks/useContacts';
+import { deleteContact } from "@/lib/api/contacts";
 import { useAuth } from "@/lib/context/AuthContext";
-import { AlertTriangle } from "lucide-react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, CircularProgress } from '@mui/material';
-import { AppButton } from "@/components/ui/app-button";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import type { SuperTableState } from "@/components/ui/super-table";
 
@@ -34,7 +31,6 @@ export const ContactClient = () => {
     const router = useRouter();
     const { getToken } = useAuth();
     const deleteMutation = useDeleteContact();
-    const bulkDeleteMutation = useDeleteMultipleContacts();
     const deleteAllMutation = useDeleteAllContacts();
     const duplicateMutation = useDuplicateContacts();
     const componentRef = useRef<HTMLDivElement>(null);
@@ -49,6 +45,7 @@ export const ContactClient = () => {
     const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
     const [bulkDeleteContacts, setBulkDeleteContacts] = useState<Contact[]>([]);
     const [bulkClearSelection, setBulkClearSelection] = useState<(() => void) | null>(null);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     // --- Data State (server-side pagination + search) ---
     const [dataContact, setDataContact] = useState<Contact[]>([]);
@@ -225,6 +222,62 @@ export const ContactClient = () => {
         setOpenDeleteMultiple(true);
     };
 
+    // Ported as-is from the deleted DeleteContactModal
+    const handleConfirmDelete = async () => {
+        if (!selectedItem) return;
+        try {
+            await deleteMutation.mutateAsync(selectedItem.id);
+            reloadCurrentPage();
+            setOpenDelete(false);
+            notify.success("Contact deleted!");
+        } catch (err: any) {
+            notify.error(err.message || "Failed to delete contact");
+        }
+    };
+
+    // Ported as-is from the deleted DeleteMultipleContactModal (sequential
+    // per-contact deletes with success/fail counting).
+    const handleConfirmBulkDelete = async () => {
+        if (!bulkDeleteContacts.length) {
+            notify.error("Please select at least one contact");
+            return;
+        }
+
+        setIsBulkDeleting(true);
+        let successCount = 0;
+        let failCount = 0;
+        const failMessages: string[] = [];
+
+        for (const contact of bulkDeleteContacts) {
+            try {
+                const token = await getToken();
+                if (!token) throw new Error("No authentication token");
+                await deleteContact(token, contact.id);
+                successCount++;
+            } catch (err: any) {
+                const message = err?.message || "Gagal menghapus contact";
+                failMessages.push(message);
+                failCount++;
+            }
+        }
+
+        setIsBulkDeleting(false);
+        setOpenDeleteMultiple(false);
+        bulkClearSelection?.();
+
+        if (successCount > 0) {
+            notify.success(`${successCount} contact(s) deleted successfully`);
+        }
+        if (failCount > 0) {
+            notify.error(
+                `${failCount} contact(s) failed to delete` +
+                (failMessages[0] ? `: ${failMessages[0]}` : "")
+            );
+        }
+
+        reloadCurrentPage();
+    };
+
     const handleConfirmDeleteAll = async () => {
         try {
             await deleteAllMutation.mutateAsync();
@@ -301,23 +354,28 @@ export const ContactClient = () => {
                 onClose={() => setOpenEdit(false)}
                 onSuccess={reloadCurrentPage}
             />
-            <DeleteContactModal
-                open={openDelete}
-                initialData={selectedItem}
+            <ConfirmationPopup
+                isOpen={openDelete}
                 onClose={() => setOpenDelete(false)}
-                onSuccess={reloadCurrentPage}
+                onConfirm={handleConfirmDelete}
+                title="Delete Contact"
+                description={`Are you sure you want to delete contact ${selectedItem?.name ?? ""}?`}
+                confirmText="Delete Contact"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
             />
-            <DeleteMultipleContactModal
-                open={openDeleteMultiple}
-                selected={bulkDeleteContacts}
+            <ConfirmationPopup
+                isOpen={openDeleteMultiple}
                 onClose={() => {
                     setOpenDeleteMultiple(false);
                     bulkClearSelection?.();
                 }}
-                onSuccess={() => {
-                    reloadCurrentPage();
-                    bulkClearSelection?.();
-                }}
+                onConfirm={handleConfirmBulkDelete}
+                title="Are you sure you want to delete all selected list?"
+                description="This action is permanent and cannot be undone"
+                confirmText={`Delete ${bulkDeleteContacts.length} Contact${bulkDeleteContacts.length > 1 ? "s" : ""}`}
+                variant="danger"
+                isLoading={isBulkDeleting}
             />
             <ImportContactModal
                 open={openImport}
@@ -325,36 +383,17 @@ export const ContactClient = () => {
                 onSuccess={reloadCurrentPage}
             />
 
-            {/* Delete All Confirmation Dialog */}
-            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-                <DialogTitle>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <AlertTriangle size={20} className="text-red-500" />
-                        <span>Delete All Contacts</span>
-                    </Stack>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        Are you sure you want to delete <strong>all contacts</strong>? This action cannot be undone.
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <AppButton variantStyle="outline" onClick={() => setConfirmAllOpen(false)}>
-                        Cancel
-                    </AppButton>
-                    <AppButton
-                        variantStyle="danger"
-                        onClick={handleConfirmDeleteAll}
-                        disabled={deleteAllMutation.isPending}
-                    >
-                        {deleteAllMutation.isPending ? (
-                            <CircularProgress size={16} color="inherit" />
-                        ) : (
-                            "Delete All"
-                        )}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+            {/* Delete All Confirmation */}
+            <ConfirmationPopup
+                isOpen={confirmAllOpen}
+                onClose={() => setConfirmAllOpen(false)}
+                onConfirm={handleConfirmDeleteAll}
+                title="Delete All Contacts"
+                description={<>Are you sure you want to delete <strong>all contacts</strong>? This action cannot be undone.</>}
+                confirmText="Delete All"
+                variant="danger"
+                isLoading={deleteAllMutation.isPending}
+            />
 
             {/* Hidden Printable Table */}
             <div style={{ display: "none" }}>

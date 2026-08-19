@@ -6,7 +6,7 @@ import { SuperTable, SuperTableState } from "@/components/ui/super-table";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
@@ -43,7 +43,7 @@ export default function ProductTable({
     isBulkDeleting
 }: ProductTableProps) {
     const { setEditId, deleteProduct } = useGetProductStore();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
     const columns = useMemo<MRT_ColumnDef<Product>[]>(
@@ -98,10 +98,10 @@ export default function ProductTable({
                                 setEditId(product.id);
                             }} />
                             <DeleteButton onClick={() => {
-                                showConfirmation({
-                                    type: "delete",
+                                confirm({
+                                    variant: "danger",
                                     title: "Delete Product",
-                                    message: `Are you sure you want to delete "${product.product_name}"? This action cannot be undone.`,
+                                    description: `Are you sure you want to delete "${product.product_name}"? This action cannot be undone.`,
                                     confirmText: "Delete",
                                     cancelText: "Cancel",
                                     onConfirm: async () => {
@@ -120,11 +120,12 @@ export default function ProductTable({
                 },
             },
         ],
-        [setEditId, deleteProduct, showConfirmation]
+        [setEditId, deleteProduct, confirm]
     );
 
     return (
         <>
+            {confirmationPopup}
             <AddProductModal open={isModalOpen} onOpenChange={setIsModalOpen} />
             <SuperTable
                 tableId="products-table"

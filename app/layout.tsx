@@ -5,6 +5,7 @@ import "./globals.css";
 import { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { LanguageProvider } from "@/lib/context/LanguageContext";
+import { AppThemeProvider } from "@/components/providers/AppThemeProvider";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { ogImageUrl } from "@/lib/utils/og-image";
 
@@ -97,11 +98,13 @@ export default function RootLayout({
             zIndex: 100000,
           }}
         />
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LanguageProvider>
+        <AppThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </LanguageProvider>
+        </AppThemeProvider>
       </body>
     </html>
   );

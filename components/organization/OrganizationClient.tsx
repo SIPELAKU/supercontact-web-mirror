@@ -5,10 +5,10 @@ import useDepartments, { useBranches } from "@/lib/hooks/useDepartments";
 import {
   AddDepartmentsButton,
   AddDepartmentsModal,
-  DeleteDepartmentsModal,
   DepartmentsTableList,
   EditDepartmentsModal,
 } from "@/components/organization";
+import { useRouter } from "next/navigation";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { DepartmentsType } from "@/lib/types/Departments";
@@ -56,7 +56,7 @@ export default function OrganizationClient() {
     : undefined;
 
   // Fetch departments with React Query
-  const { departments, total, isLoading, isError, error, refetch, deleteDepartment } = useDepartments(
+  const { departments, total, isLoading, isError, error, refetch, deleteDepartment, isDeleting } = useDepartments(
     tableState.pagination.pageIndex,
     tableState.pagination.pageSize,
     tableState.globalFilter,
@@ -67,6 +67,27 @@ export default function OrganizationClient() {
     sortByParam,
     sortOrderParam
   );
+  const router = useRouter();
+
+  // Ported as-is from the deleted DeleteDepartmentsModal (departments-modal/delete-departments)
+  const handleConfirmDelete = async () => {
+    if (!selectedDepartment?.id) return;
+    try {
+      if (!token) {
+        notify.error("No authentication token", {
+          description: "Please login to continue",
+        });
+        router.push("/login");
+        return;
+      }
+      await deleteDepartment(selectedDepartment.id);
+      notify.success("Department deleted successfully");
+      setOpenDelete(false);
+    } catch (error) {
+      console.error("Failed to delete department:", error);
+      notify.error("Failed to delete department");
+    }
+  };
 
   // Fetch branch options for filter dropdown
   const { data: branchesData } = useBranches();
@@ -262,10 +283,16 @@ export default function OrganizationClient() {
         )}
       />
 
-      <DeleteDepartmentsModal
-        open={openDelete}
-        setOpen={setOpenDelete}
-        departmentId={selectedDepartment?.id}
+      <ConfirmationPopup
+        isOpen={openDelete}
+        onClose={() => setOpenDelete(false)}
+        onConfirm={handleConfirmDelete}
+        title="Are you sure you want to delete this department?"
+        description="This action is permanent and cannot be undone"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
 
       {openAddMobile && (

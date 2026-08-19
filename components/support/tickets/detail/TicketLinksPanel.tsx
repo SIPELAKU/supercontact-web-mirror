@@ -4,7 +4,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { useTicketLinks, useDeleteTicketLink } from "@/lib/hooks/useTickets";
 import { usePermission } from "@/lib/hooks/usePermission";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { TicketStatusBadge } from "../TicketBadges";
 
@@ -18,15 +18,15 @@ export function TicketLinksPanel({ ticketId }: TicketLinksPanelProps) {
     const deleteMutation = useDeleteTicketLink(ticketId);
     const { can } = usePermission();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     if (links.length === 0) return null;
 
     const handleRemove = (linkId: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove Link",
-            message: "Remove this related-ticket link?",
+            description: "Remove this related-ticket link?",
             confirmText: "Remove",
             onConfirm: async () => {
                 try {
@@ -69,6 +69,7 @@ export function TicketLinksPanel({ ticketId }: TicketLinksPanelProps) {
                     </div>
                 ))}
             </div>
+            {confirmationPopup}
         </div>
     );
 }

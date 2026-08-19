@@ -8,7 +8,7 @@ import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import { CompanyStats } from "@/components/omnichannel";
@@ -101,7 +101,7 @@ export default function CompaniesWorkspaceClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { getToken } = useAuth();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     // ===== Tab + shared filter state =====
     // Both live in this one orchestrator, not per-tab - that's what lets
@@ -232,10 +232,10 @@ export default function CompaniesWorkspaceClient() {
 
     const handleDeleteSaved = (id: string) => {
         const company = savedCompanies.find((c) => c.id === id);
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Company",
-            message: `Are you sure you want to delete ${company?.name || "this company"} from your saved companies?`,
+            description: `Are you sure you want to delete ${company?.name || "this company"} from your saved companies?`,
             confirmText: "Delete",
             cancelText: "Cancel",
             onConfirm: async () => {
@@ -253,10 +253,10 @@ export default function CompaniesWorkspaceClient() {
 
     const handleBulkDeleteSaved = (ids: string[], clearSelection: () => void) => {
         if (ids.length === 0) return;
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Companies",
-            message: `Are you sure you want to delete ${ids.length} companies from your saved companies?`,
+            description: `Are you sure you want to delete ${ids.length} companies from your saved companies?`,
             confirmText: `Delete (${ids.length})`,
             cancelText: "Cancel",
             onConfirm: async () => {
@@ -340,10 +340,10 @@ export default function CompaniesWorkspaceClient() {
 
     const handleRemoveMember = (crmCompanyId: string, name: string) => {
         if (!selectedListId) return;
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove from List",
-            message: `Remove "${name}" from this list?`,
+            description: `Remove "${name}" from this list?`,
             confirmText: "Remove",
             cancelText: "Cancel",
             onConfirm: async () => {
@@ -707,6 +707,7 @@ export default function CompaniesWorkspaceClient() {
                     fetchSaved();
                 }}
             />
+            {confirmationPopup}
         </div>
     );
 }

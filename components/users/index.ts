@@ -5,7 +5,6 @@ export { default as ExportButton} from "./users-button/ExportButton";
 // ========= Modals =========
 export { default as AddUsersModal  } from "./users-modal/add-users";
 export { default as EditUsersModal } from "./users-modal/edit-users";
-export { default as DeleteUserModal } from "./users-modal/delete-users";
 export { default as DetailUsersModal} from "./users-modal/detail-users";
 
 // ========= Table =========

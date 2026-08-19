@@ -7,15 +7,15 @@ import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { handleError } from "@/lib/utils/errorHandler";
-import { useIntegrations, useTestIntegrationConnection } from "@/lib/hooks/useIntegrations";
+import { useIntegrations, useTestIntegrationConnection, useDeleteIntegration } from "@/lib/hooks/useIntegrations";
 import { Integration, IntegrationProvider } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
 import { CircularProgress, Tooltip } from "@mui/material";
 import { AlertCircle, CheckCircle2, HelpCircle, Play, Plug, Plus } from "lucide-react";
 import AddIntegrationModal from "./AddIntegrationModal";
 import EditIntegrationModal from "./EditIntegrationModal";
-import DeleteIntegrationModal from "./DeleteIntegrationModal";
 import ConnectionStatusModal from "./ConnectionStatusModal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 // B6: pluggable adapter stubs - schema-reserved (see AVAILABLE_PROVIDERS
 // below, which deliberately excludes these) but no client is wired up yet.
@@ -52,10 +52,25 @@ export const IntegrationsClient = () => {
     const [openAdd, setOpenAdd] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
+    const deleteIntegrationMutation = useDeleteIntegration();
     const [openStatus, setOpenStatus] = useState(false);
     const [selected, setSelected] = useState<Integration | null>(null);
 
     const testConnectionMutation = useTestIntegrationConnection();
+
+    // Ported as-is from the deleted DeleteIntegrationModal
+    const handleConfirmDelete = async () => {
+        if (!selected) return;
+        try {
+            await deleteIntegrationMutation.mutateAsync(selected.id);
+            notify.success("Integration Deleted", { description: "Searches for this provider will fall back to the shared platform key." });
+            refetch();
+            setOpenDelete(false);
+        } catch (err: any) {
+            const message = handleError(err, "Delete Integration");
+            notify.error("Error", { description: message });
+        }
+    };
 
     const handleTestConnection = async (item: Integration) => {
         notify.info("Testing Connection...", {
@@ -262,14 +277,17 @@ export const IntegrationsClient = () => {
                 integration={selected}
             />
 
-            {openDelete && (
-                <DeleteIntegrationModal
-                    open={openDelete}
-                    onClose={() => setOpenDelete(false)}
-                    onSuccess={() => refetch()}
-                    integration={selected}
-                />
-            )}
+            <ConfirmationPopup
+                isOpen={openDelete}
+                onClose={() => setOpenDelete(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Integration"
+                description={<>Are you sure you want to remove the <span className="font-semibold text-gray-900">{selected ? PROVIDER_LABELS[selected.provider] : ""}</span> integration? This cannot be undone.</>}
+                confirmText="Delete Integration"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteIntegrationMutation.isPending}
+            />
 
             {openStatus && (
                 <ConnectionStatusModal

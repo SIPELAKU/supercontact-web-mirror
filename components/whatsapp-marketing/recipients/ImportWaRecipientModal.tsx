@@ -599,7 +599,7 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
         description="This will cancel your import process."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>,
     document.body

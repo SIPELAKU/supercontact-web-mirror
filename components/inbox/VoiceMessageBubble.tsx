@@ -67,7 +67,7 @@ export default function VoiceMessageBubble({ src, isMe }: VoiceMessageBubbleProp
 
     return (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-[18px] shadow-sm min-w-[280px] select-none ${isMe
-                ? "bg-indigo-600 text-white rounded-br-none"
+                ? "bg-[#5479EE] text-white rounded-br-none"
                 : "bg-white text-gray-700 rounded-bl-none border border-gray-100"
             }`}>
             <audio ref={audioRef} src={src} preload="metadata" />
@@ -75,7 +75,7 @@ export default function VoiceMessageBubble({ src, isMe }: VoiceMessageBubbleProp
             {/* Play/Pause Button */}
             <button
                 onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 ${isMe ? "bg-white text-indigo-600" : "bg-indigo-600 text-white"
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-95 ${isMe ? "bg-white text-[#5479EE]" : "bg-[#5479EE] text-white"
                     }`}
             >
                 {isPlaying ? (

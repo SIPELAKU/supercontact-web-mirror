@@ -7,7 +7,7 @@ import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import AddSuppressionEntryModal from "@/components/data-intelligence/compliance/AddSuppressionEntryModal";
@@ -30,13 +30,13 @@ export default function SuppressionListPage() {
     const entries = response?.data || [];
     const [openAdd, setOpenAdd] = useState(false);
     const deleteEntry = useDeleteSuppressionEntry();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     const handleDelete = (id: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove Suppression Entry",
-            message: "Remove this entry from the suppression list?",
+            description: "Remove this entry from the suppression list?",
             confirmText: "Remove",
             cancelText: "Cancel",
             onConfirm: async () => {
@@ -144,6 +144,7 @@ export default function SuppressionListPage() {
             </div>
 
             <AddSuppressionEntryModal open={openAdd} onClose={() => setOpenAdd(false)} />
+            {confirmationPopup}
         </div>
     );
 }

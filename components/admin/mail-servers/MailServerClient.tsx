@@ -19,7 +19,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import AddMailServerModal from './AddMailServerModal';
 import EditMailServerModal from './EditMailServerModal';
 import ConnectionStatusModal from './ConnectionStatusModal';
-import DeleteMailServerModal from './DeleteMailServerModal';
 
 const STATUS_FILTER_OPTIONS = ["Active", "Inactive", "Error"];
 
@@ -138,6 +137,20 @@ export const MailServerClient = () => {
         setSelectedServer(item);
         setOpenStatus(true);
     }, []);
+
+    // Ported as-is from the deleted DeleteMailServerModal
+    const handleConfirmDelete = async () => {
+        if (!serverToDelete) return;
+        try {
+            await deleteMailServerMutation.mutateAsync(serverToDelete.id);
+            notify.success("Mail Server Deleted", { description: "The mail server has been successfully deleted." });
+            refetch();
+            setOpenDelete(false);
+        } catch (err: any) {
+            const message = handleError(err, "Delete Mail Server");
+            notify.error("Error", { description: message });
+        }
+    };
 
     const handleConfirmBulkDelete = async () => {
         if (!bulkDeleteTarget) return;
@@ -400,17 +413,17 @@ export const MailServerClient = () => {
                 />
             )}
 
-            {openDelete && (
-                <DeleteMailServerModal
-                    open={openDelete}
-                    onClose={() => setOpenDelete(false)}
-                    onSuccess={() => {
-                        // Optional: any specific success logic like refreshing list is handled in hook
-                        refetch();
-                    }}
-                    mailServer={serverToDelete}
-                />
-            )}
+            <ConfirmationPopup
+                isOpen={openDelete}
+                onClose={() => setOpenDelete(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Mail Server"
+                description={<>Are you sure you want to delete mail server <span className="font-semibold text-gray-900">{serverToDelete?.name}</span>? This action cannot be undone.</>}
+                confirmText="Delete Server"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMailServerMutation.isPending}
+            />
 
             <ConfirmationPopup
                 isOpen={!!bulkDeleteTarget}

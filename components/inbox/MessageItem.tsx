@@ -31,7 +31,7 @@ export default function MessageItem({
                     <button
                         onClick={() => handleMessageClick(msg, {} as any)}
                         className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedMessages.includes(msg.id)
-                            ? "bg-indigo-600 border-indigo-600 text-white"
+                            ? "bg-[#5479EE] border-[#5479EE] text-white"
                             : "border-gray-300 bg-white"
                             }`}
                     >
@@ -68,7 +68,7 @@ export default function MessageItem({
                     {msg.type === "Image" ? (
                         <div
                             className={`rounded-[12px] p-2 shadow-sm hover:opacity-95 transition-opacity relative ${sentByMe
-                                ? "bg-indigo-600 rounded-br-none"
+                                ? "bg-[#5479EE] rounded-br-none"
                                 : "bg-white rounded-bl-none border border-gray-100"
                                 }`}
                         >
@@ -110,7 +110,7 @@ export default function MessageItem({
                     ) : msg.type === "File" ? (
                         <div
                             className={`px-4 py-3 rounded-[18px] text-[14px] leading-relaxed shadow-sm flex items-center gap-2 ${sentByMe
-                                ? "bg-indigo-600 text-white rounded-br-none"
+                                ? "bg-[#5479EE] text-white rounded-br-none"
                                 : "bg-white text-gray-700 rounded-bl-none border border-gray-100"
                                 }`}
                         >
@@ -136,7 +136,7 @@ export default function MessageItem({
                     ) : (
                         <div
                             className={`px-4 py-3 rounded-[18px] text-[14px] leading-relaxed shadow-sm ${sentByMe
-                                ? "bg-indigo-600 text-white rounded-br-none"
+                                ? "bg-[#5479EE] text-white rounded-br-none"
                                 : "bg-white text-gray-700 rounded-bl-none border border-gray-100"
                                 }`}
                         >

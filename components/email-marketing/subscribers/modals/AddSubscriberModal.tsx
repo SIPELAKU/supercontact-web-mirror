@@ -10,15 +10,12 @@ import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useCreateSubscriber } from '@/lib/hooks/useSubscribers';
 import { MailingList } from '@/lib/types/email-marketing';
 import {
-    Alert, Autocomplete, Box,
-    Button,
-    CircularProgress,
+    Alert, Box,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     Stack,
-    TextField,
     ToggleButton,
     ToggleButtonGroup
 } from '@mui/material';
@@ -198,8 +195,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                     {creationMode === 'manual' ? (
                         <>
                             <Box>
-                                <label htmlFor="email">Email <span style={{ color: 'red' }}>*</span> </label>
                                 <AppInput
+                                    label="Email"
                                     isBgWhite
                                     type="email"
                                     value={email}
@@ -211,8 +208,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 />
                             </Box>
                             <Box>
-                                <label htmlFor="name">Name <span style={{ color: 'red' }}>*</span> </label>
                                 <AppInput
+                                    label="Name"
                                     isBgWhite
                                     type="text"
                                     value={name}
@@ -224,8 +221,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 />
                             </Box>
                             <Box>
-                                <label htmlFor="phoneNumber">Phone Number</label>
                                 <AppInput
+                                    label="Phone Number"
                                     isBgWhite
                                     type="tel"
                                     value={phoneNumber}
@@ -235,8 +232,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                             </Box>
 
                             <Box>
-                                <label htmlFor="position">Position</label>
                                 <AppInput
+                                    label="Position"
                                     isBgWhite
                                     type="text"
                                     value={position}
@@ -245,8 +242,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 />
                             </Box>
                             <Box>
-                                <label htmlFor="company">Company</label>
                                 <AppInput
+                                    label="Company"
                                     isBgWhite
                                     type="text"
                                     value={company}
@@ -255,8 +252,8 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                                 />
                             </Box>
                             <Box>
-                                <label htmlFor="address">Address</label>
                                 <AppTextarea
+                                    label="Address"
                                     isBgWhite
                                     value={address}
                                     onChange={(e) => setAddress(e.target.value)}
@@ -330,7 +327,7 @@ const AddSubscriberModal = ({ open, onClose, onSuccess, defaultListId, target = 
                 description="This will discard your current record."
                 confirmText="Discard record"
                 cancelText="Cancel"
-                variant="danger"
+                variant="discard"
             />
         </Dialog>
     );

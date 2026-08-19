@@ -66,7 +66,7 @@ export default function ConfirmationTestPage() {
                 description="This will discard your current record."
                 confirmText="Discard record"
                 cancelText="Cancel"
-                variant="danger"
+                variant="discard"
                 isLoading={isLoading}
             />
         </Box>

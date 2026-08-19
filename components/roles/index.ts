@@ -7,7 +7,6 @@ export { default as EditPermissionsButton } from "./roles-button-open-modal/Edit
 // ========= Modals =========
 export { default as AddPermissionsModal } from "./roles-modal/AddPermissionsModal";
 export { default as AddRoleModal } from "./roles-modal/AddRoleModal";
-export { default as DeleteRolesPermissionsModal } from "./roles-modal/DeleteRolesPermissionsModal";
 export { default as EditPermissionsModal } from "./roles-modal/EditPermissionsModal";
 
 // ========= Table =========

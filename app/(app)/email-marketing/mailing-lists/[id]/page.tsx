@@ -6,6 +6,7 @@ import ImportSubscriberModal from '@/components/email-marketing/subscribers/moda
 import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import PageHeader from '@/components/ui/page-header';
 import { useMailingListDetail, useDeleteMailingListSubscriber, useBulkDeleteMailingListSubscribers, useDeleteAllMailingListSubscribers, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
@@ -16,11 +17,6 @@ import {
     Box,
     Chip,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
     IconButton,
     Paper,
     Tab,
@@ -31,7 +27,7 @@ import {
 } from '@mui/material';
 import { format }
     from 'date-fns';
-import { AlertTriangle, ArrowLeft, Download, Eye, Mail, Search, Trash2, UserPlus, History } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Mail, Search, Trash2, UserPlus, History } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { notify } from '@/lib/notifications';
 import { useParams, useRouter } from 'next/navigation';
@@ -430,33 +426,27 @@ const MailingListDetailPage = () => {
                 mailingListIds={[listId]}
             />
 
-            <Dialog
-                open={Boolean(subscriberToDelete) || selectedToDelete.length > 0 && Boolean(subscriberToDelete?.id === 'BULK')}
+            <ConfirmationPopup
+                isOpen={Boolean(subscriberToDelete) || selectedToDelete.length > 0 && Boolean(subscriberToDelete?.id === 'BULK')}
                 onClose={() => {
                     if (!deleteSubscriberMutation.isPending && !bulkDeleteSubscriberMutation.isPending) {
                         setSubscriberToDelete(null);
                     }
                 }}
-            >
-                <DialogTitle>Remove Subscriber{selectedToDelete.length > 1 ? 's' : ''}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        {selectedToDelete.length > 0 && subscriberToDelete?.id === 'BULK' ? (
-                            <>Are you sure you want to remove <strong>{selectedToDelete.length}</strong> selected subscriber(s) from this mailing list?</>
-                        ) : (
-                            <>Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?</>
-                        )}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <AppButton variantStyle="outline" onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
-                        Cancel
-                    </AppButton>
-                    <AppButton variantStyle="danger" onClick={handleDeleteSubscriber} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
-                        {deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Remove'}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleDeleteSubscriber}
+                title={`Remove Subscriber${selectedToDelete.length > 1 ? 's' : ''}`}
+                description={
+                    selectedToDelete.length > 0 && subscriberToDelete?.id === 'BULK' ? (
+                        <>Are you sure you want to remove <strong>{selectedToDelete.length}</strong> selected subscriber(s) from this mailing list?</>
+                    ) : (
+                        <>Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?</>
+                    )
+                }
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}
+            />
 
             <ViewCampaignStatsModal
                 open={isViewModalOpen}
@@ -472,25 +462,17 @@ const MailingListDetailPage = () => {
                 onClose={() => setPreviewSubscriber(null)}
             />
 
-            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-                <DialogTitle>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                        <Typography variant="h6" color="error">Remove All Subscribers</Typography>
-                    </Stack>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        <strong>WARNING:</strong> Are you sure you want to remove <strong>all subscribers</strong> from this mailing list? This action will only remove them from this list, it will not delete the contacts themselves.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline' disabled={deleteAllSubscriberMutation.isPending}>Cancel</AppButton>
-                    <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllSubscriberMutation.isPending}>
-                        {deleteAllSubscriberMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete All'}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+            <ConfirmationPopup
+                isOpen={confirmAllOpen}
+                onClose={() => setConfirmAllOpen(false)}
+                onConfirm={handleConfirmDeleteAll}
+                title="Remove All Subscribers"
+                description={<><strong>WARNING:</strong> Are you sure you want to remove <strong>all subscribers</strong> from this mailing list? This action will only remove them from this list, it will not delete the contacts themselves.</>}
+                confirmText="Delete All"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteAllSubscriberMutation.isPending}
+            />
         </Box>
     );
 };

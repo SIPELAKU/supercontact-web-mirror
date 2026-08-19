@@ -144,7 +144,7 @@ export default function InboxClient() {
 
                   {pinnedMsg && (
                     <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-                      <Pin className="w-4 h-4 text-[#5479EE] shrink-0 fill-indigo-600" />
+                      <Pin className="w-4 h-4 text-[#5479EE] shrink-0 fill-[#5479EE]" />
                       <div className="flex-1 min-w-0">
                         {pinnedMsg.type === "Image" ? (
                           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function InboxClient() {
                           </p>
                         )}
                       </div>
-                      <button onClick={() => chat.unpin(pinnedMsg.id)} className="text-indigo-400 hover:text-indigo-700">
+                      <button onClick={() => chat.unpin(pinnedMsg.id)} className="text-indigo-400 hover:text-[#3F66E0]">
                         <X className="w-4 h-4" />
                       </button>
                     </div>

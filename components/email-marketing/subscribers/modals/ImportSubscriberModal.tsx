@@ -671,7 +671,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
         description="This will cancel your import process."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

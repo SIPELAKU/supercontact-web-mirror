@@ -37,22 +37,17 @@ const InputField: React.FC<InputProps> = ({
   isRequired = false,
   error,
 }) => (
-  <div className="flex flex-col w-full gap-2">
-    <label className="font-medium text-gray-700">
-      {label}
-      {isRequired && <span className="text-red-500"> *</span>}
-    </label>
-    <AppInput
-      required={isRequired}
-      type="text"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      isBgWhite
-      className={error ? "border-red-500" : ""}
-    />
-    {error && <span className="text-red-500 text-sm">{error}</span>}
-  </div>
+  <AppInput
+    label={label}
+    required={isRequired}
+    type="text"
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    isBgWhite
+    error={!!error}
+    helperText={error}
+  />
 );
 
 // ---------------------------------------------------------------------------
@@ -434,7 +429,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
         description="This will discard your current changes."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

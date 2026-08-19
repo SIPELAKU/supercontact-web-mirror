@@ -1,7 +1,5 @@
 "use client";
 
-import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import Cookies from 'js-cookie';
@@ -15,7 +13,7 @@ import PageHeader from '@/components/ui/page-header';
 import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
 import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
-import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 export default function SubscribersClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -216,45 +214,29 @@ export default function SubscribersClient() {
         />
       )}
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedToDelete?.length} selected subscriber(s)? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}>
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete ${selectedToDelete?.length} selected subscriber(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+      />
 
-      <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <Typography variant="h6" color="error">Delete All Data</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            <strong>WARNING:</strong> Are you sure you want to delete <strong>all subscribers</strong> in your account? This action is highly destructive and cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllMutation.isPending}>
-            {deleteAllMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete All'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmAllOpen}
+        onClose={() => setConfirmAllOpen(false)}
+        onConfirm={handleConfirmDeleteAll}
+        title="Delete All Data"
+        description={<><strong>WARNING:</strong> Are you sure you want to delete <strong>all subscribers</strong> in your account? This action is highly destructive and cannot be undone.</>}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteAllMutation.isPending}
+      />
     </div>
   );
 }

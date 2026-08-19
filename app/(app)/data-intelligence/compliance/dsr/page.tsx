@@ -8,7 +8,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import CreateDsrRequestModal from "@/components/data-intelligence/compliance/CreateDsrRequestModal";
 import { useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
@@ -40,7 +40,7 @@ export default function DsrRequestsPage() {
     const requests = response?.data || [];
     const [openCreate, setOpenCreate] = useState(false);
     const updateStatus = useUpdateDsrRequestStatus();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     const applyStatusChange = async (id: string, status: DsrRequestStatus) => {
         try {
@@ -53,10 +53,10 @@ export default function DsrRequestsPage() {
 
     const handleStatusChange = (id: string, status: DsrRequestStatus, requestType: string) => {
         if (status === "completed" && requestType === "deletion") {
-            showConfirmation({
-                type: "warning",
+            confirm({
+                variant: "warning",
                 title: "Complete Deletion Request",
-                message:
+                description:
                     "Marking this deletion request completed will add the subject to your suppression list, so future searches and CRM saves exclude them. Continue?",
                 confirmText: "Continue",
                 cancelText: "Cancel",
@@ -192,6 +192,7 @@ export default function DsrRequestsPage() {
             </div>
 
             <CreateDsrRequestModal open={openCreate} onClose={() => setOpenCreate(false)} />
+            {confirmationPopup}
         </div>
     );
 }

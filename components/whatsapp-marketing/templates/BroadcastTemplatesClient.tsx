@@ -3,20 +3,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
+import { Box, Typography } from '@mui/material';
 
 import PageHeader from '@/components/ui/page-header';
-import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { notify } from '@/lib/notifications';
 import {
   useBroadcastTemplates,
@@ -170,38 +160,18 @@ export default function BroadcastTemplatesClient() {
         onDeleteRequest={handleDeleteRequest}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedToDelete?.length} selected template(s)?{' '}
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle="outline">
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleConfirmDelete}
-            color="danger"
-            variantStyle="danger"
-            disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}
-          >
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Delete'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      {/* Delete Confirmation */}
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete ${selectedToDelete?.length} selected template(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+      />
     </div>
   );
 }

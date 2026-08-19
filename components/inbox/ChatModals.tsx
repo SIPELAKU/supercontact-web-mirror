@@ -66,10 +66,10 @@ export default function ChatModals({
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">
+                                <div className="w-10 h-10 rounded-full bg-[#5479EE] flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-200">
                                     A
                                 </div>
-                                <h3 className="text-xl font-bold text-indigo-700">Upload Files</h3>
+                                <h3 className="text-xl font-bold text-[#3F66E0]">Upload Files</h3>
                             </div>
                             <button onClick={() => setIsUploadModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-6 h-6" />
@@ -142,7 +142,7 @@ export default function ChatModals({
                 <div className="absolute inset-0 z-60 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-start mb-6">
-                            <h3 className="text-xl font-bold text-indigo-700">Choose how long your pin lasts</h3>
+                            <h3 className="text-xl font-bold text-[#3F66E0]">Choose how long your pin lasts</h3>
                             <button onClick={() => setShowPinModal(false)} className="text-gray-400 hover:text-gray-600">
                                 <X className="w-5 h-5" />
                             </button>
@@ -154,7 +154,7 @@ export default function ChatModals({
                                     onClick={() => setPinDuration(duration)}
                                     className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
                                 >
-                                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${pinDuration === duration ? "bg-indigo-600 border-indigo-600 text-white" : "border-gray-300"}`}>
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${pinDuration === duration ? "bg-[#5479EE] border-[#5479EE] text-white" : "border-gray-300"}`}>
                                         {pinDuration === duration && <CheckCircle2 className="w-3.5 h-3.5" />}
                                     </div>
                                     <span className="text-sm font-medium text-gray-700">{duration}</span>
@@ -163,7 +163,7 @@ export default function ChatModals({
                         </div>
                         <div className="flex gap-3 justify-end">
                             <button onClick={() => setShowPinModal(false)} className="px-6 py-2 text-[#5479EE] font-medium hover:bg-indigo-50 rounded-lg transition-colors border border-indigo-200">Cancel</button>
-                            <button onClick={confirmPin} className="px-8 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-md">Pin</button>
+                            <button onClick={confirmPin} className="px-8 py-2 bg-[#5479EE] text-white font-medium rounded-lg hover:bg-[#3F66E0] shadow-md">Pin</button>
                         </div>
                     </div>
                 </div>

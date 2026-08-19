@@ -23,9 +23,7 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  TextField,
   Typography,
-  InputAdornment,
   Grid,
   Paper,
   Tooltip,
@@ -452,20 +450,14 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                   </Box>
 
                   {mailingLists.length > 0 && (
-                    <TextField
+                    <AppInput
                       fullWidth
-                      size="small"
                       placeholder="Search mailing lists..."
                       value={mailingListSearch}
                       onChange={(e) => setMailingListSearch(e.target.value)}
                       sx={{ mb: 2 }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Search className="w-4 h-4 text-gray-400" />
-                          </InputAdornment>
-                        ),
-                      }}
+                      isBgWhite
+                      startIcon={<Search className="w-4 h-4 text-gray-400" />}
                     />
                   )}
 
@@ -557,9 +549,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                     )}
                   </Box>
 
-                  <TextField
+                  <AppInput
                     fullWidth
-                    size="small"
                     placeholder="Search subscribers by email or name..."
                     value={subscriberSearch}
                     onChange={(e) => {
@@ -567,13 +558,8 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
                       setSubscriberPage(1); // Reset to first page on search
                     }}
                     sx={{ mb: 2 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Search className="w-4 h-4 text-gray-400" />
-                        </InputAdornment>
-                      ),
-                    }}
+                    isBgWhite
+                    startIcon={<Search className="w-4 h-4 text-gray-400" />}
                   />
                   {isLoadingSubscribers ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -713,7 +699,7 @@ const EditCampaignModal = ({ open, onClose, onSuccess, campaign }: EditCampaignM
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

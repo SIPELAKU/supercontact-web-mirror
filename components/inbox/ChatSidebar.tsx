@@ -126,7 +126,7 @@ export default function ChatSidebar({
             <div className="p-4 border-t border-gray-100">
                 <button
                     onClick={onStartConversation}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full bg-[#5479EE] hover:bg-[#3F66E0] text-white font-medium py-2.5 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                     Start Conversation
                 </button>

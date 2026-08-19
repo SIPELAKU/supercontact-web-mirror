@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Typography } from "@mui/material";
 
 import { useAuth } from "@/lib/context/AuthContext";
@@ -13,7 +13,6 @@ import {
 
 import {
   AddMemberButton,
-  DeleteMembersModal,
   DepartementTableMember as DepartmentsTableMember,
   DepartmentsCardInfo,
   DepartmentsCardInfoSkeleton,
@@ -91,8 +90,29 @@ export default function DetailDepartments() {
     sortOrderParam
   );
 
-  const deleteMutation = useDeleteMember(id, ""); // memberId is required in hook params for React Query key, but the mutation actually takes args if not supplied in hook or we can just use regular hook. The hook is useDeleteMember(deptId, memberId) which is suboptimal for bulk.
-  // Wait, let's look at useDeleteMember implementation.
+  const router = useRouter();
+  const deleteMutation = useDeleteMember(id, memberId ?? "");
+
+  // Ported as-is from the deleted DeleteMembersModal (departments-modal/delete-members)
+  const handleConfirmDeleteMember = async () => {
+    if (memberId && id) {
+      try {
+        if (!token) {
+          notify.error("No authentication token", {
+            description: "Please login to continue",
+          });
+          router.push("/login");
+          return;
+        }
+        await deleteMutation.mutateAsync();
+        notify.success("Member deleted successfully");
+        setOpenDelete(false);
+      } catch (error) {
+        console.error("Failed to delete department:", error);
+        notify.error("Failed to delete member");
+      }
+    }
+  };
 
   const departmentData = departmentResponse?.data;
   const totalItems = membersResponse?.data?.total || 0;
@@ -335,11 +355,16 @@ export default function DetailDepartments() {
       />
 
       {memberId && (
-        <DeleteMembersModal
-          open={openDelete}
-          setOpen={setOpenDelete}
-          departmentId={id}
-          memberId={memberId}
+        <ConfirmationPopup
+          isOpen={openDelete}
+          onClose={() => setOpenDelete(false)}
+          onConfirm={handleConfirmDeleteMember}
+          title="Are you sure you want to delete this member?"
+          description="This action is permanent and cannot be undone"
+          confirmText="Delete Member"
+          cancelText="Cancel"
+          variant="danger"
+          isLoading={deleteMutation.isPending}
         />
       )}
 

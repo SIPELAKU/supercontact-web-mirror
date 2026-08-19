@@ -102,7 +102,7 @@ const AddGroupBroadcastModal = ({ open, onClose, onSuccess }: AddGroupBroadcastM
         description="This will discard your current entry."
         confirmText="Discard entry"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

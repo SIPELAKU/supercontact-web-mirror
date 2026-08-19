@@ -1,11 +1,16 @@
 "use client";
 
+import { notFound } from "next/navigation";
+
 import React, { useState } from "react";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { Box, Typography, Paper } from "@mui/material";
 
 export default function ConfirmationTestPage() {
+  // Dev-only page: hidden in production builds
+  if (process.env.NODE_ENV === "production") notFound();
+
     const [isPopupOpen, setIsPopupOpen] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [lastAction, setLastAction] = useState<string | null>(null);

@@ -14,7 +14,6 @@ export { default as DepartmentsCardInfoSkeleton } from "./departments-card/info-
 
 // ========= Table =========
 export { default as DepartmentsTableList } from "./departments-table/DepartmentsTableList";
-export { default as DepartementTableFilter } from "./departments-table/DepartmentsTableFilter";
 
 export { default as DepartmentsTableDataNotFound } from "./departments-table/DepartmentsTableNotFound";
 export { default as DeparmentsTableError } from "./departments-table/DepartmentsTableError";

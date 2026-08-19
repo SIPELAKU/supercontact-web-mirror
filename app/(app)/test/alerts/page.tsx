@@ -1,10 +1,15 @@
 "use client";
 
+import { notFound } from "next/navigation";
+
 import { AppAlert } from "@/components/ui/app-alert";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 
 export default function AlertsTestPage() {
+  // Dev-only page: hidden in production builds
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <div className="container mx-auto p-10 space-y-10">
       <h1 className="text-3xl font-bold">Alert Components Test</h1>

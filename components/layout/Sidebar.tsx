@@ -69,6 +69,9 @@ const menuData: MenuSection[] = [
         ],
       },
       {
+        // Intentionally ungated: the smart-capture API endpoints require
+        // authentication only (auth_require) - there is no permissions_require
+        // gate on any of them, so there is no permission string to mirror here.
         name: "Smart Capture",
         icon: Target,
         path: "/smart-capture",
@@ -84,7 +87,9 @@ const menuData: MenuSection[] = [
         icon: MessageCircle,
         children: [
           { name: "Recipients", path: "/whatsapp-marketing/recipients", permission: "recipients" },
-          { name: "Templates", path: "/whatsapp-marketing/template-broadcasting" },
+          // "omnichannel:setup" mirrors the gate on every /broadcast-templates
+          // API endpoint (permissions_require("omnichannel:setup")).
+          { name: "Templates", path: "/whatsapp-marketing/template-broadcasting", permission: "omnichannel:setup" },
           { name: "Groups", path: "/whatsapp-marketing/group-broadcasting", permission: "broadcast_groups" },
           { name: "Broadcasts", path: "/whatsapp-marketing/broadcasting-wa", permission: "broadcasts" },
         ],
@@ -129,13 +134,18 @@ const menuData: MenuSection[] = [
         ],
       },
       {
+        // Flattened from a group with a single child ("Dashboard") - same
+        // rationale as Omnichannel above: a one-child group only added a
+        // click between the user and its single destination.
         name: "Analytics",
         icon: BarChart3,
-        children: [
-          { name: "Dashboard", path: "/analytics/dashboard", permission: "analytics" },
-        ],
+        path: "/analytics/dashboard",
+        permission: "analytics",
       },
       {
+        // Intentionally ungated: the notes API's permissions_require("notes")
+        // dependency is commented out server-side, so the API enforces
+        // authentication only. Re-gate this once the API does.
         name: "Notes",
         icon: FileText,
         path: "/notes",

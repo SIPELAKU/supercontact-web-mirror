@@ -1,5 +1,7 @@
 'use client';
 
+import { notFound } from "next/navigation";
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -550,6 +552,9 @@ const ServerSideDemo = () => {
 // PAGE EXPORT
 // ========================================================================
 export default function SuperTableDemoPage() {
+  // Dev-only page: hidden in production builds
+  if (process.env.NODE_ENV === "production") notFound();
+
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });

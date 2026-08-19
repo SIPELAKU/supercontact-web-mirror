@@ -211,7 +211,7 @@ export default function AddTaskModal({
               id="add-task-modal-title"
               className="text-xl font-bold text-blue-600"
             >
-              Add New Task
+              Add Task
             </h2>
             <p
               id="add-task-modal-description"

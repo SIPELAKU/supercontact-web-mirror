@@ -23,7 +23,7 @@ export default function UsersTableSkeleton({ rows = 5 }: { rows?: number }) {
           <TableCell>Manager</TableCell>
           <TableCell>Manager ID</TableCell>
           <TableCell>Member Count</TableCell>
-          <TableCell align="center">Action</TableCell>
+          <TableCell align="center">Actions</TableCell>
         </TableRow>
       </TableHead>
 

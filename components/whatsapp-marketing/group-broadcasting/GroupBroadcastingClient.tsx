@@ -78,7 +78,7 @@ export default function GroupBroadcastingClient() {
       <PageHeader
         title="Group Broadcasting"
         breadcrumbs={[
-          { label: "Whatsapp Marketing" },
+          { label: "WhatsApp Marketing" },
           { label: "Group Broadcasting" },
         ]}
       />
@@ -112,7 +112,7 @@ export default function GroupBroadcastingClient() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         description={deleteDescription}
-        confirmText="Yes, Delete"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deleteMutation.isPending}

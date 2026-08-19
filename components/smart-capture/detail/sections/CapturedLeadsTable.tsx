@@ -202,11 +202,11 @@ export const CapturedLeadsTable = () => {
       },
       {
         accessorKey: 'captured_at',
-        header: 'Captured At',
+        header: 'Captured',
         Cell: ({ cell }) => (
           <div className="flex items-center gap-1.5 text-gray-500 text-[13px]">
             <Calendar size={14} className="opacity-70" />
-            <span>{format(new Date(cell.getValue<string>()), 'dd MM yyyy HH:mm')}</span>
+            <span>{format(new Date(cell.getValue<string>()), 'dd MMM yyyy, HH:mm')}</span>
           </div>
         ),
       },
@@ -310,7 +310,7 @@ export const CapturedLeadsTable = () => {
                   startIcon={<Trash2 size={16} />}
                   onClick={() => handleBulkDeleteRequest(selectedRows, clearSelection)}
                 >
-                  Delete Selected
+                  Delete ({selectedRows.length})
                 </AppButton>
               </div>
             )}
@@ -334,7 +334,7 @@ export const CapturedLeadsTable = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
-        title={deleteTarget && deleteTarget.ids.length > 1 ? 'Delete Selected Leads' : 'Delete Lead'}
+        title={deleteTarget && deleteTarget.ids.length > 1 ? `Delete (${deleteTarget.ids.length})` : 'Delete Lead'}
         description={
           deleteTarget
             ? deleteTarget.ids.length > 1

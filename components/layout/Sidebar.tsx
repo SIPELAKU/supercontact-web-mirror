@@ -62,10 +62,10 @@ const menuData: MenuSection[] = [
         name: "Sales",
         icon: TrendingUp,
         children: [
-          { name: "Product", path: "/sales/product", permission: "products" },
-          { name: "Lead", path: "/lead-management", permission: "leads" },
+          { name: "Products", path: "/sales/product", permission: "products" },
+          { name: "Leads", path: "/lead-management", permission: "leads" },
           { name: "Pipeline", path: "/sales/pipeline", permission: "pipelines" },
-          { name: "Quotation", path: "/sales/quotation", permission: "quotations" },
+          { name: "Quotations", path: "/sales/quotation", permission: "quotations" },
         ],
       },
       {
@@ -74,18 +74,18 @@ const menuData: MenuSection[] = [
         path: "/smart-capture",
       },
       {
-        name: "Contact",
+        name: "Contacts",
         icon: Contact,
         path: "/contact",
         permission: "contacts",
       },
       {
-        name: "Whatsapp Marketing",
+        name: "WhatsApp Marketing",
         icon: MessageCircle,
         children: [
           { name: "Recipients", path: "/whatsapp-marketing/recipients", permission: "recipients" },
-          { name: "Broadcast Template", path: "/whatsapp-marketing/template-broadcasting" },
-          { name: "Broadcast Group", path: "/whatsapp-marketing/group-broadcasting", permission: "broadcast_groups" },
+          { name: "Templates", path: "/whatsapp-marketing/template-broadcasting" },
+          { name: "Groups", path: "/whatsapp-marketing/group-broadcasting", permission: "broadcast_groups" },
           { name: "Broadcasts", path: "/whatsapp-marketing/broadcasting-wa", permission: "broadcasts" },
         ],
       },
@@ -93,9 +93,9 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
-          { name: "All Subscribers", path: "/email-marketing/subscribers", permission: "subscribers" },
-          { name: "Campaign", path: "/email-marketing/campaigns", permission: "campaigns" },
-          { name: "Mailing List", path: "/email-marketing/mailing-lists", permission: "mailing_lists" },
+          { name: "Subscribers", path: "/email-marketing/subscribers", permission: "subscribers" },
+          { name: "Campaigns", path: "/email-marketing/campaigns", permission: "campaigns" },
+          { name: "Mailing Lists", path: "/email-marketing/mailing-lists", permission: "mailing_lists" },
         ],
       },
       {

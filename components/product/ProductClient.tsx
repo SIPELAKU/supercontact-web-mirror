@@ -122,11 +122,11 @@ export default function ProductClient() {
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} produk berhasil dihapus`);
+      notify.success(`${successCount} product(s) deleted successfully`);
     }
     if (failCount > 0) {
       notify.error(
-        `${failCount} produk gagal dihapus karena masih terhubung ke data lain`,
+        `${failCount} product(s) could not be deleted because they are still linked to other data`,
         { description: `Produk: ${failedNames.join(', ')}` }
       );
     }

@@ -109,7 +109,7 @@ export default function MailingListsClient() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         description={`Are you sure you want to delete mailing list "${listToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Yes, Delete"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deleteMutation.isPending}

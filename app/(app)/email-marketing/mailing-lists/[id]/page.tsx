@@ -198,7 +198,7 @@ const MailingListDetailPage = () => {
                     onClick={() => router.push('/email-marketing/mailing-lists')}
                     sx={{ textTransform: 'none' }}
                 >
-                    Kembali ke Mailing List
+                    Back to Mailing Lists
                 </AppButton>
             </Box>
 
@@ -218,7 +218,7 @@ const MailingListDetailPage = () => {
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
                 <Tabs value={activeTab} onChange={handleTabChange}>
                     <Tab label="Subscribers" />
-                    <Tab label="Campaign Terkirim" />
+                    <Tab label="Sent Campaigns" />
                 </Tabs>
             </Box>
 
@@ -298,7 +298,7 @@ const MailingListDetailPage = () => {
                                     onClick={() => setShowAddSubscriberModal(true)}
                                     sx={{ height: '40px' }}
                                 >
-                                    Tambah Subscriber
+                                    Add Subscriber
                                 </AppButton>
                             </div>
                         )}
@@ -310,7 +310,7 @@ const MailingListDetailPage = () => {
                                     onClick={() => handleBulkDelete(selectedRows, clearSelection)}
                                     sx={{ height: '40px' }}
                                 >
-                                    Delete Selected ({selectedRows.length})
+                                    Delete ({selectedRows.length})
                                 </AppButton>
                                 <AppButton
                                     variantStyle="soft"
@@ -457,7 +457,7 @@ const MailingListDetailPage = () => {
                 <DialogActions>
                     <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline' disabled={deleteAllSubscriberMutation.isPending}>Cancel</AppButton>
                     <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllSubscriberMutation.isPending}>
-                        {deleteAllSubscriberMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Remove All'}
+                        {deleteAllSubscriberMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete All'}
                     </AppButton>
                 </DialogActions>
             </Dialog>

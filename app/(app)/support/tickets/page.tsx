@@ -104,10 +104,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil dihapus` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) deleted successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal dihapus` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to delete` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal menghapus tiket" });
@@ -123,10 +123,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil ditugaskan` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) assigned successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal ditugaskan` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to assign` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal menugaskan tiket" });
@@ -142,10 +142,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil diperbarui` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) updated successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal diperbarui` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to update` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal memperbarui tiket" });
@@ -228,8 +228,8 @@ export default function TicketManagementPage() {
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
             <PageHeader
-                title="Ticket Management"
-                breadcrumbs={[{ label: "Support" }, { label: "Ticket" }]}
+                title="Tickets"
+                breadcrumbs={[{ label: "Support" }, { label: "Tickets" }]}
             />
 
             <div className="w-full overflow-x-auto">
@@ -306,7 +306,7 @@ export default function TicketManagementPage() {
             <div style={{ display: "none" }}>
                 <PrintableTable
                     ref={componentRef}
-                    title="Ticket Management"
+                    title="Tickets"
                     data={tickets}
                     columns={printableColumns}
                 />

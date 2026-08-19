@@ -193,10 +193,10 @@ export default function UsersClient() {
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} user berhasil dihapus`);
+      notify.success(`${successCount} user(s) deleted successfully`);
     }
     if (failCount > 0) {
-      notify.error(`${failCount} user gagal dihapus`);
+      notify.error(`${failCount} user(s) failed to delete`);
     }
   };
 
@@ -210,7 +210,7 @@ export default function UsersClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <SettingsPageHeader
-        title="Manage User"
+        title="Users"
         breadcrumbs={[{ label: "Settings", href: "/settings" }, { label: "Users" }]}
       />
 
@@ -253,7 +253,7 @@ export default function UsersClient() {
                 <div className="hidden md:flex gap-2">
                   <AppButton onClick={() => setOpenAdd(true)}
                     startIcon={<Plus size={16} />}>
-                    Add New User
+                    Add User
                   </AppButton>
                   <AppButton variantStyle="outline" onClick={handlePrint}
                     startIcon={<Printer size={16} />}>

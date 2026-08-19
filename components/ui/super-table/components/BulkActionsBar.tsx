@@ -57,7 +57,7 @@ export function BulkActionsBar<TData extends object>({
             textTransform: 'none',
           }}
         >
-          {selectedCount} line selected
+          {selectedCount} selected
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

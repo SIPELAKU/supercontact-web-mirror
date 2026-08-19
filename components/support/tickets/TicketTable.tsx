@@ -138,7 +138,7 @@ export function TicketTable({
             },
             {
                 accessorKey: "updated_at",
-                header: "Last Updated",
+                header: "Updated",
                 enableColumnFilter: false,
                 Cell: ({ cell }) => {
                     const dateVal = cell.getValue<string>();
@@ -239,7 +239,7 @@ export function TicketTable({
                                 }
                             }}
                         >
-                            {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRows.length} Tiket`}
+                            {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
                         </AppButton>
                     )}
                 </div>

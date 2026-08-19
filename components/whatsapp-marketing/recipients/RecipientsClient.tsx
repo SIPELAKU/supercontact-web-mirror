@@ -220,7 +220,7 @@ export default function RecipientsClient() {
             {deleteMutation.isPending || bulkDeleteMutation.isPending ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Yes, Delete'
+              'Delete'
             )}
           </AppButton>
         </DialogActions>
@@ -253,7 +253,7 @@ export default function RecipientsClient() {
             {deleteAllMutation.isPending ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Yes, Delete All'
+              'Delete All'
             )}
           </AppButton>
         </DialogActions>

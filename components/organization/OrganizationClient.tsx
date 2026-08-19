@@ -170,10 +170,10 @@ export default function OrganizationClient() {
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} department berhasil dihapus`);
+      notify.success(`${successCount} department(s) deleted successfully`);
     }
     if (failCount > 0) {
-      notify.error(`${failCount} department gagal dihapus`);
+      notify.error(`${failCount} department(s) failed to delete`);
     }
   };
 
@@ -242,7 +242,7 @@ export default function OrganizationClient() {
                 className="flex items-center justify-center w-9 h-9
                            rounded-md bg-[#5479EE] text-white
                            hover:bg-[#3F66E0] transition-colors"
-                title="Add New Department"
+                title="Add Department"
               >
                 <Plus size={16} />
               </button>

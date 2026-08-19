@@ -79,10 +79,10 @@ const BroadcastTemplatesTable = ({
       },
       {
         accessorKey: 'created_at',
-        header: 'Last Update',
+        header: 'Updated',
         Cell: ({ cell }) => {
           const date = cell.getValue<string>();
-          return date ? format(new Date(date), 'MMMM d, yyyy') : '-';
+          return date ? format(new Date(date), 'dd MMM yyyy, HH:mm') : '-';
         },
       },
     ],

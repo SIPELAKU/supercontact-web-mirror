@@ -60,7 +60,7 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
 
   return (
     <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
-      <DialogTitle>Create New Mailing List</DialogTitle>
+      <DialogTitle>Add Mailing List</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <label htmlFor="name">Name</label>

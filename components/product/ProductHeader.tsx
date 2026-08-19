@@ -7,7 +7,7 @@ export default function ProductHeader() {
   return (
     <>
       <PageHeader
-        title="Product Catalog"
+        title="Products"
         breadcrumbs={[
           { label: "Sales" },
           { label: "Product Catalog" },

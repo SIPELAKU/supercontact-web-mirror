@@ -120,7 +120,7 @@ export const IntegrationsClient = () => {
                             <TableRow className="bg-[#EEF2FD]!">
                                 <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Provider</TableCell>
                                 <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, textAlign: "center" }}>Status</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, pr: 3, textAlign: "center" }}>Action</TableCell>
+                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, pr: 3, textAlign: "center" }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

@@ -53,7 +53,7 @@ export default function IcpBuilderPage() {
                             database for lookalikes - with a transparent, per-attribute breakdown.
                         </p>
                         <AppButton variantStyle="primary" onClick={() => setIsCreating(true)}>
-                            New ICP
+                            Add ICP
                         </AppButton>
                     </div>
 

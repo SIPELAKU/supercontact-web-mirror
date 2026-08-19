@@ -155,7 +155,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                 title={`#${ticket.ticket_code} - ${ticket.subject}`}
                 breadcrumbs={[
                     { label: "Support" },
-                    { label: "Ticket", href: "/support/tickets" },
+                    { label: "Tickets", href: "/support/tickets" },
                     { label: ticket.ticket_code || ticket.id },
                 ]}
             />

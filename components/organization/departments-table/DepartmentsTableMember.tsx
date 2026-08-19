@@ -142,8 +142,8 @@ export default function DepartmentsTableMember({
             }}
           >
             {isBulkDeleting
-              ? "Menghapus..."
-              : `Hapus ${selectedRows.length} Member`}
+              ? "Deleting..."
+              : `Delete (${selectedRows.length})`}
           </AppButton>
         ) : undefined}
         features={{

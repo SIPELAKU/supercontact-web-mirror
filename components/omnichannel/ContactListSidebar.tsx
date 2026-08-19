@@ -168,7 +168,7 @@ export default function ContactListSidebar({
                 {isNewContactOpen && (
                     <div className="p-4 border-b border-gray-100 bg-gray-50/50 animate-in slide-in-from-top duration-300">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-gray-900">Create Contact</h3>
+                            <h3 className="font-bold text-gray-900">Add Contact</h3>
                             <button
                                 onClick={() => onToggleNewContact(false)}
                                 className="p-1 hover:bg-gray-200 rounded-full transition-colors"
@@ -342,7 +342,7 @@ export default function ContactListSidebar({
                         title={`No contacts found for "${searchTerm}"`}
                         description="Try a different search term or add a new contact."
                         action={{
-                            label: "New Contact",
+                            label: "Add Contact",
                             onClick: () => onToggleNewContact(true),
                             icon: <UserPlus />,
                         }}

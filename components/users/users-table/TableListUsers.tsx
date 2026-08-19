@@ -97,7 +97,7 @@ export default function TableListUsers({
     },
     {
       id: "actions",
-      header: "Action",
+      header: "Actions",
       enableColumnFilter: false,
       enableSorting: false,
       enableHiding: false,
@@ -143,8 +143,8 @@ export default function TableListUsers({
             }}
           >
             {isBulkDeleting 
-              ? "Menghapus..." 
-              : `Hapus ${selectedRows.length} User`}
+              ? "Deleting..."
+              : `Delete (${selectedRows.length})`}
           </AppButton>
         )}
         features={{

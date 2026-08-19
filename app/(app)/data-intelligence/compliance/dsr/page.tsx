@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from 'date-fns';
 import { useState } from "react";
 import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import { Plus, FileClock } from "lucide-react";
@@ -138,7 +139,7 @@ export default function DsrRequestsPage() {
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-sm text-gray-600">
-                                            {new Date(request.created_at).toLocaleDateString()}
+                                            {format(new Date(request.created_at), "dd MMM yyyy, HH:mm")}
                                         </TableCell>
                                         <TableCell>
                                             <AppSelect

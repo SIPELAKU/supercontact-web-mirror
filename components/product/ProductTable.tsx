@@ -141,7 +141,7 @@ export default function ProductTable({
                             }
                         }}
                     >
-                        {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRows.length} Produk`}
+                        {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
                     </AppButton>
                 )}
                 manualPagination={true}

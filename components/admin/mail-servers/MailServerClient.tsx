@@ -67,12 +67,12 @@ export const MailServerClient = () => {
 
     const allColumns = [
         { id: "selection", label: "Selection" },
-        { id: "name", label: "Nama" },
+        { id: "name", label: "Name" },
         { id: "smtp_host", label: "Server SMTP" },
         { id: "smtp_username", label: "Username" },
         { id: "smtp_region", label: "Region" },
         { id: "status", label: "Status" },
-        { id: "action", label: "Aksi" },
+        { id: "action", label: "Actions" },
     ];
 
     // Filter Logic (client-side operator popover; applied to the full fetched set
@@ -232,7 +232,7 @@ export const MailServerClient = () => {
                                 <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Region</TableCell>
                                 <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, textAlign: 'center' }}>Status</TableCell>
                                 <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, textAlign: 'center' }}>Active</TableCell>
-                                <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3, textAlign: 'center' }}>Action</TableCell>
+                                <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2, pr: 3, textAlign: 'center' }}>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

@@ -80,7 +80,7 @@ export default function SmartCaptureClient() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
-          title="Lead Magnets"
+          title="Smart Capture"
           description="Manage your forms and soft-selling assets to get validated prospects."
           breadcrumbs={[
             {

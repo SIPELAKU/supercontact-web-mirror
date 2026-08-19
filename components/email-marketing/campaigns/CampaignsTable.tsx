@@ -99,7 +99,7 @@ export default function CampaignsTable({
     {
       id: "sent_at",
       accessorKey: "sent_at",
-      header: "Sent Date",
+      header: "Sent",
       enableColumnFilter: false,
       Cell: ({ row }) => (
         <span>
@@ -211,7 +211,7 @@ export default function CampaignsTable({
             >
               {isBulkDeleting
                 ? "Deleting..."
-                : `Delete ${selectedRows.length} Campaigns`}
+                : `Delete (${selectedRows.length})`}
             </AppButton>
           </Box>
         )}

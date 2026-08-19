@@ -60,7 +60,7 @@ export default function AlertsTestPage() {
             className="bg-[#7BDD3E] hover:bg-[#68C52E]"
             onClick={() =>
               notify.success("Success", {
-                description: "Data berhasil disimpan",
+                description: "Data saved successfully",
               })
             }
           >

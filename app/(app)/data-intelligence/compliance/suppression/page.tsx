@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from 'date-fns';
 import { useState } from "react";
 import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import { Plus, ShieldOff } from "lucide-react";
@@ -114,7 +115,7 @@ export default function SuppressionListPage() {
                                             {entry.reason || "-"}
                                         </TableCell>
                                         <TableCell className="text-sm text-gray-600">
-                                            {new Date(entry.created_at).toLocaleDateString()}
+                                            {format(new Date(entry.created_at), "dd MMM yyyy, HH:mm")}
                                         </TableCell>
                                         <TableCell align="center">
                                             <DeleteButton onClick={() => handleDelete(entry.id)} />

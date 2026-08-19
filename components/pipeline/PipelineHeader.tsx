@@ -6,7 +6,7 @@ export default function PipelineHeader() {
   return (
     <>
       <PageHeader
-        title="Opportunity Pipeline"
+        title="Pipeline"
         breadcrumbs={[
           { label: "Sales" },
           { label: "Opportunity Pipeline" },

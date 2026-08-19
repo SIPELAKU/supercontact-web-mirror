@@ -181,7 +181,7 @@ const LeadMagnetsTable = ({
     () => [
       {
         accessorKey: 'name',
-        header: 'Nama Magnet',
+        header: 'Magnet Name',
         Cell: ({ cell }) => (
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-500 rounded-md">
@@ -208,7 +208,7 @@ const LeadMagnetsTable = ({
       },
       {
         id: 'conversion',
-        header: 'Konversi',
+        header: 'Conversion',
         // accessorFn: (row) => (row as any).conversion ?? 0,
         accessorKey: 'conversions',
         Cell: ({ cell }) => <span className="text-gray-700">{cell.getValue<number>()}%</span>,
@@ -308,7 +308,7 @@ const LeadMagnetsTable = ({
                   variantStyle="primary"
                   startIcon={<Plus size={16} />}
                 >
-                  Add New Magnet
+                  Add Magnet
                 </AppButton>
               </Link>
             </div>
@@ -318,7 +318,7 @@ const LeadMagnetsTable = ({
               <Link href="/smart-capture/create">
                 <button
                   className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
-                  title="Add New Magnet"
+                  title="Add Magnet"
                 >
                   <Plus size={16} />
                 </button>

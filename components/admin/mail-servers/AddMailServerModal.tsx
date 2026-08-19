@@ -133,7 +133,7 @@ const AddMailServerModal: React.FC<AddMailServerModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-900">Add New Mail Server</h2>
+                    <h2 className="text-xl font-bold text-gray-900">Add Mail Server</h2>
                 </div>
 
                 <div className="p-6 space-y-6">

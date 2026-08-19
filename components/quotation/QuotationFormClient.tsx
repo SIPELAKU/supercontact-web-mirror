@@ -383,7 +383,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         breadcrumbs={[
           { label: "Sales" },
           { label: "Quotation Builder" },
-          { label: "Add New Quotation" },
+          { label: "Add Quotation" },
         ]}
       />
 

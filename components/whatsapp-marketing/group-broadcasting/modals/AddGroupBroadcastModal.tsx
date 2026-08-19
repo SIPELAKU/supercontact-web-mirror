@@ -58,7 +58,7 @@ const AddGroupBroadcastModal = ({ open, onClose, onSuccess }: AddGroupBroadcastM
 
   return (
     <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
-      <DialogTitle>Create New Group Broadcast</DialogTitle>
+      <DialogTitle>Add Group</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <label htmlFor="name" style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', fontWeight: 500 }}>

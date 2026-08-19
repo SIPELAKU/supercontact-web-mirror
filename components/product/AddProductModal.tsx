@@ -285,7 +285,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 ">
                     <div className="mt-2">
                         <h2 className="text-2xl font-semibold text-[#5479EE]">
-                            {id ? "Update Product" : "Add New Product"}
+                            {id ? "Update Product" : "Add Product"}
                         </h2>
                     </div>
 

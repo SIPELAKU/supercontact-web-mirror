@@ -200,7 +200,7 @@ export default function BroadcastTemplatesClient() {
             {deleteMutation.isPending || bulkDeleteMutation.isPending ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Yes, Delete'
+              'Delete'
             )}
           </AppButton>
         </DialogActions>

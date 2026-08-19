@@ -217,7 +217,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       {!isFocusMode && (
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-            Create New Campaigns
+            Add Campaign
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton

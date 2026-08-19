@@ -252,7 +252,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
+            <h2 className="text-2xl font-bold text-[#5479EE]">Add Contact</h2>
             <p className="text-gray-600 text-md mt-1">
               Fill in the details below to add a new contact to your CRM.
             </p>

@@ -57,7 +57,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
           startIcon={<Plus className="w-4 h-4" />}
           onClick={onAdd}
         >
-          Create New List
+          Add Mailing List
         </AppButton>
       </Box>
 

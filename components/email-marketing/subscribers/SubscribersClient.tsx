@@ -228,7 +228,7 @@ export default function SubscribersClient() {
         <DialogActions>
           <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
           <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}>
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
+            {deleteMutation.isPending || bulkDeleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete'}
           </AppButton>
         </DialogActions>
       </Dialog>
@@ -248,7 +248,7 @@ export default function SubscribersClient() {
         <DialogActions>
           <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
           <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllMutation.isPending}>
-            {deleteAllMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete All Data!'}
+            {deleteAllMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Delete All'}
           </AppButton>
         </DialogActions>
       </Dialog>

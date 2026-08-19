@@ -275,7 +275,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
         >
           <div className="p-6">
             <h2 className="text-2xl font-bold text-[#5479EE]">
-              {isEdit ? "Edit Recipient" : "Add New Recipient"}
+              {isEdit ? "Edit Recipient" : "Add Recipient"}
             </h2>
             <p className="text-gray-600 text-md mt-1">
               {isEdit
@@ -379,7 +379,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
                     setContactSearchQuery(newInputValue);
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  label="Pilih Kontak untuk di-import"
+                  label="Select contacts to import"
                   placeholder="Search name or email..."
                   error={Boolean(errors.contacts)}
                   helperText={errors.contacts}

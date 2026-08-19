@@ -233,7 +233,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
       },
       {
         id: "actions",
-        header: "Action",
+        header: "Actions",
         Cell: ({ row }) => {
           const job = row.original;
           const status = job.status;

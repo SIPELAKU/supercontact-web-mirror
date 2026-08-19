@@ -124,7 +124,7 @@ export default function CreateSmartCaptureClient({
           </AppButton>
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              {mode === 'edit' ? 'Edit Lead Magnet' : 'Create New Lead Magnet'}
+              {mode === 'edit' ? 'Edit Smart Capture' : 'Add Smart Capture'}
             </h1>
             <p className="text-gray-500 text-xs mt-0.5">
               Lead Magnets

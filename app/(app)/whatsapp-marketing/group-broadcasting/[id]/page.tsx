@@ -130,7 +130,7 @@ const GroupBroadcastDetailPage = () => {
             <PageHeader
                 title={groupBroadcast.name}
                 breadcrumbs={[
-                    { label: "Whatsapp Marketing" },
+                    { label: "WhatsApp Marketing" },
                     { label: "Group Broadcasting", href: "/whatsapp-marketing/group-broadcasting" },
                     { label: groupBroadcast.name }
                 ]}
@@ -285,7 +285,7 @@ const GroupBroadcastDetailPage = () => {
                                             <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Delivered</TableCell>
                                             <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Read</TableCell>
                                             <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Failed</TableCell>
-                                            <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Action</TableCell>
+                                            <TableCell sx={{ color: '#6B7280', fontWeight: 600, py: 2 }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

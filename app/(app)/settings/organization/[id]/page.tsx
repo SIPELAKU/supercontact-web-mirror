@@ -168,12 +168,12 @@ export default function DetailDepartments() {
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} member berhasil dihapus`);
+      notify.success(`${successCount} member(s) deleted successfully`);
       // Simpan trigeger manual refresh walau tidak pakai useMutation via API call langsung, atau anggap table refetch on close (karena hook tak dirender ulang otomatis)
       // Idealnya reload dengan me-mutate SWR/ReactQuery key
     }
     if (failCount > 0) {
-      notify.error(`${failCount} member gagal dihapus`);
+      notify.error(`${failCount} member(s) failed to delete`);
     }
 
     // We should trigger a refetch here. Just reloading the page is dirty, let the user manually refresh or we can keep it as is.

@@ -116,7 +116,7 @@ export default function NotesPage() {
               startIcon={<IoIosAdd />}
               className="whitespace-nowrap px-5"
             >
-              Add New Notes
+              Add Note
             </AppButton>
           </div>
         </div>

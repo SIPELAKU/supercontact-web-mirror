@@ -95,7 +95,7 @@ export default function BroadcastingWATable({
     {
       id: "created_at",
       accessorKey: "created_at",
-      header: "Created At",
+      header: "Created",
       enableColumnFilter: false,
       Cell: ({ row }) => (
         <Typography variant="caption">

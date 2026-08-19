@@ -338,7 +338,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         color="primary"
         onClick={() => setOpen(true)}
       >
-        <GrAdd className="text-lg mr-2" /> Add New Lead
+        <GrAdd className="text-lg mr-2" /> Add Lead
       </AppButton>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -354,7 +354,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         >
           <div className="mt-2">
             <h2 className="text-2xl font-semibold text-[#5479EE]">
-              Add New Leads
+              Add Lead
             </h2>
           </div>
 

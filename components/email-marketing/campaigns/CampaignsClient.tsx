@@ -152,11 +152,11 @@ export default function CampaignsClient() {
     setBulkDeleteTarget(null);
     clearSelection();
 
-    if (successCount > 0) notify.success(`${successCount} kampanye berhasil dihapus`);
-    if (failCount > 0) notify.error(`${failCount} kampanye gagal dihapus`);
+    if (successCount > 0) notify.success(`${successCount} campaign(s) deleted successfully`);
+    if (failCount > 0) notify.error(`${failCount} campaign(s) failed to delete`);
     if (skippedCount > 0) {
       notify.warning(
-        `${skippedCount} kampanye dilewati karena tidak dapat dihapus`,
+        `${skippedCount} campaign(s) skipped because they cannot be deleted`,
         { description: skippedNames.join(', ') }
       );
     }
@@ -326,7 +326,7 @@ export default function CampaignsClient() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         description={`Are you sure you want to delete campaign "${campaignToDelete?.subject}"? This action cannot be undone.`}
-        confirmText="Yes, Delete"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deleteMutation.isPending}

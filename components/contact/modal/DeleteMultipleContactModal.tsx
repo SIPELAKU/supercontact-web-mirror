@@ -54,11 +54,11 @@ const DeleteMultipleContactModal: React.FC<DeleteContactModalProps> = ({
     clearSelection?.();
 
     if (successCount > 0) {
-      notify.success(`${successCount} contact berhasil dihapus`);
+      notify.success(`${successCount} contact(s) deleted successfully`);
     }
     if (failCount > 0) {
       notify.error(
-        `${failCount} contact gagal dihapus` +
+        `${failCount} contact(s) failed to delete` +
         (failMessages[0] ? `: ${failMessages[0]}` : "")
       );
     }

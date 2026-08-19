@@ -128,7 +128,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
           startIcon={<Plus className="w-4 h-4" />}
           onClick={onAdd}
         >
-          Create New Group Broadcast
+          Add Group
         </AppButton>
       </Box>
 

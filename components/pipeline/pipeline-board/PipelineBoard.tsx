@@ -443,7 +443,7 @@ export default function PipelineBoard() {
           color="primary"
           startIcon={<Plus />}
         >
-          Add New Pipeline
+          Add Deal
         </AppButton>
 
       </div>

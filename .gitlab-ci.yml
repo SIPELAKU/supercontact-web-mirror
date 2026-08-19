@@ -69,14 +69,12 @@ workflow:
     - when: never
 
 # ---- Konfigurasi Global ----
-
-image: node:20-alpine
-
-# Caching untuk vercel CLI agar tidak install ulang setiap run
-cache:
-  key: vercel-cli
-  paths:
-    - /usr/local/lib/node_modules/vercel/
+#
+# 2026-08-19: dipindah dari shared runner (image node:20-alpine) ke
+# self-hosted shell runner (tags: active) karena kuota menit CI shared
+# runner GitLab Free habis. Shell runner mengabaikan `image:`; node
+# tersedia di host runner. Vercel CLI di-install lokal per job
+# (npm i -g butuh root di shell runner).
 
 stages:
   - deploy
@@ -103,6 +101,7 @@ variables:
 # ============================================================
 deploy_staging:
   stage: deploy
+  tags: [active]
   environment:
     name: staging
     url: https://solvera-supercontact-staging.vercel.app
@@ -119,25 +118,25 @@ deploy_staging:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI
-    - npm i -g vercel
+    # Install Vercel CLI (lokal - shell runner tidak bisa npm i -g)
+    - npm install --no-save vercel
 
     # Pull konfigurasi Vercel project (env vars staging)
-    - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
+    - npx vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
 
     # vercel build hanya baca .env.preview.local, jadi copy dari staging
     - cp .vercel/.env.staging.local .vercel/.env.preview.local
 
     # Build menggunakan Vercel (env variables dari Vercel ikut)
-    - vercel build --token=$VERCEL_TOKEN
+    - npx vercel build --token=$VERCEL_TOKEN
 
     # Deploy sebagai preview (staging)
-    - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
+    - DEPLOY_URL=$(npx vercel deploy --prebuilt --token=$VERCEL_TOKEN)
     - echo "Preview URL → $DEPLOY_URL"
 
     # Alias ke domain staging
-    - vercel alias $DEPLOY_URL solvera-supercontact-staging.vercel.app --token=$VERCEL_TOKEN
-    - vercel alias $DEPLOY_URL staging.smartsales.id --token=$VERCEL_TOKEN
+    - npx vercel alias $DEPLOY_URL solvera-supercontact-staging.vercel.app --token=$VERCEL_TOKEN
+    - npx vercel alias $DEPLOY_URL staging.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Staging deployment selesai!"
@@ -171,6 +170,7 @@ deploy_staging:
 # ============================================================
 deploy_prod:
   stage: deploy
+  tags: [active]
   environment:
     name: production
     url: https://solvera-supercontact.vercel.app
@@ -187,18 +187,18 @@ deploy_prod:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI
-    - npm i -g vercel
+    # Install Vercel CLI (lokal - shell runner tidak bisa npm i -g)
+    - npm install --no-save vercel
 
     # Pull konfigurasi Vercel project
-    - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+    - npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
 
     # Build menggunakan Vercel (env variables dari Vercel ikut)
-    - vercel build --prod --token=$VERCEL_TOKEN
+    - npx vercel build --prod --token=$VERCEL_TOKEN
 
     # Deploy ke production
-    - DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
-    - vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+    - npx vercel alias $DEPLOY_URL www.smartsales.id --token=$VERCEL_TOKEN
 
     - echo ""
     - echo "✅ Production deployment selesai!"

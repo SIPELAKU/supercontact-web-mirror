@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Globe } from "lucide-react";
+import { Copy, Globe, AlertTriangle } from "lucide-react";
 import { notify } from "@/lib/notifications";
 
 interface WebWidgetEmbedGuideProps {
@@ -58,14 +58,28 @@ const WebWidgetEmbedGuide: React.FC<WebWidgetEmbedGuideProps> = ({ widgetKey }) 
   }, []);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+  const apiUrlMissing = !apiUrl;
 
   const snippet = useMemo(() => {
     if (!origin) return "";
-    return `<script\n  src="${origin}/widget.js"\n  data-widget-key="${widgetKey}"\n  data-api-url="${apiUrl}"\n  async\n></script>`;
+    // data-locale is optional; defaults to "id" inside widget.js when absent.
+    // Shown here so a tenant can switch the widget chrome to English ("en").
+    return `<script\n  src="${origin}/widget.js"\n  data-widget-key="${widgetKey}"\n  data-api-url="${apiUrl}"\n  data-locale="id"\n  async\n></script>`;
   }, [origin, widgetKey, apiUrl]);
 
   return (
     <div className="space-y-8">
+      {apiUrlMissing && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800">
+            <strong>Heads up:</strong> the API URL is not configured for this environment, so the snippet
+            below has an empty <code className="bg-amber-100 px-1 rounded">data-api-url</code> and the widget
+            will not connect. Contact your administrator before installing it.
+          </p>
+        </div>
+      )}
+
       {/* Connection & Embed */}
       <div>
         <h3 className="text-sm font-semibold text-gray-900 mb-1">Connection & Embed</h3>

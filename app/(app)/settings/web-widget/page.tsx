@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import ConnectWebWidgetForm from "@/components/omnichannel/ConnectWebWidgetForm";
@@ -12,23 +12,40 @@ import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
 export default function SettingsWebWidgetPage() {
-  // v1 configures/embeds only the first widget account - multiple widgets
-  // managed at once is an explicit non-goal for now (see plans/), the data
-  // model already supports more, agents can still connect + delete extras
-  // below via the generic AccountList.
+  // Each connected widget now gets its own config + embed: when more than one
+  // exists, a selector picks which one this page targets. The default falls
+  // to the first ACTIVE account (or the first of any, so a deactivated widget
+  // is still reachable to reactivate) - previously the whole page was locked
+  // to that single "primary" account with no way to configure the others.
   //
-  // GET /accounts now returns inactive (deleted) accounts too, so agents can
-  // reactivate them below - but that means an active widget must be
-  // preferred here, or a deleted one would silently take over this panel
-  // with no obvious way back to creating/reactivating.
+  // GET /accounts also returns inactive (deleted) accounts so they can be
+  // reactivated below via the generic AccountList / banner.
   const { data: accounts, isLoading } = useAccounts("web_widget", true);
-  const primaryAccount = accounts?.find((a) => a.is_active) ?? accounts?.[0];
   const reactivateAccountMutation = useReactivateAccount();
 
+  const defaultAccount = accounts?.find((a) => a.is_active) ?? accounts?.[0];
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+
+  // Keep the selection valid as accounts load / change (e.g. after a delete).
+  useEffect(() => {
+    if (!accounts || accounts.length === 0) {
+      setSelectedAccountId(null);
+      return;
+    }
+    setSelectedAccountId((prev) =>
+      prev && accounts.some((a) => a.id === prev) ? prev : (defaultAccount?.id ?? null),
+    );
+  }, [accounts, defaultAccount?.id]);
+
+  const selectedAccount = useMemo(
+    () => accounts?.find((a) => a.id === selectedAccountId) ?? defaultAccount,
+    [accounts, selectedAccountId, defaultAccount],
+  );
+
   const handleReactivate = async () => {
-    if (!primaryAccount) return;
+    if (!selectedAccount) return;
     try {
-      await reactivateAccountMutation.mutateAsync(primaryAccount.id);
+      await reactivateAccountMutation.mutateAsync(selectedAccount.id);
       notify.success("Widget Reactivated", { description: "This widget is accepting messages again." });
     } catch (error: any) {
       notify.error("Error", { description: handleError(error, "Reactivate Widget") });
@@ -47,7 +64,7 @@ export default function SettingsWebWidgetPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-center min-h-[300px]">
           <Loader2 className="animate-spin text-gray-400" size={32} />
         </div>
-      ) : !primaryAccount ? (
+      ) : !selectedAccount ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 min-h-[400px]">
           <div className="mb-2">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Create a Web Widget</h2>
@@ -60,10 +77,31 @@ export default function SettingsWebWidgetPage() {
         </div>
       ) : (
         <>
-          {!primaryAccount.is_active && (
+          {accounts && accounts.length > 1 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex items-center gap-3 flex-wrap">
+              <label className="text-sm font-medium text-gray-700">Configuring widget</label>
+              <select
+                value={selectedAccount.id}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="h-10 min-w-[220px] rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
+              >
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.display_name}
+                    {a.is_active ? "" : " (deactivated)"}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500">
+                The configuration and embed snippet below apply to the selected widget.
+              </p>
+            </div>
+          )}
+
+          {!selectedAccount.is_active && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-sm text-amber-800">
-                <strong>{primaryAccount.display_name}</strong> is deactivated — visitors can&apos;t start new
+                <strong>{selectedAccount.display_name}</strong> is deactivated — visitors can&apos;t start new
                 chats until you reactivate it.
               </p>
               <button
@@ -83,15 +121,15 @@ export default function SettingsWebWidgetPage() {
           )}
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-1">{primaryAccount.display_name}</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-1">{selectedAccount.display_name}</h2>
             <p className="text-sm text-gray-600 mb-6">
               Customize how the widget looks and behaves for your visitors.
             </p>
-            <WebWidgetConfigPanel accountId={primaryAccount.id} />
+            <WebWidgetConfigPanel key={selectedAccount.id} accountId={selectedAccount.id} />
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <WebWidgetEmbedGuide widgetKey={primaryAccount.channel_identifier} />
+            <WebWidgetEmbedGuide key={selectedAccount.id} widgetKey={selectedAccount.channel_identifier} />
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">

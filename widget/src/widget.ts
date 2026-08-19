@@ -20,6 +20,79 @@ interface WidgetConfig {
   is_widget_enabled: boolean;
   is_within_business_hours: boolean;
   offline_message?: string | null;
+  // i18n (POLISH sprint): the public config endpoint does NOT currently
+  // return these, so today they're always undefined and the widget falls
+  // back to the data-locale attribute (default "id"). Kept optional so that
+  // IF the backend ever adds a `locale`/`strings` field to get_public_config
+  // it's picked up with zero further frontend change - see resolveStrings().
+  locale?: "id" | "en" | string | null;
+  strings?: Partial<WidgetStrings> | null;
+}
+
+// All visitor-facing chrome strings. Everything the widget renders in the
+// UI flows through one of these keys so the bundle can ship more than one
+// language pack without touching the backend.
+interface WidgetStrings {
+  offline: string;
+  disconnected: string;
+  yourName: string;
+  yourEmail: string;
+  typeMessage: string;
+  send: string;
+  openChat: string;
+  closeChat: string;
+  failedRetry: string;
+  newMessage: string;
+  downloadAttachment: string;
+  attachment: string;
+}
+
+const STRINGS_EN: WidgetStrings = {
+  offline: "We're currently offline",
+  disconnected: "Disconnected — refresh to reconnect",
+  yourName: "Your name",
+  yourEmail: "Your email (optional)",
+  typeMessage: "Type a message...",
+  send: "Send",
+  openChat: "Open chat",
+  closeChat: "Close chat",
+  failedRetry: "Failed — tap to retry",
+  newMessage: "New message",
+  downloadAttachment: "Download attachment",
+  attachment: "attachment",
+};
+
+const STRINGS_ID: WidgetStrings = {
+  offline: "Kami sedang offline",
+  disconnected: "Koneksi terputus — muat ulang untuk menyambung kembali",
+  yourName: "Nama Anda",
+  yourEmail: "Email Anda (opsional)",
+  typeMessage: "Ketik pesan...",
+  send: "Kirim",
+  openChat: "Buka obrolan",
+  closeChat: "Tutup obrolan",
+  failedRetry: "Gagal — ketuk untuk mencoba lagi",
+  newMessage: "Pesan baru",
+  downloadAttachment: "Unduh lampiran",
+  attachment: "lampiran",
+};
+
+// Base pack selected by locale (default Indonesian - the product's tenants
+// are Indonesian), then merged with any per-string overrides (only ever
+// present if the backend later supplies config.strings).
+function resolveStrings(
+  locale: string | null | undefined,
+  overrides?: Partial<WidgetStrings> | null,
+): WidgetStrings {
+  const base = locale === "en" ? STRINGS_EN : STRINGS_ID;
+  const merged: WidgetStrings = { ...base };
+  if (overrides) {
+    for (const k in overrides) {
+      const v = (overrides as Record<string, unknown>)[k];
+      if (typeof v === "string" && v.trim()) (merged as unknown as Record<string, string>)[k] = v;
+    }
+  }
+  return merged;
 }
 
 interface StoredSession {
@@ -67,6 +140,9 @@ interface ServerMessage {
 
   const widgetKey = currentScript.getAttribute("data-widget-key");
   const apiUrl = (currentScript.getAttribute("data-api-url") || "").replace(/\/$/, "");
+  // Optional locale override on the embed <script data-locale="en"> tag.
+  // Absent => "id" (default, tenants are Indonesian). Zero backend change.
+  const localeAttr = (currentScript.getAttribute("data-locale") || "").trim().toLowerCase();
   if (!widgetKey || !apiUrl) {
     console.error("[SmartSales Widget] missing data-widget-key or data-api-url");
     return;
@@ -94,6 +170,18 @@ interface ServerMessage {
       localStorage.setItem(storageKey, JSON.stringify(session));
     } catch {
       /* localStorage unavailable (private mode, etc) - session just won't persist across reloads */
+    }
+  }
+
+  // Item 4 (expired-token cleanup): purge the persisted token so a reload
+  // doesn't keep replaying an expired/invalid token. Called on a hard 401
+  // from the REST API (unambiguous token-expired), NOT on a WS 1008 close -
+  // 1008 also covers too-many-connections/origin, where the token is fine.
+  function removeSession() {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      /* localStorage unavailable - nothing persisted to remove */
     }
   }
 
@@ -135,7 +223,11 @@ interface ServerMessage {
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(json?.error?.message || json?.message || "Request failed");
+      const err = new Error(json?.error?.message || json?.message || "Request failed") as Error & {
+        status?: number;
+      };
+      err.status = res.status; // lets callers detect a 401 for token cleanup (item 4)
+      throw err;
     }
     return json?.data ?? json;
   }
@@ -144,6 +236,7 @@ interface ServerMessage {
     private root: HTMLDivElement;
     private shadow: ShadowRoot;
     private config: WidgetConfig | null = null;
+    private strings: WidgetStrings = resolveStrings(localeAttr);
     private session: StoredSession | null = getSession();
     private ws: WebSocket | null = null;
     private pingTimer: number | null = null;
@@ -181,6 +274,9 @@ interface ServerMessage {
         return;
       }
       if (!this.config || !this.config.is_widget_enabled) return;
+
+      // Precedence: backend config.locale (future) > data-locale attr > "id".
+      this.strings = resolveStrings(this.config.locale || localeAttr, this.config.strings);
 
       this.render();
 
@@ -238,7 +334,8 @@ interface ServerMessage {
         .msg.inbound .retry { color: #DC2626; }
         .offline { padding: 10px 12px; background: #FEF3C7; color: #92400E; font-size: 12px; }
         form { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-top: 1px solid #E5E7EB; }
-        input, textarea { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; }
+        /* 16px (not 13px) so iOS Safari doesn't zoom the page on focus (item 2 a11y). */
+        input, textarea { border: 1px solid #E5E7EB; border-radius: 8px; padding: 8px 10px; font-size: 16px; outline: none; }
         input:focus, textarea:focus { border-color: ${brand}; }
         button.send { background: ${brand}; color: #fff; border: none; border-radius: 8px; padding: 8px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
         button.send:disabled { opacity: .5; cursor: default; }
@@ -248,7 +345,7 @@ interface ServerMessage {
 
       this.bubbleEl = document.createElement("button");
       this.bubbleEl.className = "bubble";
-      this.bubbleEl.setAttribute("aria-label", "Open chat");
+      this.bubbleEl.setAttribute("aria-label", this.strings.openChat);
       this.bubbleEl.textContent = "💬";
       this.bubbleEl.onclick = () => this.toggle();
       this.badgeEl = document.createElement("span");
@@ -265,10 +362,11 @@ interface ServerMessage {
       header.className = "header";
       header.style.position = "relative";
       header.innerHTML = `${escapeHtml(this.config!.title)}<p>${
-        this.config!.is_within_business_hours ? escapeHtml(this.config!.greeting_message) : "We're currently offline"
+        this.config!.is_within_business_hours ? escapeHtml(this.config!.greeting_message) : escapeHtml(this.strings.offline)
       }</p>`;
       const closeBtn = document.createElement("button");
       closeBtn.className = "close";
+      closeBtn.setAttribute("aria-label", this.strings.closeChat);
       closeBtn.textContent = "✕";
       closeBtn.onclick = () => this.toggle();
       header.appendChild(closeBtn);
@@ -279,7 +377,8 @@ interface ServerMessage {
       // live channel is down rather than silently swallowing agent replies.
       this.statusEl = document.createElement("div");
       this.statusEl.className = "status";
-      this.statusEl.textContent = "Disconnected - refresh to reconnect";
+      this.statusEl.setAttribute("role", "status");
+      this.statusEl.textContent = this.strings.disconnected;
       this.panelEl.appendChild(this.statusEl);
 
       if (!this.config!.is_within_business_hours && this.config!.offline_message) {
@@ -291,6 +390,10 @@ interface ServerMessage {
 
       this.bodyEl = document.createElement("div");
       this.bodyEl.className = "body";
+      // a11y (item 2): announce agent replies to screen readers as they arrive.
+      this.bodyEl.setAttribute("role", "log");
+      this.bodyEl.setAttribute("aria-live", "polite");
+      this.bodyEl.setAttribute("aria-atomic", "false");
       this.panelEl.appendChild(this.bodyEl);
 
       this.formEl = this.buildForm();
@@ -306,11 +409,13 @@ interface ServerMessage {
       if (!this.session) {
         // pre-chat form: name + email, market-standard table stakes (see plans/)
         const nameInput = document.createElement("input");
-        nameInput.placeholder = "Your name";
+        nameInput.placeholder = this.strings.yourName;
+        nameInput.setAttribute("aria-label", this.strings.yourName);
         nameInput.name = "visitor_name";
 
         const emailInput = document.createElement("input");
-        emailInput.placeholder = "Your email (optional)";
+        emailInput.placeholder = this.strings.yourEmail;
+        emailInput.setAttribute("aria-label", this.strings.yourEmail);
         emailInput.name = "visitor_email";
         emailInput.type = "email";
 
@@ -319,15 +424,25 @@ interface ServerMessage {
       }
 
       const messageInput = document.createElement("textarea");
-      messageInput.placeholder = "Type a message...";
+      messageInput.placeholder = this.strings.typeMessage;
+      messageInput.setAttribute("aria-label", this.strings.typeMessage);
       messageInput.name = "message";
       messageInput.rows = 2;
+      // Enter sends, Shift+Enter inserts a newline (keyboard operability, item 2).
+      messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          if (typeof form.requestSubmit === "function") form.requestSubmit();
+          else void this.handleSubmit(form, sendBtn);
+        }
+      });
       form.appendChild(messageInput);
 
       const sendBtn = document.createElement("button");
       sendBtn.type = "submit";
       sendBtn.className = "send";
-      sendBtn.textContent = "Send";
+      sendBtn.setAttribute("aria-label", this.strings.send);
+      sendBtn.textContent = this.strings.send;
       form.appendChild(sendBtn);
 
       form.onsubmit = (e) => {
@@ -398,6 +513,8 @@ interface ServerMessage {
       } catch (e) {
         console.error("[SmartSales Widget] send failed", e);
         msg.status = "failed";
+        // Expired/revoked token on an authenticated send: purge it (item 4).
+        if ((e as { status?: number })?.status === 401) this.clearSession();
       } finally {
         if (sendBtn) sendBtn.disabled = false;
         this.renderMessages();
@@ -419,12 +536,12 @@ interface ServerMessage {
         link.className = "att-image";
         const img = document.createElement("img");
         img.src = url;
-        img.alt = att.filename || "attachment";
+        img.alt = att.filename || this.strings.attachment;
         img.loading = "lazy";
         link.appendChild(img);
       } else {
         link.className = "att-file";
-        link.textContent = `📎 ${att.filename || "Download attachment"}`;
+        link.textContent = `📎 ${att.filename || this.strings.downloadAttachment}`;
       }
       return link;
     }
@@ -457,7 +574,7 @@ interface ServerMessage {
           const retry = document.createElement("button");
           retry.type = "button";
           retry.className = "retry";
-          retry.textContent = "Failed — tap to retry";
+          retry.textContent = this.strings.failedRetry;
           retry.onclick = () => void this.attemptSend(m);
           el.appendChild(retry);
         }
@@ -487,9 +604,22 @@ interface ServerMessage {
         );
         this.messages = [...serverMsgs, ...pendingLocal];
         this.renderMessages();
-      } catch {
-        // Keep whatever is already rendered; a failed resync is non-fatal.
+      } catch (e) {
+        // A 401 means the visitor token expired/was revoked: purge it so a
+        // reload starts a fresh pre-chat rather than replaying a dead token
+        // (item 4). Any other failure is non-fatal - keep what's rendered.
+        if ((e as { status?: number })?.status === 401) this.clearSession();
       }
+    }
+
+    // Item 4: drop the persisted + in-memory token and reset to the pre-chat
+    // state so the visitor can start over cleanly.
+    private clearSession() {
+      removeSession();
+      this.session = null;
+      this.serverIds = new Set();
+      this.stoppedReconnect = true;
+      if (this.formEl) this.formEl.replaceWith((this.formEl = this.buildForm()));
     }
 
     private connectSocket() {
@@ -578,7 +708,7 @@ interface ServerMessage {
       this.originalTitle = document.title;
       let alt = false;
       this.titleFlashTimer = window.setInterval(() => {
-        document.title = alt ? this.originalTitle : "💬 New message";
+        document.title = alt ? this.originalTitle : `💬 ${this.strings.newMessage}`;
         alt = !alt;
       }, 1200);
     }
@@ -594,7 +724,12 @@ interface ServerMessage {
     private toggle() {
       this.isOpen = !this.isOpen;
       this.panelEl.classList.toggle("open", this.isOpen);
-      if (this.isOpen) this.clearUnread();
+      if (this.isOpen) {
+        this.clearUnread();
+        // a11y (item 2): move focus into the composer when the panel opens.
+        const input = this.formEl?.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null;
+        if (input) window.setTimeout(() => input.focus(), 0);
+      }
     }
   }
 

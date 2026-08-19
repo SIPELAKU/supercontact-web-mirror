@@ -41,6 +41,21 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
       },
+      // The embeddable widget bundle lives at a STABLE, version-agnostic path
+      // (/widget.js) - every tenant's <script src=".../widget.js"> points at
+      // it, so we must NOT rename or content-hash it (that would break every
+      // existing embed). Instead cache it briefly and force revalidation, so a
+      // deploy is picked up within ~5 minutes without a hard cache bust.
+      // NOTE: for the same reason we deliberately do NOT add Subresource
+      // Integrity (SRI) to the embed snippet - the asset is mutable, so a
+      // pinned hash would break on every deploy.
+      {
+        source: '/widget.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=300, must-revalidate' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
     ];
   },
   // D2 (Data Intelligence UI/UX revamp): Company Search, its Results page,

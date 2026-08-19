@@ -26,6 +26,9 @@ import {
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
   ConversationViewersResponse,
+  ConversationListItem,
+  ConversationInboxFilters,
+  ConversationInboxResponse,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -56,6 +59,9 @@ export type {
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
   ConversationViewersResponse,
+  ConversationListItem,
+  ConversationInboxFilters,
+  ConversationInboxResponse,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
@@ -148,6 +154,42 @@ export async function fetchOmnichannelContacts(
 
   if (!res.ok) {
     throw json || new Error('Failed to fetch omnichannel contacts');
+  }
+
+  return json.data || json;
+}
+
+// Conversation-FIRST queue for the Support Desk agent workspace.
+// GET /omnichannels/inbox -> { data: { conversations, total, page, limit } }.
+// Unlike fetchOmnichannelContacts (contact-first inbox), this returns one row
+// per conversation, unified across every channel. Empty/omitted filter keys
+// are dropped rather than sent blank.
+export async function fetchConversationInbox(
+  token: string,
+  filters: ConversationInboxFilters = {}
+): Promise<ConversationInboxResponse> {
+  const params = new URLSearchParams();
+  if (filters.status) params.append('status', filters.status);
+  if (filters.priority) params.append('priority', filters.priority);
+  if (filters.assigned_to_me) params.append('assigned_to_me', 'true');
+  if (filters.unassigned) params.append('unassigned', 'true');
+  if (filters.channel_type) params.append('channel_type', filters.channel_type);
+  if (filters.q) params.append('q', filters.q);
+  if (filters.page) params.append('page', String(filters.page));
+  if (filters.limit) params.append('limit', String(filters.limit));
+
+  const res = await fetchWithTimeout(`${API_BASE}/inbox?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch conversation inbox');
   }
 
   return json.data || json;

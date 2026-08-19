@@ -154,6 +154,10 @@ const menuData: MenuSection[] = [
         name: "Support",
         icon: HelpCircle,
         children: [
+          // Conversation-first agent workspace (sibling to the contact-first
+          // Omnichannel inbox above). Gated on the same "omnichannel:use"
+          // permission the Omnichannel entry uses.
+          { name: "Workspace", path: "/support/workspace", permission: "omnichannel:use" },
           { name: "Tickets", path: "/support/tickets", permission: ["tickets:read:my", "tickets:read:team", "tickets"] },
           { name: "Ticket Dashboard", path: "/support/tickets/dashboard", permission: ["tickets:reports:view", "tickets"] },
         ],

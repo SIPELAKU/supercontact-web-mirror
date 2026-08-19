@@ -28,6 +28,7 @@ import {
   refreshEmail,
   fetchContactInboxDetail,
   fetchOmnichannelContacts,
+  fetchConversationInbox,
   createConversation,
   fetchConversation,
   deleteConversation,
@@ -51,6 +52,8 @@ import {
   ConversationTagsResponse,
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
+  ConversationInboxFilters,
+  ConversationInboxResponse,
 } from "../api/omnichannel";
 import { ConversationViewer } from "../types/omnichannel";
 
@@ -107,6 +110,34 @@ export function useOmnichannelContacts(
     // Long safety-net poll - useOmnichannelRealtime (WS) handles the snappy
     // path, this just backstops missed/dropped pushes.
     refetchInterval: 60000,
+    refetchOnWindowFocus: true,
+    enabled: !!token,
+  });
+}
+
+// Conversation-FIRST queue for the Support Desk agent workspace (the flat
+// conversation inbox, GET /omnichannels/inbox). Kept under the shared
+// ['omnichannels','inbox', ...] key prefix so the broad invalidations fired by
+// the conversation mutation hooks (useSendMessage / useSetConversationStatus /
+// useSetConversationPriority / useAssignConversation / useMarkAsRead - all of
+// which invalidate ['omnichannels','inbox']) also refresh this queue. The
+// whole filters object is part of the key so each preset/refinement combo
+// caches independently.
+//
+// useOmnichannelRealtime keeps the OPEN conversation live via its own targeted
+// invalidation; the refetchInterval below is the queue's safety-net for
+// inbound customer messages on OTHER conversations (its WS patch is scoped to
+// the contact-first cache, so it can't patch this cache in place).
+export function useConversationInbox(filters: ConversationInboxFilters) {
+  const { token } = useAuth();
+  return useQuery<ConversationInboxResponse, Error>({
+    queryKey: ['omnichannels', 'inbox', 'conversations', filters],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchConversationInbox(token, filters);
+    },
+    staleTime: 1000 * 15,
+    refetchInterval: 30000,
     refetchOnWindowFocus: true,
     enabled: !!token,
   });

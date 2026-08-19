@@ -83,6 +83,51 @@ export interface ConversationWithMessages extends Conversation {
   notes: ConversationNote[];
 }
 
+// ---------------------------------------------------------------------------
+// Conversation-FIRST inbox (Support Desk agent workspace).
+//
+// Distinct from the contact-first inbox (OmnichannelContact* above, backed by
+// GET /omnichannels/inbox/contacts). This is the flat conversation queue that
+// GET /omnichannels/inbox returns - one row per conversation, unified across
+// every channel - for the Zendesk-style agent workspace.
+// ---------------------------------------------------------------------------
+export interface ConversationListItem {
+  id: string;
+  account_id: string;
+  contact_id?: string | null;
+  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  external_contact_identifier?: string;
+  external_contact_name?: string;
+  status: ConversationStatus;
+  priority?: ConversationPriority;
+  last_message_at?: string;
+  last_message_preview?: string;
+  unread_count: number;
+  subject?: string;
+  assigned_user_id?: string | null;
+  snoozed_until?: string | null;
+}
+
+// Query params for GET /omnichannels/inbox. Every field is optional; omitted
+// keys are dropped from the querystring rather than sent empty.
+export interface ConversationInboxFilters {
+  status?: ConversationStatus;
+  priority?: ConversationPriority;
+  assigned_to_me?: boolean;
+  unassigned?: boolean;
+  channel_type?: 'whatsapp' | 'email' | 'web_widget';
+  q?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ConversationInboxResponse {
+  conversations: ConversationListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // Conversation assignment/tags/notes (Phase 3)
 export interface ConversationTag {
   id: string;

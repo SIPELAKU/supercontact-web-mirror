@@ -339,7 +339,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         color="primary"
         onClick={() => setOpen(true)}
       >
-        <GrAdd className="text-lg mr-2" /> Add Lead
+        <GrAdd className="text-lg sm:mr-2" />
+        <span className="hidden sm:inline">Add Lead</span>
       </AppButton>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>

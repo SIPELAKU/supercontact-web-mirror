@@ -18,27 +18,31 @@ import {
     Chip,
     CircularProgress,
     IconButton,
-    Paper,
-    Tab,
-    Tabs,
     Tooltip,
-    Typography,
-    Stack
+    Typography
 } from '@mui/material';
+import { AppTabs } from '@/components/ui/app-tabs';
 import { format }
     from 'date-fns';
 import { ArrowLeft, Download, Eye, Mail, Search, Trash2, UserPlus, History } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { notify } from '@/lib/notifications';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+
+type ListTab = 'subscribers' | 'campaigns';
+const VALID_TABS: ListTab[] = ['subscribers', 'campaigns'];
 
 const MailingListDetailPage = () => {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const listId = String(params.id);
 
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState<ListTab>(() => {
+        const fromUrl = searchParams.get('tab') as ListTab | null;
+        return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'subscribers';
+    });
     // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -50,13 +54,13 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
-    const { data: mailingListData, isLoading, isFetching, error, refetch } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? searchQuery : undefined);
+    const { data: mailingListData, isLoading, isFetching, error, refetch } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 'subscribers' ? searchQuery : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
     const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
     const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns, isError: isErrorCampaigns, error: errorCampaigns, refetch: refetchCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? searchQuery : undefined, activeTab === 1);
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns, isError: isErrorCampaigns, error: errorCampaigns, refetch: refetchCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 'campaigns' ? searchQuery : undefined, activeTab === 'campaigns');
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
@@ -72,9 +76,10 @@ const MailingListDetailPage = () => {
     const campaigns: Campaign[] = campaignsData?.data?.campaigns || [];
     const totalCampaigns = campaignsData?.data?.total || 0;
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-        setActiveTab(newValue);
+    const handleTabChange = (tab: ListTab) => {
+        setActiveTab(tab);
         setSearchQuery('');
+        router.replace(`/email-marketing/mailing-lists/${listId}?tab=${tab}`, { scroll: false });
     };
 
     const handleDeleteSubscriber = async () => {
@@ -214,17 +219,21 @@ const MailingListDetailPage = () => {
             </Box>
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                <Tabs value={activeTab} onChange={handleTabChange}>
-                    <Tab label="Subscribers" />
-                    <Tab label="Sent Campaigns" />
-                </Tabs>
+            <Box sx={{ mb: 3 }}>
+                <AppTabs<ListTab>
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    tabs={[
+                        { value: 'subscribers', label: 'Subscribers' },
+                        { value: 'campaigns', label: 'Sent Campaigns' },
+                    ]}
+                />
             </Box>
 
             {/* Tab Content */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Subscribers Tab */}
-                {activeTab === 0 && (
+                {activeTab === 'subscribers' && (
                     <SuperTable<Subscriber>
                         tableId="mailing-list-subscribers-table"
                         data={subscribers}
@@ -342,7 +351,7 @@ const MailingListDetailPage = () => {
                 )}
 
                 {/* Campaigns Tab */}
-                {activeTab === 1 && (
+                {activeTab === 'campaigns' && (
                     <SuperTable<Campaign>
                         tableId="mailing-list-campaigns-table"
                         data={campaigns}

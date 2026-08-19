@@ -109,7 +109,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message as string}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label htmlFor="customer_name" className="font-bold text-gray-800 text-base">Customer Name</Label>
                     <AppInput
@@ -138,7 +138,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label className="font-bold text-gray-800 text-base">Priority</Label>
                     <Controller
@@ -194,7 +194,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label className="font-bold text-gray-800 text-base">Category</Label>
                     <Controller

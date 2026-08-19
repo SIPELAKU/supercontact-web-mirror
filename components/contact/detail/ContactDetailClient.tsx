@@ -9,9 +9,10 @@ import AddTaskModal from "@/components/contact/modal/AddTaskModal";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useDeleteContact } from "@/lib/hooks/useContacts";
 import { useAuth } from "@/lib/context/AuthContext";
-import { CircularProgress, Box, Tab, Tabs } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
 import PageHeader from "@/components/ui/page-header";
+import { AppTabs } from "@/components/ui/app-tabs";
 
 import { ContactHeader } from "./sections/ContactHeader";
 import { ContactInfo } from "./sections/ContactInfo";
@@ -184,31 +185,17 @@ export const ContactDetailClient = () => {
 
             <ContactHeader contact={contact} onEdit={() => setOpenEdit(true)} />
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => handleTabChange(val)}
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            minWidth: "auto",
-                            padding: "10px 4px",
-                            marginRight: "28px",
-                            color: "#6B7280",
-                        },
-                        "& .Mui-selected": { color: "#5479EE!important" },
-                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
-                    }}
-                >
-                    <Tab label="Overview" value="overview" disableRipple />
-                    <Tab label="Activity" value="activity" disableRipple />
-                    <Tab label="Email" value="email" disableRipple />
-                    <Tab label="WhatsApp" value="whatsapp" disableRipple />
-                    <Tab label="Conversations" value="conversations" disableRipple />
-                </Tabs>
-            </Box>
+            <AppTabs<ProfileTab>
+                value={activeTab}
+                onChange={handleTabChange}
+                tabs={[
+                    { value: "overview", label: "Overview" },
+                    { value: "activity", label: "Activity" },
+                    { value: "email", label: "Email" },
+                    { value: "whatsapp", label: "WhatsApp" },
+                    { value: "conversations", label: "Conversations" },
+                ]}
+            />
 
             {activeTab === "overview" && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

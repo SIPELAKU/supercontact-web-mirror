@@ -533,7 +533,7 @@ export default function CompaniesWorkspaceClient() {
                                     onClick={handlePrint}
                                     startIcon={<Printer size={16} />}
                                 >
-                                    Print PDF
+                                    <span className="hidden sm:inline">Print PDF</span>
                                 </AppButton>
                             )}
                             renderRowActions={(row) => (

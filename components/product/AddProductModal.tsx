@@ -290,7 +290,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                     </div>
 
                     <div className="mt-6 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-900">Product Name</label>
                                 <AppInput
@@ -315,7 +315,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-900">
                                     SKU

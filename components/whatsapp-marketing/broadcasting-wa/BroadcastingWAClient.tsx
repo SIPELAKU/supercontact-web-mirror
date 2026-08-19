@@ -186,7 +186,7 @@ export default function BroadcastingWAClient() {
               onClick={handleOpenAddModal}
               startIcon={<Plus size={16} />}
             >
-              Create Broadcast
+              <span className="hidden sm:inline">Create Broadcast</span>
             </AppButton>
           </Box>
         )}

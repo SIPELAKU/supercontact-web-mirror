@@ -3,16 +3,26 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { AppButton } from '@/components/ui/app-button';
 import LeadMagnetsTable from './LeadMagnetsTable';
 import PageHeader from '../ui/page-header';
 import { useSmartCaptures } from '@/lib/hooks/useSmartCaptures';
 import { SuperTableState } from '@/components/ui/super-table/types';
-import { Tabs, Tab, Box, Badge, Chip } from '@mui/material';
+import { Box, Chip } from '@mui/material';
+import { AppTabs } from '@/components/ui/app-tabs';
+
+type CaptureTab = 'active' | 'inactive';
+const VALID_TABS: CaptureTab[] = ['active', 'inactive'];
 
 export default function SmartCaptureClient() {
-  const [tabIndex, setTabIndex] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<CaptureTab>(() => {
+    const fromUrl = searchParams.get('tab') as CaptureTab | null;
+    return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'active';
+  });
   const [params, setParams] = useState<{
     page: number;
     limit: number;
@@ -55,20 +65,22 @@ export default function SmartCaptureClient() {
     }));
   };
 
-  const handleTabChange = (_: any, newIndex: number) => {
-    setTabIndex(newIndex);
+  const handleTabChange = (tab: CaptureTab) => {
+    setActiveTab(tab);
     setParams(prev => ({ ...prev, page: 1 })); // Reset page on tab switch
+    router.replace(`/smart-capture?tab=${tab}`, { scroll: false });
   };
 
   const activeCount = activeRes?.data?.total || 0;
   const inactiveCount = inactiveRes?.data?.total || 0;
 
-  const currentData = tabIndex === 0 ? activeRes : inactiveRes;
-  const currentLoading = tabIndex === 0 ? activeLoading : inactiveLoading;
-  const currentFetching = tabIndex === 0 ? activeFetching : inactiveFetching;
-  const currentIsError = tabIndex === 0 ? activeError : inactiveError;
-  const currentError = tabIndex === 0 ? activeErrorObj : inactiveErrorObj;
-  const currentRefetch = tabIndex === 0 ? refetchActive : refetchInactive;
+  const isActiveTab = activeTab === 'active';
+  const currentData = isActiveTab ? activeRes : inactiveRes;
+  const currentLoading = isActiveTab ? activeLoading : inactiveLoading;
+  const currentFetching = isActiveTab ? activeFetching : inactiveFetching;
+  const currentIsError = isActiveTab ? activeError : inactiveError;
+  const currentError = isActiveTab ? activeErrorObj : inactiveErrorObj;
+  const currentRefetch = isActiveTab ? refetchActive : refetchInactive;
 
   const stats = currentData?.data?.stats;
   const totalViews = stats?.total_views || 0;
@@ -125,67 +137,53 @@ export default function SmartCaptureClient() {
 
       {/* Tabs and Table Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 overflow-hidden">
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
-          <Tabs
-            value={tabIndex}
+        <Box sx={{ px: 2, pt: 1 }}>
+          <AppTabs<CaptureTab>
+            value={activeTab}
             onChange={handleTabChange}
-            sx={{
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                minWidth: 100,
-                py: 2,
+            tabs={[
+              {
+                value: 'active',
+                label: (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Active
+                    <Chip
+                      label={activeCount}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        bgcolor: isActiveTab ? '#EEF2FF' : '#F8FAFC',
+                        color: isActiveTab ? '#5479EE' : '#94A3B8',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  </Box>
+                ),
               },
-              '& .Mui-selected': {
-                color: '#5479EE !important',
+              {
+                value: 'inactive',
+                label: (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Inactive
+                    <Chip
+                      label={inactiveCount}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        bgcolor: !isActiveTab ? '#EEF2FF' : '#F8FAFC',
+                        color: !isActiveTab ? '#5479EE' : '#94A3B8',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  </Box>
+                ),
               },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#5479EE',
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-              }
-            }}
-          >
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Active
-                  <Chip
-                    label={activeCount}
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      bgcolor: tabIndex === 0 ? '#EEF2FF' : '#F8FAFC',
-                      color: tabIndex === 0 ? '#5479EE' : '#94A3B8',
-                      transition: 'all 0.2s'
-                    }}
-                  />
-                </Box>
-              }
-            />
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Inactive
-                  <Chip
-                    label={inactiveCount}
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      bgcolor: tabIndex === 1 ? '#EEF2FF' : '#F8FAFC',
-                      color: tabIndex === 1 ? '#5479EE' : '#94A3B8',
-                      transition: 'all 0.2s'
-                    }}
-                  />
-                </Box>
-              }
-            />
-          </Tabs>
+            ]}
+          />
         </Box>
 
         <LeadMagnetsTable

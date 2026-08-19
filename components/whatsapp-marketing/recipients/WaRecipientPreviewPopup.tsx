@@ -155,7 +155,7 @@ export const WaRecipientPreviewPopup = ({ recipient, onClose }: WaRecipientPrevi
                                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                                     Additional Info
                                 </Typography>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {Object.entries(recipient.custom_fields).map(([key, value]) => (
                                         <div key={key} className="bg-gray-50 rounded-lg p-2.5">
                                             <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, " ")}</p>

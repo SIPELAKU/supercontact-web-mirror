@@ -412,8 +412,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
-          <div className="flex items-center justify-between px-6">
-            <section className="flex items-center gap-4">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-6">
+            <section className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <label htmlFor="salesperson" className="text-foreground font-medium">
                 Salesperson:
               </label>
@@ -439,7 +439,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <NotesCard notes={notes} onChange={setNotes} />
           <div className="flex justify-end items-center mb-8 px-6">
-            <div className="flex gap-3">
+            <div className="flex flex-wrap justify-end gap-3">
               <Link href="/sales/quotation">
                 <AppButton variantStyle="danger" color="danger">
                   Cancel

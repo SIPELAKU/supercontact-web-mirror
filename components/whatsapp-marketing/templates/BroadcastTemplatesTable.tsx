@@ -158,7 +158,7 @@ const BroadcastTemplatesTable = ({
           onClick={onCreate}
           startIcon={<Plus size={16} />}
         >
-          Create Template
+          <span className="hidden sm:inline">Create Template</span>
         </AppButton>
       )}
       renderBulkActions={({ selectedRows, clearSelection }) => (

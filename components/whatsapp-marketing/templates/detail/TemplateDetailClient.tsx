@@ -153,7 +153,7 @@ export default function TemplateDetailClient() {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="h6" color="error">Failed to load template details.</Typography>
-        <AppButton onClick={() => router.back()} sx={{ mt: 2 }}>Go Back</AppButton>
+        <AppButton onClick={() => router.push('/whatsapp-marketing/template-broadcasting')} sx={{ mt: 2 }}>Back to Templates</AppButton>
       </Box>
     );
   }
@@ -169,7 +169,7 @@ export default function TemplateDetailClient() {
         ]}
       />
 
-      <AppButton onClick={() => router.back()} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back</AppButton>
+      <AppButton onClick={() => router.push('/whatsapp-marketing/template-broadcasting')} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back to Templates</AppButton>
       <Grid container spacing={3}>
         <Grid item xs={12} md={7} lg={8}>
           <Stack spacing={3}>

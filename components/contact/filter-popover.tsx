@@ -111,7 +111,7 @@ export default function FilterPopover({
         slotProps={{
           paper: {
             className:
-              "w-[600px] p-4 rounded-xl mt-1.5 shadow-lg border border-gray-100",
+              "w-[min(600px,90vw)] p-4 rounded-xl mt-1.5 shadow-lg border border-gray-100",
             style: {
               boxShadow:
                 "0px 10px 15px -3px rgba(0, 0, 0, 0.05), 0px 4px 6px -2px rgba(0, 0, 0, 0.025)",

@@ -443,7 +443,7 @@ export default function PipelineBoard() {
           color="primary"
           startIcon={<Plus />}
         >
-          Add Deal
+          <span className="hidden sm:inline">Add Deal</span>
         </AppButton>
 
       </div>

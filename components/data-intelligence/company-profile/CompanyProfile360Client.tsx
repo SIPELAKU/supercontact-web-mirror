@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Tabs, Tab } from "@mui/material";
 import { CheckCircle2 } from "lucide-react";
+import { AppTabs } from "@/components/ui/app-tabs";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard } from "@/components/omnichannel";
@@ -223,30 +223,16 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                 />
             )}
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => handleTabChange(val)}
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            minWidth: "auto",
-                            padding: "10px 4px",
-                            marginRight: "28px",
-                            color: "#6B7280",
-                        },
-                        "& .Mui-selected": { color: "#5479EE!important" },
-                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
-                    }}
-                >
-                    <Tab label="Overview" value="overview" disableRipple />
-                    <Tab label="People & Org" value="people-org" disableRipple />
-                    <Tab label="Signals" value="signals" disableRipple />
-                    <Tab label="Sources" value="sources" disableRipple />
-                </Tabs>
-            </Box>
+            <AppTabs<ProfileTab>
+                value={activeTab}
+                onChange={handleTabChange}
+                tabs={[
+                    { value: "overview", label: "Overview" },
+                    { value: "people-org", label: "People & Org" },
+                    { value: "signals", label: "Signals" },
+                    { value: "sources", label: "Sources" },
+                ]}
+            />
 
             {activeTab === "overview" && (
                 <div className="space-y-6">

@@ -11,13 +11,12 @@ import {
     Chip,
     CircularProgress,
     IconButton,
-    Tab,
-    Tabs,
     Typography
 } from '@mui/material';
+import { AppTabs } from '@/components/ui/app-tabs';
 import { format } from 'date-fns';
 import { ArrowLeft, Upload, Plus, Eye, Send, Users } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
 import ImportWaRecipientModal from '@/components/whatsapp-marketing/recipients/ImportWaRecipientModal';
@@ -25,12 +24,19 @@ import ViewBroadcastCampaignStatsModal from '@/components/whatsapp-marketing/gro
 import { useQueryClient } from '@tanstack/react-query';
 import { BroadcastCampaign, WaRecipient } from '@/lib/types/whatsapp-marketing';
 
+type GroupTab = 'recipients' | 'campaigns';
+const VALID_TABS: GroupTab[] = ['recipients', 'campaigns'];
+
 const GroupBroadcastDetailPage = () => {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const broadcastGroupId = String(params.id);
 
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState<GroupTab>(() => {
+        const fromUrl = searchParams.get('tab') as GroupTab | null;
+        return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'recipients';
+    });
 
     const queryClient = useQueryClient();
     const [isAddRecipientModalOpen, setAddRecipientModalOpen] = useState(false);
@@ -59,7 +65,7 @@ const GroupBroadcastDetailPage = () => {
         campaignPage + 1,
         campaignRowsPerPage,
         campaignSearch,
-        activeTab === 1
+        activeTab === 'campaigns'
     );
 
     const groupBroadcast = detailData?.data;
@@ -69,8 +75,9 @@ const GroupBroadcastDetailPage = () => {
     const campaigns = campaignsData?.data?.broadcasts || [];
     const totalCampaigns = campaignsData?.data?.total || 0;
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-        setActiveTab(newValue);
+    const handleTabChange = (tab: GroupTab) => {
+        setActiveTab(tab);
+        router.replace(`/whatsapp-marketing/group-broadcasting/${broadcastGroupId}?tab=${tab}`, { scroll: false });
     };
 
     const handleSuccess = () => {
@@ -181,7 +188,7 @@ const GroupBroadcastDetailPage = () => {
                     onClick={() => router.push('/whatsapp-marketing/group-broadcasting')}
                     sx={{ textTransform: 'none' }}
                 >
-                    Kembali ke Group Broadcasting
+                    Back to Group Broadcasting
                 </AppButton>
             </Box>
 
@@ -196,16 +203,20 @@ const GroupBroadcastDetailPage = () => {
                 />
             </Box>
 
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                <Tabs value={activeTab} onChange={handleTabChange}>
-                    <Tab label="Recipients" />
-                    <Tab label="Broadcast (campaign) sent" />
-                </Tabs>
+            <Box sx={{ mb: 3 }}>
+                <AppTabs<GroupTab>
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    tabs={[
+                        { value: 'recipients', label: 'Recipients' },
+                        { value: 'campaigns', label: 'Broadcast (campaign) sent' },
+                    ]}
+                />
             </Box>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 {/* Recipients Tab */}
-                {activeTab === 0 && (
+                {activeTab === 'recipients' && (
                     // INTERIM: the /broadcast-groups/{id} recipients endpoint does not
                     // support a `search` param yet, so the search box filters
                     // client-side over the currently loaded page only (manualFiltering
@@ -262,7 +273,7 @@ const GroupBroadcastDetailPage = () => {
                 )}
 
                 {/* Campaigns Tab */}
-                {activeTab === 1 && (
+                {activeTab === 'campaigns' && (
                     <SuperTable<BroadcastCampaign>
                         tableId="group-broadcast-campaigns-table"
                         columns={campaignColumns}

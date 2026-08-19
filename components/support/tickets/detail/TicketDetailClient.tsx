@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Tabs, Tab } from "@mui/material";
 import { Pencil, Trash2, GitMerge, Link2 } from "lucide-react";
+import { AppTabs } from "@/components/ui/app-tabs";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -232,29 +232,15 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                 </div>
             </div>
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => handleTabChange(val)}
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            minWidth: "auto",
-                            padding: "10px 4px",
-                            marginRight: "28px",
-                            color: "#6B7280",
-                        },
-                        "& .Mui-selected": { color: "#5479EE!important" },
-                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
-                    }}
-                >
-                    <Tab label="Overview" value="overview" disableRipple />
-                    <Tab label="Activity" value="activity" disableRipple />
-                    <Tab label="Conversation" value="conversation" disableRipple />
-                </Tabs>
-            </Box>
+            <AppTabs<DetailTab>
+                value={activeTab}
+                onChange={handleTabChange}
+                tabs={[
+                    { value: "overview", label: "Overview" },
+                    { value: "activity", label: "Activity" },
+                    { value: "conversation", label: "Conversation" },
+                ]}
+            />
 
             {activeTab === "overview" && (
                 <div className="space-y-6">

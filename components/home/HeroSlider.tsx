@@ -9,103 +9,204 @@ import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { trackCtaClick } from '@/lib/analytics/events';
 import Hero from './Hero';
-import {
-    Client360Illustration,
-    DataIntelligenceIllustration,
-    EmailMarketingIllustration,
-    IllustrationProps,
-    OmnichannelIllustration,
-    PipelineIllustration,
-    SmartCaptureIllustration,
-    TicketingIllustration,
-    WhatsAppCampaignIllustration,
-} from './slider-illustrations';
+// Each slide reuses the destination page's own hero visual so the slide
+// looks exactly like the page it links to.
+import { CrmSalesHeroVisual } from '../crm-sales/CrmSalesHero';
+import { CrmServicesHeroVisual } from '../crm-services/CrmServicesHero';
+import { OmniHeroVisual } from '../public-omnichannel/OmniHero';
+import { TicketHeroVisual } from '../ticket-public/TicketHero';
+import { FinanceHeroVisual } from '../solution-finance/FinanceHero';
+import { TravelHeroVisual } from '../solution-travel/TravelHero';
+import { HotelHeroVisual } from '../solution-hotel/HotelHero';
+import { LogisticsHeroVisual } from '../solution-logistics/LogisticsHero';
+import { FmcgHeroVisual } from '../solution-fmcg/FmcgHero';
+import { RetailHeroVisual } from '../solution-retail/RetailHero';
+import { OutsourcingHeroVisual } from '../solution-outsourcing/OutsourcingHero';
+import { ITSaaSHeroVisual } from '../solution-it-saas/ITSaaSHero';
+import { SalesHeroVisual } from '../solusi/sales/SalesHero';
+import { CSHeroVisual } from '../solusi/customer-service/CSHero';
+import { MarketingHeroVisual } from '../solusi/marketing/MarketingHero';
+import { HRHeroVisual } from '../solusi/human-resource/HRHero';
+import { OpHeroVisual } from '../solusi/operasional/OpHero';
+import { IntHeroVisual } from '../solusi/integrasi-sales-marketing/IntHero';
 
 const AUTOPLAY_MS = 6000;
 const SWIPE_THRESHOLD_PX = 50;
 
-// Feature slides 2-9. Copy claims stay within what the produk pages promise;
-// features without a dedicated page link to the closest produk page or /price.
+// Slides 2-19: the hero (top section) of every /produk/* and /solusi/* page.
+// Copy is NOT rewritten: titleKey/descKey reference the exact strings each
+// destination page renders in its own hero (lib/utils/strings.ts).
+// `industryKey` (solusi slides only) builds the "Solusi <Industri>" eyebrow
+// from the same label the navigation menu uses.
 const featureSlides: Array<{
     key: string;
-    badgeKey: string;
+    industryKey?: string; // absent => produk slide
     titleKey: string;
     descKey: string;
     href: string;
     trackLabel: string;
-    Illustration: React.ComponentType<IllustrationProps>;
+    Visual: React.ComponentType;
 }> = [
+    // ── Produk ──────────────────────────────────────────────────────────
     {
-        key: 'pipeline',
-        badgeKey: 'hero_slide_pipeline_badge',
-        titleKey: 'hero_slide_pipeline_title',
-        descKey: 'hero_slide_pipeline_desc',
+        key: 'crm-sales',
+        titleKey: 'crm_sales_hero_title',
+        descKey: 'crm_sales_hero_desc',
         href: '/produk/crm-sales',
-        trackLabel: 'hero_slide_pipeline',
-        Illustration: PipelineIllustration,
+        trackLabel: 'hero_slide_crm_sales',
+        Visual: CrmSalesHeroVisual,
     },
     {
-        key: 'smartcapture',
-        badgeKey: 'hero_slide_capture_badge',
-        titleKey: 'hero_slide_capture_title',
-        descKey: 'hero_slide_capture_desc',
-        href: '/produk/crm-sales',
-        trackLabel: 'hero_slide_smartcapture',
-        Illustration: SmartCaptureIllustration,
-    },
-    {
-        key: 'client360',
-        badgeKey: 'hero_slide_client360_badge',
-        titleKey: 'hero_slide_client360_title',
-        descKey: 'hero_slide_client360_desc',
-        href: '/produk/omnichannel',
-        trackLabel: 'hero_slide_client360',
-        Illustration: Client360Illustration,
-    },
-    {
-        key: 'wa-campaign',
-        badgeKey: 'hero_slide_wa_badge',
-        titleKey: 'hero_slide_wa_title',
-        descKey: 'hero_slide_wa_desc',
-        href: '/produk/omnichannel',
-        trackLabel: 'hero_slide_wa_campaign',
-        Illustration: WhatsAppCampaignIllustration,
-    },
-    {
-        key: 'email-marketing',
-        badgeKey: 'hero_slide_email_badge',
-        titleKey: 'hero_slide_email_title',
-        descKey: 'hero_slide_email_desc',
-        href: '/produk/omnichannel',
-        trackLabel: 'hero_slide_email_marketing',
-        Illustration: EmailMarketingIllustration,
+        key: 'crm-services',
+        titleKey: 'crm_services_title',
+        descKey: 'crm_services_desc',
+        href: '/produk/crm-services',
+        trackLabel: 'hero_slide_crm_services',
+        Visual: CrmServicesHeroVisual,
     },
     {
         key: 'omnichannel',
-        badgeKey: 'hero_slide_omni_badge',
-        titleKey: 'hero_slide_omni_title',
-        descKey: 'hero_slide_omni_desc',
+        titleKey: 'omni_hero_title',
+        descKey: 'omni_hero_desc',
         href: '/produk/omnichannel',
         trackLabel: 'hero_slide_omnichannel',
-        Illustration: OmnichannelIllustration,
+        Visual: OmniHeroVisual,
     },
     {
-        key: 'data-intelligence',
-        badgeKey: 'hero_slide_dataintel_badge',
-        titleKey: 'hero_slide_dataintel_title',
-        descKey: 'hero_slide_dataintel_desc',
-        href: '/price',
-        trackLabel: 'hero_slide_data_intelligence',
-        Illustration: DataIntelligenceIllustration,
+        key: 'ticket',
+        titleKey: 'ticket_hero_title',
+        descKey: 'ticket_hero_desc',
+        href: '/produk/ticket',
+        trackLabel: 'hero_slide_ticket',
+        Visual: TicketHeroVisual,
+    },
+    // ── Solusi (industri) ───────────────────────────────────────────────
+    {
+        key: 'keuangan',
+        industryKey: 'sol_ind_finance',
+        titleKey: 'fin_hero_title',
+        descKey: 'fin_hero_desc',
+        href: '/solusi/keuangan',
+        trackLabel: 'hero_slide_keuangan',
+        Visual: FinanceHeroVisual,
     },
     {
-        key: 'ticketing',
-        badgeKey: 'hero_slide_ticketing_badge',
-        titleKey: 'hero_slide_ticketing_title',
-        descKey: 'hero_slide_ticketing_desc',
-        href: '/produk/crm-services',
-        trackLabel: 'hero_slide_ticketing',
-        Illustration: TicketingIllustration,
+        key: 'tour-travel',
+        industryKey: 'sol_ind_travel',
+        titleKey: 'travel_hero_title',
+        descKey: 'travel_hero_desc',
+        href: '/solusi/tour-travel',
+        trackLabel: 'hero_slide_tour_travel',
+        Visual: TravelHeroVisual,
+    },
+    {
+        key: 'perhotelan',
+        industryKey: 'sol_ind_hotel',
+        titleKey: 'hotel_hero_title',
+        descKey: 'hotel_hero_desc',
+        href: '/solusi/perhotelan',
+        trackLabel: 'hero_slide_perhotelan',
+        Visual: HotelHeroVisual,
+    },
+    {
+        key: 'logistik',
+        industryKey: 'sol_ind_logistics',
+        titleKey: 'logistics_hero_title',
+        descKey: 'logistics_hero_desc',
+        href: '/solusi/logistik',
+        trackLabel: 'hero_slide_logistik',
+        Visual: LogisticsHeroVisual,
+    },
+    {
+        key: 'fmcg',
+        industryKey: 'sol_ind_fmcg',
+        titleKey: 'fmcg_hero_title',
+        descKey: 'fmcg_hero_desc',
+        href: '/solusi/fmcg',
+        trackLabel: 'hero_slide_fmcg',
+        Visual: FmcgHeroVisual,
+    },
+    {
+        key: 'ritel',
+        industryKey: 'sol_ind_retail',
+        titleKey: 'retail_hero_title',
+        descKey: 'retail_hero_desc',
+        href: '/solusi/ritel',
+        trackLabel: 'hero_slide_ritel',
+        Visual: RetailHeroVisual,
+    },
+    {
+        key: 'outsourcing',
+        industryKey: 'sol_ind_outsourcing',
+        titleKey: 'out_hero_title',
+        descKey: 'out_hero_desc',
+        href: '/solusi/outsourcing',
+        trackLabel: 'hero_slide_outsourcing',
+        Visual: OutsourcingHeroVisual,
+    },
+    {
+        key: 'it-saas',
+        industryKey: 'sol_ind_it',
+        titleKey: 'it_hero_title',
+        descKey: 'it_hero_desc',
+        href: '/solusi/it-saas',
+        trackLabel: 'hero_slide_it_saas',
+        Visual: ITSaaSHeroVisual,
+    },
+    // ── Solusi (peran) ──────────────────────────────────────────────────
+    {
+        key: 'sales',
+        industryKey: 'sol_role_sales',
+        titleKey: 'sol_sales_hero_title',
+        descKey: 'sol_sales_hero_desc',
+        href: '/solusi/sales',
+        trackLabel: 'hero_slide_sales',
+        Visual: SalesHeroVisual,
+    },
+    {
+        key: 'customer-service',
+        industryKey: 'sol_role_cs',
+        titleKey: 'sol_cs_hero_title',
+        descKey: 'sol_cs_hero_desc',
+        href: '/solusi/customer-service',
+        trackLabel: 'hero_slide_customer_service',
+        Visual: CSHeroVisual,
+    },
+    {
+        key: 'marketing',
+        industryKey: 'sol_role_marketing',
+        titleKey: 'sol_mkt_hero_title',
+        descKey: 'sol_mkt_hero_desc',
+        href: '/solusi/marketing',
+        trackLabel: 'hero_slide_marketing',
+        Visual: MarketingHeroVisual,
+    },
+    {
+        key: 'human-resource',
+        industryKey: 'sol_role_hr',
+        titleKey: 'sol_hr_hero_title',
+        descKey: 'sol_hr_hero_desc',
+        href: '/solusi/human-resource',
+        trackLabel: 'hero_slide_human_resource',
+        Visual: HRHeroVisual,
+    },
+    {
+        key: 'operasional',
+        industryKey: 'sol_role_ops',
+        titleKey: 'sol_op_hero_title',
+        descKey: 'sol_op_hero_desc',
+        href: '/solusi/operasional',
+        trackLabel: 'hero_slide_operasional',
+        Visual: OpHeroVisual,
+    },
+    {
+        key: 'integrasi-sales-marketing',
+        industryKey: 'sol_role_intmkt',
+        titleKey: 'sol_int_hero_title',
+        descKey: 'sol_int_hero_desc',
+        href: '/solusi/integrasi-sales-marketing',
+        trackLabel: 'hero_slide_integrasi_sales_marketing',
+        Visual: IntHeroVisual,
     },
 ];
 
@@ -166,6 +267,8 @@ const HeroSlider = () => {
             onMouseLeave={() => setPaused(false)}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
+            // Single shared background for ALL slides; every slide wrapper below
+            // is transparent so the section reads as one uniform surface.
             sx={{ position: 'relative', width: '100%', overflow: 'hidden', backgroundColor: '#5479EE' }}
         >
             {/* Track: every slide stays in the DOM (crawlable); movement is a CSS transform. */}
@@ -190,6 +293,9 @@ const HeroSlider = () => {
 
                 {featureSlides.map((slide, i) => {
                     const index = i + 1;
+                    const badge = slide.industryKey
+                        ? strings.formatString(strings.hero_slide_badge_solusi, strings[slide.industryKey])
+                        : strings.hero_slide_badge_produk;
                     return (
                         <Box
                             key={slide.key}
@@ -201,7 +307,6 @@ const HeroSlider = () => {
                                 minWidth: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
-                                backgroundColor: '#5479EE',
                                 color: 'white',
                             }}
                             {...(active !== index ? ({ inert: '' } as Record<string, unknown>) : {})}
@@ -212,40 +317,20 @@ const HeroSlider = () => {
                                         display: 'flex',
                                         flexDirection: { xs: 'column', lg: 'row' },
                                         alignItems: 'center',
-                                        gap: { xs: 3, lg: 8 },
+                                        gap: { xs: 5, lg: 8 },
                                         maxWidth: { xs: '600px', lg: '1120px' },
                                         mx: 'auto',
                                         pt: { xs: 8, md: 8 },
                                         pb: { xs: 10, md: 10 },
                                     }}
                                 >
-                                    {/* Illustration: above the text on mobile, right column on desktop */}
                                     <Box
                                         sx={{
-                                            order: { xs: 1, lg: 2 },
-                                            flex: { lg: '0 0 44%' },
-                                            width: '100%',
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            '& .hero-slide-illustration': {
-                                                display: 'block',
-                                                width: { xs: 240, sm: 300, lg: '100%' },
-                                                maxWidth: 460,
-                                                height: 'auto',
-                                            },
-                                        }}
-                                    >
-                                        <slide.Illustration className="hero-slide-illustration" />
-                                    </Box>
-
-                                    <Box
-                                        sx={{
-                                            order: { xs: 2, lg: 1 },
                                             flex: { lg: 1 },
                                             textAlign: { xs: 'center', lg: 'left' },
                                         }}
                                     >
-                                        {/* Feature-name eyebrow (mirrors the produk pages' hero badges) */}
+                                        {/* Eyebrow: "Produk" / "Solusi <Industri>" */}
                                         <Box
                                             sx={{
                                                 display: 'inline-flex',
@@ -267,10 +352,10 @@ const HeroSlider = () => {
                                                     textTransform: 'uppercase',
                                                 }}
                                             >
-                                                {strings[slide.badgeKey]}
+                                                {badge}
                                             </Typography>
                                         </Box>
-                                        {/* h2 so the page keeps exactly one h1 (slide 1's) */}
+                                        {/* The destination page's own headline, as h2 so the page keeps exactly one h1 (slide 1's) */}
                                         <Typography
                                             variant="h1"
                                             component="h2"
@@ -283,6 +368,7 @@ const HeroSlider = () => {
                                         >
                                             {strings[slide.titleKey]}
                                         </Typography>
+                                        {/* The destination page's own subcopy, clamped to 3 lines for slide height */}
                                         <Typography
                                             variant="h6"
                                             component="p"
@@ -291,6 +377,10 @@ const HeroSlider = () => {
                                                 fontWeight: 400,
                                                 opacity: 0.9,
                                                 mb: 4,
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden',
                                             }}
                                         >
                                             {strings[slide.descKey]}
@@ -346,6 +436,18 @@ const HeroSlider = () => {
                                             </Button>
                                         </Box>
                                     </Box>
+
+                                    {/* The destination page's own hero visual (shared component) */}
+                                    <Box
+                                        sx={{
+                                            flex: { lg: '0 0 46%' },
+                                            width: '100%',
+                                            maxWidth: { xs: 480, lg: 'none' },
+                                            mx: { xs: 'auto', lg: 0 },
+                                        }}
+                                    >
+                                        <slide.Visual />
+                                    </Box>
                                 </Box>
                             </Container>
                         </Box>
@@ -385,16 +487,46 @@ const HeroSlider = () => {
                 <ChevronRightIcon />
             </IconButton>
 
-            {/* Dot indicators (compact on mobile so all 9 stay tidy) */}
+            {/* Mobile: 19 dots overflow a 360px viewport, so show a "n / 19" counter instead */}
             <Box
                 sx={{
                     position: 'absolute',
-                    bottom: { xs: 12, md: 20 },
+                    bottom: 12,
                     left: 0,
                     right: 0,
-                    display: 'flex',
+                    display: { xs: 'flex', md: 'none' },
                     justifyContent: 'center',
-                    gap: { xs: 0.75, md: 1.25 },
+                    zIndex: 5,
+                    pointerEvents: 'none',
+                }}
+            >
+                <Typography
+                    component="span"
+                    sx={{
+                        px: 1.5,
+                        py: 0.25,
+                        borderRadius: '999px',
+                        backgroundColor: 'rgba(0,0,0,0.25)',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                    }}
+                >
+                    {active + 1} / {SLIDE_COUNT}
+                </Typography>
+            </Box>
+
+            {/* Desktop: compact dot indicators (one per slide) */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    display: { xs: 'none', md: 'flex' },
+                    justifyContent: 'center',
+                    gap: 0.75,
                     zIndex: 5,
                 }}
             >
@@ -407,8 +539,8 @@ const HeroSlider = () => {
                         aria-current={active === i ? 'true' : undefined}
                         onClick={() => goTo(i)}
                         sx={{
-                            width: active === i ? { xs: 18, md: 24 } : { xs: 8, md: 10 },
-                            height: { xs: 8, md: 10 },
+                            width: active === i ? 18 : 8,
+                            height: 8,
                             borderRadius: '999px',
                             border: 'none',
                             padding: 0,

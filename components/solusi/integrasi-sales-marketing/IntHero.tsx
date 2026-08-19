@@ -144,42 +144,50 @@ export default function IntHero() {
                     </Grid>
 
                     <Grid item xs={12} md={5}>
-                        <Box
-                            sx={{
-                                bgcolor: 'white',
-                                borderRadius: '24px',
-                                p: 3,
-                                boxShadow: '0 50px 100px -20px rgba(0,0,0,0.25)',
-                                color: '#1E293B'
-                            }}
-                        >
-                            <Stack spacing={2}>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0FDF4' }}>
-                                    <WhatsAppIcon sx={{ color: '#22C55E' }} />
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>WhatsApp</Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B' }}>Lead masuk → profil dibuat otomatis</Typography>
-                                    </Box>
-                                </Stack>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0F7FF' }}>
-                                    <EmailIcon sx={{ color: '#3854D6' }} />
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Email Campaign</Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B' }}>Balasan → masuk ke pipeline sales</Typography>
-                                    </Box>
-                                </Stack>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#FFF7ED' }}>
-                                    <SyncAltIcon sx={{ color: '#F97316' }} />
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Auto-Routing</Typography>
-                                        <Typography variant="caption" sx={{ color: '#64748B' }}>Diteruskan ke sales yang bertugas</Typography>
-                                    </Box>
-                                </Stack>
-                            </Stack>
-                        </Box>
+                        <IntHeroVisual />
                     </Grid>
                 </Grid>
             </Container>
+        </Box>
+    );
+}
+
+// Right-side hero visual, also reused by the homepage hero slider
+// (components/home/HeroSlider.tsx) so the slide matches this page exactly.
+export function IntHeroVisual() {
+    return (
+        <Box
+            sx={{
+                bgcolor: 'white',
+                borderRadius: '24px',
+                p: 3,
+                boxShadow: '0 50px 100px -20px rgba(0,0,0,0.25)',
+                color: '#1E293B'
+            }}
+        >
+            <Stack spacing={2}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0FDF4' }}>
+                    <WhatsAppIcon sx={{ color: '#22C55E' }} />
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>WhatsApp</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>Lead masuk → profil dibuat otomatis</Typography>
+                    </Box>
+                </Stack>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0F7FF' }}>
+                    <EmailIcon sx={{ color: '#3854D6' }} />
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Email Campaign</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>Balasan → masuk ke pipeline sales</Typography>
+                    </Box>
+                </Stack>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#FFF7ED' }}>
+                    <SyncAltIcon sx={{ color: '#F97316' }} />
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Auto-Routing</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>Diteruskan ke sales yang bertugas</Typography>
+                    </Box>
+                </Stack>
+            </Stack>
         </Box>
     );
 }

@@ -115,95 +115,103 @@ export default function FmcgHero() {
                     </Box>
 
                     {/* Right Side Mockup */}
-                    <Box sx={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-
-                        <Paper
-                            elevation={16}
-                            sx={{
-                                position: 'relative',
-                                zIndex: 3,
-                                borderRadius: '16px',
-                                width: '100%',
-                                p: 3,
-                                bgcolor: 'white',
-                                transform: { lg: 'perspective(1000px) rotateY(-5deg) rotateX(2deg)' },
-                                transition: 'all 0.4s ease',
-                                '&:hover': {
-                                    transform: { lg: 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-5px)' }
-                                }
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                <Box>
-                                    <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#1E293B' }}>
-                                        {strings.fmcg_hero_mockup_title}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.85rem', color: '#64748B' }}>
-                                        {strings.fmcg_hero_mockup_period}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{
-                                    bgcolor: '#DCFCE7', color: '#16A34A', px: 1.5, py: 0.5,
-                                    borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700
-                                }}>
-                                    {strings.fmcg_hero_mockup_stats}
-                                </Box>
-                            </Box>
-
-                            {/* Kanban Columns */}
-                            <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
-
-                                {/* Column 1: Pesanan Baru */}
-                                <Box sx={{ flex: 1, minWidth: '160px' }}>
-                                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', mb: 1, textTransform: 'uppercase' }}>
-                                        {strings.fmcg_hero_mockup_col1}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #E2E8F0' }}>
-                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Toko Rejeki Lancar</Typography>
-                                            <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Order: 15 Karton Sabun</Typography>
-                                        </Paper>
-                                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #FCD34D' }}>
-                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Warung Bu Yati</Typography>
-                                            <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Order: 5 Dus Kopi</Typography>
-                                        </Paper>
-                                    </Box>
-                                </Box>
-
-                                {/* Column 2: Proses Gudang */}
-                                <Box sx={{ flex: 1, minWidth: '160px' }}>
-                                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#F59E0B', mb: 1, textTransform: 'uppercase' }}>
-                                        {strings.fmcg_hero_mockup_col2}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #F59E0B' }}>
-                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Grosir Makmur</Typography>
-                                            <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Picking & Packing</Typography>
-                                        </Paper>
-                                    </Box>
-                                </Box>
-
-                                {/* Column 3: Sedang Dikirim */}
-                                <Box sx={{ flex: 1, minWidth: '160px' }}>
-                                    <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#10B981', mb: 1, textTransform: 'uppercase' }}>
-                                        {strings.fmcg_hero_mockup_col3}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #10B981' }}>
-                                            <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Mitra Mart</Typography>
-                                            <Typography sx={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 600 }}>Estimasi Tiba: 14:00</Typography>
-                                        </Paper>
-                                    </Box>
-                                </Box>
-
-                            </Box>
-
-                        </Paper>
-
-                    </Box>
+                    <FmcgHeroVisual />
 
                 </Box>
             </Container>
+        </Box>
+    );
+}
+
+// Right-side hero visual, also reused by the homepage hero slider
+// (components/home/HeroSlider.tsx) so the slide matches this page exactly.
+export function FmcgHeroVisual() {
+    return (
+        <Box sx={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+
+            <Paper
+                elevation={16}
+                sx={{
+                    position: 'relative',
+                    zIndex: 3,
+                    borderRadius: '16px',
+                    width: '100%',
+                    p: 3,
+                    bgcolor: 'white',
+                    transform: { lg: 'perspective(1000px) rotateY(-5deg) rotateX(2deg)' },
+                    transition: 'all 0.4s ease',
+                    '&:hover': {
+                        transform: { lg: 'perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-5px)' }
+                    }
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box>
+                        <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#1E293B' }}>
+                            {strings.fmcg_hero_mockup_title}
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.85rem', color: '#64748B' }}>
+                            {strings.fmcg_hero_mockup_period}
+                        </Typography>
+                    </Box>
+                    <Box sx={{
+                        bgcolor: '#DCFCE7', color: '#16A34A', px: 1.5, py: 0.5,
+                        borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700
+                    }}>
+                        {strings.fmcg_hero_mockup_stats}
+                    </Box>
+                </Box>
+
+                {/* Kanban Columns */}
+                <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
+
+                    {/* Column 1: Pesanan Baru */}
+                    <Box sx={{ flex: 1, minWidth: '160px' }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', mb: 1, textTransform: 'uppercase' }}>
+                            {strings.fmcg_hero_mockup_col1}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #E2E8F0' }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Toko Rejeki Lancar</Typography>
+                                <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Order: 15 Karton Sabun</Typography>
+                            </Paper>
+                            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #FCD34D' }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Warung Bu Yati</Typography>
+                                <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Order: 5 Dus Kopi</Typography>
+                            </Paper>
+                        </Box>
+                    </Box>
+
+                    {/* Column 2: Proses Gudang */}
+                    <Box sx={{ flex: 1, minWidth: '160px' }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#F59E0B', mb: 1, textTransform: 'uppercase' }}>
+                            {strings.fmcg_hero_mockup_col2}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #F59E0B' }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Grosir Makmur</Typography>
+                                <Typography sx={{ fontSize: '0.7rem', color: '#64748B' }}>Picking & Packing</Typography>
+                            </Paper>
+                        </Box>
+                    </Box>
+
+                    {/* Column 3: Sedang Dikirim */}
+                    <Box sx={{ flex: 1, minWidth: '160px' }}>
+                        <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#10B981', mb: 1, textTransform: 'uppercase' }}>
+                            {strings.fmcg_hero_mockup_col3}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '8px', borderLeft: '4px solid #10B981' }}>
+                                <Typography sx={{ fontWeight: 700, fontSize: '0.85rem', color: '#334155' }}>Mitra Mart</Typography>
+                                <Typography sx={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 600 }}>Estimasi Tiba: 14:00</Typography>
+                            </Paper>
+                        </Box>
+                    </Box>
+
+                </Box>
+
+            </Paper>
+
         </Box>
     );
 }

@@ -9,40 +9,107 @@ import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { trackCtaClick } from '@/lib/analytics/events';
 import Hero from './Hero';
+import {
+    Client360Illustration,
+    DataIntelligenceIllustration,
+    EmailMarketingIllustration,
+    IllustrationProps,
+    OmnichannelIllustration,
+    PipelineIllustration,
+    SmartCaptureIllustration,
+    TicketingIllustration,
+    WhatsAppCampaignIllustration,
+} from './slider-illustrations';
 
 const AUTOPLAY_MS = 6000;
 const SWIPE_THRESHOLD_PX = 50;
 
-// Slides 2-4 reuse the real produk-page hero copy (same strings keys) so the
-// slider stays truthful to what each product page actually promises.
-const productSlides = [
+// Feature slides 2-9. Copy claims stay within what the produk pages promise;
+// features without a dedicated page link to the closest produk page or /price.
+const featureSlides: Array<{
+    key: string;
+    badgeKey: string;
+    titleKey: string;
+    descKey: string;
+    href: string;
+    trackLabel: string;
+    Illustration: React.ComponentType<IllustrationProps>;
+}> = [
     {
-        key: 'crm-sales',
-        titleKey: 'crm_sales_hero_title',
-        descKey: 'crm_sales_hero_desc',
-        btnKey: 'hero_slide_crm_btn',
+        key: 'pipeline',
+        badgeKey: 'hero_slide_pipeline_badge',
+        titleKey: 'hero_slide_pipeline_title',
+        descKey: 'hero_slide_pipeline_desc',
         href: '/produk/crm-sales',
-        trackLabel: 'hero_slide_crm_sales',
+        trackLabel: 'hero_slide_pipeline',
+        Illustration: PipelineIllustration,
+    },
+    {
+        key: 'smartcapture',
+        badgeKey: 'hero_slide_capture_badge',
+        titleKey: 'hero_slide_capture_title',
+        descKey: 'hero_slide_capture_desc',
+        href: '/produk/crm-sales',
+        trackLabel: 'hero_slide_smartcapture',
+        Illustration: SmartCaptureIllustration,
+    },
+    {
+        key: 'client360',
+        badgeKey: 'hero_slide_client360_badge',
+        titleKey: 'hero_slide_client360_title',
+        descKey: 'hero_slide_client360_desc',
+        href: '/produk/omnichannel',
+        trackLabel: 'hero_slide_client360',
+        Illustration: Client360Illustration,
+    },
+    {
+        key: 'wa-campaign',
+        badgeKey: 'hero_slide_wa_badge',
+        titleKey: 'hero_slide_wa_title',
+        descKey: 'hero_slide_wa_desc',
+        href: '/produk/omnichannel',
+        trackLabel: 'hero_slide_wa_campaign',
+        Illustration: WhatsAppCampaignIllustration,
+    },
+    {
+        key: 'email-marketing',
+        badgeKey: 'hero_slide_email_badge',
+        titleKey: 'hero_slide_email_title',
+        descKey: 'hero_slide_email_desc',
+        href: '/produk/omnichannel',
+        trackLabel: 'hero_slide_email_marketing',
+        Illustration: EmailMarketingIllustration,
     },
     {
         key: 'omnichannel',
-        titleKey: 'omni_hero_title',
-        descKey: 'omni_hero_desc',
-        btnKey: 'hero_slide_omni_btn',
+        badgeKey: 'hero_slide_omni_badge',
+        titleKey: 'hero_slide_omni_title',
+        descKey: 'hero_slide_omni_desc',
         href: '/produk/omnichannel',
         trackLabel: 'hero_slide_omnichannel',
+        Illustration: OmnichannelIllustration,
     },
     {
-        key: 'ticket',
-        titleKey: 'ticket_hero_title',
-        descKey: 'ticket_hero_desc',
-        btnKey: 'hero_slide_ticket_btn',
-        href: '/produk/ticket',
-        trackLabel: 'hero_slide_ticket',
+        key: 'data-intelligence',
+        badgeKey: 'hero_slide_dataintel_badge',
+        titleKey: 'hero_slide_dataintel_title',
+        descKey: 'hero_slide_dataintel_desc',
+        href: '/price',
+        trackLabel: 'hero_slide_data_intelligence',
+        Illustration: DataIntelligenceIllustration,
+    },
+    {
+        key: 'ticketing',
+        badgeKey: 'hero_slide_ticketing_badge',
+        titleKey: 'hero_slide_ticketing_title',
+        descKey: 'hero_slide_ticketing_desc',
+        href: '/produk/crm-services',
+        trackLabel: 'hero_slide_ticketing',
+        Illustration: TicketingIllustration,
     },
 ];
 
-const SLIDE_COUNT = productSlides.length + 1;
+const SLIDE_COUNT = featureSlides.length + 1;
 
 const HeroSlider = () => {
     useLanguage();
@@ -121,7 +188,7 @@ const HeroSlider = () => {
                     <Hero />
                 </Box>
 
-                {productSlides.map((slide, i) => {
+                {featureSlides.map((slide, i) => {
                     const index = i + 1;
                     return (
                         <Box
@@ -139,83 +206,145 @@ const HeroSlider = () => {
                             }}
                             {...(active !== index ? ({ inert: '' } as Record<string, unknown>) : {})}
                         >
-                            <Container maxWidth="xl" sx={{ px: { xs: 2, md: 0 } }}>
+                            <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 } }}>
                                 <Box
                                     sx={{
-                                        maxWidth: { xs: '100%', md: '760px' },
+                                        display: 'flex',
+                                        flexDirection: { xs: 'column', lg: 'row' },
+                                        alignItems: 'center',
+                                        gap: { xs: 3, lg: 8 },
+                                        maxWidth: { xs: '600px', lg: '1120px' },
                                         mx: 'auto',
-                                        textAlign: 'center',
-                                        py: { xs: 12, md: 10 },
-                                        px: { xs: 1, md: 0 },
+                                        pt: { xs: 8, md: 8 },
+                                        pb: { xs: 10, md: 10 },
                                     }}
                                 >
-                                    {/* h2 so the page keeps exactly one h1 (slide 1's) */}
-                                    <Typography
-                                        variant="h1"
-                                        component="h2"
+                                    {/* Illustration: above the text on mobile, right column on desktop */}
+                                    <Box
                                         sx={{
-                                            fontSize: { xs: '2.25rem', md: '40px' },
-                                            fontWeight: 700,
-                                            lineHeight: 1.2,
-                                            mb: 3,
+                                            order: { xs: 1, lg: 2 },
+                                            flex: { lg: '0 0 44%' },
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            '& .hero-slide-illustration': {
+                                                display: 'block',
+                                                width: { xs: 240, sm: 300, lg: '100%' },
+                                                maxWidth: 460,
+                                                height: 'auto',
+                                            },
                                         }}
                                     >
-                                        {strings[slide.titleKey]}
-                                    </Typography>
-                                    <Typography
-                                        variant="h6"
-                                        component="p"
+                                        <slide.Illustration className="hero-slide-illustration" />
+                                    </Box>
+
+                                    <Box
                                         sx={{
-                                            fontSize: { xs: '1rem', md: '20px' },
-                                            fontWeight: 400,
-                                            opacity: 0.9,
-                                            mb: 5,
+                                            order: { xs: 2, lg: 1 },
+                                            flex: { lg: 1 },
+                                            textAlign: { xs: 'center', lg: 'left' },
                                         }}
                                     >
-                                        {strings[slide.descKey]}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center' }}>
-                                        <Button
-                                            component={Link}
-                                            href="/register"
-                                            variant="contained"
-                                            size="large"
-                                            onClick={() => trackCtaClick('home', `${slide.trackLabel}_register`)}
+                                        {/* Feature-name eyebrow (mirrors the produk pages' hero badges) */}
+                                        <Box
                                             sx={{
-                                                backgroundColor: 'white',
-                                                color: 'primary.main',
-                                                fontWeight: 600,
-                                                textTransform: 'none',
-                                                px: 4,
-                                                py: 1.5,
-                                                borderRadius: '50px',
-                                                '&:hover': { backgroundColor: '#f5f5f5' },
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                px: 2,
+                                                py: 0.5,
+                                                mb: 2.5,
+                                                borderRadius: '999px',
+                                                border: '1px solid rgba(255,255,255,0.35)',
+                                                backgroundColor: 'rgba(255,255,255,0.12)',
                                             }}
                                         >
-                                            {strings.hero_cta_free}
-                                        </Button>
-                                        <Button
-                                            component={Link}
-                                            href={slide.href}
-                                            variant="outlined"
-                                            size="large"
-                                            onClick={() => trackCtaClick('home', `${slide.trackLabel}_learn_more`)}
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    letterSpacing: '0.06em',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                {strings[slide.badgeKey]}
+                                            </Typography>
+                                        </Box>
+                                        {/* h2 so the page keeps exactly one h1 (slide 1's) */}
+                                        <Typography
+                                            variant="h1"
+                                            component="h2"
                                             sx={{
-                                                color: 'white',
-                                                borderColor: 'rgba(255,255,255,0.7)',
-                                                fontWeight: 600,
-                                                textTransform: 'none',
-                                                px: 4,
-                                                py: 1.5,
-                                                borderRadius: '50px',
-                                                '&:hover': {
-                                                    borderColor: 'white',
-                                                    backgroundColor: 'rgba(255,255,255,0.08)',
-                                                },
+                                                fontSize: { xs: '1.75rem', md: '2.25rem', lg: '40px' },
+                                                fontWeight: 700,
+                                                lineHeight: 1.2,
+                                                mb: 2.5,
                                             }}
                                         >
-                                            {strings[slide.btnKey]}
-                                        </Button>
+                                            {strings[slide.titleKey]}
+                                        </Typography>
+                                        <Typography
+                                            variant="h6"
+                                            component="p"
+                                            sx={{
+                                                fontSize: { xs: '0.95rem', md: '18px' },
+                                                fontWeight: 400,
+                                                opacity: 0.9,
+                                                mb: 4,
+                                            }}
+                                        >
+                                            {strings[slide.descKey]}
+                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                gap: 2,
+                                                justifyContent: { xs: 'center', lg: 'flex-start' },
+                                            }}
+                                        >
+                                            <Button
+                                                component={Link}
+                                                href="/register"
+                                                variant="contained"
+                                                size="large"
+                                                onClick={() => trackCtaClick('home', `${slide.trackLabel}_register`)}
+                                                sx={{
+                                                    backgroundColor: 'white',
+                                                    color: 'primary.main',
+                                                    fontWeight: 600,
+                                                    textTransform: 'none',
+                                                    px: 4,
+                                                    py: 1.5,
+                                                    borderRadius: '50px',
+                                                    '&:hover': { backgroundColor: '#f5f5f5' },
+                                                }}
+                                            >
+                                                {strings.hero_cta_free}
+                                            </Button>
+                                            <Button
+                                                component={Link}
+                                                href={slide.href}
+                                                variant="outlined"
+                                                size="large"
+                                                onClick={() => trackCtaClick('home', `${slide.trackLabel}_learn_more`)}
+                                                sx={{
+                                                    color: 'white',
+                                                    borderColor: 'rgba(255,255,255,0.7)',
+                                                    fontWeight: 600,
+                                                    textTransform: 'none',
+                                                    px: 4,
+                                                    py: 1.5,
+                                                    borderRadius: '50px',
+                                                    '&:hover': {
+                                                        borderColor: 'white',
+                                                        backgroundColor: 'rgba(255,255,255,0.08)',
+                                                    },
+                                                }}
+                                            >
+                                                {strings.hero_slide_learn_more}
+                                            </Button>
+                                        </Box>
                                     </Box>
                                 </Box>
                             </Container>
@@ -256,7 +385,7 @@ const HeroSlider = () => {
                 <ChevronRightIcon />
             </IconButton>
 
-            {/* Dot indicators */}
+            {/* Dot indicators (compact on mobile so all 9 stay tidy) */}
             <Box
                 sx={{
                     position: 'absolute',
@@ -265,7 +394,7 @@ const HeroSlider = () => {
                     right: 0,
                     display: 'flex',
                     justifyContent: 'center',
-                    gap: 1.25,
+                    gap: { xs: 0.75, md: 1.25 },
                     zIndex: 5,
                 }}
             >
@@ -278,8 +407,8 @@ const HeroSlider = () => {
                         aria-current={active === i ? 'true' : undefined}
                         onClick={() => goTo(i)}
                         sx={{
-                            width: active === i ? 24 : 10,
-                            height: 10,
+                            width: active === i ? { xs: 18, md: 24 } : { xs: 8, md: 10 },
+                            height: { xs: 8, md: 10 },
                             borderRadius: '999px',
                             border: 'none',
                             padding: 0,

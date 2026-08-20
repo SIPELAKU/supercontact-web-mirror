@@ -36,6 +36,11 @@ export const PERMISSIONS = [
   "conversations:routing:manage",
   "agents:read",
   "agents:manage",
+  // Help Center / Knowledge Base (Phase 6).
+  "knowledge:read",
+  "knowledge:author",
+  "knowledge:publish",
+  "knowledge:manage",
 ].sort();
 
 export const formatPermissionLabel = (permission: string) => {
@@ -56,6 +61,7 @@ const PREFIX_GROUP_LABELS: Record<string, string> = {
   conversations: "Conversations",
   agents: "Agents",
   tickets: "Tickets",
+  knowledge: "Knowledge Base",
   tasks: "Tasks",
   contacts: "Contacts",
 };
@@ -86,6 +92,7 @@ const GROUP_ORDER = [
   "Conversations",
   "Agents",
   "Tickets",
+  "Knowledge Base",
   "Tasks",
   "Contacts",
   "Sales",

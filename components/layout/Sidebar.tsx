@@ -160,6 +160,9 @@ const menuData: MenuSection[] = [
           { name: "Workspace", path: "/support/workspace", permission: "omnichannel:use" },
           { name: "Tickets", path: "/support/tickets", permission: ["tickets:read:my", "tickets:read:team", "tickets"] },
           { name: "Ticket Dashboard", path: "/support/tickets/dashboard", permission: ["tickets:reports:view", "tickets"] },
+          // Phase 6 Help Center / Knowledge Base authoring app. Gated on the
+          // base read grant (publish/manage imply read on the page itself).
+          { name: "Knowledge Base", path: "/knowledge-base", permission: ["knowledge:read", "knowledge:author", "knowledge:publish", "knowledge:manage"] },
         ],
       },
     ],

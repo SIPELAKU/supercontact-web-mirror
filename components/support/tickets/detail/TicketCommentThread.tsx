@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2, Paperclip, X, MessageCircle, Mail, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
@@ -36,8 +37,18 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
     const [replyMode, setReplyMode] = useState<"public" | "internal">("public");
     const [body, setBody] = useState("");
     const [files, setFiles] = useState<File[]>([]);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const comments = data?.data?.data || [];
+
+    // Insert a Knowledge Base snippet at the caret (falls back to append).
+    const insertAtCaret = (snippet: string) => {
+        const el = textareaRef.current;
+        const start = el?.selectionStart ?? body.length;
+        const end = el?.selectionEnd ?? body.length;
+        setBody(body.slice(0, start) + snippet + body.slice(end));
+        requestAnimationFrame(() => textareaRef.current?.focus());
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -125,6 +136,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                         </p>
                     )}
                     <textarea
+                        ref={textareaRef}
                         value={body}
                         onChange={(e) => setBody(e.target.value)}
                         placeholder={
@@ -156,10 +168,14 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                     )}
 
                     <div className="flex justify-between items-center">
-                        <label className="cursor-pointer text-gray-500 hover:text-gray-700">
-                            <Paperclip size={16} />
-                            <input type="file" multiple className="hidden" onChange={handleFileChange} />
-                        </label>
+                        <div className="flex items-center gap-1">
+                            <label className="cursor-pointer p-1 text-gray-500 hover:text-gray-700">
+                                <Paperclip size={16} />
+                                <input type="file" multiple className="hidden" onChange={handleFileChange} />
+                            </label>
+                            {/* Knowledge base search - inserts an article link + excerpt at the caret. */}
+                            <KbSearchPopover direction="down" onInsert={insertAtCaret} />
+                        </div>
                         <AppButton
                             onClick={handleSubmit}
                             variantStyle="primary"

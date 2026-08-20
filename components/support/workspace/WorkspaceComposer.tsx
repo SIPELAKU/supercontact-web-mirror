@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { CannedReply } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 
 type ComposerMode = "reply" | "note";
 
@@ -188,6 +189,16 @@ export function WorkspaceComposer({
     }
     closePicker();
     // Return focus to the textarea for immediate editing before sending.
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
+  // Insert arbitrary text (e.g. a Knowledge Base snippet) at the caret, falling
+  // back to append. Routed through setText so the reply draft still autosaves.
+  const insertAtCaret = (snippet: string) => {
+    const el = textareaRef.current;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    setText(text.slice(0, start) + snippet + text.slice(end));
     requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
@@ -386,6 +397,14 @@ export function WorkspaceComposer({
               <Zap className="h-[17px] w-[17px]" />
             </button>
           </Tooltip>
+
+          {/* Knowledge base search - inserts an article link + excerpt at the
+              caret (flows through setText so the draft still autosaves). */}
+          <KbSearchPopover
+            direction="up"
+            disabled={disabled || isSending}
+            onInsert={insertAtCaret}
+          />
 
           <div className="flex-1" />
 

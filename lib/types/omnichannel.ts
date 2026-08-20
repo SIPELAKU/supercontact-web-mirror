@@ -362,6 +362,16 @@ export interface WebWidgetConfig {
   // Privacy footer.
   privacy_footer_text: string | null;
   privacy_url: string | null;
+  // AI Answer Bot (Phase 7B) - auto-answers the visitor's first message from
+  // the published Knowledge Base before/alongside routing to an agent.
+  // These round-trip on the admin GET/PUT config. Note answer_bot_min_confidence
+  // is admin-only here; the PUBLIC widget config intentionally omits it.
+  answer_bot_enabled: boolean;
+  answer_bot_max_articles: number;
+  answer_bot_use_llm: boolean;
+  answer_bot_min_confidence: number;
+  answer_bot_intro_text: string | null;
+  answer_bot_no_answer_text: string | null;
 }
 
 export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;

@@ -50,6 +50,13 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   // Privacy
   privacy_footer_text: null,
   privacy_url: null,
+  // AI Answer Bot
+  answer_bot_enabled: false,
+  answer_bot_max_articles: 3,
+  answer_bot_use_llm: false,
+  answer_bot_min_confidence: 0.3,
+  answer_bot_intro_text: null,
+  answer_bot_no_answer_text: null,
 };
 
 const ToggleRow: React.FC<{
@@ -134,6 +141,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       handoff_queue_id: config.handoff_queue_id ?? null,
       privacy_footer_text: config.privacy_footer_text ?? null,
       privacy_url: config.privacy_url ?? null,
+      answer_bot_enabled: config.answer_bot_enabled ?? DEFAULT_FORM.answer_bot_enabled,
+      answer_bot_max_articles: config.answer_bot_max_articles ?? DEFAULT_FORM.answer_bot_max_articles,
+      answer_bot_use_llm: config.answer_bot_use_llm ?? DEFAULT_FORM.answer_bot_use_llm,
+      answer_bot_min_confidence: config.answer_bot_min_confidence ?? DEFAULT_FORM.answer_bot_min_confidence,
+      answer_bot_intro_text: config.answer_bot_intro_text ?? null,
+      answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
     });
     setDomainsInput((config.allowed_domains || []).join(", "));
   }, [config]);
@@ -445,6 +458,100 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             placeholder="https://example.com/privacy"
           />
         </div>
+      </Section>
+
+      {/* AI Answer Bot */}
+      <Section
+        title="AI Answer Bot"
+        description="Automatically answer a visitor's first message from your published Knowledge Base before an agent picks it up. The reply arrives as a normal message in the conversation."
+      >
+        <div className="border-t border-gray-100">
+          <ToggleRow
+            label="Enable answer bot"
+            description="Search the published Knowledge Base on the visitor's first message and post a suggested answer. Agents and routing are unaffected."
+            checked={form.answer_bot_enabled}
+            onChange={(checked) => setField("answer_bot_enabled", checked)}
+          />
+        </div>
+
+        {form.answer_bot_enabled && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Max Articles</label>
+                <AppInput
+                  fullWidth
+                  isBgWhite
+                  type="number"
+                  value={String(form.answer_bot_max_articles)}
+                  inputProps={{ min: 1, max: 5, step: 1 }}
+                  onChange={(e) => {
+                    const n = Math.round(Number(e.target.value));
+                    if (!Number.isFinite(n)) return;
+                    setField("answer_bot_max_articles", Math.min(5, Math.max(1, n)));
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  How many top Knowledge Base articles to ground the answer on (1–5).
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Minimum Confidence</label>
+                <AppInput
+                  fullWidth
+                  isBgWhite
+                  type="number"
+                  value={String(form.answer_bot_min_confidence)}
+                  inputProps={{ min: 0, max: 1, step: 0.05 }}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (!Number.isFinite(n)) return;
+                    setField("answer_bot_min_confidence", Math.min(1, Math.max(0, n)));
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  Suppress answers below this match score (0.0–1.0). Higher is stricter.
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100">
+              <ToggleRow
+                label="Use AI to compose an answer"
+                description="Let AI write a grounded reply from the matched articles instead of just linking them. When off, the bot replies with article-based content only."
+                checked={form.answer_bot_use_llm}
+                onChange={(checked) => setField("answer_bot_use_llm", checked)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Intro Text (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_intro_text ?? ""}
+                onChange={(e) => setField("answer_bot_intro_text", e.target.value || null)}
+                placeholder="Here's what I found that might help:"
+              />
+              <p className="text-xs text-gray-500">Optional line shown before an automated answer.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">No-Answer Text (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_no_answer_text ?? ""}
+                onChange={(e) => setField("answer_bot_no_answer_text", e.target.value || null)}
+                placeholder="I'll connect you with a team member who can help."
+              />
+              <p className="text-xs text-gray-500">
+                Optional message when nothing confident enough is found. Leave blank to stay silent and let an agent reply.
+              </p>
+            </div>
+          </>
+        )}
       </Section>
 
       {/* Behaviour toggles */}

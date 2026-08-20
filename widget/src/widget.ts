@@ -61,6 +61,17 @@ interface WidgetConfig {
   privacy_url?: string | null;
   presence?: WidgetPresence | null;
 
+  // AI Answer Bot (Phase 7B) - the PUBLIC subset of the tenant's answer-bot
+  // config (get_public_config omits answer_bot_min_confidence, which is
+  // server-side only). In 7B.1 the bot's reply arrives as a normal OUTBOUND
+  // message and renders as a team bubble, so these fields need no new render
+  // branch today - they're declared so a later 7B.2 rich card can consume them.
+  answer_bot_enabled?: boolean;
+  answer_bot_max_articles?: number;
+  answer_bot_use_llm?: boolean;
+  answer_bot_intro_text?: string | null;
+  answer_bot_no_answer_text?: string | null;
+
   // i18n (POLISH sprint): the public config endpoint does NOT currently
   // return these, so today they're always undefined and the widget falls
   // back to the data-locale attribute (default "id"). Kept optional so that

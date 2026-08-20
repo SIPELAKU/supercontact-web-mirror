@@ -365,10 +365,17 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
   }
 
   // Flip company-centric server direction to visitor-centric UI direction.
+  // Company "inbound" (a visitor message) => UI "outbound" (right, us); anything
+  // else (company "outbound" = an agent reply, OR a missing direction) => UI
+  // "inbound" (left, the support team). Keying on "inbound" — not "outbound" —
+  // is deliberate: the live WS "message" frame carries only agent replies and
+  // does NOT include a direction field, so it must default to the team side
+  // (left). Keying on "outbound" defaulted those to the right, making agent
+  // replies look like the visitor's own messages.
   function fromServer(m: ServerMessage): WidgetMessage {
     return {
       id: m.id,
-      direction: m.direction === "outbound" ? "inbound" : "outbound",
+      direction: m.direction === "inbound" ? "outbound" : "inbound",
       content: m.content || "",
       sent_at: m.sent_at,
       media_url: m.media_url ?? null,

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@mui/material";
-import { ListOrdered, Pencil, Plus, Trash2 } from "lucide-react";
+import { ListOrdered, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -27,11 +28,13 @@ import {
   useCreateConversationQueue,
   useUpdateConversationQueue,
   useDeleteConversationQueue,
+  useRouteQueueNow,
 } from "@/lib/hooks/useAgents";
 import type {
   ConversationQueue,
   ConversationQueueChannelType,
   ConversationQueuePriority,
+  RoutingStrategy,
 } from "@/lib/types/agents";
 
 // "Any" is the empty-string option that maps back to a null column on save.
@@ -61,6 +64,17 @@ const PRIORITY_LABEL: Record<ConversationQueuePriority, string> = {
   normal: "Normal",
   high: "High",
   urgent: "Urgent",
+};
+
+// Phase 4b auto-assignment strategy (only shown when auto-assign is on).
+const STRATEGY_OPTIONS: { value: RoutingStrategy; label: string }[] = [
+  { value: "round_robin", label: "Round robin" },
+  { value: "load_based", label: "Load-based" },
+];
+
+const STRATEGY_LABEL: Record<RoutingStrategy, string> = {
+  round_robin: "Round-robin",
+  load_based: "Load-based",
 };
 
 // ---------------------------------------------------------------------------
@@ -181,6 +195,7 @@ export default function RoutingQueuesSettingsTab() {
   const createMutation = useCreateConversationQueue();
   const updateMutation = useUpdateConversationQueue();
   const deleteMutation = useDeleteConversationQueue();
+  const routeNowMutation = useRouteQueueNow();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ConversationQueue | null>(null);
@@ -189,7 +204,11 @@ export default function RoutingQueuesSettingsTab() {
   const [channel, setChannel] = useState<ConversationQueueChannelType | "">("");
   const [priority, setPriority] = useState<ConversationQueuePriority | "">("");
   const [position, setPosition] = useState("0");
+  const [autoRoute, setAutoRoute] = useState(false);
+  const [routingStrategy, setRoutingStrategy] = useState<RoutingStrategy>("round_robin");
   const [deleteTarget, setDeleteTarget] = useState<ConversationQueue | null>(null);
+  // Which queue row is currently being routed (drives the per-row spinner state).
+  const [routingId, setRoutingId] = useState<string | null>(null);
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -200,6 +219,8 @@ export default function RoutingQueuesSettingsTab() {
     setChannel("");
     setPriority("");
     setPosition(String(queues.length));
+    setAutoRoute(false);
+    setRoutingStrategy("round_robin");
     setModalOpen(true);
   };
 
@@ -210,6 +231,8 @@ export default function RoutingQueuesSettingsTab() {
     setChannel(queue.channel_type ?? "");
     setPriority(queue.priority ?? "");
     setPosition(String(queue.position));
+    setAutoRoute(queue.auto_route);
+    setRoutingStrategy(queue.routing_strategy);
     setModalOpen(true);
   };
 
@@ -236,6 +259,8 @@ export default function RoutingQueuesSettingsTab() {
       channel_type: channel || null,
       priority: priority || null,
       position: positionValue,
+      auto_route: autoRoute,
+      routing_strategy: routingStrategy,
     };
     try {
       if (editing) {
@@ -274,6 +299,24 @@ export default function RoutingQueuesSettingsTab() {
     }
   };
 
+  // Phase 4b: run the auto-assignment sweep for a single queue immediately.
+  const handleRouteNow = (queue: ConversationQueue) => {
+    setRoutingId(queue.id);
+    routeNowMutation.mutate(queue.id, {
+      onSuccess: ({ assigned }) => {
+        if (assigned > 0) {
+          notify.success(`Assigned ${assigned} conversation(s)`);
+        } else {
+          notify.info("Nothing to route", {
+            description: "No unassigned conversations matched this queue.",
+          });
+        }
+      },
+      onError: (error) => notify.error("Error", { description: handleError(error, "Route Now") }),
+      onSettled: () => setRoutingId(null),
+    });
+  };
+
   const columns = useMemo<MRT_ColumnDef<ConversationQueue>[]>(
     () => [
       {
@@ -301,6 +344,21 @@ export default function RoutingQueuesSettingsTab() {
         id: "priority",
         accessorFn: (row) => (row.priority ? PRIORITY_LABEL[row.priority] : "Any"),
         header: "Priority",
+      },
+      {
+        id: "auto",
+        accessorFn: (row) => (row.auto_route ? STRATEGY_LABEL[row.routing_strategy] : "Off"),
+        header: "Auto",
+        Cell: ({ row }) =>
+          row.original.auto_route ? (
+            <Badge variant="secondary" className="font-medium">
+              {STRATEGY_LABEL[row.original.routing_strategy]}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="font-medium text-gray-400">
+              Off
+            </Badge>
+          ),
       },
       {
         accessorKey: "position",
@@ -376,6 +434,22 @@ export default function RoutingQueuesSettingsTab() {
             canManage
               ? ({ row }) => (
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRouteNow(row.original)}
+                      className="text-gray-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-gray-300"
+                      aria-label={`Route ${row.original.name} now`}
+                      title={
+                        row.original.is_active
+                          ? "Route now - assign matching conversations to eligible online agents"
+                          : "Activate the queue to route"
+                      }
+                      disabled={
+                        !row.original.is_active ||
+                        (routeNowMutation.isPending && routingId === row.original.id)
+                      }
+                    >
+                      <Zap size={16} />
+                    </button>
                     <button
                       onClick={() => openEdit(row.original)}
                       className="text-gray-300 hover:text-gray-700"
@@ -467,6 +541,32 @@ export default function RoutingQueuesSettingsTab() {
                 onChange={(e) => setPosition(e.target.value)}
                 helperText="Lower positions are pulled first."
               />
+
+              <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50/70 p-4">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Switch
+                    size="small"
+                    checked={autoRoute}
+                    onChange={(e) => setAutoRoute(e.target.checked)}
+                    inputProps={{ "aria-label": "Auto-assign conversations" }}
+                  />
+                  Auto-assign
+                </label>
+                <p className="text-xs text-gray-500">
+                  When on, unassigned conversations matching this queue are automatically assigned to
+                  eligible online agents (checked every minute).
+                </p>
+                {autoRoute && (
+                  <AppSelect
+                    isBgWhite
+                    fullWidth
+                    label="Strategy"
+                    value={routingStrategy}
+                    options={STRATEGY_OPTIONS}
+                    onChange={(e) => setRoutingStrategy(e.target.value as RoutingStrategy)}
+                  />
+                )}
+              </div>
             </div>
 
             <DialogFooter>

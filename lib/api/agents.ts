@@ -24,6 +24,7 @@ import type {
   CreateConversationQueueRequest,
   UpdateConversationQueueRequest,
   ClaimNextResult,
+  RouteQueueNowResult,
 } from "../types/agents";
 
 // Re-export types for convenience (mirrors omnichannel.ts).
@@ -46,9 +47,11 @@ export type {
   ConversationQueue,
   ConversationQueueChannelType,
   ConversationQueuePriority,
+  RoutingStrategy,
   CreateConversationQueueRequest,
   UpdateConversationQueueRequest,
   ClaimNextResult,
+  RouteQueueNowResult,
 } from "../types/agents";
 
 const ROSTER_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agents`;
@@ -485,6 +488,33 @@ export async function claimNextConversation(
 
   if (!res.ok) {
     throw json || new Error("Failed to claim next conversation");
+  }
+
+  return json.data || json;
+}
+
+/**
+ * POST /conversation-queues/{id}/route-now -> { data: { assigned: number } }.
+ * Runs the Phase 4b auto-assignment sweep for a single queue immediately and
+ * reports how many conversations were assigned. Gated by `omnichannel:setup`.
+ */
+export async function routeQueueNow(
+  token: string,
+  queueId: string
+): Promise<RouteQueueNowResult> {
+  const res = await fetchWithTimeout(`${QUEUES_BASE}/${queueId}/route-now`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to route queue");
   }
 
   return json.data || json;

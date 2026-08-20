@@ -21,6 +21,7 @@ import {
   updateConversationQueue,
   deleteConversationQueue,
   claimNextConversation,
+  routeQueueNow,
 } from "../api/agents";
 import type {
   AgentRosterItem,
@@ -37,6 +38,7 @@ import type {
   CreateConversationQueueRequest,
   UpdateConversationQueueRequest,
   ClaimNextResult,
+  RouteQueueNowResult,
 } from "../types/agents";
 
 // Query key roots (kept together so invalidations stay in sync):
@@ -369,6 +371,27 @@ export function useClaimNext() {
       if (result.claimed) {
         queryClient.invalidateQueries({ queryKey: [...INBOX_KEY] });
       }
+    },
+  });
+}
+
+/**
+ * Phase 4b "Route now" - run the auto-assignment sweep for one queue on demand.
+ * On success it refreshes the workspace inbox (freshly assigned conversations)
+ * and the queue list (any surfaced counts).
+ */
+export function useRouteQueueNow() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation<RouteQueueNowResult, Error, string>({
+    mutationFn: (queueId: string) => {
+      if (!token) throw new Error("No authentication token");
+      return routeQueueNow(token, queueId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...INBOX_KEY] });
+      queryClient.invalidateQueries({ queryKey: [...QUEUES_KEY] });
     },
   });
 }

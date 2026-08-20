@@ -82,6 +82,14 @@ export interface UpdateRoutingProfileRequest {
 export type ConversationQueueChannelType = "whatsapp" | "email" | "web_widget";
 export type ConversationQueuePriority = "low" | "normal" | "high" | "urgent";
 
+/**
+ * How the Phase 4b auto-assignment sweep spreads unassigned conversations
+ * across eligible online agents.
+ *   - round_robin: rotate through eligible agents in order.
+ *   - load_based:  prefer the agent with the fewest open conversations.
+ */
+export type RoutingStrategy = "round_robin" | "load_based";
+
 /** One admin-defined conversation queue. */
 export interface ConversationQueue {
   id: string;
@@ -91,6 +99,11 @@ export interface ConversationQueue {
   priority: ConversationQueuePriority | null;
   position: number;
   is_active: boolean;
+  /** Phase 4b: when true, a scheduled sweep auto-assigns matching
+   *  unassigned conversations to eligible online agents. */
+  auto_route: boolean;
+  /** Phase 4b: strategy the auto-assignment sweep uses. */
+  routing_strategy: RoutingStrategy;
   created_at: string;
   updated_at: string;
 }
@@ -101,8 +114,11 @@ export interface CreateConversationQueueRequest {
   channel_type?: ConversationQueueChannelType | null;
   priority?: ConversationQueuePriority | null;
   position?: number;
+  auto_route?: boolean;
+  routing_strategy?: RoutingStrategy;
 }
 
+// Inherits auto_route? / routing_strategy? from CreateConversationQueueRequest.
 export type UpdateConversationQueueRequest = Partial<CreateConversationQueueRequest> & {
   is_active?: boolean;
 };
@@ -115,6 +131,15 @@ export type UpdateConversationQueueRequest = Partial<CreateConversationQueueRequ
 export interface ClaimNextResult {
   claimed: boolean;
   conversation?: ConversationWithMessages;
+}
+
+/**
+ * Result of POST /conversation-queues/{id}/route-now (Phase 4b). Runs the
+ * auto-assignment sweep for a single queue immediately and reports how many
+ * conversations were assigned.
+ */
+export interface RouteQueueNowResult {
+  assigned: number;
 }
 
 /** Summary shape returned by the list/create/update group endpoints. */

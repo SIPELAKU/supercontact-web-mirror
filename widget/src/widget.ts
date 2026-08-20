@@ -294,6 +294,16 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
   // an invalid relative WebSocket URL. When absent, derive ws base from apiUrl as
   // before (correct for the standard absolute-URL tenant embed).
   const wsUrlAttr = (currentScript.getAttribute("data-ws-url") || "").replace(/\/$/, "");
+  // Optional launcher placement on the embed <script data-position="bottom-left">
+  // tag. Default bottom-right. Lets a tenant move the widget to the other corner.
+  const positionAttr = (currentScript.getAttribute("data-position") || "bottom-right")
+    .trim()
+    .toLowerCase();
+  const POS = /^(bottom-right|bottom-left|top-right|top-left)$/.test(positionAttr)
+    ? positionAttr
+    : "bottom-right";
+  const posV = POS.startsWith("top") ? "top" : "bottom"; // vertical anchor edge
+  const posH = POS.endsWith("left") ? "left" : "right"; // horizontal anchor edge
   if (!widgetKey || !apiUrl) {
     console.error("[SmartSales Widget] missing data-widget-key or data-api-url");
     return;
@@ -428,7 +438,18 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     constructor() {
       this.root = document.createElement("div");
       this.root.id = "smartsales-widget-root";
-      document.body.appendChild(this.root);
+      // Mount on <html>, NOT <body>. A `transform` / `filter` / `perspective` /
+      // `will-change` on the host page's <body> (very common with animation
+      // libraries, page transitions, some CSS frameworks) establishes a
+      // containing block that turns our `position: fixed` bubble/panel into
+      // `position: absolute` - which is exactly what pins the widget to the wrong
+      // corner and lets it scroll away instead of staying on screen. <html> is far
+      // less likely to carry such a property, so fixed positioning stays true to
+      // the viewport. Defensive inline reset so a broad host rule like
+      // `div { position: relative }` can't turn the root itself into a containing
+      // block that would re-trap the fixed children.
+      this.root.style.cssText = "position: static; margin: 0; padding: 0; border: 0;";
+      (document.documentElement || document.body).appendChild(this.root);
       this.shadow = this.root.attachShadow({ mode: "open" });
     }
 
@@ -477,7 +498,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
         .bubble {
-          position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px;
+          position: fixed; ${posV}: 20px; ${posH}: 20px; width: 56px; height: 56px;
           border-radius: 50%; background: ${brand}; color: #fff; border: none;
           cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2147483000;
           display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden;
@@ -492,7 +513,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .badge.show { display: block; }
 
         .panel {
-          position: fixed; bottom: 88px; right: 20px; width: 380px; max-width: calc(100vw - 40px);
+          position: fixed; ${posV}: 88px; ${posH}: 20px; width: 380px; max-width: calc(100vw - 40px);
           height: 560px; max-height: calc(100vh - 120px); background: #fff; border-radius: 16px;
           box-shadow: 0 12px 40px rgba(0,0,0,.22); display: none; flex-direction: column; overflow: hidden;
           z-index: 2147483000;

@@ -307,6 +307,21 @@ export interface UpdateAccountRequest {
   branch?: string;
 }
 
+// One visitor-facing "option card" rendered on the widget home screen. The
+// widget client (widget/, owned separately) renders `icon` from a FIXED key
+// set (see WIDGET_QUICK_ACTION_ICON_KEYS in
+// components/omnichannel/QuickActionsBuilder.tsx) - keep the two in sync.
+// `target_queue_id` routes a conversation started from this card to a specific
+// conversation queue (null = unrouted); `prefill` seeds the composer text.
+export interface QuickAction {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  target_queue_id: string | null;
+  prefill: string | null;
+}
+
 export interface WebWidgetConfig {
   id: string;
   account_id: string;
@@ -319,6 +334,25 @@ export interface WebWidgetConfig {
   enable_ai_triage: boolean;
   business_hours_calendar_id?: string | null;
   offline_message?: string | null;
+  // Branding (title + brand_color above already cover the rest).
+  bot_name: string;
+  bot_avatar_url: string | null;
+  // Home screen (the visitor's first view before starting a conversation).
+  home_headline: string;
+  home_subtext: string;
+  show_home_screen: boolean;
+  // Quick actions - the option cards the widget renders on the home screen.
+  quick_actions: QuickAction[];
+  // Presence & response time.
+  response_time_label: string;
+  show_presence: boolean;
+  // Human handoff (escape hatch from an AI/self-serve flow to a live agent).
+  enable_human_handoff: boolean;
+  handoff_label: string;
+  handoff_queue_id: string | null;
+  // Privacy footer.
+  privacy_footer_text: string | null;
+  privacy_url: string | null;
 }
 
 export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;

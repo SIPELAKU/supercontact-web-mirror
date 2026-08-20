@@ -25,6 +25,11 @@ import {
   ConversationNote,
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
+  SnoozeConversationRequest,
+  TransferConversationRequest,
+  CannedReply,
+  CreateCannedReplyRequest,
+  UpdateCannedReplyRequest,
   ConversationViewersResponse,
   ConversationListItem,
   ConversationInboxFilters,
@@ -58,6 +63,11 @@ export type {
   ConversationNote,
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
+  SnoozeConversationRequest,
+  TransferConversationRequest,
+  CannedReply,
+  CreateCannedReplyRequest,
+  UpdateCannedReplyRequest,
   ConversationViewersResponse,
   ConversationListItem,
   ConversationInboxFilters,
@@ -586,6 +596,55 @@ export async function setConversationPriority(token: string, conversationId: str
   return json.data || json;
 }
 
+// Snooze a conversation until an ISO-8601 UTC datetime (auto-reopen). The
+// backend moves it to `snoozed` status, so it drops out of the open queue.
+export async function snoozeConversation(token: string, conversationId: string, snoozedUntilISO: string): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/snooze`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ snoozed_until: snoozedUntilISO }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to snooze conversation');
+  }
+
+  return json.data || json;
+}
+
+// Hand the conversation to another agent, with an optional note.
+export async function transferConversation(token: string, conversationId: string, data: TransferConversationRequest): Promise<ConversationWithMessages> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/transfer`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to transfer conversation');
+  }
+
+  return json.data || json;
+}
+
 // Conversation collision presence (mirrors the ticket viewers heartbeat/poll
 // pair in lib/api/tickets.ts). Both are best-effort - the caller swallows
 // errors rather than surfacing a toast.
@@ -784,6 +843,96 @@ export async function uploadMedia(token: string, conversationId: string, file: F
 
   if (!res.ok) {
     throw json || new Error('Failed to upload media');
+  }
+
+  return json.data || json;
+}
+
+// Canned Replies (saved replies with an optional "/" shortcut)
+export async function fetchCannedReplies(token: string, includeInactive?: boolean): Promise<CannedReply[]> {
+  const params = new URLSearchParams();
+  if (includeInactive) params.append('include_inactive', 'true');
+
+  const res = await fetchWithTimeout(`${API_BASE}/canned-replies?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch canned replies');
+  }
+
+  const data = json.data || json;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createCannedReply(token: string, data: CreateCannedReplyRequest): Promise<CannedReply> {
+  const res = await fetchWithTimeout(`${API_BASE}/canned-replies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to create canned reply');
+  }
+
+  return json.data || json;
+}
+
+export async function updateCannedReply(token: string, id: string, data: UpdateCannedReplyRequest): Promise<CannedReply> {
+  const res = await fetchWithTimeout(`${API_BASE}/canned-replies/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update canned reply');
+  }
+
+  return json.data || json;
+}
+
+export async function deleteCannedReply(token: string, id: string): Promise<{ id: string; deleted: boolean }> {
+  const res = await fetchWithTimeout(`${API_BASE}/canned-replies/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to delete canned reply');
   }
 
   return json.data || json;

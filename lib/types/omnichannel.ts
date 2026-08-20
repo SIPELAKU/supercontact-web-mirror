@@ -157,6 +157,47 @@ export interface SetConversationPriorityRequest {
   priority: ConversationPriority;
 }
 
+// Snooze (auto-reopen scheduling). PATCH /conversations/{id}/snooze.
+// `snoozed_until` is an ISO-8601 UTC datetime string.
+export interface SnoozeConversationRequest {
+  snoozed_until: string;
+}
+
+// Hand a conversation to another agent. POST /conversations/{id}/transfer.
+export interface TransferConversationRequest {
+  assigned_user_id: string;
+  note?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Canned replies (saved omnichannel replies with an optional "/" shortcut).
+// Base /omnichannels/canned-replies. Listing + insertion needs omnichannel:use;
+// create/update/delete needs omnichannel:setup.
+// ---------------------------------------------------------------------------
+export interface CannedReply {
+  id: string;
+  title: string;
+  shortcut: string | null;
+  body: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCannedReplyRequest {
+  title: string;
+  shortcut?: string | null;
+  body: string;
+  is_active?: boolean;
+}
+
+export interface UpdateCannedReplyRequest {
+  title?: string;
+  shortcut?: string | null;
+  body?: string;
+  is_active?: boolean;
+}
+
 // Conversation collision presence (mirrors the ticket viewers response;
 // excludes the caller).
 export interface ConversationViewer {

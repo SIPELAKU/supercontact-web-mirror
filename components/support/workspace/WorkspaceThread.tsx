@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Menu, MenuItem, Tooltip } from "@mui/material";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { Divider, Menu, MenuItem } from "@mui/material";
 import {
   ArrowLeft,
   Clock,
@@ -15,12 +15,21 @@ import {
 import { cn } from "@/lib/utils";
 import MessageList from "@/components/omnichannel/MessageList";
 import { ConversationViewersIndicator } from "@/components/omnichannel/ConversationViewersIndicator";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
+import { AppButton } from "@/components/ui/app-button";
+import { AppTextarea } from "@/components/ui/app-textarea";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ConversationWithMessages,
   ConversationListItem,
   SettableConversationStatus,
 } from "@/lib/types/omnichannel";
-import { useSetConversationStatus } from "@/lib/hooks/useOmnichannel";
+import {
+  useSetConversationStatus,
+  useSnoozeConversation,
+  useTransferConversation,
+} from "@/lib/hooks/useOmnichannel";
+import { useUsers } from "@/lib/hooks/useUsers";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { WorkspaceComposer } from "./WorkspaceComposer";
@@ -82,6 +91,7 @@ export function WorkspaceThread({
         color={color}
         channelLabel={channel.label}
         subLabel={identifier}
+        currentAssigneeId={selectedItem?.assigned_user_id ?? undefined}
         contextOpen={contextOpen}
         onToggleContext={onToggleContext}
         onBackToQueue={onBackToQueue}
@@ -113,6 +123,7 @@ function ThreadHeader({
   color,
   channelLabel,
   subLabel,
+  currentAssigneeId,
   contextOpen,
   onToggleContext,
   onBackToQueue,
@@ -123,12 +134,16 @@ function ThreadHeader({
   color: string;
   channelLabel: string;
   subLabel: string;
+  currentAssigneeId?: string;
   contextOpen: boolean;
   onToggleContext: () => void;
   onBackToQueue: () => void;
 }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [snoozeAnchor, setSnoozeAnchor] = useState<null | HTMLElement>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
   const statusMutation = useSetConversationStatus();
+  const snoozeMutation = useSnoozeConversation();
   const currentStatus = conversation?.status ?? "open";
 
   const setStatus = (status: SettableConversationStatus) => {
@@ -137,6 +152,33 @@ function ThreadHeader({
       { conversationId, data: { status } },
       { onError: (error) => notify.error("Error", { description: handleError(error, "Update Status") }) }
     );
+  };
+
+  // Presets recomputed each time the menu (re)opens so "1 hour"/"Tomorrow" stay
+  // relative to now. Times are built in the user's locale then serialized UTC.
+  const snoozePresets = useMemo(() => computeSnoozePresets(), [snoozeAnchor]);
+  const [customSnooze, setCustomSnooze] = useState("");
+
+  const applySnooze = (iso: string) => {
+    setSnoozeAnchor(null);
+    setCustomSnooze("");
+    snoozeMutation.mutate(
+      { conversationId, snoozedUntil: iso },
+      {
+        onSuccess: () => notify.success("Conversation snoozed"),
+        onError: (error) => notify.error("Error", { description: handleError(error, "Snooze Conversation") }),
+      }
+    );
+  };
+
+  const applyCustomSnooze = () => {
+    if (!customSnooze) return;
+    const parsed = new Date(customSnooze);
+    if (Number.isNaN(parsed.getTime())) {
+      notify.warning("Invalid date", { description: "Please pick a valid snooze date and time." });
+      return;
+    }
+    applySnooze(parsed.toISOString());
   };
 
   // "More" status actions besides the primary Solve button.
@@ -181,35 +223,59 @@ function ThreadHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
-        {/* Snooze - render but DISABLED (no snooze scheduling backend).
-            TODO(Support Desk Phase 2): wire Snooze (auto-reopen). */}
-        <Tooltip title="Coming soon" arrow>
-          <span>
-            <button
-              type="button"
-              disabled
-              className="hidden cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-300 sm:inline-flex"
-            >
-              <Clock className="h-3.5 w-3.5" />
-              Snooze
-            </button>
-          </span>
-        </Tooltip>
+        {/* Snooze - preset schedule + custom date-time (auto-reopen). */}
+        <button
+          type="button"
+          onClick={(e) => setSnoozeAnchor(e.currentTarget)}
+          disabled={snoozeMutation.isPending}
+          className="hidden items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 sm:inline-flex"
+          aria-haspopup="menu"
+          aria-expanded={Boolean(snoozeAnchor)}
+        >
+          <Clock className="h-3.5 w-3.5" />
+          Snooze
+        </button>
+        <Menu
+          anchorEl={snoozeAnchor}
+          open={Boolean(snoozeAnchor)}
+          onClose={() => setSnoozeAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <MenuItem disabled sx={{ fontSize: 11, opacity: 0.7 }}>
+            Snooze until…
+          </MenuItem>
+          {snoozePresets.map((preset) => (
+            <MenuItem key={preset.label} onClick={() => applySnooze(preset.iso)} sx={{ fontSize: 13 }}>
+              {preset.label}
+            </MenuItem>
+          ))}
+          <Divider />
+          <div className="px-3 py-2" onKeyDown={(e) => e.stopPropagation()}>
+            <label className="mb-1 block text-[11px] font-semibold text-gray-500">Custom date &amp; time</label>
+            <input
+              type="datetime-local"
+              value={customSnooze}
+              onChange={(e) => setCustomSnooze(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[12.5px] text-gray-800 outline-none focus:border-[#5479EE] focus:ring-2 focus:ring-[#EEF2FD]"
+            />
+            <div className="mt-2 flex justify-end">
+              <AppButton size="small" onClick={applyCustomSnooze} disabled={!customSnooze || snoozeMutation.isPending}>
+                Snooze
+              </AppButton>
+            </div>
+          </div>
+        </Menu>
 
-        {/* Transfer - render but DISABLED (no transfer/handoff backend).
-            TODO(Support Desk Phase 2): wire Transfer to another agent/team. */}
-        <Tooltip title="Coming soon" arrow>
-          <span>
-            <button
-              type="button"
-              disabled
-              className="hidden cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-300 sm:inline-flex"
-            >
-              <Repeat className="h-3.5 w-3.5" />
-              Transfer
-            </button>
-          </span>
-        </Tooltip>
+        {/* Transfer - hand the conversation to another agent. */}
+        <button
+          type="button"
+          onClick={() => setTransferOpen(true)}
+          className="hidden items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12.5px] font-semibold text-gray-600 transition-colors hover:bg-gray-50 sm:inline-flex"
+        >
+          <Repeat className="h-3.5 w-3.5" />
+          Transfer
+        </button>
 
         {/* Solve (primary) */}
         <button
@@ -259,6 +325,146 @@ function ThreadHeader({
           <PanelRight className="h-4 w-4" />
         </button>
       </div>
+
+      <TransferDialog
+        open={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        conversationId={conversationId}
+        currentAssigneeId={currentAssigneeId}
+      />
     </header>
+  );
+}
+
+// Preset snooze targets, computed in the user's locale and serialized to UTC
+// ISO-8601 for the backend. "Tomorrow"/"Next week" land at 09:00 local.
+function computeSnoozePresets(): { label: string; iso: string }[] {
+  const now = new Date();
+  const plusHours = (h: number) => new Date(now.getTime() + h * 3600_000).toISOString();
+  const atNineAmInDays = (days: number) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + days);
+    d.setHours(9, 0, 0, 0);
+    return d.toISOString();
+  };
+  return [
+    { label: "1 hour", iso: plusHours(1) },
+    { label: "3 hours", iso: plusHours(3) },
+    { label: "Tomorrow, 9:00 AM", iso: atNineAmInDays(1) },
+    { label: "Next week", iso: atNineAmInDays(7) },
+  ];
+}
+
+interface UserOption {
+  value: string;
+  label: string;
+}
+
+// Transfer dialog - agent picker (same useUsers-based recipe as the context
+// panel's Assignee control) + an optional note. Excludes the current assignee.
+function TransferDialog({
+  open,
+  onClose,
+  conversationId,
+  currentAssigneeId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  conversationId: string;
+  currentAssigneeId?: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<UserOption | null>(null);
+  const [note, setNote] = useState("");
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback((_event: any, value: string) => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => setSearch(value), 300);
+  }, []);
+
+  const { data: usersData, isLoading: isLoadingUsers } = useUsers(1, 20, search);
+  const userOptions: UserOption[] = (usersData?.data?.users || [])
+    .filter((u) => u.id !== currentAssigneeId)
+    .map((u) => ({ value: u.id, label: u.fullname }));
+
+  const transferMutation = useTransferConversation();
+
+  const reset = () => {
+    setSearch("");
+    setSelected(null);
+    setNote("");
+  };
+
+  const handleClose = () => {
+    if (transferMutation.isPending) return;
+    reset();
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    if (!selected) {
+      notify.warning("Select an agent", { description: "Choose the agent to transfer this conversation to." });
+      return;
+    }
+    transferMutation.mutate(
+      { conversationId, data: { assigned_user_id: selected.value, note: note.trim() || undefined } },
+      {
+        onSuccess: () => {
+          notify.success(`Conversation transferred to ${selected.label}`);
+          reset();
+          onClose();
+        },
+        onError: (error) => notify.error("Error", { description: handleError(error, "Transfer Conversation") }),
+      }
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => (next ? undefined : handleClose())} maxWidth="sm">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Transfer conversation</DialogTitle>
+          <p className="text-sm text-gray-500">Hand this conversation to another agent, with an optional note.</p>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-semibold text-gray-600">Transfer to</label>
+            <AppAutocomplete
+              isBgWhite
+              options={userOptions}
+              placeholder="Search agents…"
+              value={selected}
+              onChange={(_e, newValue) => setSelected(newValue as UserOption | null)}
+              onInputChange={handleSearchChange}
+              loading={isLoadingUsers}
+              disabled={transferMutation.isPending}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-semibold text-gray-600">Note (optional)</label>
+            <AppTextarea
+              isBgWhite
+              rows={3}
+              placeholder="Add context for the agent taking over…"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={transferMutation.isPending}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <AppButton variantStyle="outline" color="gray" onClick={handleClose} disabled={transferMutation.isPending}>
+            Cancel
+          </AppButton>
+          <AppButton onClick={handleSubmit} disabled={!selected || transferMutation.isPending} isLoading={transferMutation.isPending}>
+            Transfer
+          </AppButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

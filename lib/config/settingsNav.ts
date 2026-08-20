@@ -41,6 +41,12 @@ export const settingsNav: SettingsRegistry = [
       { id: "business-hours", title: "Business Hours", path: "/settings/support/business-hours" },
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },
+      {
+        id: "canned-replies",
+        title: "Canned Replies",
+        path: "/settings/support/canned-replies",
+        permission: "omnichannel:setup",
+      },
     ],
   },
   {

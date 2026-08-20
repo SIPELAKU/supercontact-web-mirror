@@ -42,6 +42,12 @@ import {
   fetchConversationTags,
   setConversationStatus,
   setConversationPriority,
+  snoozeConversation,
+  transferConversation,
+  fetchCannedReplies,
+  createCannedReply,
+  updateCannedReply,
+  deleteCannedReply,
   conversationViewerHeartbeat,
   getConversationViewers,
   OmnichannelContact,
@@ -52,6 +58,10 @@ import {
   ConversationTagsResponse,
   SetConversationStatusRequest,
   SetConversationPriorityRequest,
+  TransferConversationRequest,
+  CannedReply,
+  CreateCannedReplyRequest,
+  UpdateCannedReplyRequest,
   ConversationInboxFilters,
   ConversationInboxResponse,
 } from "../api/omnichannel";
@@ -442,6 +452,43 @@ export function useSetConversationPriority() {
   });
 }
 
+export function useSnoozeConversation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, snoozedUntil }: { conversationId: string; snoozedUntil: string }) => {
+      if (!token) throw new Error('No authentication token');
+      return snoozeConversation(token, conversationId, snoozedUntil);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+      // Snoozing moves the conversation to `snoozed` status, so it drops out of
+      // the currently filtered open queue - refresh the inbox.
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+    },
+  });
+}
+
+export function useTransferConversation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, data }: { conversationId: string; data: TransferConversationRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return transferConversation(token, conversationId, data);
+    },
+    onSuccess: (_, { conversationId }) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+      // A transfer reassigns the conversation, so it can move in/out of the
+      // "assigned to me" view and updates the inbox row's assignee.
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox', 'contacts'] });
+    },
+  });
+}
+
 // Conversation collision presence. Heartbeat-polling (not a WS subscription),
 // mirroring lib/hooks/useTicketPresence.ts exactly: on each ~20s tick it POSTs
 // a heartbeat then GETs the current viewers (the response already excludes the
@@ -544,6 +591,68 @@ export function useUploadMedia() {
     },
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+    },
+  });
+}
+
+// Canned Replies Hooks
+// includeInactive is part of the key so the composer's active-only picker and
+// the settings page's full listing cache independently (mirrors useAccounts).
+export function useCannedReplies(includeInactive?: boolean) {
+  const { token } = useAuth();
+  return useQuery<CannedReply[], Error>({
+    queryKey: ['omnichannels', 'canned-replies', includeInactive ?? false],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchCannedReplies(token, includeInactive);
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useCreateCannedReply() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateCannedReplyRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return createCannedReply(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'canned-replies'] });
+    },
+  });
+}
+
+export function useUpdateCannedReply() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateCannedReplyRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return updateCannedReply(token, id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'canned-replies'] });
+    },
+  });
+}
+
+export function useDeleteCannedReply() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error('No authentication token');
+      return deleteCannedReply(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'canned-replies'] });
     },
   });
 }

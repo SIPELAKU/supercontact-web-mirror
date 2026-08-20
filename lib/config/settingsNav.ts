@@ -38,6 +38,12 @@ export const settingsNav: SettingsRegistry = [
       { id: "categories", title: "Categories", path: "/settings/support/categories" },
       { id: "custom-fields", title: "Custom Fields", path: "/settings/support/custom-fields" },
       { id: "sla", title: "SLA Policies", path: "/settings/support/sla" },
+      {
+        id: "conversation-sla",
+        title: "Conversation SLA",
+        path: "/settings/support/conversation-sla",
+        permission: "omnichannel:setup",
+      },
       { id: "business-hours", title: "Business Hours", path: "/settings/support/business-hours" },
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },

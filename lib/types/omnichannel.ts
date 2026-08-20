@@ -58,6 +58,9 @@ export interface Conversation {
   sentiment_label?: "positive" | "negative" | "neutral";
   sentiment_model?: string;
   sentiment_score?: number;
+  // Computed conversation-SLA summary (Conversation SLA Phase 3). `null` (or
+  // absent) means no policy matches this conversation - render nothing.
+  sla?: ConversationSlaSummary | null;
 }
 
 export interface Message {
@@ -106,6 +109,9 @@ export interface ConversationListItem {
   subject?: string;
   assigned_user_id?: string | null;
   snoozed_until?: string | null;
+  // Computed conversation-SLA summary (Conversation SLA Phase 3). `null` (or
+  // absent) means no policy matches this conversation - render nothing.
+  sla?: ConversationSlaSummary | null;
 }
 
 // Query params for GET /omnichannels/inbox. Every field is optional; omitted
@@ -168,6 +174,54 @@ export interface TransferConversationRequest {
   assigned_user_id: string;
   note?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Conversation SLA (Conversation SLA Phase 3).
+//
+// Per-conversation computed summary (attached to every conversation payload as
+// `sla`, `null` when no policy matches) + tenant policy CRUD under
+// /omnichannels/conversation-sla/policies. Listing needs omnichannel:use;
+// create/update/delete needs omnichannel:setup. A null channel_type or priority
+// on a policy means "any".
+// ---------------------------------------------------------------------------
+export interface ConversationSlaSummary {
+  policy_id: string;
+  policy_name: string;
+  first_response_due_at: string | null;
+  first_response_met: boolean;
+  first_response_breached: boolean;
+  resolution_due_at: string | null;
+  resolution_met: boolean;
+  resolution_breached: boolean;
+}
+
+export type ConversationSlaChannelType = 'whatsapp' | 'email' | 'web_widget';
+
+export interface ConversationSlaPolicy {
+  id: string;
+  name: string;
+  channel_type: ConversationSlaChannelType | null;
+  priority: ConversationPriority | null;
+  first_response_target_minutes: number;
+  resolution_target_minutes: number;
+  business_hours_calendar_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateConversationSlaPolicyRequest {
+  name: string;
+  channel_type?: ConversationSlaChannelType | null;
+  priority?: ConversationPriority | null;
+  first_response_target_minutes: number;
+  resolution_target_minutes: number;
+  business_hours_calendar_id?: string | null;
+}
+
+export type UpdateConversationSlaPolicyRequest = Partial<CreateConversationSlaPolicyRequest> & {
+  is_active?: boolean;
+};
 
 // ---------------------------------------------------------------------------
 // Canned replies (saved omnichannel replies with an optional "/" shortcut).

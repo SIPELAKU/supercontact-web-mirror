@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Menu, MenuItem } from "@mui/material";
-import { Search, Flag, ChevronDown, MessageCircle, Mail, Globe, Inbox } from "lucide-react";
+import { Search, Flag, ChevronDown, MessageCircle, Mail, Globe, Inbox, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ConversationListItem,
@@ -15,8 +15,11 @@ import {
   CHANNEL_META,
   PRIORITY_META,
   STATUS_META,
+  SLA_TONE_META,
   avatarColor,
   formatRelativeTime,
+  formatSlaRemaining,
+  getSlaChipState,
   getInitials,
 } from "./workspaceHelpers";
 
@@ -163,6 +166,14 @@ export function ConversationQueueList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
+  // One shared, low-frequency ticker drives every row's SLA countdown so the
+  // chips stay live without re-rendering the whole list every second.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <section className="flex h-full w-full flex-col overflow-hidden border-l border-r border-gray-200 bg-white">
       {/* Header */}
@@ -236,6 +247,7 @@ export function ConversationQueueList({
               item={item}
               selected={item.id === selectedId}
               onSelect={() => onSelect(item)}
+              now={now}
             />
           ))
         )}
@@ -248,10 +260,12 @@ function QueueRow({
   item,
   selected,
   onSelect,
+  now,
 }: {
   item: ConversationListItem;
   selected: boolean;
   onSelect: () => void;
+  now: number;
 }) {
   const name = item.external_contact_name || item.external_contact_identifier || "Unknown contact";
   const status = STATUS_META[item.status] ?? STATUS_META.open;
@@ -260,6 +274,7 @@ function QueueRow({
   const ChannelIcon = CHANNEL_ICON[item.channel_type];
   const color = avatarColor(item.external_contact_identifier || item.id);
   const unread = item.unread_count > 0;
+  const sla = getSlaChipState(item.sla, now);
 
   return (
     <button
@@ -324,6 +339,21 @@ function QueueRow({
           >
             <ChannelIcon className="h-2.5 w-2.5 text-white" />
           </span>
+
+          {sla && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular-nums",
+                SLA_TONE_META[sla.tone].chip
+              )}
+              title={`SLA ${sla.label === "FR" ? "first response" : "resolution"}${
+                sla.tone === "breach" ? " breached" : ` due in ${formatSlaRemaining(sla.remainingMs)}`
+              }`}
+            >
+              <Clock className="h-3 w-3" />
+              {sla.label} {formatSlaRemaining(sla.remainingMs)}
+            </span>
+          )}
         </div>
       </div>
 

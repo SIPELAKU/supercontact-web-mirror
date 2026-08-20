@@ -4,7 +4,7 @@
 // strings so the design stays consistent across the queue row, the thread
 // header and the context panel.
 
-import { ConversationStatus, ConversationPriority } from "@/lib/types/omnichannel";
+import { ConversationStatus, ConversationPriority, ConversationSlaSummary } from "@/lib/types/omnichannel";
 
 export type ChannelType = "whatsapp" | "email" | "web_widget";
 
@@ -97,3 +97,104 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
   whatsapp: { label: "WhatsApp", badge: "bg-[#25D366]" },
   email: { label: "Email", badge: "bg-[#8B5CF6]" },
 };
+
+// ---------------------------------------------------------------------------
+// Conversation SLA (Conversation SLA Phase 3).
+//
+// Pure helpers that turn a computed `ConversationSlaSummary` into the single
+// most-relevant countdown chip (queue rows) or a per-target status (context
+// panel). Tones reuse the workspace's status/priority palette: green (ok) /
+// amber (warn, <15 min left) / red (breach).
+// ---------------------------------------------------------------------------
+export type SlaTone = "ok" | "warn" | "breach";
+
+// Under 15 minutes remaining flips an on-track target to the amber "warn" tone.
+const SLA_WARN_THRESHOLD_MS = 15 * 60 * 1000;
+
+export interface SlaToneMeta {
+  chip: string; // full pill: background + text, for the compact queue chip
+  text: string; // text colour only, for inline labels
+}
+
+export const SLA_TONE_META: Record<SlaTone, SlaToneMeta> = {
+  ok: { chip: "bg-emerald-50 text-emerald-700", text: "text-emerald-600" },
+  warn: { chip: "bg-amber-50 text-amber-700", text: "text-amber-600" },
+  breach: { chip: "bg-red-50 text-red-700", text: "text-red-600" },
+};
+
+function slaTone(breached: boolean, remainingMs: number): SlaTone {
+  if (breached) return "breach";
+  if (remainingMs < SLA_WARN_THRESHOLD_MS) return "warn";
+  return "ok";
+}
+
+export interface SlaChipState {
+  label: "FR" | "Res";
+  dueAt: string | null;
+  remainingMs: number;
+  tone: SlaTone;
+}
+
+// The single most-relevant pending target for a conversation, or null when
+// there's nothing to chase (both targets met, or no policy). First response
+// takes precedence until met, then resolution while still pending.
+export function getSlaChipState(
+  sla: ConversationSlaSummary | null | undefined,
+  now: number
+): SlaChipState | null {
+  if (!sla) return null;
+
+  if (!sla.first_response_met) {
+    const dueAt = sla.first_response_due_at;
+    const remainingMs = dueAt ? new Date(dueAt).getTime() - now : 0;
+    return { label: "FR", dueAt, remainingMs, tone: slaTone(sla.first_response_breached, remainingMs) };
+  }
+
+  if (!sla.resolution_met) {
+    const dueAt = sla.resolution_due_at;
+    const remainingMs = dueAt ? new Date(dueAt).getTime() - now : 0;
+    return { label: "Res", dueAt, remainingMs, tone: slaTone(sla.resolution_breached, remainingMs) };
+  }
+
+  return null;
+}
+
+export interface SlaTargetState {
+  dueAt: string | null;
+  remainingMs: number;
+  tone: SlaTone;
+  statusLabel: string; // "Met" | "Breached" | "Due in mm:ss"
+}
+
+// Per-target (first response / resolution) status for the context panel, where
+// both rows are shown regardless of which one is currently in flight.
+export function getSlaTargetState(
+  met: boolean,
+  breached: boolean,
+  dueAt: string | null,
+  now: number
+): SlaTargetState {
+  const remainingMs = dueAt ? new Date(dueAt).getTime() - now : 0;
+  if (breached) {
+    return { dueAt, remainingMs, tone: "breach", statusLabel: "Breached" };
+  }
+  if (met) {
+    return { dueAt, remainingMs, tone: "ok", statusLabel: "Met" };
+  }
+  const tone: SlaTone = remainingMs < SLA_WARN_THRESHOLD_MS ? "warn" : "ok";
+  return { dueAt, remainingMs, tone, statusLabel: `Due in ${formatSlaRemaining(remainingMs)}` };
+}
+
+// mm:ss under an hour, H:mm at/over an hour, with a leading "-" once overdue.
+export function formatSlaRemaining(remainingMs: number): string {
+  const overdue = remainingMs < 0;
+  const totalSeconds = Math.floor(Math.abs(remainingMs) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const sign = overdue ? "-" : "";
+  if (hours > 0) {
+    return `${sign}${hours}:${String(minutes).padStart(2, "0")}`;
+  }
+  return `${sign}${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}

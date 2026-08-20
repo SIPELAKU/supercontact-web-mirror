@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Chip } from "@mui/material";
 import { format } from "date-fns";
-import { Mail, Phone, Globe, User, ExternalLink, Hash } from "lucide-react";
+import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock } from "lucide-react";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
@@ -24,11 +24,20 @@ import {
   SettableConversationStatus,
   ConversationTag,
   ConversationNote,
+  ConversationSlaSummary,
 } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { cn } from "@/lib/utils";
-import { ChannelType, CHANNEL_META, STATUS_META, avatarColor, getInitials } from "./workspaceHelpers";
+import {
+  ChannelType,
+  CHANNEL_META,
+  STATUS_META,
+  SLA_TONE_META,
+  avatarColor,
+  getInitials,
+  getSlaTargetState,
+} from "./workspaceHelpers";
 
 // Icon + human label for the customer's channel identifier row.
 const IDENTIFIER_META: Record<ChannelType, { icon: React.ElementType; label: string }> = {
@@ -109,11 +118,13 @@ export function WorkspaceContextPanel({ selectedItem, conversation }: WorkspaceC
           <TagsControl conversationId={conversationId} tags={conversation?.tags || []} />
         </Section>
 
+        {/* SLA - only when a policy matches this conversation (sla != null). */}
+        {conversation?.sla && <SlaSection sla={conversation.sla} />}
+
         {/* Internal notes (read-only here; added from the composer's Note tab) */}
         <NotesSection notes={conversation?.notes || []} />
 
         {/* OMITTED by design (no data source yet), matching the workspace spec:
-            - SLA countdown chips  -> TODO(Support Desk Phase 2): SLA policies API
             - Suggested knowledge  -> TODO(Support Desk Phase 3): KB suggestions API
             Rendered as nothing rather than empty/fake panels. */}
       </div>
@@ -137,6 +148,66 @@ function KV({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
       <span className="w-16 shrink-0 text-gray-500">{k}</span>
       <span className="truncate font-semibold text-gray-800" title={v}>
         {v}
+      </span>
+    </div>
+  );
+}
+
+// ------------------------------- SLA --------------------------------------
+// First-response + resolution rows with a live-ticking status pill, coloured by
+// tone (green met/on-track, amber approaching, red breached). Rendered only when
+// the conversation has a matching SLA policy (caller guards on `sla != null`).
+function SlaSection({ sla }: { sla: ConversationSlaSummary }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const firstResponse = getSlaTargetState(
+    sla.first_response_met,
+    sla.first_response_breached,
+    sla.first_response_due_at,
+    now
+  );
+  const resolution = getSlaTargetState(
+    sla.resolution_met,
+    sla.resolution_breached,
+    sla.resolution_due_at,
+    now
+  );
+
+  return (
+    <Section title="SLA">
+      <SlaRow label="First response" state={firstResponse} />
+      <SlaRow label="Resolution" state={resolution} />
+    </Section>
+  );
+}
+
+function SlaRow({
+  label,
+  state,
+}: {
+  label: string;
+  state: ReturnType<typeof getSlaTargetState>;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <div className="text-[12.5px] font-semibold text-gray-800">{label}</div>
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-gray-400">
+          <Clock className="h-3 w-3" />
+          {state.dueAt ? format(new Date(state.dueAt), "dd MMM, HH:mm") : "No due time"}
+        </div>
+      </div>
+      <span
+        className={cn(
+          "shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold tabular-nums",
+          SLA_TONE_META[state.tone].chip
+        )}
+      >
+        {state.statusLabel}
       </span>
     </div>
   );

@@ -19,9 +19,16 @@ import {
   ConversationPriority,
   ConversationInboxFilters,
   ConversationWithMessages,
+  SavedView,
+  SavedViewFilters,
 } from "@/lib/types/omnichannel";
 import { ChannelType } from "./workspaceHelpers";
-import { WORKSPACE_VIEWS, WorkspaceView, WorkspaceViewId } from "./workspaceViews";
+import {
+  WORKSPACE_VIEWS,
+  WorkspaceView,
+  WorkspaceActiveId,
+  toSavedViewSelectionId,
+} from "./workspaceViews";
 import { WorkspaceViewsRail } from "./WorkspaceViewsRail";
 import { ConversationQueueList } from "./ConversationQueueList";
 import { WorkspaceThread } from "./WorkspaceThread";
@@ -59,8 +66,11 @@ export default function WorkspaceClient() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 
-  // Views rail preset -> base filters (status + assignment).
-  const [activeViewId, setActiveViewId] = useState<WorkspaceViewId>("assigned_to_me");
+  // Views rail preset -> base filters (status + assignment). activeViewId spans
+  // both built-in preset ids and the `saved:<uuid>` namespace for custom views.
+  const [activeViewId, setActiveViewId] = useState<WorkspaceActiveId>("assigned_to_me");
+  // Name of the active custom view (built-ins get their label from WORKSPACE_VIEWS).
+  const [savedViewName, setSavedViewName] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusValue>("all");
   const [assignedToMe, setAssignedToMe] = useState(true);
   const [unassigned, setUnassigned] = useState(false);
@@ -93,12 +103,41 @@ export default function WorkspaceClient() {
     setSelectedSnapshot(null);
   }, [conversationParam]);
 
+  // Built-in presets apply only what they define (status + assignment), leaving
+  // the queue's own priority/channel/search refinements untouched.
   const selectView = (view: WorkspaceView) => {
     setActiveViewId(view.id);
+    setSavedViewName(null);
     setStatusFilter(view.filters.status ?? "all");
     setAssignedToMe(!!view.filters.assigned_to_me);
     setUnassigned(!!view.filters.unassigned);
   };
+
+  // Custom saved views apply ALL of their filters (status, priority, channel,
+  // assignment, and search), fully replacing the current queue filter state.
+  const applySavedView = (view: SavedView) => {
+    setActiveViewId(toSavedViewSelectionId(view.id));
+    setSavedViewName(view.name);
+    setStatusFilter((view.filters.status as StatusValue) ?? "all");
+    setPriorityFilter((view.filters.priority as PriorityValue) ?? "all");
+    setChannelFilter((view.filters.channel_type as ChannelValue) ?? "all");
+    setAssignedToMe(!!view.filters.assigned_to_me);
+    setUnassigned(!!view.filters.unassigned);
+    setQ(view.filters.q ?? "");
+  };
+
+  // Current queue filter state projected into the saved-view filter shape,
+  // dropping "all"/empty values so a saved view stores only active filters.
+  const currentSavedFilters: SavedViewFilters = useMemo(() => {
+    const f: SavedViewFilters = {};
+    if (statusFilter !== "all") f.status = statusFilter;
+    if (priorityFilter !== "all") f.priority = priorityFilter;
+    if (channelFilter !== "all") f.channel_type = channelFilter;
+    if (assignedToMe) f.assigned_to_me = true;
+    if (unassigned) f.unassigned = true;
+    if (q.trim()) f.q = q.trim();
+    return f;
+  }, [statusFilter, priorityFilter, channelFilter, assignedToMe, unassigned, q]);
 
   const filters: ConversationInboxFilters = useMemo(
     () => ({
@@ -166,7 +205,7 @@ export default function WorkspaceClient() {
   };
 
   const activeView = WORKSPACE_VIEWS.find((v) => v.id === activeViewId);
-  const viewLabel = activeView?.label ?? "Conversations";
+  const viewLabel = activeView?.label ?? savedViewName ?? "Conversations";
 
   // Defensive gate mirroring the sidebar entry (omnichannel:use). The link is
   // already hidden for users without the permission; this covers direct nav.
@@ -189,6 +228,8 @@ export default function WorkspaceClient() {
         <WorkspaceViewsRail
           activeViewId={activeViewId}
           onSelectView={selectView}
+          onSelectSavedView={applySavedView}
+          currentFilters={currentSavedFilters}
           activeTotal={total}
           isLoading={isLoadingQueue}
           onConversationClaimed={handleConversationClaimed}
@@ -231,7 +272,11 @@ export default function WorkspaceClient() {
 
       {/* Context panel - collapses below xl and via the header toggle */}
       <div className={cn("shrink-0 xl:w-[322px]", contextOpen ? "hidden xl:flex" : "hidden")}>
-        <WorkspaceContextPanel selectedItem={currentItem} conversation={conversation} />
+        <WorkspaceContextPanel
+          selectedItem={currentItem}
+          conversation={conversation}
+          onSelectConversation={handleSelect}
+        />
       </div>
     </div>
   );

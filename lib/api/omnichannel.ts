@@ -34,6 +34,11 @@ import {
   ConversationListItem,
   ConversationInboxFilters,
   ConversationInboxResponse,
+  OrganizationSummary,
+  SavedView,
+  CreateSavedViewRequest,
+  UpdateSavedViewRequest,
+  ConversationDraft,
 } from "../types/omnichannel";
 
 // Re-export types for convenience
@@ -72,6 +77,11 @@ export type {
   ConversationListItem,
   ConversationInboxFilters,
   ConversationInboxResponse,
+  OrganizationSummary,
+  SavedView,
+  CreateSavedViewRequest,
+  UpdateSavedViewRequest,
+  ConversationDraft,
 };
 
 const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/omnichannels`;
@@ -936,4 +946,209 @@ export async function deleteCannedReply(token: string, id: string): Promise<{ id
   }
 
   return json.data || json;
+}
+
+// Organizations (CRM company summary + its conversations) for the workspace
+// context panel. The conversations list reuses ConversationListItem so it
+// renders exactly like the inbox queue rows.
+export async function fetchOrganization(token: string, crmCompanyId: string): Promise<OrganizationSummary> {
+  const res = await fetchWithTimeout(`${API_BASE}/organizations/${encodeURIComponent(crmCompanyId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch organization');
+  }
+
+  return json.data || json;
+}
+
+export async function fetchOrganizationConversations(
+  token: string,
+  crmCompanyId: string,
+  limit = 50
+): Promise<ConversationListItem[]> {
+  const params = new URLSearchParams();
+  params.append('limit', String(limit));
+
+  const res = await fetchWithTimeout(
+    `${API_BASE}/organizations/${encodeURIComponent(crmCompanyId)}/conversations?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch organization conversations');
+  }
+
+  const data = json.data || json;
+  return Array.isArray(data) ? data : [];
+}
+
+// Saved views (named, optionally-shared queue filter presets).
+export async function fetchSavedViews(token: string, resource = 'conversation'): Promise<SavedView[]> {
+  const params = new URLSearchParams();
+  params.append('resource', resource);
+
+  const res = await fetchWithTimeout(`${API_BASE}/saved-views?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch saved views');
+  }
+
+  const data = json.data || json;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createSavedView(token: string, data: CreateSavedViewRequest): Promise<SavedView> {
+  const res = await fetchWithTimeout(`${API_BASE}/saved-views`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to create saved view');
+  }
+
+  return json.data || json;
+}
+
+export async function updateSavedView(token: string, id: string, data: UpdateSavedViewRequest): Promise<SavedView> {
+  const res = await fetchWithTimeout(`${API_BASE}/saved-views/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to update saved view');
+  }
+
+  return json.data || json;
+}
+
+export async function deleteSavedView(token: string, id: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_BASE}/saved-views/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to delete saved view');
+  }
+}
+
+// Reply drafts (per-conversation, per-agent). GET returns an empty body when
+// none exists; PUT upserts; DELETE clears (called on send).
+export async function fetchConversationDraft(token: string, conversationId: string): Promise<ConversationDraft> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/draft`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to fetch draft');
+  }
+
+  const data = json.data || json;
+  return { body: data?.body ?? '' };
+}
+
+export async function saveConversationDraft(token: string, conversationId: string, body: string): Promise<ConversationDraft> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/draft`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ body }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to save draft');
+  }
+
+  const data = json.data || json;
+  return { body: data?.body ?? '' };
+}
+
+export async function deleteConversationDraft(token: string, conversationId: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/draft`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    // DELETE may return 204 with no body; only try to parse an error payload.
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // no body
+    }
+    throw json || new Error('Failed to delete draft');
+  }
 }

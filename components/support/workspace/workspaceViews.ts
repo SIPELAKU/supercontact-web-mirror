@@ -12,6 +12,19 @@ export type WorkspaceViewId =
   | "solved"
   | "snoozed";
 
+// Custom (persisted, per-tenant) saved views live in a distinct id namespace
+// so their selection state never collides with the built-in preset ids above.
+export type SavedViewSelectionId = `saved:${string}`;
+export type WorkspaceActiveId = WorkspaceViewId | SavedViewSelectionId;
+
+export function toSavedViewSelectionId(id: string): SavedViewSelectionId {
+  return `saved:${id}`;
+}
+
+export function isSavedViewSelectionId(id: string): id is SavedViewSelectionId {
+  return id.startsWith("saved:");
+}
+
 export interface WorkspaceView {
   id: WorkspaceViewId;
   label: string;

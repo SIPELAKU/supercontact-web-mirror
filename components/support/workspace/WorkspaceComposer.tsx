@@ -2,9 +2,16 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Tooltip } from "@mui/material";
-import { MessageSquare, StickyNote, Paperclip, Smile, Zap, Send, Loader2 } from "lucide-react";
+import { MessageSquare, StickyNote, Paperclip, Smile, Zap, Send, Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSendMessage, useCreateConversationNote, useCannedReplies } from "@/lib/hooks/useOmnichannel";
+import {
+  useSendMessage,
+  useCreateConversationNote,
+  useCannedReplies,
+  useConversationDraft,
+  useSaveConversationDraft,
+  useDeleteConversationDraft,
+} from "@/lib/hooks/useOmnichannel";
 import { useAuth } from "@/lib/context/AuthContext";
 import { CannedReply } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
@@ -34,6 +41,18 @@ export function WorkspaceComposer({
   const addNote = useCreateConversationNote();
   const isSending = sendMessage.isPending || addNote.isPending;
 
+  // Reply drafts: prefill on open, debounced autosave while typing, delete on
+  // send. Notes aren't drafted.
+  const draftQuery = useConversationDraft(conversationId);
+  const saveDraft = useSaveConversationDraft();
+  const deleteDraft = useDeleteConversationDraft();
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
+  // Whether the saved draft has been loaded into the input for this conversation.
+  const prefilledRef = useRef(false);
+  // The body currently persisted server-side, so autosave can skip no-op PUTs
+  // and stale saves after a conversation switch.
+  const lastSavedRef = useRef<{ conversationId: string; body: string } | null>(null);
+
   const { userProfile } = useAuth();
   const agentName = userProfile?.fullname || "";
 
@@ -56,12 +75,61 @@ export function WorkspaceComposer({
     setPickerQuery("");
   };
 
-  // Clear the draft + picker when the agent switches conversations.
+  // Clear the input + picker when the agent switches conversations. The saved
+  // draft (if any) is re-hydrated by the prefill effect below.
   useEffect(() => {
     setText("");
     setMode("reply");
     closePicker();
+    prefilledRef.current = false;
+    setDraftStatus("idle");
   }, [conversationId]);
+
+  // Prefill the composer with the saved draft once it resolves - but only if the
+  // input is still empty (don't clobber text the agent already started typing
+  // for this conversation). Runs once per conversation via prefilledRef.
+  useEffect(() => {
+    if (!conversationId) return;
+    if (prefilledRef.current) return;
+    if (draftQuery.isLoading) return; // wait for the GET (or cache) to resolve
+    prefilledRef.current = true;
+    const body = draftQuery.data?.body ?? "";
+    lastSavedRef.current = { conversationId, body };
+    if (body) {
+      setText((prev) => (prev.trim() === "" ? body : prev));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, draftQuery.isLoading, draftQuery.data]);
+
+  // Debounced autosave of the reply draft. Skips no-op saves, waits until the
+  // draft has been hydrated (so load doesn't overwrite an existing draft with an
+  // empty body), and captures the conversation id so a switch can't misroute an
+  // in-flight save.
+  useEffect(() => {
+    if (!conversationId) return;
+    if (!prefilledRef.current) return;
+    if (mode !== "reply") return;
+    const body = text;
+    const saved = lastSavedRef.current;
+    if (saved && saved.conversationId === conversationId && saved.body === body) return;
+
+    const convId = conversationId;
+    const timer = setTimeout(() => {
+      setDraftStatus("saving");
+      saveDraft.mutate(
+        { conversationId: convId, body },
+        {
+          onSuccess: () => {
+            lastSavedRef.current = { conversationId: convId, body };
+            setDraftStatus("saved");
+          },
+          onError: () => setDraftStatus("idle"),
+        }
+      );
+    }, 700);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, conversationId, mode]);
 
   // Replace {{customer_name}} / {{agent_name}}; leave unknown placeholders as-is.
   const applyPlaceholders = (body: string) =>
@@ -139,6 +207,12 @@ export function WorkspaceComposer({
     try {
       if (mode === "reply") {
         await sendMessage.mutateAsync({ conversationId, content });
+        // Sent - drop the saved draft so it doesn't reappear. Mark the last
+        // saved body empty first so the autosave effect won't re-PUT the text
+        // as it clears.
+        lastSavedRef.current = { conversationId, body: "" };
+        setDraftStatus("idle");
+        deleteDraft.mutate(conversationId);
       } else {
         await addNote.mutateAsync({ conversationId, data: { note: content } });
       }
@@ -314,6 +388,23 @@ export function WorkspaceComposer({
           </Tooltip>
 
           <div className="flex-1" />
+
+          {/* Draft autosave indicator (reply mode only). */}
+          {!isNote && draftStatus !== "idle" && (
+            <span className="mr-2 hidden items-center gap-1 text-[11px] text-gray-400 sm:inline-flex">
+              {draftStatus === "saving" ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Check className="h-3 w-3 text-emerald-500" />
+                  Draft saved
+                </>
+              )}
+            </span>
+          )}
 
           <span className="mr-1 hidden text-[11px] text-gray-400 sm:inline">
             <kbd className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-mono text-[10.5px]">

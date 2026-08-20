@@ -50,6 +50,15 @@ import {
   deleteCannedReply,
   conversationViewerHeartbeat,
   getConversationViewers,
+  fetchOrganization,
+  fetchOrganizationConversations,
+  fetchSavedViews,
+  createSavedView,
+  updateSavedView,
+  deleteSavedView,
+  fetchConversationDraft,
+  saveConversationDraft,
+  deleteConversationDraft,
   OmnichannelContact,
   OmnichannelContactsResponse,
   AssignConversationRequest,
@@ -64,8 +73,13 @@ import {
   UpdateCannedReplyRequest,
   ConversationInboxFilters,
   ConversationInboxResponse,
+  OrganizationSummary,
+  SavedView,
+  CreateSavedViewRequest,
+  UpdateSavedViewRequest,
+  ConversationDraft,
 } from "../api/omnichannel";
-import { ConversationViewer } from "../types/omnichannel";
+import { ConversationViewer, ConversationListItem } from "../types/omnichannel";
 
 // Account Management Hooks
 // includeInactive defaults to false so every existing caller (new-conversation
@@ -653,6 +667,151 @@ export function useDeleteCannedReply() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'canned-replies'] });
+    },
+  });
+}
+
+// Organization Hooks (workspace context panel)
+// Both queries idle (enabled:false) when no crmCompanyId is present, so the
+// panel can call them unconditionally and render nothing when the contact
+// isn't linked to a company.
+export function useOrganization(crmCompanyId?: string | null) {
+  const { token } = useAuth();
+  return useQuery<OrganizationSummary, Error>({
+    queryKey: ['omnichannels', 'organizations', crmCompanyId],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      if (!crmCompanyId) throw new Error('No organization id');
+      return fetchOrganization(token, crmCompanyId);
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token && !!crmCompanyId,
+  });
+}
+
+export function useOrganizationConversations(crmCompanyId?: string | null, limit = 50) {
+  const { token } = useAuth();
+  return useQuery<ConversationListItem[], Error>({
+    queryKey: ['omnichannels', 'organizations', crmCompanyId, 'conversations', limit],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      if (!crmCompanyId) throw new Error('No organization id');
+      return fetchOrganizationConversations(token, crmCompanyId, limit);
+    },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+    enabled: !!token && !!crmCompanyId,
+  });
+}
+
+// Saved Views Hooks (named, optionally-shared queue filter presets).
+export function useSavedViews(resource = 'conversation') {
+  const { token } = useAuth();
+  return useQuery<SavedView[], Error>({
+    queryKey: ['omnichannels', 'saved-views', resource],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      return fetchSavedViews(token, resource);
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useCreateSavedView() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateSavedViewRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return createSavedView(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'saved-views'] });
+    },
+  });
+}
+
+export function useUpdateSavedView() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateSavedViewRequest }) => {
+      if (!token) throw new Error('No authentication token');
+      return updateSavedView(token, id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'saved-views'] });
+    },
+  });
+}
+
+export function useDeleteSavedView() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error('No authentication token');
+      return deleteSavedView(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'saved-views'] });
+    },
+  });
+}
+
+// Reply Draft Hooks (composer autosave).
+// Kept under an independent ['omnichannels','drafts', id] key (NOT nested under
+// the conversation key) so the broad conversation invalidations fired on every
+// message send / status change don't churn or race the composer's own draft
+// GET while the agent is typing. The composer manages hydration/autosave
+// explicitly; the mutations keep the cache in sync via setQueryData.
+export function useConversationDraft(conversationId: string | null) {
+  const { token } = useAuth();
+  return useQuery<ConversationDraft, Error>({
+    queryKey: ['omnichannels', 'drafts', conversationId],
+    queryFn: () => {
+      if (!token) throw new Error('No authentication token');
+      if (!conversationId) return { body: '' };
+      return fetchConversationDraft(token, conversationId);
+    },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+    enabled: !!token && !!conversationId,
+  });
+}
+
+export function useSaveConversationDraft() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ conversationId, body }: { conversationId: string; body: string }) => {
+      if (!token) throw new Error('No authentication token');
+      return saveConversationDraft(token, conversationId, body);
+    },
+    onSuccess: (data, { conversationId }) => {
+      queryClient.setQueryData(['omnichannels', 'drafts', conversationId], data);
+    },
+  });
+}
+
+export function useDeleteConversationDraft() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) => {
+      if (!token) throw new Error('No authentication token');
+      return deleteConversationDraft(token, conversationId);
+    },
+    onSuccess: (_, conversationId) => {
+      queryClient.setQueryData(['omnichannels', 'drafts', conversationId], { body: '' });
     },
   });
 }

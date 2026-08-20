@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { Chip } from "@mui/material";
 import { format } from "date-fns";
-import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock } from "lucide-react";
+import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock, Building2, MapPin, Briefcase } from "lucide-react";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
@@ -15,6 +15,8 @@ import {
   useSetConversationPriority,
   useSetConversationTags,
   useConversationTags,
+  useOrganization,
+  useOrganizationConversations,
 } from "@/lib/hooks/useOmnichannel";
 import {
   ConversationWithMessages,
@@ -37,6 +39,7 @@ import {
   avatarColor,
   getInitials,
   getSlaTargetState,
+  formatRelativeTime,
 } from "./workspaceHelpers";
 
 // Icon + human label for the customer's channel identifier row.
@@ -49,9 +52,12 @@ const IDENTIFIER_META: Record<ChannelType, { icon: React.ElementType; label: str
 interface WorkspaceContextPanelProps {
   selectedItem: ConversationListItem | null;
   conversation?: ConversationWithMessages;
+  // Selecting one of the organization's other conversations reuses the same
+  // selection mechanism the queue list uses (WorkspaceClient.handleSelect).
+  onSelectConversation?: (item: ConversationListItem) => void;
 }
 
-export function WorkspaceContextPanel({ selectedItem, conversation }: WorkspaceContextPanelProps) {
+export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConversation }: WorkspaceContextPanelProps) {
   if (!selectedItem) {
     return (
       <aside className="flex h-full w-full flex-col items-center justify-center border-l border-gray-200 bg-white px-6 text-center">
@@ -74,6 +80,11 @@ export function WorkspaceContextPanel({ selectedItem, conversation }: WorkspaceC
   const idMeta = IDENTIFIER_META[channelType];
   const IdIcon = idMeta.icon;
   const color = avatarColor(identifier || conversationId);
+
+  // CRM organization the contact belongs to (Support Desk Phase 1/2). Prefer
+  // the freshly-fetched conversation, fall back to the selected list-item.
+  const crmCompanyId = conversation?.crm_company_id ?? selectedItem.crm_company_id ?? null;
+  const organizationName = conversation?.organization_name ?? selectedItem.organization_name ?? null;
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden border-l border-gray-200 bg-white">
@@ -105,6 +116,17 @@ export function WorkspaceContextPanel({ selectedItem, conversation }: WorkspaceC
             </Link>
           )}
         </Section>
+
+        {/* Organization - only when the contact is linked to a CRM company.
+            Renders nothing otherwise (no empty section). */}
+        {crmCompanyId && (
+          <OrganizationSection
+            crmCompanyId={crmCompanyId}
+            fallbackName={organizationName}
+            currentConversationId={conversationId}
+            onSelectConversation={onSelectConversation}
+          />
+        )}
 
         {/* Conversation properties - all fully functional */}
         <Section title="Conversation">
@@ -149,6 +171,161 @@ function KV({ icon, k, v }: { icon: React.ReactNode; k: string; v: string }) {
       <span className="truncate font-semibold text-gray-800" title={v}>
         {v}
       </span>
+    </div>
+  );
+}
+
+// --------------------------- Organization ---------------------------------
+// CRM company summary + the company's OTHER conversations (Support Desk
+// Phase 1/2). Rendered only when the contact has a crm_company_id (caller
+// guards). The queries idle until then, so it's safe to mount conditionally.
+function OrganizationSection({
+  crmCompanyId,
+  fallbackName,
+  currentConversationId,
+  onSelectConversation,
+}: {
+  crmCompanyId: string;
+  fallbackName?: string | null;
+  currentConversationId: string;
+  onSelectConversation?: (item: ConversationListItem) => void;
+}) {
+  const { data: org, isLoading, isError } = useOrganization(crmCompanyId);
+  const { data: conversations = [], isLoading: isLoadingConvos } =
+    useOrganizationConversations(crmCompanyId);
+
+  // The org's other conversations (exclude the one currently open).
+  const otherConversations = useMemo(
+    () => conversations.filter((c) => c.id !== currentConversationId).slice(0, 6),
+    [conversations, currentConversationId]
+  );
+
+  // With nothing loaded and nothing loading (e.g. the summary 404'd), avoid an
+  // empty shell - render nothing unless we at least have a name to show.
+  if (isError && !fallbackName) return null;
+  if (!org && !isLoading && !fallbackName) return null;
+
+  const name = org?.name || fallbackName || "Organization";
+
+  return (
+    <Section title="Organization">
+      {isLoading && !org ? (
+        <OrgSkeleton />
+      ) : (
+        <>
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#EEF2FD] text-[#3E63D8]">
+              <Building2 className="h-[18px] w-[18px]" />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[13.5px] font-bold text-gray-900" title={name}>
+                {name}
+              </div>
+              {org?.domain && (
+                <div className="truncate text-[11.5px] text-gray-400" title={org.domain}>
+                  {org.domain}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {(org?.industry || org?.location) && (
+            <div className="space-y-3">
+              {org?.industry && (
+                <KV icon={<Briefcase className="h-[15px] w-[15px]" />} k="Industry" v={org.industry} />
+              )}
+              {org?.location && (
+                <KV icon={<MapPin className="h-[15px] w-[15px]" />} k="Location" v={org.location} />
+              )}
+            </div>
+          )}
+
+          {org && (
+            <div className="grid grid-cols-3 gap-2">
+              <OrgStat label="Contacts" value={org.contact_count} />
+              <OrgStat label="Convos" value={org.conversation_count} />
+              <OrgStat label="Open" value={org.open_conversation_count} />
+            </div>
+          )}
+
+          <div>
+            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              Other conversations
+            </div>
+            {isLoadingConvos && otherConversations.length === 0 ? (
+              <p className="text-[12px] text-gray-400">Loading…</p>
+            ) : otherConversations.length === 0 ? (
+              <p className="text-[12px] text-gray-400">No other conversations from this organization.</p>
+            ) : (
+              <div className="space-y-1">
+                {otherConversations.map((c) => (
+                  <OrgConversationRow key={c.id} item={c} onSelect={() => onSelectConversation?.(c)} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function OrgStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50 px-2 py-1.5 text-center">
+      <div className="text-[15px] font-extrabold tabular-nums text-gray-900">{value}</div>
+      <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</div>
+    </div>
+  );
+}
+
+function OrgConversationRow({
+  item,
+  onSelect,
+}: {
+  item: ConversationListItem;
+  onSelect: () => void;
+}) {
+  const name = item.external_contact_name || item.external_contact_identifier || "Unknown contact";
+  const status = STATUS_META[item.status] ?? STATUS_META.open;
+  const channel = CHANNEL_META[item.channel_type];
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center gap-2 rounded-lg border border-gray-100 px-2.5 py-2 text-left transition-colors hover:border-gray-200 hover:bg-gray-50"
+    >
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", status.dot)} title={status.label} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[12.5px] font-semibold text-gray-800">
+          {item.subject || item.last_message_preview || name}
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400">
+          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-[3px]", channel.badge)} title={channel.label} />
+          <span className="truncate">{name}</span>
+        </div>
+      </div>
+      <span className="shrink-0 text-[10.5px] text-gray-400">{formatRelativeTime(item.last_message_at)}</span>
+    </button>
+  );
+}
+
+function OrgSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3">
+      <div className="flex items-center gap-2.5">
+        <div className="h-9 w-9 rounded-lg bg-gray-200" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-2/3 rounded bg-gray-200" />
+          <div className="h-2.5 w-1/2 rounded bg-gray-100" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-gray-100" />
+        ))}
+      </div>
     </div>
   );
 }

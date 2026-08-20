@@ -61,6 +61,11 @@ export interface Conversation {
   // Computed conversation-SLA summary (Conversation SLA Phase 3). `null` (or
   // absent) means no policy matches this conversation - render nothing.
   sla?: ConversationSlaSummary | null;
+  // CRM organization the conversation's contact belongs to (Support Desk
+  // Phase 1/2). `null` when the contact isn't linked to a company - the
+  // workspace context panel renders the Organization section only when set.
+  crm_company_id?: string | null;
+  organization_name?: string | null;
 }
 
 export interface Message {
@@ -112,6 +117,10 @@ export interface ConversationListItem {
   // Computed conversation-SLA summary (Conversation SLA Phase 3). `null` (or
   // absent) means no policy matches this conversation - render nothing.
   sla?: ConversationSlaSummary | null;
+  // CRM organization the conversation's contact belongs to (Support Desk
+  // Phase 1/2). `null`/absent when the contact isn't linked to a company.
+  crm_company_id?: string | null;
+  organization_name?: string | null;
 }
 
 // Query params for GET /omnichannels/inbox. Every field is optional; omitted
@@ -470,4 +479,76 @@ export interface OmnichannelContactInboxDetail {
   open_conversation_count: number;
   latest_conversation_id?: string;
   last_message_at?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Organizations (Support Desk Phase 1/2).
+//
+// A CRM company view surfaced in the workspace context panel: the company's
+// profile plus its aggregate contact/conversation counts. The company's
+// conversations are fetched separately and reuse ConversationListItem, so the
+// org's other conversations render exactly like the inbox queue rows.
+// Base /omnichannels/organizations/{crm_company_id}.
+// ---------------------------------------------------------------------------
+export interface OrganizationSummary {
+  id: string;
+  name: string;
+  domain: string | null;
+  industry: string | null;
+  location: string | null;
+  contact_count: number;
+  conversation_count: number;
+  open_conversation_count: number;
+}
+
+// ---------------------------------------------------------------------------
+// Saved views (Support Desk Phase 1/2).
+//
+// A named, optionally-shared filter preset for the workspace queue. Distinct
+// from the built-in WORKSPACE_VIEWS presets (which are hard-coded client-side):
+// these are per-tenant, persisted, and selecting one applies ALL of its
+// filters. `is_owner` gates deletion. Base /omnichannels/saved-views.
+// ---------------------------------------------------------------------------
+export interface SavedViewFilters {
+  status?: string;
+  priority?: string;
+  channel_type?: string;
+  assigned_to_me?: boolean;
+  unassigned?: boolean;
+  q?: string;
+}
+
+export interface SavedView {
+  id: string;
+  name: string;
+  resource: string;
+  filters: SavedViewFilters;
+  is_shared: boolean;
+  position: number;
+  is_owner: boolean;
+}
+
+export interface CreateSavedViewRequest {
+  name: string;
+  resource?: string;
+  filters: SavedViewFilters;
+  is_shared?: boolean;
+}
+
+export interface UpdateSavedViewRequest {
+  name?: string;
+  filters?: SavedViewFilters;
+  is_shared?: boolean;
+  position?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Reply drafts (Support Desk Phase 1/2).
+//
+// A single per-conversation, per-agent draft body autosaved from the composer
+// and cleared on send. GET returns an empty body when none exists.
+// Base /omnichannels/conversations/{conversation_id}/draft.
+// ---------------------------------------------------------------------------
+export interface ConversationDraft {
+  body: string;
 }

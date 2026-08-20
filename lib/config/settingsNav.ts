@@ -47,6 +47,12 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/support/canned-replies",
         permission: "omnichannel:setup",
       },
+      {
+        id: "agents",
+        title: "Agents",
+        path: "/settings/support/agents",
+        permission: "agents:read",
+      },
     ],
   },
   {

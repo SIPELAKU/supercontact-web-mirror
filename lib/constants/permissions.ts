@@ -41,6 +41,8 @@ export const PERMISSIONS = [
   "knowledge:author",
   "knowledge:publish",
   "knowledge:manage",
+  // Support-Desk AI Copilot (Phase 7A) - draft-only assist in composers.
+  "copilot:use",
 ].sort();
 
 export const formatPermissionLabel = (permission: string) => {
@@ -62,6 +64,7 @@ const PREFIX_GROUP_LABELS: Record<string, string> = {
   agents: "Agents",
   tickets: "Tickets",
   knowledge: "Knowledge Base",
+  copilot: "AI Copilot",
   tasks: "Tasks",
   contacts: "Contacts",
 };
@@ -93,6 +96,7 @@ const GROUP_ORDER = [
   "Agents",
   "Tickets",
   "Knowledge Base",
+  "AI Copilot",
   "Tasks",
   "Contacts",
   "Sales",

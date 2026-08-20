@@ -4,6 +4,7 @@ import React from "react";
 import { Mail, Send, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import RichTextToolbar from "../email-marketing/campaigns/RichTextToolbar";
+import { CopilotLauncher, type CopilotComposerConfig } from "@/components/support/copilot/CopilotDrawer";
 
 interface EmailComposerProps {
     isOpen: boolean;
@@ -22,6 +23,9 @@ interface EmailComposerProps {
     onToolbarAction: (command: string, value?: string) => void;
     onSend: () => void;
     isSending: boolean;
+    // AI Copilot config from the parent (which owns the contentEditable body +
+    // conversationId). Rewrite reads the body text; Insert writes it back.
+    copilot?: CopilotComposerConfig;
 }
 
 // Email reply composer for column 2: an open/collapsed toggle, To/CC/BCC/
@@ -45,6 +49,7 @@ export default function EmailComposer({
     onToolbarAction,
     onSend,
     isSending,
+    copilot,
 }: EmailComposerProps) {
     if (!isOpen) {
         return (
@@ -118,7 +123,12 @@ export default function EmailComposer({
             </div>
 
             {/* Send Button Trigger Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center gap-2">
+                {/* AI Copilot - output only writes into the draft; never auto-sends. */}
+                <div className="flex items-center">
+                    {copilot && <CopilotLauncher {...copilot} disabled={isSending} />}
+                </div>
+                <div className="flex items-center gap-2">
                 <AppButton
                     type="button"
                     variantStyle="outline"
@@ -137,6 +147,7 @@ export default function EmailComposer({
                 >
                     Send Email
                 </AppButton>
+                </div>
             </div>
         </div>
     );

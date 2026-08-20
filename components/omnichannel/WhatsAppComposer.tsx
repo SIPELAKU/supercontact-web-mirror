@@ -4,6 +4,7 @@ import React from "react";
 import { X, Send, File as FileIcon, Paperclip } from "lucide-react";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { CircularProgress } from "@mui/material";
+import { CopilotLauncher, type CopilotComposerConfig } from "@/components/support/copilot/CopilotDrawer";
 
 interface WhatsAppComposerProps {
     inputText: string;
@@ -16,6 +17,9 @@ interface WhatsAppComposerProps {
     onRemoveFile: () => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
     isSending: boolean;
+    // AI Copilot config from the parent (which owns draft text + conversationId).
+    // Present -> full drawer when a conversation exists, else Rewrite-only.
+    copilot?: CopilotComposerConfig;
 }
 
 // WhatsApp reply composer for column 2: textarea, file attach/preview, send
@@ -32,6 +36,7 @@ export default function WhatsAppComposer({
     onRemoveFile,
     fileInputRef,
     isSending,
+    copilot,
 }: WhatsAppComposerProps) {
     return (
         <div className="flex items-center gap-2 p-2">
@@ -48,6 +53,9 @@ export default function WhatsAppComposer({
             >
                 <Paperclip className="w-5 h-5" />
             </button>
+
+            {/* AI Copilot - output only writes into the draft; never auto-sends. */}
+            {copilot && <CopilotLauncher {...copilot} disabled={isSending} />}
 
             <form onSubmit={onSend} className="flex-1 flex items-center gap-2">
                 <div className="flex-1 relative group rounded-[28px] border border-gray-300 overflow-hidden">

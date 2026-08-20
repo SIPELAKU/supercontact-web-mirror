@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Loader2, Paperclip, X, MessageCircle, Mail, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
+import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
@@ -175,6 +176,17 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                             </label>
                             {/* Knowledge base search - inserts an article link + excerpt at the caret. */}
                             <KbSearchPopover direction="down" onInsert={insertAtCaret} />
+                            {/* AI Copilot - Rewrite ONLY: a ticket is not an
+                                omnichannel conversation, so summarize/suggest-reply
+                                (which need conversation_id) don't apply. No
+                                conversationId is passed, so the drawer shows only
+                                Rewrite. */}
+                            <CopilotLauncher
+                                getDraft={() => body}
+                                onInsert={(value, mode) =>
+                                    mode === "replace" ? setBody(value) : insertAtCaret(value)
+                                }
+                            />
                         </div>
                         <AppButton
                             onClick={handleSubmit}

@@ -83,6 +83,13 @@ export {
 // Billings API
 export * from './billings';
 
+// AI Copilot API (Phase 7A - draft-only assist)
+export {
+    copilotSummarize, copilotSuggestReply, copilotRewrite,
+    type CopilotSource, type CopilotTone,
+    type CopilotSummarizeResponse, type CopilotSuggestReplyResponse, type CopilotRewriteResponse
+} from './ai-copilot';
+
 // Smart Capture API
 export {
     fetchSmartCaptureById,

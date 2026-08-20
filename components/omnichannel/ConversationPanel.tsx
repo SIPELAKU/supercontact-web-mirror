@@ -10,6 +10,7 @@ import ConversationHeader from "./ConversationHeader";
 import WhatsAppComposer from "./WhatsAppComposer";
 import EmailComposer from "./EmailComposer";
 import { AccountSelectOption } from "./AccountSelect";
+import type { CopilotComposerConfig } from "@/components/support/copilot/CopilotDrawer";
 
 export interface WhatsAppComposerBundle {
     inputText: string;
@@ -21,6 +22,7 @@ export interface WhatsAppComposerBundle {
     onRemoveFile: () => void;
     fileInputRef: React.RefObject<HTMLInputElement>;
     isSending: boolean;
+    copilot?: CopilotComposerConfig;
 }
 
 export interface EmailComposerBundle {
@@ -38,6 +40,7 @@ export interface EmailComposerBundle {
     onBodyKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
     onToolbarAction: (command: string, value?: string) => void;
     isSending: boolean;
+    copilot?: CopilotComposerConfig;
 }
 
 interface ConversationPanelProps {

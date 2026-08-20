@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useSendMessage, useUploadMedia } from "@/lib/hooks/useOmnichannel";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
@@ -108,6 +109,18 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
               <Paperclip size={20} className="text-gray-600" />
             </div>
           </label>
+
+          {/* AI Copilot - full drawer (conversationId is in scope). Output only
+              writes into the message draft state; NEVER auto-sends. */}
+          <CopilotLauncher
+            disabled={isSubmitting}
+            className="h-auto w-auto border border-gray-300 p-2"
+            conversationId={conversationId}
+            getDraft={() => message}
+            onInsert={(value, mode) =>
+              setMessage((prev) => (mode === "replace" ? value : prev ? `${prev}\n${value}` : value))
+            }
+          />
 
           <AppButton
             onClick={handleSendMessage}

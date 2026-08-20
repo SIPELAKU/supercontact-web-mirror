@@ -17,6 +17,7 @@ import { CannedReply } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
+import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
 
 type ComposerMode = "reply" | "note";
 
@@ -404,6 +405,16 @@ export function WorkspaceComposer({
             direction="up"
             disabled={disabled || isSending}
             onInsert={insertAtCaret}
+          />
+
+          {/* AI Copilot - full drawer (this composer always has a conversation).
+              Insert routes through insertAtCaret/setText so the reply draft
+              still autosaves; NEVER auto-sends. */}
+          <CopilotLauncher
+            disabled={disabled || isSending}
+            conversationId={conversationId}
+            getDraft={() => text}
+            onInsert={(value, mode) => (mode === "replace" ? setText(value) : insertAtCaret(value))}
           />
 
           <div className="flex-1" />

@@ -494,6 +494,17 @@ export default function OmnichannelClient() {
                         onRemoveFile: handleRemoveFile,
                         fileInputRef,
                         isSending: sendMessageMutation.isPending || createConversationMutation.isPending || uploadMediaMutation.isPending,
+                        // AI Copilot: full drawer once a conversation exists (else
+                        // Rewrite-only). Insert writes into the same inputText draft
+                        // state the composer sends from - never auto-sends.
+                        copilot: {
+                            conversationId: activeConversationId,
+                            getDraft: () => inputText,
+                            onInsert: (text, mode) =>
+                                setInputText((prev) =>
+                                    mode === "replace" ? text : prev ? `${prev}\n${text}` : text
+                                ),
+                        },
                     }}
                     email={{
                         isOpen: isEmailComposerOpen,
@@ -515,6 +526,19 @@ export default function OmnichannelClient() {
                         },
                         onToolbarAction: execCommand,
                         isSending: sendMessageMutation.isPending || createConversationMutation.isPending,
+                        // AI Copilot: reads/writes the contentEditable body text
+                        // and keeps emailHtmlContent in sync. Never auto-sends.
+                        copilot: {
+                            conversationId: activeConversationId,
+                            getDraft: () => emailEditorRef.current?.innerText ?? "",
+                            onInsert: (text, mode) => {
+                                const el = emailEditorRef.current;
+                                if (!el) return;
+                                if (mode === "replace") el.innerText = text;
+                                else el.innerText = el.innerText ? `${el.innerText}\n${text}` : text;
+                                setEmailHtmlContent(el.innerHTML);
+                            },
+                        },
                     }}
                 />
 

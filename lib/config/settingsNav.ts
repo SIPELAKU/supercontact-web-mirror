@@ -44,6 +44,12 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/support/conversation-sla",
         permission: "omnichannel:setup",
       },
+      {
+        id: "routing",
+        title: "Routing",
+        path: "/settings/support/routing",
+        permission: "omnichannel:use",
+      },
       { id: "business-hours", title: "Business Hours", path: "/settings/support/business-hours" },
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },

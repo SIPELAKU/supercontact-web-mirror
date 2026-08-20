@@ -13,6 +13,14 @@ import {
   addGroupMember,
   updateGroupMemberRole,
   removeGroupMember,
+  fetchMyPresence,
+  setMyPresence,
+  updateMyRoutingProfile,
+  fetchConversationQueues,
+  createConversationQueue,
+  updateConversationQueue,
+  deleteConversationQueue,
+  claimNextConversation,
 } from "../api/agents";
 import type {
   AgentRosterItem,
@@ -22,15 +30,28 @@ import type {
   UpdateAgentGroupRequest,
   AddGroupMemberRequest,
   AgentGroupRole,
+  AgentProfile,
+  AgentPresenceStatus,
+  UpdateRoutingProfileRequest,
+  ConversationQueue,
+  CreateConversationQueueRequest,
+  UpdateConversationQueueRequest,
+  ClaimNextResult,
 } from "../types/agents";
 
 // Query key roots (kept together so invalidations stay in sync):
 //   ['agents', 'roster']            -> read-only roster
 //   ['agents', 'groups', include]   -> group list (per include_inactive flag)
 //   ['agents', 'group', id]         -> a single group + its members
+//   ['agents', 'me', 'presence']    -> the signed-in agent's presence/profile
+//   ['agents', 'queues', include]   -> conversation queue list (per include flag)
+//   ['omnichannels', 'inbox']       -> workspace queue (invalidated by claim-next)
 const ROSTER_KEY = ["agents", "roster"] as const;
 const GROUPS_KEY = ["agents", "groups"] as const;
 const GROUP_KEY = ["agents", "group"] as const;
+const PRESENCE_KEY = ["agents", "me", "presence"] as const;
+const QUEUES_KEY = ["agents", "queues"] as const;
+const INBOX_KEY = ["omnichannels", "inbox"] as const;
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -189,6 +210,165 @@ export function useRemoveGroupMember() {
       queryClient.invalidateQueries({ queryKey: [...GROUP_KEY, groupId] });
       queryClient.invalidateQueries({ queryKey: [...GROUPS_KEY] });
       queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Agent presence + self-service routing profile (Phase 4a)
+// ---------------------------------------------------------------------------
+
+/** The signed-in agent's presence + routing profile (GET /agents/me/presence). */
+export function useMyPresence() {
+  const { token } = useAuth();
+  return useQuery<AgentProfile, Error>({
+    queryKey: [...PRESENCE_KEY],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return fetchMyPresence(token);
+    },
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+/**
+ * Set your own presence. Optimistically flips the cached presence_status so the
+ * workspace switch feels instant, rolling back on error.
+ */
+export function useSetMyPresence() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation<AgentProfile, Error, AgentPresenceStatus, { previous?: AgentProfile }>({
+    mutationFn: (status: AgentPresenceStatus) => {
+      if (!token) throw new Error("No authentication token");
+      return setMyPresence(token, status);
+    },
+    onMutate: async (status) => {
+      await queryClient.cancelQueries({ queryKey: [...PRESENCE_KEY] });
+      const previous = queryClient.getQueryData<AgentProfile>([...PRESENCE_KEY]);
+      if (previous) {
+        queryClient.setQueryData<AgentProfile>([...PRESENCE_KEY], {
+          ...previous,
+          presence_status: status,
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _status, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData([...PRESENCE_KEY], context.previous);
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData([...PRESENCE_KEY], result);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [...PRESENCE_KEY] });
+    },
+  });
+}
+
+/** Update your own routing profile (max concurrent open + accepts transfers). */
+export function useUpdateMyRoutingProfile() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateRoutingProfileRequest) => {
+      if (!token) throw new Error("No authentication token");
+      return updateMyRoutingProfile(token, data);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData([...PRESENCE_KEY], result);
+      queryClient.invalidateQueries({ queryKey: [...PRESENCE_KEY] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Conversation queues (Phase 4a)
+// ---------------------------------------------------------------------------
+
+export function useConversationQueues(includeInactive?: boolean) {
+  const { token } = useAuth();
+  return useQuery<ConversationQueue[], Error>({
+    queryKey: [...QUEUES_KEY, includeInactive ?? false],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return fetchConversationQueues(token, includeInactive);
+    },
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useCreateConversationQueue() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateConversationQueueRequest) => {
+      if (!token) throw new Error("No authentication token");
+      return createConversationQueue(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...QUEUES_KEY] });
+    },
+  });
+}
+
+export function useUpdateConversationQueue() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateConversationQueueRequest }) => {
+      if (!token) throw new Error("No authentication token");
+      return updateConversationQueue(token, id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...QUEUES_KEY] });
+    },
+  });
+}
+
+export function useDeleteConversationQueue() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error("No authentication token");
+      return deleteConversationQueue(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...QUEUES_KEY] });
+    },
+  });
+}
+
+/**
+ * Race-safe "claim next" pull from a queue. On success it refreshes the
+ * workspace inbox (the claimed conversation is now assigned to the caller and
+ * should surface in the "assigned to me" views).
+ */
+export function useClaimNext() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation<ClaimNextResult, Error, string>({
+    mutationFn: (queueId: string) => {
+      if (!token) throw new Error("No authentication token");
+      return claimNextConversation(token, queueId);
+    },
+    onSuccess: (result) => {
+      if (result.claimed) {
+        queryClient.invalidateQueries({ queryKey: [...INBOX_KEY] });
+      }
     },
   });
 }

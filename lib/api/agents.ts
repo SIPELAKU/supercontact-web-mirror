@@ -17,6 +17,13 @@ import type {
   UpdateAgentGroupRequest,
   AddGroupMemberRequest,
   UpdateGroupMemberRoleRequest,
+  AgentProfile,
+  AgentPresenceStatus,
+  UpdateRoutingProfileRequest,
+  ConversationQueue,
+  CreateConversationQueueRequest,
+  UpdateConversationQueueRequest,
+  ClaimNextResult,
 } from "../types/agents";
 
 // Re-export types for convenience (mirrors omnichannel.ts).
@@ -31,10 +38,23 @@ export type {
   UpdateAgentGroupRequest,
   AddGroupMemberRequest,
   UpdateGroupMemberRoleRequest,
+  AgentProfile,
+  AgentPresenceStatus,
+  AgentSeatType,
+  SetPresenceRequest,
+  UpdateRoutingProfileRequest,
+  ConversationQueue,
+  ConversationQueueChannelType,
+  ConversationQueuePriority,
+  CreateConversationQueueRequest,
+  UpdateConversationQueueRequest,
+  ClaimNextResult,
 } from "../types/agents";
 
 const ROSTER_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agents`;
 const GROUPS_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agent-groups`;
+const ME_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agents/me`;
+const QUEUES_BASE = `${process.env.NEXT_PUBLIC_API_URL}/conversation-queues`;
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
 const jsonHeaders = (token: string) => ({
@@ -262,6 +282,209 @@ export async function removeGroupMember(
 
   if (!res.ok) {
     throw json || new Error("Failed to remove group member");
+  }
+
+  return json.data || json;
+}
+
+// ---------------------------------------------------------------------------
+// Agent presence + self-service routing profile (Phase 4a)
+// ---------------------------------------------------------------------------
+
+/** GET /agents/me/presence -> { data: AgentProfile }. */
+export async function fetchMyPresence(token: string): Promise<AgentProfile> {
+  const res = await fetchWithTimeout(`${ME_BASE}/presence`, { headers: authHeaders(token) });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to fetch presence");
+  }
+
+  return json.data || json;
+}
+
+/** PUT /agents/me/presence body { status } -> { data: AgentProfile }. */
+export async function setMyPresence(
+  token: string,
+  status: AgentPresenceStatus
+): Promise<AgentProfile> {
+  const res = await fetchWithTimeout(`${ME_BASE}/presence`, {
+    method: "PUT",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ status }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to update presence");
+  }
+
+  return json.data || json;
+}
+
+/** PATCH /agents/me/routing-profile -> { data: AgentProfile }. */
+export async function updateMyRoutingProfile(
+  token: string,
+  data: UpdateRoutingProfileRequest
+): Promise<AgentProfile> {
+  const res = await fetchWithTimeout(`${ME_BASE}/routing-profile`, {
+    method: "PATCH",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to update routing profile");
+  }
+
+  return json.data || json;
+}
+
+// ---------------------------------------------------------------------------
+// Conversation queues (Phase 4a)
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /conversation-queues?include_inactive=<bool> -> { data: { data: [...] } }.
+ * The list payload is double-nested (one `data` for the envelope, one more for
+ * the list) - unwrap both defensively, mirroring the roster endpoint.
+ */
+export async function fetchConversationQueues(
+  token: string,
+  includeInactive?: boolean
+): Promise<ConversationQueue[]> {
+  const params = new URLSearchParams();
+  if (includeInactive) params.append("include_inactive", "true");
+
+  const res = await fetchWithTimeout(`${QUEUES_BASE}?${params.toString()}`, {
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to fetch conversation queues");
+  }
+
+  const outer = json.data ?? json;
+  const list = outer?.data ?? outer;
+  return Array.isArray(list) ? list : [];
+}
+
+/** POST /conversation-queues -> { data: ConversationQueue } (201). */
+export async function createConversationQueue(
+  token: string,
+  data: CreateConversationQueueRequest
+): Promise<ConversationQueue> {
+  const res = await fetchWithTimeout(QUEUES_BASE, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to create conversation queue");
+  }
+
+  return json.data || json;
+}
+
+/** PATCH /conversation-queues/{id} -> { data: ConversationQueue }. */
+export async function updateConversationQueue(
+  token: string,
+  id: string,
+  data: UpdateConversationQueueRequest
+): Promise<ConversationQueue> {
+  const res = await fetchWithTimeout(`${QUEUES_BASE}/${id}`, {
+    method: "PATCH",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to update conversation queue");
+  }
+
+  return json.data || json;
+}
+
+/** DELETE /conversation-queues/{id} -> { data: { ...soft-deleted } }. */
+export async function deleteConversationQueue(
+  token: string,
+  id: string
+): Promise<ConversationQueue> {
+  const res = await fetchWithTimeout(`${QUEUES_BASE}/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to delete conversation queue");
+  }
+
+  return json.data || json;
+}
+
+/**
+ * POST /conversation-queues/{id}/claim-next -> { data: ClaimNextResult }.
+ * Race-safe pull of the next-in-line conversation. `claimed: false` means the
+ * queue was empty (no conversation returned).
+ */
+export async function claimNextConversation(
+  token: string,
+  queueId: string
+): Promise<ClaimNextResult> {
+  const res = await fetchWithTimeout(`${QUEUES_BASE}/${queueId}/claim-next`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to claim next conversation");
   }
 
   return json.data || json;

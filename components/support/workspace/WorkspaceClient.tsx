@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,6 +17,7 @@ import {
   ConversationStatus,
   ConversationPriority,
   ConversationInboxFilters,
+  ConversationWithMessages,
 } from "@/lib/types/omnichannel";
 import { ChannelType } from "./workspaceHelpers";
 import { WORKSPACE_VIEWS, WorkspaceView, WorkspaceViewId } from "./workspaceViews";
@@ -30,8 +32,30 @@ type ChannelValue = ChannelType | "all";
 
 const QUEUE_PAGE_LIMIT = 30;
 
+// Projects a full claimed conversation down to the ConversationListItem shape
+// the queue/thread/context panes consume, so a just-claimed conversation shows
+// immediately even before the inbox list refetch lands.
+function claimedToListItem(c: ConversationWithMessages): ConversationListItem {
+  return {
+    id: c.id,
+    account_id: c.account_id,
+    channel_type: c.channel_type,
+    external_contact_identifier: c.external_contact_identifier,
+    external_contact_name: c.external_contact_name,
+    status: c.status,
+    priority: c.priority,
+    last_message_at: c.last_message_at,
+    last_message_preview: c.last_message_preview,
+    unread_count: c.unread_count,
+    subject: c.subject,
+    snoozed_until: c.snoozed_until,
+    sla: c.sla,
+  };
+}
+
 export default function WorkspaceClient() {
   const { can } = usePermission();
+  const queryClient = useQueryClient();
 
   // Views rail preset -> base filters (status + assignment).
   const [activeViewId, setActiveViewId] = useState<WorkspaceViewId>("assigned_to_me");
@@ -112,6 +136,17 @@ export default function WorkspaceClient() {
     setSelectedSnapshot(null);
   };
 
+  // "Claim next" pulled a conversation off a queue - seed the detail cache and
+  // select it so the thread opens instantly.
+  const handleConversationClaimed = (conversation: ConversationWithMessages) => {
+    queryClient.setQueryData(
+      ["omnichannels", "conversations", conversation.id],
+      conversation
+    );
+    setSelectedId(conversation.id);
+    setSelectedSnapshot(claimedToListItem(conversation));
+  };
+
   const activeView = WORKSPACE_VIEWS.find((v) => v.id === activeViewId);
   const viewLabel = activeView?.label ?? "Conversations";
 
@@ -138,6 +173,7 @@ export default function WorkspaceClient() {
           onSelectView={selectView}
           activeTotal={total}
           isLoading={isLoadingQueue}
+          onConversationClaimed={handleConversationClaimed}
         />
       </div>
 

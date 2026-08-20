@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
-import { Tooltip } from "@mui/material";
 import { CheckCheck, Zap, ListChecks, CheckCircle2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ConversationWithMessages } from "@/lib/types/omnichannel";
 import { WORKSPACE_VIEWS, WorkspaceView, WorkspaceViewId } from "./workspaceViews";
+import { AgentPresenceSwitch } from "./AgentPresenceSwitch";
+import { ClaimNextControl } from "./ClaimNextControl";
 
 const VIEW_ICONS: Record<WorkspaceViewId, React.ElementType> = {
   assigned_to_me: CheckCheck,
@@ -24,15 +26,20 @@ interface WorkspaceViewsRailProps {
   // Other views intentionally show no number rather than a fake one.
   activeTotal?: number;
   isLoading?: boolean;
+  // Invoked when the agent claims the next conversation from a queue - the
+  // workspace selects the returned conversation.
+  onConversationClaimed: (conversation: ConversationWithMessages) => void;
 }
 
-// Left rail: agent presence switch (disabled - Coming soon) + the view
-// presets, grouped. Collapses below `lg` (see WorkspaceClient's grid).
+// Left rail: live agent presence switch + the view presets (grouped) + a
+// "claim next" queue puller in the footer. Collapses below `lg` (see
+// WorkspaceClient's grid).
 export function WorkspaceViewsRail({
   activeViewId,
   onSelectView,
   activeTotal,
   isLoading,
+  onConversationClaimed,
 }: WorkspaceViewsRailProps) {
   const grouped = GROUP_ORDER.map((group) => ({
     group,
@@ -44,35 +51,8 @@ export function WorkspaceViewsRail({
       <div className="px-4 pb-3 pt-4">
         <h1 className="text-lg font-extrabold tracking-tight text-gray-900">Workspace</h1>
 
-        {/* Agent presence switch - render but DISABLED (no presence backend yet).
-            TODO(Support Desk Phase 2): wire Online/Away/Offline to an agent
-            presence service and reflect it on the queue rows' status dots. */}
-        <Tooltip title="Coming soon" placement="bottom" arrow>
-          <div
-            className="mt-3 flex cursor-not-allowed gap-1 rounded-[10px] border border-gray-200 bg-gray-50 p-[3px] opacity-60"
-            aria-disabled="true"
-          >
-            {(["Online", "Away", "Offline"] as const).map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                disabled
-                className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-1 py-1.5 text-xs font-semibold",
-                  i === 0 ? "bg-white text-emerald-600 shadow-sm" : "text-gray-400"
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    i === 0 ? "bg-emerald-500" : "bg-current"
-                  )}
-                />
-                {label}
-              </button>
-            ))}
-          </div>
-        </Tooltip>
+        {/* Live agent presence switch (Phase 4a). */}
+        <AgentPresenceSwitch />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2.5 pb-4" aria-label="Conversation views">
@@ -120,6 +100,9 @@ export function WorkspaceViewsRail({
           </div>
         ))}
       </nav>
+
+      {/* Claim-next queue puller (Phase 4a). */}
+      <ClaimNextControl onClaimed={onConversationClaimed} />
     </aside>
   );
 }

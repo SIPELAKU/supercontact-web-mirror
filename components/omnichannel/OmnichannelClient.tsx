@@ -23,7 +23,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
-import ContactListSidebar, { ContactListStatusFilter, ContactListPriorityFilter } from "./ContactListSidebar";
+import ContactListSidebar from "./ContactListSidebar";
 import ConversationPanel from "./ConversationPanel";
 import ConversationDetailSidebar from "./ConversationDetailSidebar";
 
@@ -87,20 +87,16 @@ export default function OmnichannelClient() {
 
     // Contacts data - left panel's channel category filter (All/WhatsApp/
     // Email) and last-activity time window (all/1d/1w/1m) are server-side,
-    // so recency ordering stays correct per category.
-    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email" | "web_widget">("all");
+    // so recency ordering stays correct per category. Web-widget conversations
+    // live in the Support Desk Workspace, so this contact-first inbox only
+    // covers WhatsApp + Email (status/priority/assignment filters belong to the
+    // Workspace queue, not here).
+    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email">("all");
     const [listTimeFilter, setListTimeFilter] = useState<number>(0); // 0 = all time, else days
-    // Support Desk Phase 0 filters (all server-side).
-    const [listStatusFilter, setListStatusFilter] = useState<ContactListStatusFilter>("all");
-    const [listPriorityFilter, setListPriorityFilter] = useState<ContactListPriorityFilter>("all");
-    const [listAssignedToMe, setListAssignedToMe] = useState<boolean>(false);
     const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
         searchTerm,
         listChannelFilter === "all" ? undefined : listChannelFilter,
-        listTimeFilter || undefined,
-        listStatusFilter === "all" ? undefined : listStatusFilter,
-        listPriorityFilter === "all" ? undefined : listPriorityFilter,
-        listAssignedToMe || undefined
+        listTimeFilter || undefined
     );
     const { data: accounts } = useAccounts();
     const createConversationMutation = useCreateConversation();
@@ -454,12 +450,6 @@ export default function OmnichannelClient() {
                     onChannelFilterChange={setListChannelFilter}
                     timeFilter={listTimeFilter}
                     onTimeFilterChange={setListTimeFilter}
-                    statusFilter={listStatusFilter}
-                    onStatusFilterChange={setListStatusFilter}
-                    priorityFilter={listPriorityFilter}
-                    onPriorityFilterChange={setListPriorityFilter}
-                    assignedToMe={listAssignedToMe}
-                    onAssignedToMeChange={setListAssignedToMe}
                     selectedContactId={selectedContact?.contact_id}
                     onSelectContact={handleSelectContact}
                     onRefresh={() => handleRefreshEmail(false)}

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ function claimedToListItem(c: ConversationWithMessages): ConversationListItem {
 export default function WorkspaceClient() {
   const { can } = usePermission();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
   // Views rail preset -> base filters (status + assignment).
   const [activeViewId, setActiveViewId] = useState<WorkspaceViewId>("assigned_to_me");
@@ -74,6 +76,22 @@ export default function WorkspaceClient() {
   const [selectedSnapshot, setSelectedSnapshot] = useState<ConversationListItem | null>(null);
 
   const [contextOpen, setContextOpen] = useState(true);
+
+  // Deep-link: ?conversation=<id> (e.g. from a web-widget notification).
+  // Apply each distinct param value once - opens the thread on load / when a
+  // new notification is clicked while the page stays mounted, without fighting
+  // the user's manual queue selections afterwards. Selecting by id is enough:
+  // useConversation fetches it and WorkspaceThread renders from that even when
+  // the conversation isn't in the current queue filter (snapshot stays null).
+  const conversationParam = searchParams.get("conversation");
+  const appliedDeepLinkRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!conversationParam) return;
+    if (appliedDeepLinkRef.current === conversationParam) return;
+    appliedDeepLinkRef.current = conversationParam;
+    setSelectedId(conversationParam);
+    setSelectedSnapshot(null);
+  }, [conversationParam]);
 
   const selectView = (view: WorkspaceView) => {
     setActiveViewId(view.id);

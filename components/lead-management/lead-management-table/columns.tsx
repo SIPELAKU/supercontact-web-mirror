@@ -29,11 +29,11 @@ import { MRT_ColumnDef } from "@/components/ui/super-table";
 // Column definitions for MUI Table using SuperTable formatting
 export const leadColumns: MRT_ColumnDef<Lead>[] = [
   {
-    accessorFn: (row) => row.contact.name,
+    accessorFn: (row) => row.contact?.name ?? "",
     id: "lead_name",
     header: "Lead Name",
     enableColumnFilter: false,
-    Cell: ({ row }) => <span className="text-black font-medium">{row.original.contact.name}</span>,
+    Cell: ({ row }) => <span className="text-black font-medium">{row.original.contact?.name ?? "—"}</span>,
   },
   {
     accessorKey: "lead_status",
@@ -66,18 +66,18 @@ export const leadColumns: MRT_ColumnDef<Lead>[] = [
     ),
   },
   {
-    accessorFn: (row) => row.user.fullname,
+    accessorFn: (row) => row.user?.fullname ?? "",
     id: "user",
     header: "Assigned To",
     filterVariant: 'select',
     enableColumnFilter: true,
     Cell: ({ row }) => (
-      <span className="text-[#6B7280]">{row.original.user.fullname}</span>
+      <span className="text-[#6B7280]">{row.original.user?.fullname ?? "Unassigned"}</span>
     ),
   },
   {
     accessorFn: (row) => {
-      const dateStr = row.contact.last_contacted?.created_at;
+      const dateStr = row.contact?.last_contacted?.created_at;
       if (!dateStr) return null;
       return new Date(dateStr);
     },

@@ -81,7 +81,7 @@ export default function LeadManagement() {
           if (Array.isArray(dateFilter) && (dateFilter[0] || dateFilter[1])) {
             const [start, end] = dateFilter;
             filtered = filtered.filter((l) => {
-              const dateString = l.contact.last_contacted?.created_at;
+              const dateString = l.contact?.last_contacted?.created_at;
               if (!dateString) return false;
               const leadDate = new Date(dateString);
               if (start && leadDate < new Date(start)) return false;

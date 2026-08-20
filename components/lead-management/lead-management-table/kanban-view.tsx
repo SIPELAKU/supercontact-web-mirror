@@ -155,7 +155,7 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
           )}
         </div>
 
-        <p className="font-semibold mb-1 pr-8">{lead.contact.name}</p>
+        <p className="font-semibold mb-1 pr-8">{lead.contact?.name ?? "—"}</p>
         <p className="text-sm opacity-80 mb-1">Status: {lead.lead_status}</p>
 
         <div className="text-sm flex items-center gap-2 opacity-80">
@@ -169,7 +169,7 @@ function SortableCard({ lead, onCardClick }: { lead: Lead; onCardClick: (lead: L
         onClose={() => setShowDeleteConfirmation(false)}
         onConfirm={confirmDeleteLead}
         title="Are you sure?"
-        description={`Are you sure you want to delete lead "${lead.contact.name}"?`}
+        description={`Are you sure you want to delete lead "${lead.contact?.name ?? "this lead"}"?`}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
@@ -487,7 +487,7 @@ export default function KanbanView({ data, isLoading, error }: KanbanBoardProps)
         {activeLead ? (
           <div className="rotate-3 scale-105">
             <Card className="bg-white rounded-xl shadow-lg p-4 text-black border-2 border-[#5479EE]">
-              <p className="font-semibold mb-1 pr-8">{activeLead.contact.name}</p>
+              <p className="font-semibold mb-1 pr-8">{activeLead.contact?.name ?? "—"}</p>
               <p className="text-sm opacity-80 mb-1">Status: {activeLead.lead_status}</p>
               <div className="text-sm flex items-center gap-2 opacity-80">
                 {sourceIcon[activeLead.lead_source as LeadSource]}

@@ -121,10 +121,10 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   useEffect(() => {
     if (lead) {
       setForm({
-        name: lead.contact.name || "",
-        email: lead.contact.email || "",
-        phone_number: lead.contact.phone_number || "",
-        company: lead.contact.company || "",
+        name: lead.contact?.name || "",
+        email: lead.contact?.email || "",
+        phone_number: lead.contact?.phone_number || "",
+        company: lead.contact?.company || "",
         industry: lead.industry || "",
         companySize: lead.company_size,
         officeLocation: lead.office_location || "",
@@ -266,7 +266,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
       if (!token) throw new Error('No authentication token');
 
       const updateData: UpdateLeadData = {
-        contact_id: selectedContactId || lead.contact.id,
+        contact_id: selectedContactId || lead.contact?.id || "",
         name: form.name,
         email: form.email,
         phone_number: form.phone_number,
@@ -305,7 +305,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         leadId: lead.id,
         error: error.message,
         updateData: {
-          contact_id: lead.contact.id,
+          contact_id: lead.contact?.id,
           industry: form.industry,
           company_size: form.companySize,
           office_location: form.officeLocation,

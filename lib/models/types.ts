@@ -7,8 +7,10 @@ export interface Lead {
   lead_source: LeadSource;
   created_at: string;
   assigned_to: string;
-  contact: Contact;
-  user: User
+  // Nullable at runtime: a lead's contact can be SET NULL when the contact is
+  // deleted, and an unassigned lead has no user. The UI must guard both.
+  contact: Contact | null;
+  user: User | null;
   industry: string;
   company_size: string;
   office_location: string;

@@ -18,7 +18,7 @@ function escapeHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function safeHref(url: string): string | null {
+export function safeHref(url: string): string | null {
   const trimmed = url.trim();
   if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed;
   if (/^\/[^/]/.test(trimmed) || trimmed.startsWith("/")) return trimmed;

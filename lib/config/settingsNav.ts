@@ -9,6 +9,7 @@ import {
   Building2,
   CreditCard,
   Globe,
+  LifeBuoy,
   Mail,
   MessageCircle,
   Network,
@@ -80,6 +81,15 @@ export const settingsNav: SettingsRegistry = [
     icon: Globe,
     path: "/settings/web-widget",
     permission: "omnichannel:setup",
+  },
+  {
+    id: "help-center",
+    title: "Help Center",
+    icon: LifeBuoy,
+    path: "/settings/help-center",
+    // Portal admin reuses the Knowledge Base "manage" grant (Phase 7C decision
+    // #2) - no dedicated help_center:manage permission.
+    permission: "knowledge:manage",
   },
   {
     id: "email",

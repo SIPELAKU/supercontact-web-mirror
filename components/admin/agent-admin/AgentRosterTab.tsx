@@ -1,17 +1,32 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Chip, Tooltip } from "@mui/material";
-import { Star, Users } from "lucide-react";
+import { SlidersHorizontal, Star, Users } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import type { AgentRosterItem } from "@/lib/types/agents";
 import { useAgentRoster } from "@/lib/hooks/useAgents";
+import AgentManageModal from "./AgentManageModal";
 
-// Read-only roster of every support agent, one row per agent. Search / column
-// filters are handled client-side by SuperTable's built-in global filter.
-export default function AgentRosterTab() {
+interface AgentRosterTabProps {
+  /** Gates the per-agent manage action; false = read-only viewer. */
+  canManage: boolean;
+}
+
+// Roster of every support agent, one row per agent. Search / column filters are
+// handled client-side by SuperTable's built-in global filter. Managers get a
+// per-row action to edit seat type, capacity and skills.
+export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
   const { data: agents = [], isLoading, isError, refetch } = useAgentRoster();
+
+  // Track the managed agent by id and re-derive from the live roster so its
+  // skill chips refresh in place after an assign/remove.
+  const [manageId, setManageId] = useState<string | null>(null);
+  const manageAgent = useMemo(
+    () => agents.find((a) => a.id === manageId) ?? null,
+    [agents, manageId]
+  );
 
   const columns = useMemo<MRT_ColumnDef<AgentRosterItem>[]>(
     () => [
@@ -42,6 +57,61 @@ export default function AgentRosterTab() {
             <span className="text-gray-700">{value}</span>
           ) : (
             <span className="text-gray-300">—</span>
+          );
+        },
+      },
+      {
+        id: "seat_type",
+        header: "Seat",
+        accessorFn: (row) => (row.seat_type === "light" ? "Light" : "Full"),
+        Cell: ({ row }) => {
+          const isLight = row.original.seat_type === "light";
+          return (
+            <Tooltip
+              title={
+                isLight
+                  ? "Light seat: read + internal-note only"
+                  : "Full seat: can be assigned work and reply publicly"
+              }
+              arrow
+            >
+              <span
+                className={
+                  isLight
+                    ? "inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700"
+                    : "inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700"
+                }
+              >
+                {isLight ? "Light" : "Full"}
+              </span>
+            </Tooltip>
+          );
+        },
+      },
+      {
+        id: "skills",
+        header: "Skills",
+        // Flatten to skill names so the global search can match on them.
+        accessorFn: (row) => (row.skills ?? []).map((s) => s.name).join(", "),
+        enableSorting: false,
+        Cell: ({ row }) => {
+          const skills = row.original.skills ?? [];
+          if (!skills.length) return <span className="text-gray-300">—</span>;
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {skills.map((s) => (
+                <Chip
+                  key={s.id}
+                  size="small"
+                  label={s.name}
+                  sx={{
+                    backgroundColor: "#5479EE1A",
+                    color: "#5479EE",
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+            </div>
           );
         },
       },
@@ -116,7 +186,15 @@ export default function AgentRosterTab() {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
       <p className="text-sm text-gray-500 max-w-2xl">
         Everyone in your workspace who can be assigned support work. Group membership is managed from
-        the <span className="font-medium text-gray-700">Groups</span> tab.
+        the <span className="font-medium text-gray-700">Groups</span> tab
+        {canManage ? (
+          <>
+            ; use the <span className="font-medium text-gray-700">manage</span> action to set an
+            agent&apos;s seat, capacity and skills.
+          </>
+        ) : (
+          "."
+        )}
       </p>
 
       <SuperTable<AgentRosterItem>
@@ -127,6 +205,22 @@ export default function AgentRosterTab() {
         isError={isError}
         errorMessage="Failed to load agents. Please try again."
         onRetry={() => refetch()}
+        renderRowActions={
+          canManage
+            ? ({ row }) => (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setManageId(row.original.id)}
+                    className="text-gray-300 hover:text-gray-700"
+                    aria-label={`Manage ${row.original.fullname}`}
+                    title="Manage seat, capacity and skills"
+                  >
+                    <SlidersHorizontal size={16} />
+                  </button>
+                </div>
+              )
+            : undefined
+        }
         renderEmptyState={() => (
           <EmptyState
             icon={Users}
@@ -136,6 +230,14 @@ export default function AgentRosterTab() {
         )}
         features={{ columnFilters: false }}
       />
+
+      {canManage && (
+        <AgentManageModal
+          agent={manageAgent}
+          open={!!manageId}
+          onClose={() => setManageId(null)}
+        />
+      )}
     </div>
   );
 }

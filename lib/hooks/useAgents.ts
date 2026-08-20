@@ -16,6 +16,13 @@ import {
   fetchMyPresence,
   setMyPresence,
   updateMyRoutingProfile,
+  fetchAgentSkills,
+  createAgentSkill,
+  updateAgentSkill,
+  deleteAgentSkill,
+  assignAgentSkill,
+  removeAgentSkill,
+  adminUpdateAgentProfile,
   fetchConversationQueues,
   createConversationQueue,
   updateConversationQueue,
@@ -34,6 +41,10 @@ import type {
   AgentProfile,
   AgentPresenceStatus,
   UpdateRoutingProfileRequest,
+  AgentSkill,
+  CreateAgentSkillRequest,
+  UpdateAgentSkillRequest,
+  AdminUpdateAgentProfileRequest,
   ConversationQueue,
   CreateConversationQueueRequest,
   UpdateConversationQueueRequest,
@@ -52,6 +63,7 @@ const ROSTER_KEY = ["agents", "roster"] as const;
 const GROUPS_KEY = ["agents", "groups"] as const;
 const GROUP_KEY = ["agents", "group"] as const;
 const PRESENCE_KEY = ["agents", "me", "presence"] as const;
+const SKILLS_KEY = ["agents", "skills"] as const;
 const QUEUES_KEY = ["agents", "queues"] as const;
 const INBOX_KEY = ["omnichannels", "inbox"] as const;
 
@@ -286,6 +298,133 @@ export function useUpdateMyRoutingProfile() {
     onSuccess: (result) => {
       queryClient.setQueryData([...PRESENCE_KEY], result);
       queryClient.invalidateQueries({ queryKey: [...PRESENCE_KEY] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Agent skills + admin-managed agent profile (Phase 1b)
+// ---------------------------------------------------------------------------
+
+/** Company skill vocabulary (GET /agent-skills). */
+export function useAgentSkills(includeInactive?: boolean) {
+  const { token } = useAuth();
+  return useQuery<AgentSkill[], Error>({
+    queryKey: [...SKILLS_KEY, includeInactive ?? false],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return fetchAgentSkills(token, includeInactive);
+    },
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  });
+}
+
+export function useCreateAgentSkill() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateAgentSkillRequest) => {
+      if (!token) throw new Error("No authentication token");
+      return createAgentSkill(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...SKILLS_KEY] });
+    },
+  });
+}
+
+export function useUpdateAgentSkill() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateAgentSkillRequest }) => {
+      if (!token) throw new Error("No authentication token");
+      return updateAgentSkill(token, id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...SKILLS_KEY] });
+      // Roster rows show each agent's skill chips.
+      queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
+    },
+  });
+}
+
+export function useDeleteAgentSkill() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error("No authentication token");
+      return deleteAgentSkill(token, id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...SKILLS_KEY] });
+      queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
+    },
+  });
+}
+
+/** Assign a skill to an agent (POST /agents/{user_id}/skills). */
+export function useAssignAgentSkill() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, skillId }: { userId: string; skillId: string }) => {
+      if (!token) throw new Error("No authentication token");
+      return assignAgentSkill(token, userId, skillId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
+      queryClient.invalidateQueries({ queryKey: [...SKILLS_KEY] });
+    },
+  });
+}
+
+/** Remove a skill from an agent (DELETE /agents/{user_id}/skills/{skill_id}). */
+export function useRemoveAgentSkill() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, skillId }: { userId: string; skillId: string }) => {
+      if (!token) throw new Error("No authentication token");
+      return removeAgentSkill(token, userId, skillId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
+      queryClient.invalidateQueries({ queryKey: [...SKILLS_KEY] });
+    },
+  });
+}
+
+/**
+ * Manager-set agent profile (seat type + capacity + transfers) for any agent
+ * (PATCH /agents/{user_id}/profile). Refreshes the roster so the seat chip
+ * updates in place.
+ */
+export function useAdminUpdateAgentProfile() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      data,
+    }: {
+      userId: string;
+      data: AdminUpdateAgentProfileRequest;
+    }) => {
+      if (!token) throw new Error("No authentication token");
+      return adminUpdateAgentProfile(token, userId, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...ROSTER_KEY] });
     },
   });
 }

@@ -22,6 +22,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { usePermission } from "@/lib/hooks/usePermission";
 import {
   useAgentGroups,
+  useAgentSkills,
   useMyPresence,
   useUpdateMyRoutingProfile,
   useConversationQueues,
@@ -185,12 +186,21 @@ export default function RoutingQueuesSettingsTab() {
   const [showInactive, setShowInactive] = useState(false);
   const { data: queues = [], isLoading, isError, refetch } = useConversationQueues(showInactive);
   const { data: groups = [] } = useAgentGroups();
+  // Include inactive skills so a queue that still references a retired skill can
+  // resolve its label in the table and the edit form.
+  const { data: skills = [] } = useAgentSkills(true);
 
   const groupsById = useMemo(() => {
     const map = new Map<string, string>();
     groups.forEach((g) => map.set(g.id, g.name));
     return map;
   }, [groups]);
+
+  const skillsById = useMemo(() => {
+    const map = new Map<string, string>();
+    skills.forEach((s) => map.set(s.id, s.name));
+    return map;
+  }, [skills]);
 
   const createMutation = useCreateConversationQueue();
   const updateMutation = useUpdateConversationQueue();
@@ -206,6 +216,7 @@ export default function RoutingQueuesSettingsTab() {
   const [position, setPosition] = useState("0");
   const [autoRoute, setAutoRoute] = useState(false);
   const [routingStrategy, setRoutingStrategy] = useState<RoutingStrategy>("round_robin");
+  const [requiredSkillId, setRequiredSkillId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<ConversationQueue | null>(null);
   // Which queue row is currently being routed (drives the per-row spinner state).
   const [routingId, setRoutingId] = useState<string | null>(null);
@@ -221,6 +232,7 @@ export default function RoutingQueuesSettingsTab() {
     setPosition(String(queues.length));
     setAutoRoute(false);
     setRoutingStrategy("round_robin");
+    setRequiredSkillId("");
     setModalOpen(true);
   };
 
@@ -233,6 +245,7 @@ export default function RoutingQueuesSettingsTab() {
     setPosition(String(queue.position));
     setAutoRoute(queue.auto_route);
     setRoutingStrategy(queue.routing_strategy);
+    setRequiredSkillId(queue.required_skill_id ?? "");
     setModalOpen(true);
   };
 
@@ -261,6 +274,7 @@ export default function RoutingQueuesSettingsTab() {
       position: positionValue,
       auto_route: autoRoute,
       routing_strategy: routingStrategy,
+      required_skill_id: requiredSkillId || null,
     };
     try {
       if (editing) {
@@ -346,6 +360,20 @@ export default function RoutingQueuesSettingsTab() {
         header: "Priority",
       },
       {
+        id: "required_skill",
+        accessorFn: (row) =>
+          row.required_skill_id ? skillsById.get(row.required_skill_id) ?? "Skill" : "—",
+        header: "Required skill",
+        Cell: ({ row }) =>
+          row.original.required_skill_id ? (
+            <span className="text-gray-700">
+              {skillsById.get(row.original.required_skill_id) ?? "Skill"}
+            </span>
+          ) : (
+            <span className="text-gray-300">—</span>
+          ),
+      },
+      {
         id: "auto",
         accessorFn: (row) => (row.auto_route ? STRATEGY_LABEL[row.routing_strategy] : "Off"),
         header: "Auto",
@@ -381,7 +409,7 @@ export default function RoutingQueuesSettingsTab() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [groupsById, canManage, updateMutation.isPending]
+    [groupsById, skillsById, canManage, updateMutation.isPending]
   );
 
   const groupSelectOptions = useMemo(
@@ -391,6 +419,24 @@ export default function RoutingQueuesSettingsTab() {
     ],
     [groups]
   );
+
+  // "None" plus every active skill; keep an already-selected inactive skill in
+  // the list so editing a queue that requires a retired skill still shows it.
+  const skillSelectOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [{ value: "", label: "None" }];
+    const seen = new Set<string>();
+    skills.forEach((s) => {
+      if (s.is_active) {
+        opts.push({ value: s.id, label: s.name });
+        seen.add(s.id);
+      }
+    });
+    if (requiredSkillId && !seen.has(requiredSkillId)) {
+      const selected = skills.find((s) => s.id === requiredSkillId);
+      if (selected) opts.push({ value: selected.id, label: `${selected.name} (inactive)` });
+    }
+    return opts;
+  }, [skills, requiredSkillId]);
 
   return (
     <div className="space-y-4">
@@ -530,6 +576,19 @@ export default function RoutingQueuesSettingsTab() {
                   options={PRIORITY_OPTIONS}
                   onChange={(e) => setPriority(e.target.value as ConversationQueuePriority | "")}
                 />
+              </div>
+              <div>
+                <AppSelect
+                  isBgWhite
+                  fullWidth
+                  label="Required skill"
+                  value={requiredSkillId}
+                  options={skillSelectOptions}
+                  onChange={(e) => setRequiredSkillId(e.target.value as string)}
+                />
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Only agents with this skill will be auto-assigned or can claim from this queue.
+                </p>
               </div>
               <AppInput
                 isBgWhite

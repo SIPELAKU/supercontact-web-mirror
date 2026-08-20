@@ -20,6 +20,10 @@ import type {
   AgentProfile,
   AgentPresenceStatus,
   UpdateRoutingProfileRequest,
+  AgentSkill,
+  CreateAgentSkillRequest,
+  UpdateAgentSkillRequest,
+  AdminUpdateAgentProfileRequest,
   ConversationQueue,
   CreateConversationQueueRequest,
   UpdateConversationQueueRequest,
@@ -35,6 +39,7 @@ export type {
   AgentGroupMember,
   AgentGroupRole,
   AgentRosterGroupRef,
+  AgentRosterSkillRef,
   CreateAgentGroupRequest,
   UpdateAgentGroupRequest,
   AddGroupMemberRequest,
@@ -44,6 +49,10 @@ export type {
   AgentSeatType,
   SetPresenceRequest,
   UpdateRoutingProfileRequest,
+  AgentSkill,
+  CreateAgentSkillRequest,
+  UpdateAgentSkillRequest,
+  AdminUpdateAgentProfileRequest,
   ConversationQueue,
   ConversationQueueChannelType,
   ConversationQueuePriority,
@@ -57,6 +66,7 @@ export type {
 const ROSTER_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agents`;
 const GROUPS_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agent-groups`;
 const ME_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agents/me`;
+const SKILLS_BASE = `${process.env.NEXT_PUBLIC_API_URL}/agent-skills`;
 const QUEUES_BASE = `${process.env.NEXT_PUBLIC_API_URL}/conversation-queues`;
 
 const authHeaders = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -354,6 +364,190 @@ export async function updateMyRoutingProfile(
 
   if (!res.ok) {
     throw json || new Error("Failed to update routing profile");
+  }
+
+  return json.data || json;
+}
+
+// ---------------------------------------------------------------------------
+// Agent skills (Phase 1b): company skill vocabulary + per-agent assignment.
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /agent-skills?include_inactive=<bool> -> { data: { data: AgentSkill[] } }.
+ * The list payload is double-nested (one `data` for the envelope, one more for
+ * the list) - unwrap both defensively, mirroring the roster endpoint.
+ */
+export async function fetchAgentSkills(
+  token: string,
+  includeInactive?: boolean
+): Promise<AgentSkill[]> {
+  const params = new URLSearchParams();
+  if (includeInactive) params.append("include_inactive", "true");
+
+  const res = await fetchWithTimeout(`${SKILLS_BASE}?${params.toString()}`, {
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to fetch agent skills");
+  }
+
+  const outer = json.data ?? json;
+  const list = outer?.data ?? outer;
+  return Array.isArray(list) ? list : [];
+}
+
+/** POST /agent-skills -> { data: AgentSkill } (201). Duplicate name -> 400. */
+export async function createAgentSkill(
+  token: string,
+  data: CreateAgentSkillRequest
+): Promise<AgentSkill> {
+  const res = await fetchWithTimeout(SKILLS_BASE, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to create agent skill");
+  }
+
+  return json.data || json;
+}
+
+/** PATCH /agent-skills/{id} -> { data: AgentSkill }. */
+export async function updateAgentSkill(
+  token: string,
+  id: string,
+  data: UpdateAgentSkillRequest
+): Promise<AgentSkill> {
+  const res = await fetchWithTimeout(`${SKILLS_BASE}/${id}`, {
+    method: "PATCH",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to update agent skill");
+  }
+
+  return json.data || json;
+}
+
+/** DELETE /agent-skills/{id} -> { data: { ...soft-deleted } } (soft delete). */
+export async function deleteAgentSkill(
+  token: string,
+  id: string
+): Promise<AgentSkill> {
+  const res = await fetchWithTimeout(`${SKILLS_BASE}/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to delete agent skill");
+  }
+
+  return json.data || json;
+}
+
+/** POST /agents/{user_id}/skills body { skill_id } -> { data: ... }. */
+export async function assignAgentSkill(
+  token: string,
+  userId: string,
+  skillId: string
+): Promise<unknown> {
+  const res = await fetchWithTimeout(`${ROSTER_BASE}/${userId}/skills`, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ skill_id: skillId }),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to assign skill");
+  }
+
+  return json.data || json;
+}
+
+/** DELETE /agents/{user_id}/skills/{skill_id} -> { data: { ...removed } }. */
+export async function removeAgentSkill(
+  token: string,
+  userId: string,
+  skillId: string
+): Promise<unknown> {
+  const res = await fetchWithTimeout(`${ROSTER_BASE}/${userId}/skills/${skillId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to remove skill");
+  }
+
+  return json.data || json;
+}
+
+/**
+ * PATCH /agents/{user_id}/profile -> { data: AgentProfile }. Lets a manager set
+ * any agent's seat type, routing capacity and transfer opt-in.
+ */
+export async function adminUpdateAgentProfile(
+  token: string,
+  userId: string,
+  data: AdminUpdateAgentProfileRequest
+): Promise<AgentProfile> {
+  const res = await fetchWithTimeout(`${ROSTER_BASE}/${userId}/profile`, {
+    method: "PATCH",
+    headers: jsonHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (!res.ok) {
+    throw json || new Error("Failed to update agent profile");
   }
 
   return json.data || json;

@@ -19,6 +19,12 @@ export interface AgentRosterGroupRef {
   role: AgentGroupRole;
 }
 
+/** Lightweight skill reference embedded in a roster row. */
+export interface AgentRosterSkillRef {
+  id: string;
+  name: string;
+}
+
 /** One agent as shown on the read-only roster (GET /agents). */
 export interface AgentRosterItem {
   id: string;
@@ -30,6 +36,59 @@ export interface AgentRosterItem {
   /** Live presence (Phase 4a). Optional - only present once the roster
    *  endpoint surfaces it; absent on older payloads. */
   presence_status?: AgentPresenceStatus;
+  /** Licensed seat kind (Phase 1b). Optional - absent on older payloads;
+   *  treated as "full" when missing. */
+  seat_type?: AgentSeatType;
+  /** Skills assigned to this agent (Phase 1b). Optional - absent on older
+   *  payloads. */
+  skills?: AgentRosterSkillRef[];
+  /** Routing capacity (Phase 4a). Only surfaced on newer roster payloads;
+   *  used to seed the admin profile editor when present. */
+  max_concurrent_open?: number | null;
+  /** Whether this agent accepts transfers (Phase 4a). Only surfaced on newer
+   *  roster payloads; used to seed the admin profile editor when present. */
+  accepts_transfers?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Agent skills (Support Desk Phase 1b).
+//
+// A company-wide skill vocabulary. Skills are assigned to agents and can gate
+// conversation queues (only agents holding the required skill are auto-assigned
+// or can claim from a skill-scoped queue).
+//
+// Permissions: reading needs `agents:read`; managing (create/update/delete) and
+// per-agent assignment need `agents:manage`.
+// ---------------------------------------------------------------------------
+
+/** One entry in the company skill vocabulary (GET /agent-skills). */
+export interface AgentSkill {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** POST /agent-skills body. */
+export interface CreateAgentSkillRequest {
+  name: string;
+}
+
+/** PATCH /agent-skills/{id} body (both fields optional). */
+export interface UpdateAgentSkillRequest {
+  name?: string;
+  is_active?: boolean;
+}
+
+/**
+ * PATCH /agents/{user_id}/profile body (all fields optional). Lets a manager
+ * set any agent's licensed seat, routing capacity and transfer opt-in.
+ */
+export interface AdminUpdateAgentProfileRequest {
+  seat_type?: AgentSeatType;
+  max_concurrent_open?: number | null;
+  accepts_transfers?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +163,9 @@ export interface ConversationQueue {
   auto_route: boolean;
   /** Phase 4b: strategy the auto-assignment sweep uses. */
   routing_strategy: RoutingStrategy;
+  /** Phase 1b: when set, only agents holding this skill are auto-assigned or
+   *  can claim from this queue. */
+  required_skill_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -116,6 +178,7 @@ export interface CreateConversationQueueRequest {
   position?: number;
   auto_route?: boolean;
   routing_strategy?: RoutingStrategy;
+  required_skill_id?: string | null;
 }
 
 // Inherits auto_route? / routing_strategy? from CreateConversationQueueRequest.

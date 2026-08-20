@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Users, UsersRound } from "lucide-react";
+import { Tags, Users, UsersRound } from "lucide-react";
 import { AppTabs } from "@/components/ui/app-tabs";
 import { usePermission } from "@/lib/hooks/usePermission";
 import AgentRosterTab from "./AgentRosterTab";
 import AgentGroupsTab from "./AgentGroupsTab";
+import AgentSkillsTab from "./AgentSkillsTab";
 
-type AgentAdminTab = "roster" | "groups";
+type AgentAdminTab = "roster" | "groups" | "skills";
 
-// Tenant admin console for support agents. Two tabs:
-//   - Roster: read-only view of every agent and the groups they belong to.
+// Tenant admin console for support agents. Three tabs:
+//   - Roster: every agent, their groups/skills/seat, and (for managers) a
+//     per-agent editor for seat type, capacity and skills.
 //   - Groups: create/edit/delete agent groups (teams) and manage members.
+//   - Skills: the company skill vocabulary (create/edit/soft-delete).
 // All write controls are gated in-UI by the `agents:manage` permission; the
 // route itself is gated by `agents:read` via the Settings layout.
 export default function AgentAdminClient() {
@@ -27,10 +30,13 @@ export default function AgentAdminClient() {
         tabs={[
           { value: "roster", label: "Roster", icon: <Users size={16} /> },
           { value: "groups", label: "Groups", icon: <UsersRound size={16} /> },
+          { value: "skills", label: "Skills", icon: <Tags size={16} /> },
         ]}
       />
 
-      {tab === "roster" ? <AgentRosterTab /> : <AgentGroupsTab canManage={canManage} />}
+      {tab === "roster" && <AgentRosterTab canManage={canManage} />}
+      {tab === "groups" && <AgentGroupsTab canManage={canManage} />}
+      {tab === "skills" && <AgentSkillsTab canManage={canManage} />}
     </div>
   );
 }

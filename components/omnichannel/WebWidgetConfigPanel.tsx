@@ -40,6 +40,8 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   show_home_screen: true,
   // Quick actions
   quick_actions: [],
+  // Widget language (null = automatic: use embed data-locale / widget default)
+  default_locale: null,
   // Presence & response time
   response_time_label: "Usually replies instantly",
   show_presence: true,
@@ -134,6 +136,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       home_subtext: config.home_subtext ?? DEFAULT_FORM.home_subtext,
       show_home_screen: config.show_home_screen ?? DEFAULT_FORM.show_home_screen,
       quick_actions: Array.isArray(config.quick_actions) ? config.quick_actions : [],
+      default_locale: config.default_locale ?? null,
       response_time_label: config.response_time_label ?? DEFAULT_FORM.response_time_label,
       show_presence: config.show_presence ?? DEFAULT_FORM.show_presence,
       enable_human_handoff: config.enable_human_handoff ?? DEFAULT_FORM.enable_human_handoff,
@@ -305,6 +308,24 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             placeholder="We're offline right now — leave a message and we'll reply by email."
             disabled={!form.business_hours_calendar_id}
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">Widget Language</label>
+          <select
+            value={form.default_locale ?? ""}
+            onChange={(e) => setField("default_locale", e.target.value || null)}
+            className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
+          >
+            <option value="">Automatic (visitor/browser)</option>
+            <option value="id">Bahasa Indonesia</option>
+            <option value="en">English</option>
+          </select>
+          <p className="text-xs text-gray-500">
+            Automatic uses the language set on your embed code, or falls back to the widget default.
+          </p>
         </div>
       </div>
 

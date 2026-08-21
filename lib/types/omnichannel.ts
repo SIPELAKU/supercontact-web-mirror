@@ -372,6 +372,10 @@ export interface WebWidgetConfig {
   answer_bot_min_confidence: number;
   answer_bot_intro_text: string | null;
   answer_bot_no_answer_text: string | null;
+  // i18n: admin-configurable widget language. null/undefined = "Automatic"
+  // (the widget uses its embed data-locale attribute or its own default);
+  // otherwise one of the shipped string-pack locales ("id" | "en").
+  default_locale?: string | null;
 }
 
 export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;

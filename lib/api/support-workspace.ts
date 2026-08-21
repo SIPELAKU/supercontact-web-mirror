@@ -45,7 +45,8 @@ export interface UnifiedFeedItem {
     status: string;
     priority: string;
     // Only conversations carry a channel (a ChannelType value: "whatsapp" |
-    // "email" | "web_widget" | "sms" | "messenger"); null for tickets.
+    // "email" | "web_widget" | "sms" | "messenger" | "instagram"); null for
+    // tickets.
     channel_type: string | null;
     assignee_id: string | null;
     assignee_name: string | null;

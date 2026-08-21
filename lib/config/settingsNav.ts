@@ -10,6 +10,7 @@ import {
   CreditCard,
   Facebook,
   Globe,
+  Instagram,
   LifeBuoy,
   Mail,
   MessageCircle,
@@ -117,6 +118,13 @@ export const settingsNav: SettingsRegistry = [
     title: "Messenger",
     icon: Facebook,
     path: "/settings/messenger",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "instagram",
+    title: "Instagram",
+    icon: Instagram,
+    path: "/settings/instagram",
     permission: "omnichannel:setup",
   },
   {

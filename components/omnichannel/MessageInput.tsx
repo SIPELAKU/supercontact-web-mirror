@@ -44,11 +44,12 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
       return;
     }
 
-    // SMS and Messenger are text-only for now - the media upload path is
-    // WhatsApp-specific (and the backend rejects media for both with a 400).
-    if ((channelType === "sms" || channelType === "messenger") && selectedFile) {
+    // SMS and Messenger/Instagram are text-only for now - the media upload path is
+    // WhatsApp-specific (and the backend rejects media for all three with a 400).
+    if ((channelType === "sms" || channelType === "messenger" || channelType === "instagram") && selectedFile) {
+      const channelLabel = channelType === "sms" ? "SMS" : channelType === "messenger" ? "Messenger" : "Instagram";
       notify.warning("Attachments Not Supported", {
-        description: `Attachments aren't supported for ${channelType === "sms" ? "SMS" : "Messenger"} yet. Remove the file to send.`,
+        description: `Attachments aren't supported for ${channelLabel} yet. Remove the file to send.`,
       });
       return;
     }

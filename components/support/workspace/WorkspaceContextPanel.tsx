@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { Chip } from "@mui/material";
 import { format } from "date-fns";
-import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock, Building2, MapPin, Briefcase, ClipboardCheck, Facebook } from "lucide-react";
+import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock, Building2, MapPin, Briefcase, ClipboardCheck, Facebook, Instagram } from "lucide-react";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
@@ -52,6 +52,8 @@ const IDENTIFIER_META: Record<ChannelType, { icon: React.ElementType; label: str
   web_widget: { icon: Globe, label: "Visitor" },
   // A PSID is an opaque page-scoped id, not a phone/email.
   messenger: { icon: Facebook, label: "Messenger ID" },
+  // Same for an IGSID (Instagram-scoped user id).
+  instagram: { icon: Instagram, label: "Instagram ID" },
 };
 
 interface WorkspaceContextPanelProps {

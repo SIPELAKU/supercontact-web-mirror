@@ -17,15 +17,20 @@ const PAGE_SIZE = 20;
 // Deep-link routing: a ticket row opens the ticket detail page; a conversation
 // row opens whichever surface that conversation actually lives on, matching
 // getNotificationRoute() in lib/api/notifications.ts:
-//   - web_widget / messenger -> Support Desk Workspace (?conversation=<id>)
-//     (messenger follows the web-widget precedent: a PSID has no phone/email
-//     contact identity, so those conversations live conversation-first)
+//   - web_widget / messenger / instagram -> Support Desk Workspace
+//     (?conversation=<id>) (the Meta channels follow the web-widget
+//     precedent: a PSID/IGSID has no phone/email contact identity, so those
+//     conversations live conversation-first)
 //   - whatsapp/sms/email (and any other channel) -> contact-first Omnichannel
 //     Inbox
 // ---------------------------------------------------------------------------
 function feedItemHref(item: UnifiedFeedItem): string {
     if (item.kind === "ticket") return `/support/tickets/${item.id}`;
-    if (item.channel_type === "web_widget" || item.channel_type === "messenger") {
+    if (
+        item.channel_type === "web_widget" ||
+        item.channel_type === "messenger" ||
+        item.channel_type === "instagram"
+    ) {
         return `/support/workspace?conversation=${item.id}`;
     }
     return `/omnichannel?conversation=${item.id}`;

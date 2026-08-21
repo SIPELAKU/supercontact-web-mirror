@@ -8,6 +8,7 @@ import {
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
   ConnectMessengerRequest,
+  ConnectInstagramRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -54,6 +55,7 @@ export type {
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
   ConnectMessengerRequest,
+  ConnectInstagramRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -291,6 +293,35 @@ export async function connectMessenger(token: string, data: ConnectMessengerRequ
 
   if (!res.ok) {
     throw json || new Error('Failed to connect Messenger account');
+  }
+
+  return json.data || json;
+}
+
+// Phase 9 Inc C: connect an Instagram professional account for DMs. Same
+// BYOK page token flow as Messenger; the backend resolves the IG business
+// account id from page_id when it isn't supplied directly, verifies the
+// token against the Graph API, and stores it encrypted. An IG account can
+// be actively connected to only ONE company platform-wide (webhook tenant
+// routing is purely by the IG business account id).
+export async function connectInstagram(token: string, data: ConnectInstagramRequest): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/instagram`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to connect Instagram account');
   }
 
   return json.data || json;

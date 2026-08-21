@@ -1,13 +1,13 @@
 // Omnichannel Types
 
 // THE channel union. Every FE channel_type value flows through this one type -
-// adding a channel (Phase 9: sms, messenger; later instagram) means extending
-// it here and letting the compiler surface every switch/record that needs a
+// adding a channel (Phase 9: sms, messenger, instagram) means extending it
+// here and letting the compiler surface every switch/record that needs a
 // new arm. Types that deliberately exclude a channel (e.g. the contact-first
-// inbox filter, which leaves out web_widget AND messenger - PSIDs have no
-// phone/email contact identity, so messenger conversations live in the
-// Workspace like widget chats) stay hand-written on purpose.
-export type ChannelType = 'whatsapp' | 'email' | 'web_widget' | 'sms' | 'messenger';
+// inbox filter, which leaves out web_widget AND messenger/instagram -
+// PSIDs/IGSIDs have no phone/email contact identity, so Meta conversations
+// live in the Workspace like widget chats) stay hand-written on purpose.
+export type ChannelType = 'whatsapp' | 'email' | 'web_widget' | 'sms' | 'messenger' | 'instagram';
 
 export type WhatsAppApprovalStatus = 'pending_approval' | 'approved' | 'rejected';
 
@@ -323,6 +323,19 @@ export interface ConnectSmsRequest {
 export interface ConnectMessengerRequest {
   display_name?: string;
   page_id: string;
+  page_access_token: string;
+}
+
+// Phase 9 Inc C: connect an Instagram professional account for DMs
+// (POST /omnichannels/accounts/instagram). Same BYOK page token as
+// Messenger. Supply either the linked Facebook Page ID (the backend
+// resolves the IG business account id from it via the Graph API) or the IG
+// business account id directly - the backend requires at least one. An IG
+// account can be actively connected to only ONE company platform-wide.
+export interface ConnectInstagramRequest {
+  display_name?: string;
+  page_id?: string;
+  ig_business_account_id?: string;
   page_access_token: string;
 }
 

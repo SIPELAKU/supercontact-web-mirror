@@ -11,6 +11,7 @@ import {
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
   ConnectMessengerRequest,
+  ConnectInstagramRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -22,6 +23,7 @@ import {
   connectWhatsApp,
   connectSms,
   connectMessenger,
+  connectInstagram,
   connectEmail,
   connectWebWidget,
   fetchWebWidgetConfig,
@@ -211,6 +213,22 @@ export function useConnectMessenger() {
     mutationFn: (data: ConnectMessengerRequest) => {
       if (!token) throw new Error('No authentication token');
       return connectMessenger(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+// Phase 9 Inc C: connect an Instagram professional account for DMs.
+export function useConnectInstagram() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ConnectInstagramRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return connectInstagram(token, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });

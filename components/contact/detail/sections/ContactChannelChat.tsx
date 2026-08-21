@@ -31,11 +31,13 @@ const CHANNEL_LABELS: Record<ChatChannel, string> = {
     sms: "SMS",
     email: "Email",
     web_widget: "Web Chat",
-    // Label only for type-completeness: messenger stays OUT of this
-    // contact-first surface (the availableChannels / eligibleAccounts
-    // whitelists below exclude it on purpose - a PSID has no phone/email
-    // identity, messenger conversations live in the Support Workspace).
+    // Labels only for type-completeness: messenger/instagram stay OUT of
+    // this contact-first surface (the availableChannels / eligibleAccounts
+    // whitelists below exclude them on purpose - a PSID/IGSID has no
+    // phone/email identity, Meta conversations live in the Support
+    // Workspace).
     messenger: "Messenger",
+    instagram: "Instagram",
 };
 
 interface ContactChannelChatProps {

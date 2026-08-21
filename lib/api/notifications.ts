@@ -50,8 +50,9 @@ export interface UnreadCountResponse {
  *
  * Conversation notifications are split by channel: the backend tags
  * "omnichannel_conversation" for WhatsApp/SMS/Email (-> contact-first
- * Omnichannel Inbox) and "widget_conversation" / "messenger_conversation"
- * for web-widget and Messenger chats (-> Support Desk Workspace), matching
+ * Omnichannel Inbox) and "widget_conversation" / "messenger_conversation" /
+ * "instagram_conversation" for web-widget, Messenger and Instagram chats
+ * (-> Support Desk Workspace), matching
  * where each conversation actually lives in the UI.
  */
 export function getNotificationRoute(notif: NotificationData): string | null {
@@ -72,6 +73,9 @@ export function getNotificationRoute(notif: NotificationData): string | null {
             // Messenger follows the web-widget precedent: a PSID carries no
             // phone/email contact identity, so its conversations live in the
             // Workspace too (backend conversation_notification_entity_type).
+            return notif.entity_id ? `/support/workspace?conversation=${notif.entity_id}` : "/support/workspace";
+        case "instagram_conversation":
+            // Instagram DMs mirror Messenger exactly (IGSID identity).
             return notif.entity_id ? `/support/workspace?conversation=${notif.entity_id}` : "/support/workspace";
         case "chat_message":
             return "/inbox";

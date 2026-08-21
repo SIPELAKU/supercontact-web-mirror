@@ -108,6 +108,9 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
   // Facebook brand blue - Messenger conversations live in the Workspace
   // (PSID identity, no contact), same as web_widget.
   messenger: { label: "Messenger", badge: "bg-[#1877F2]" },
+  // Instagram brand pink/magenta - IG DMs follow the Messenger precedent
+  // (IGSID identity, no contact), so they live in the Workspace too.
+  instagram: { label: "Instagram", badge: "bg-[#E1306C]" },
 };
 
 // ---------------------------------------------------------------------------

@@ -4,11 +4,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { Chip } from "@mui/material";
 import { format } from "date-fns";
-import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock, Building2, MapPin, Briefcase } from "lucide-react";
+import { Mail, Phone, Globe, User, ExternalLink, Hash, Clock, Building2, MapPin, Briefcase, ClipboardCheck } from "lucide-react";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppButton } from "@/components/ui/app-button";
 import { useUsers } from "@/lib/hooks/useUsers";
+import { usePermission } from "@/lib/hooks/usePermission";
+import { QaReviewFormDialog } from "@/components/support/qa/QaReviewFormDialog";
 import {
   useAssignConversation,
   useSetConversationStatus,
@@ -58,6 +60,11 @@ interface WorkspaceContextPanelProps {
 }
 
 export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConversation }: WorkspaceContextPanelProps) {
+  // Hooks stay above the empty-state early return (React rules of hooks).
+  const { can } = usePermission();
+  const canQaReview = can("support:qa:review");
+  const [isQaOpen, setIsQaOpen] = useState(false);
+
   if (!selectedItem) {
     return (
       <aside className="flex h-full w-full flex-col items-center justify-center border-l border-gray-200 bg-white px-6 text-center">
@@ -138,6 +145,20 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
             currentUserFullname={conversation?.assigned_user_fullname}
           />
           <TagsControl conversationId={conversationId} tags={conversation?.tags || []} />
+          {/* QA launch point (Phase 8D) - opens the new-review dialog with the
+              subject pre-filled to this conversation. */}
+          {canQaReview && (
+            <AppButton
+              variantStyle="outline"
+              color="gray"
+              size="small"
+              className="w-full text-xs"
+              onClick={() => setIsQaOpen(true)}
+              startIcon={<ClipboardCheck size={14} />}
+            >
+              QA review
+            </AppButton>
+          )}
         </Section>
 
         {/* SLA - only when a policy matches this conversation (sla != null). */}
@@ -150,6 +171,24 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
             - Suggested knowledge  -> TODO(Support Desk Phase 3): KB suggestions API
             Rendered as nothing rather than empty/fake panels. */}
       </div>
+
+      {canQaReview && (
+        <QaReviewFormDialog
+          isOpen={isQaOpen}
+          onClose={() => setIsQaOpen(false)}
+          defaultSubjectType="conversation"
+          defaultSubjectId={conversationId}
+          lockSubject
+          defaultAgent={
+            selectedItem.assigned_user_id
+              ? {
+                  id: selectedItem.assigned_user_id,
+                  name: conversation?.assigned_user_fullname || "Assigned agent",
+                }
+              : null
+          }
+        />
+      )}
     </aside>
   );
 }

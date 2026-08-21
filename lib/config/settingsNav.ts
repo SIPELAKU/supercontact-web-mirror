@@ -65,6 +65,24 @@ export const settingsNav: SettingsRegistry = [
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },
       {
+        // CSAT surveys carry their own support:csat:* grants rather than the
+        // section's tickets:config:manage: a user may hold only the view grant
+        // (see responses) or the manage grant (enable + configure).
+        id: "csat",
+        title: "CSAT Surveys",
+        path: "/settings/support/csat",
+        permission: ["support:csat:manage", "support:csat:view"],
+      },
+      {
+        // QA scorecard administration (Phase 8D). Carries its own dedicated
+        // grant instead of the section's tickets:config:manage - scorecard
+        // design is a QA-lead task, not a general ticket-config one.
+        id: "qa",
+        title: "QA Scorecards",
+        path: "/settings/support/qa",
+        permission: "support:qa:manage",
+      },
+      {
         id: "canned-replies",
         title: "Canned Replies",
         path: "/settings/support/canned-replies",

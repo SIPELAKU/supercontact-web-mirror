@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Pencil, Trash2, GitMerge, Link2 } from "lucide-react";
+import { Pencil, Trash2, GitMerge, Link2, ClipboardCheck } from "lucide-react";
 import { AppTabs } from "@/components/ui/app-tabs";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
@@ -28,6 +28,7 @@ import { TicketSideConversationsPanel } from "./TicketSideConversationsPanel";
 import { TicketConversationPanel } from "./TicketConversationPanel";
 import { MergeTicketModal } from "../modals/MergeTicketModal";
 import { LinkTicketModal } from "../modals/LinkTicketModal";
+import { QaReviewFormDialog } from "@/components/support/qa/QaReviewFormDialog";
 
 interface TicketDetailClientProps {
     id: string;
@@ -43,6 +44,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const { confirm, confirmationPopup } = useConfirmationPopup();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const canDelete = can(["tickets:delete", "tickets"]);
+    const canQaReview = can("support:qa:review");
 
     const { data, isLoading, error } = useTicket(id);
     const deleteMutation = useDeleteTicket();
@@ -53,6 +55,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isMergeOpen, setIsMergeOpen] = useState(false);
     const [isLinkOpen, setIsLinkOpen] = useState(false);
+    const [isQaOpen, setIsQaOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<DetailTab>(() => {
         const requested = searchParams.get("tab") as DetailTab | null;
         return requested && VALID_TABS.includes(requested) ? requested : "overview";
@@ -195,6 +198,15 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                     </span>
                 ))}
                 <div className="ml-auto flex items-center gap-2">
+                    {canQaReview && (
+                        <AppButton
+                            variantStyle="outline"
+                            onClick={() => setIsQaOpen(true)}
+                            startIcon={<ClipboardCheck size={14} />}
+                        >
+                            QA review
+                        </AppButton>
+                    )}
                     {canWrite && <ApplyMacroButton ticketId={ticket.id} />}
                     {canWrite && !ticket.merged_into_ticket_id && (
                         <AppButton
@@ -333,6 +345,20 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
             <EditTicketModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} ticket={ticket} />
             <MergeTicketModal isOpen={isMergeOpen} onClose={() => setIsMergeOpen(false)} ticket={ticket} />
             <LinkTicketModal isOpen={isLinkOpen} onClose={() => setIsLinkOpen(false)} ticket={ticket} />
+            {canQaReview && (
+                <QaReviewFormDialog
+                    isOpen={isQaOpen}
+                    onClose={() => setIsQaOpen(false)}
+                    defaultSubjectType="ticket"
+                    defaultSubjectId={ticket.id}
+                    lockSubject
+                    defaultAgent={
+                        ticket.assigned_agent
+                            ? { id: ticket.assigned_agent.id, name: ticket.assigned_agent.fullname }
+                            : null
+                    }
+                />
+            )}
             {confirmationPopup}
         </div>
     );

@@ -154,6 +154,11 @@ const menuData: MenuSection[] = [
         name: "Support",
         icon: HelpCircle,
         children: [
+          // Unified cross-entity feed: tickets + omnichannel conversations in
+          // one read-only list (Increment 8). Visible to anyone who can read
+          // EITHER side, so the union gate mirrors the Tickets read grant plus
+          // the Omnichannel "use" grant (any-of).
+          { name: "All Work", path: "/support/all", permission: ["tickets:read:my", "tickets:read:team", "tickets", "omnichannel:use"] },
           // Conversation-first agent workspace (sibling to the contact-first
           // Omnichannel inbox above). Gated on the same "omnichannel:use"
           // permission the Omnichannel entry uses.

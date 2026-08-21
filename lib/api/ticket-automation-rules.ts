@@ -85,3 +85,38 @@ export async function deleteTicketAutomationRule(token: string, id: string): Pro
     });
     return handleResponse(res, "Failed to delete automation rule");
 }
+
+// ---- Auto-close solved tickets setting (companies.auto_close_solved_days) ----
+
+export interface AutoCloseSetting {
+    // null or 0 = disabled; a positive value 1..365 = close Solved tickets after
+    // that many days.
+    auto_close_solved_days: number | null;
+}
+
+export async function fetchAutoCloseSetting(
+    token: string
+): Promise<{ data: AutoCloseSetting }> {
+    const url = getFullUrl("/ticket-automation-rules/auto-close");
+    const res = await fetchWithTimeout(url, {
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    });
+    return handleResponse(res, "Failed to load auto-close setting");
+}
+
+export async function updateAutoCloseSetting(
+    token: string,
+    auto_close_solved_days: number | null
+): Promise<{ data: AutoCloseSetting }> {
+    const url = getFullUrl("/ticket-automation-rules/auto-close");
+    const res = await fetchWithTimeout(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ auto_close_solved_days }),
+    });
+    return handleResponse(res, "Failed to update auto-close setting");
+}

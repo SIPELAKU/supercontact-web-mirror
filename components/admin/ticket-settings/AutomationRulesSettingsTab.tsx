@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@mui/material";
 import { Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
@@ -15,6 +15,8 @@ import {
     useCreateTicketAutomationRule,
     useUpdateTicketAutomationRule,
     useDeleteTicketAutomationRule,
+    useAutoCloseSetting,
+    useUpdateAutoCloseSetting,
 } from "@/lib/hooks/useTicketAutomationRules";
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import {
@@ -28,7 +30,14 @@ import {
 const TRIGGER_OPTIONS: { value: TicketAutomationTriggerType; label: string }[] = [
     { value: "on_create", label: "On Ticket Created" },
     { value: "on_update", label: "On Ticket Updated" },
+    { value: "time_based", label: "Time-based (scheduled)" },
 ];
+
+function triggerLabel(trigger: TicketAutomationTriggerType): string {
+    if (trigger === "on_create") return "On Create";
+    if (trigger === "on_update") return "On Update";
+    return "Time-based";
+}
 
 const FIELD_OPTIONS = [
     { value: "priority", label: "Priority" },
@@ -79,6 +88,40 @@ export default function AutomationRulesSettingsTab() {
     const createMutation = useCreateTicketAutomationRule();
     const updateMutation = useUpdateTicketAutomationRule();
     const deleteMutation = useDeleteTicketAutomationRule();
+
+    // Auto-close solved tickets setting (companies.auto_close_solved_days).
+    const { data: autoCloseData } = useAutoCloseSetting();
+    const updateAutoCloseMutation = useUpdateAutoCloseSetting();
+    const [autoCloseDays, setAutoCloseDays] = useState("");
+
+    useEffect(() => {
+        const value = autoCloseData?.data?.auto_close_solved_days;
+        setAutoCloseDays(value === null || value === undefined ? "" : String(value));
+    }, [autoCloseData]);
+
+    const handleSaveAutoClose = async () => {
+        const trimmed = autoCloseDays.trim();
+        let value: number | null;
+        if (trimmed === "") {
+            value = null; // empty = disabled
+        } else {
+            const parsed = Number(trimmed);
+            if (!Number.isInteger(parsed) || parsed < 0 || parsed > 365) {
+                notify.warning("Validation Error", {
+                    description:
+                        "Enter a whole number of days between 0 and 365 (0 or empty disables auto-close).",
+                });
+                return;
+            }
+            value = parsed;
+        }
+        try {
+            await updateAutoCloseMutation.mutateAsync(value);
+            notify.success("Auto-close setting saved");
+        } catch (error: any) {
+            notify.error("Error", { description: error.message });
+        }
+    };
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
@@ -165,8 +208,7 @@ export default function AutomationRulesSettingsTab() {
             },
             {
                 id: "trigger",
-                accessorFn: (row) =>
-                    row.trigger_type === "on_create" ? "On Create" : "On Update",
+                accessorFn: (row) => triggerLabel(row.trigger_type),
                 header: "Trigger",
             },
             {
@@ -198,6 +240,38 @@ export default function AutomationRulesSettingsTab() {
                 priority order (lower number = runs first).
             </p>
 
+            <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-800">Auto-close solved tickets</h3>
+                    <p className="text-xs text-gray-500 mt-1 max-w-2xl">
+                        Automatically move a ticket from Solved to Closed after it has stayed Solved for
+                        the number of days below. Set to 0 or leave empty to disable. Checked on a
+                        schedule (hourly).
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-500">
+                            Automatically close Solved tickets after (days)
+                        </label>
+                        <AppInput
+                            isBgWhite
+                            type="number"
+                            placeholder="Disabled"
+                            value={autoCloseDays}
+                            inputProps={{ min: 0, max: 365 }}
+                            onChange={(e) => setAutoCloseDays(e.target.value)}
+                        />
+                    </div>
+                    <AppButton
+                        onClick={handleSaveAutoClose}
+                        disabled={updateAutoCloseMutation.isPending}
+                    >
+                        Save
+                    </AppButton>
+                </div>
+            </div>
+
             <div className="rounded-xl border border-gray-200 p-4 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
@@ -219,6 +293,12 @@ export default function AutomationRulesSettingsTab() {
                             options={TRIGGER_OPTIONS}
                             onChange={(e) => setTriggerType(e.target.value as TicketAutomationTriggerType)}
                         />
+                        {triggerType === "time_based" && (
+                            <p className="text-xs text-gray-500">
+                                Time-based rules are re-evaluated on a schedule (hourly) against open
+                                tickets and fire at most once per ticket.
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-gray-500">Priority (lower runs first)</label>

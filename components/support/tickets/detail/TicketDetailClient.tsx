@@ -23,6 +23,7 @@ import { TicketAttachmentUploader } from "./TicketAttachmentUploader";
 import { TicketViewersIndicator } from "./TicketViewersIndicator";
 import { ApplyMacroButton } from "./ApplyMacroButton";
 import { TicketLinksPanel } from "./TicketLinksPanel";
+import { TicketParticipantsPanel } from "./TicketParticipantsPanel";
 import { TicketConversationPanel } from "./TicketConversationPanel";
 import { MergeTicketModal } from "../modals/MergeTicketModal";
 import { LinkTicketModal } from "../modals/LinkTicketModal";
@@ -307,6 +308,8 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                             )}
                         </div>
                     </div>
+
+                    <TicketParticipantsPanel ticketId={id} />
 
                     <TicketLinksPanel ticketId={id} />
                 </div>

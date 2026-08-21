@@ -52,6 +52,15 @@ export const settingsNav: SettingsRegistry = [
         permission: "omnichannel:use",
       },
       { id: "business-hours", title: "Business Hours", path: "/settings/support/business-hours" },
+      {
+        // Per-agent reply signature. Any agent who can reply to tickets manages
+        // their own, so this item is NOT gated behind the section's
+        // tickets:config:manage - it carries its own agent-level permission set.
+        id: "signature",
+        title: "My Signature",
+        path: "/settings/support/signature",
+        permission: ["tickets:write:my", "tickets:write:team", "tickets", "tickets:config:manage"],
+      },
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },
       {

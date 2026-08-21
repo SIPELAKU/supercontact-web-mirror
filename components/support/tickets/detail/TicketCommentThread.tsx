@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Loader2, Paperclip, X, MessageCircle, Mail, Globe } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, Loader2, Paperclip, PenLine, X, MessageCircle, Mail, Globe } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
@@ -15,6 +15,12 @@ import {
     useUpdateTicketComment,
     useDeleteTicketComment,
 } from "@/lib/hooks/useTicketComments";
+import {
+    useTicketSignature,
+    useTicketDraft,
+    useSaveTicketDraft,
+    useDeleteTicketDraft,
+} from "@/lib/hooks/useTicketCollab";
 import { TicketCommentItem } from "./TicketCommentItem";
 
 interface TicketCommentThreadProps {
@@ -42,6 +48,88 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
 
     const comments = data?.data?.data || [];
 
+    // --- Agent signature (append-on-demand, never double-appended) ---
+    const { data: signature } = useTicketSignature();
+    const signatureBody = signature?.is_active ? (signature.body ?? "").trim() : "";
+    // Hide the button once the signature is already present so it can't be added twice.
+    const canInsertSignature = signatureBody !== "" && !body.includes(signatureBody);
+
+    const insertSignature = () => {
+        if (!signatureBody || body.includes(signatureBody)) return;
+        setBody((prev) => {
+            const trimmed = prev.replace(/\s+$/, "");
+            const separator = trimmed.length > 0 ? "\n\n" : "";
+            return `${trimmed}${separator}${signatureBody}`;
+        });
+        requestAnimationFrame(() => textareaRef.current?.focus());
+    };
+
+    // --- Reply drafts (prefill on ticket change, debounced autosave, delete on
+    // send). Kept keyed by ticketId so switching tickets never clobbers the
+    // in-progress body, and flows through setBody so KB / Copilot / signature
+    // inserts autosave too. ---
+    const draftQuery = useTicketDraft(ticketId);
+    const saveDraft = useSaveTicketDraft();
+    const deleteDraft = useDeleteTicketDraft();
+    const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved">("idle");
+    // Whether the saved draft has been loaded into the input for this ticket.
+    const prefilledRef = useRef(false);
+    // The body currently persisted server-side, so autosave can skip no-op PUTs
+    // and stale saves after a ticket switch.
+    const lastSavedRef = useRef<{ ticketId: string; body: string } | null>(null);
+
+    // Reset the composer when the ticket changes; the saved draft (if any) is
+    // re-hydrated by the prefill effect below.
+    useEffect(() => {
+        setBody("");
+        setFiles([]);
+        prefilledRef.current = false;
+        setDraftStatus("idle");
+    }, [ticketId]);
+
+    // Prefill the composer with the saved draft once it resolves - but only if
+    // the input is still empty (don't clobber text the agent already started).
+    useEffect(() => {
+        if (!ticketId) return;
+        if (prefilledRef.current) return;
+        if (draftQuery.isLoading) return; // wait for the GET (or cache) to resolve
+        prefilledRef.current = true;
+        const draftBody = draftQuery.data?.body ?? "";
+        lastSavedRef.current = { ticketId, body: draftBody };
+        if (draftBody) {
+            setBody((prev) => (prev.trim() === "" ? draftBody : prev));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ticketId, draftQuery.isLoading, draftQuery.data]);
+
+    // Debounced autosave. Skips no-op saves, waits until the draft has been
+    // hydrated (so load doesn't overwrite an existing draft with an empty body),
+    // and captures the ticket id so a switch can't misroute an in-flight save.
+    useEffect(() => {
+        if (!ticketId) return;
+        if (!prefilledRef.current) return;
+        const nextBody = body;
+        const saved = lastSavedRef.current;
+        if (saved && saved.ticketId === ticketId && saved.body === nextBody) return;
+
+        const tid = ticketId;
+        const timer = setTimeout(() => {
+            setDraftStatus("saving");
+            saveDraft.mutate(
+                { ticketId: tid, body: nextBody },
+                {
+                    onSuccess: () => {
+                        lastSavedRef.current = { ticketId: tid, body: nextBody };
+                        setDraftStatus("saved");
+                    },
+                    onError: () => setDraftStatus("idle"),
+                }
+            );
+        }, 700);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [body, ticketId]);
+
     // Insert a Knowledge Base snippet at the caret (falls back to append).
     const insertAtCaret = (snippet: string) => {
         const el = textareaRef.current;
@@ -68,6 +156,12 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
             });
             setBody("");
             setFiles([]);
+            // Sent - drop the saved draft so it doesn't reappear. Mark the last
+            // saved body as empty first so the autosave effect treats setBody("")
+            // as a no-op instead of racing a fresh PUT against the DELETE.
+            lastSavedRef.current = { ticketId, body: "" };
+            setDraftStatus("idle");
+            deleteDraft.mutate(ticketId);
         } catch (err: any) {
             notify.error(err?.message || "Failed to add comment");
         }
@@ -187,14 +281,45 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                                     mode === "replace" ? setBody(value) : insertAtCaret(value)
                                 }
                             />
+                            {/* Agent signature - appends the saved signature to the
+                                draft (never twice). Draft-only: the agent still sends. */}
+                            {canInsertSignature && (
+                                <button
+                                    type="button"
+                                    onClick={insertSignature}
+                                    className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-gray-500 hover:text-gray-700"
+                                    title="Insert your signature"
+                                >
+                                    <PenLine size={16} />
+                                    <span className="hidden sm:inline">Signature</span>
+                                </button>
+                            )}
                         </div>
-                        <AppButton
-                            onClick={handleSubmit}
-                            variantStyle="primary"
-                            disabled={createMutation.isPending || !body.trim()}
-                        >
-                            {createMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Send"}
-                        </AppButton>
+                        <div className="flex items-center gap-3">
+                            {/* Draft autosave indicator. */}
+                            {draftStatus !== "idle" && (
+                                <span className="hidden items-center gap-1 text-[11px] text-gray-400 sm:inline-flex">
+                                    {draftStatus === "saving" ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            Saving…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="h-3 w-3 text-emerald-500" />
+                                            Draft saved
+                                        </>
+                                    )}
+                                </span>
+                            )}
+                            <AppButton
+                                onClick={handleSubmit}
+                                variantStyle="primary"
+                                disabled={createMutation.isPending || !body.trim()}
+                            >
+                                {createMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Send"}
+                            </AppButton>
+                        </div>
                     </div>
                 </div>
             )}

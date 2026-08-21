@@ -45,6 +45,7 @@ const CHANNEL_OPTIONS: { value: ConversationQueueChannelType | ""; label: string
   { value: "sms", label: "SMS" },
   { value: "email", label: "Email" },
   { value: "web_widget", label: "Web widget" },
+  { value: "messenger", label: "Messenger" },
 ];
 
 const PRIORITY_OPTIONS: { value: ConversationQueuePriority | ""; label: string }[] = [
@@ -60,6 +61,7 @@ const CHANNEL_LABEL: Record<ConversationQueueChannelType, string> = {
   sms: "SMS",
   email: "Email",
   web_widget: "Web widget",
+  messenger: "Messenger",
 };
 
 const PRIORITY_LABEL: Record<ConversationQueuePriority, string> = {

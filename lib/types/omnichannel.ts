@@ -1,11 +1,13 @@
 // Omnichannel Types
 
 // THE channel union. Every FE channel_type value flows through this one type -
-// adding a channel (Phase 9: sms, later messenger/instagram) means extending it
-// here and letting the compiler surface every switch/record that needs a new
-// arm. Types that deliberately exclude a channel (e.g. the contact-first inbox
-// filter, which leaves out web_widget) stay hand-written on purpose.
-export type ChannelType = 'whatsapp' | 'email' | 'web_widget' | 'sms';
+// adding a channel (Phase 9: sms, messenger; later instagram) means extending
+// it here and letting the compiler surface every switch/record that needs a
+// new arm. Types that deliberately exclude a channel (e.g. the contact-first
+// inbox filter, which leaves out web_widget AND messenger - PSIDs have no
+// phone/email contact identity, so messenger conversations live in the
+// Workspace like widget chats) stay hand-written on purpose.
+export type ChannelType = 'whatsapp' | 'email' | 'web_widget' | 'sms' | 'messenger';
 
 export type WhatsAppApprovalStatus = 'pending_approval' | 'approved' | 'rejected';
 
@@ -312,6 +314,16 @@ export interface ConnectSmsRequest {
   phone_number: string;
   twilio_account_sid: string;
   twilio_auth_token: string;
+}
+
+// Phase 9 Inc B: connect a Facebook Page for Messenger
+// (POST /omnichannels/accounts/messenger). BYOK Page Access Token - the
+// backend verifies it against the Graph API before storing it encrypted. A
+// page can be actively connected to only ONE company platform-wide.
+export interface ConnectMessengerRequest {
+  display_name?: string;
+  page_id: string;
+  page_access_token: string;
 }
 
 export interface ConnectEmailRequest {

@@ -8,6 +8,7 @@
 import {
   Building2,
   CreditCard,
+  Facebook,
   Globe,
   LifeBuoy,
   Mail,
@@ -109,6 +110,13 @@ export const settingsNav: SettingsRegistry = [
     title: "SMS",
     icon: Smartphone,
     path: "/settings/sms",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "messenger",
+    title: "Messenger",
+    icon: Facebook,
+    path: "/settings/messenger",
     permission: "omnichannel:setup",
   },
   {

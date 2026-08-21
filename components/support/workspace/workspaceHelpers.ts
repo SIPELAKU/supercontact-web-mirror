@@ -105,6 +105,9 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
   whatsapp: { label: "WhatsApp", badge: "bg-[#25D366]" },
   email: { label: "Email", badge: "bg-[#8B5CF6]" },
   sms: { label: "SMS", badge: "bg-[#F59E0B]" },
+  // Facebook brand blue - Messenger conversations live in the Workspace
+  // (PSID identity, no contact), same as web_widget.
+  messenger: { label: "Messenger", badge: "bg-[#1877F2]" },
 };
 
 // ---------------------------------------------------------------------------

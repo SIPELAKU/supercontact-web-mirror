@@ -10,6 +10,7 @@ import {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
+  ConnectMessengerRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -20,6 +21,7 @@ import {
   fetchAccounts,
   connectWhatsApp,
   connectSms,
+  connectMessenger,
   connectEmail,
   connectWebWidget,
   fetchWebWidgetConfig,
@@ -193,6 +195,22 @@ export function useConnectSms() {
     mutationFn: (data: ConnectSmsRequest) => {
       if (!token) throw new Error('No authentication token');
       return connectSms(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+// Phase 9 Inc B: connect a Facebook Page for Messenger.
+export function useConnectMessenger() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ConnectMessengerRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return connectMessenger(token, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });

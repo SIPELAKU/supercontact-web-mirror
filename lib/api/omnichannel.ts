@@ -7,6 +7,7 @@ import {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
+  ConnectMessengerRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -52,6 +53,7 @@ export type {
   ConversationWithMessages,
   ConnectWhatsAppRequest,
   ConnectSmsRequest,
+  ConnectMessengerRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -262,6 +264,33 @@ export async function connectSms(token: string, data: ConnectSmsRequest): Promis
 
   if (!res.ok) {
     throw json || new Error('Failed to connect SMS account');
+  }
+
+  return json.data || json;
+}
+
+// Phase 9 Inc B: connect a Facebook Page for Messenger. BYOK Page Access
+// Token - the backend verifies it against the Graph API before storing it
+// encrypted; a page can be actively connected to only ONE company
+// platform-wide (webhook tenant routing is purely by page id).
+export async function connectMessenger(token: string, data: ConnectMessengerRequest): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/messenger`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to connect Messenger account');
   }
 
   return json.data || json;

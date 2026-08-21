@@ -33,6 +33,7 @@ const CHANNEL_OPTIONS: { value: ConversationSlaChannelType | ""; label: string }
   { value: "sms", label: "SMS" },
   { value: "email", label: "Email" },
   { value: "web_widget", label: "Web widget" },
+  { value: "messenger", label: "Messenger" },
 ];
 
 const PRIORITY_OPTIONS: { value: ConversationPriority | ""; label: string }[] = [
@@ -48,6 +49,7 @@ const CHANNEL_LABEL: Record<ConversationSlaChannelType, string> = {
   sms: "SMS",
   email: "Email",
   web_widget: "Web widget",
+  messenger: "Messenger",
 };
 
 const PRIORITY_LABEL: Record<ConversationPriority, string> = {

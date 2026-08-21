@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Paperclip, PenLine, X, MessageCircle, Mail, Globe, Smartphone } from "lucide-react";
+import { Check, Loader2, Paperclip, PenLine, X, MessageCircle, Mail, Globe, Smartphone, Facebook } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
@@ -209,6 +209,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                             {channelType === "sms" && <Smartphone size={12} />}
                             {channelType === "email" && <Mail size={12} />}
                             {channelType === "web_widget" && <Globe size={12} />}
+                            {channelType === "messenger" && <Facebook size={12} />}
                             {channelType === "whatsapp"
                                 ? "Reply via WhatsApp"
                                 : channelType === "sms"
@@ -217,7 +218,9 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                                         ? "Reply via Email"
                                         : channelType === "web_widget"
                                             ? "Reply via Website Chat"
-                                            : "Public Reply"}
+                                            : channelType === "messenger"
+                                                ? "Reply via Messenger"
+                                                : "Public Reply"}
                         </button>
                         <button
                             onClick={() => setReplyMode("internal")}
@@ -231,7 +234,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                     </div>
                     {channelType && replyMode === "public" && (
                         <p className="text-xs text-gray-400">
-                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : channelType === "sms" ? "SMS" : channelType === "web_widget" ? "the website chat" : "email"}.
+                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : channelType === "sms" ? "SMS" : channelType === "web_widget" ? "the website chat" : channelType === "messenger" ? "Messenger" : "email"}.
                         </p>
                     )}
                     <textarea

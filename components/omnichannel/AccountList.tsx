@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAccounts, useDeleteAccount, useUpdateAccount, useReactivateAccount } from "@/lib/hooks/useOmnichannel";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Trash2, Mail, MessageCircle, Globe, Smartphone, Pencil, Check, X, RotateCcw } from "lucide-react";
+import { Loader2, Trash2, Mail, MessageCircle, Globe, Smartphone, Pencil, Check, X, RotateCcw, Facebook } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { notify } from "@/lib/notifications";
@@ -100,6 +100,8 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
               <Smartphone className="text-amber-600" size={24} />
             ) : account.channel_type === 'web_widget' ? (
               <Globe className="text-indigo-600" size={24} />
+            ) : account.channel_type === 'messenger' ? (
+              <Facebook className="text-[#1877F2]" size={24} />
             ) : (
               <Mail className="text-blue-600" size={24} />
             )}
@@ -141,7 +143,7 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
             <p className="text-sm text-gray-600 mb-2">{account.channel_identifier}</p>
 
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className="capitalize">{account.channel_type === 'sms' ? 'SMS' : account.channel_type}</span>
+              <span className="capitalize">{account.channel_type === 'sms' ? 'SMS' : account.channel_type === 'messenger' ? 'Messenger' : account.channel_type}</span>
               <span>•</span>
               <span>Added {new Date(account.created_at).toLocaleDateString()}</span>
             </div>

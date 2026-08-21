@@ -29,6 +29,7 @@ import {
 // semantics - this dimension already has an established meaning in this
 // app, so it's reused rather than assigning a fresh categorical palette.
 const PRIORITY_COLORS: Record<string, string> = {
+    Urgent: "#991b1b",
     High: "#dc2626",
     Medium: "#ea580c",
     Low: "#2563eb",

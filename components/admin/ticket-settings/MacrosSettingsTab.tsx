@@ -26,6 +26,7 @@ const STATUS_OPTIONS = [
 
 const PRIORITY_OPTIONS = [
     { value: "", label: "No change" },
+    { value: "Urgent", label: "Urgent" },
     { value: "High", label: "High" },
     { value: "Medium", label: "Medium" },
     { value: "Low", label: "Low" },

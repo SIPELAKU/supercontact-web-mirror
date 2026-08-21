@@ -43,7 +43,7 @@ const OP_OPTIONS: { value: TicketConditionOp; label: string }[] = [
     { value: "changed_from", label: "changed from" },
 ];
 
-const PRIORITY_VALUES = ["High", "Medium", "Low"];
+const PRIORITY_VALUES = ["Urgent", "High", "Medium", "Low"];
 const STATUS_VALUES = ["Open", "In Progress", "Closed"];
 
 const ACTION_TYPE_OPTIONS = [

@@ -20,6 +20,7 @@ import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
 import { TicketSlaPolicy, TicketSlaPriority } from "@/lib/types/TicketSettings";
 
 const PRIORITY_OPTIONS: { value: TicketSlaPriority; label: string }[] = [
+    { value: "Urgent", label: "Urgent" },
     { value: "High", label: "High" },
     { value: "Medium", label: "Medium" },
     { value: "Low", label: "Low" },

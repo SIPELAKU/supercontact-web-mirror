@@ -58,6 +58,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
     }, []);
 
     const priorityOptions = [
+        { label: "Urgent", value: "Urgent" },
         { label: "High", value: "High" },
         { label: "Medium", value: "Medium" },
         { label: "Low", value: "Low" },

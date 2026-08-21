@@ -108,7 +108,7 @@ export function TicketTable({
                 accessorKey: "priority",
                 header: "Priority",
                 filterVariant: "select",
-                filterSelectOptions: ["High", "Medium", "Low"],
+                filterSelectOptions: ["Urgent", "High", "Medium", "Low"],
                 Cell: ({ cell }) => (
                     <TicketPriorityBadge priority={cell.getValue<any>()} />
                 ),

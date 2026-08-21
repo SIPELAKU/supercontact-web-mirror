@@ -78,7 +78,7 @@ export interface BusinessHoursCalendar {
     updated_at: string;
 }
 
-export type TicketSlaPriority = "High" | "Medium" | "Low";
+export type TicketSlaPriority = "Urgent" | "High" | "Medium" | "Low";
 
 export interface TicketSlaPolicy {
     id: string;

@@ -34,6 +34,9 @@ export function TicketPriorityBadge({ priority }: PriorityBadgeProps) {
     let className = "";
 
     switch (priority) {
+        case "Urgent":
+            className = "bg-red-600 text-white hover:bg-red-700 border-none";
+            break;
         case "High":
             className = "bg-red-100 text-red-700 hover:bg-red-200 border-none";
             break;

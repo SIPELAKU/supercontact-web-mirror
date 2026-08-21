@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import MessageList from "@/components/omnichannel/MessageList";
 import { ConversationViewersIndicator } from "@/components/omnichannel/ConversationViewersIndicator";
+import { ConversationTypingIndicator } from "@/components/omnichannel/TypingIndicator";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppButton } from "@/components/ui/app-button";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -107,6 +108,14 @@ export function WorkspaceThread({
           <MessageList messages={conversation?.messages || []} channelType={channelType} />
         )}
       </div>
+
+      {/* Visitor-typing indicator - sits just above the composer, at the bottom
+          of the message stream. Auto-clears ~4s after the last WS signal. */}
+      <ConversationTypingIndicator
+        conversationId={conversationId}
+        name={name.split(" ")[0]}
+        className="shrink-0 px-4 pb-1 pt-0.5"
+      />
 
       <WorkspaceComposer
         conversationId={conversationId}

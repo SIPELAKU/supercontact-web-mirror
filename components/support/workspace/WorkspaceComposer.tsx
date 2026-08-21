@@ -13,6 +13,7 @@ import {
   useDeleteConversationDraft,
 } from "@/lib/hooks/useOmnichannel";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { CannedReply } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -57,6 +58,10 @@ export function WorkspaceComposer({
 
   const { userProfile } = useAuth();
   const agentName = userProfile?.fullname || "";
+
+  // Best-effort agent-typing signal (throttled ~2s). Fired only while composing
+  // a public Reply - internal notes are never visible to the visitor.
+  const notifyAgentTyping = useAgentTypingSignal(conversationId);
 
   // Canned replies (active only) for the "/" picker + toolbar button.
   const { data: cannedReplies = [] } = useCannedReplies(false);
@@ -165,6 +170,9 @@ export function WorkspaceComposer({
 
   const handleTextChange = (value: string) => {
     setText(value);
+    // Let the visitor's channel show "agent is typing" while composing a reply
+    // (not internal notes). Best-effort + throttled; never blocks the input.
+    if (mode === "reply") notifyAgentTyping();
     // Typing "/" at the very start opens the slash picker; the text after it
     // becomes the filter. Any other content closes a slash-triggered picker.
     if (value.startsWith("/")) {

@@ -99,6 +99,12 @@ interface WidgetStrings {
   newMessage: string;
   downloadAttachment: string;
   attachment: string;
+  // Realtime + attachments (agent-typing indicator, file upload):
+  agentTyping: string;
+  attachFile: string;
+  uploading: string;
+  fileTooLarge: string;
+  uploadFailed: string;
   // Support Assistant chrome:
   greetingHi: string;
   homeHeadline: string;
@@ -137,6 +143,11 @@ const STRINGS_EN: WidgetStrings = {
   newMessage: "New message",
   downloadAttachment: "Download attachment",
   attachment: "attachment",
+  agentTyping: "Support is typing…",
+  attachFile: "Attach a file",
+  uploading: "Uploading…",
+  fileTooLarge: "File is too large (max 10MB)",
+  uploadFailed: "Upload failed — tap to retry",
   greetingHi: "Hi there! 👋",
   homeHeadline: "How can we help?",
   homeSubtext: "Choose an option below or send us a message.",
@@ -173,6 +184,11 @@ const STRINGS_ID: WidgetStrings = {
   newMessage: "Pesan baru",
   downloadAttachment: "Unduh lampiran",
   attachment: "lampiran",
+  agentTyping: "Tim support sedang mengetik…",
+  attachFile: "Lampirkan berkas",
+  uploading: "Mengunggah…",
+  fileTooLarge: "Berkas terlalu besar (maks 10MB)",
+  uploadFailed: "Gagal mengunggah — ketuk untuk coba lagi",
   greetingHi: "Halo! 👋",
   homeHeadline: "Ada yang bisa kami bantu?",
   homeSubtext: "Pilih opsi di bawah atau kirim pesan kepada kami.",
@@ -306,6 +322,8 @@ const IC_SHIELD =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
 const IC_SEND =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+const IC_PAPERCLIP =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
 
 // Map a quick-action's free-form `icon` string to a themed tile + glyph.
 // Supports at least: question/chat, quote/dollar, order/package, sales/person,
@@ -377,6 +395,13 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
   const wsUrl = wsUrlAttr || apiUrl.replace(/^http/, "ws");
   const storageKey = `smartsales_widget_session_${widgetKey}`;
+  // Launcher-bubble drag position (top-left px), persisted per widget key so a
+  // visitor's chosen corner survives reloads. Independent of the session key so
+  // "Start over" never wipes it. Absent => fall back to the data-position anchor.
+  const posStorageKey = `smartsales_widget_pos_${widgetKey}`;
+  // A pointer must travel this many px before a press counts as a DRAG rather
+  // than a click - below it, the press still opens the panel as before.
+  const DRAG_THRESHOLD_PX = 6;
   const PING_INTERVAL_MS = 2 * 60 * 1000; // well under the server's 5-minute idle timeout
   // Reconnect backoff (item 2): exponential base 1s, cap 30s, full jitter.
   const RECONNECT_BASE_MS = 1000;
@@ -409,6 +434,31 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       localStorage.removeItem(storageKey);
     } catch {
       /* localStorage unavailable - nothing persisted to remove */
+    }
+  }
+
+  interface BubblePos {
+    left: number;
+    top: number;
+  }
+
+  function getStoredBubblePos(): BubblePos | null {
+    try {
+      const raw = localStorage.getItem(posStorageKey);
+      if (!raw) return null;
+      const p = JSON.parse(raw) as BubblePos;
+      if (typeof p?.left === "number" && typeof p?.top === "number") return p;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  function setStoredBubblePos(pos: BubblePos) {
+    try {
+      localStorage.setItem(posStorageKey, JSON.stringify(pos));
+    } catch {
+      /* localStorage unavailable - position just won't persist across reloads */
     }
   }
 
@@ -451,9 +501,15 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
   }
 
   async function apiFetch(path: string, options: RequestInit = {}) {
+    // For a multipart upload (FormData body) the browser MUST set Content-Type
+    // itself so it includes the boundary - never force application/json there.
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+    const baseHeaders: Record<string, string> = isFormData
+      ? {}
+      : { "Content-Type": "application/json" };
     const res = await fetch(`${apiUrl}${path}`, {
       ...options,
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      headers: { ...baseHeaders, ...(options.headers || {}) },
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -497,6 +553,41 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // show. Only ONE is live at a time; a new bot_suggestion replaces it.
     private deflection: DeflectionState | null = null;
 
+    // ---- Agent-typing indicator (feature 1) ----
+    // Transient "Support is typing…" state, driven by WS "agent_typing" frames.
+    // Auto-hides ~4s after the last frame; the timer is reset on each frame.
+    private agentTyping = false;
+    private agentTypingTimer: number | null = null;
+    private static readonly AGENT_TYPING_HIDE_MS = 4000;
+
+    // ---- Visitor-typing emit (feature 2) ----
+    // Leading-edge throttle: fire on the first keystroke, then at most once per
+    // window. Records the last successful emit time (epoch ms).
+    private lastTypingSentAt = 0;
+    private static readonly VISITOR_TYPING_WINDOW_MS = 2000;
+
+    // ---- File upload (feature 3) ----
+    // Transient upload state, rendered as a pending row in the thread. `file` +
+    // `content` are retained so an "error" row can re-attempt the same upload.
+    private upload:
+      | { filename: string; state: "uploading" | "error"; file: File; content: string }
+      | null = null;
+    // Error copy shown on an upload "error" row: fileTooLarge (unretryable) vs
+    // uploadFailed (retryable). Null while uploading or when there's no upload.
+    private uploadErrorText: string | null = null;
+    private static readonly MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // ~10MB, mirrors backend
+
+    // ---- Launcher drag (feature 4) ----
+    // Current custom bubble position (top-left px) or null when following the
+    // default data-position anchor. Seeded from localStorage on construction.
+    private bubblePos: BubblePos | null = getStoredBubblePos();
+    private dragActive = false;
+    private dragMoved = false;
+    private dragStartX = 0;
+    private dragStartY = 0;
+    private dragGrabX = 0;
+    private dragGrabY = 0;
+
     private bubbleEl!: HTMLButtonElement;
     private badgeEl!: HTMLSpanElement;
     private panelEl!: HTMLDivElement;
@@ -510,6 +601,13 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private menuEl!: HTMLDivElement;
     private menuWrapEl!: HTMLDivElement;
     private backBtn!: HTMLButtonElement;
+    // Composer element refs (form is built once and re-parented between views),
+    // held so the upload flow can toggle the send/attach buttons and read the
+    // typed text without re-querying the DOM.
+    private messageInputEl!: HTMLTextAreaElement;
+    private sendBtnEl!: HTMLButtonElement;
+    private attachBtnEl!: HTMLButtonElement;
+    private fileInputEl!: HTMLInputElement;
     // "Talk to a human" overflow-menu item - a chat-view-only defense-in-depth
     // escape hatch (Phase 7B.2), shown/hidden per view in setView().
     private talkHumanItem!: HTMLButtonElement;
@@ -581,7 +679,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           border-radius: 50%; background: ${brand}; color: #fff; border: none;
           cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.2); z-index: 2147483000;
           display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden;
+          /* touch drags move the launcher instead of scrolling the host page (feature 4) */
+          touch-action: none;
         }
+        .bubble.dragging { cursor: grabbing; box-shadow: 0 8px 22px rgba(0,0,0,.28); }
         .bubble img { width: 100%; height: 100%; object-fit: cover; }
         .badge {
           position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px;
@@ -726,6 +827,35 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
         button.send svg { width: 18px; height: 18px; }
         button.send:disabled { opacity: .5; cursor: default; }
+        button.attach {
+          flex: 0 0 auto; background: none; color: #6B7280; border: none; padding: 0; cursor: pointer;
+          width: 34px; height: 38px; display: flex; align-items: center; justify-content: center;
+        }
+        button.attach svg { width: 20px; height: 20px; }
+        button.attach:hover { color: ${brand}; }
+        button.attach:disabled { opacity: .4; cursor: default; }
+
+        /* ---- Agent-typing indicator (feature 1) ---- */
+        .typing { align-self: flex-start; display: flex; align-items: center; gap: 8px; max-width: 80%;
+          padding: 9px 12px; border-radius: 12px; background: #fff; border: 1px solid #E5E7EB; }
+        .typing-label { font-size: 12px; color: #6B7280; }
+        .typing-dots { display: inline-flex; gap: 3px; }
+        .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #9CA3AF; display: inline-block;
+          animation: ss-typing 1.2s infinite ease-in-out; }
+        .typing-dots span:nth-child(2) { animation-delay: .2s; }
+        .typing-dots span:nth-child(3) { animation-delay: .4s; }
+        @keyframes ss-typing { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+        /* ---- Upload pending / error row (feature 3) ---- */
+        .upload-row { align-self: flex-end; max-width: 80%; display: flex; align-items: center; gap: 8px;
+          padding: 8px 12px; border-radius: 12px; background: ${brand}; color: #fff; font-size: 13px; }
+        .upload-row.error { background: #fff; border: 1px solid #FCA5A5; color: #DC2626; flex-wrap: wrap; }
+        .upload-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .upload-spinner { width: 15px; height: 15px; flex: 0 0 auto; border-radius: 50%;
+          border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; animation: ss-spin .8s linear infinite; }
+        .upload-retry { background: none; border: none; padding: 0; cursor: pointer; font-size: 12px; font-weight: 700;
+          color: #DC2626; text-decoration: underline; }
+        @keyframes ss-spin { to { transform: rotate(360deg); } }
 
         /* ---- Mobile: panel goes full-screen, reveal the back affordance ---- */
         @media (max-width: 480px) {
@@ -753,12 +883,19 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         glyph.textContent = "💬";
         this.bubbleEl.appendChild(glyph);
       }
-      this.bubbleEl.onclick = () => this.toggle();
+      // Toggle is driven by pointer/keyboard handlers (setupBubbleDrag) so a
+      // press that becomes a DRAG doesn't also open the panel. No `onclick`, so
+      // the browser's ghost-click after a pointer drag is a harmless no-op.
+      this.setupBubbleDrag();
       this.badgeEl = document.createElement("span");
       this.badgeEl.className = "badge";
       this.badgeEl.setAttribute("aria-hidden", "true");
       this.bubbleEl.appendChild(this.badgeEl);
       this.shadow.appendChild(this.bubbleEl);
+      // Restore a previously dragged position, overriding the data-position
+      // anchor. Deferred a tick so the bubble has a measurable size to clamp to.
+      this.applyStoredBubblePosition();
+      window.addEventListener("resize", () => this.onViewportResize());
 
       // ---- Panel ----
       this.panelEl = document.createElement("div");
@@ -1061,6 +1198,36 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       const form = document.createElement("form");
       form.className = "composer";
 
+      // Attach (paperclip) button + its hidden file input (feature 3). The input
+      // lives inside the form so form.reset() clears it; the upload is driven by
+      // its `change` event, never by form submit.
+      const attachBtn = document.createElement("button");
+      attachBtn.type = "button";
+      attachBtn.className = "attach";
+      attachBtn.setAttribute("aria-label", this.strings.attachFile);
+      attachBtn.title = this.strings.attachFile;
+      attachBtn.appendChild(svgEl(IC_PAPERCLIP));
+      this.attachBtnEl = attachBtn;
+      form.appendChild(attachBtn);
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      // Images + PDF + common document types (backend limit ~10MB, enforced client-side too).
+      fileInput.accept =
+        "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv";
+      fileInput.style.display = "none";
+      fileInput.addEventListener("change", () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (f) void this.handleFileSelected(f);
+        // Clear so selecting the SAME file again still fires `change`.
+        fileInput.value = "";
+      });
+      this.fileInputEl = fileInput;
+      attachBtn.onclick = () => {
+        if (!attachBtn.disabled) fileInput.click();
+      };
+      form.appendChild(fileInput);
+
       const messageInput = document.createElement("textarea");
       messageInput.placeholder = this.strings.typeMessage;
       messageInput.setAttribute("aria-label", this.strings.typeMessage);
@@ -1074,6 +1241,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           else void this.handleSubmit(form, sendBtn);
         }
       });
+      // Visitor-typing emit (feature 2): best-effort, leading-edge throttled.
+      messageInput.addEventListener("input", () => this.emitVisitorTyping());
+      this.messageInputEl = messageInput;
       form.appendChild(messageInput);
 
       const sendBtn = document.createElement("button");
@@ -1081,6 +1251,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       sendBtn.className = "send";
       sendBtn.setAttribute("aria-label", this.strings.send);
       sendBtn.appendChild(svgEl(IC_SEND));
+      this.sendBtnEl = sendBtn;
       form.appendChild(sendBtn);
 
       form.onsubmit = (e) => {
@@ -1088,7 +1259,17 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         void this.handleSubmit(form, sendBtn);
       };
 
+      // Attach is only usable once a conversation (visitor_token) exists, since
+      // the upload endpoint is token-authed and there's no start-with-file path.
+      this.refreshComposerState();
+
       return form;
+    }
+
+    // Enable the attach button only when there's a live session (visitor_token).
+    // Called after the form is built and whenever the session appears/clears.
+    private refreshComposerState() {
+      if (this.attachBtnEl) this.attachBtnEl.disabled = !this.session;
     }
 
     private async handleSubmit(form: HTMLFormElement, sendBtn: HTMLButtonElement) {
@@ -1179,6 +1360,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           });
           this.session = { visitor_token: result.visitor_token, conversation_id: result.conversation_id };
           setSession(this.session);
+          this.refreshComposerState(); // a session now exists -> enable attach
           // A brand-new session must not inherit a prior "stop reconnecting"
           // flag (e.g. from an earlier expired-token purge) - clear it before
           // (re)connecting so the fresh conversation keeps full WS resilience.
@@ -1202,6 +1384,129 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       } finally {
         if (sendBtn) sendBtn.disabled = false;
         this.renderMessages();
+      }
+    }
+
+    // Feature 2 (visitor-typing emit). Best-effort, leading-edge throttled:
+    // fires on the first keystroke, then at most once per VISITOR_TYPING_WINDOW_MS.
+    // No-op without a session/conversation; all errors are swallowed (a dropped
+    // typing ping must never surface to the visitor).
+    private emitVisitorTyping() {
+      if (!this.session) return;
+      const now = Date.now();
+      if (now - this.lastTypingSentAt < SmartSalesWidget.VISITOR_TYPING_WINDOW_MS) return;
+      this.lastTypingSentAt = now;
+      void apiFetch(`/public/widget/typing`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+      }).catch(() => {
+        /* best-effort - a failed typing ping is never surfaced */
+      });
+    }
+
+    // Feature 1 (agent-typing display). Called for each WS "agent_typing" frame:
+    // shows the indicator and (re)arms the auto-hide timer, so it lingers ~4s
+    // after the LAST frame. Chat-view only.
+    private showAgentTyping() {
+      if (this.view !== "chat") return;
+      this.agentTyping = true;
+      if (this.agentTypingTimer) window.clearTimeout(this.agentTypingTimer);
+      this.agentTypingTimer = window.setTimeout(() => {
+        this.agentTyping = false;
+        this.agentTypingTimer = null;
+        this.renderMessages();
+      }, SmartSalesWidget.AGENT_TYPING_HIDE_MS);
+      this.renderMessages();
+    }
+
+    // Clear the agent-typing indicator immediately (e.g. the awaited agent
+    // message just arrived, so the "typing…" row would be stale).
+    private clearAgentTyping() {
+      if (this.agentTypingTimer) {
+        window.clearTimeout(this.agentTypingTimer);
+        this.agentTypingTimer = null;
+      }
+      this.agentTyping = false;
+    }
+
+    // Feature 3 (file upload). A file was chosen via the paperclip input: enforce
+    // the client-side size limit, then POST it (multipart) with the current typed
+    // text as `content`. Renders a pending "uploading" row, replaced by the real
+    // message bubble on success (deduped by id against the WS echo) or an error
+    // row with a retry affordance on failure.
+    private async handleFileSelected(file: File) {
+      const content = (this.messageInputEl?.value || "").trim();
+      if (file.size > SmartSalesWidget.MAX_UPLOAD_BYTES) {
+        // Surface the friendly size error as a retryable-looking row, but keep
+        // no file so "retry" isn't offered for something that can never succeed.
+        this.upload = { filename: file.name, state: "error", file, content };
+        // Overload the error copy for the too-large case via a one-shot flag on
+        // the row - simplest is a dedicated render below; reuse the error row.
+        this.uploadErrorText = this.strings.fileTooLarge;
+        this.renderMessages();
+        return;
+      }
+      this.uploadErrorText = null;
+      // No session => the token-authed upload endpoint can't be reached. The
+      // attach button is disabled in that state, but guard defensively.
+      if (!this.session) {
+        this.upload = { filename: file.name, state: "error", file, content };
+        this.uploadErrorText = this.strings.uploadFailed;
+        this.renderMessages();
+        return;
+      }
+      this.upload = { filename: file.name, state: "uploading", file, content };
+      // Clear the composer text now (it's being sent WITH the file), mirroring a
+      // normal send; retained in this.upload.content for a retry.
+      if (this.messageInputEl) this.messageInputEl.value = "";
+      await this.attemptUpload();
+    }
+
+    // Perform (or retry) the upload described by this.upload. Kept separate from
+    // handleFileSelected so the error row's retry button re-runs exactly this.
+    private async attemptUpload() {
+      const up = this.upload;
+      if (!up || !this.session) return;
+      up.state = "uploading";
+      this.uploadErrorText = null;
+      if (this.sendBtnEl) this.sendBtnEl.disabled = true;
+      if (this.attachBtnEl) this.attachBtnEl.disabled = true;
+      this.renderMessages();
+      try {
+        const fd = new FormData();
+        fd.append("file", up.file);
+        if (up.content) fd.append("content", up.content);
+        // NOTE: no Content-Type header - the browser sets the multipart boundary.
+        const result = await apiFetch(`/public/widget/messages/upload`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+          body: fd,
+        });
+        // The uploaded message is the visitor's OWN (right/outbound in the UI).
+        // De-dupe against a possible WS echo by id, exactly like the send path.
+        const id = (result?.id as string | undefined) || undefined;
+        if (!id || !this.serverIds.has(id)) {
+          if (id) this.serverIds.add(id);
+          this.messages.push({
+            id,
+            direction: "outbound",
+            content: (result?.content as string) || up.content || "",
+            attachments: (result?.attachments as WidgetAttachment[]) || [],
+            status: "sent",
+          });
+        }
+        this.upload = null;
+        if (this.view !== "chat") this.setView("chat");
+        this.renderMessages();
+      } catch (e) {
+        console.error("[SmartSales Widget] upload failed", e);
+        if ((e as { status?: number })?.status === 401) this.clearSession();
+        up.state = "error";
+        this.uploadErrorText = this.strings.uploadFailed;
+        this.renderMessages();
+      } finally {
+        if (this.sendBtnEl) this.sendBtnEl.disabled = false;
+        this.refreshComposerState();
       }
     }
 
@@ -1294,7 +1599,75 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         this.bodyEl.appendChild(sys);
       }
 
+      // Pending / failed upload row (feature 3), rendered like a visitor bubble.
+      const uploadEl = this.buildUploadRow();
+      if (uploadEl) this.bodyEl.appendChild(uploadEl);
+
+      // Agent-typing indicator (feature 1) - always the very last thing, right
+      // below the newest message. Chat-view only (guarded when armed).
+      if (this.agentTyping && this.view === "chat") {
+        const typing = document.createElement("div");
+        typing.className = "typing";
+        typing.setAttribute("aria-live", "polite");
+        const label = document.createElement("span");
+        label.className = "typing-label";
+        label.textContent = this.strings.agentTyping;
+        const dots = document.createElement("span");
+        dots.className = "typing-dots";
+        dots.innerHTML = "<span></span><span></span><span></span>";
+        typing.appendChild(dots);
+        typing.appendChild(label);
+        this.bodyEl.appendChild(typing);
+      }
+
       this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
+    }
+
+    // Build the pending/failed upload row for the CURRENT this.upload state, or
+    // null when there's no upload in flight. Fully derived from state so it
+    // survives message churn (like the deflection control).
+    private buildUploadRow(): HTMLElement | null {
+      const up = this.upload;
+      if (!up) return null;
+
+      if (up.state === "uploading") {
+        const row = document.createElement("div");
+        row.className = "upload-row";
+        const spinner = document.createElement("span");
+        spinner.className = "upload-spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        row.appendChild(spinner);
+        const name = document.createElement("span");
+        name.className = "upload-name";
+        name.textContent = `📎 ${up.filename}`;
+        row.appendChild(name);
+        const status = document.createElement("span");
+        status.textContent = this.strings.uploading;
+        row.appendChild(status);
+        return row;
+      }
+
+      // Error row: filename + reason, with a retry action unless the failure is
+      // an unrecoverable size violation (retrying can never make it fit).
+      const row = document.createElement("div");
+      row.className = "upload-row error";
+      const name = document.createElement("span");
+      name.className = "upload-name";
+      name.textContent = `📎 ${up.filename}`;
+      row.appendChild(name);
+      const msg = document.createElement("span");
+      msg.textContent = this.uploadErrorText || this.strings.uploadFailed;
+      row.appendChild(msg);
+      const tooLarge = up.file.size > SmartSalesWidget.MAX_UPLOAD_BYTES;
+      if (!tooLarge) {
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "upload-retry";
+        retry.textContent = this.strings.failedRetry;
+        retry.onclick = () => void this.attemptUpload();
+        row.appendChild(retry);
+      }
+      return row;
     }
 
     // Phase 7B.2: arm (or re-arm) the "Was this helpful?" escalation control
@@ -1520,6 +1893,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.serverIds = new Set();
       this.stoppedReconnect = true;
       this.agentConnected = false;
+      this.refreshComposerState(); // no token -> attach unusable
     }
 
     // Explicit "Start over" (overflow menu): tear the live session all the way
@@ -1550,6 +1924,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.agentConnected = false;
       this.deflection = null;
       this.reconnectAttempts = 0;
+      this.clearAgentTyping();
+      this.upload = null;
+      this.uploadErrorText = null;
+      this.refreshComposerState(); // session gone -> attach unusable again
       // Allow the next conversation to reconnect normally.
       this.stoppedReconnect = false;
       this.renderMessages();
@@ -1579,11 +1957,19 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             this.onBotSuggestion(data.deflection_id, data.articles);
             return;
           }
+          // Agent-typing indicator (feature 1): a support agent is typing. Show
+          // the transient "Support is typing…" row; it self-hides ~4s later.
+          if (data.type === "agent_typing") {
+            this.showAgentTyping();
+            return;
+          }
           if (data.type === "message") {
             // Dedupe redelivery/echo by id (item 3).
             if (data.id && this.serverIds.has(data.id)) return;
             if (data.id) this.serverIds.add(data.id);
             const msg = fromServer(data);
+            // An actual agent message supersedes the "typing…" hint.
+            if (msg.direction === "inbound") this.clearAgentTyping();
             this.messages.push(msg);
             this.renderMessages();
             // Unread badge (item 6): only agent (inbound) frames, only while closed.
@@ -1698,6 +2084,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
     private toggle() {
       this.isOpen = !this.isOpen;
+      if (this.isOpen) this.positionPanel(); // anchor near the (possibly dragged) bubble
       this.panelEl.classList.toggle("open", this.isOpen);
       if (!this.isOpen) this.closeMenu();
       if (this.isOpen) {
@@ -1706,6 +2093,137 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         const input = this.formEl?.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null;
         if (input) window.setTimeout(() => input.focus(), 0);
       }
+    }
+
+    // ---- Launcher drag (feature 4) ----
+
+    // Wire pointer + keyboard interaction on the bubble. A press that stays
+    // within DRAG_THRESHOLD_PX opens the panel (click); one that exceeds it
+    // becomes a drag that repositions + persists the bubble. Keyboard users get
+    // Enter/Space to open (there's no `onclick` to lean on anymore).
+    private setupBubbleDrag() {
+      const b = this.bubbleEl;
+
+      b.addEventListener("keydown", (e: KeyboardEvent) => {
+        if (e.repeat) return; // ignore auto-repeat while a key is held
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          this.toggle();
+        }
+      });
+
+      b.addEventListener("pointerdown", (e: PointerEvent) => {
+        // Primary button / touch / pen only.
+        if (e.button !== 0 && e.pointerType === "mouse") return;
+        this.dragActive = true;
+        this.dragMoved = false;
+        this.dragStartX = e.clientX;
+        this.dragStartY = e.clientY;
+        const r = b.getBoundingClientRect();
+        this.dragGrabX = e.clientX - r.left;
+        this.dragGrabY = e.clientY - r.top;
+        try {
+          b.setPointerCapture(e.pointerId);
+        } catch {
+          /* capture unsupported - drag still works via document-level moves */
+        }
+      });
+
+      b.addEventListener("pointermove", (e: PointerEvent) => {
+        if (!this.dragActive) return;
+        const dx = e.clientX - this.dragStartX;
+        const dy = e.clientY - this.dragStartY;
+        if (!this.dragMoved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+        this.dragMoved = true;
+        b.classList.add("dragging");
+        e.preventDefault();
+        this.moveBubbleTo(e.clientX - this.dragGrabX, e.clientY - this.dragGrabY);
+      });
+
+      const endDrag = (e: PointerEvent) => {
+        if (!this.dragActive) return;
+        this.dragActive = false;
+        b.classList.remove("dragging");
+        try {
+          b.releasePointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+        if (this.dragMoved) {
+          // A real drag: persist wherever it landed. Do NOT toggle the panel.
+          if (this.bubblePos) setStoredBubblePos(this.bubblePos);
+        } else {
+          // No meaningful movement: treat as a click and open/close the panel.
+          this.toggle();
+        }
+      };
+      b.addEventListener("pointerup", endDrag);
+      b.addEventListener("pointercancel", () => {
+        this.dragActive = false;
+        b.classList.remove("dragging");
+      });
+    }
+
+    // Move the bubble to a viewport (top-left) position, clamped on-screen, and
+    // record it as the active custom position. Neutralizes the CSS anchor edges.
+    private moveBubbleTo(left: number, top: number) {
+      const b = this.bubbleEl;
+      const w = b.offsetWidth || 56;
+      const h = b.offsetHeight || 56;
+      const margin = 8;
+      const maxLeft = Math.max(margin, window.innerWidth - w - margin);
+      const maxTop = Math.max(margin, window.innerHeight - h - margin);
+      const l = Math.min(Math.max(left, margin), maxLeft);
+      const t = Math.min(Math.max(top, margin), maxTop);
+      b.style.left = `${l}px`;
+      b.style.top = `${t}px`;
+      b.style.right = "auto";
+      b.style.bottom = "auto";
+      this.bubblePos = { left: l, top: t };
+    }
+
+    // Apply a previously persisted position on load, overriding the
+    // data-position anchor. No-op (keeps the CSS default) when none is stored.
+    private applyStoredBubblePosition() {
+      if (!this.bubblePos) return;
+      this.moveBubbleTo(this.bubblePos.left, this.bubblePos.top);
+    }
+
+    // Keep a custom-positioned bubble (and any open custom-positioned panel)
+    // on-screen when the viewport shrinks. The default anchor needs no help.
+    private onViewportResize() {
+      if (this.bubblePos) this.moveBubbleTo(this.bubblePos.left, this.bubblePos.top);
+      if (this.isOpen) this.positionPanel();
+    }
+
+    // Anchor the panel near the current bubble position. On mobile the panel is
+    // full-screen (CSS media query), so we must clear any inline overrides; on
+    // the default anchor (no custom pos) we also clear inline styles so the CSS
+    // `${posV}/${posH}` rules apply. Only a custom desktop position is computed.
+    private positionPanel() {
+      const p = this.panelEl.style;
+      if (window.innerWidth <= 480 || !this.bubblePos) {
+        p.left = p.top = p.right = p.bottom = "";
+        return;
+      }
+      const gap = 12;
+      const margin = 8;
+      const r = this.bubbleEl.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const panelW = Math.min(380, vw - 2 * margin);
+      const panelH = Math.min(560, vh - 2 * margin);
+      // Horizontal: right-align to the bubble when it sits right-of-center,
+      // else left-align; then clamp fully on-screen.
+      let left = r.left + r.width / 2 > vw / 2 ? r.right - panelW : r.left;
+      left = Math.min(Math.max(left, margin), Math.max(margin, vw - panelW - margin));
+      // Vertical: prefer above the bubble when it's in the lower half, else below.
+      let top = r.top > vh / 2 ? r.top - gap - panelH : r.bottom + gap;
+      top = Math.min(Math.max(top, margin), Math.max(margin, vh - panelH - margin));
+      p.left = `${left}px`;
+      p.top = `${top}px`;
+      p.right = "auto";
+      p.bottom = "auto";
     }
   }
 

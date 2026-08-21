@@ -15,6 +15,7 @@ import {
     useCreateTicketFromConversation
 } from "@/lib/hooks/useOmnichannel";
 import { useOmnichannelRealtime } from "@/lib/hooks/useOmnichannelRealtime";
+import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { fetchContactTimeline } from "@/lib/api/omnichannel";
 import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
@@ -115,6 +116,10 @@ export default function OmnichannelClient() {
     // conversation on WS push, backstopped by the refetchInterval polling in
     // useOmnichannel.ts. See lib/hooks/useOmnichannelRealtime.ts.
     useOmnichannelRealtime(activeConversationId || undefined);
+
+    // Best-effort agent-typing signal (throttled ~2s) for the WhatsApp/Web and
+    // Email composers, wired through the client-owned input handlers below.
+    const notifyAgentTyping = useAgentTypingSignal(activeConversationId);
 
     // Deep-link support: ?conversation=<id> (used by the notification panel).
     // We resolve the conversation's contact identifier, search for it, then
@@ -486,7 +491,10 @@ export default function OmnichannelClient() {
                     onSendMessage={handleSendMessage}
                     whatsapp={{
                         inputText,
-                        onInputChange: setInputText,
+                        onInputChange: (value) => {
+                            setInputText(value);
+                            notifyAgentTyping();
+                        },
                         selectedFile,
                         previewUrl,
                         onFileTrigger: handleFileTrigger,
@@ -517,7 +525,10 @@ export default function OmnichannelClient() {
                         subject: emailSubject,
                         onSubjectChange: setEmailSubject,
                         editorRef: emailEditorRef,
-                        onBodyInput: (e) => setEmailHtmlContent((e.target as HTMLDivElement).innerHTML),
+                        onBodyInput: (e) => {
+                            setEmailHtmlContent((e.target as HTMLDivElement).innerHTML);
+                            notifyAgentTyping();
+                        },
                         onBodyKeyDown: (e) => {
                             if (e.key === 'Enter' && e.ctrlKey) {
                                 e.preventDefault();

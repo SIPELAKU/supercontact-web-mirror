@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useSendMessage, useUploadMedia } from "@/lib/hooks/useOmnichannel";
+import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
@@ -19,6 +20,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const sendMessageMutation = useSendMessage();
   const uploadMediaMutation = useUploadMedia();
+  // Best-effort agent-typing signal (throttled ~2s), fired on each keystroke.
+  const notifyAgentTyping = useAgentTypingSignal(conversationId);
 
   const isSubmitting = sendMessageMutation.isPending || uploadMediaMutation.isPending;
 
@@ -87,7 +90,10 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
         <div className="flex-1">
           <textarea
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              notifyAgentTyping();
+            }}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             rows={3}

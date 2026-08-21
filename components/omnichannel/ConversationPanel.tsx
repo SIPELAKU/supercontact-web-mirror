@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { CircularProgress } from "@mui/material";
 import { ConversationWithMessages, OmnichannelContact } from "@/lib/types/omnichannel";
 import MessageList from "./MessageList";
+import { ConversationTypingIndicator } from "./TypingIndicator";
 import ConversationHeader from "./ConversationHeader";
 import WhatsAppComposer from "./WhatsAppComposer";
 import EmailComposer from "./EmailComposer";
@@ -168,6 +169,15 @@ export default function ConversationPanel({
                             </div>
                         )}
                     </div>
+
+                    {/* Visitor-typing indicator - bottom of the message list,
+                        above the composer. Auto-clears ~4s after the last WS
+                        signal (renders nothing while inactive). */}
+                    <ConversationTypingIndicator
+                        conversationId={activeConversationId}
+                        name={selectedContact.display_name?.split(" ")[0]}
+                        className="px-6 pb-1 pt-0.5"
+                    />
 
                     {/* Input Area */}
                     {(activeConversationId || isChannelSelected) && (

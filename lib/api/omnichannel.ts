@@ -697,6 +697,28 @@ export async function getConversationViewers(token: string, conversationId: stri
   return json;
 }
 
+// Agent-typing presence: best-effort POST fired (throttled) from the agent
+// composer while the agent is typing, so the visitor's channel can surface an
+// "agent is typing" indicator. Mirrors the viewer-heartbeat best-effort
+// contract - the caller (useAgentTypingSignal) swallows errors.
+export async function postConversationTyping(token: string, conversationId: string): Promise<void> {
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/typing`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to send conversation typing signal');
+  }
+}
+
 export async function setConversationTags(token: string, conversationId: string, data: SetConversationTagsRequest): Promise<ConversationWithMessages> {
   const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/tags`, {
     method: 'PUT',

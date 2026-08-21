@@ -10,6 +10,7 @@ import {
   OmnichannelContact,
   OmnichannelContactsResponse,
 } from "@/lib/types/omnichannel";
+import { markVisitorTyping } from "./useConversationTyping";
 
 const RECONNECT_BASE_DELAY_MS = 1000;
 const RECONNECT_MAX_DELAY_MS = 30000;
@@ -172,6 +173,11 @@ export function useOmnichannelRealtime(activeConversationId: string | undefined)
           const data = JSON.parse(event.data);
           if (data.type === "omnichannel_conversation_updated") {
             handleConversationUpdated(data.data || {});
+          } else if (data.type === "visitor_typing") {
+            // Visitor-typing presence. The contract carries conversation_id at
+            // the top level; fall back to a nested `data` shape defensively.
+            const conversationId = data.conversation_id ?? data.data?.conversation_id;
+            if (conversationId) markVisitorTyping(conversationId);
           }
         } catch (e) {
           console.error("[Omnichannel WS] Parse error", e);

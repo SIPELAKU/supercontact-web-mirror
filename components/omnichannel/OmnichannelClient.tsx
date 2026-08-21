@@ -18,13 +18,13 @@ import { useOmnichannelRealtime } from "@/lib/hooks/useOmnichannelRealtime";
 import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { fetchContactTimeline } from "@/lib/api/omnichannel";
 import { ContactReq } from "@/lib/models/types";
-import { OmnichannelContact } from "@/lib/types/omnichannel";
+import { ChannelType, OmnichannelContact } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
-import ContactListSidebar from "./ContactListSidebar";
+import ContactListSidebar, { ContactListChannelFilter } from "./ContactListSidebar";
 import ConversationPanel from "./ConversationPanel";
 import ConversationDetailSidebar from "./ConversationDetailSidebar";
 
@@ -36,7 +36,7 @@ export default function OmnichannelClient() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isNewContactOpen, setIsNewContactOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [chatMode, setChatMode] = useState<"whatsapp" | "email" | "web_widget">("whatsapp");
+    const [chatMode, setChatMode] = useState<ChannelType>("whatsapp");
     const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -86,13 +86,13 @@ export default function OmnichannelClient() {
         }
     };
 
-    // Contacts data - left panel's channel category filter (All/WhatsApp/
+    // Contacts data - left panel's channel category filter (All/WhatsApp/SMS/
     // Email) and last-activity time window (all/1d/1w/1m) are server-side,
     // so recency ordering stays correct per category. Web-widget conversations
     // live in the Support Desk Workspace, so this contact-first inbox only
-    // covers WhatsApp + Email (status/priority/assignment filters belong to the
-    // Workspace queue, not here).
-    const [listChannelFilter, setListChannelFilter] = useState<"all" | "whatsapp" | "email">("all");
+    // covers WhatsApp + SMS + Email (status/priority/assignment filters belong
+    // to the Workspace queue, not here).
+    const [listChannelFilter, setListChannelFilter] = useState<ContactListChannelFilter>("all");
     const [listTimeFilter, setListTimeFilter] = useState<number>(0); // 0 = all time, else days
     const { data: omnichannelContactsData, isLoading: isLoadingContacts, refetch: refetchContacts } = useOmnichannelContacts(
         searchTerm,
@@ -312,6 +312,14 @@ export default function OmnichannelClient() {
                 notify.error("Media must have a description in English");
                 return;
             }
+        }
+
+        // SMS is text-only for now - the media upload path below is
+        // WhatsApp-specific, so refuse loudly instead of silently dropping
+        // the attachment.
+        if (chatMode === "sms" && selectedFile) {
+            notify.error("Attachments aren't supported for SMS yet. Remove the file to send.");
+            return;
         }
 
         try {

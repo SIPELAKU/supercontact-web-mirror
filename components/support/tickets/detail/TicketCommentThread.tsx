@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Paperclip, PenLine, X, MessageCircle, Mail, Globe } from "lucide-react";
+import { Check, Loader2, Paperclip, PenLine, X, MessageCircle, Mail, Globe, Smartphone } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
@@ -22,10 +22,11 @@ import {
     useDeleteTicketDraft,
 } from "@/lib/hooks/useTicketCollab";
 import { TicketCommentItem } from "./TicketCommentItem";
+import type { ChannelType } from "@/lib/types/omnichannel";
 
 interface TicketCommentThreadProps {
     ticketId: string;
-    channelType?: "whatsapp" | "email" | "web_widget" | null;
+    channelType?: ChannelType | null;
     customerName?: string;
 }
 
@@ -205,15 +206,18 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                                 }`}
                         >
                             {channelType === "whatsapp" && <MessageCircle size={12} />}
+                            {channelType === "sms" && <Smartphone size={12} />}
                             {channelType === "email" && <Mail size={12} />}
                             {channelType === "web_widget" && <Globe size={12} />}
                             {channelType === "whatsapp"
                                 ? "Reply via WhatsApp"
-                                : channelType === "email"
-                                    ? "Reply via Email"
-                                    : channelType === "web_widget"
-                                        ? "Reply via Website Chat"
-                                        : "Public Reply"}
+                                : channelType === "sms"
+                                    ? "Reply via SMS"
+                                    : channelType === "email"
+                                        ? "Reply via Email"
+                                        : channelType === "web_widget"
+                                            ? "Reply via Website Chat"
+                                            : "Public Reply"}
                         </button>
                         <button
                             onClick={() => setReplyMode("internal")}
@@ -227,7 +231,7 @@ export function TicketCommentThread({ ticketId, channelType, customerName }: Tic
                     </div>
                     {channelType && replyMode === "public" && (
                         <p className="text-xs text-gray-400">
-                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : channelType === "web_widget" ? "the website chat" : "email"}.
+                            This will be sent to the customer over {channelType === "whatsapp" ? "WhatsApp" : channelType === "sms" ? "SMS" : channelType === "web_widget" ? "the website chat" : "email"}.
                         </p>
                     )}
                     <textarea

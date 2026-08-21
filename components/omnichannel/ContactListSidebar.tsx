@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, UserPlus, X, Loader2, Flame, Mail, MessageCircle, Globe } from "lucide-react";
+import { Search, UserPlus, X, Loader2, Flame, Mail, MessageCircle, Globe, Smartphone } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AppInput } from "@/components/ui/app-input";
 import { AppTextarea } from "@/components/ui/app-textarea";
@@ -12,7 +12,10 @@ import { ContactReq } from "@/lib/models/types";
 import { OmnichannelContact } from "@/lib/types/omnichannel";
 import { CircularProgress } from "@mui/material";
 
-export type ContactListChannelFilter = "all" | "whatsapp" | "email";
+// Deliberately narrower than ChannelType: the contact-first inbox covers the
+// agent-initiated channels (WhatsApp / SMS / Email) - web_widget conversations
+// live in the Support Desk Workspace instead.
+export type ContactListChannelFilter = "all" | "whatsapp" | "sms" | "email";
 
 interface ContactListSidebarProps {
     contacts: OmnichannelContact[];
@@ -44,6 +47,7 @@ interface ContactListSidebarProps {
 const CHANNEL_FILTERS: { value: ContactListChannelFilter; label: string }[] = [
     { value: "all", label: "All" },
     { value: "whatsapp", label: "WhatsApp" },
+    { value: "sms", label: "SMS" },
     { value: "email", label: "Email" },
 ];
 
@@ -318,6 +322,9 @@ export default function ContactListSidebar({
                                             <span className="ml-2 flex items-center gap-1 shrink-0">
                                                 {contact.channel_types?.includes("whatsapp") && (
                                                     <MessageCircle className="w-3 h-3 text-emerald-500" />
+                                                )}
+                                                {contact.channel_types?.includes("sms") && (
+                                                    <Smartphone className="w-3 h-3 text-amber-500" />
                                                 )}
                                                 {contact.channel_types?.includes("email") && (
                                                     <Mail className="w-3 h-3 text-blue-400" />

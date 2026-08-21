@@ -1,5 +1,12 @@
 // Omnichannel Types
 
+// THE channel union. Every FE channel_type value flows through this one type -
+// adding a channel (Phase 9: sms, later messenger/instagram) means extending it
+// here and letting the compiler surface every switch/record that needs a new
+// arm. Types that deliberately exclude a channel (e.g. the contact-first inbox
+// filter, which leaves out web_widget) stay hand-written on purpose.
+export type ChannelType = 'whatsapp' | 'email' | 'web_widget' | 'sms';
+
 export type WhatsAppApprovalStatus = 'pending_approval' | 'approved' | 'rejected';
 
 // Full lifecycle status set that can appear on a conversation object.
@@ -13,7 +20,7 @@ export interface Account {
   id: string;
   company_id: string;
   user_id: string;
-  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  channel_type: ChannelType;
   channel_identifier: string;
   display_name: string;
   branch: string | null;
@@ -30,7 +37,7 @@ export interface Account {
 export interface Conversation {
   id: string;
   account_id: string;
-  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  channel_type: ChannelType;
   contact_name?: string;
   contact_identifier?: string;
   external_contact_name?: string;
@@ -103,7 +110,7 @@ export interface ConversationListItem {
   id: string;
   account_id: string;
   contact_id?: string | null;
-  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  channel_type: ChannelType;
   external_contact_identifier?: string;
   external_contact_name?: string;
   status: ConversationStatus;
@@ -130,7 +137,7 @@ export interface ConversationInboxFilters {
   priority?: ConversationPriority;
   assigned_to_me?: boolean;
   unassigned?: boolean;
-  channel_type?: 'whatsapp' | 'email' | 'web_widget';
+  channel_type?: ChannelType;
   q?: string;
   page?: number;
   limit?: number;
@@ -204,7 +211,7 @@ export interface ConversationSlaSummary {
   resolution_breached: boolean;
 }
 
-export type ConversationSlaChannelType = 'whatsapp' | 'email' | 'web_widget';
+export type ConversationSlaChannelType = ChannelType;
 
 export interface ConversationSlaPolicy {
   id: string;
@@ -295,6 +302,16 @@ export interface ConnectWhatsAppRequest {
   twilio_auth_token: string;
   branch?: string;
   display_name?: string;
+}
+
+// Phase 9 Inc A: connect an SMS number (POST /omnichannels/accounts/sms).
+// Mirrors the WhatsApp connect envelope - same Twilio credentials, no
+// whatsapp-specific approval flow and no branch field.
+export interface ConnectSmsRequest {
+  display_name?: string;
+  phone_number: string;
+  twilio_account_sid: string;
+  twilio_auth_token: string;
 }
 
 export interface ConnectEmailRequest {
@@ -411,7 +428,7 @@ export interface OmnichannelContact {
   phone_number?: string;
   company?: string;
   position?: string;
-  channel_types: ('email' | 'whatsapp' | 'web_widget')[];
+  channel_types: ChannelType[];
   unread_count: number;
   latest_conversation_id?: string;
   last_message_at?: string;
@@ -435,7 +452,7 @@ export interface OmnichannelContactsResponse {
 // for a contact that has more than one channel (e.g. WhatsApp + Email).
 export interface OmnichannelContactTimelineConversation {
   conversation_id: string;
-  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  channel_type: ChannelType;
   status: ConversationStatus;
   subject?: string;
   external_contact_identifier: string;
@@ -452,7 +469,7 @@ export interface OmnichannelContactTimelineConversation {
 export interface OmnichannelContactTimelineMessage {
   id: string;
   conversation_id: string;
-  channel_type: 'whatsapp' | 'email' | 'web_widget';
+  channel_type: ChannelType;
   direction: 'inbound' | 'outbound';
   sender_identifier: string;
   content: string;
@@ -488,7 +505,7 @@ export interface OmnichannelContactInboxDetail {
   company?: string;
   position?: string;
   address?: string;
-  channel_types: ('whatsapp' | 'email' | 'web_widget')[];
+  channel_types: ChannelType[];
   unread_count: number;
   open_conversation_count: number;
   latest_conversation_id?: string;

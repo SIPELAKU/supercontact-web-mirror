@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Message } from "@/lib/types/omnichannel";
+import { ChannelType, Message } from "@/lib/types/omnichannel";
 import { format } from "date-fns";
 import { CheckCheck, Check, X, Clock, ZoomIn, ZoomOut, RotateCcw, FileText, Download, Play, Pause, Volume2 } from "lucide-react";
 import Image from "next/image";
 
 interface MessageListProps {
   messages: Message[];
-  channelType: 'whatsapp' | 'email' | 'web_widget';
+  channelType: ChannelType;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {

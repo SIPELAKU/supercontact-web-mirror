@@ -46,6 +46,7 @@ import {
 
 // Icon + human label for the customer's channel identifier row.
 const IDENTIFIER_META: Record<ChannelType, { icon: React.ElementType; label: string }> = {
+  sms: { icon: Phone, label: "Phone" },
   email: { icon: Mail, label: "Email" },
   whatsapp: { icon: Phone, label: "Phone" },
   web_widget: { icon: Globe, label: "Visitor" },
@@ -84,7 +85,9 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
     "Unknown contact";
   const identifier =
     conversation?.external_contact_identifier || selectedItem.external_contact_identifier || "—";
-  const idMeta = IDENTIFIER_META[channelType];
+  // Fallback keeps the panel rendering even if the backend ships a channel
+  // value this build doesn't know yet.
+  const idMeta = IDENTIFIER_META[channelType] ?? IDENTIFIER_META.web_widget;
   const IdIcon = idMeta.icon;
   const color = avatarColor(identifier || conversationId);
 

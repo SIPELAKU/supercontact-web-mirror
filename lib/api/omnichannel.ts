@@ -1,10 +1,12 @@
 import { fetchWithTimeout } from "./api-client";
 import {
   Account,
+  ChannelType,
   Conversation,
   Message,
   ConversationWithMessages,
   ConnectWhatsAppRequest,
+  ConnectSmsRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -44,10 +46,12 @@ import {
 // Re-export types for convenience
 export type {
   Account,
+  ChannelType,
   Conversation,
   Message,
   ConversationWithMessages,
   ConnectWhatsAppRequest,
+  ConnectSmsRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -233,6 +237,31 @@ export async function connectWhatsApp(token: string, data: ConnectWhatsAppReques
 
   if (!res.ok) {
     throw json || new Error('Failed to connect WhatsApp account');
+  }
+
+  return json.data || json;
+}
+
+// Phase 9 Inc A: connect an SMS number. Mirrors connectWhatsApp's envelope -
+// same Twilio credentials, backend verifies the account before storing.
+export async function connectSms(token: string, data: ConnectSmsRequest): Promise<Account> {
+  const res = await fetchWithTimeout(`${API_BASE}/accounts/sms`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw json || new Error('Failed to connect SMS account');
   }
 
   return json.data || json;

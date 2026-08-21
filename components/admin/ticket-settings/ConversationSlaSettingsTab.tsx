@@ -30,6 +30,7 @@ import {
 const CHANNEL_OPTIONS: { value: ConversationSlaChannelType | ""; label: string }[] = [
   { value: "", label: "Any" },
   { value: "whatsapp", label: "WhatsApp" },
+  { value: "sms", label: "SMS" },
   { value: "email", label: "Email" },
   { value: "web_widget", label: "Web widget" },
 ];
@@ -44,6 +45,7 @@ const PRIORITY_OPTIONS: { value: ConversationPriority | ""; label: string }[] = 
 
 const CHANNEL_LABEL: Record<ConversationSlaChannelType, string> = {
   whatsapp: "WhatsApp",
+  sms: "SMS",
   email: "Email",
   web_widget: "Web widget",
 };

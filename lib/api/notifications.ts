@@ -49,14 +49,15 @@ export interface UnreadCountResponse {
  * navigation) rather than guessing a wrong URL.
  *
  * Conversation notifications are split by channel: the backend tags
- * "omnichannel_conversation" for WhatsApp/Email (-> contact-first Omnichannel
- * Inbox) and "widget_conversation" for web-widget chats (-> Support Desk
- * Workspace), matching where each conversation actually lives in the UI.
+ * "omnichannel_conversation" for WhatsApp/SMS/Email (-> contact-first
+ * Omnichannel Inbox) and "widget_conversation" for web-widget chats (->
+ * Support Desk Workspace), matching where each conversation actually lives in
+ * the UI.
  */
 export function getNotificationRoute(notif: NotificationData): string | null {
     switch (notif.entity_type) {
         case "omnichannel_conversation":
-            // WhatsApp/Email conversations. Route into the contact-first
+            // WhatsApp/SMS/Email conversations. Route into the contact-first
             // Omnichannel Inbox (left: contacts, center: conversation, right:
             // contact details) rather than the standalone
             // /omnichannel/conversations/[id] page, which only renders the message

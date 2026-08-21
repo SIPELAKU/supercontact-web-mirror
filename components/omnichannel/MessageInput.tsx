@@ -8,10 +8,11 @@ import { AppButton } from "@/components/ui/app-button";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import type { ChannelType } from "@/lib/types/omnichannel";
 
 interface MessageInputProps {
   conversationId: string;
-  channelType: 'whatsapp' | 'email' | 'web_widget';
+  channelType: ChannelType;
   onMessageSent?: () => void;
 }
 
@@ -40,6 +41,14 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
   const handleSendMessage = async () => {
     if (!message.trim() && !selectedFile) {
       notify.warning("Empty Message", { description: "Please enter a message or select a file." });
+      return;
+    }
+
+    // SMS is text-only for now - the media upload path is WhatsApp-specific.
+    if (channelType === "sms" && selectedFile) {
+      notify.warning("Attachments Not Supported", {
+        description: "Attachments aren't supported for SMS yet. Remove the file to send.",
+      });
       return;
     }
 

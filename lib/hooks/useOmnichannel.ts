@@ -9,6 +9,7 @@ import {
   Message,
   ConversationWithMessages,
   ConnectWhatsAppRequest,
+  ConnectSmsRequest,
   ConnectEmailRequest,
   ConnectWebWidgetRequest,
   WebWidgetConfig,
@@ -18,6 +19,7 @@ import {
   OmnichannelContactInboxDetail,
   fetchAccounts,
   connectWhatsApp,
+  connectSms,
   connectEmail,
   connectWebWidget,
   fetchWebWidgetConfig,
@@ -175,6 +177,22 @@ export function useConnectWhatsApp() {
     mutationFn: (data: ConnectWhatsAppRequest) => {
       if (!token) throw new Error('No authentication token');
       return connectWhatsApp(token, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });
+    },
+  });
+}
+
+// Phase 9 Inc A: connect an SMS number (mirrors useConnectWhatsApp).
+export function useConnectSms() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ConnectSmsRequest) => {
+      if (!token) throw new Error('No authentication token');
+      return connectSms(token, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'accounts'] });

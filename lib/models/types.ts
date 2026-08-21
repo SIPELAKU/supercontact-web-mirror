@@ -63,7 +63,7 @@ export interface Contact {
   broadcast_groups?: { id: string; name: string }[],
   conversations?: {
     id: string;
-    channel_type: "whatsapp" | "email";
+    channel_type: "whatsapp" | "sms" | "email" | "web_widget";
     status: "open" | "closed" | "archived";
     last_message_at: string | null;
     last_message_preview: string | null;

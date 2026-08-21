@@ -3,17 +3,17 @@
 import React, { useState } from "react";
 import { useAccounts, useDeleteAccount, useUpdateAccount, useReactivateAccount } from "@/lib/hooks/useOmnichannel";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Trash2, Mail, MessageCircle, Globe, Pencil, Check, X, RotateCcw } from "lucide-react";
+import { Loader2, Trash2, Mail, MessageCircle, Globe, Smartphone, Pencil, Check, X, RotateCcw } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { ActiveStatusBadge, WhatsAppStatusBadge, BranchBadge } from "@/components/omnichannel/AccountStatusBadges";
-import type { Account } from "@/lib/types/omnichannel";
+import type { Account, ChannelType } from "@/lib/types/omnichannel";
 
 interface AccountListProps {
-  channelType?: 'whatsapp' | 'email' | 'web_widget';
+  channelType?: ChannelType;
 }
 
 // Shares a query key (and therefore a cache entry) with any other useAccounts(channelType)
@@ -96,6 +96,8 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
           <div className="p-3 bg-gray-100 rounded-lg">
             {account.channel_type === 'whatsapp' ? (
               <MessageCircle className="text-green-600" size={24} />
+            ) : account.channel_type === 'sms' ? (
+              <Smartphone className="text-amber-600" size={24} />
             ) : account.channel_type === 'web_widget' ? (
               <Globe className="text-indigo-600" size={24} />
             ) : (
@@ -139,7 +141,7 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
             <p className="text-sm text-gray-600 mb-2">{account.channel_identifier}</p>
 
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span className="capitalize">{account.channel_type}</span>
+              <span className="capitalize">{account.channel_type === 'sms' ? 'SMS' : account.channel_type}</span>
               <span>•</span>
               <span>Added {new Date(account.created_at).toLocaleDateString()}</span>
             </div>

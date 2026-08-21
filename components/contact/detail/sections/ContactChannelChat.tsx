@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Loader2, Mail, MessageCircle, MessagesSquare, Send } from "lucide-react";
+import { Globe, Loader2, Mail, MessageCircle, MessagesSquare, Send, Smartphone } from "lucide-react";
 
 import MessageList from "@/components/omnichannel/MessageList";
 import MessageInput from "@/components/omnichannel/MessageInput";
@@ -17,16 +17,18 @@ import {
 import { useOmnichannelRealtime } from "@/lib/hooks/useOmnichannelRealtime";
 import { fetchContactTimeline } from "@/lib/api/omnichannel";
 import {
+    ChannelType,
     OmnichannelContactTimelineConversation,
     OmnichannelContactTimelineResponse,
 } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
-type ChatChannel = "whatsapp" | "email" | "web_widget";
+type ChatChannel = ChannelType;
 
 const CHANNEL_LABELS: Record<ChatChannel, string> = {
     whatsapp: "WhatsApp",
+    sms: "SMS",
     email: "Email",
     web_widget: "Web Chat",
 };
@@ -85,6 +87,7 @@ export const ContactChannelChat = ({
         conversations.forEach((c) => {
             if (
                 c.channel_type === "whatsapp" ||
+                c.channel_type === "sms" ||
                 c.channel_type === "email" ||
                 c.channel_type === "web_widget"
             ) {
@@ -151,6 +154,8 @@ export const ContactChannelChat = ({
                         >
                             {channel === "whatsapp" ? (
                                 <MessageCircle size={13} />
+                            ) : channel === "sms" ? (
+                                <Smartphone size={13} />
                             ) : channel === "web_widget" ? (
                                 <Globe size={13} />
                             ) : (
@@ -211,10 +216,15 @@ const StartConversationPanel = ({
     const { data: accounts } = useAccounts(channelType);
     const createConversation = useCreateConversation();
 
+    // Agent-initiated channels only - a web-widget conversation can't be
+    // started by staff, so widget accounts stay out of the picker.
     const eligibleAccounts = useMemo(
         () =>
             (accounts || []).filter(
-                (a) => a.channel_type === "whatsapp" || a.channel_type === "email"
+                (a) =>
+                    a.channel_type === "whatsapp" ||
+                    a.channel_type === "sms" ||
+                    a.channel_type === "email"
             ),
         [accounts]
     );
@@ -264,8 +274,8 @@ const StartConversationPanel = ({
                     title="No conversations yet"
                     description={
                         channelType
-                            ? `Start a ${channelType === "whatsapp" ? "WhatsApp" : "email"} conversation with this contact from a connected account.`
-                            : "Start a conversation with this contact from a connected WhatsApp or email account."
+                            ? `Start a ${CHANNEL_LABELS[channelType]} conversation with this contact from a connected account.`
+                            : "Start a conversation with this contact from a connected WhatsApp, SMS or email account."
                     }
                     action={{
                         label: "Start conversation",

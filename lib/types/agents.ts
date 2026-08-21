@@ -7,7 +7,7 @@
 // Permissions: reads need `agents:read`, all writes need `agents:manage`.
 // ---------------------------------------------------------------------------
 
-import type { ConversationWithMessages } from "./omnichannel";
+import type { ChannelType, ConversationWithMessages } from "./omnichannel";
 
 /** A user's role within an agent group. */
 export type AgentGroupRole = "member" | "lead";
@@ -138,7 +138,7 @@ export interface UpdateRoutingProfileRequest {
 // create/update/delete need `omnichannel:setup`.
 // ---------------------------------------------------------------------------
 
-export type ConversationQueueChannelType = "whatsapp" | "email" | "web_widget";
+export type ConversationQueueChannelType = ChannelType;
 export type ConversationQueuePriority = "low" | "normal" | "high" | "urgent";
 
 /**

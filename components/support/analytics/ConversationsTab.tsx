@@ -28,6 +28,8 @@ import { ChartEmptyState, DASH, formatMinutes } from "./shared";
 const SOLVED_COLOR = "#16a34a"; // app's existing success green (CVD-checked against #5479EE)
 
 function prettyChannel(raw: string): string {
+    // Acronym channels stay fully uppercase ("sms" -> "SMS", not "Sms").
+    if (raw.toLowerCase() === "sms") return "SMS";
     return raw
         .split(/[_\s-]+/)
         .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))

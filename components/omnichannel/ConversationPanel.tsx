@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { MessageCircle, Mail } from "lucide-react";
+import { MessageCircle, Mail, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CircularProgress } from "@mui/material";
-import { ConversationWithMessages, OmnichannelContact } from "@/lib/types/omnichannel";
+import { ChannelType, ConversationWithMessages, OmnichannelContact } from "@/lib/types/omnichannel";
 import MessageList from "./MessageList";
 import { ConversationTypingIndicator } from "./TypingIndicator";
 import ConversationHeader from "./ConversationHeader";
@@ -50,9 +50,9 @@ interface ConversationPanelProps {
     isLoadingConversation: boolean;
     activeConversationId: string | null;
     isChannelSelected: boolean;
-    onStartChannel: (mode: "whatsapp" | "email") => void;
-    chatMode: "whatsapp" | "email" | "web_widget";
-    onChatModeChange: (mode: "whatsapp" | "email" | "web_widget") => void;
+    onStartChannel: (mode: "whatsapp" | "sms" | "email") => void;
+    chatMode: ChannelType;
+    onChatModeChange: (mode: ChannelType) => void;
     channelAccounts: AccountSelectOption[];
     selectedAccountId: string;
     onAccountChange: (accountId: string) => void;
@@ -70,7 +70,7 @@ interface ConversationPanelProps {
 
 // Column 2 of the Omnichannel 3-column layout: the conversation header, the
 // message list (or the empty/loading states in its place), and the
-// WhatsApp/Email composer switch. Hidden on mobile until a contact is
+// plain-text/Email composer switch. Hidden on mobile until a contact is
 // selected, complementing ContactListSidebar's collapse - same `md:`
 // breakpoint used in components/inbox/InboxClient.tsx.
 export default function ConversationPanel({
@@ -133,7 +133,7 @@ export default function ConversationPanel({
                                 </div>
                                 <p className="text-sm font-semibold text-gray-500 mb-8">No messages in this conversation yet</p>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl px-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl px-4">
                                     <button
                                         onClick={() => onStartChannel("whatsapp")}
                                         className="p-6 bg-[#F0FDF4] rounded-2xl cursor-pointer border-2 border-transparent hover:border-green-200 transition-all group text-center flex flex-col items-center"
@@ -143,6 +143,17 @@ export default function ConversationPanel({
                                         </div>
                                         <h4 className="font-bold text-gray-900 mb-1">Start WhatsApp Conversation</h4>
                                         <p className="text-xs text-gray-500 leading-relaxed">Open a direct WhatsApp thread for this contact</p>
+                                    </button>
+
+                                    <button
+                                        onClick={() => onStartChannel("sms")}
+                                        className="p-6 bg-[#FFFBEB] rounded-2xl cursor-pointer border-2 border-transparent hover:border-amber-200 transition-all group text-center flex flex-col items-center"
+                                    >
+                                        <div className="w-12 h-12 bg-[#F59E0B] text-white rounded-xl flex items-center justify-center mb-4 shadow-md shadow-amber-200 group-hover:scale-110 transition-transform">
+                                            <Smartphone className="w-6 h-6" />
+                                        </div>
+                                        <h4 className="font-bold text-gray-900 mb-1">Start SMS Conversation</h4>
+                                        <p className="text-xs text-gray-500 leading-relaxed">Text this contact&apos;s phone number directly</p>
                                     </button>
 
                                     <button
@@ -189,17 +200,20 @@ export default function ConversationPanel({
                                     onSend={onSendMessage}
                                 />
                             ) : (
-                                // WhatsApp and Web Chat both use the plain-text
-                                // composer (no subject/CC/HTML) - a website-chat
-                                // reply is a plain message like WhatsApp, not email.
+                                // WhatsApp, SMS and Web Chat all use the
+                                // plain-text composer (no subject/CC/HTML) - an
+                                // SMS or website-chat reply is a plain message
+                                // like WhatsApp, not email.
                                 <WhatsAppComposer {...whatsapp} onSend={onSendMessage} />
                             )}
                             <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest font-medium">
                                 Sending via {chatMode === "whatsapp"
                                     ? "WhatsApp Business API"
-                                    : chatMode === "web_widget"
-                                        ? "Website Chat"
-                                        : "SMTP Relay"}
+                                    : chatMode === "sms"
+                                        ? "Twilio SMS"
+                                        : chatMode === "web_widget"
+                                            ? "Website Chat"
+                                            : "SMTP Relay"}
                             </p>
                         </div>
                     )}
@@ -211,7 +225,7 @@ export default function ConversationPanel({
                     </div>
                     <h2 className="text-xl font-bold text-gray-900 mb-2">Welcome to Omnichannel Inbox</h2>
                     <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-                        Select a contact from the left list to start a conversation via WhatsApp or Email.
+                        Select a contact from the left list to start a conversation via WhatsApp, SMS or Email.
                         Manage all your communications in one powerful interface.
                     </p>
                 </div>

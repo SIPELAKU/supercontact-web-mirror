@@ -18,7 +18,8 @@ const PAGE_SIZE = 20;
 // row opens whichever surface that conversation actually lives on, matching
 // getNotificationRoute() in lib/api/notifications.ts:
 //   - web_widget  -> Support Desk Workspace (?conversation=<id>)
-//   - whatsapp/email (and any other channel) -> contact-first Omnichannel Inbox
+//   - whatsapp/sms/email (and any other channel) -> contact-first Omnichannel
+//     Inbox
 // ---------------------------------------------------------------------------
 function feedItemHref(item: UnifiedFeedItem): string {
     if (item.kind === "ticket") return `/support/tickets/${item.id}`;

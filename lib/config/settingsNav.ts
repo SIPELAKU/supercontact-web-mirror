@@ -15,6 +15,7 @@ import {
   Network,
   Plug,
   Shield,
+  Smartphone,
   Ticket,
   Users,
 } from "lucide-react";
@@ -101,6 +102,13 @@ export const settingsNav: SettingsRegistry = [
     title: "WhatsApp",
     icon: MessageCircle,
     path: "/settings/whatsapp",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "sms",
+    title: "SMS",
+    icon: Smartphone,
+    path: "/settings/sms",
     permission: "omnichannel:setup",
   },
   {

@@ -4,9 +4,17 @@
 // strings so the design stays consistent across the queue row, the thread
 // header and the context panel.
 
-import { ConversationStatus, ConversationPriority, ConversationSlaSummary } from "@/lib/types/omnichannel";
+import {
+  ChannelType,
+  ConversationStatus,
+  ConversationPriority,
+  ConversationSlaSummary,
+} from "@/lib/types/omnichannel";
 
-export type ChannelType = "whatsapp" | "email" | "web_widget";
+// Re-export the unified channel union so existing `import { ChannelType } from
+// "./workspaceHelpers"` sites keep working - the definition lives in
+// lib/types/omnichannel.ts.
+export type { ChannelType };
 
 // Deterministic avatar palette (brand blue first, then a small warm/cool
 // spread) so a given contact always gets the same colour across panes.
@@ -96,6 +104,7 @@ export const CHANNEL_META: Record<ChannelType, ChannelMeta> = {
   web_widget: { label: "Web widget", badge: "bg-[#5479EE]" },
   whatsapp: { label: "WhatsApp", badge: "bg-[#25D366]" },
   email: { label: "Email", badge: "bg-[#8B5CF6]" },
+  sms: { label: "SMS", badge: "bg-[#F59E0B]" },
 };
 
 // ---------------------------------------------------------------------------

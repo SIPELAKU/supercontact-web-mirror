@@ -78,7 +78,10 @@ export function WorkspaceThread({
     selectedItem?.external_contact_identifier ||
     "Unknown contact";
   const channelType = conversation?.channel_type || selectedItem?.channel_type || "web_widget";
-  const channel = CHANNEL_META[channelType];
+  // Fallback label keeps the thread rendering even if the backend ships a
+  // channel value this build doesn't know yet (CHANNEL_META lookup would
+  // otherwise crash on `.label`).
+  const channel = CHANNEL_META[channelType] ?? { label: channelType, badge: "bg-gray-400" };
   const identifier =
     conversation?.external_contact_identifier || selectedItem?.external_contact_identifier || "";
   const color = avatarColor(identifier || conversationId);

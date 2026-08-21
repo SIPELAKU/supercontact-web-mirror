@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Menu, MenuItem } from "@mui/material";
-import { Search, Flag, ChevronDown, MessageCircle, Mail, Globe, Inbox, Clock } from "lucide-react";
+import { Search, Flag, ChevronDown, MessageCircle, Mail, Globe, Inbox, Clock, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ConversationListItem,
@@ -27,6 +27,7 @@ const CHANNEL_ICON: Record<ChannelType, React.ElementType> = {
   whatsapp: MessageCircle,
   email: Mail,
   web_widget: Globe,
+  sms: Smartphone,
 };
 
 type StatusValue = ConversationStatus | "all";
@@ -115,6 +116,7 @@ const CHANNEL_OPTIONS: FilterOption[] = [
   { value: "web_widget", label: "Web widget" },
   { value: "whatsapp", label: "WhatsApp" },
   { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
 ];
 
 interface ConversationQueueListProps {

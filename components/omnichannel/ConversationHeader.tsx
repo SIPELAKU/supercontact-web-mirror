@@ -8,12 +8,13 @@ import {
     MessageCircle,
     Mail,
     Globe,
+    Smartphone,
     Loader2,
     Ticket as TicketIcon,
     Trash,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OmnichannelContact, ConversationWithMessages } from "@/lib/types/omnichannel";
+import { ChannelType, OmnichannelContact, ConversationWithMessages } from "@/lib/types/omnichannel";
 import AccountSelect, { AccountSelectOption } from "./AccountSelect";
 import { ConversationViewersIndicator } from "./ConversationViewersIndicator";
 
@@ -22,8 +23,8 @@ interface ConversationHeaderProps {
     conversation?: ConversationWithMessages;
     activeConversationId: string | null;
     isChannelSelected: boolean;
-    chatMode: "whatsapp" | "email" | "web_widget";
-    onChatModeChange: (mode: "whatsapp" | "email" | "web_widget") => void;
+    chatMode: ChannelType;
+    onChatModeChange: (mode: ChannelType) => void;
     channelAccounts: AccountSelectOption[];
     selectedAccountId: string;
     onAccountChange: (accountId: string) => void;
@@ -37,7 +38,7 @@ interface ConversationHeaderProps {
 }
 
 // Header for column 2 (the active conversation): contact name, sentiment
-// badge, WhatsApp/Email channel toggle, account picker, and the
+// badge, WhatsApp/SMS/Email channel toggle, account picker, and the
 // ticket/delete/sidebar-toggle actions. The `md:hidden` back button lets
 // mobile users return to the contact list (column 1) - mirrors
 // components/inbox/ChatHeader.tsx's back-button affordance.
@@ -92,6 +93,16 @@ export default function ConversationHeader({
                                 >
                                     <MessageCircle className="w-3 h-3" />
                                     WhatsApp
+                                </button>
+                                <button
+                                    onClick={() => onChatModeChange("sms")}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold transition-all",
+                                        chatMode === "sms" ? "bg-white text-primary shadow-sm border border-gray-200/50" : "text-gray-400 hover:text-gray-600"
+                                    )}
+                                >
+                                    <Smartphone className="w-3 h-3" />
+                                    SMS
                                 </button>
                                 <button
                                     onClick={() => onChatModeChange("email")}

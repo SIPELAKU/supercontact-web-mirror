@@ -40,9 +40,41 @@ export interface LinkedTicketSummary {
     status: TicketStatus;
 }
 
+// Phase 5 / Inc 3: typed link vocabulary. Each link is stored inverse-mirrored
+// on the backend, so a ticket's own row already carries its perspective's type
+// (e.g. the "blocks" side sees "blocks", the other side sees "blocked_by").
+export type TicketLinkType =
+    | "related"
+    | "duplicate"
+    | "blocks"
+    | "blocked_by"
+    | "parent_of"
+    | "child_of";
+
+// Human labels used both when creating a link (picker) and when rendering an
+// existing one (panel), e.g. "Blocks #123", "Blocked by #45", "Related to #9".
+export const TICKET_LINK_TYPE_LABELS: Record<TicketLinkType, string> = {
+    related: "Related to",
+    duplicate: "Duplicate of",
+    blocks: "Blocks",
+    blocked_by: "Blocked by",
+    parent_of: "Parent of",
+    child_of: "Child of",
+};
+
+// Options offered in the link-type picker (this ticket's own perspective).
+export const TICKET_LINK_TYPE_OPTIONS: { value: TicketLinkType; label: string }[] = [
+    { value: "related", label: "Related to" },
+    { value: "duplicate", label: "Duplicate of" },
+    { value: "blocks", label: "Blocks" },
+    { value: "blocked_by", label: "Blocked by" },
+    { value: "parent_of", label: "Parent of" },
+    { value: "child_of", label: "Child of" },
+];
+
 export interface TicketLink {
     id: string;
-    link_type: string;
+    link_type: TicketLinkType;
     created_at: string;
     other_ticket: LinkedTicketSummary;
 }

@@ -15,7 +15,7 @@ import {
     fetchTicketLinks,
     deleteTicketLink,
 } from "@/lib/api/tickets";
-import { CreateTicketDTO, TicketPriority, TicketStatus, UpdateTicketDTO } from "@/lib/types/Ticket";
+import { CreateTicketDTO, TicketLinkType, TicketPriority, TicketStatus, UpdateTicketDTO } from "@/lib/types/Ticket";
 
 export function useTickets(
     page: number = 1,
@@ -192,10 +192,10 @@ export function useCreateTicketLink(ticketId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (linkedTicketId: string) => {
+        mutationFn: async (params: { linkedTicketId: string; linkType?: TicketLinkType }) => {
             const token = await getToken();
             if (!token) throw new Error("No auth token");
-            return createTicketLink(token, ticketId, linkedTicketId);
+            return createTicketLink(token, ticketId, params.linkedTicketId, params.linkType ?? "related");
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ticket-links", ticketId] });

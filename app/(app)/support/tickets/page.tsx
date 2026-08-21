@@ -66,6 +66,7 @@ export default function TicketManagementPage() {
         tableState.globalFilter,
         getFilterValue("status"),
         getFilterValue("priority"),
+        getFilterValue("type"),
         getFilterValue("assigned_agent"),
         sortByParam,
         sortOrderParam
@@ -167,6 +168,7 @@ export default function TicketManagementPage() {
             const search = params.currentState.globalFilter;
             const status = getFilterValue("status");
             const priority = getFilterValue("priority");
+            const type = getFilterValue("type");
             const agentId = getFilterValue("assigned_agent");
 
             const LIMIT_PER_PAGE = 100;
@@ -181,6 +183,7 @@ export default function TicketManagementPage() {
                 if (search) urlParams.set("search", search);
                 if (status) urlParams.set("status", status);
                 if (priority) urlParams.set("priority", priority);
+                if (type) urlParams.set("type", type);
                 if (agentId) urlParams.set("assigned_agent_id", agentId);
                 if (sortByParam) {
                     urlParams.set("sort_by", sortByParam);

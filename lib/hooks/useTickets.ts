@@ -23,6 +23,7 @@ export function useTickets(
     search?: string,
     status?: string,
     priority?: string,
+    type?: string,
     agentId?: string,
     sortBy?: string,
     sortOrder?: "asc" | "desc"
@@ -30,11 +31,11 @@ export function useTickets(
     const { getToken } = useAuth();
 
     return useQuery({
-        queryKey: ["tickets", page, limit, search, status, priority, agentId, sortBy, sortOrder],
+        queryKey: ["tickets", page, limit, search, status, priority, type, agentId, sortBy, sortOrder],
         queryFn: async () => {
             const token = await getToken();
             if (!token) throw new Error("No authentication token");
-            return fetchTickets(token, page, limit, search, status, priority, agentId, sortBy, sortOrder);
+            return fetchTickets(token, page, limit, search, status, priority, type, agentId, sortBy, sortOrder);
         },
         placeholderData: keepPreviousData,
     });

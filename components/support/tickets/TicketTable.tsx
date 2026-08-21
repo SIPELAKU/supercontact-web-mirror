@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Ticket as TicketGlyph, Plus } from "lucide-react";
 
 import { Ticket, TicketStatus } from "@/lib/types/Ticket";
-import { TicketPriorityBadge, TicketStatusBadge } from "./TicketBadges";
+import { TicketPriorityBadge, TicketStatusBadge, TicketTypeBadge } from "./TicketBadges";
 import { TicketSlaBadge } from "./TicketSlaBadge";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 import { SuperTable, SuperTableState, MRT_ColumnDef } from "@/components/ui/super-table";
@@ -123,6 +123,16 @@ export function TicketTable({
                 filterSelectOptions: ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"],
                 Cell: ({ cell }) => (
                     <TicketStatusBadge status={cell.getValue<any>()} />
+                ),
+            },
+            {
+                accessorKey: "type",
+                header: "Type",
+                filterVariant: "select",
+                filterSelectOptions: ["Question", "Incident", "Problem", "Task"],
+                // Nullable — the badge renders nothing when the value is unset.
+                Cell: ({ cell }) => (
+                    <TicketTypeBadge type={cell.getValue<any>()} />
                 ),
             },
             {

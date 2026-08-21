@@ -30,6 +30,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             customer_email: initialData?.customer_email || "",
             priority: initialData?.priority || "",
             status: initialData?.status || "",
+            type: initialData?.type || "",
             assigned_agent_id: initialData?.assigned_agent_id || "",
             category_id: initialData?.category_id || null,
             tags: initialData?.tags?.map((t) => t.name) || [],
@@ -73,6 +74,15 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
         { label: "Closed", value: "Closed" },
     ];
 
+    // Type is nullable — the empty option lets the user clear it back to "None".
+    const typeOptions = [
+        { label: "None", value: "" },
+        { label: "Question", value: "Question" },
+        { label: "Incident", value: "Incident" },
+        { label: "Problem", value: "Problem" },
+        { label: "Task", value: "Task" },
+    ];
+
     useEffect(() => {
         if (initialData) {
             setValue("subject", initialData.subject);
@@ -81,6 +91,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             setValue("customer_email", initialData.customer_email);
             setValue("priority", initialData.priority);
             setValue("status", initialData.status);
+            setValue("type" as any, initialData.type || "");
             setValue("assigned_agent_id", initialData.assigned_agent_id || "");
             setValue("category_id" as any, initialData.category_id || null);
             setValue("tags" as any, initialData.tags?.map((t) => t.name) || []);
@@ -88,8 +99,14 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
         }
     }, [initialData, setValue]);
 
+    // Normalize the nullable Type field: an empty selection ("None") must be
+    // sent as null, not "", so the backend clears it rather than rejecting "".
+    const handleFormSubmit = (data: any) => {
+        onSubmit({ ...data, type: data.type || null });
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="subject" className="font-bold text-gray-800 text-base">Subject</Label>
                 <AppInput
@@ -179,23 +196,41 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label className="font-bold text-gray-800 text-base">Assigned Agent</Label>
-                <Controller
-                    name="assigned_agent_id"
-                    control={control}
-                    render={({ field }) => (
-                        <AppAutocomplete
-                            isBgWhite
-                            options={agentOptions}
-                            placeholder="Search and select agent"
-                            value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
-                            onChange={(e, newValue) => field.onChange((newValue as { value: string; label: string } | null)?.value || "")}
-                            onInputChange={handleAgentSearchChange}
-                            loading={isLoadingAgents}
-                        />
-                    )}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Type</Label>
+                    <Controller
+                        name={"type" as any}
+                        control={control}
+                        render={({ field }) => (
+                            <AppSelect
+                                options={typeOptions}
+                                placeholder="Select Type"
+                                value={field.value}
+                                isBgWhite={true}
+                                onChange={(e) => field.onChange(e.target.value)}
+                            />
+                        )}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Assigned Agent</Label>
+                    <Controller
+                        name="assigned_agent_id"
+                        control={control}
+                        render={({ field }) => (
+                            <AppAutocomplete
+                                isBgWhite
+                                options={agentOptions}
+                                placeholder="Search and select agent"
+                                value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
+                                onChange={(e, newValue) => field.onChange((newValue as { value: string; label: string } | null)?.value || "")}
+                                onInputChange={handleAgentSearchChange}
+                                loading={isLoadingAgents}
+                            />
+                        )}
+                    />
+                </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">

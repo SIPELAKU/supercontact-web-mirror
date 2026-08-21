@@ -2,6 +2,7 @@ import { TicketCategory, TicketTag } from "./TicketSettings";
 
 export type TicketPriority = "Urgent" | "High" | "Medium" | "Low";
 export type TicketStatus = "Open" | "Pending" | "On-hold" | "In Progress" | "Solved" | "Closed";
+export type TicketType = "Question" | "Incident" | "Problem" | "Task";
 
 export interface Agent {
     id: string;
@@ -69,6 +70,7 @@ export interface Ticket {
     customer_email: string;
     priority: TicketPriority;
     status: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     assigned_agent?: Agent;
     created_by?: Agent;
@@ -91,6 +93,7 @@ export interface CreateTicketDTO {
     customer_email: string;
     priority: TicketPriority;
     status: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     category_id?: string | null;
     tags?: string[];
@@ -104,6 +107,7 @@ export interface UpdateTicketDTO {
     customer_email?: string;
     priority?: TicketPriority;
     status?: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     category_id?: string | null;
     tags?: string[];

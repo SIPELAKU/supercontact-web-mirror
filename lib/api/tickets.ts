@@ -38,6 +38,7 @@ export async function fetchTickets(
     search?: string,
     status?: string,
     priority?: string,
+    type?: string,
     agentId?: string,
     sortBy?: string,
     sortOrder?: "asc" | "desc"
@@ -50,6 +51,7 @@ export async function fetchTickets(
     if (search) queryParams.append("search", search);
     if (status && status !== "Select Status") queryParams.append("status", status);
     if (priority && priority !== "Select Priority") queryParams.append("priority", priority);
+    if (type && type !== "Select Type") queryParams.append("type", type);
     if (agentId && agentId !== "Select Agent") queryParams.append("assigned_agent_id", agentId);
     if (sortBy) {
         queryParams.append("sort_by", sortBy);

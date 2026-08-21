@@ -14,7 +14,7 @@ import { useTicket, useDeleteTicket } from "@/lib/hooks/useTickets";
 import { useConversation } from "@/lib/hooks/useOmnichannel";
 import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
 import { useUploadTicketAttachments, useDeleteTicketAttachment } from "@/lib/hooks/useTicketAttachments";
-import { TicketPriorityBadge, TicketStatusBadge } from "../TicketBadges";
+import { TicketPriorityBadge, TicketStatusBadge, TicketTypeBadge } from "../TicketBadges";
 import { TicketSlaBadge } from "../TicketSlaBadge";
 import { EditTicketModal } from "../modals/EditTicketModal";
 import { TicketCommentThread } from "./TicketCommentThread";
@@ -176,6 +176,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
             <div className="flex flex-wrap items-center gap-3">
                 <TicketPriorityBadge priority={ticket.priority} />
                 <TicketStatusBadge status={ticket.status} />
+                <TicketTypeBadge type={ticket.type} />
                 <TicketSlaBadge sla={ticket.sla} />
                 <TicketViewersIndicator ticketId={ticket.id} />
                 {ticket.category && (

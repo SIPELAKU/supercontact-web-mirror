@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
+import { useTicketForms } from "@/lib/hooks/useTicketForms";
 import { Ticket } from "@/lib/types/Ticket";
 import { AppButton } from "@/components/ui/app-button";
 import { buildVisibilityValues, isFieldVisible } from "@/lib/utils/ticketFieldVisibility";
@@ -37,6 +38,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             category_id: initialData?.category_id || null,
             tags: initialData?.tags?.map((t) => t.name) || [],
             custom_fields: initialData?.custom_fields || {},
+            form_id: initialData?.form_id || "",
         } as any
     });
 
@@ -55,6 +57,30 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
     // hidden by their visibility condition (matching backend validate_custom_fields).
     const { data: customFieldData } = useTicketCustomFields();
     const customFieldDefs = customFieldData?.data?.data || [];
+
+    // Inc 7: optional ticket form picker. Only active forms are offered; selecting
+    // one sets form_id on the ticket. Purely additive/non-breaking - no field is
+    // blocked when a form isn't chosen.
+    const { data: ticketForms = [] } = useTicketForms();
+    const activeForms = ticketForms.filter((f) => f.is_active);
+    const formOptions = [
+        { label: "None", value: "" },
+        ...activeForms
+            .slice()
+            .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+            .map((f) => ({ label: f.name, value: f.id })),
+    ];
+    const watchedFormId = watch("form_id" as any);
+    const selectedForm = activeForms.find((f) => f.id === watchedFormId) || null;
+    const FIELD_LABELS: Record<string, string> = {
+        subject: "Subject",
+        description: "Description",
+        type: "Type",
+        priority: "Priority",
+        status: "Status",
+    };
+    const fieldLabelFor = (key: string) =>
+        FIELD_LABELS[key] || customFieldDefs.find((d: any) => d.field_key === key)?.label || key;
 
     const agentOptions = agents.map((agent: any) => ({
         label: agent.fullname,
@@ -110,6 +136,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             setValue("category_id" as any, initialData.category_id || null);
             setValue("tags" as any, initialData.tags?.map((t) => t.name) || []);
             setValue("custom_fields" as any, initialData.custom_fields || {});
+            setValue("form_id" as any, initialData.form_id || "");
         }
     }, [initialData, setValue]);
 
@@ -129,7 +156,12 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 delete customFields[def.field_key];
             }
         }
-        onSubmit({ ...data, type: data.type || null, custom_fields: customFields });
+        onSubmit({
+            ...data,
+            type: data.type || null,
+            form_id: data.form_id || null,
+            custom_fields: customFields,
+        });
     };
 
     return (
@@ -282,6 +314,35 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     />
                 </div>
             </div>
+
+            {formOptions.length > 1 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <Label className="font-bold text-gray-800 text-base">Form</Label>
+                        <Controller
+                            name={"form_id" as any}
+                            control={control}
+                            render={({ field }) => (
+                                <AppSelect
+                                    options={formOptions}
+                                    placeholder="Select Form"
+                                    value={field.value}
+                                    isBgWhite={true}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                />
+                            )}
+                        />
+                        {selectedForm && selectedForm.field_layout?.length > 0 && (
+                            <p className="text-xs text-gray-400">
+                                Recommended fields:{" "}
+                                {selectedForm.field_layout
+                                    .map((f) => `${fieldLabelFor(f.field)}${f.required ? "*" : ""}`)
+                                    .join(", ")}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <Controller
                 name={"custom_fields" as any}

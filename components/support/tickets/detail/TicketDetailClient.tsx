@@ -24,6 +24,7 @@ import { TicketViewersIndicator } from "./TicketViewersIndicator";
 import { ApplyMacroButton } from "./ApplyMacroButton";
 import { TicketLinksPanel } from "./TicketLinksPanel";
 import { TicketParticipantsPanel } from "./TicketParticipantsPanel";
+import { TicketSideConversationsPanel } from "./TicketSideConversationsPanel";
 import { TicketConversationPanel } from "./TicketConversationPanel";
 import { MergeTicketModal } from "../modals/MergeTicketModal";
 import { LinkTicketModal } from "../modals/LinkTicketModal";
@@ -310,6 +311,8 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                     </div>
 
                     <TicketParticipantsPanel ticketId={id} />
+
+                    <TicketSideConversationsPanel ticketId={id} />
 
                     <TicketLinksPanel ticketId={id} />
                 </div>

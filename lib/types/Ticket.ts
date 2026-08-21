@@ -114,6 +114,8 @@ export interface Ticket {
     sla?: TicketSlaSummary | null;
     merged_into_ticket_id?: string | null;
     source_conversation_id?: string | null;
+    // Phase 5 / Inc 7: optional ticket form this ticket was created with.
+    form_id?: string | null;
     created_at?: string;
     updated_at?: string;
 }
@@ -130,6 +132,7 @@ export interface CreateTicketDTO {
     category_id?: string | null;
     tags?: string[];
     custom_fields?: Record<string, any>;
+    form_id?: string | null;
 }
 
 export interface UpdateTicketDTO {
@@ -144,6 +147,7 @@ export interface UpdateTicketDTO {
     category_id?: string | null;
     tags?: string[];
     custom_fields?: Record<string, any>;
+    form_id?: string | null;
 }
 
 export interface TicketResponse {

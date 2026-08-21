@@ -38,6 +38,7 @@ export const settingsNav: SettingsRegistry = [
     children: [
       { id: "categories", title: "Categories", path: "/settings/support/categories" },
       { id: "custom-fields", title: "Custom Fields", path: "/settings/support/custom-fields" },
+      { id: "ticket-forms", title: "Ticket Forms", path: "/settings/support/ticket-forms" },
       { id: "sla", title: "SLA Policies", path: "/settings/support/sla" },
       {
         id: "conversation-sla",

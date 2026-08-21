@@ -16,7 +16,10 @@ import { usePermission } from "@/lib/hooks/usePermission";
 
 const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
     { value: "Open", label: "Open" },
+    { value: "Pending", label: "Pending" },
+    { value: "On-hold", label: "On-hold" },
     { value: "In Progress", label: "In Progress" },
+    { value: "Solved", label: "Solved" },
     { value: "Closed", label: "Closed" },
 ];
 
@@ -117,7 +120,7 @@ export function TicketTable({
                 accessorKey: "status",
                 header: "Status",
                 filterVariant: "select",
-                filterSelectOptions: ["Open", "In Progress", "Closed"],
+                filterSelectOptions: ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"],
                 Cell: ({ cell }) => (
                     <TicketStatusBadge status={cell.getValue<any>()} />
                 ),

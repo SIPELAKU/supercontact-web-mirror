@@ -44,7 +44,7 @@ const OP_OPTIONS: { value: TicketConditionOp; label: string }[] = [
 ];
 
 const PRIORITY_VALUES = ["Urgent", "High", "Medium", "Low"];
-const STATUS_VALUES = ["Open", "In Progress", "Closed"];
+const STATUS_VALUES = ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"];
 
 const ACTION_TYPE_OPTIONS = [
     { value: "assign", label: "Assign to agent" },

@@ -20,7 +20,10 @@ import {
 const STATUS_OPTIONS = [
     { value: "", label: "No change" },
     { value: "Open", label: "Open" },
+    { value: "Pending", label: "Pending" },
+    { value: "On-hold", label: "On-hold" },
     { value: "In Progress", label: "In Progress" },
+    { value: "Solved", label: "Solved" },
     { value: "Closed", label: "Closed" },
 ];
 

@@ -1,7 +1,7 @@
 import { TicketCategory, TicketTag } from "./TicketSettings";
 
 export type TicketPriority = "Urgent" | "High" | "Medium" | "Low";
-export type TicketStatus = "Open" | "In Progress" | "Closed";
+export type TicketStatus = "Open" | "Pending" | "On-hold" | "In Progress" | "Solved" | "Closed";
 
 export interface Agent {
     id: string;

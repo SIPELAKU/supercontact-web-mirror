@@ -12,8 +12,17 @@ export function TicketStatusBadge({ status }: StatusBadgeProps) {
         case "Open":
             className = "bg-blue-100 text-blue-700 hover:bg-blue-200 border-none";
             break;
+        case "Pending":
+            className = "bg-amber-100 text-amber-800 hover:bg-amber-200 border-none";
+            break;
+        case "On-hold":
+            className = "bg-slate-100 text-slate-700 hover:bg-slate-200 border-none";
+            break;
         case "In Progress":
             className = "bg-green-100 text-green-700 hover:bg-green-200 border-none";
+            break;
+        case "Solved":
+            className = "bg-emerald-600 text-white hover:bg-emerald-700 border-none";
             break;
         case "Closed":
             className = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-none";

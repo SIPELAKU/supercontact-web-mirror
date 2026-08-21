@@ -66,7 +66,10 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
 
     const statusOptions = [
         { label: "Open", value: "Open" },
+        { label: "Pending", value: "Pending" },
+        { label: "On-hold", value: "On-hold" },
         { label: "In Progress", value: "In Progress" },
+        { label: "Solved", value: "Solved" },
         { label: "Closed", value: "Closed" },
     ];
 

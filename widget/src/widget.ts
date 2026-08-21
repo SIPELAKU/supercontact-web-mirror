@@ -112,6 +112,14 @@ interface WidgetStrings {
   startOver: string;
   back: string;
   menu: string;
+  menuTalkToHuman: string;
+  // Answer-Bot deflection control (Phase 7B.2):
+  deflectQuestion: string;
+  deflectYes: string;
+  deflectTalkHuman: string;
+  deflectHelpful: string;
+  deflectConnecting: string;
+  deflectRetry: string;
 }
 
 const STRINGS_EN: WidgetStrings = {
@@ -141,6 +149,13 @@ const STRINGS_EN: WidgetStrings = {
   startOver: "Start over",
   back: "Back",
   menu: "More options",
+  menuTalkToHuman: "Talk to a human",
+  deflectQuestion: "Was this helpful?",
+  deflectYes: "Yes, thanks",
+  deflectTalkHuman: "Talk to a human",
+  deflectHelpful: "Glad that helped!",
+  deflectConnecting: "Connecting you to our team…",
+  deflectRetry: "Couldn't send — tap to retry",
 };
 
 const STRINGS_ID: WidgetStrings = {
@@ -170,6 +185,13 @@ const STRINGS_ID: WidgetStrings = {
   startOver: "Mulai ulang",
   back: "Kembali",
   menu: "Opsi lainnya",
+  menuTalkToHuman: "Bicara dengan agen",
+  deflectQuestion: "Apakah ini membantu?",
+  deflectYes: "Ya, terima kasih",
+  deflectTalkHuman: "Bicara dengan agen",
+  deflectHelpful: "Senang bisa membantu!",
+  deflectConnecting: "Menghubungkan Anda dengan tim kami…",
+  deflectRetry: "Gagal mengirim — ketuk untuk coba lagi",
 };
 
 // Base pack selected by locale (default Indonesian - the product's tenants
@@ -216,6 +238,39 @@ interface WidgetMessage {
   // SAME /start payload (queue + originating quick-action). Anonymous start:
   // no visitor_name/visitor_email captured up-front anymore.
   startCtx?: { target_queue_id?: string | null; action_id?: string | null };
+}
+
+// Client-only state for a single Answer-Bot deflection (Phase 7B.2), built from
+// a WS "bot_suggestion" frame and never persisted. `articles` holds TITLES ONLY:
+// the backend contract carries no URLs, so they're rendered as plain-text
+// context (never invented links). The bot's actual answer has already arrived
+// as a normal OUTBOUND message bubble, so the frame's `answer` field is
+// deliberately not re-rendered here. Lifecycle is per-deflection: a new
+// bot_suggestion replaces this wholesale (a fresh "open" control); a resolved
+// deflection ("helpful"/"escalated") shows a note and never re-arms.
+interface DeflectionState {
+  id: string;
+  articles: { title: string }[];
+  // open --click--> submitting --success--> (helpful | escalated)
+  //                            --failure--> error (retryable, buttons re-enabled)
+  state: "open" | "submitting" | "helpful" | "escalated" | "error";
+  // Provenance of THIS card. "live": armed by a bot_suggestion WS frame the
+  // socket actually received. "resync": replayed from the resync endpoint's
+  // pending_deflection field. Only resync-sourced cards are auto-cleared when a
+  // later resync reports NO pending deflection - a live frame can legitimately
+  // be newer than a resync snapshot, so we never let a stale resync erase it.
+  source: "live" | "resync";
+}
+
+// Shape of the resync endpoint's new `pending_deflection` field (GET
+// /public/widget/conversation): the current unresolved suppressed deflection
+// for the conversation, or null. Same shape as the bot_suggestion WS payload,
+// so a reload/reconnect can replay the escalation card the dropped WS frame
+// never delivered (Phase 7B.2 true-deflection fix).
+interface PendingDeflection {
+  deflection_id?: string | null;
+  articles?: Array<{ title?: string | null }> | null;
+  answer?: string | null;
 }
 
 // Server-shaped message as returned by GET /public/widget/conversation and
@@ -438,6 +493,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // history resync, which rebuilds this.messages from server state.
     private agentConnected = false;
     private menuOpen = false;
+    // Active Answer-Bot deflection (Phase 7B.2), or null when there's none to
+    // show. Only ONE is live at a time; a new bot_suggestion replaces it.
+    private deflection: DeflectionState | null = null;
 
     private bubbleEl!: HTMLButtonElement;
     private badgeEl!: HTMLSpanElement;
@@ -452,6 +510,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private menuEl!: HTMLDivElement;
     private menuWrapEl!: HTMLDivElement;
     private backBtn!: HTMLButtonElement;
+    // "Talk to a human" overflow-menu item - a chat-view-only defense-in-depth
+    // escape hatch (Phase 7B.2), shown/hidden per view in setView().
+    private talkHumanItem!: HTMLButtonElement;
 
     constructor() {
       this.root = document.createElement("div");
@@ -637,6 +698,20 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .msg.inbound .retry { color: #DC2626; }
         .sys-line { align-self: center; max-width: 92%; text-align: center; font-size: 11px; color: #6B7280; background: #EEF2F7; padding: 4px 12px; border-radius: 999px; margin: 2px auto; }
 
+        /* ---- Answer-Bot deflection control (Phase 7B.2) ---- */
+        .deflect { align-self: stretch; margin: 2px 0; padding: 10px 12px; border: 1px solid #E9EDF3; border-radius: 12px; background: #fff; }
+        .deflect-q { font-size: 12px; font-weight: 700; color: #111827; }
+        .deflect-articles { list-style: none; margin: 8px 0 0; padding: 0; }
+        .deflect-articles li { position: relative; font-size: 12px; color: #6B7280; line-height: 1.45; padding-left: 14px; }
+        .deflect-articles li::before { content: "•"; position: absolute; left: 3px; color: #C0C7D2; }
+        .deflect-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .deflect-btn { flex: 1 1 0; border-radius: 9px; padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: pointer; line-height: 1.2; }
+        .deflect-btn.yes { background: ${brand}; color: #fff; border: 1.5px solid ${brand}; }
+        .deflect-btn.human { background: #fff; color: ${brand}; border: 1.5px solid ${brand}; }
+        .deflect-btn.human:hover { background: ${brand}; color: #fff; }
+        .deflect-btn:disabled { opacity: .55; cursor: default; }
+        .deflect-err { font-size: 11px; color: #DC2626; margin-top: 8px; }
+
         /* ---- Composer (shared between views, re-parented on view switch) ---- */
         .composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #E5E7EB; background: #fff; }
         /* 16px (not 13px) so iOS Safari doesn't zoom the page on focus (item 2 a11y). */
@@ -788,6 +863,19 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.menuEl = document.createElement("div");
       this.menuEl.className = "menu";
       this.menuEl.setAttribute("role", "menu");
+
+      // Defense-in-depth human path (Phase 7B.2): a visitor is never stuck after
+      // a confident deflection even if the escalation card somehow isn't shown.
+      // Chat-view only (toggled in setView) - the home view already carries its
+      // own handoff card. onTalkToHuman() escalates a live deflection or falls
+      // back to the normal handoff.
+      this.talkHumanItem = document.createElement("button");
+      this.talkHumanItem.className = "menu-item";
+      this.talkHumanItem.setAttribute("role", "menuitem");
+      this.talkHumanItem.textContent = this.strings.menuTalkToHuman;
+      this.talkHumanItem.onclick = () => this.onTalkToHuman();
+      this.menuEl.appendChild(this.talkHumanItem);
+
       const startOver = document.createElement("button");
       startOver.className = "menu-item";
       startOver.setAttribute("role", "menuitem");
@@ -1052,6 +1140,23 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       );
     }
 
+    // Chat-view overflow-menu "Talk to a human" (Phase 7B.2 defense-in-depth):
+    // an always-available escape hatch so a visitor is never stranded after a
+    // confident deflection - even if the escalation card wasn't rendered. If an
+    // unresolved deflection is live, ESCALATE that (POST helpful=false, exactly
+    // like the card's own "Talk to a human"; submitDeflection already no-ops a
+    // mid-flight "submitting" one, so this can't double-escalate). Otherwise, or
+    // once the deflection is already resolved, fall back to the normal handoff.
+    private onTalkToHuman() {
+      this.closeMenu();
+      const d = this.deflection;
+      if (d && d.state !== "helpful" && d.state !== "escalated") {
+        void this.submitDeflection(d, false);
+      } else {
+        this.onHandoff();
+      }
+    }
+
     private async attemptSend(msg: WidgetMessage, sendBtn?: HTMLButtonElement) {
       msg.status = "sending";
       this.renderMessages();
@@ -1175,6 +1280,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         this.bodyEl.appendChild(el);
       }
 
+      // Answer-Bot deflection control / resolution note (Phase 7B.2), rendered
+      // right under the latest bot answer bubble. Rebuilt from this.deflection
+      // on every render so its disabled/resolved state survives message churn.
+      const deflectEl = this.buildDeflection();
+      if (deflectEl) this.bodyEl.appendChild(deflectEl);
+
       // Sticky "connected with an agent" system line (assigned:true from /start).
       if (this.agentConnected) {
         const sys = document.createElement("div");
@@ -1184,6 +1295,182 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       }
 
       this.bodyEl.scrollTop = this.bodyEl.scrollHeight;
+    }
+
+    // Phase 7B.2: arm (or re-arm) the "Was this helpful?" escalation control
+    // from a WS "bot_suggestion" frame. A new deflection ALWAYS replaces any
+    // prior one with a fresh "open" control, so a previously-resolved note is
+    // superseded. Titles are kept as plain text only (contract carries no URLs).
+    private onBotSuggestion(
+      deflectionId?: string,
+      articles?: Array<{ title?: string | null }> | null,
+    ) {
+      const id = (deflectionId || "").trim();
+      if (!id) return; // malformed frame - nothing actionable
+      // De-dupe by deflection_id: if we're ALREADY showing this exact deflection
+      // (e.g. it was replayed from resync first, or this frame is a redelivery),
+      // do nothing. Rebuilding would reset an in-flight submission or revert a
+      // just-resolved state back to "open". A genuinely NEW deflection has a new
+      // id and still replaces the old one wholesale (below).
+      if (this.deflection && this.deflection.id === id) return;
+      const titles = (articles || [])
+        .map((a) => (a && typeof a.title === "string" ? a.title.trim() : ""))
+        .filter((t) => t.length > 0)
+        .map((title) => ({ title }));
+      this.deflection = { id, articles: titles, state: "open", source: "live" };
+      // Mirror the "message" frame's behavior: just re-render (don't yank the
+      // visitor's view). It renders into the chat thread, which they're already
+      // in after sending the message that produced this suggestion.
+      this.renderMessages();
+    }
+
+    // Phase 7B.2 true-deflection replay: reconcile this.deflection against the
+    // resync endpoint's `pending_deflection`. Callers re-render afterwards (this
+    // never renders itself), so it only mutates state.
+    //
+    // De-dupe / guard rules (requirement 3):
+    //  - pending is present: (re)build the card ONLY when we're not already
+    //    showing that exact deflection_id. If we ARE (open, mid-submission, or
+    //    just-resolved), leave it untouched so a resync can't double-render it
+    //    or revert a just-submitted state back to "open".
+    //  - pending is null: clear the card ONLY when it was itself sourced from a
+    //    resync. A live bot_suggestion frame can be newer than this snapshot, so
+    //    a stale "no pending" resync must never erase it.
+    private reconcilePendingDeflection(pending: PendingDeflection | null): void {
+      const id =
+        pending && typeof pending.deflection_id === "string" ? pending.deflection_id.trim() : "";
+      if (id) {
+        // Same deflection already on screen: do not touch (guards in-flight /
+        // resolved state, and avoids a redundant rebuild for an unchanged card).
+        if (this.deflection && this.deflection.id === id) return;
+        const titles = (pending!.articles || [])
+          .map((a) => (a && typeof a.title === "string" ? a.title.trim() : ""))
+          .filter((t) => t.length > 0)
+          .map((title) => ({ title }));
+        this.deflection = { id, articles: titles, state: "open", source: "resync" };
+      } else if (this.deflection && this.deflection.source === "resync") {
+        // No pending deflection server-side and our card came from a resync
+        // (incl. one we already resolved) -> it's done; drop it.
+        this.deflection = null;
+      }
+    }
+
+    // Build the deflection element for the CURRENT this.deflection state, or
+    // null when there's none. Fully derived from state so a re-render (e.g. a
+    // new agent message arriving mid-flight) faithfully rebuilds the control,
+    // including its disabled/resolved/error appearance.
+    private buildDeflection(): HTMLElement | null {
+      const d = this.deflection;
+      if (!d) return null;
+
+      // Resolved: a subtle centered note replaces the control. It persists (no
+      // buttons) until a NEW bot_suggestion arrives and re-arms a fresh control.
+      if (d.state === "helpful" || d.state === "escalated") {
+        const note = document.createElement("div");
+        note.className = "sys-line";
+        note.textContent =
+          d.state === "helpful" ? this.strings.deflectHelpful : this.strings.deflectConnecting;
+        return note;
+      }
+
+      const box = document.createElement("div");
+      box.className = "deflect";
+
+      const q = document.createElement("div");
+      q.className = "deflect-q";
+      q.textContent = this.strings.deflectQuestion;
+      box.appendChild(q);
+
+      if (d.articles.length) {
+        const list = document.createElement("ul");
+        list.className = "deflect-articles";
+        for (const a of d.articles) {
+          const li = document.createElement("li");
+          li.textContent = a.title; // plain text - no link is provided
+          list.appendChild(li);
+        }
+        box.appendChild(list);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "deflect-actions";
+
+      const yesBtn = document.createElement("button");
+      yesBtn.type = "button";
+      yesBtn.className = "deflect-btn yes";
+      yesBtn.textContent = this.strings.deflectYes;
+
+      const humanBtn = document.createElement("button");
+      humanBtn.type = "button";
+      humanBtn.className = "deflect-btn human";
+      humanBtn.textContent = this.strings.deflectTalkHuman;
+
+      // Double-click / one-submission guard: while a POST is in flight both
+      // buttons are disabled. Because it's derived from d.state, the disabled
+      // look survives any re-render that happens during the request.
+      if (d.state === "submitting") {
+        yesBtn.disabled = true;
+        humanBtn.disabled = true;
+      }
+      yesBtn.onclick = () => void this.submitDeflection(d, true);
+      humanBtn.onclick = () => void this.submitDeflection(d, false);
+
+      actions.appendChild(yesBtn);
+      actions.appendChild(humanBtn);
+      box.appendChild(actions);
+
+      // Failed POST: keep the (re-enabled) buttons and show a small retry hint.
+      if (d.state === "error") {
+        const err = document.createElement("div");
+        err.className = "deflect-err";
+        err.textContent = this.strings.deflectRetry;
+        box.appendChild(err);
+      }
+
+      return box;
+    }
+
+    // POST the visitor's verdict for a deflection, reusing the widget's existing
+    // Bearer visitor-token auth (identical to the /messages send). helpful:true
+    // marks it deflected; helpful:false makes the BACKEND escalate to a human
+    // (creates the ticket + notifies an agent) - so we do NOT also fire
+    // onHandoff(), which would double-escalate; the "Connecting you..." note
+    // simply mirrors the handoff UX. Never auto-escalates: only a real click.
+    private async submitDeflection(d: DeflectionState, helpful: boolean) {
+      // Guard: act only on the still-active deflection, and only from an
+      // actionable state (open, or error-after-retry). This is what enforces
+      // "one submission per deflection" and swallows double-clicks.
+      if (this.deflection !== d) return;
+      if (d.state !== "open" && d.state !== "error") return;
+      if (!this.session) {
+        d.state = "error";
+        this.renderMessages();
+        return;
+      }
+
+      d.state = "submitting";
+      this.renderMessages();
+      try {
+        await apiFetch(`/public/widget/deflection/${encodeURIComponent(d.id)}/feedback`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+          body: JSON.stringify({ helpful }),
+        });
+        // A new bot_suggestion could have replaced this.deflection mid-flight;
+        // only reflect the resolution if this is still the active one.
+        if (this.deflection === d) {
+          d.state = helpful ? "helpful" : "escalated";
+          this.renderMessages();
+        }
+      } catch (e) {
+        console.error("[SmartSales Widget] deflection feedback failed", e);
+        // Expired/revoked token: purge it so a reload starts fresh (item 4).
+        if ((e as { status?: number })?.status === 401) this.clearSession();
+        if (this.deflection === d) {
+          d.state = "error"; // re-enables the buttons + shows the retry hint
+          this.renderMessages();
+        }
+      }
     }
 
     // Re-fetch full history and reconcile (item 3). Server state is
@@ -1205,6 +1492,16 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           serverMsgs.filter((m): m is WidgetMessage & { id: string } => !!m.id).map((m) => m.id),
         );
         this.messages = [...serverMsgs, ...pendingLocal];
+        // Phase 7B.2 true-deflection replay (PRIMARY fix): the confident-answer
+        // escalation card is delivered live via a bot_suggestion WS frame that
+        // is published synchronously during /start - BEFORE this widget's socket
+        // connects - so it reaches zero sockets and is dropped. The resync
+        // endpoint now echoes the current unresolved deflection so the card
+        // renders reliably on socket-open, page reload, and reconnect,
+        // independent of that dropped frame.
+        this.reconcilePendingDeflection(
+          (conv.pending_deflection as PendingDeflection | null | undefined) ?? null,
+        );
         this.renderMessages();
       } catch (e) {
         // A 401 means the visitor token expired/was revoked: purge it so a
@@ -1251,6 +1548,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.messages = [];
       this.serverIds = new Set();
       this.agentConnected = false;
+      this.deflection = null;
       this.reconnectAttempts = 0;
       // Allow the next conversation to reconnect normally.
       this.stoppedReconnect = false;
@@ -1265,7 +1563,22 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
       socket.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as ServerMessage & { type?: string };
+          const data = JSON.parse(event.data) as ServerMessage & {
+            type?: string;
+            // Phase 7B.2 "bot_suggestion" frame fields (see onBotSuggestion).
+            deflection_id?: string;
+            articles?: Array<{ title?: string | null }> | null;
+            answer?: string | null;
+            conversation_id?: string;
+          };
+          // Answer-Bot deflection (Phase 7B.2): the confident bot answer itself
+          // already arrived as a normal OUTBOUND "message" frame (rendered as a
+          // team bubble); this companion frame only arms the "Was this helpful?"
+          // escalation control beneath it. Handled BEFORE the "message" branch.
+          if (data.type === "bot_suggestion") {
+            this.onBotSuggestion(data.deflection_id, data.articles);
+            return;
+          }
           if (data.type === "message") {
             // Dedupe redelivery/echo by id (item 3).
             if (data.id && this.serverIds.has(data.id)) return;
@@ -1377,6 +1690,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // Back affordance only makes sense returning from chat to a home screen
       // (its own CSS restricts it to mobile full-screen).
       this.backBtn.classList.toggle("show", v === "chat" && !!this.config!.show_home_screen);
+      // "Talk to a human" is a chat-view escape hatch only; the home view has
+      // its own handoff card, so hide the menu item there to avoid redundancy.
+      this.talkHumanItem.style.display = v === "chat" ? "block" : "none";
       if (v === "chat") this.renderMessages();
     }
 

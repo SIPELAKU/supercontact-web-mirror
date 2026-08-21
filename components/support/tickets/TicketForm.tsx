@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
+import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
 import { Ticket } from "@/lib/types/Ticket";
 import { AppButton } from "@/components/ui/app-button";
+import { buildVisibilityValues, isFieldVisible } from "@/lib/utils/ticketFieldVisibility";
 import TicketCategorySelect from "./TicketCategorySelect";
 import TicketTagsInput from "./TicketTagsInput";
 import TicketCustomFieldsPanel from "./TicketCustomFieldsPanel";
@@ -22,7 +24,7 @@ interface TicketFormProps {
 }
 
 export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: TicketFormProps) {
-    const { register, handleSubmit, setValue, control, formState: { errors } } = useForm({
+    const { register, handleSubmit, setValue, control, watch, formState: { errors } } = useForm({
         defaultValues: {
             subject: initialData?.subject || "",
             description: initialData?.description || "",
@@ -41,6 +43,18 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
     const [agentSearch, setAgentSearch] = useState("");
     const { data: agentData, isLoading: isLoadingAgents } = useAssignableAgents(agentSearch);
     const agents = agentData?.data || [];
+
+    // Inc 4: watch the built-in fields a custom field can be conditioned on, so the
+    // panel re-evaluates visibility reactively as the user edits them.
+    const watchedType = watch("type" as any);
+    const watchedPriority = watch("priority");
+    const watchedStatus = watch("status");
+    const builtInValues = { type: watchedType, priority: watchedPriority, status: watchedStatus };
+
+    // Definitions are also needed at submit time to strip values of fields that are
+    // hidden by their visibility condition (matching backend validate_custom_fields).
+    const { data: customFieldData } = useTicketCustomFields();
+    const customFieldDefs = customFieldData?.data?.data || [];
 
     const agentOptions = agents.map((agent: any) => ({
         label: agent.fullname,
@@ -101,8 +115,21 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
 
     // Normalize the nullable Type field: an empty selection ("None") must be
     // sent as null, not "", so the backend clears it rather than rejecting "".
+    // Inc 4: also drop values of custom fields hidden by their visibility condition
+    // (evaluated against the final submitted state) so they aren't persisted and a
+    // hidden required field can't block submit — mirroring the backend.
     const handleFormSubmit = (data: any) => {
-        onSubmit({ ...data, type: data.type || null });
+        const customFields = { ...(data.custom_fields || {}) };
+        const visibilityValues = buildVisibilityValues(
+            { type: data.type, priority: data.priority, status: data.status },
+            customFields
+        );
+        for (const def of customFieldDefs) {
+            if (!isFieldVisible(def.visibility_condition ?? null, visibilityValues)) {
+                delete customFields[def.field_key];
+            }
+        }
+        onSubmit({ ...data, type: data.type || null, custom_fields: customFields });
     };
 
     return (
@@ -263,6 +290,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     <TicketCustomFieldsPanel
                         values={field.value || {}}
                         onChange={(key, value) => field.onChange({ ...(field.value || {}), [key]: value })}
+                        builtInValues={builtInValues}
                     />
                 )}
             />

@@ -2,23 +2,38 @@ import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
 import { Label } from "@/components/ui/label";
 import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
+import {
+    buildVisibilityValues,
+    isFieldVisible,
+} from "@/lib/utils/ticketFieldVisibility";
 
 interface TicketCustomFieldsPanelProps {
     values: Record<string, any>;
     onChange: (fieldKey: string, value: any) => void;
+    // Inc 4: current built-in ticket field values (type/priority/status) so a
+    // custom field's visibility condition can be evaluated reactively as the user
+    // edits the ticket. Omitted on read-only surfaces => built-ins treated as empty.
+    builtInValues?: { type?: any; priority?: any; status?: any };
 }
 
 // One control per active TicketCustomFieldDefinition, keyed by field_type -
 // used in both the create/edit form and the (read) detail page overview.
-export default function TicketCustomFieldsPanel({ values, onChange }: TicketCustomFieldsPanelProps) {
+export default function TicketCustomFieldsPanel({ values, onChange, builtInValues }: TicketCustomFieldsPanelProps) {
     const { data, isLoading } = useTicketCustomFields();
     const definitions = data?.data?.data || [];
 
-    if (isLoading || definitions.length === 0) return null;
+    // Flat map the visibility evaluator compares against: built-in ticket fields
+    // plus the current custom-field values, both keyed by their reference name.
+    const visibilityValues = buildVisibilityValues(builtInValues || {}, values);
+    const visibleDefinitions = definitions.filter((def) =>
+        isFieldVisible(def.visibility_condition ?? null, visibilityValues)
+    );
+
+    if (isLoading || visibleDefinitions.length === 0) return null;
 
     return (
         <div className="space-y-4">
-            {definitions.map((def) => {
+            {visibleDefinitions.map((def) => {
                 const value = values?.[def.field_key];
                 return (
                     <div key={def.id} className="space-y-2">

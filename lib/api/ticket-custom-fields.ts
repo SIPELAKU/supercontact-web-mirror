@@ -1,5 +1,9 @@
 import { fetchWithTimeout } from "./api-client";
-import { TicketCustomFieldDefinition, TicketCustomFieldType } from "@/lib/types/TicketSettings";
+import {
+    TicketCustomFieldDefinition,
+    TicketCustomFieldType,
+    TicketVisibilityCondition,
+} from "@/lib/types/TicketSettings";
 
 function getFullUrl(path: string): string {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -28,6 +32,7 @@ export interface CreateTicketCustomFieldDTO {
     select_options?: string[];
     is_required?: boolean;
     display_order?: number;
+    visibility_condition?: TicketVisibilityCondition | null;
 }
 
 export interface UpdateTicketCustomFieldDTO {
@@ -36,6 +41,7 @@ export interface UpdateTicketCustomFieldDTO {
     is_required?: boolean;
     is_active?: boolean;
     display_order?: number;
+    visibility_condition?: TicketVisibilityCondition | null;
 }
 
 export async function fetchTicketCustomFields(

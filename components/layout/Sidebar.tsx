@@ -164,7 +164,12 @@ const menuData: MenuSection[] = [
           // permission the Omnichannel entry uses.
           { name: "Workspace", path: "/support/workspace", permission: "omnichannel:use" },
           { name: "Tickets", path: "/support/tickets", permission: ["tickets:read:my", "tickets:read:team", "tickets"] },
-          { name: "Ticket Dashboard", path: "/support/tickets/dashboard", permission: ["tickets:reports:view", "tickets"] },
+          // Phase 10 Support Analytics (tabs: Tickets / Conversations /
+          // Agents / CSAT). The old /support/tickets/dashboard route still
+          // renders the same Tickets dashboard, this entry just points at
+          // the tabbed page. Any-of union of the per-tab gates so anyone
+          // who can see at least one tab gets the entry.
+          { name: "Analytics", path: "/support/analytics", permission: ["tickets:reports:view", "tickets", "conversations:reports:view", "omnichannel:use"] },
           // Phase 8D QA reviews - visible to anyone holding ANY qa grant
           // (viewers, reviewers, and scorecard admins all land here).
           { name: "QA Reviews", path: "/support/qa", permission: ["support:qa:view", "support:qa:review", "support:qa:manage"] },

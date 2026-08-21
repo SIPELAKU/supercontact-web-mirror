@@ -34,7 +34,7 @@ const PRIORITY_COLORS: Record<string, string> = {
     Medium: "#ea580c",
     Low: "#2563eb",
 };
-const PRIMARY_COLOR = "#5479EE"; // matches the app's existing brand/action color
+export const PRIMARY_COLOR = "#5479EE"; // matches the app's existing brand/action color
 
 const SCOPE_OPTIONS = [
     { value: "team", label: "My Team" },
@@ -42,7 +42,7 @@ const SCOPE_OPTIONS = [
     { value: "my", label: "My Tickets" },
 ];
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+export function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <Paper sx={{ p: 3, borderRadius: "12px", boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)" }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
@@ -75,7 +75,11 @@ function ComplianceBar({ label, pct, met, total }: { label: string; pct: number;
     );
 }
 
-export function TicketDashboardClient() {
+// The dashboard body without the page chrome. Rendered by BOTH the
+// standalone /support/tickets/dashboard page (via TicketDashboardClient
+// below) and the Tickets tab of /support/analytics (Phase 10), so the two
+// routes stay a single implementation.
+export function TicketDashboardPanel() {
     const [scope, setScope] = useState<"my" | "team" | "all">("team");
     const params = { scope };
 
@@ -137,12 +141,7 @@ export function TicketDashboardClient() {
     ];
 
     return (
-        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
-            <PageHeader
-                title="Ticket Dashboard"
-                breadcrumbs={[{ label: "Support" }, { label: "Dashboard" }]}
-            />
-
+        <div className="space-y-6">
             <div className="flex justify-end">
                 <div className="w-48">
                     <AppSelect
@@ -235,6 +234,20 @@ export function TicketDashboardClient() {
                     </ChartCard>
                 </Grid>
             </Grid>
+        </div>
+    );
+}
+
+// Standalone page wrapper (kept so /support/tickets/dashboard still works
+// unchanged) - page chrome + the shared panel.
+export function TicketDashboardClient() {
+    return (
+        <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
+            <PageHeader
+                title="Ticket Dashboard"
+                breadcrumbs={[{ label: "Support" }, { label: "Dashboard" }]}
+            />
+            <TicketDashboardPanel />
         </div>
     );
 }

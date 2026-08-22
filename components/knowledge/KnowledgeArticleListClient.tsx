@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen,
+  LayoutTemplate,
   Loader2,
   Plus,
   Search,
@@ -44,6 +45,15 @@ export default function KnowledgeArticleListClient() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
 
+  // Honor a ?status= deep link (e.g. the Template Gallery's "Review articles"
+  // CTA lands on /knowledge-base?status=draft). Read from window.location on
+  // mount instead of useSearchParams to avoid the App Router Suspense
+  // requirement for a one-shot initializer.
+  useEffect(() => {
+    const s = new URLSearchParams(window.location.search).get("status");
+    if (s === "draft" || s === "published" || s === "archived") setStatus(s);
+  }, []);
+
   const { data: sections = [] } = useKbSections();
   const sectionName = useMemo(() => {
     const map = new Map<string, string>();
@@ -73,6 +83,15 @@ export default function KnowledgeArticleListClient() {
         breadcrumbs={[{ label: "Support" }, { label: "Knowledge Base" }]}
         actions={
           <div className="flex items-center gap-2">
+            {canManage && (
+              <AppButton
+                variantStyle="outline"
+                startIcon={<LayoutTemplate size={16} />}
+                onClick={() => router.push("/knowledge-base/templates")}
+              >
+                Template Gallery
+              </AppButton>
+            )}
             {canManage && (
               <AppButton
                 variantStyle="outline"

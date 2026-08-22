@@ -95,6 +95,51 @@ export interface KbFlag {
   updated_at?: string;
 }
 
+// ---- Template packs (KB Industry Starter Packs) ------------------------------
+
+export interface KbTemplateVariable {
+  key: string;
+  label: string;
+  example?: string | null;
+}
+
+// One node of the gallery preview tree: category name -> section names only.
+export interface KbTemplatePreviewCategory {
+  name: string;
+  sections: string[];
+}
+
+export interface KbTemplateCounts {
+  categories: number;
+  sections: number;
+  articles: number;
+}
+
+export interface KbTemplatePack {
+  id: string;
+  name: string;
+  description: string | null;
+  industry: string;
+  version: number | string;
+  variables: KbTemplateVariable[];
+  locales: string[];
+  counts: KbTemplateCounts;
+  preview: KbTemplatePreviewCategory[];
+}
+
+export interface InstallKbTemplateRequest {
+  locale: string;
+  variables?: Record<string, string>;
+  install_as?: "draft" | "published";
+  public_defaults?: boolean;
+}
+
+export interface KbTemplateInstallResult {
+  created: KbTemplateCounts;
+  skipped: KbTemplateCounts;
+  unsubstituted_variables: string[];
+}
+
 // ---- Request payloads --------------------------------------------------------
 
 export interface CreateKbCategoryRequest {

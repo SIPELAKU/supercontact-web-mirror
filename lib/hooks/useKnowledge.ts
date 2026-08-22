@@ -27,6 +27,12 @@ import {
   fetchKbFlags,
   resolveKbFlag,
 } from "../api/knowledge";
+import { fetchKbTemplates, installKbTemplate } from "../api/knowledge-templates";
+import type {
+  KbTemplatePack,
+  InstallKbTemplateRequest,
+  KbTemplateInstallResult,
+} from "../types/knowledge";
 import type {
   KbCategory,
   KbSection,
@@ -340,6 +346,41 @@ export function useSubmitKbFeedback() {
       return submitKbFeedback(token, id, data);
     },
     onSuccess: (_a, vars) => invalidateArticle(qc, vars.id),
+  });
+}
+
+// ---- Template packs ----------------------------------------------------------
+
+export function useKbTemplates(enabled = true) {
+  const { token } = useAuth();
+  return useQuery<KbTemplatePack[], Error>({
+    queryKey: [KB, "templates"],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return fetchKbTemplates(token);
+    },
+    // Packs are versioned repo files - they only change on release.
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    enabled: !!token && enabled,
+  });
+}
+
+export function useInstallKbTemplate() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useMutation<
+    KbTemplateInstallResult,
+    unknown,
+    { packId: string; data: InstallKbTemplateRequest }
+  >({
+    mutationFn: ({ packId, data }) => {
+      if (!token) throw new Error("No authentication token");
+      return installKbTemplate(token, packId, data);
+    },
+    // An install creates categories + sections + articles in one shot, so
+    // refresh every knowledge query via the shared root key.
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KB] }),
   });
 }
 

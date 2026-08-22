@@ -20,6 +20,7 @@ import {
   unpublishKbArticle,
   archiveKbArticle,
   deleteKbArticle,
+  aiAdaptKbArticle,
   fetchKbArticleVersions,
   searchKb,
   submitKbFeedback,
@@ -264,6 +265,18 @@ export function useUpdateKbArticle() {
     onSuccess: (_article, vars) => {
       invalidateArticle(qc, vars.id);
       qc.invalidateQueries({ queryKey: [KB, "article", vars.id, "versions"] });
+    },
+  });
+}
+
+// Draft-only Copilot suggestion - never mutates the article server-side, so
+// no cache invalidation on success (there is nothing to invalidate).
+export function useAiAdaptKbArticle() {
+  const { token } = useAuth();
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!token) throw new Error("No authentication token");
+      return aiAdaptKbArticle(token, id);
     },
   });
 }

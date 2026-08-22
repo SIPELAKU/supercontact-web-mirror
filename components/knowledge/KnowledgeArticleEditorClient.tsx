@@ -9,6 +9,7 @@ import {
   Loader2,
   Save,
   Send,
+  Sparkles,
   Trash2,
   Undo2,
   X,
@@ -30,6 +31,7 @@ import {
   useUnpublishKbArticle,
   useArchiveKbArticle,
   useDeleteKbArticle,
+  useAiAdaptKbArticle,
   useKbPermissions,
 } from "@/lib/hooks/useKnowledge";
 import { MarkdownEditor } from "./MarkdownEditor";
@@ -63,6 +65,7 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
   const [labelDraft, setLabelDraft] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [showVersions, setShowVersions] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
 
   const { data: sections = [] } = useKbSections(categoryId || undefined);
 
@@ -89,6 +92,7 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
   const unpublishMutation = useUnpublishKbArticle();
   const archiveMutation = useArchiveKbArticle();
   const deleteMutation = useDeleteKbArticle();
+  const aiAdaptMutation = useAiAdaptKbArticle();
 
   const savingDraft = createMutation.isPending || updateMutation.isPending;
   const statusChanging =
@@ -137,6 +141,29 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
     } catch (err) {
       notify.error("Error", { description: getErrorMessage(err, "Failed to save article") });
     }
+  };
+
+  const handleAiAdapt = async () => {
+    if (!articleId) return;
+    try {
+      const result = await aiAdaptMutation.mutateAsync(articleId);
+      if (!result.available || !result.suggested_body) {
+        notify.error("AI not available", {
+          description: "This workspace doesn't have an AI provider configured yet.",
+        });
+        return;
+      }
+      setAiSuggestion(result.suggested_body);
+    } catch (err) {
+      notify.error("Error", { description: getErrorMessage(err, "Failed to generate a suggestion") });
+    }
+  };
+
+  const applyAiSuggestion = () => {
+    if (!aiSuggestion) return;
+    setBody(aiSuggestion);
+    setAiSuggestion(null);
+    notify.success("Suggestion applied", { description: "Review it below, then Save to keep it." });
   };
 
   const runStatus = async (
@@ -313,8 +340,56 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
           />
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-600">Body</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-600">Body</label>
+              {!isNew && canWrite && (
+                <button
+                  type="button"
+                  onClick={handleAiAdapt}
+                  disabled={aiAdaptMutation.isPending}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#5479EE]/30 bg-[#5479EE]/5 px-2.5 py-1 text-[12px] font-semibold text-[#3E63D8] hover:bg-[#5479EE]/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {aiAdaptMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Generate with AI
+                </button>
+              )}
+            </div>
             <MarkdownEditor value={body} onChange={setBody} disabled={readOnly} />
+
+            {aiSuggestion && (
+              <div className="mt-3 rounded-xl border border-[#5479EE]/30 bg-[#5479EE]/5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#3E63D8]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI-personalized draft — review before applying
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setAiSuggestion(null)}
+                    aria-label="Dismiss suggestion"
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-white p-3 text-[13px] text-gray-700">
+                  {aiSuggestion}
+                </div>
+                <p className="mt-2 text-[11.5px] text-gray-400">
+                  This only fills the Body field below — nothing is saved until you click Save.
+                </p>
+                <div className="mt-2 flex justify-end gap-2">
+                  <AppButton variantStyle="outline" color="gray" onClick={() => setAiSuggestion(null)}>
+                    Discard
+                  </AppButton>
+                  <AppButton onClick={applyAiSuggestion}>Use this draft</AppButton>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

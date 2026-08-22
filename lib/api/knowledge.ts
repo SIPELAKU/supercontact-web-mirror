@@ -12,6 +12,7 @@ import type {
   KbArticle,
   KbArticleSummary,
   KbArticleVersion,
+  KbArticleAiAdaptResponse,
   KbSearchHit,
   KbFlag,
   CreateKbCategoryRequest,
@@ -32,6 +33,7 @@ export type {
   KbArticle,
   KbArticleSummary,
   KbArticleVersion,
+  KbArticleAiAdaptResponse,
   KbSearchHit,
   KbFlag,
   CreateKbCategoryRequest,
@@ -195,6 +197,16 @@ export async function unpublishKbArticle(token: string, id: string): Promise<KbA
     headers: authHeaders(token),
   });
   return handle<KbArticle>(res, "Failed to unpublish article");
+}
+
+// Draft-only Copilot suggestion - never mutates the article. The caller must
+// still PATCH the article to keep the suggested body.
+export async function aiAdaptKbArticle(token: string, id: string): Promise<KbArticleAiAdaptResponse> {
+  const res = await fetchWithTimeout(`${API_BASE}/articles/${id}/ai-adapt`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  return handle<KbArticleAiAdaptResponse>(res, "Failed to generate an AI suggestion");
 }
 
 export async function archiveKbArticle(token: string, id: string): Promise<KbArticle> {

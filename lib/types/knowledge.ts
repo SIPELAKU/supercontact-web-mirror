@@ -67,6 +67,11 @@ export interface KbArticleVersion {
   created_at: string;
 }
 
+export interface KbArticleAiAdaptResponse {
+  available: boolean;
+  suggested_body: string | null;
+}
+
 export interface KbSearchHit {
   article_id: string;
   title: string;

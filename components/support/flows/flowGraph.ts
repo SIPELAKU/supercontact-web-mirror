@@ -70,12 +70,19 @@ export const KNOWN_NODE_TYPES = [
     "delay",
 ] as const;
 
-export const BRANCH_LABEL: Record<FlowEdgeBranch, string> = {
+// Only the FIXED vocabularies have friendly labels; a menu branch is an
+// author-defined option key and renders as itself.
+export const BRANCH_LABEL: Record<string, string> = {
     yes: "Ya",
     no: "Tidak",
     found: "Ketemu",
     not_found: "Tidak",
 };
+
+/** Edge label for a branch: a known vocabulary word, else the raw key. */
+export function branchLabel(branch: FlowEdgeBranch): string {
+    return BRANCH_LABEL[branch] ?? String(branch);
+}
 
 /** Branches rendered green (the "positive" outcome of a branching node). */
 const POSITIVE_BRANCHES: FlowEdgeBranch[] = ["yes", "found"];
@@ -85,15 +92,28 @@ const POSITIVE_BRANCHES: FlowEdgeBranch[] = ["yes", "found"];
  * these branch values (mirroring condition's yes/no pattern), so an edge's
  * branch can be mirrored onto sourceHandle and back.
  */
-export function branchesForNodeType(nodeType: string | undefined): FlowEdgeBranch[] {
+export function branchesForNodeType(
+    nodeType: string | undefined,
+    data?: StudioNodeData
+): FlowEdgeBranch[] {
     if (nodeType === "condition") return ["yes", "no"];
     if (nodeType === "kb_answer") return ["found", "not_found"];
+    // F4: a menu routes the customer's reply along one edge per option, so
+    // its vocabulary is its own option keys rather than a fixed pair.
+    if (nodeType === "menu") {
+        return (Array.isArray(data?.options) ? data!.options : [])
+            .map((option) => (option && typeof option === "object" ? option.key : ""))
+            .filter((key): key is string => typeof key === "string" && key.length > 0);
+    }
     return [];
 }
 
 function parseBranch(value: unknown): FlowEdgeBranch | undefined {
-    return value === "yes" || value === "no" || value === "found" || value === "not_found"
-        ? value
+    // Menu keys are author-defined, so any non-empty string is a valid branch;
+    // whether it BELONGS on a given edge is decided by the source node's
+    // vocabulary at the call site.
+    return typeof value === "string" && value.trim().length > 0
+        ? (value.trim() as FlowEdgeBranch)
         : undefined;
 }
 
@@ -143,7 +163,7 @@ export function defaultNodeData(type: string): StudioNodeData {
 export function edgeDisplayProps(branch?: FlowEdgeBranch): Partial<StudioEdge> {
     return {
         type: "smoothstep",
-        label: branch ? BRANCH_LABEL[branch] : undefined,
+        label: branch ? branchLabel(branch) : undefined,
         labelStyle: {
             fontSize: 11,
             fontWeight: 600,
@@ -182,6 +202,7 @@ export function toStudioGraph(graph: FlowGraph | null | undefined): {
         }));
 
     const nodeTypeById = new Map(nodes.map((n) => [n.id, n.type ?? "unknown"]));
+    const nodeDataById = new Map(nodes.map((n) => [n.id, n.data]));
 
     const edges: StudioEdge[] = rawEdges
         .filter(
@@ -200,7 +221,10 @@ export function toStudioGraph(graph: FlowGraph | null | undefined): {
             // not_found) render branch handles; attaching a branch handle id
             // to another node type (or the wrong vocabulary) would detach
             // the edge, so mirror branch -> sourceHandle only when it belongs.
-            const sourceBranches = branchesForNodeType(nodeTypeById.get(e.source));
+            const sourceBranches = branchesForNodeType(
+                nodeTypeById.get(e.source),
+                nodeDataById.get(e.source)
+            );
             const handleBranch = branch && sourceBranches.includes(branch) ? branch : undefined;
             return {
                 id: e.id,

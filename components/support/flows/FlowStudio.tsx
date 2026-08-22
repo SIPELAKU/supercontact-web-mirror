@@ -311,16 +311,28 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
 
     const onConnect = useCallback((conn: Connection) => {
         if (!conn.source || !conn.target || conn.source === conn.target) return;
-        const sourceType = nodesRef.current.find((n) => n.id === conn.source)?.type;
-        // Branching sources (condition: yes/no, kb_answer: found/not_found)
-        // take their branch from the handle the user dragged from.
-        const branchVocab = branchesForNodeType(sourceType);
-        const branch: FlowEdgeBranch | undefined =
-            branchVocab.length > 0
-                ? branchVocab.includes(conn.sourceHandle as FlowEdgeBranch)
-                    ? (conn.sourceHandle as FlowEdgeBranch)
-                    : branchVocab[0]
-                : undefined;
+        const sourceNode = nodesRef.current.find((n) => n.id === conn.source);
+        const sourceType = sourceNode?.type;
+        // Branching sources take their branch from the handle the user
+        // dragged from: condition yes/no, kb_answer found/not_found, and
+        // (F4) menu -> one of its option keys.
+        const branchVocab = branchesForNodeType(sourceType, sourceNode?.data);
+        let branch: FlowEdgeBranch | undefined;
+        if (branchVocab.length > 0) {
+            if (branchVocab.includes(conn.sourceHandle as FlowEdgeBranch)) {
+                branch = conn.sourceHandle as FlowEdgeBranch;
+            } else {
+                // No handle to go on. Pick the first key this menu hasn't
+                // routed yet - defaulting to vocab[0] every time would give
+                // two edges the same option key, which the server rejects.
+                const used = new Set(
+                    edgesRef.current
+                        .filter((e) => e.source === conn.source)
+                        .map((e) => String(e.data?.branch ?? ""))
+                );
+                branch = branchVocab.find((b) => !used.has(String(b))) ?? branchVocab[0];
+            }
+        }
         const newEdge: StudioEdge = {
             id: makeGraphId("edge"),
             source: conn.source,
@@ -420,6 +432,9 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                 // Move the edge onto the matching handle only when the source
                 // node actually renders that handle (condition: yes/no,
                 // kb_answer: found/not_found) - otherwise it would detach.
+                // Deliberately called WITHOUT node data: a menu carries its
+                // option keys as branches but renders a single generic source
+                // handle, so a menu branch must never become a handle id.
                 const sourceType = nodesRef.current.find((n) => n.id === e.source)?.type;
                 const isBranchHandle = branchesForNodeType(sourceType).includes(branch);
                 return {
@@ -657,9 +672,10 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
 
     const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
     const selectedEdge = edges.find((e) => e.id === selectedEdgeId) ?? null;
-    const selectedEdgeSourceType = selectedEdge
-        ? nodes.find((n) => n.id === selectedEdge.source)?.type ?? null
+    const selectedEdgeSourceNode = selectedEdge
+        ? nodes.find((n) => n.id === selectedEdge.source) ?? null
         : null;
+    const selectedEdgeSourceType = selectedEdgeSourceNode?.type ?? null;
 
     // ---- Guard states ------------------------------------------------------
     if (!canManage) {
@@ -1134,6 +1150,7 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                         selectedNode={selectedNode}
                         selectedEdge={selectedEdge}
                         selectedEdgeSourceType={selectedEdgeSourceType}
+                        selectedEdgeSourceData={selectedEdgeSourceNode?.data ?? null}
                         triggerConfig={triggerConfig}
                         channelScope={channelScope}
                         status={status}

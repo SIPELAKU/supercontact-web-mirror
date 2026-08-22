@@ -161,8 +161,10 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
 interface FlowPropertiesPanelProps {
     selectedNode: StudioNode | null;
     selectedEdge: StudioEdge | null;
-    /** Type of the selected edge's source node (condition/kb_answer enable the branch toggle). */
+    /** Type of the selected edge's source node (condition/kb_answer/menu enable the branch picker). */
     selectedEdgeSourceType: string | null;
+    /** Data of that source node - a menu's option keys ARE its branch vocabulary. */
+    selectedEdgeSourceData?: StudioNodeData | null;
     triggerConfig: FlowTriggerConfig;
     channelScope: string[];
     status: FlowStatus;
@@ -177,6 +179,7 @@ export default function FlowPropertiesPanel({
     selectedNode,
     selectedEdge,
     selectedEdgeSourceType,
+    selectedEdgeSourceData,
     triggerConfig,
     channelScope,
     status,
@@ -191,38 +194,64 @@ export default function FlowPropertiesPanel({
     // ---- Edge selected -----------------------------------------------------
     if (!selectedNode && selectedEdge) {
         const branch = selectedEdge.data?.branch;
-        // Branching sources expose their branch vocabulary as a toggle:
-        // condition -> yes/no, kb_answer -> found/not_found. The first entry
-        // is the "positive" branch (green), the second the negative (red).
-        const branchChoices = branchesForNodeType(selectedEdgeSourceType ?? undefined);
+        // Branching sources expose their branch vocabulary as a picker:
+        // condition -> yes/no, kb_answer -> found/not_found (first entry is
+        // the "positive" branch, green; second is the negative, red), and
+        // menu -> its own option keys, which have no polarity.
+        const isMenuSource = selectedEdgeSourceType === "menu";
+        const branchChoices = branchesForNodeType(
+            selectedEdgeSourceType ?? undefined,
+            selectedEdgeSourceData ?? undefined
+        );
+        const menuOptions = Array.isArray(selectedEdgeSourceData?.options)
+            ? selectedEdgeSourceData!.options!
+            : [];
         return (
             <div className="space-y-6 p-4">
                 <PanelSection title="Connection">
                     {branchChoices.length > 0 ? (
                         <>
                             <p className="text-sm text-gray-600">
-                                {selectedEdgeSourceType === "kb_answer"
-                                    ? "Which outcome of the KB answer does this connection follow?"
-                                    : "Which branch of the condition does this connection follow?"}
+                                {isMenuSource
+                                    ? "Which menu option does this connection follow?"
+                                    : selectedEdgeSourceType === "kb_answer"
+                                      ? "Which outcome of the KB answer does this connection follow?"
+                                      : "Which branch of the condition does this connection follow?"}
                             </p>
-                            <div className="flex gap-2">
-                                {branchChoices.map((b, index) => (
-                                    <button
-                                        key={b}
-                                        type="button"
-                                        onClick={() => onEdgeBranchChange(selectedEdge.id, b)}
-                                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                                            branch === b
-                                                ? index === 0
-                                                    ? "border-green-600 bg-green-50 text-green-700"
-                                                    : "border-red-500 bg-red-50 text-red-600"
-                                                : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-                                        }`}
-                                    >
-                                        {BRANCH_LABEL[b]}
-                                    </button>
-                                ))}
+                            <div className={isMenuSource ? "flex flex-col gap-2" : "flex gap-2"}>
+                                {branchChoices.map((b, index) => {
+                                    const active = branch === b;
+                                    const menuLabel = menuOptions.find(
+                                        (o) => o && o.key === b
+                                    )?.label;
+                                    return (
+                                        <button
+                                            key={b}
+                                            type="button"
+                                            onClick={() => onEdgeBranchChange(selectedEdge.id, b)}
+                                            className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                                active
+                                                    ? isMenuSource
+                                                        ? "border-[#5479EE] bg-[#5479EE]/10 text-[#3f5fd0]"
+                                                        : index === 0
+                                                          ? "border-green-600 bg-green-50 text-green-700"
+                                                          : "border-red-500 bg-red-50 text-red-600"
+                                                    : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {isMenuSource
+                                                ? `${b}${menuLabel ? ` · ${menuLabel}` : ""}`
+                                                : BRANCH_LABEL[b]}
+                                        </button>
+                                    );
+                                })}
                             </div>
+                            {isMenuSource && (
+                                <p className="text-xs text-gray-400">
+                                    Balasan pelanggan dicocokkan ke kunci opsi ini. Opsi tanpa
+                                    koneksi berarti percakapan selesai di situ.
+                                </p>
+                            )}
                         </>
                     ) : (
                         <p className="text-sm text-gray-600">

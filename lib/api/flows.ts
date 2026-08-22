@@ -76,7 +76,17 @@ export type FlowNodeType =
 
 export type ConditionKind = "keyword" | "business_hours" | "channel";
 
-export type FlowEdgeBranch = "yes" | "no" | "found" | "not_found";
+// condition -> yes/no, kb_answer -> found/not_found, and (F4) menu -> one of
+// its own option keys, which are author-defined strings. The `string & {}`
+// arm keeps editor autocomplete for the fixed vocabularies while still
+// admitting a menu key.
+export type FlowEdgeBranch =
+    | "yes"
+    | "no"
+    | "found"
+    | "not_found"
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    | (string & {});
 
 // kb_answer: flows scoped to web_widget may only use grounding "public"
 // (the backend validates this; the studio disables "internal" accordingly).

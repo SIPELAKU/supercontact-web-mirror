@@ -757,9 +757,12 @@ export default function FlowPropertiesPanel({
                         </div>
                     </div>
                     <div className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
-                        Setelah prompt + opsi terkirim, run <span className="font-semibold">berhenti</span>{" "}
-                        menunggu balasan pelanggan. Routing balasan per opsi hadir di fase berikutnya
-                        (F3).
+                        Setelah prompt + opsi terkirim, run{" "}
+                        <span className="font-semibold">menunggu balasan</span> pelanggan, lalu
+                        dirutekan lewat koneksi milik opsi yang dipilih. Tarik garis dari titik
+                        biru di bawah kartu (satu per opsi) ke langkah berikutnya. Opsi tanpa
+                        koneksi berarti percakapan selesai di situ. Balasan yang tidak dikenali
+                        dikirimi ulang menu satu kali; kalau tetap tidak cocok, run berhenti.
                     </div>
                 </PanelSection>
                 <AppButton

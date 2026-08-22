@@ -256,7 +256,7 @@ KbAnswerNode.displayName = "KbAnswerNode";
 
 const MenuNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
     const prompt = typeof data?.prompt === "string" ? data.prompt : "";
-    const optionCount = Array.isArray(data?.options) ? data.options.length : 0;
+    const options = Array.isArray(data?.options) ? data.options : [];
     return (
         <CardShell
             selected={selected}
@@ -274,10 +274,34 @@ const MenuNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
                     <p className="text-xs italic text-gray-400">No prompt yet - set it in the panel.</p>
                 )}
                 <p className="text-[11px] text-gray-500">
-                    {optionCount} opsi · run berhenti menunggu balasan
+                    {options.length} opsi · balasan pelanggan dirutekan per opsi
                 </p>
             </div>
+            {/* One SOURCE handle per option (id = the option key), mirroring
+                condition's yes/no handles. Without these the node has nothing
+                to drag from and a guided tree cannot be drawn at all; their
+                ids are also what lets a saved edge re-attach to the right
+                option when the graph is loaded. */}
+            {options.length > 0 && (
+                <div className="flex justify-around border-t border-gray-100 px-2 pb-2 pt-1 text-[10px] font-semibold text-sky-700">
+                    {options.map((option) => (
+                        <span key={option.key} className="truncate px-0.5" title={option.label}>
+                            {option.key}
+                        </span>
+                    ))}
+                </div>
+            )}
             <Handle type="target" position={Position.Top} className={HANDLE_CLASS} />
+            {options.map((option, index) => (
+                <Handle
+                    key={option.key}
+                    id={option.key}
+                    type="source"
+                    position={Position.Bottom}
+                    style={{ left: `${((index + 0.5) / options.length) * 100}%` }}
+                    className="!h-2.5 !w-2.5 !rounded-full !border-2 !border-white !bg-sky-500 shadow"
+                />
+            ))}
         </CardShell>
     );
 });

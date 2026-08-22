@@ -429,6 +429,26 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
         setNodes((nds) =>
             nds.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...patch } } : n))
         );
+        // Editing a menu's OPTIONS retargets what its edges are allowed to
+        // route. An edge left pointing at a renamed or deleted option key
+        // fails server validation ("routes option keys that do not exist"),
+        // which on a published flow rejects the whole save - and the author
+        // has no way to see WHICH edge is at fault. Drop those edges here
+        // instead, at the moment the option goes away.
+        if ("options" in patch) {
+            const keys = new Set(
+                (Array.isArray(patch.options) ? patch.options : [])
+                    .map((o) => (o && typeof o === "object" ? o.key : ""))
+                    .filter((k) => typeof k === "string" && k.length > 0)
+            );
+            setEdges((eds) =>
+                eds.filter((e) => {
+                    if (e.source !== nodeId) return true;
+                    const branch = e.data?.branch;
+                    return !branch || keys.has(String(branch));
+                })
+            );
+        }
         setDirty(true);
     }, []);
 
@@ -437,13 +457,16 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
             eds.map((e) => {
                 if (e.id !== edgeId) return e;
                 // Move the edge onto the matching handle only when the source
-                // node actually renders that handle (condition: yes/no,
-                // kb_answer: found/not_found) - otherwise it would detach.
-                // Deliberately called WITHOUT node data: a menu carries its
-                // option keys as branches but renders a single generic source
-                // handle, so a menu branch must never become a handle id.
-                const sourceType = nodesRef.current.find((n) => n.id === e.source)?.type;
-                const isBranchHandle = branchesForNodeType(sourceType).includes(branch);
+                // node actually renders that handle: condition yes/no,
+                // kb_answer found/not_found, and a menu's per-option handles
+                // (id = the option key). Passing node data is required for
+                // the menu case - without it the edge would keep pointing at
+                // the old option's handle.
+                const sourceNode = nodesRef.current.find((n) => n.id === e.source);
+                const isBranchHandle = branchesForNodeType(
+                    sourceNode?.type,
+                    sourceNode?.data
+                ).includes(branch);
                 return {
                     ...e,
                     sourceHandle: isBranchHandle ? branch : e.sourceHandle,

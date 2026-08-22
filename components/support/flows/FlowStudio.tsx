@@ -30,17 +30,25 @@ import {
 import {
     AlertTriangle,
     ArrowLeft,
+    BookOpen,
     CheckCircle2,
     CloudUpload,
+    FlaskConical,
+    HelpCircle,
+    List,
     Loader2,
     MessageSquareText,
     Play,
     ShieldAlert,
     Split,
+    Ticket,
     UserRound,
     X,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import { AppSelect } from "@/components/ui/app-select";
+import { AppTextarea } from "@/components/ui/app-textarea";
+import { Switch } from "@/components/ui/switch";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
@@ -48,14 +56,22 @@ import { usePermission } from "@/lib/hooks/usePermission";
 import {
     useFlow,
     usePublishFlow,
+    useSimulateFlow,
     useUnpublishFlow,
     useUpdateFlow,
     useValidateFlow,
 } from "@/lib/hooks/useFlows";
-import { FlowApiError, type FlowStatus, type FlowTriggerConfig } from "@/lib/api/flows";
-import { CORE_NODE_TYPES, FallbackNode, miniMapNodeColor } from "./FlowNodes";
-import FlowPropertiesPanel from "./FlowPropertiesPanel";
 import {
+    FlowApiError,
+    type FlowEdgeBranch,
+    type FlowStatus,
+    type FlowTriggerConfig,
+    type SimulateFlowResult,
+} from "@/lib/api/flows";
+import { CORE_NODE_TYPES, FallbackNode, miniMapNodeColor } from "./FlowNodes";
+import FlowPropertiesPanel, { CHANNEL_LABELS } from "./FlowPropertiesPanel";
+import {
+    branchesForNodeType,
     defaultNodeData,
     edgeDisplayProps,
     makeGraphId,
@@ -96,7 +112,67 @@ const PALETTE_ITEMS: { type: string; label: string; hint: string; icon: React.Re
         icon: <UserRound size={15} />,
         accent: "bg-emerald-100 text-emerald-600",
     },
+    {
+        type: "kb_answer",
+        label: "KB Answer",
+        hint: "Answer from the knowledge base",
+        icon: <BookOpen size={15} />,
+        accent: "bg-violet-100 text-violet-600",
+    },
+    {
+        type: "menu",
+        label: "Menu",
+        hint: "Prompt + quick-reply options",
+        icon: <List size={15} />,
+        accent: "bg-sky-100 text-sky-600",
+    },
+    {
+        type: "ticket_action",
+        label: "Ticket Action",
+        hint: "Create ticket / priority / tag",
+        icon: <Ticket size={15} />,
+        accent: "bg-orange-100 text-orange-600",
+    },
 ];
+
+// ---- Simulate panel helpers ------------------------------------------------
+
+/** Small icon for one simulator trace step, keyed by the step's node type. */
+function StepTypeIcon({ nodeType }: { nodeType: string }) {
+    switch (nodeType) {
+        case "trigger":
+            return <Play size={13} className="text-[#5479EE]" fill="currentColor" />;
+        case "send_message":
+            return <MessageSquareText size={13} className="text-[#5479EE]" />;
+        case "condition":
+            return <Split size={13} className="text-amber-600" />;
+        case "handoff":
+            return <UserRound size={13} className="text-emerald-600" />;
+        case "kb_answer":
+            return <BookOpen size={13} className="text-violet-600" />;
+        case "menu":
+            return <List size={13} className="text-sky-600" />;
+        case "ticket_action":
+            return <Ticket size={13} className="text-orange-600" />;
+        default:
+            return <HelpCircle size={13} className="text-gray-400" />;
+    }
+}
+
+/**
+ * Chip tinting for a step outcome. The outcome vocabulary belongs to the
+ * backend, so this is a heuristic: negatives are tested before positives
+ * ("not_found" contains "found", "no_match" contains "match").
+ */
+function outcomeChipClass(outcome: string): string {
+    const o = outcome.toLowerCase();
+    if (/error|fail|invalid/.test(o)) return "bg-red-100 text-red-700";
+    if (/not_found|no_match|no-match|skip|halt|stopped|false/.test(o))
+        return "bg-amber-100 text-amber-700";
+    if (/sent|found|match|success|ok|created|done|true|executed|answered/.test(o))
+        return "bg-green-100 text-green-700";
+    return "bg-gray-100 text-gray-600";
+}
 
 function StatusBadge({ status }: { status: FlowStatus }) {
     return status === "published" ? (
@@ -119,6 +195,7 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
     const validateMutation = useValidateFlow();
     const publishMutation = usePublishFlow();
     const unpublishMutation = useUnpublishFlow();
+    const simulateMutation = useSimulateFlow();
 
     const { screenToFlowPosition, setCenter } = useReactFlow();
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -140,6 +217,16 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
     // Saving onto a PUBLISHED flow changes what customers get immediately, so
     // it goes through an explicit confirm (drafts save directly).
     const [saveLiveConfirmOpen, setSaveLiveConfirmOpen] = useState(false);
+    // ---- Simulate panel (F2) ----------------------------------------------
+    const [simOpen, setSimOpen] = useState(false);
+    const [simMessage, setSimMessage] = useState("");
+    const [simChannel, setSimChannel] = useState("");
+    const [simBusinessHours, setSimBusinessHours] = useState(true);
+    const [simAgentOnline, setSimAgentOnline] = useState(true);
+    const [simResult, setSimResult] = useState<SimulateFlowResult | null>(null);
+    // Simulation runs server-side on the SAVED graph; unsaved canvas changes
+    // trigger this save-first prompt so the trace matches what's on screen.
+    const [simSaveConfirmOpen, setSimSaveConfirmOpen] = useState(false);
     // The canvas mounts only after the graph is hydrated so ReactFlow's
     // initial fitView actually sees the nodes.
     const [hydrated, setHydrated] = useState(false);
@@ -215,8 +302,15 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
     const onConnect = useCallback((conn: Connection) => {
         if (!conn.source || !conn.target || conn.source === conn.target) return;
         const sourceType = nodesRef.current.find((n) => n.id === conn.source)?.type;
-        const branch =
-            sourceType === "condition" ? (conn.sourceHandle === "no" ? "no" : "yes") : undefined;
+        // Branching sources (condition: yes/no, kb_answer: found/not_found)
+        // take their branch from the handle the user dragged from.
+        const branchVocab = branchesForNodeType(sourceType);
+        const branch: FlowEdgeBranch | undefined =
+            branchVocab.length > 0
+                ? branchVocab.includes(conn.sourceHandle as FlowEdgeBranch)
+                    ? (conn.sourceHandle as FlowEdgeBranch)
+                    : branchVocab[0]
+                : undefined;
         const newEdge: StudioEdge = {
             id: makeGraphId("edge"),
             source: conn.source,
@@ -309,15 +403,18 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
         setDirty(true);
     }, []);
 
-    const onEdgeBranchChange = useCallback((edgeId: string, branch: "yes" | "no") => {
+    const onEdgeBranchChange = useCallback((edgeId: string, branch: FlowEdgeBranch) => {
         setEdges((eds) =>
             eds.map((e) => {
                 if (e.id !== edgeId) return e;
-                const fromCondition =
-                    nodesRef.current.find((n) => n.id === e.source)?.type === "condition";
+                // Move the edge onto the matching handle only when the source
+                // node actually renders that handle (condition: yes/no,
+                // kb_answer: found/not_found) - otherwise it would detach.
+                const sourceType = nodesRef.current.find((n) => n.id === e.source)?.type;
+                const isBranchHandle = branchesForNodeType(sourceType).includes(branch);
                 return {
                     ...e,
-                    sourceHandle: fromCondition ? branch : e.sourceHandle,
+                    sourceHandle: isBranchHandle ? branch : e.sourceHandle,
                     data: { ...e.data, branch },
                     ...edgeDisplayProps(branch),
                 };
@@ -350,7 +447,8 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
         updateMutation.isPending ||
         validateMutation.isPending ||
         publishMutation.isPending ||
-        unpublishMutation.isPending;
+        unpublishMutation.isPending ||
+        simulateMutation.isPending;
 
     const handleSave = async (silent = false): Promise<boolean> => {
         const graph = toApiGraph(nodesRef.current, edgesRef.current);
@@ -466,21 +564,85 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
         }
     };
 
+    // Selects + pans to one node (validation issues + simulator steps).
+    const focusNode = useCallback(
+        (nodeId: string) => {
+            const node = nodesRef.current.find((n) => n.id === nodeId);
+            if (!node) return;
+            setNodes((nds) => nds.map((n) => ({ ...n, selected: n.id === node.id })));
+            setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
+            setSelectedNodeId(node.id);
+            setSelectedEdgeId(null);
+            const width = node.measured?.width ?? 224;
+            const height = node.measured?.height ?? 96;
+            setCenter(node.position.x + width / 2, node.position.y + height / 2, {
+                zoom: 1.15,
+                duration: 500,
+            });
+        },
+        [setCenter]
+    );
+
     // Clicking a validation issue selects + pans to the offending node.
     const focusIssue = (issue: StudioIssue) => {
         if (!issue.node_id) return;
-        const node = nodesRef.current.find((n) => n.id === issue.node_id);
-        if (!node) return;
-        setNodes((nds) => nds.map((n) => ({ ...n, selected: n.id === node.id })));
-        setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
-        setSelectedNodeId(node.id);
-        setSelectedEdgeId(null);
-        const width = node.measured?.width ?? 224;
-        const height = node.measured?.height ?? 96;
-        setCenter(node.position.x + width / 2, node.position.y + height / 2, {
-            zoom: 1.15,
-            duration: 500,
-        });
+        focusNode(issue.node_id);
+    };
+
+    // ---- Simulate panel actions -------------------------------------------
+    const simChannelOptions = useMemo(() => {
+        // Simulate against the flow's own channels; fall back to the F1 pair
+        // if the scope is somehow empty so the panel stays usable.
+        const source = channelScope.length > 0 ? channelScope : ["whatsapp", "web_widget"];
+        return source.map((c) => ({ value: c, label: CHANNEL_LABELS[c] ?? c }));
+    }, [channelScope]);
+
+    const openSimulatePanel = () => {
+        setSimOpen(true);
+        // Keep the chosen channel only while it stays within the flow's scope.
+        setSimChannel((current) =>
+            simChannelOptions.some((o) => o.value === current)
+                ? current
+                : simChannelOptions[0]?.value ?? ""
+        );
+    };
+
+    const runSimulation = async () => {
+        try {
+            const result = await simulateMutation.mutateAsync({
+                id: flowId,
+                data: {
+                    message_text: simMessage.trim(),
+                    channel_type: simChannel,
+                    context: {
+                        business_hours_open: simBusinessHours,
+                        agent_online: simAgentOnline,
+                    },
+                },
+            });
+            setSimResult(result);
+        } catch (error) {
+            notify.error("Error", { description: handleError(error, "Simulate Flow") });
+        }
+    };
+
+    // The simulator dry-runs the SERVER's saved graph, so unsaved canvas
+    // changes go through a save-first prompt (otherwise the trace would not
+    // match what's on screen).
+    const handleRunSimulation = () => {
+        if (!simMessage.trim() || !simChannel) return;
+        if (dirty) {
+            setSimSaveConfirmOpen(true);
+            return;
+        }
+        void runSimulation();
+    };
+
+    const handleSaveAndSimulate = async () => {
+        setSimSaveConfirmOpen(false);
+        const ok = await handleSave(true);
+        if (!ok) return;
+        await runSimulation();
     };
 
     const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
@@ -598,6 +760,14 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                         isLoading={validateMutation.isPending}
                     >
                         Validate
+                    </AppButton>
+                    <AppButton
+                        variantStyle="outline"
+                        size="small"
+                        startIcon={<FlaskConical size={14} />}
+                        onClick={() => (simOpen ? setSimOpen(false) : openSimulatePanel())}
+                    >
+                        Simulate
                     </AppButton>
                     {status === "published" ? (
                         <AppButton
@@ -772,6 +942,180 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                             </ul>
                         </div>
                     )}
+
+                    {/* ---- Simulate drawer (F2) ---- */}
+                    {simOpen && (
+                        <div className="absolute inset-y-0 right-0 z-20 flex w-96 max-w-[calc(100%-1rem)] flex-col border-l border-gray-200 bg-white shadow-xl">
+                            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
+                                <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                    <FlaskConical size={15} className="text-[#5479EE]" />
+                                    Simulate
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSimOpen(false)}
+                                    className="text-gray-400 hover:text-gray-700"
+                                    aria-label="Close simulate panel"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+                                <p className="text-xs text-gray-500">
+                                    Dry-run: tidak ada pesan yang benar-benar terkirim dan tidak ada
+                                    tiket yang dibuat. Simulasi memakai graph yang{" "}
+                                    <span className="font-medium">tersimpan di server</span>.
+                                </p>
+                                {dirty && (
+                                    <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                        Ada perubahan belum disimpan - Anda akan diminta menyimpan
+                                        sebelum simulasi dijalankan.
+                                    </div>
+                                )}
+                                <AppTextarea
+                                    isBgWhite
+                                    fullWidth
+                                    label="Pesan masuk (uji)"
+                                    rows={3}
+                                    placeholder="mis. Bagaimana cara reset password?"
+                                    value={simMessage}
+                                    onChange={(e) => setSimMessage(e.target.value)}
+                                />
+                                <AppSelect
+                                    isBgWhite
+                                    fullWidth
+                                    label="Channel"
+                                    value={simChannel}
+                                    options={simChannelOptions}
+                                    onChange={(e) => setSimChannel(e.target.value as string)}
+                                />
+                                <div className="space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-gray-600">
+                                            Jam kerja buka
+                                        </span>
+                                        <Switch
+                                            checked={simBusinessHours}
+                                            onCheckedChange={setSimBusinessHours}
+                                            aria-label="Jam kerja buka"
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-gray-600">
+                                            Agen online
+                                        </span>
+                                        <Switch
+                                            checked={simAgentOnline}
+                                            onCheckedChange={setSimAgentOnline}
+                                            aria-label="Agen online"
+                                        />
+                                    </div>
+                                </div>
+                                <AppButton
+                                    fullWidth
+                                    startIcon={<Play size={15} />}
+                                    onClick={handleRunSimulation}
+                                    disabled={isBusy || !simMessage.trim() || !simChannel}
+                                    isLoading={simulateMutation.isPending}
+                                >
+                                    Run Simulation
+                                </AppButton>
+
+                                {simResult && (
+                                    <div className="space-y-4 border-t border-gray-100 pt-4">
+                                        <div>
+                                            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                Langkah eksekusi
+                                            </h3>
+                                            {simResult.steps.length === 0 ? (
+                                                <p className="text-xs italic text-gray-400">
+                                                    Tidak ada langkah yang dijalankan.
+                                                </p>
+                                            ) : (
+                                                <ol className="space-y-1.5">
+                                                    {simResult.steps.map((step, index) => {
+                                                        const nodeExists = nodes.some(
+                                                            (n) => n.id === step.node_id
+                                                        );
+                                                        return (
+                                                            <li key={`${step.node_id}-${index}`}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        nodeExists && focusNode(step.node_id)
+                                                                    }
+                                                                    disabled={!nodeExists}
+                                                                    title={
+                                                                        nodeExists
+                                                                            ? "Tampilkan node di kanvas"
+                                                                            : undefined
+                                                                    }
+                                                                    className={`w-full rounded-lg border border-gray-100 px-2.5 py-2 text-left transition-colors ${
+                                                                        nodeExists
+                                                                            ? "cursor-pointer hover:border-[#5479EE]/40 hover:bg-[#5479EE]/5"
+                                                                            : "cursor-default"
+                                                                    }`}
+                                                                >
+                                                                    <span className="flex items-center gap-2">
+                                                                        <span className="w-4 shrink-0 text-[10px] font-semibold text-gray-400">
+                                                                            {index + 1}
+                                                                        </span>
+                                                                        <StepTypeIcon nodeType={step.node_type} />
+                                                                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
+                                                                            {step.node_type}
+                                                                        </span>
+                                                                        <span
+                                                                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${outcomeChipClass(step.outcome)}`}
+                                                                        >
+                                                                            {step.outcome || "-"}
+                                                                        </span>
+                                                                    </span>
+                                                                    {step.detail && (
+                                                                        <span className="mt-1 block pl-6 text-[11px] text-gray-500">
+                                                                            {step.detail}
+                                                                        </span>
+                                                                    )}
+                                                                </button>
+                                                            </li>
+                                                        );
+                                                    })}
+                                                </ol>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                Pesan yang akan terkirim
+                                            </h3>
+                                            {simResult.would_send.length === 0 ? (
+                                                <p className="text-xs italic text-gray-400">
+                                                    Tidak ada pesan yang akan terkirim.
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {simResult.would_send.map((msg, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="max-w-[90%] whitespace-pre-wrap break-words rounded-2xl rounded-bl-md bg-[#5479EE]/10 px-3 py-2 text-sm text-gray-800"
+                                                        >
+                                                            {msg.text}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {simResult.halted_reason && (
+                                            <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                                <span className="font-semibold">Run berhenti:</span>{" "}
+                                                {simResult.halted_reason}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ---- Properties panel ---- */}
@@ -802,6 +1146,22 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                 cancelText="Cancel"
                 variant="info"
                 isLoading={publishMutation.isPending}
+            />
+
+            <ConfirmationPopup
+                isOpen={simSaveConfirmOpen}
+                onClose={() => setSimSaveConfirmOpen(false)}
+                onConfirm={() => void handleSaveAndSimulate()}
+                title="Simpan perubahan sebelum simulasi?"
+                description={
+                    status === "published"
+                        ? `Simulasi memakai graph yang tersimpan di server, sedangkan kanvas punya perubahan belum disimpan. "${name || "Untitled flow"}" sedang PUBLISHED - menyimpan berarti perubahan langsung aktif untuk pelanggan.`
+                        : "Simulasi memakai graph yang tersimpan di server, sedangkan kanvas punya perubahan belum disimpan. Simpan dulu agar hasil simulasi sesuai kanvas saat ini."
+                }
+                confirmText="Simpan & simulasikan"
+                cancelText="Batal"
+                variant={status === "published" ? "warning" : "info"}
+                isLoading={updateMutation.isPending || simulateMutation.isPending}
             />
 
             <ConfirmationPopup

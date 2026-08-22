@@ -9,9 +9,14 @@
 import type { Edge, Node } from "@xyflow/react";
 import type {
     ConditionKind,
+    FlowEdgeBranch,
     FlowGraph,
     FlowGraphEdge,
     FlowGraphNode,
+    KbGrounding,
+    MenuOption,
+    TicketActionKind,
+    TicketPriority,
 } from "@/lib/api/flows";
 
 // One loose data bag shared by every node type (union of the per-type contract
@@ -28,24 +33,66 @@ export type StudioNodeData = {
     // handoff
     queue_id?: string | null;
     note?: string;
+    // kb_answer
+    grounding?: KbGrounding;
+    max_articles?: number;
+    min_confidence?: number;
+    fallback_text?: string;
+    // menu
+    prompt?: string;
+    options?: MenuOption[];
+    // ticket_action
+    action?: TicketActionKind;
+    priority?: TicketPriority;
+    tag?: string;
     // unknown node types keep whatever the backend sent
     [key: string]: unknown;
 };
 
 export type StudioEdgeData = {
-    branch?: "yes" | "no";
+    branch?: FlowEdgeBranch;
     [key: string]: unknown;
 };
 
 export type StudioNode = Node<StudioNodeData>;
 export type StudioEdge = Edge<StudioEdgeData>;
 
-export const KNOWN_NODE_TYPES = ["trigger", "send_message", "condition", "handoff"] as const;
+export const KNOWN_NODE_TYPES = [
+    "trigger",
+    "send_message",
+    "condition",
+    "handoff",
+    "kb_answer",
+    "menu",
+    "ticket_action",
+] as const;
 
-export const BRANCH_LABEL: Record<"yes" | "no", string> = {
+export const BRANCH_LABEL: Record<FlowEdgeBranch, string> = {
     yes: "Ya",
     no: "Tidak",
+    found: "Ketemu",
+    not_found: "Tidak",
 };
+
+/** Branches rendered green (the "positive" outcome of a branching node). */
+const POSITIVE_BRANCHES: FlowEdgeBranch[] = ["yes", "found"];
+
+/**
+ * The branch vocabulary of a branching node type: its source-handle ids ARE
+ * these branch values (mirroring condition's yes/no pattern), so an edge's
+ * branch can be mirrored onto sourceHandle and back.
+ */
+export function branchesForNodeType(nodeType: string | undefined): FlowEdgeBranch[] {
+    if (nodeType === "condition") return ["yes", "no"];
+    if (nodeType === "kb_answer") return ["found", "not_found"];
+    return [];
+}
+
+function parseBranch(value: unknown): FlowEdgeBranch | undefined {
+    return value === "yes" || value === "no" || value === "found" || value === "not_found"
+        ? value
+        : undefined;
+}
 
 let idCounter = 0;
 
@@ -69,6 +116,18 @@ export function defaultNodeData(type: string): StudioNodeData {
             return { kind: "keyword", keywords: [], match: "any" };
         case "handoff":
             return { queue_id: null, note: "" };
+        case "kb_answer":
+            return { grounding: "public", max_articles: 3, min_confidence: 0.5, fallback_text: "" };
+        case "menu":
+            return {
+                prompt: "",
+                options: [
+                    { key: "1", label: "" },
+                    { key: "2", label: "" },
+                ],
+            };
+        case "ticket_action":
+            return { action: "create_ticket" };
         case "trigger":
         default:
             return {};
@@ -76,11 +135,15 @@ export function defaultNodeData(type: string): StudioNodeData {
 }
 
 /** Visual styling shared by every edge the studio renders/creates. */
-export function edgeDisplayProps(branch?: "yes" | "no"): Partial<StudioEdge> {
+export function edgeDisplayProps(branch?: FlowEdgeBranch): Partial<StudioEdge> {
     return {
         type: "smoothstep",
         label: branch ? BRANCH_LABEL[branch] : undefined,
-        labelStyle: { fontSize: 11, fontWeight: 600, fill: branch === "no" ? "#b91c1c" : "#15803d" },
+        labelStyle: {
+            fontSize: 11,
+            fontWeight: 600,
+            fill: branch && POSITIVE_BRANCHES.includes(branch) ? "#15803d" : "#b91c1c",
+        },
         labelBgStyle: { fill: "#ffffff", stroke: "#e5e7eb" },
         labelBgPadding: [4, 2] as [number, number],
         labelBgBorderRadius: 4,
@@ -127,17 +190,20 @@ export function toStudioGraph(graph: FlowGraph | null | undefined): {
                 nodeTypeById.has(e.target)
         )
         .map((e) => {
-            const branch = e.data?.branch === "no" ? "no" : e.data?.branch === "yes" ? "yes" : undefined;
-            const fromCondition = nodeTypeById.get(e.source) === "condition";
+            const branch = parseBranch(e.data?.branch);
+            // Only branching nodes (condition: yes/no, kb_answer: found/
+            // not_found) render branch handles; attaching a branch handle id
+            // to another node type (or the wrong vocabulary) would detach
+            // the edge, so mirror branch -> sourceHandle only when it belongs.
+            const sourceBranches = branchesForNodeType(nodeTypeById.get(e.source));
+            const handleBranch = branch && sourceBranches.includes(branch) ? branch : undefined;
             return {
                 id: e.id,
                 source: e.source,
                 target: e.target,
-                // Only condition nodes render branch handles; attaching a
-                // branch handle id to another node type would detach the edge.
-                sourceHandle: fromCondition && branch ? branch : undefined,
+                sourceHandle: handleBranch,
                 data: branch ? { branch } : {},
-                ...edgeDisplayProps(fromCondition ? branch : undefined),
+                ...edgeDisplayProps(handleBranch),
             };
         });
 
@@ -181,6 +247,60 @@ function serializeNodeData(node: StudioNode): Record<string, unknown> {
             }
             return out;
         }
+        case "kb_answer": {
+            const out: Record<string, unknown> = {
+                grounding: data.grounding === "internal" ? "internal" : "public",
+            };
+            const maxArticles = Math.round(toFiniteNumber(data.max_articles, NaN));
+            if (Number.isFinite(maxArticles)) {
+                out.max_articles = Math.min(5, Math.max(1, maxArticles));
+            }
+            const minConfidence = toFiniteNumber(data.min_confidence, NaN);
+            if (Number.isFinite(minConfidence)) {
+                out.min_confidence = Math.min(1, Math.max(0, minConfidence));
+            }
+            if (typeof data.fallback_text === "string" && data.fallback_text.trim()) {
+                out.fallback_text = data.fallback_text.trim();
+            }
+            return out;
+        }
+        case "menu": {
+            const options = Array.isArray(data.options)
+                ? data.options
+                      .filter((o): o is MenuOption => !!o && typeof o === "object")
+                      .map((o) => ({
+                          key: String(o.key ?? "").trim(),
+                          label: String(o.label ?? "").trim(),
+                      }))
+                      .filter((o) => o.key.length > 0)
+                : [];
+            return {
+                prompt: typeof data.prompt === "string" ? data.prompt : "",
+                // 2..5 items is enforced by the editor + server validation;
+                // the serializer only caps runaway lists defensively.
+                options: options.slice(0, 5),
+            };
+        }
+        case "ticket_action": {
+            const action: TicketActionKind =
+                data.action === "set_priority" || data.action === "add_tag"
+                    ? data.action
+                    : "create_ticket";
+            const out: Record<string, unknown> = { action };
+            if (action === "set_priority") {
+                const priority: TicketPriority =
+                    data.priority === "Urgent" ||
+                    data.priority === "High" ||
+                    data.priority === "Low"
+                        ? data.priority
+                        : "Medium";
+                out.priority = priority;
+            }
+            if (action === "add_tag") {
+                out.tag = typeof data.tag === "string" ? data.tag.trim() : "";
+            }
+            return out;
+        }
         default:
             // Unknown node type: round-trip its data untouched.
             return { ...data };
@@ -204,9 +324,9 @@ export function toApiGraph(nodes: StudioNode[], edges: StudioEdge[]): FlowGraph 
             data: serializeNodeData(n),
         })),
         edges: edges.map((e) => {
-            const branch = e.data?.branch;
+            const branch = parseBranch(e.data?.branch);
             const out: FlowGraphEdge = { id: e.id, source: e.source, target: e.target };
-            if (branch === "yes" || branch === "no") {
+            if (branch) {
                 out.data = { branch };
             }
             return out;

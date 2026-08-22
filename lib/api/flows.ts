@@ -52,14 +52,38 @@ export interface FlowTriggerConfig {
 }
 
 // --- Graph contract (exact - the engine executes this shape) ---------------
-// Node: {id, type: "trigger"|"send_message"|"condition"|"handoff", position, data}
-// Edge: {id, source, target, data?: {branch?: "yes"|"no"}}
+// Node: {id, type: "trigger"|"send_message"|"condition"|"handoff"|
+//        "kb_answer"|"menu"|"ticket_action", position, data}
+// Edge: {id, source, target, data?: {branch?: "yes"|"no"|"found"|"not_found"}}
+// (yes/no belong to condition edges, found/not_found to kb_answer edges.)
 // The studio serializes xyflow state down to exactly this (no selected/
 // measured/dragging/sourceHandle fields ever reach the API).
 
-export type FlowNodeType = "trigger" | "send_message" | "condition" | "handoff";
+export type FlowNodeType =
+    | "trigger"
+    | "send_message"
+    | "condition"
+    | "handoff"
+    | "kb_answer"
+    | "menu"
+    | "ticket_action";
 
 export type ConditionKind = "keyword" | "business_hours" | "channel";
+
+export type FlowEdgeBranch = "yes" | "no" | "found" | "not_found";
+
+// kb_answer: flows scoped to web_widget may only use grounding "public"
+// (the backend validates this; the studio disables "internal" accordingly).
+export type KbGrounding = "public" | "internal";
+
+export interface MenuOption {
+    key: string;
+    label: string;
+}
+
+export type TicketActionKind = "create_ticket" | "set_priority" | "add_tag";
+
+export type TicketPriority = "Urgent" | "High" | "Medium" | "Low";
 
 export interface FlowGraphNode {
     id: string;
@@ -74,7 +98,7 @@ export interface FlowGraphEdge {
     id: string;
     source: string;
     target: string;
-    data?: { branch?: "yes" | "no" };
+    data?: { branch?: FlowEdgeBranch };
 }
 
 export interface FlowGraph {
@@ -141,6 +165,32 @@ export interface FlowRun {
     started_at?: string;
     finished_at?: string | null;
     [key: string]: unknown;
+}
+
+// --- Simulator (F2) --------------------------------------------------------
+// POST /support/flows/{id}/simulate - dry-run of the SERVER's saved graph
+// against one hypothetical inbound message. Nothing is sent or created.
+
+export interface SimulateFlowRequest {
+    message_text: string;
+    channel_type: string;
+    context?: {
+        business_hours_open?: boolean;
+        agent_online?: boolean;
+    };
+}
+
+export interface SimulateStep {
+    node_id: string;
+    node_type: string;
+    outcome: string;
+    detail?: string | null;
+}
+
+export interface SimulateFlowResult {
+    steps: SimulateStep[];
+    would_send: { text: string }[];
+    halted_reason?: string | null;
 }
 
 export type AutomationMode = "legacy" | "flow";
@@ -298,6 +348,50 @@ export async function deleteFlow(token: string, id: string): Promise<void> {
         headers: authHeaders(token),
     });
     await handleResponse<unknown>(res, "Failed to delete flow");
+}
+
+/**
+ * POST /support/flows/{id}/simulate - dry-run against the flow's SAVED graph
+ * (unsaved studio changes are invisible to it; the studio saves first).
+ * Unwraps defensively so a missing/odd field never crashes the panel.
+ */
+export async function simulateFlow(
+    token: string,
+    id: string,
+    data: SimulateFlowRequest
+): Promise<SimulateFlowResult> {
+    const res = await fetchWithTimeout(getFullUrl(`/support/flows/${id}/simulate`), {
+        method: "POST",
+        headers: jsonHeaders(token),
+        body: JSON.stringify(data),
+    });
+    const json = await handleResponse<{ data: any }>(res, "Failed to simulate flow");
+    const payload = json.data ?? {};
+    const steps: SimulateStep[] = Array.isArray(payload.steps)
+        ? payload.steps
+              .filter((s: any) => !!s && typeof s === "object")
+              .map((s: any) => ({
+                  node_id: String(s.node_id ?? ""),
+                  node_type: String(s.node_type ?? "unknown"),
+                  outcome: String(s.outcome ?? ""),
+                  detail: typeof s.detail === "string" ? s.detail : null,
+              }))
+        : [];
+    const wouldSend: { text: string }[] = Array.isArray(payload.would_send)
+        ? payload.would_send
+              .map((m: any) =>
+                  typeof m === "string" ? { text: m } : { text: String(m?.text ?? "") }
+              )
+              .filter((m: { text: string }) => !!m.text)
+        : [];
+    return {
+        steps,
+        would_send: wouldSend,
+        halted_reason:
+            typeof payload.halted_reason === "string" && payload.halted_reason
+                ? payload.halted_reason
+                : null,
+    };
 }
 
 export async function fetchFlowRuns(token: string, id: string, limit = 20): Promise<FlowRun[]> {

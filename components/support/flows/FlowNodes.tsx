@@ -2,13 +2,23 @@
 
 // components/support/flows/FlowNodes.tsx
 // Custom xyflow node cards for the Flow Studio (brand #5479EE, Tailwind).
-// Four contract types (trigger / send_message / condition / handoff) plus a
-// fallback card so a graph containing node types this build doesn't know
-// (e.g. from a newer backend) still renders and round-trips.
+// Seven contract types (trigger / send_message / condition / handoff /
+// kb_answer / menu / ticket_action) plus a fallback card so a graph
+// containing node types this build doesn't know (e.g. from a newer backend)
+// still renders and round-trips.
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { HelpCircle, MessageSquareText, Play, Split, UserRound } from "lucide-react";
+import {
+    BookOpen,
+    HelpCircle,
+    List,
+    MessageSquareText,
+    Play,
+    Split,
+    Ticket,
+    UserRound,
+} from "lucide-react";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { StudioNode } from "./flowGraph";
 
@@ -192,6 +202,129 @@ const HandoffNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
 });
 HandoffNode.displayName = "HandoffNode";
 
+const KbAnswerNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
+    const grounding = data?.grounding === "internal" ? "internal" : "public";
+    const maxArticles = typeof data?.max_articles === "number" ? data.max_articles : null;
+    const minConfidence = typeof data?.min_confidence === "number" ? data.min_confidence : null;
+    return (
+        <CardShell
+            selected={selected}
+            accentClass="bg-violet-100 text-violet-600"
+            icon={<BookOpen size={14} />}
+            title="KB Answer"
+            subtitle="Knowledge base"
+        >
+            <div className="space-y-1.5 px-3 pt-1.5 text-xs text-gray-600">
+                <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        grounding === "internal"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-green-100 text-green-700"
+                    }`}
+                >
+                    {grounding === "internal" ? "Internal" : "Publik"}
+                </span>
+                <p className="text-[11px] text-gray-500">
+                    {maxArticles !== null ? `Maks ${maxArticles} artikel` : "Maks artikel default"}
+                    {minConfidence !== null ? ` · min. keyakinan ${minConfidence}` : ""}
+                </p>
+            </div>
+            <div className="mt-1.5 flex justify-between border-t border-gray-100 px-4 pb-2 pt-1 text-[10px] font-semibold">
+                <span className="text-green-700">Ketemu</span>
+                <span className="text-red-600">Tidak</span>
+            </div>
+            <Handle type="target" position={Position.Top} className={HANDLE_CLASS} />
+            <Handle
+                id="found"
+                type="source"
+                position={Position.Bottom}
+                style={{ left: "25%" }}
+                className="!h-2.5 !w-2.5 !rounded-full !border-2 !border-white !bg-green-600 shadow"
+            />
+            <Handle
+                id="not_found"
+                type="source"
+                position={Position.Bottom}
+                style={{ left: "75%" }}
+                className="!h-2.5 !w-2.5 !rounded-full !border-2 !border-white !bg-red-500 shadow"
+            />
+        </CardShell>
+    );
+});
+KbAnswerNode.displayName = "KbAnswerNode";
+
+const MenuNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
+    const prompt = typeof data?.prompt === "string" ? data.prompt : "";
+    const optionCount = Array.isArray(data?.options) ? data.options.length : 0;
+    return (
+        <CardShell
+            selected={selected}
+            accentClass="bg-sky-100 text-sky-600"
+            icon={<List size={14} />}
+            title="Menu"
+            subtitle="Quick reply"
+        >
+            <div className="space-y-1.5 px-3 pb-2.5 pt-1.5">
+                {prompt ? (
+                    <p className="line-clamp-2 whitespace-pre-wrap break-words rounded-md bg-gray-50 px-2 py-1.5 text-xs text-gray-600">
+                        {prompt}
+                    </p>
+                ) : (
+                    <p className="text-xs italic text-gray-400">No prompt yet - set it in the panel.</p>
+                )}
+                <p className="text-[11px] text-gray-500">
+                    {optionCount} opsi · run berhenti menunggu balasan
+                </p>
+            </div>
+            <Handle type="target" position={Position.Top} className={HANDLE_CLASS} />
+        </CardShell>
+    );
+});
+MenuNode.displayName = "MenuNode";
+
+const TICKET_ACTION_LABEL: Record<string, string> = {
+    create_ticket: "Create ticket",
+    set_priority: "Set priority",
+    add_tag: "Add tag",
+};
+
+const TicketActionNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
+    const action = typeof data?.action === "string" ? data.action : "create_ticket";
+    const priority = typeof data?.priority === "string" ? data.priority : "";
+    const tag = typeof data?.tag === "string" ? data.tag : "";
+    return (
+        <CardShell
+            selected={selected}
+            accentClass="bg-orange-100 text-orange-600"
+            icon={<Ticket size={14} />}
+            title="Ticket Action"
+            subtitle={TICKET_ACTION_LABEL[action] ?? action}
+        >
+            <div className="px-3 pb-2.5 pt-1.5 text-xs text-gray-600">
+                {action === "set_priority" ? (
+                    <p>
+                        Prioritas:{" "}
+                        <span className="font-medium text-gray-800">{priority || "Medium"}</span>
+                    </p>
+                ) : action === "add_tag" ? (
+                    tag ? (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                            {tag}
+                        </span>
+                    ) : (
+                        <p className="italic text-gray-400">No tag yet - set it in the panel.</p>
+                    )
+                ) : (
+                    <p>Buat tiket dari percakapan ini.</p>
+                )}
+            </div>
+            <Handle type="target" position={Position.Top} className={HANDLE_CLASS} />
+            <Handle type="source" position={Position.Bottom} className={HANDLE_CLASS} />
+        </CardShell>
+    );
+});
+TicketActionNode.displayName = "TicketActionNode";
+
 /** Renders any node type this build doesn't recognize (forward compat). */
 const FallbackNode = memo(({ type, selected }: NodeProps<StudioNode>) => (
     <CardShell
@@ -216,6 +349,9 @@ export const CORE_NODE_TYPES = {
     send_message: SendMessageNode,
     condition: ConditionNode,
     handoff: HandoffNode,
+    kb_answer: KbAnswerNode,
+    menu: MenuNode,
+    ticket_action: TicketActionNode,
 };
 
 export { FallbackNode };
@@ -231,6 +367,12 @@ export function miniMapNodeColor(node: { type?: string }): string {
             return "#10b981";
         case "send_message":
             return "#93aef5";
+        case "kb_answer":
+            return "#8b5cf6";
+        case "menu":
+            return "#0ea5e9";
+        case "ticket_action":
+            return "#f97316";
         default:
             return "#cbd5e1";
     }

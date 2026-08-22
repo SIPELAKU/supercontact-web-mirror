@@ -17,12 +17,14 @@ import {
     unpublishFlow,
     deleteFlow,
     fetchFlowRuns,
+    simulateFlow,
     updateAutomationMode,
     FlowSummary,
     FlowDetail,
     FlowRun,
     CreateFlowRequest,
     UpdateFlowRequest,
+    SimulateFlowRequest,
     AutomationMode,
 } from "@/lib/api/flows";
 
@@ -136,6 +138,18 @@ export function useDeleteFlow() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: FLOWS_KEY, exact: true });
+        },
+    });
+}
+
+/** Dry-run of the flow's SAVED graph - sends/creates nothing, so no cache
+ *  invalidation is needed. */
+export function useSimulateFlow() {
+    const { token } = useAuth();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: SimulateFlowRequest }) => {
+            if (!token) throw new Error("No authentication token");
+            return simulateFlow(token, id, data);
         },
     });
 }

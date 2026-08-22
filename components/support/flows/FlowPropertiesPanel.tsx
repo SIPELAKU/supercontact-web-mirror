@@ -7,14 +7,29 @@
 // nothing is persisted until "Save draft" in the toolbar.
 
 import { useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { AppTextarea } from "@/components/ui/app-textarea";
 import { AppInput } from "@/components/ui/app-input";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
-import type { ConditionKind, FlowStatus, FlowTriggerConfig, FlowTriggerType } from "@/lib/api/flows";
-import { BRANCH_LABEL, type StudioEdge, type StudioNode, type StudioNodeData } from "./flowGraph";
+import type {
+    ConditionKind,
+    FlowEdgeBranch,
+    FlowStatus,
+    FlowTriggerConfig,
+    FlowTriggerType,
+    MenuOption,
+    TicketActionKind,
+    TicketPriority,
+} from "@/lib/api/flows";
+import {
+    BRANCH_LABEL,
+    branchesForNodeType,
+    type StudioEdge,
+    type StudioNode,
+    type StudioNodeData,
+} from "./flowGraph";
 
 export const TRIGGER_TYPE_OPTIONS: { value: FlowTriggerType; label: string }[] = [
     { value: "inbound_first", label: "First inbound message" },
@@ -28,6 +43,22 @@ const CONDITION_KIND_OPTIONS: { value: ConditionKind; label: string }[] = [
     { value: "business_hours", label: "Within business hours" },
     { value: "channel", label: "Channel" },
 ];
+
+const TICKET_ACTION_OPTIONS: { value: TicketActionKind; label: string }[] = [
+    { value: "create_ticket", label: "Create ticket" },
+    { value: "set_priority", label: "Set priority" },
+    { value: "add_tag", label: "Add tag" },
+];
+
+const TICKET_PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
+    { value: "Urgent", label: "Urgent" },
+    { value: "High", label: "High" },
+    { value: "Medium", label: "Medium" },
+    { value: "Low", label: "Low" },
+];
+
+const MENU_MIN_OPTIONS = 2;
+const MENU_MAX_OPTIONS = 5;
 
 const VARIABLE_HINTS = ["{{contact_name}}", "{{company_name}}"];
 
@@ -120,14 +151,14 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
 interface FlowPropertiesPanelProps {
     selectedNode: StudioNode | null;
     selectedEdge: StudioEdge | null;
-    /** Type of the selected edge's source node ("condition" enables branch toggle). */
+    /** Type of the selected edge's source node (condition/kb_answer enable the branch toggle). */
     selectedEdgeSourceType: string | null;
     triggerConfig: FlowTriggerConfig;
     channelScope: string[];
     status: FlowStatus;
     onTriggerConfigChange: (config: FlowTriggerConfig) => void;
     onNodeDataChange: (nodeId: string, patch: Partial<StudioNodeData>) => void;
-    onEdgeBranchChange: (edgeId: string, branch: "yes" | "no") => void;
+    onEdgeBranchChange: (edgeId: string, branch: FlowEdgeBranch) => void;
     onDeleteNode: (nodeId: string) => void;
     onDeleteEdge: (edgeId: string) => void;
 }
@@ -150,24 +181,29 @@ export default function FlowPropertiesPanel({
     // ---- Edge selected -----------------------------------------------------
     if (!selectedNode && selectedEdge) {
         const branch = selectedEdge.data?.branch;
-        const isConditionEdge = selectedEdgeSourceType === "condition";
+        // Branching sources expose their branch vocabulary as a toggle:
+        // condition -> yes/no, kb_answer -> found/not_found. The first entry
+        // is the "positive" branch (green), the second the negative (red).
+        const branchChoices = branchesForNodeType(selectedEdgeSourceType ?? undefined);
         return (
             <div className="space-y-6 p-4">
                 <PanelSection title="Connection">
-                    {isConditionEdge ? (
+                    {branchChoices.length > 0 ? (
                         <>
                             <p className="text-sm text-gray-600">
-                                Which branch of the condition does this connection follow?
+                                {selectedEdgeSourceType === "kb_answer"
+                                    ? "Which outcome of the KB answer does this connection follow?"
+                                    : "Which branch of the condition does this connection follow?"}
                             </p>
                             <div className="flex gap-2">
-                                {(["yes", "no"] as const).map((b) => (
+                                {branchChoices.map((b, index) => (
                                     <button
                                         key={b}
                                         type="button"
                                         onClick={() => onEdgeBranchChange(selectedEdge.id, b)}
                                         className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
                                             branch === b
-                                                ? b === "yes"
+                                                ? index === 0
                                                     ? "border-green-600 bg-green-50 text-green-700"
                                                     : "border-red-500 bg-red-50 text-red-600"
                                                 : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
@@ -456,6 +492,308 @@ export default function FlowPropertiesPanel({
                         value={note}
                         onChange={(e) => onNodeDataChange(selectedNode.id, { note: e.target.value })}
                     />
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- KB Answer node ----------------------------------------------------
+    if (selectedNode.type === "kb_answer") {
+        const grounding = data.grounding === "internal" ? "internal" : "public";
+        const maxArticles = typeof data.max_articles === "number" ? data.max_articles : null;
+        const minConfidence = typeof data.min_confidence === "number" ? data.min_confidence : null;
+        const fallbackText = typeof data.fallback_text === "string" ? data.fallback_text : "";
+        // Backend rule: a flow scoped to web_widget may only ground on PUBLIC
+        // articles (visitors must never see internal-only content).
+        const widgetScoped = channelScope.includes("web_widget");
+        const groundingOptions = [
+            { value: "public", label: "Publik (artikel publik saja)" },
+            {
+                value: "internal",
+                label: "Internal (semua artikel published)",
+                disabled: widgetScoped,
+            },
+        ];
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="KB Answer">
+                    <p className="text-xs text-gray-500">
+                        Answers from the knowledge base. Follow the{" "}
+                        <span className="font-semibold text-green-700">Ketemu</span> handle when an
+                        article is found, and <span className="font-semibold text-red-600">Tidak</span>{" "}
+                        when nothing relevant is found.
+                    </p>
+                    <AppSelect
+                        isBgWhite
+                        fullWidth
+                        label="Grounding"
+                        value={grounding}
+                        options={groundingOptions}
+                        onChange={(e) =>
+                            onNodeDataChange(selectedNode.id, {
+                                grounding: e.target.value === "internal" ? "internal" : "public",
+                            })
+                        }
+                    />
+                    {widgetScoped && (
+                        <p className="text-xs text-gray-500">
+                            Flow ini mencakup channel <span className="font-medium">Web widget</span>,
+                            jadi grounding wajib <span className="font-medium">Publik</span> - pengunjung
+                            widget tidak boleh melihat artikel internal.
+                        </p>
+                    )}
+                    {widgetScoped && grounding === "internal" && (
+                        <p className="text-xs font-medium text-amber-600">
+                            Grounding saat ini &quot;Internal&quot; tetapi flow mencakup Web widget - publish
+                            akan ditolak. Ubah ke Publik.
+                        </p>
+                    )}
+                    <AppInput
+                        isBgWhite
+                        fullWidth
+                        type="number"
+                        label="Max articles (1-5)"
+                        inputProps={{ min: 1, max: 5, step: 1 }}
+                        value={maxArticles ?? ""}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            onNodeDataChange(selectedNode.id, {
+                                max_articles: raw === "" ? undefined : Number(raw),
+                            });
+                        }}
+                    />
+                    <AppInput
+                        isBgWhite
+                        fullWidth
+                        type="number"
+                        label="Min confidence (0-1)"
+                        inputProps={{ min: 0, max: 1, step: 0.05 }}
+                        value={minConfidence ?? ""}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            onNodeDataChange(selectedNode.id, {
+                                min_confidence: raw === "" ? undefined : Number(raw),
+                            });
+                        }}
+                    />
+                    <AppTextarea
+                        isBgWhite
+                        fullWidth
+                        label="Fallback text"
+                        rows={3}
+                        placeholder="Maaf, kami belum menemukan jawabannya. Tim kami akan segera membantu."
+                        value={fallbackText}
+                        onChange={(e) =>
+                            onNodeDataChange(selectedNode.id, { fallback_text: e.target.value })
+                        }
+                    />
+                    <p className="text-xs text-gray-500">
+                        Fallback text dikirim ketika tidak ada artikel yang cukup relevan (cabang
+                        Tidak).
+                    </p>
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Menu / Quick Reply node -------------------------------------------
+    if (selectedNode.type === "menu") {
+        const prompt = typeof data.prompt === "string" ? data.prompt : "";
+        const options: MenuOption[] = Array.isArray(data.options)
+            ? (data.options as MenuOption[]).map((o) => ({
+                  key: String(o?.key ?? ""),
+                  label: String(o?.label ?? ""),
+              }))
+            : [];
+
+        const setOptions = (next: MenuOption[]) =>
+            onNodeDataChange(selectedNode.id, { options: next });
+
+        const addOption = () => {
+            if (options.length >= MENU_MAX_OPTIONS) return;
+            // Auto-key: the first unused number 1..5.
+            const used = new Set(options.map((o) => o.key.trim()));
+            let key = String(options.length + 1);
+            for (let i = 1; i <= MENU_MAX_OPTIONS; i += 1) {
+                if (!used.has(String(i))) {
+                    key = String(i);
+                    break;
+                }
+            }
+            setOptions([...options, { key, label: "" }]);
+        };
+
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Menu / Quick reply">
+                    <AppTextarea
+                        isBgWhite
+                        fullWidth
+                        label="Prompt"
+                        rows={3}
+                        placeholder="Silakan pilih topik bantuan:"
+                        value={prompt}
+                        onChange={(e) => onNodeDataChange(selectedNode.id, { prompt: e.target.value })}
+                    />
+                    <div>
+                        <p className="mb-1.5 text-sm font-medium text-gray-600">
+                            Options{" "}
+                            <span className="font-normal text-gray-400">
+                                ({MENU_MIN_OPTIONS}-{MENU_MAX_OPTIONS})
+                            </span>
+                        </p>
+                        <div className="space-y-2">
+                            {options.map((option, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    <div className="w-14 shrink-0">
+                                        <AppInput
+                                            isBgWhite
+                                            fullWidth
+                                            aria-label={`Option ${index + 1} key`}
+                                            placeholder="1"
+                                            value={option.key}
+                                            onChange={(e) =>
+                                                setOptions(
+                                                    options.map((o, i) =>
+                                                        i === index ? { ...o, key: e.target.value } : o
+                                                    )
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <AppInput
+                                            isBgWhite
+                                            fullWidth
+                                            aria-label={`Option ${index + 1} label`}
+                                            placeholder="Label opsi"
+                                            value={option.label}
+                                            onChange={(e) =>
+                                                setOptions(
+                                                    options.map((o, i) =>
+                                                        i === index ? { ...o, label: e.target.value } : o
+                                                    )
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        aria-label={`Remove option ${index + 1}`}
+                                        disabled={options.length <= MENU_MIN_OPTIONS}
+                                        onClick={() => setOptions(options.filter((_, i) => i !== index))}
+                                        className="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-2">
+                            <AppButton
+                                variantStyle="outline"
+                                size="small"
+                                startIcon={<Plus size={14} />}
+                                disabled={options.length >= MENU_MAX_OPTIONS}
+                                onClick={addOption}
+                            >
+                                Add option
+                            </AppButton>
+                        </div>
+                    </div>
+                    <div className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                        Setelah prompt + opsi terkirim, run <span className="font-semibold">berhenti</span>{" "}
+                        menunggu balasan pelanggan. Routing balasan per opsi hadir di fase berikutnya
+                        (F3).
+                    </div>
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Ticket Action node ------------------------------------------------
+    if (selectedNode.type === "ticket_action") {
+        const action: TicketActionKind =
+            data.action === "set_priority" || data.action === "add_tag"
+                ? data.action
+                : "create_ticket";
+        const priority: TicketPriority =
+            data.priority === "Urgent" || data.priority === "High" || data.priority === "Low"
+                ? data.priority
+                : "Medium";
+        const tag = typeof data.tag === "string" ? data.tag : "";
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Ticket Action">
+                    <AppSelect
+                        isBgWhite
+                        fullWidth
+                        label="Action"
+                        value={action}
+                        options={TICKET_ACTION_OPTIONS}
+                        onChange={(e) =>
+                            onNodeDataChange(selectedNode.id, {
+                                action: e.target.value as TicketActionKind,
+                            })
+                        }
+                    />
+                    {action === "set_priority" && (
+                        <AppSelect
+                            isBgWhite
+                            fullWidth
+                            label="Priority"
+                            value={priority}
+                            options={TICKET_PRIORITY_OPTIONS}
+                            onChange={(e) =>
+                                onNodeDataChange(selectedNode.id, {
+                                    priority: e.target.value as TicketPriority,
+                                })
+                            }
+                        />
+                    )}
+                    {action === "add_tag" && (
+                        <AppInput
+                            isBgWhite
+                            fullWidth
+                            label="Tag"
+                            placeholder="mis. vip, komplain, follow-up"
+                            value={tag}
+                            onChange={(e) =>
+                                onNodeDataChange(selectedNode.id, { tag: e.target.value })
+                            }
+                        />
+                    )}
+                    <p className="text-xs text-gray-500">
+                        {action === "create_ticket"
+                            ? "Membuat tiket dari percakapan ini, lalu lanjut ke langkah berikutnya."
+                            : action === "set_priority"
+                              ? "Mengubah prioritas tiket percakapan ini, lalu lanjut ke langkah berikutnya."
+                              : "Menambahkan tag ke tiket percakapan ini, lalu lanjut ke langkah berikutnya."}
+                    </p>
                 </PanelSection>
                 <AppButton
                     variantStyle="danger"

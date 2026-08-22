@@ -45,6 +45,8 @@ export type StudioNodeData = {
     action?: TicketActionKind;
     priority?: TicketPriority;
     tag?: string;
+    // delay
+    minutes?: number;
     // unknown node types keep whatever the backend sent
     [key: string]: unknown;
 };
@@ -65,6 +67,7 @@ export const KNOWN_NODE_TYPES = [
     "kb_answer",
     "menu",
     "ticket_action",
+    "delay",
 ] as const;
 
 export const BRANCH_LABEL: Record<FlowEdgeBranch, string> = {
@@ -128,6 +131,8 @@ export function defaultNodeData(type: string): StudioNodeData {
             };
         case "ticket_action":
             return { action: "create_ticket" };
+        case "delay":
+            return { minutes: 15 };
         case "trigger":
         default:
             return {};
@@ -300,6 +305,14 @@ function serializeNodeData(node: StudioNode): Record<string, unknown> {
                 out.tag = typeof data.tag === "string" ? data.tag.trim() : "";
             }
             return out;
+        }
+        case "delay": {
+            // Must reach the server as a real integer - the backend rejects
+            // "15" and 15.5 alike, so a number input's string value would
+            // otherwise fail validation on save.
+            const raw = Number(data.minutes);
+            const minutes = Number.isFinite(raw) ? Math.round(raw) : 15;
+            return { minutes };
         }
         default:
             // Unknown node type: round-trip its data untouched.

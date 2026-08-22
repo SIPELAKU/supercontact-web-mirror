@@ -2,8 +2,8 @@
 
 // components/support/flows/FlowNodes.tsx
 // Custom xyflow node cards for the Flow Studio (brand #5479EE, Tailwind).
-// Seven contract types (trigger / send_message / condition / handoff /
-// kb_answer / menu / ticket_action) plus a fallback card so a graph
+// Eight contract types (trigger / send_message / condition / handoff /
+// kb_answer / menu / ticket_action / delay) plus a fallback card so a graph
 // containing node types this build doesn't know (e.g. from a newer backend)
 // still renders and round-trips.
 
@@ -11,6 +11,7 @@ import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
     BookOpen,
+    Clock,
     HelpCircle,
     List,
     MessageSquareText,
@@ -325,6 +326,32 @@ const TicketActionNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
 });
 TicketActionNode.displayName = "TicketActionNode";
 
+/** delay: pauses the run, then continues after the configured wait. */
+const DelayNode = memo(({ data, selected }: NodeProps<StudioNode>) => {
+    const raw = Number(data?.minutes);
+    const minutes = Number.isFinite(raw) ? Math.round(raw) : 15;
+    const label =
+        minutes >= 60
+            ? `${Math.floor(minutes / 60)} jam${minutes % 60 ? ` ${minutes % 60} mnt` : ""}`
+            : `${minutes} menit`;
+    return (
+        <CardShell
+            selected={selected}
+            accentClass="bg-slate-100 text-slate-600"
+            icon={<Clock size={14} />}
+            title="Delay"
+            subtitle={`Tunggu ${label}`}
+        >
+            <p className="px-3 pb-2.5 pt-1.5 text-xs text-gray-600">
+                Alur berhenti di sini, lalu lanjut otomatis setelah {label}.
+            </p>
+            <Handle type="target" position={Position.Top} className={HANDLE_CLASS} />
+            <Handle type="source" position={Position.Bottom} className={HANDLE_CLASS} />
+        </CardShell>
+    );
+});
+DelayNode.displayName = "DelayNode";
+
 /** Renders any node type this build doesn't recognize (forward compat). */
 const FallbackNode = memo(({ type, selected }: NodeProps<StudioNode>) => (
     <CardShell
@@ -352,6 +379,7 @@ export const CORE_NODE_TYPES = {
     kb_answer: KbAnswerNode,
     menu: MenuNode,
     ticket_action: TicketActionNode,
+    delay: DelayNode,
 };
 
 export { FallbackNode };
@@ -373,6 +401,8 @@ export function miniMapNodeColor(node: { type?: string }): string {
             return "#0ea5e9";
         case "ticket_action":
             return "#f97316";
+        case "delay":
+            return "#64748b";
         default:
             return "#cbd5e1";
     }

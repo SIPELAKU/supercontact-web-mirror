@@ -357,6 +357,30 @@ export async function deleteFlow(token: string, id: string): Promise<void> {
 }
 
 /**
+ * Condense one simulated step's `detail` object into a short line for the
+ * trace. The backend sends a per-node-type dict (minutes, priority, tag,
+ * grounding, note, ...), so only the keys worth showing an author are
+ * surfaced, in a stable order, and anything unrecognized is ignored rather
+ * than dumped as JSON.
+ */
+function summarizeStepDetail(detail: unknown): string | null {
+    if (typeof detail === "string") return detail.trim() || null;
+    if (!detail || typeof detail !== "object") return null;
+    const d = detail as Record<string, unknown>;
+    const parts: string[] = [];
+    if (typeof d.minutes === "number") parts.push(`${d.minutes} menit`);
+    if (typeof d.priority === "string") parts.push(`prioritas: ${d.priority}`);
+    if (typeof d.tag === "string" && d.tag) parts.push(`tag: ${d.tag}`);
+    if (typeof d.grounding === "string") parts.push(`sumber: ${d.grounding}`);
+    if (Array.isArray(d.articles) && d.articles.length > 0) {
+        parts.push(`${d.articles.length} artikel`);
+    }
+    if (typeof d.trigger === "string") parts.push(`trigger: ${d.trigger}`);
+    if (typeof d.note === "string" && d.note) parts.push(d.note);
+    return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/**
  * POST /support/flows/{id}/simulate - dry-run against the flow's SAVED graph
  * (unsaved studio changes are invisible to it; the studio saves first).
  * Unwraps defensively so a missing/odd field never crashes the panel.
@@ -380,7 +404,10 @@ export async function simulateFlow(
                   node_id: String(s.node_id ?? ""),
                   node_type: String(s.node_type ?? "unknown"),
                   outcome: String(s.outcome ?? ""),
-                  detail: typeof s.detail === "string" ? s.detail : null,
+                  // The backend always sends `detail` as an OBJECT, so a
+                  // string-only guard silently dropped it for every step.
+                  // Summarize the human-useful keys instead.
+                  detail: summarizeStepDetail(s.detail),
               }))
         : [];
     const wouldSend: { text: string }[] = Array.isArray(payload.would_send)

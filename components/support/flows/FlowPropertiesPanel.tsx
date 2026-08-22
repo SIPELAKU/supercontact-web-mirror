@@ -60,6 +60,11 @@ const TICKET_PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
 const MENU_MIN_OPTIONS = 2;
 const MENU_MAX_OPTIONS = 5;
 
+// Mirrors DELAY_MINUTES_RANGE in flow_engine_service.py - the server rejects
+// anything outside it, so the editor warns before the save round-trip.
+const DELAY_MIN_MINUTES = 1;
+const DELAY_MAX_MINUTES = 1440;
+
 const VARIABLE_HINTS = ["{{contact_name}}", "{{company_name}}"];
 
 export const CHANNEL_LABELS: Record<string, string> = {
@@ -798,6 +803,59 @@ export default function FlowPropertiesPanel({
                             : action === "set_priority"
                               ? "Mengubah prioritas tiket percakapan ini, lalu lanjut ke langkah berikutnya."
                               : "Menambahkan tag ke tiket percakapan ini, lalu lanjut ke langkah berikutnya."}
+                    </p>
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    if (selectedNode.type === "delay") {
+        const rawMinutes = Number(data.minutes);
+        const minutes = Number.isFinite(rawMinutes) ? Math.round(rawMinutes) : 15;
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Delay">
+                    <AppInput
+                        isBgWhite
+                        fullWidth
+                        type="number"
+                        label="Wait (minutes)"
+                        value={String(minutes)}
+                        onChange={(e) => {
+                            const raw = e.target.value.trim();
+                            // Number("") is 0, which would quietly save an
+                            // out-of-range delay the server then rejects.
+                            const next = raw === "" ? NaN : Number(raw);
+                            onNodeDataChange(selectedNode.id, {
+                                minutes: Number.isFinite(next)
+                                    ? Math.max(
+                                          DELAY_MIN_MINUTES,
+                                          Math.min(DELAY_MAX_MINUTES, Math.round(next))
+                                      )
+                                    : DELAY_MIN_MINUTES,
+                            });
+                        }}
+                    />
+                    <p className="text-xs text-gray-400">
+                        {DELAY_MIN_MINUTES}–{DELAY_MAX_MINUTES} menit (maks 24 jam). Nilai di
+                        luar rentang otomatis disesuaikan.
+                    </p>
+                    <p className="text-xs text-gray-500">
+                        Alur berhenti di node ini, lalu dilanjutkan otomatis setelah waktunya
+                        tiba. Saat dilanjutkan, alur akan dibatalkan jika percakapan sudah
+                        dipegang agen, akun dikembalikan ke bot bawaan, atau flow ini tidak lagi
+                        published — jadi bot tidak pernah menyela.
+                    </p>
+                    <p className="text-xs text-gray-400">
+                        Jatah kirim pesan per-run tetap dihitung lintas delay, tidak di-reset.
                     </p>
                 </PanelSection>
                 <AppButton

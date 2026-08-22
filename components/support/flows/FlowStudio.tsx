@@ -32,6 +32,7 @@ import {
     ArrowLeft,
     BookOpen,
     CheckCircle2,
+    Clock,
     CloudUpload,
     FlaskConical,
     HelpCircle,
@@ -133,6 +134,13 @@ const PALETTE_ITEMS: { type: string; label: string; hint: string; icon: React.Re
         icon: <Ticket size={15} />,
         accent: "bg-orange-100 text-orange-600",
     },
+    {
+        type: "delay",
+        label: "Delay",
+        hint: "Wait, then continue the flow",
+        icon: <Clock size={15} />,
+        accent: "bg-slate-100 text-slate-600",
+    },
 ];
 
 // ---- Simulate panel helpers ------------------------------------------------
@@ -154,6 +162,8 @@ function StepTypeIcon({ nodeType }: { nodeType: string }) {
             return <List size={13} className="text-sky-600" />;
         case "ticket_action":
             return <Ticket size={13} className="text-orange-600" />;
+        case "delay":
+            return <Clock size={13} className="text-slate-500" />;
         default:
             return <HelpCircle size={13} className="text-gray-400" />;
     }

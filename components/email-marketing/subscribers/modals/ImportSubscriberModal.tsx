@@ -3,7 +3,6 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
-import * as XLSX from "xlsx";
 import { notify } from "@/lib/notifications";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { AppButton } from "@/components/ui/app-button";
@@ -140,6 +139,10 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
 
     try {
       const data = await file.arrayBuffer();
+      // xlsx is loaded on demand: this modal only needs it once the user
+      // actually picks a file, and a static import put ~400 kB of SheetJS
+      // into the first load of every page that can open this modal.
+      const XLSX = await import("xlsx");
       const workbook = XLSX.read(data);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];

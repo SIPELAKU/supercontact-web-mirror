@@ -17,6 +17,7 @@ import {
     unpublishFlow,
     deleteFlow,
     fetchFlowRuns,
+    fetchFlowAnalytics,
     simulateFlow,
     updateAutomationMode,
     FlowSummary,
@@ -26,6 +27,7 @@ import {
     UpdateFlowRequest,
     SimulateFlowRequest,
     AutomationMode,
+    FlowAnalytics,
 } from "@/lib/api/flows";
 
 const FLOWS_KEY = ["support", "flows"];
@@ -167,8 +169,26 @@ export function useFlowRuns(id: string | null | undefined, limit = 20) {
     });
 }
 
-/** Per-account legacy-bot vs flow-engine switch (F1 exposes the mutation;
- *  the account-settings UI lands with F3). */
+/** Outcome metrics for one flow over a day window (F4b). */
+export function useFlowAnalytics(
+    id: string | null | undefined,
+    days = 30,
+    enabled = true
+) {
+    const { token } = useAuth();
+    return useQuery<FlowAnalytics, Error>({
+        queryKey: [...FLOWS_KEY, id, "analytics", days],
+        queryFn: () => {
+            if (!token) throw new Error("No authentication token");
+            return fetchFlowAnalytics(token, id as string, days);
+        },
+        refetchOnWindowFocus: false,
+        enabled: !!token && !!id && enabled,
+    });
+}
+
+/** Per-account legacy-bot vs flow-engine switch (the account-settings UI
+ *  landed with F3a). */
 export function useUpdateAutomationMode() {
     const { token } = useAuth();
     const queryClient = useQueryClient();

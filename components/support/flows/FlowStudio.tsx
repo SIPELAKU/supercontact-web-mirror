@@ -30,6 +30,7 @@ import {
 import {
     AlertTriangle,
     ArrowLeft,
+    BarChart3,
     BookOpen,
     CheckCircle2,
     Clock,
@@ -56,6 +57,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { usePermission } from "@/lib/hooks/usePermission";
 import {
     useFlow,
+    useFlowAnalytics,
     usePublishFlow,
     useSimulateFlow,
     useUnpublishFlow,
@@ -229,6 +231,11 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
     const [saveLiveConfirmOpen, setSaveLiveConfirmOpen] = useState(false);
     // ---- Simulate panel (F2) ----------------------------------------------
     const [simOpen, setSimOpen] = useState(false);
+    const [analyticsOpen, setAnalyticsOpen] = useState(false);
+    const [analyticsDays, setAnalyticsDays] = useState(30);
+    // Only fetched while the drawer is open - this is a reporting query,
+    // not something the editor needs on every load.
+    const analyticsQuery = useFlowAnalytics(flowId, analyticsDays, analyticsOpen);
     const [simMessage, setSimMessage] = useState("");
     const [simChannel, setSimChannel] = useState("");
     const [simBusinessHours, setSimBusinessHours] = useState(true);
@@ -795,6 +802,17 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                     >
                         Simulate
                     </AppButton>
+                    <AppButton
+                        variantStyle="outline"
+                        size="small"
+                        startIcon={<BarChart3 size={14} />}
+                        onClick={() => {
+                            setAnalyticsOpen((open) => !open);
+                            if (!analyticsOpen) setSimOpen(false);
+                        }}
+                    >
+                        Analytics
+                    </AppButton>
                     {status === "published" ? (
                         <AppButton
                             variantStyle="outline"
@@ -966,6 +984,175 @@ function FlowStudioInner({ flowId }: { flowId: string }) {
                                     </li>
                                 ))}
                             </ul>
+                        </div>
+                    )}
+
+                    {/* ---- Analytics drawer (F4b) ---- */}
+                    {analyticsOpen && (
+                        <div className="absolute inset-y-0 right-0 z-20 flex w-96 max-w-[calc(100%-1rem)] flex-col border-l border-gray-200 bg-white shadow-xl">
+                            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
+                                <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                    <BarChart3 size={15} className="text-[#5479EE]" />
+                                    Analytics
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setAnalyticsOpen(false)}
+                                    className="text-gray-400 hover:text-gray-700"
+                                    aria-label="Close analytics panel"
+                                >
+                                    <X size={16} />
+                                </button>
+                            </div>
+                            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+                                <div className="flex gap-1.5">
+                                    {[7, 30, 90].map((d) => (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => setAnalyticsDays(d)}
+                                            className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors ${
+                                                analyticsDays === d
+                                                    ? "border-[#5479EE] bg-[#5479EE]/10 text-[#3f5fd0]"
+                                                    : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {d} hari
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {analyticsQuery.isLoading ? (
+                                    <div className="flex items-center gap-2 py-8 text-sm text-gray-400">
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Memuat metrik…
+                                    </div>
+                                ) : analyticsQuery.isError ? (
+                                    <p className="text-sm text-red-500">
+                                        Gagal memuat metrik alur ini.
+                                    </p>
+                                ) : !analyticsQuery.data || analyticsQuery.data.total_runs === 0 ? (
+                                    <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center">
+                                        <p className="text-sm font-medium text-gray-600">
+                                            Belum ada run
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-400">
+                                            Metrik muncul setelah alur ini dipublish dan mulai
+                                            dijalankan oleh pesan masuk.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[
+                                                {
+                                                    label: "Selesai",
+                                                    value: analyticsQuery.data.completion_rate,
+                                                    tone: "text-green-700",
+                                                },
+                                                {
+                                                    label: "Ke agen",
+                                                    value: analyticsQuery.data.handoff_rate,
+                                                    tone: "text-amber-700",
+                                                },
+                                                {
+                                                    label: "Deflected",
+                                                    value: analyticsQuery.data.deflection_rate,
+                                                    tone: "text-[#3f5fd0]",
+                                                },
+                                            ].map((m) => (
+                                                <div
+                                                    key={m.label}
+                                                    className="rounded-xl border border-gray-200 p-2.5 text-center"
+                                                >
+                                                    <p className={`text-lg font-bold ${m.tone}`}>
+                                                        {Math.round(m.value * 100)}%
+                                                    </p>
+                                                    <p className="text-[11px] text-gray-500">
+                                                        {m.label}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <p className="text-[11px] text-gray-400">
+                                            {analyticsQuery.data.total_runs} run ·{" "}
+                                            {analyticsQuery.data.deflected_runs} dijawab KB tanpa
+                                            perlu agen · {analyticsQuery.data.handoff_runs} berakhir
+                                            di agen.
+                                        </p>
+
+                                        <div>
+                                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                Status run
+                                            </p>
+                                            <div className="space-y-1">
+                                                {Object.entries(analyticsQuery.data.by_status).map(
+                                                    ([st, count]) => (
+                                                        <div
+                                                            key={st}
+                                                            className="flex items-center justify-between rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs"
+                                                        >
+                                                            <span className="font-medium text-gray-600">
+                                                                {st}
+                                                            </span>
+                                                            <span className="text-gray-500">
+                                                                {count}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                Per node
+                                            </p>
+                                            <p className="mb-2 text-[11px] text-gray-400">
+                                                Klik untuk menyorot node di kanvas.
+                                            </p>
+                                            <ol className="space-y-1.5">
+                                                {analyticsQuery.data.nodes.map((n) => (
+                                                    <li key={n.node_id}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => focusNode(n.node_id)}
+                                                            className="w-full rounded-lg border border-gray-200 px-2.5 py-2 text-left hover:bg-gray-50"
+                                                        >
+                                                            <span className="flex items-center justify-between gap-2">
+                                                                <span className="inline-flex min-w-0 items-center gap-1.5">
+                                                                    <StepTypeIcon
+                                                                        nodeType={n.node_type}
+                                                                    />
+                                                                    <span className="truncate text-xs font-medium text-gray-700">
+                                                                        {n.node_type}
+                                                                    </span>
+                                                                </span>
+                                                                <span className="shrink-0 text-[11px] text-gray-400">
+                                                                    {n.total}×
+                                                                </span>
+                                                            </span>
+                                                            <span className="mt-1 flex flex-wrap gap-1">
+                                                                {Object.entries(n.outcomes).map(
+                                                                    ([outcome, count]) => (
+                                                                        <span
+                                                                            key={outcome}
+                                                                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${outcomeChipClass(outcome)}`}
+                                                                        >
+                                                                            {outcome} {count}
+                                                                        </span>
+                                                                    )
+                                                                )}
+                                                            </span>
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )}
 

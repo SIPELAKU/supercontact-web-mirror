@@ -209,6 +209,34 @@ export interface SimulateFlowResult {
     halted_reason?: string | null;
 }
 
+// --- Analytics (F4b) -------------------------------------------------------
+// GET /support/flows/{id}/analytics - aggregated from the runs the engine
+// already logged, so the numbers cannot drift from what actually executed.
+
+export interface FlowNodeStat {
+    node_id: string;
+    node_type: string;
+    outcomes: Record<string, number>;
+    total: number;
+}
+
+export interface FlowAnalytics {
+    flow_id: string;
+    window_days: number;
+    total_runs: number;
+    by_status: Record<string, number>;
+    /** 0..1 - runs that reached a natural end. */
+    completion_rate: number;
+    /** 0..1 - runs that reached a human. */
+    handoff_rate: number;
+    /** 0..1 - runs answered from the KB that never reached a human. */
+    deflection_rate: number;
+    handoff_runs: number;
+    kb_answered_runs: number;
+    deflected_runs: number;
+    nodes: FlowNodeStat[];
+}
+
 export type AutomationMode = "legacy" | "flow";
 
 // ---------------------------------------------------------------------------
@@ -452,6 +480,45 @@ export async function fetchFlowRuns(token: string, id: string, limit = 20): Prom
           ? outer.runs
           : outer?.data;
     return Array.isArray(list) ? list : [];
+}
+
+/** GET /support/flows/{id}/analytics - outcome metrics over a day window. */
+export async function fetchFlowAnalytics(
+    token: string,
+    id: string,
+    days = 30
+): Promise<FlowAnalytics> {
+    const params = new URLSearchParams({ days: String(days) });
+    const res = await fetchWithTimeout(
+        getFullUrl(`/support/flows/${id}/analytics?${params.toString()}`),
+        { headers: authHeaders(token) }
+    );
+    const json = await handleResponse<{ data: any }>(res, "Failed to load flow analytics");
+    const d = json.data ?? {};
+    const nodes: FlowNodeStat[] = Array.isArray(d.nodes)
+        ? d.nodes
+              .filter((n: any) => !!n && typeof n === "object")
+              .map((n: any) => ({
+                  node_id: String(n.node_id ?? ""),
+                  node_type: String(n.node_type ?? "unknown"),
+                  outcomes:
+                      n.outcomes && typeof n.outcomes === "object" ? n.outcomes : {},
+                  total: Number(n.total) || 0,
+              }))
+        : [];
+    return {
+        flow_id: String(d.flow_id ?? id),
+        window_days: Number(d.window_days) || days,
+        total_runs: Number(d.total_runs) || 0,
+        by_status: d.by_status && typeof d.by_status === "object" ? d.by_status : {},
+        completion_rate: Number(d.completion_rate) || 0,
+        handoff_rate: Number(d.handoff_rate) || 0,
+        deflection_rate: Number(d.deflection_rate) || 0,
+        handoff_runs: Number(d.handoff_runs) || 0,
+        kb_answered_runs: Number(d.kb_answered_runs) || 0,
+        deflected_runs: Number(d.deflected_runs) || 0,
+        nodes,
+    };
 }
 
 /**

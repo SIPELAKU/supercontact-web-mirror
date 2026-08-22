@@ -71,11 +71,16 @@ export const CHANNEL_LABELS: Record<string, string> = {
     instagram: "Instagram",
 };
 
-// F1 scope: the channels a channel-condition can branch on. Values are the
-// raw channel strings the engine compares the inbound channel against.
+// The channels a channel-condition can branch on. Values are the raw channel
+// strings the engine compares the inbound channel against. F3 widened this
+// from the F1 pair to every channel the engine now runs on.
 const CONDITION_CHANNEL_OPTIONS: { value: string; label: string }[] = [
     { value: "whatsapp", label: CHANNEL_LABELS.whatsapp },
     { value: "web_widget", label: CHANNEL_LABELS.web_widget },
+    { value: "email", label: CHANNEL_LABELS.email },
+    { value: "sms", label: CHANNEL_LABELS.sms },
+    { value: "messenger", label: CHANNEL_LABELS.messenger },
+    { value: "instagram", label: CHANNEL_LABELS.instagram },
 ];
 
 /** Chip-style multi-keyword editor (Enter or comma adds, X removes). */

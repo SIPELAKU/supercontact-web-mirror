@@ -32,10 +32,14 @@ import type { FlowChannel, FlowSummary, FlowTriggerType } from "@/lib/api/flows"
 import { CHANNEL_LABELS, KeywordsInput, TRIGGER_TYPE_OPTIONS } from "./FlowPropertiesPanel";
 import { makeGraphId } from "./flowGraph";
 
-// F1 scope: flows run on WhatsApp + web widget only.
-const F1_CHANNELS: { value: FlowChannel; label: string }[] = [
+// Every channel the FlowEngine runs on (F3 completed the set).
+const FLOW_CHANNELS: { value: FlowChannel; label: string }[] = [
     { value: "whatsapp", label: "WhatsApp" },
     { value: "web_widget", label: "Web widget" },
+    { value: "email", label: "Email" },
+    { value: "sms", label: "SMS" },
+    { value: "messenger", label: "Messenger" },
+    { value: "instagram", label: "Instagram" },
 ];
 
 const TRIGGER_LABEL: Record<string, string> = Object.fromEntries(
@@ -320,7 +324,7 @@ export default function FlowsListClient() {
                                 Channels <span className="text-red-500">*</span>
                             </p>
                             <div className="flex flex-wrap gap-2">
-                                {F1_CHANNELS.map((c) => {
+                                {FLOW_CHANNELS.map((c) => {
                                     const active = channels.includes(c.value);
                                     return (
                                         <button
@@ -340,8 +344,8 @@ export default function FlowsListClient() {
                                 })}
                             </div>
                             <p className="mt-1 text-xs text-gray-400">
-                                More channels (Email, SMS, Messenger, Instagram) arrive in a later
-                                release.
+                                The flow runs only on the channels you pick here, and only on
+                                accounts switched to flow automation.
                             </p>
                         </div>
 

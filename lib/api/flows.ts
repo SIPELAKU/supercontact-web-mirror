@@ -33,9 +33,15 @@ function jsonHeaders(token: string): HeadersInit {
 
 export type FlowStatus = "draft" | "published";
 
-// F1 scope covers whatsapp + web_widget only; the API field is a plain string
-// array so later channels (email/sms/...) flow through without a type change.
-export type FlowChannel = "whatsapp" | "web_widget";
+// Every channel the FlowEngine runs on (F3 completed the set). Mirrors the
+// backend ChannelType enum, which is what channel_scope validates against.
+export type FlowChannel =
+    | "whatsapp"
+    | "web_widget"
+    | "email"
+    | "sms"
+    | "messenger"
+    | "instagram";
 
 export type FlowTriggerType =
     | "inbound_first"

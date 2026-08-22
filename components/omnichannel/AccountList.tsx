@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { useAccounts, useDeleteAccount, useUpdateAccount, useReactivateAccount } from "@/lib/hooks/useOmnichannel";
+import { useUpdateAutomationMode } from "@/lib/hooks/useFlows";
+import { usePermission } from "@/lib/hooks/usePermission";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Trash2, Mail, MessageCircle, Globe, Smartphone, Pencil, Check, X, RotateCcw, Facebook, Instagram } from "lucide-react";
+import { Loader2, Trash2, Mail, MessageCircle, Globe, Smartphone, Pencil, Check, X, RotateCcw, Facebook, Instagram, Workflow } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { notify } from "@/lib/notifications";
@@ -21,9 +23,21 @@ interface AccountListProps {
 const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
   const { data: accounts, isLoading, error } = useAccounts(channelType, true);
   const { userProfile } = useAuth();
+  const { can } = usePermission();
+  // Must match the API gate on PATCH /accounts/{id}/automation-mode, which is
+  // `omnichannel:setup` (the permission the Manager role actually holds and
+  // the one that owns these settings pages). Gating the UI on
+  // `conversations:routing:manage` instead would hide the toggle from every
+  // Manager even though the request would have succeeded - the profile
+  // endpoint returns raw role permissions and does NOT expand the
+  // setup -> routing:manage alias the backend applies. Accepting either
+  // keeps custom roles granted only the routing permission working too.
+  const canManageFlows = can(["omnichannel:setup", "conversations:routing:manage"]);
   const deleteAccountMutation = useDeleteAccount();
   const updateAccountMutation = useUpdateAccount();
   const reactivateAccountMutation = useReactivateAccount();
+  const automationModeMutation = useUpdateAutomationMode();
+  const [pendingModeId, setPendingModeId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; accountId: string | null; accountName: string }>({
     open: false,
     accountId: null,
@@ -73,6 +87,45 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
     } catch (error: any) {
       const message = handleError(error, "Update Account");
       notify.error("Error", { description: message });
+    }
+  };
+
+  // Only WhatsApp (rule-bot) and the web widget (answer-bot) have a built-in
+  // bot to fall back to. On Email/SMS/Messenger/Instagram, legacy mode means
+  // NO automation at all - saying "the built-in bot replies here" there would
+  // be plainly false.
+  const hasLegacyBot = (channel: ChannelType) =>
+    channel === "whatsapp" || channel === "web_widget";
+
+  const legacyModeDescription = (channel: ChannelType) =>
+    hasLegacyBot(channel)
+      ? "The built-in bot replies here; published flows are paused."
+      : "No automatic replies on this account.";
+
+  const flowModeDescription = (channel: ChannelType) =>
+    hasLegacyBot(channel)
+      ? "Published flows reply here; the built-in bot is paused."
+      : "Published flows reply here.";
+
+  const handleAutomationModeToggle = async (account: Account) => {
+    const next = account.automation_mode === "flow" ? "legacy" : "flow";
+    setPendingModeId(account.id);
+    try {
+      await automationModeMutation.mutateAsync({ accountId: account.id, mode: next });
+      notify.success(
+        next === "flow" ? "Flow automation enabled" : "Flow automation disabled",
+        {
+          description:
+            next === "flow"
+              ? flowModeDescription(account.channel_type)
+              : legacyModeDescription(account.channel_type),
+        }
+      );
+    } catch (error: any) {
+      const message = handleError(error, "Update Automation Mode");
+      notify.error("Error", { description: message });
+    } finally {
+      setPendingModeId(null);
     }
   };
 
@@ -149,6 +202,44 @@ const AccountList: React.FC<AccountListProps> = ({ channelType }) => {
               <span>•</span>
               <span>Added {new Date(account.created_at).toLocaleDateString()}</span>
             </div>
+
+            {/* Automation owner: the built-in bot, or published Flow Studio
+                flows. Mutually exclusive so a contact never gets a double
+                auto-reply, which is why this is one toggle, not two. */}
+            {account.is_active && canManageFlows && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={account.automation_mode === "flow"}
+                  aria-label="Use Flow Studio automation for this account"
+                  disabled={pendingModeId === account.id}
+                  onClick={() => handleAutomationModeToggle(account)}
+                  className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+                    account.automation_mode === "flow" ? "bg-[#5479EE]" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                      account.automation_mode === "flow" ? "translate-x-[18px]" : "translate-x-[3px]"
+                    }`}
+                  />
+                </button>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                  {pendingModeId === account.id ? (
+                    <Loader2 className="animate-spin" size={13} />
+                  ) : (
+                    <Workflow size={13} className={account.automation_mode === "flow" ? "text-[#5479EE]" : "text-gray-400"} />
+                  )}
+                  Flow automation
+                </span>
+                <span className="text-[11px] text-gray-400">
+                  {account.automation_mode === "flow"
+                    ? flowModeDescription(account.channel_type)
+                    : legacyModeDescription(account.channel_type)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

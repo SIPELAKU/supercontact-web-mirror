@@ -32,6 +32,11 @@ export interface Account {
   smtp_host?: string | null;
   smtp_port?: number | null;
   is_active: boolean;
+  // Which automation owns this account's inbound auto-replies: "legacy" (the
+  // WhatsApp rule-bot / widget answer-bot) or "flow" (published Flow Studio
+  // flows). Mutually exclusive, so a contact never gets a double auto-reply.
+  // Optional for safety: older cached payloads predate the column.
+  automation_mode?: "legacy" | "flow";
   created_at: string;
   updated_at: string;
 }

@@ -173,6 +173,9 @@ const menuData: MenuSection[] = [
           // Phase 8D QA reviews - visible to anyone holding ANY qa grant
           // (viewers, reviewers, and scorecard admins all land here).
           { name: "QA Reviews", path: "/support/qa", permission: ["support:qa:view", "support:qa:review", "support:qa:manage"] },
+          // Flow Studio (F1) - visual automation flows. Same gate the backend
+          // /support/flows endpoints enforce.
+          { name: "Flows", path: "/support/flows", permission: "conversations:routing:manage" },
           // Phase 6 Help Center / Knowledge Base authoring app. Gated on the
           // base read grant (publish/manage imply read on the page itself).
           { name: "Knowledge Base", path: "/knowledge-base", permission: ["knowledge:read", "knowledge:author", "knowledge:publish", "knowledge:manage"] },

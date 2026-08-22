@@ -1,0 +1,491 @@
+"use client";
+
+// components/support/flows/FlowPropertiesPanel.tsx
+// Right-hand inspector of the Flow Studio: edits the selected node's data
+// (or a selected edge's Ya/Tidak branch), and the flow-level trigger config
+// when the trigger node is selected. All edits mutate studio-local state;
+// nothing is persisted until "Save draft" in the toolbar.
+
+import { useState } from "react";
+import { Trash2, X } from "lucide-react";
+import { AppButton } from "@/components/ui/app-button";
+import { AppSelect } from "@/components/ui/app-select";
+import { AppTextarea } from "@/components/ui/app-textarea";
+import { AppInput } from "@/components/ui/app-input";
+import { useConversationQueues } from "@/lib/hooks/useAgents";
+import type { ConditionKind, FlowStatus, FlowTriggerConfig, FlowTriggerType } from "@/lib/api/flows";
+import { BRANCH_LABEL, type StudioEdge, type StudioNode, type StudioNodeData } from "./flowGraph";
+
+export const TRIGGER_TYPE_OPTIONS: { value: FlowTriggerType; label: string }[] = [
+    { value: "inbound_first", label: "First inbound message" },
+    { value: "keyword", label: "Keyword match" },
+    { value: "off_hours", label: "Outside business hours" },
+    { value: "no_agent_online", label: "No agent online" },
+];
+
+const CONDITION_KIND_OPTIONS: { value: ConditionKind; label: string }[] = [
+    { value: "keyword", label: "Keyword match" },
+    { value: "business_hours", label: "Within business hours" },
+    { value: "channel", label: "Channel" },
+];
+
+const VARIABLE_HINTS = ["{{contact_name}}", "{{company_name}}"];
+
+export const CHANNEL_LABELS: Record<string, string> = {
+    whatsapp: "WhatsApp",
+    web_widget: "Web widget",
+    email: "Email",
+    sms: "SMS",
+    messenger: "Messenger",
+    instagram: "Instagram",
+};
+
+// F1 scope: the channels a channel-condition can branch on. Values are the
+// raw channel strings the engine compares the inbound channel against.
+const CONDITION_CHANNEL_OPTIONS: { value: string; label: string }[] = [
+    { value: "whatsapp", label: CHANNEL_LABELS.whatsapp },
+    { value: "web_widget", label: CHANNEL_LABELS.web_widget },
+];
+
+/** Chip-style multi-keyword editor (Enter or comma adds, X removes). */
+export function KeywordsInput({
+    value,
+    onChange,
+    placeholder,
+}: {
+    value: string[];
+    onChange: (next: string[]) => void;
+    placeholder?: string;
+}) {
+    const [draft, setDraft] = useState("");
+
+    const commit = () => {
+        const kw = draft.trim();
+        if (!kw) return;
+        if (!value.some((v) => v.toLowerCase() === kw.toLowerCase())) {
+            onChange([...value, kw]);
+        }
+        setDraft("");
+    };
+
+    return (
+        <div>
+            {value.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                    {value.map((kw) => (
+                        <span
+                            key={kw}
+                            className="inline-flex items-center gap-1 rounded-full bg-[#5479EE]/10 px-2.5 py-0.5 text-xs font-medium text-[#3f5fd0]"
+                        >
+                            {kw}
+                            <button
+                                type="button"
+                                aria-label={`Remove keyword ${kw}`}
+                                onClick={() => onChange(value.filter((v) => v !== kw))}
+                                className="text-[#3f5fd0]/60 hover:text-[#3f5fd0]"
+                            >
+                                <X size={12} />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+            <AppInput
+                isBgWhite
+                fullWidth
+                placeholder={placeholder ?? "Type a keyword, press Enter"}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                        e.preventDefault();
+                        commit();
+                    }
+                }}
+                onBlur={commit}
+            />
+        </div>
+    );
+}
+
+function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+        <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h3>
+            {children}
+        </div>
+    );
+}
+
+interface FlowPropertiesPanelProps {
+    selectedNode: StudioNode | null;
+    selectedEdge: StudioEdge | null;
+    /** Type of the selected edge's source node ("condition" enables branch toggle). */
+    selectedEdgeSourceType: string | null;
+    triggerConfig: FlowTriggerConfig;
+    channelScope: string[];
+    status: FlowStatus;
+    onTriggerConfigChange: (config: FlowTriggerConfig) => void;
+    onNodeDataChange: (nodeId: string, patch: Partial<StudioNodeData>) => void;
+    onEdgeBranchChange: (edgeId: string, branch: "yes" | "no") => void;
+    onDeleteNode: (nodeId: string) => void;
+    onDeleteEdge: (edgeId: string) => void;
+}
+
+export default function FlowPropertiesPanel({
+    selectedNode,
+    selectedEdge,
+    selectedEdgeSourceType,
+    triggerConfig,
+    channelScope,
+    status,
+    onTriggerConfigChange,
+    onNodeDataChange,
+    onEdgeBranchChange,
+    onDeleteNode,
+    onDeleteEdge,
+}: FlowPropertiesPanelProps) {
+    const { data: queues, isError: queuesError } = useConversationQueues(false);
+
+    // ---- Edge selected -----------------------------------------------------
+    if (!selectedNode && selectedEdge) {
+        const branch = selectedEdge.data?.branch;
+        const isConditionEdge = selectedEdgeSourceType === "condition";
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Connection">
+                    {isConditionEdge ? (
+                        <>
+                            <p className="text-sm text-gray-600">
+                                Which branch of the condition does this connection follow?
+                            </p>
+                            <div className="flex gap-2">
+                                {(["yes", "no"] as const).map((b) => (
+                                    <button
+                                        key={b}
+                                        type="button"
+                                        onClick={() => onEdgeBranchChange(selectedEdge.id, b)}
+                                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
+                                            branch === b
+                                                ? b === "yes"
+                                                    ? "border-green-600 bg-green-50 text-green-700"
+                                                    : "border-red-500 bg-red-50 text-red-600"
+                                                : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        {BRANCH_LABEL[b]}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <p className="text-sm text-gray-600">
+                            A simple connection - the flow continues along it unconditionally.
+                        </p>
+                    )}
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteEdge(selectedEdge.id)}
+                >
+                    Delete connection
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Nothing selected --------------------------------------------------
+    if (!selectedNode) {
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Flow">
+                    <div className="space-y-2 text-sm text-gray-600">
+                        <p>
+                            Channels:{" "}
+                            <span className="font-medium text-gray-800">
+                                {channelScope.length > 0
+                                    ? channelScope.map((c) => CHANNEL_LABELS[c] ?? c).join(", ")
+                                    : "None"}
+                            </span>
+                        </p>
+                        <p>
+                            Status: <span className="font-medium text-gray-800">{status}</span>
+                        </p>
+                    </div>
+                </PanelSection>
+                <PanelSection title="Tips">
+                    <ul className="list-disc space-y-1.5 pl-4 text-xs text-gray-500">
+                        <li>Select a node or connection to edit it here.</li>
+                        <li>Drag from the left palette (or click an item) to add a step.</li>
+                        <li>Connect nodes by dragging between their round handles.</li>
+                        <li>Press Delete to remove the selected node or connection.</li>
+                    </ul>
+                </PanelSection>
+            </div>
+        );
+    }
+
+    const data = selectedNode.data ?? {};
+
+    // ---- Trigger node: edits flow-level trigger_config --------------------
+    if (selectedNode.type === "trigger") {
+        const keywords = Array.isArray(triggerConfig.keywords) ? triggerConfig.keywords : [];
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Trigger">
+                    <p className="text-xs text-gray-500">
+                        The trigger decides when this flow starts for an inbound conversation on the
+                        flow&apos;s channels.
+                    </p>
+                    <AppSelect
+                        isBgWhite
+                        fullWidth
+                        label="Trigger type"
+                        value={triggerConfig.type ?? "inbound_first"}
+                        options={TRIGGER_TYPE_OPTIONS}
+                        onChange={(e) =>
+                            onTriggerConfigChange({
+                                ...triggerConfig,
+                                type: e.target.value as FlowTriggerType,
+                            })
+                        }
+                    />
+                    {triggerConfig.type === "keyword" && (
+                        <div>
+                            <p className="mb-1.5 text-sm font-medium text-gray-600">Keywords</p>
+                            <KeywordsInput
+                                value={keywords}
+                                onChange={(next) =>
+                                    onTriggerConfigChange({ ...triggerConfig, keywords: next })
+                                }
+                            />
+                        </div>
+                    )}
+                </PanelSection>
+                <p className="text-xs text-gray-400">
+                    The trigger node cannot be deleted - every flow starts from it.
+                </p>
+            </div>
+        );
+    }
+
+    // ---- Send Message node -------------------------------------------------
+    if (selectedNode.type === "send_message") {
+        const text = typeof data.text === "string" ? data.text : "";
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Send Message">
+                    <AppTextarea
+                        isBgWhite
+                        fullWidth
+                        label="Message text"
+                        rows={5}
+                        placeholder="Halo {{contact_name}}, terima kasih sudah menghubungi kami!"
+                        value={text}
+                        onChange={(e) => onNodeDataChange(selectedNode.id, { text: e.target.value })}
+                    />
+                    <div>
+                        <p className="mb-1.5 text-xs text-gray-500">Insert a variable:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {VARIABLE_HINTS.map((v) => (
+                                <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() =>
+                                        onNodeDataChange(selectedNode.id, {
+                                            text: text ? `${text} ${v}` : v,
+                                        })
+                                    }
+                                    className="rounded-full border border-[#5479EE]/30 bg-[#5479EE]/5 px-2.5 py-1 font-mono text-[11px] text-[#3f5fd0] hover:bg-[#5479EE]/15"
+                                >
+                                    {v}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Condition node ----------------------------------------------------
+    if (selectedNode.type === "condition") {
+        const kind: ConditionKind =
+            data.kind === "business_hours" || data.kind === "channel" ? data.kind : "keyword";
+        const keywords = Array.isArray(data.keywords) ? (data.keywords as string[]) : [];
+        const channels = Array.isArray(data.channels) ? (data.channels as string[]) : [];
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Condition">
+                    <AppSelect
+                        isBgWhite
+                        fullWidth
+                        label="Condition type"
+                        value={kind}
+                        options={CONDITION_KIND_OPTIONS}
+                        onChange={(e) =>
+                            onNodeDataChange(selectedNode.id, {
+                                kind: e.target.value as ConditionKind,
+                            })
+                        }
+                    />
+                    {kind === "keyword" && (
+                        <div>
+                            <p className="mb-1.5 text-sm font-medium text-gray-600">
+                                Keywords <span className="font-normal text-gray-400">(match any)</span>
+                            </p>
+                            <KeywordsInput
+                                value={keywords}
+                                onChange={(next) =>
+                                    onNodeDataChange(selectedNode.id, { keywords: next, match: "any" })
+                                }
+                            />
+                        </div>
+                    )}
+                    {kind === "channel" && (
+                        <div>
+                            <p className="mb-1.5 text-sm font-medium text-gray-600">
+                                Channels <span className="font-normal text-gray-400">(match any)</span>
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {CONDITION_CHANNEL_OPTIONS.map((option) => {
+                                    const selected = channels.includes(option.value);
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            aria-pressed={selected}
+                                            onClick={() =>
+                                                onNodeDataChange(selectedNode.id, {
+                                                    channels: selected
+                                                        ? channels.filter((c) => c !== option.value)
+                                                        : [...channels, option.value],
+                                                })
+                                            }
+                                            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                                                selected
+                                                    ? "border-[#5479EE] bg-[#5479EE]/10 text-[#3f5fd0]"
+                                                    : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <p className="mt-1.5 text-xs text-gray-500">
+                                Ya when the conversation is on one of the selected channels. At least
+                                one channel is required to publish.
+                            </p>
+                        </div>
+                    )}
+                    <p className="text-xs text-gray-500">
+                        Connect the <span className="font-semibold text-green-700">Ya</span> handle for
+                        when the condition matches, and{" "}
+                        <span className="font-semibold text-red-600">Tidak</span> for when it doesn&apos;t.
+                    </p>
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Handoff node ------------------------------------------------------
+    if (selectedNode.type === "handoff") {
+        const queueId = typeof data.queue_id === "string" ? data.queue_id : "";
+        const note = typeof data.note === "string" ? data.note : "";
+        const queueOptions = [
+            { value: "", label: "Default (no specific queue)" },
+            ...(queues ?? []).map((q) => ({ value: q.id, label: q.name })),
+        ];
+        return (
+            <div className="space-y-6 p-4">
+                <PanelSection title="Handoff to human">
+                    {queuesError ? (
+                        // Queue listing needs omnichannel:use; fall back to a
+                        // raw id field so the node stays editable regardless.
+                        <AppInput
+                            isBgWhite
+                            fullWidth
+                            label="Queue ID (optional)"
+                            placeholder="Paste a conversation-queue UUID"
+                            value={queueId}
+                            onChange={(e) =>
+                                onNodeDataChange(selectedNode.id, {
+                                    queue_id: e.target.value.trim() || null,
+                                })
+                            }
+                        />
+                    ) : (
+                        <AppSelect
+                            isBgWhite
+                            fullWidth
+                            label="Assign to queue"
+                            value={queueId}
+                            options={queueOptions}
+                            onChange={(e) =>
+                                onNodeDataChange(selectedNode.id, {
+                                    queue_id: (e.target.value as string) || null,
+                                })
+                            }
+                        />
+                    )}
+                    <AppTextarea
+                        isBgWhite
+                        fullWidth
+                        label="Note for the agent"
+                        rows={3}
+                        placeholder="Context the agent should see when they pick this up"
+                        value={note}
+                        onChange={(e) => onNodeDataChange(selectedNode.id, { note: e.target.value })}
+                    />
+                </PanelSection>
+                <AppButton
+                    variantStyle="danger"
+                    fullWidth
+                    startIcon={<Trash2 size={14} />}
+                    onClick={() => onDeleteNode(selectedNode.id)}
+                >
+                    Delete node
+                </AppButton>
+            </div>
+        );
+    }
+
+    // ---- Unknown node type -------------------------------------------------
+    return (
+        <div className="space-y-6 p-4">
+            <PanelSection title={`Node: ${selectedNode.type ?? "unknown"}`}>
+                <p className="text-sm text-gray-600">
+                    This node type isn&apos;t editable in this version of the studio. Its configuration is
+                    preserved unchanged when you save.
+                </p>
+            </PanelSection>
+            <AppButton
+                variantStyle="danger"
+                fullWidth
+                startIcon={<Trash2 size={14} />}
+                onClick={() => onDeleteNode(selectedNode.id)}
+            >
+                Delete node
+            </AppButton>
+        </div>
+    );
+}

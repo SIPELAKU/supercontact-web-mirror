@@ -495,6 +495,19 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
           />
         </div>
 
+        {/* Deliberately OUTSIDE the answer_bot_enabled gate: this switch also
+            governs the KB step inside a conversation flow, which runs whether
+            or not the answer bot is on. Hiding it there left tenants unable to
+            reach the switch that controls their flow's answers. */}
+        <div className="border-t border-gray-100">
+          <ToggleRow
+            label="Use AI to compose an answer"
+            description="Let AI write a grounded reply from the matched articles instead of just linking them. Applies to the answer bot and to Knowledge Base steps in your conversation flows. When off, replies use article-based content only."
+            checked={form.answer_bot_use_llm}
+            onChange={(checked) => setField("answer_bot_use_llm", checked)}
+          />
+        </div>
+
         {form.answer_bot_enabled && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -537,14 +550,6 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               </div>
             </div>
 
-            <div className="border-t border-gray-100">
-              <ToggleRow
-                label="Use AI to compose an answer"
-                description="Let AI write a grounded reply from the matched articles instead of just linking them. When off, the bot replies with article-based content only."
-                checked={form.answer_bot_use_llm}
-                onChange={(checked) => setField("answer_bot_use_llm", checked)}
-              />
-            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Intro Text (optional)</label>

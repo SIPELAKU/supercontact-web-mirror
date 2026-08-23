@@ -18,7 +18,9 @@ import {
   Plug,
   Shield,
   Smartphone,
+  Sparkles,
   Ticket,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import type { SettingsItem, SettingsRegistry, SettingsSection } from "@/lib/types/Settings";
@@ -31,6 +33,30 @@ export const settingsNav: SettingsRegistry = [
     children: [
       { id: "company", title: "Company", path: "/settings/general/company" },
       { id: "key-people", title: "Key People", path: "/settings/general/company/key-people" },
+    ],
+  },
+  {
+    // Onboarding sits near the top on purpose: it is the first thing a new
+    // tenant needs and the place they return to after installing a blueprint,
+    // to work through what was deliberately left switched off.
+    id: "onboarding",
+    title: "Setup Cepat",
+    icon: Sparkles,
+    path: "/settings/onboarding",
+    permission: ["omnichannel:setup", "conversations:config:manage"],
+  },
+  {
+    id: "sales",
+    title: "Sales",
+    icon: TrendingUp,
+    permission: "pipelines",
+    children: [
+      {
+        id: "pipeline-stages",
+        title: "Tahapan Penjualan",
+        path: "/settings/sales/pipeline-stages",
+        permission: "pipelines",
+      },
     ],
   },
   {

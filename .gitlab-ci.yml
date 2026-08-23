@@ -58,13 +58,15 @@
 #   1. Tag versi (v1.5.0, v1.5.0-rc.1) → deployment normal
 #   2. Push ke staging/main             → hotfix urgent (oleh Lead)
 #
-# Push ke dev, feature/*, bugfix/* → TIDAK ada pipeline
+#   3. Push ke dev                      → deploy dev.smartsales.id
+#
+# Push ke feature/*, bugfix/* → TIDAK ada pipeline
 # (ditambah auto [skip ci] via .githooks/prepare-commit-msg)
 workflow:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\.\d+)?$/'
       when: always
-    - if: '$CI_COMMIT_BRANCH =~ /^(staging|main|master)$/'
+    - if: '$CI_COMMIT_BRANCH =~ /^(dev|staging|main|master)$/'
       when: always
     - when: never
 
@@ -82,6 +84,79 @@ stages:
 variables:
   NEXT_TELEMETRY_DISABLED: "1"
   NODE_OPTIONS: "--max-old-space-size=4096"
+  # Slug Environment Vercel untuk tier dev. TIDAK ditebak dan TIDAK punya
+  # fallback: kalau salah, `vercel pull` gagal dan job berhenti - jauh lebih
+  # baik daripada diam-diam membangun dev memakai env var milik preview
+  # (mis. NEXT_PUBLIC_API_URL menunjuk ke API yang salah).
+  # Ubah lewat GitLab → Settings → CI/CD → Variables bila slug-nya berbeda.
+  VERCEL_DEV_ENV: "development"
+
+# ============================================================
+# Deploy to DEV (Vercel Preview + alias dev.smartsales.id)
+# ============================================================
+#
+# Dipicu oleh: push/merge ke branch dev.
+#
+# Kenapa job ini ada: dev.smartsales.id dulu mengandalkan auto-deploy Vercel,
+# dan itu berhenti bekerja tanpa suara - push berhasil, pipeline "success"
+# dengan NOL job, dan domainnya tetap menyajikan build lama. Gejalanya baru
+# terlihat sebagai halaman error saat seseorang membuka rute baru.
+#
+# Langkah `vercel alias` di bawah adalah inti perbaikannya: `vercel deploy`
+# tanpa --prod menghasilkan deployment PREVIEW yang TIDAK otomatis mengambil
+# alih domain kustom. Ini bug yang sama persis dengan yang pernah terjadi di
+# brod-frontend.
+# ============================================================
+deploy_dev:
+  stage: deploy
+  tags: [active]
+  environment:
+    name: development
+    url: https://dev.smartsales.id
+  script:
+    - echo "🧪 Deploying to DEV"
+    - echo "   Branch  → $CI_COMMIT_BRANCH"
+    - echo "   Commit  → $CI_COMMIT_SHORT_SHA"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
+
+    # Vercel CLI ke prefix terpisah - meng-install ke node_modules proyek
+    # mencemari dependency tree dan mematahkan `vercel build`.
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
+
+    # Kalau slug environment salah, job berhenti DI SINI - bukan lanjut
+    # membangun dev dengan env var yang salah.
+    - echo "   Vercel env → $VERCEL_DEV_ENV"
+    - vercel pull --yes --environment=$VERCEL_DEV_ENV --token=$VERCEL_TOKEN
+
+    # `vercel build` hanya membaca .env.preview.local, jadi salin dari env dev.
+    - |
+      SRC=".vercel/.env.${VERCEL_DEV_ENV}.local"
+      if [ ! -f "$SRC" ]; then
+        echo "❌ $SRC tidak ada setelah vercel pull."
+        echo "   Slug environment '$VERCEL_DEV_ENV' kemungkinan salah."
+        echo "   Perbaiki variabel CI VERCEL_DEV_ENV, jangan tebak di sini."
+        ls -a .vercel || true
+        exit 1
+      fi
+      cp "$SRC" .vercel/.env.preview.local
+
+    - vercel build --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
+    - echo "Preview URL → $DEPLOY_URL"
+
+    # WAJIB: tanpa ini deployment-nya jadi preview tak ber-alias dan
+    # dev.smartsales.id tetap menunjuk build lama.
+    - vercel alias $DEPLOY_URL dev.smartsales.id --token=$VERCEL_TOKEN
+
+    - echo ""
+    - echo "✅ Dev deployment selesai!"
+    - echo "   URL → https://dev.smartsales.id"
+    - echo "   Commit → $CI_COMMIT_SHORT_SHA"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
 
 # ============================================================
 # Deploy to STAGING (Vercel Preview)

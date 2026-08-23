@@ -143,6 +143,23 @@ deploy_dev:
       fi
       cp "$SRC" .vercel/.env.preview.local
 
+    # The marketing site dogfoods the Web Widget, and app/(marketing)/layout.tsx
+    # falls back to the PRODUCTION widget key when NEXT_PUBLIC_WIDGET_KEY is
+    # unset. On dev that key does not exist in the dev database, so the config
+    # fetch 404s and the widget silently renders nothing - it looks like the
+    # widget "isn't there" rather than like a misconfiguration.
+    #
+    # NEXT_PUBLIC_* is inlined at BUILD time, so it has to be in the env file
+    # `vercel build` reads, not just in the job environment.
+    - |
+      if [ -n "$NEXT_PUBLIC_WIDGET_KEY" ]; then
+        echo "NEXT_PUBLIC_WIDGET_KEY=\"$NEXT_PUBLIC_WIDGET_KEY\"" >> .vercel/.env.preview.local
+        echo "   Widget key → set for dev (${NEXT_PUBLIC_WIDGET_KEY:0:8}…)"
+      else
+        echo "   Widget key → NOT set; the marketing widget will fall back to"
+        echo "                the production key and stay invisible on dev."
+      fi
+
     - vercel build --token=$VERCEL_TOKEN
     - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
     - echo "Preview URL → $DEPLOY_URL"

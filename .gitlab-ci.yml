@@ -160,6 +160,19 @@ deploy_dev:
         echo "                the production key and stay invisible on dev."
       fi
 
+    # The widget needs an ABSOLUTE ws:// base. data-api-url is "/api/proxy" - a
+    # relative path that cannot carry a WebSocket upgrade - and the widget's
+    # fallback (apiUrl with http->ws) leaves it relative, so `new WebSocket()`
+    # never connects. Symptom: replies only appear after a page refresh.
+    - |
+      if [ -n "$NEXT_PUBLIC_WS_URL" ]; then
+        echo "NEXT_PUBLIC_WS_URL=\"$NEXT_PUBLIC_WS_URL\"" >> .vercel/.env.preview.local
+        echo "   WS base   → $NEXT_PUBLIC_WS_URL"
+      else
+        echo "   WS base   → NOT set; the widget will have no realtime channel"
+        echo "                and messages will only appear on refresh."
+      fi
+
     - vercel build --token=$VERCEL_TOKEN
     - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
     - echo "Preview URL → $DEPLOY_URL"

@@ -25,6 +25,10 @@ const DESTINATION: Record<ChecklistKind, { label: string; href: string }> = {
         label: "Antrean",
         href: "/settings/support/routing",
     },
+    automation_mode: {
+        label: "Mode automation akun",
+        href: "/settings/web-widget",
+    },
 };
 
 export default function ActivationChecklist() {

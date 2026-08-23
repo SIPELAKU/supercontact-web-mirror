@@ -61,7 +61,10 @@ export type ChecklistKind =
     | "conversation_sla_policy"
     | "ticket_automation_rule"
     | "flow"
-    | "conversation_queue";
+    | "conversation_queue"
+    /** The account is still on `legacy` automation, so published flows do not
+     *  run on it. Publishing a flow without this is silent no-op. */
+    | "automation_mode";
 
 export interface ChecklistItem {
     kind: ChecklistKind;

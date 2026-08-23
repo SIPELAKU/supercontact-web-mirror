@@ -27,6 +27,19 @@ import { BEHAVIOUR_MODULES, moduleLabel } from "./moduleLabels";
 
 type Step = "industry" | "details" | "preview" | "done";
 
+/** Module names, whatever shape the API hands over.
+ *
+ *  This exists because the listing returned an array of names while the detail
+ *  endpoint returned the manifest object, and `new Set(object)` threw - the
+ *  whole wizard went to the error boundary the moment an industry was picked.
+ *  The API is consistent now; this stays so that a future shape change is a
+ *  cosmetic bug rather than a white screen. */
+function moduleNames(modules: unknown): string[] {
+    if (Array.isArray(modules)) return modules.filter((m): m is string => typeof m === "string");
+    if (modules && typeof modules === "object") return Object.keys(modules as object);
+    return [];
+}
+
 const STEPS: Array<{ id: Step; label: string }> = [
     { id: "industry", label: "Pilih industri" },
     { id: "details", label: "Isi data & modul" },
@@ -54,7 +67,7 @@ export default function BlueprintWizard({
 
     // Default to installing everything the blueprint offers; the tenant unticks.
     useEffect(() => {
-        if (detail) setModules(new Set(detail.modules || []));
+        if (detail) setModules(new Set(moduleNames(detail.modules)));
     }, [detail]);
 
     const missingVariables = useMemo(() => {
@@ -168,7 +181,7 @@ export default function BlueprintWizard({
                                 </p>
                             )}
                             <p className="mt-2 text-xs text-muted-foreground">
-                                {bp.modules?.length ?? 0} modul
+                                {moduleNames(bp.modules).length} modul
                             </p>
                         </button>
                     ))}
@@ -210,7 +223,7 @@ export default function BlueprintWizard({
                             dan harus Anda nyalakan sendiri setelah ditinjau.
                         </p>
                         <div className="grid gap-2 sm:grid-cols-2">
-                            {(detail.modules || []).map((key) => (
+                            {moduleNames(detail.modules).map((key) => (
                                 <label
                                     key={key}
                                     className="flex items-center gap-2 rounded-md border p-2.5 text-sm"
@@ -220,7 +233,14 @@ export default function BlueprintWizard({
                                         checked={modules.has(key)}
                                         onChange={() => toggleModule(key)}
                                     />
-                                    <span className="flex-1">{moduleLabel(key)}</span>
+                                    <span className="flex-1">
+                                        {moduleLabel(key)}
+                                        {typeof detail.counts?.[key] === "number" && (
+                                            <span className="ml-1.5 text-xs text-muted-foreground">
+                                                ({detail.counts[key]})
+                                            </span>
+                                        )}
+                                    </span>
                                     {BEHAVIOUR_MODULES.has(key) && (
                                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
                                             mati

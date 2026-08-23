@@ -10,7 +10,12 @@ export interface BlueprintSummary {
     description?: string;
     industry?: string;
     version?: number;
+    /** Module names. The listing and the detail endpoint return the SAME shape
+     *  here; they used to disagree (list vs object), which crashed the wizard. */
     modules: string[];
+    /** How many items each module carries. `knowledge_base` counts as 1 - it
+     *  references a KB pack rather than inlining its articles. */
+    counts?: Record<string, number>;
     variables?: BlueprintVariable[];
 }
 

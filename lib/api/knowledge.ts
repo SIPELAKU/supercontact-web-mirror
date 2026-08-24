@@ -24,6 +24,10 @@ import type {
   KbArticleListParams,
   KbFeedbackRequest,
   KbFlagRequest,
+  KbBulkPublishRequest,
+  KbBulkPublishReport,
+  KbBulkStatusRequest,
+  KbBulkStatusReport,
 } from "../types/knowledge";
 
 // Re-export types for convenience (mirrors omnichannel.ts).
@@ -189,6 +193,30 @@ export async function publishKbArticle(token: string, id: string): Promise<KbArt
     headers: authHeaders(token),
   });
   return handle<KbArticle>(res, "Failed to publish article");
+}
+
+export async function bulkSetKbArticleStatus(
+  token: string,
+  payload: KbBulkStatusRequest
+): Promise<KbBulkStatusReport> {
+  const res = await fetchWithTimeout(`${API_BASE}/articles/bulk-status`, {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle<KbBulkStatusReport>(res, "Failed to update article status");
+}
+
+export async function bulkPublishKbArticles(
+  token: string,
+  payload: KbBulkPublishRequest
+): Promise<KbBulkPublishReport> {
+  const res = await fetchWithTimeout(`${API_BASE}/articles/bulk-publish`, {
+    method: "POST",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle<KbBulkPublishReport>(res, "Failed to publish articles");
 }
 
 export async function unpublishKbArticle(token: string, id: string): Promise<KbArticle> {

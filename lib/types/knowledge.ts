@@ -205,3 +205,43 @@ export interface KbFeedbackRequest {
 export interface KbFlagRequest {
   reason: string;
 }
+
+/** Exactly one selector is honoured by the API. `all_drafts` is never the
+ *  default: publishing a whole knowledge base should not be reachable by
+ *  forgetting a field. */
+export interface KbBulkPublishRequest {
+  article_ids?: string[];
+  category_ids?: string[];
+  all_drafts?: boolean;
+}
+
+export interface KbBulkPublishReport {
+  published: number;
+  /** Already published - the call is idempotent, they are not re-stamped. */
+  skipped: number;
+  /** Archived articles named explicitly. Archiving is a retraction, so bulk
+   *  publish never resurrects one; it reports instead of silently doing
+   *  nothing. */
+  skipped_archived: number;
+  failed: { article_id: string; error: string }[];
+}
+
+export interface KbBulkStatusRequest {
+  status: KbArticleStatus;
+  article_ids?: string[];
+  category_ids?: string[];
+  all_matching?: boolean;
+}
+
+export interface KbBulkStatusReport {
+  status: string;
+  /** Articles this call actually moved. */
+  changed: number;
+  /** Already in the target status - idempotent, not re-stamped. */
+  skipped: number;
+  /** Named explicitly but cannot make that transition, e.g. an archived
+   *  article asked to publish. Archiving is a retraction, so bulk publish
+   *  never resurrects one. */
+  skipped_ineligible: number;
+  failed: { article_id: string; error: string }[];
+}

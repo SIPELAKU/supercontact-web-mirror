@@ -16,6 +16,8 @@ import {
   fetchKbArticle,
   createKbArticle,
   updateKbArticle,
+  bulkPublishKbArticles,
+  bulkSetKbArticleStatus,
   publishKbArticle,
   unpublishKbArticle,
   archiveKbArticle,
@@ -50,6 +52,8 @@ import type {
   UpdateKbArticleRequest,
   KbArticleListParams,
   KbFeedbackRequest,
+  KbBulkPublishRequest,
+  KbBulkStatusRequest,
 } from "../types/knowledge";
 
 // Root cache key so a broad invalidate({ queryKey: ['knowledge'] }) can refresh
@@ -290,6 +294,41 @@ export function usePublishKbArticle() {
       return publishKbArticle(token, id);
     },
     onSuccess: (_a, id) => invalidateArticle(qc, id),
+  });
+}
+
+export function useBulkSetKbArticleStatus() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: KbBulkStatusRequest) => {
+      if (!token) throw new Error("No authentication token");
+      return bulkSetKbArticleStatus(token, payload);
+    },
+    // A bulk run can move dozens of rows and it also changes the blueprint
+    // activation checklist's KB count, so invalidate both.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [KB] });
+      qc.invalidateQueries({ queryKey: ["activation-checklist"] });
+    },
+  });
+}
+
+export function useBulkPublishKbArticles() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: KbBulkPublishRequest) => {
+      if (!token) throw new Error("No authentication token");
+      return bulkPublishKbArticles(token, payload);
+    },
+    // A bulk run can move dozens of rows and it also empties the blueprint
+    // activation checklist's KB item, so invalidate both rather than a single
+    // article key.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [KB] });
+      qc.invalidateQueries({ queryKey: ["activation-checklist"] });
+    },
   });
 }
 

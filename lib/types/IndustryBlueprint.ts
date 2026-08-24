@@ -64,13 +64,21 @@ export type ChecklistKind =
     | "conversation_queue"
     /** The account is still on `legacy` automation, so published flows do not
      *  run on it. Publishing a flow without this is silent no-op. */
-    | "automation_mode";
+    | "automation_mode"
+    /** Articles still sitting in draft. A pack installs dozens at once, and a
+     *  kb_answer flow node whose categories hold nothing published takes the
+     *  not_found branch every time - so the bot reads as broken rather than
+     *  unconfigured. Aggregated server-side into ONE row carrying `count`. */
+    | "kb_article";
 
 export interface ChecklistItem {
     kind: ChecklistKind;
     id: string;
     name: string | null;
     action: string;
+    /** Only on aggregated kinds (kb_article): how many rows this one item
+     *  stands for. */
+    count?: number;
 }
 
 export interface ActivationChecklist {

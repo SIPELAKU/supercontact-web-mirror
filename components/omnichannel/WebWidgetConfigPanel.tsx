@@ -59,6 +59,10 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   answer_bot_min_confidence: 0.3,
   answer_bot_intro_text: null,
   answer_bot_no_answer_text: null,
+  auto_close_idle_enabled: false,
+  idle_warn_minutes: 30,
+  idle_close_minutes: 30,
+  idle_warn_text: null,
 };
 
 const ToggleRow: React.FC<{
@@ -150,6 +154,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       answer_bot_min_confidence: config.answer_bot_min_confidence ?? DEFAULT_FORM.answer_bot_min_confidence,
       answer_bot_intro_text: config.answer_bot_intro_text ?? null,
       answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
+      auto_close_idle_enabled:
+        config.auto_close_idle_enabled ?? DEFAULT_FORM.auto_close_idle_enabled,
+      idle_warn_minutes: config.idle_warn_minutes ?? DEFAULT_FORM.idle_warn_minutes,
+      idle_close_minutes:
+        config.idle_close_minutes ?? DEFAULT_FORM.idle_close_minutes,
+      idle_warn_text: config.idle_warn_text ?? null,
     });
     setDomainsInput((config.allowed_domains || []).join(", "));
   }, [config]);
@@ -479,6 +489,85 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             placeholder="https://example.com/privacy"
           />
         </div>
+      </Section>
+
+      {/* Idle auto-close */}
+      <Section
+        title="Tutup otomatis saat tidak ada balasan"
+        description="Chat widget adalah sesi, bukan kotak masuk. Pengunjung yang pergi meninggalkan percakapan terbuka selamanya — memakan kuota agen dan tidak pernah menghasilkan survei CSAT."
+      >
+        <div className="border-t border-gray-100">
+          <ToggleRow
+            label="Aktifkan tutup otomatis"
+            description="Bot menanyakan apakah pengunjung masih ada, lalu menandai percakapan selesai bila tidak ada jawaban. Jam diam dihitung dari pesan MANUSIA terakhir — pesan bot tidak mereset hitungannya."
+            checked={form.auto_close_idle_enabled}
+            onChange={(checked) => setField("auto_close_idle_enabled", checked)}
+          />
+        </div>
+
+        {form.auto_close_idle_enabled && (
+          <>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Pesan "masih di sana?"
+              </label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.idle_warn_text ?? ""}
+                onChange={(e) => setField("idle_warn_text", e.target.value || null)}
+                placeholder="Masih di sana? Chat ini akan kami tutup bila tidak ada balasan."
+              />
+              <p className="text-xs text-gray-500">
+                Wajib diisi. Dikosongkan berarti fitur ini tidak berjalan sama
+                sekali — menutup chat tanpa pernah bertanya terbaca seperti chat
+                yang hilang.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Diam berapa menit sebelum ditanya
+                </label>
+                <AppInput
+                  fullWidth
+                  isBgWhite
+                  type="number"
+                  value={String(form.idle_warn_minutes)}
+                  inputProps={{ min: 1, max: 1440 }}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (!Number.isFinite(n)) return;
+                    setField("idle_warn_minutes", Math.min(1440, Math.max(1, n)));
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Menit setelah ditanya sebelum ditutup
+                </label>
+                <AppInput
+                  fullWidth
+                  isBgWhite
+                  type="number"
+                  value={String(form.idle_close_minutes)}
+                  inputProps={{ min: 1, max: 1440 }}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (!Number.isFinite(n)) return;
+                    setField("idle_close_minutes", Math.min(1440, Math.max(1, n)));
+                  }}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              Percakapan ditandai <strong>Selesai</strong>, bukan dihapus, sehingga
+              survei CSAT tetap terkirim. Pengunjung yang membalas setelah
+              ditanya membatalkan penutupan.
+            </p>
+          </>
+        )}
       </Section>
 
       {/* AI Answer Bot */}

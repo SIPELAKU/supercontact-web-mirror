@@ -6,18 +6,20 @@ import { ManageUserResponse, CreateManagedUserData, UpdateManagedUserData } from
 import { fetchManagedUsers, createManagedUser, updateManagedUser, deleteManagedUser } from "../api/manage-users";
     
 export function useManagedUsers(
-  page: number, 
+  page: number,
   limit: number,
   search?: string,
   position?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: "asc" | "desc"
 ) {
   const {token} = useAuth();
   return useQuery<ManageUserResponse, Error>({
-    queryKey: ["managed-users", page, limit, search, position, status],
+    queryKey: ["managed-users", page, limit, search, position, status, sortBy, sortOrder],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchManagedUsers(token, page, limit, search, position, status);
+      return fetchManagedUsers(token, page, limit, search, position, status, sortBy, sortOrder);
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,

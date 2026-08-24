@@ -21,13 +21,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 import { UpdateSubscriberData } from '@/lib/api/email-marketing/subscribers';
 
-export function useSubscribers(page: number = 1, limit: number = 10, search?: string) {
+export function useSubscribers(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+) {
   return useQuery<SubscribersResponse>({
-    queryKey: ['subscribers', page, limit, search],
+    queryKey: ['subscribers', page, limit, search, sortBy, sortOrder],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchSubscribers(token, page, limit, search);
+      return fetchSubscribers(token, page, limit, search, sortBy, sortOrder);
     },
   });
 }

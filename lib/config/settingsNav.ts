@@ -8,12 +8,19 @@
 import {
   Building2,
   CreditCard,
+  Facebook,
+  Globe,
+  Instagram,
+  LifeBuoy,
   Mail,
   MessageCircle,
   Network,
   Plug,
   Shield,
+  Smartphone,
+  Sparkles,
   Ticket,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import type { SettingsItem, SettingsRegistry, SettingsSection } from "@/lib/types/Settings";
@@ -29,6 +36,30 @@ export const settingsNav: SettingsRegistry = [
     ],
   },
   {
+    // Onboarding sits near the top on purpose: it is the first thing a new
+    // tenant needs and the place they return to after installing a blueprint,
+    // to work through what was deliberately left switched off.
+    id: "onboarding",
+    title: "Setup Cepat",
+    icon: Sparkles,
+    path: "/settings/onboarding",
+    permission: ["omnichannel:setup", "conversations:config:manage"],
+  },
+  {
+    id: "sales",
+    title: "Sales",
+    icon: TrendingUp,
+    permission: "pipelines",
+    children: [
+      {
+        id: "pipeline-stages",
+        title: "Tahapan Penjualan",
+        path: "/settings/sales/pipeline-stages",
+        permission: "pipelines",
+      },
+    ],
+  },
+  {
     id: "support",
     title: "Support",
     icon: Ticket,
@@ -36,10 +67,62 @@ export const settingsNav: SettingsRegistry = [
     children: [
       { id: "categories", title: "Categories", path: "/settings/support/categories" },
       { id: "custom-fields", title: "Custom Fields", path: "/settings/support/custom-fields" },
+      { id: "ticket-forms", title: "Ticket Forms", path: "/settings/support/ticket-forms" },
       { id: "sla", title: "SLA Policies", path: "/settings/support/sla" },
+      {
+        id: "conversation-sla",
+        title: "Conversation SLA",
+        path: "/settings/support/conversation-sla",
+        permission: "omnichannel:setup",
+      },
+      {
+        id: "routing",
+        title: "Routing",
+        path: "/settings/support/routing",
+        permission: "omnichannel:use",
+      },
       { id: "business-hours", title: "Business Hours", path: "/settings/support/business-hours" },
+      {
+        // Per-agent reply signature. Any agent who can reply to tickets manages
+        // their own, so this item is NOT gated behind the section's
+        // tickets:config:manage - it carries its own agent-level permission set.
+        id: "signature",
+        title: "My Signature",
+        path: "/settings/support/signature",
+        permission: ["tickets:write:my", "tickets:write:team", "tickets", "tickets:config:manage"],
+      },
       { id: "macros", title: "Macros", path: "/settings/support/macros" },
       { id: "automation", title: "Automation", path: "/settings/support/automation" },
+      {
+        // CSAT surveys carry their own support:csat:* grants rather than the
+        // section's tickets:config:manage: a user may hold only the view grant
+        // (see responses) or the manage grant (enable + configure).
+        id: "csat",
+        title: "CSAT Surveys",
+        path: "/settings/support/csat",
+        permission: ["support:csat:manage", "support:csat:view"],
+      },
+      {
+        // QA scorecard administration (Phase 8D). Carries its own dedicated
+        // grant instead of the section's tickets:config:manage - scorecard
+        // design is a QA-lead task, not a general ticket-config one.
+        id: "qa",
+        title: "QA Scorecards",
+        path: "/settings/support/qa",
+        permission: "support:qa:manage",
+      },
+      {
+        id: "canned-replies",
+        title: "Canned Replies",
+        path: "/settings/support/canned-replies",
+        permission: "omnichannel:setup",
+      },
+      {
+        id: "agents",
+        title: "Agents",
+        path: "/settings/support/agents",
+        permission: "agents:read",
+      },
     ],
   },
   {
@@ -48,6 +131,43 @@ export const settingsNav: SettingsRegistry = [
     icon: MessageCircle,
     path: "/settings/whatsapp",
     permission: "omnichannel:setup",
+  },
+  {
+    id: "sms",
+    title: "SMS",
+    icon: Smartphone,
+    path: "/settings/sms",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "messenger",
+    title: "Messenger",
+    icon: Facebook,
+    path: "/settings/messenger",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "instagram",
+    title: "Instagram",
+    icon: Instagram,
+    path: "/settings/instagram",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "web-widget",
+    title: "Web Widget",
+    icon: Globe,
+    path: "/settings/web-widget",
+    permission: "omnichannel:setup",
+  },
+  {
+    id: "help-center",
+    title: "Help Center",
+    icon: LifeBuoy,
+    path: "/settings/help-center",
+    // Portal admin reuses the Knowledge Base "manage" grant (Phase 7C decision
+    // #2) - no dedicated help_center:manage permission.
+    permission: "knowledge:manage",
   },
   {
     id: "email",

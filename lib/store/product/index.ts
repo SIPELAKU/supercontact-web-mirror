@@ -20,6 +20,8 @@ type FetchProductParams = {
   page: number;
   limit: number;
   search?: string;
+  sort_by?: string;
+  sort_order?: "asc" | "desc";
 };
 
 
@@ -46,8 +48,11 @@ interface GetState {
   id: string;
   pagination: Pagination;
   searchQuery: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 
   setSearchQuery: (val?: string) => void;
+  setSort: (sortBy?: string, sortOrder?: "asc" | "desc") => void;
 
   fetchProduct: (params?: Partial<FetchProductParams>) => Promise<void>;
 
@@ -66,6 +71,12 @@ interface GetState {
   }>;
 
   deleteProduct: (id: string) => Promise<{
+    success: boolean;
+    error?: string;
+    validation?: ValidationItem[];
+  }>;
+
+  duplicateProducts: (ids: string[]) => Promise<{
     success: boolean;
     error?: string;
     validation?: ValidationItem[];
@@ -91,6 +102,8 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
   setSearchQuery: (v) => set({ searchQuery: v }),
 
+  setSort: (sortBy, sortOrder) => set({ sortBy, sortOrder }),
+
   fetchProduct: async (params) => {
     try {
       set({ loading: true, error: null });
@@ -105,6 +118,12 @@ export const useGetProductStore = create<GetState>((set, get) => ({
       const search = params?.search ?? get().searchQuery;
       if (search && search.trim() !== "") {
         query.search = search;
+      }
+
+      const sortBy = params?.sort_by ?? get().sortBy;
+      if (sortBy) {
+        query.sort_by = sortBy;
+        query.sort_order = params?.sort_order ?? get().sortOrder ?? "asc";
       }
 
       const res = await api.get("/products", {
@@ -247,6 +266,45 @@ export const useGetProductStore = create<GetState>((set, get) => ({
         error:
           axiosErr.message ??
           "Failed to delete product",
+      };
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  duplicateProducts: async (ids: string[]) => {
+    try {
+      set({ loading: true, error: null });
+
+      // Mirrors POST /contacts/duplicate: { product_ids } -> { total, created, products }
+      const res = await api.post(`/products/duplicate`, { product_ids: ids });
+
+      if (res.status === 200 || res.status === 201) {
+        await get().fetchProduct({
+          page: get().pagination.page,
+          limit: get().pagination.limit
+        });
+        return { success: true };
+      }
+
+      return { success: false, error: "Unexpected response" };
+
+    } catch (error) {
+
+      const axiosErr = error as AxiosError<any>;
+      if (axiosErr.response?.data?.error) {
+        const errorData = axiosErr.response.data.error;
+        return {
+          success: false,
+          error: typeof errorData === 'object' ? errorData.message : errorData,
+          validation: errorData.details,
+        };
+      }
+      return {
+        success: false,
+        error:
+          axiosErr.message ??
+          "Failed to duplicate products",
       };
     } finally {
       set({ loading: false });

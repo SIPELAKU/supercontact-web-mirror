@@ -12,12 +12,26 @@ import { AppButton } from '@/components/ui/app-button';
 import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 import { Stack } from '@mui/material';
-import { Trash2 } from 'lucide-react';
+import { Trash2, LayoutTemplate } from 'lucide-react';
 import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
+import { EmptyState } from '@/components/ui/empty-state';
+
+const APPROVAL_STATUS_OPTIONS: BroadcastTemplate['whatsapp_approval_status'][] = [
+  'Not submitted',
+  'Received',
+  'Pending',
+  'Approved',
+  'Rejected',
+  'Paused',
+  'Disabled',
+];
 
 interface BroadcastTemplatesTableProps {
   templates: BroadcastTemplate[];
   isLoading: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   totalCount: number;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   onCreate: () => void;
@@ -29,6 +43,9 @@ interface BroadcastTemplatesTableProps {
 const BroadcastTemplatesTable = ({
   templates,
   isLoading,
+  isError,
+  errorMessage,
+  onRetry,
   totalCount,
   onStateChange,
   onCreate,
@@ -72,17 +89,18 @@ const BroadcastTemplatesTable = ({
       {
         accessorKey: 'whatsapp_approval_status',
         header: 'Approval Status',
-        filterVariant: 'text',
+        filterVariant: 'select',
+        filterSelectOptions: APPROVAL_STATUS_OPTIONS,
         Cell: ({ row }) => (
           <TemplateApprovalStatusBadge status={row.original.whatsapp_approval_status} />
         ),
       },
       {
         accessorKey: 'created_at',
-        header: 'Last Update',
+        header: 'Updated',
         Cell: ({ cell }) => {
           const date = cell.getValue<string>();
-          return date ? format(new Date(date), 'MMMM d, yyyy') : '-';
+          return date ? format(new Date(date), 'dd MMM yyyy, HH:mm') : '-';
         },
       },
     ],
@@ -96,7 +114,19 @@ const BroadcastTemplatesTable = ({
       columns={columns}
       rowCount={totalCount}
       isLoading={isLoading}
+      isError={isError}
+      errorMessage={errorMessage}
+      onRetry={onRetry}
+      renderEmptyState={() => (
+        <EmptyState
+          icon={LayoutTemplate}
+          title="No templates found"
+          description="Create a WhatsApp template and submit it for approval to start broadcasting."
+          action={{ label: "Create Template", onClick: onCreate, icon: <Plus size={16} /> }}
+        />
+      )}
       manualPagination={true}
+      manualFiltering={true}
       onStateChange={(state) => {
         onStateChange({
           page: state.pagination.pageIndex + 1,
@@ -128,7 +158,7 @@ const BroadcastTemplatesTable = ({
           onClick={onCreate}
           startIcon={<Plus size={16} />}
         >
-          Create Template
+          <span className="hidden sm:inline">Create Template</span>
         </AppButton>
       )}
       renderBulkActions={({ selectedRows, clearSelection }) => (

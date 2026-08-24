@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Typography } from "@mui/material";
 
 import { useAuth } from "@/lib/context/AuthContext";
@@ -13,7 +13,6 @@ import {
 
 import {
   AddMemberButton,
-  DeleteMembersModal,
   DepartementTableMember as DepartmentsTableMember,
   DepartmentsCardInfo,
   DepartmentsCardInfoSkeleton,
@@ -21,6 +20,7 @@ import {
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { SuperTableState } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface FormattedMember {
   id: string;
@@ -47,6 +47,7 @@ export default function DetailDepartments() {
     pagination: { pageIndex: 0, pageSize: 10 },
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[],
   });
 
   // Extract filters from SuperTable state
@@ -54,6 +55,17 @@ export default function DetailDepartments() {
     .find((f) => f.id === "position")?.value as string | undefined;
   const statusFilter = tableState.columnFilters
     .find((f) => f.id === "status")?.value as string | undefined;
+
+  // Server-side sorting: map table column ids to backend field names
+  const MEMBER_SORT_KEYS: Record<string, string> = {
+    user: "name", // backend member whitelist key for the joined User.fullname
+    id_employee: "employee_code",
+  };
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam ? (MEMBER_SORT_KEYS[sortParam.id] ?? sortParam.id) : undefined;
+  const sortOrderParam: "asc" | "desc" | undefined = sortParam
+    ? (sortParam.desc ? "desc" : "asc")
+    : undefined;
 
   // React Query Hooks
   const { data: departmentResponse, isLoading: isLoadingDept } =
@@ -64,6 +76,7 @@ export default function DetailDepartments() {
     isLoading: isLoadingMembers,
     isError: isErrorMembers,
     error: errorMembers,
+    refetch: refetchMembers,
   } = useDepartmentMembers(
     id,
     tableState.pagination.pageIndex,
@@ -72,11 +85,34 @@ export default function DetailDepartments() {
     {
       position: positionFilter || undefined,
       status: statusFilter || undefined,
-    }
+    },
+    sortByParam,
+    sortOrderParam
   );
 
-  const deleteMutation = useDeleteMember(id, ""); // memberId is required in hook params for React Query key, but the mutation actually takes args if not supplied in hook or we can just use regular hook. The hook is useDeleteMember(deptId, memberId) which is suboptimal for bulk.
-  // Wait, let's look at useDeleteMember implementation.
+  const router = useRouter();
+  const deleteMutation = useDeleteMember(id, memberId ?? "");
+
+  // Ported as-is from the deleted DeleteMembersModal (departments-modal/delete-members)
+  const handleConfirmDeleteMember = async () => {
+    if (memberId && id) {
+      try {
+        if (!token) {
+          notify.error("No authentication token", {
+            description: "Please login to continue",
+          });
+          router.push("/login");
+          return;
+        }
+        await deleteMutation.mutateAsync();
+        notify.success("Member deleted successfully");
+        setOpenDelete(false);
+      } catch (error) {
+        console.error("Failed to delete department:", error);
+        notify.error("Failed to delete member");
+      }
+    }
+  };
 
   const departmentData = departmentResponse?.data;
   const totalItems = membersResponse?.data?.total || 0;
@@ -104,14 +140,26 @@ export default function DetailDepartments() {
       },
       globalFilter: newState.globalFilter,
       columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+      sorting: (newState.sorting || []) as { id: string; desc: boolean }[],
     });
   }, []);
 
   // Bulk Delete
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    members: FormattedMember[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedMembers: FormattedMember[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ members: selectedMembers, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { members: selectedMembers, clearSelection } = bulkDeleteTarget;
     if (!token) return;
     setIsBulkDeleting(true);
     let successCount = 0;
@@ -137,15 +185,16 @@ export default function DetailDepartments() {
     }
 
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} member berhasil dihapus`);
+      notify.success(`${successCount} member(s) deleted successfully`);
       // Simpan trigeger manual refresh walau tidak pakai useMutation via API call langsung, atau anggap table refetch on close (karena hook tak dirender ulang otomatis)
       // Idealnya reload dengan me-mutate SWR/ReactQuery key
     }
     if (failCount > 0) {
-      notify.error(`${failCount} member gagal dihapus`);
+      notify.error(`${failCount} member(s) failed to delete`);
     }
 
     // We should trigger a refetch here. Just reloading the page is dirty, let the user manually refresh or we can keep it as is.
@@ -255,6 +304,8 @@ export default function DetailDepartments() {
         members={members}
         isLoading={isLoadingMembers}
         isError={isErrorMembers}
+        errorMessage={errorMembers instanceof Error ? errorMembers.message : undefined}
+        onRetry={() => refetchMembers()}
         rowCount={totalItems}
         departmentId={id}
         onStateChange={handleTableStateChange}
@@ -304,13 +355,30 @@ export default function DetailDepartments() {
       />
 
       {memberId && (
-        <DeleteMembersModal
-          open={openDelete}
-          setOpen={setOpenDelete}
-          departmentId={id}
-          memberId={memberId}
+        <ConfirmationPopup
+          isOpen={openDelete}
+          onClose={() => setOpenDelete(false)}
+          onConfirm={handleConfirmDeleteMember}
+          title="Are you sure you want to delete this member?"
+          description="This action is permanent and cannot be undone"
+          confirmText="Delete Member"
+          cancelText="Cancel"
+          variant="danger"
+          isLoading={deleteMutation.isPending}
         />
       )}
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Remove ${bulkDeleteTarget?.members.length ?? 0} member(s)?`}
+        description="The selected members will be removed from this department. This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
+      />
     </div>
   );
 }

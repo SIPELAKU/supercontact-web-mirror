@@ -5,6 +5,8 @@ import {
     createTicketAutomationRule,
     updateTicketAutomationRule,
     deleteTicketAutomationRule,
+    fetchAutoCloseSetting,
+    updateAutoCloseSetting,
     CreateTicketAutomationRuleDTO,
     UpdateTicketAutomationRuleDTO,
 } from "@/lib/api/ticket-automation-rules";
@@ -53,5 +55,28 @@ export function useDeleteTicketAutomationRule() {
             return deleteTicketAutomationRule(token, id);
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket-automation-rules"] }),
+    });
+}
+
+export function useAutoCloseSetting() {
+    const { getToken } = useAuth();
+    return useQuery({
+        queryKey: ["ticket-auto-close-setting"],
+        queryFn: async () => {
+            const token = await getToken();
+            return fetchAutoCloseSetting(token);
+        },
+    });
+}
+
+export function useUpdateAutoCloseSetting() {
+    const { getToken } = useAuth();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (auto_close_solved_days: number | null) => {
+            const token = await getToken();
+            return updateAutoCloseSetting(token, auto_close_solved_days);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket-auto-close-setting"] }),
     });
 }

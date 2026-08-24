@@ -48,6 +48,25 @@ const aboutPageSchema = {
     },
 };
 
+const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+        {
+            "@type": "ListItem",
+            position: 1,
+            name: "Beranda",
+            item: "https://www.smartsales.id/",
+        },
+        {
+            "@type": "ListItem",
+            position: 2,
+            name: "Tentang Kami",
+            item: PAGE_URL,
+        },
+    ],
+};
+
 export default function CompanyPage() {
     return (
         <>
@@ -55,6 +74,11 @@ export default function CompanyPage() {
                 id="company-schema"
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageSchema) }}
+            />
+            <script
+                id="company-breadcrumb-schema"
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
             <CompanyClient />
         </>

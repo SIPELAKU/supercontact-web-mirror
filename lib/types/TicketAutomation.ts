@@ -1,4 +1,4 @@
-export type TicketAutomationTriggerType = "on_create" | "on_update";
+export type TicketAutomationTriggerType = "on_create" | "on_update" | "time_based";
 
 export type TicketConditionOp = "eq" | "neq" | "in" | "changed_to" | "changed_from";
 

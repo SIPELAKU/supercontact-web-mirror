@@ -8,8 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
+import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
+import { useTicketForms } from "@/lib/hooks/useTicketForms";
 import { Ticket } from "@/lib/types/Ticket";
 import { AppButton } from "@/components/ui/app-button";
+import { buildVisibilityValues, isFieldVisible } from "@/lib/utils/ticketFieldVisibility";
 import TicketCategorySelect from "./TicketCategorySelect";
 import TicketTagsInput from "./TicketTagsInput";
 import TicketCustomFieldsPanel from "./TicketCustomFieldsPanel";
@@ -22,7 +25,7 @@ interface TicketFormProps {
 }
 
 export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: TicketFormProps) {
-    const { register, handleSubmit, setValue, control, formState: { errors } } = useForm({
+    const { register, handleSubmit, setValue, control, watch, formState: { errors } } = useForm({
         defaultValues: {
             subject: initialData?.subject || "",
             description: initialData?.description || "",
@@ -30,16 +33,54 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             customer_email: initialData?.customer_email || "",
             priority: initialData?.priority || "",
             status: initialData?.status || "",
+            type: initialData?.type || "",
             assigned_agent_id: initialData?.assigned_agent_id || "",
             category_id: initialData?.category_id || null,
             tags: initialData?.tags?.map((t) => t.name) || [],
             custom_fields: initialData?.custom_fields || {},
+            form_id: initialData?.form_id || "",
         } as any
     });
 
     const [agentSearch, setAgentSearch] = useState("");
     const { data: agentData, isLoading: isLoadingAgents } = useAssignableAgents(agentSearch);
     const agents = agentData?.data || [];
+
+    // Inc 4: watch the built-in fields a custom field can be conditioned on, so the
+    // panel re-evaluates visibility reactively as the user edits them.
+    const watchedType = watch("type" as any);
+    const watchedPriority = watch("priority");
+    const watchedStatus = watch("status");
+    const builtInValues = { type: watchedType, priority: watchedPriority, status: watchedStatus };
+
+    // Definitions are also needed at submit time to strip values of fields that are
+    // hidden by their visibility condition (matching backend validate_custom_fields).
+    const { data: customFieldData } = useTicketCustomFields();
+    const customFieldDefs = customFieldData?.data?.data || [];
+
+    // Inc 7: optional ticket form picker. Only active forms are offered; selecting
+    // one sets form_id on the ticket. Purely additive/non-breaking - no field is
+    // blocked when a form isn't chosen.
+    const { data: ticketForms = [] } = useTicketForms();
+    const activeForms = ticketForms.filter((f) => f.is_active);
+    const formOptions = [
+        { label: "None", value: "" },
+        ...activeForms
+            .slice()
+            .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+            .map((f) => ({ label: f.name, value: f.id })),
+    ];
+    const watchedFormId = watch("form_id" as any);
+    const selectedForm = activeForms.find((f) => f.id === watchedFormId) || null;
+    const FIELD_LABELS: Record<string, string> = {
+        subject: "Subject",
+        description: "Description",
+        type: "Type",
+        priority: "Priority",
+        status: "Status",
+    };
+    const fieldLabelFor = (key: string) =>
+        FIELD_LABELS[key] || customFieldDefs.find((d: any) => d.field_key === key)?.label || key;
 
     const agentOptions = agents.map((agent: any) => ({
         label: agent.fullname,
@@ -58,6 +99,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
     }, []);
 
     const priorityOptions = [
+        { label: "Urgent", value: "Urgent" },
         { label: "High", value: "High" },
         { label: "Medium", value: "Medium" },
         { label: "Low", value: "Low" },
@@ -65,8 +107,20 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
 
     const statusOptions = [
         { label: "Open", value: "Open" },
+        { label: "Pending", value: "Pending" },
+        { label: "On-hold", value: "On-hold" },
         { label: "In Progress", value: "In Progress" },
+        { label: "Solved", value: "Solved" },
         { label: "Closed", value: "Closed" },
+    ];
+
+    // Type is nullable — the empty option lets the user clear it back to "None".
+    const typeOptions = [
+        { label: "None", value: "" },
+        { label: "Question", value: "Question" },
+        { label: "Incident", value: "Incident" },
+        { label: "Problem", value: "Problem" },
+        { label: "Task", value: "Task" },
     ];
 
     useEffect(() => {
@@ -77,15 +131,41 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
             setValue("customer_email", initialData.customer_email);
             setValue("priority", initialData.priority);
             setValue("status", initialData.status);
+            setValue("type" as any, initialData.type || "");
             setValue("assigned_agent_id", initialData.assigned_agent_id || "");
             setValue("category_id" as any, initialData.category_id || null);
             setValue("tags" as any, initialData.tags?.map((t) => t.name) || []);
             setValue("custom_fields" as any, initialData.custom_fields || {});
+            setValue("form_id" as any, initialData.form_id || "");
         }
     }, [initialData, setValue]);
 
+    // Normalize the nullable Type field: an empty selection ("None") must be
+    // sent as null, not "", so the backend clears it rather than rejecting "".
+    // Inc 4: also drop values of custom fields hidden by their visibility condition
+    // (evaluated against the final submitted state) so they aren't persisted and a
+    // hidden required field can't block submit — mirroring the backend.
+    const handleFormSubmit = (data: any) => {
+        const customFields = { ...(data.custom_fields || {}) };
+        const visibilityValues = buildVisibilityValues(
+            { type: data.type, priority: data.priority, status: data.status },
+            customFields
+        );
+        for (const def of customFieldDefs) {
+            if (!isFieldVisible(def.visibility_condition ?? null, visibilityValues)) {
+                delete customFields[def.field_key];
+            }
+        }
+        onSubmit({
+            ...data,
+            type: data.type || null,
+            form_id: data.form_id || null,
+            custom_fields: customFields,
+        });
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="subject" className="font-bold text-gray-800 text-base">Subject</Label>
                 <AppInput
@@ -109,7 +189,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message as string}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label htmlFor="customer_name" className="font-bold text-gray-800 text-base">Customer Name</Label>
                     <AppInput
@@ -138,7 +218,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label className="font-bold text-gray-800 text-base">Priority</Label>
                     <Controller
@@ -175,26 +255,44 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label className="font-bold text-gray-800 text-base">Assigned Agent</Label>
-                <Controller
-                    name="assigned_agent_id"
-                    control={control}
-                    render={({ field }) => (
-                        <AppAutocomplete
-                            isBgWhite
-                            options={agentOptions}
-                            placeholder="Search and select agent"
-                            value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
-                            onChange={(e, newValue) => field.onChange((newValue as { value: string; label: string } | null)?.value || "")}
-                            onInputChange={handleAgentSearchChange}
-                            loading={isLoadingAgents}
-                        />
-                    )}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Type</Label>
+                    <Controller
+                        name={"type" as any}
+                        control={control}
+                        render={({ field }) => (
+                            <AppSelect
+                                options={typeOptions}
+                                placeholder="Select Type"
+                                value={field.value}
+                                isBgWhite={true}
+                                onChange={(e) => field.onChange(e.target.value)}
+                            />
+                        )}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label className="font-bold text-gray-800 text-base">Assigned Agent</Label>
+                    <Controller
+                        name="assigned_agent_id"
+                        control={control}
+                        render={({ field }) => (
+                            <AppAutocomplete
+                                isBgWhite
+                                options={agentOptions}
+                                placeholder="Search and select agent"
+                                value={field.value ? (agentOptions.find((opt: { value: string; label: string }) => opt.value === field.value) || { value: field.value, label: initialData?.assigned_agent?.fullname || "Current Agent" }) : null}
+                                onChange={(e, newValue) => field.onChange((newValue as { value: string; label: string } | null)?.value || "")}
+                                onInputChange={handleAgentSearchChange}
+                                loading={isLoadingAgents}
+                            />
+                        )}
+                    />
+                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div className="space-y-2">
                     <Label className="font-bold text-gray-800 text-base">Category</Label>
                     <Controller
@@ -217,6 +315,35 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                 </div>
             </div>
 
+            {formOptions.length > 1 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                        <Label className="font-bold text-gray-800 text-base">Form</Label>
+                        <Controller
+                            name={"form_id" as any}
+                            control={control}
+                            render={({ field }) => (
+                                <AppSelect
+                                    options={formOptions}
+                                    placeholder="Select Form"
+                                    value={field.value}
+                                    isBgWhite={true}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                />
+                            )}
+                        />
+                        {selectedForm && selectedForm.field_layout?.length > 0 && (
+                            <p className="text-xs text-gray-400">
+                                Recommended fields:{" "}
+                                {selectedForm.field_layout
+                                    .map((f) => `${fieldLabelFor(f.field)}${f.required ? "*" : ""}`)
+                                    .join(", ")}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <Controller
                 name={"custom_fields" as any}
                 control={control}
@@ -224,6 +351,7 @@ export function TicketForm({ initialData, onSubmit, onCancel, isLoading }: Ticke
                     <TicketCustomFieldsPanel
                         values={field.value || {}}
                         onChange={(key, value) => field.onChange({ ...(field.value || {}), [key]: value })}
+                        builtInValues={builtInValues}
                     />
                 )}
             />

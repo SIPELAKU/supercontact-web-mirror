@@ -1,14 +1,18 @@
 // components/email-marketing/mailing-lists/MailingListsTable.tsx
 "use client";
 
-import { Box, CircularProgress, Paper, Typography } from '@mui/material';
-import { ChevronRight, Plus } from 'lucide-react';
-import Link from 'next/link';
-import { useState, ChangeEvent, MouseEvent } from 'react';
+import { Box } from '@mui/material';
+import { format } from 'date-fns';
+import { Mail, Plus } from 'lucide-react';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
-import Pagination from '@/components/ui/pagination';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
+import { fetchMailingLists } from '@/lib/api';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { notify } from '@/lib/notifications';
 import { MailingList } from '@/lib/types/email-marketing';
@@ -21,111 +25,137 @@ interface MailingListsTableProps {
 }
 
 const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const router = useRouter();
 
-  const { data, isLoading, error } = useMailingLists(page + 1, rowsPerPage);
+  // Server-side pagination + search driven by SuperTable state
+  const [tableState, setTableState] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+    globalFilter: '',
+  });
+
+  const { data, isLoading, isError, error, refetch } = useMailingLists(
+    tableState.pageIndex + 1,
+    tableState.pageSize,
+    tableState.globalFilter
+  );
 
   const lists = data?.data?.mailing_lists || [];
   const totalCount = data?.data?.total || 0;
 
-  const handlePageChange = (
-    _event: MouseEvent<HTMLButtonElement> | null,
-    newPage: number
-  ) => {
-    setPage(newPage);
+  useEffect(() => {
+    if (isError && error) {
+      notify.error('Failed to fetch mailing lists.');
+    }
+  }, [isError, error]);
+
+  // Export the full (searched) set, not just the visible page
+  const handleExportRequest = async (params: { format: 'csv' | 'excel'; currentState: SuperTableState }) => {
+    const token = Cookies.get('access_token');
+    if (!token) return [];
+    try {
+      const LIMIT_PER_PAGE = 100;
+      let allData: MailingList[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      do {
+        const res = await fetchMailingLists(token, currentPage, LIMIT_PER_PAGE, params.currentState.globalFilter);
+        allData = [...allData, ...(res?.data?.mailing_lists || [])];
+        totalPages = res?.data?.total_pages || 1;
+        currentPage++;
+      } while (currentPage <= totalPages);
+      return allData;
+    } catch (err) {
+      console.error('Export error:', err);
+      return [];
+    }
   };
 
-  const handleRowsPerPageChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  if (error) {
-    notify.error('Failed to fetch mailing lists.');
-  }
+  const columns = useMemo<MRT_ColumnDef<MailingList>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        Cell: ({ cell }) => (
+          <span className="font-semibold text-gray-900">{cell.getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'subscriber_count',
+        header: 'Subscribers',
+        size: 120,
+        Cell: ({ cell }) => <>{cell.getValue<number>()?.toLocaleString() ?? 0}</>,
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        Cell: ({ cell }) => {
+          const value = cell.getValue<string>();
+          return (
+            <span className="text-sm text-gray-600">
+              {value ? format(new Date(value), 'dd MMM yyyy, HH:mm') : '-'}
+            </span>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
-    <Box sx={{ width: '100%' }}>
-      {/* Toolbar */}
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Mailing Lists ({totalCount})</Typography>
+    <SuperTable<MailingList>
+      tableId="mailing-lists-table"
+      columns={columns}
+      data={lists}
+      isLoading={isLoading}
+      isError={isError}
+      errorMessage="Failed to load mailing lists. Please try again."
+      onRetry={() => refetch()}
+      manualPagination={true}
+      manualFiltering={true}
+      rowCount={totalCount}
+      onStateChange={(state) => {
+        setTableState({
+          pageIndex: state.pagination.pageIndex,
+          pageSize: state.pagination.pageSize,
+          globalFilter: state.globalFilter,
+        });
+      }}
+      onExportRequest={handleExportRequest as any}
+      onRowClick={(row) => router.push(`/email-marketing/mailing-lists/${row.id}`)}
+      renderTopLeftToolbar={() => (
         <AppButton
           variantStyle="primary"
           startIcon={<Plus className="w-4 h-4" />}
           onClick={onAdd}
         >
-          Create New List
+          Add Mailing List
         </AppButton>
-      </Box>
-
-      {/* Lists */}
-      <Box sx={{ px: 3, pb: 3 }}>
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : lists.length === 0 ? (
-          <Typography sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-            No mailing lists yet.
-          </Typography>
-        ) : (
-          lists.map((list) => (
-            <Paper
-              key={list.id}
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: 2,
-                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
-              }}
-            >
-              <Link
-                href={`/email-marketing/mailing-lists/${list.id}`}
-                style={{
-                  flex: 1,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px'
-                }}
-              >
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>{list.name}</Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center', mx: 2, minWidth: '80px' }}>
-                  <Typography variant="body1" fontWeight={600}>{list.subscriber_count}</Typography>
-                  <Typography variant="caption" color="text.secondary">Contacts</Typography>
-                </Box>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </Link>
-
-              <Box sx={{ borderLeft: 1, borderColor: 'divider', p: 1, display: 'flex', gap: 0.5 }}>
-                <EditButton onClick={() => onEdit(list)} />
-                <DeleteButton onClick={() => onDeleteRequest(list)} />
-              </Box>
-            </Paper>
-          ))
-        )}
-
-        {lists.length > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Pagination
-              count={totalCount}
-              page={page}
-              rowsPerPage={rowsPerPage}
-              onPageChange={handlePageChange}
-              onRowsPerPageChange={handleRowsPerPageChange}
-            />
-          </Box>
-        )}
-      </Box>
-    </Box>
+      )}
+      renderRowActions={({ row }) => (
+        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+          <EditButton onClick={() => onEdit(row.original)} />
+          <DeleteButton onClick={() => onDeleteRequest(row.original)} />
+        </Box>
+      )}
+      renderEmptyState={() => (
+        <EmptyState
+          icon={Mail}
+          title="No mailing lists yet"
+          description="Create a mailing list to start collecting subscribers."
+          action={{ label: 'Add Mailing List', onClick: onAdd, icon: <Plus size={16} /> }}
+        />
+      )}
+      initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+      features={{
+        // API has no sort params - avoid a misleading page-only sort
+        sorting: false,
+        globalFilter: true,
+        columnFilters: false,
+        pagination: true,
+        export: { excel: true, csv: true },
+      }}
+    />
   );
 };
 

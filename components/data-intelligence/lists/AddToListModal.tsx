@@ -9,7 +9,6 @@ import { getMyTargetCompanies } from "@/lib/api/company-intelligence";
 import { useAddCompanyListMembers } from "@/lib/hooks/useCompanyLists";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
-import { Loader2 } from "lucide-react";
 
 interface AddToListModalProps {
     open: boolean;
@@ -143,11 +142,11 @@ export default function AddToListModal({
                 </div>
 
                 <div className="flex justify-end gap-3 border-t border-gray-100 p-6">
-                    <AppButton onClick={onClose} variantStyle="outline" color="gray">
+                    <AppButton onClick={onClose} variantStyle="outline" color="gray" disabled={isSaving}>
                         Cancel
                     </AppButton>
-                    <AppButton onClick={handleSubmit} disabled={isSaving} variantStyle="primary">
-                        {isSaving ? <Loader2 className="animate-spin" /> : `Add ${selected.size > 0 ? `(${selected.size})` : ""}`}
+                    <AppButton onClick={handleSubmit} disabled={isSaving} isLoading={isSaving} variantStyle="primary">
+                        {`Add ${selected.size > 0 ? `(${selected.size})` : ""}`}
                     </AppButton>
                 </div>
             </div>

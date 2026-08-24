@@ -2,14 +2,17 @@
 
 import React, { useState } from "react";
 import { useSendMessage, useUploadMedia } from "@/lib/hooks/useOmnichannel";
+import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
+import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import type { ChannelType } from "@/lib/types/omnichannel";
 
 interface MessageInputProps {
   conversationId: string;
-  channelType: 'whatsapp' | 'email';
+  channelType: ChannelType;
   onMessageSent?: () => void;
 }
 
@@ -18,6 +21,8 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const sendMessageMutation = useSendMessage();
   const uploadMediaMutation = useUploadMedia();
+  // Best-effort agent-typing signal (throttled ~2s), fired on each keystroke.
+  const notifyAgentTyping = useAgentTypingSignal(conversationId);
 
   const isSubmitting = sendMessageMutation.isPending || uploadMediaMutation.isPending;
 
@@ -36,6 +41,16 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
   const handleSendMessage = async () => {
     if (!message.trim() && !selectedFile) {
       notify.warning("Empty Message", { description: "Please enter a message or select a file." });
+      return;
+    }
+
+    // SMS and Messenger/Instagram are text-only for now - the media upload path is
+    // WhatsApp-specific (and the backend rejects media for all three with a 400).
+    if ((channelType === "sms" || channelType === "messenger" || channelType === "instagram") && selectedFile) {
+      const channelLabel = channelType === "sms" ? "SMS" : channelType === "messenger" ? "Messenger" : "Instagram";
+      notify.warning("Attachments Not Supported", {
+        description: `Attachments aren't supported for ${channelLabel} yet. Remove the file to send.`,
+      });
       return;
     }
 
@@ -86,7 +101,10 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
         <div className="flex-1">
           <textarea
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              notifyAgentTyping();
+            }}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
             rows={3}
@@ -108,6 +126,18 @@ const MessageInput: React.FC<MessageInputProps> = ({ conversationId, channelType
               <Paperclip size={20} className="text-gray-600" />
             </div>
           </label>
+
+          {/* AI Copilot - full drawer (conversationId is in scope). Output only
+              writes into the message draft state; NEVER auto-sends. */}
+          <CopilotLauncher
+            disabled={isSubmitting}
+            className="h-auto w-auto border border-gray-300 p-2"
+            conversationId={conversationId}
+            getDraft={() => message}
+            onInsert={(value, mode) =>
+              setMessage((prev) => (mode === "replace" ? value : prev ? `${prev}\n${value}` : value))
+            }
+          />
 
           <AppButton
             onClick={handleSendMessage}

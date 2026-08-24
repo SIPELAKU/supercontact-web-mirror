@@ -6,12 +6,17 @@ import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/supe
 import { ManageUser } from "@/lib/types/manage-users";
 import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { UserRound, Plus } from "lucide-react";
 
 interface TableListUsersProps {
   users: ManageUser[];
   positionOptions?: string[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<ManageUser[]>;
@@ -28,6 +33,9 @@ export default function TableListUsers({
   positionOptions = [],
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   onStateChange,
   onExportRequest,
@@ -97,7 +105,7 @@ export default function TableListUsers({
     },
     {
       id: "actions",
-      header: "Action",
+      header: "Actions",
       enableColumnFilter: false,
       enableSorting: false,
       enableHiding: false,
@@ -129,6 +137,20 @@ export default function TableListUsers({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={UserRound}
+            title="No users found"
+            description="Invite teammates to collaborate in this workspace."
+            action={
+              onAdd
+                ? { label: "Add User", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
@@ -143,8 +165,8 @@ export default function TableListUsers({
             }}
           >
             {isBulkDeleting 
-              ? "Menghapus..." 
-              : `Hapus ${selectedRows.length} User`}
+              ? "Deleting..."
+              : `Delete (${selectedRows.length})`}
           </AppButton>
         )}
         features={{

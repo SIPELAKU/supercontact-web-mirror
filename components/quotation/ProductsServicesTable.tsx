@@ -60,7 +60,7 @@ export default function ProductsServicesCard({
         </h1>
       </div>
 
-      <div className="grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-gray-200">
+      <div className="hidden sm:grid grid-cols-12 gap-4 mb-4 pb-3 border-b border-gray-200">
         <div className="col-span-2 text-xs font-semibold text-gray-700">SKU</div>
         <div className="col-span-3 text-xs font-semibold text-gray-700">Item</div>
         <div className="col-span-2 text-xs font-semibold text-gray-700">Quantity</div>
@@ -79,9 +79,10 @@ export default function ProductsServicesCard({
             key={i}
             className="border border-gray-200 rounded-lg p-4 mb-4 shadow-sm"
           >
-            <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:items-center">
               {/* SKU Dropdown */}
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
+                <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">SKU</span>
                 <AppSelect
                   value={item.sku}
                   placeholder={getSkuPlaceholder()}
@@ -95,7 +96,8 @@ export default function ProductsServicesCard({
               </div>
 
               {/* Item/Product Name (Read-only) */}
-              <div className="col-span-3">
+              <div className="sm:col-span-3">
+                <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Item</span>
                 <AppInput
                   value={item.title}
                   readOnly
@@ -107,7 +109,8 @@ export default function ProductsServicesCard({
               </div>
 
               {/* Quantity */}
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
+                <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Quantity</span>
                 <AppInput
                   type="number"
                   value={item.qty}
@@ -119,17 +122,19 @@ export default function ProductsServicesCard({
               </div>
 
               {/* Price */}
-              <div className="col-span-2 text-sm text-gray-900 font-medium">
+              <div className="sm:col-span-2 text-sm text-gray-900 font-medium">
+                <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Price</span>
                 Rp {Number(item.unitPrice).toLocaleString('id-ID')}
               </div>
 
               {/* Total */}
-              <div className="col-span-2 text-sm text-gray-900 font-semibold">
+              <div className="sm:col-span-2 text-sm text-gray-900 font-semibold">
+                <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Total</span>
                 Rp {(item.qty * Number(item.unitPrice)).toLocaleString('id-ID')}
               </div>
 
               {/* Delete Button */}
-              <div className="col-span-1 flex justify-end">
+              <div className="sm:col-span-1 flex justify-end">
                 <button
                   onClick={() => removeItem(i)}
                   className="text-red-500 hover:text-red-700"
@@ -140,9 +145,9 @@ export default function ProductsServicesCard({
             </div>
 
             {/* Row 2: Notes and Discount */}
-            <div className="grid grid-cols-12 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mt-4">
               {/* Notes */}
-              <div className="col-span-8">
+              <div className="sm:col-span-8">
                 <AppInput
                   label="Notes"
                   placeholder="Notes"
@@ -155,7 +160,7 @@ export default function ProductsServicesCard({
               </div>
 
               {/* Discount Input */}
-              <div className="col-span-4">
+              <div className="sm:col-span-4">
                 <AppInput
                   type="number"
                   label="Discount"

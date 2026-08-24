@@ -11,11 +11,11 @@ import { useAuth } from "@/lib/context/AuthContext";
 import {
   AddUsersModal,
   CardStatUsers,
-  DeleteUserModal,
   DetailUsersModal,
   EditUsersModal,
   TableListUsers,
 } from "@/components/users";
+import { useRouter } from "next/navigation";
 
 // Fitur SuperTable
 import { AppButton } from "@/components/ui/app-button";
@@ -24,6 +24,7 @@ import { SuperTableState } from "@/components/ui/super-table";
 import { fetchManagedUsers } from "@/lib/api/manage-users";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 export default function UsersClient() {
   const { token } = useAuth();
@@ -37,6 +38,32 @@ export default function UsersClient() {
 
   // Bulk Delete State & Hook
   const deleteMutation = useDeleteManagedUser();
+  const router = useRouter();
+
+  // Ported as-is from the deleted DeleteUserModal (users-modal/delete-users)
+  const handleConfirmDelete = async () => {
+    if (!selectedUser?.id) {
+      notify.error("Please select a user.");
+      return;
+    }
+    if (!token) {
+      notify.error("You are not authorized to delete this user.", {
+        description: "Please login first.",
+      });
+      router.push("/login");
+      return;
+    }
+    try {
+      await deleteMutation.mutateAsync(selectedUser.id);
+      notify.success("User deleted successfully");
+      setOpenDelete(false);
+    } catch (error: any) {
+      const message = handleError(error, "Delete Managed User");
+      notify.error("Failed to delete user: ", {
+        description: message,
+      });
+    }
+  };
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Printing Setup
@@ -53,7 +80,8 @@ export default function UsersClient() {
     pageIndex: 0,
     pageSize: 10,
     globalFilter: "",
-    columnFilters: [] as { id: string; value: unknown }[]
+    columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[]
   });
 
   const handleTableStateChange = (state: SuperTableState) => {
@@ -61,7 +89,8 @@ export default function UsersClient() {
       pageIndex: state.pagination.pageIndex,
       pageSize: state.pagination.pageSize,
       globalFilter: state.globalFilter,
-      columnFilters: state.columnFilters || []
+      columnFilters: state.columnFilters || [],
+      sorting: state.sorting || []
     });
   };
 
@@ -84,13 +113,21 @@ export default function UsersClient() {
   })();
   const statusFilter = getFilterValue("status") || undefined;
 
+  // Server-side sorting (sort_by/sort_order contract)
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: "asc" | "desc" | undefined = sortParam
+    ? (sortParam.desc ? "desc" : "asc")
+    : undefined;
+
   // React Query Fetcher (Main Table Data)
   const {
     data: usersResponse,
     isLoading,
     isError,
     error,
-  } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter);
+    refetch,
+  } = useManagedUsers(pageParam, limitParam, searchParam, positionFilter, statusFilter, sortByParam, sortOrderParam);
 
   // Error Handling
   useEffect(() => {
@@ -125,12 +162,14 @@ export default function UsersClient() {
     // We fetch without arbitrary limit restrictions to export everything reflecting current filters
     do {
       const resp = await fetchManagedUsers(
-        token, 
-        currentPage, 
+        token,
+        currentPage,
         1000, // Safe large chunk threshold
-        searchParam, 
-        positionFilter, 
-        statusFilter
+        searchParam,
+        positionFilter,
+        statusFilter,
+        sortByParam,
+        sortOrderParam
       );
       
       if (!resp.success) {
@@ -148,10 +187,21 @@ export default function UsersClient() {
     return allData;
   };
 
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    users: ManageUser[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedUsers: ManageUser[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ users: selectedUsers, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { users: selectedUsers, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -166,13 +216,14 @@ export default function UsersClient() {
     }
     
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
-    
+
     if (successCount > 0) {
-      notify.success(`${successCount} user berhasil dihapus`);
+      notify.success(`${successCount} user(s) deleted successfully`);
     }
     if (failCount > 0) {
-      notify.error(`${failCount} user gagal dihapus`);
+      notify.error(`${failCount} user(s) failed to delete`);
     }
   };
 
@@ -186,7 +237,7 @@ export default function UsersClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <SettingsPageHeader
-        title="Manage User"
+        title="Users"
         breadcrumbs={[{ label: "Settings", href: "/settings" }, { label: "Users" }]}
       />
 
@@ -206,6 +257,9 @@ export default function UsersClient() {
             positionOptions={["All", ...allPositions]}
             isLoading={isLoading}
             isError={isError}
+            errorMessage={isError && error ? handleError(error, "Fetch Managed Users") : undefined}
+            onRetry={() => refetch()}
+            onAdd={() => setOpenAdd(true)}
             rowCount={totalCount}
             onStateChange={handleTableStateChange}
             onExportRequest={handleExportRequest}
@@ -229,7 +283,7 @@ export default function UsersClient() {
                 <div className="hidden md:flex gap-2">
                   <AppButton onClick={() => setOpenAdd(true)}
                     startIcon={<Plus size={16} />}>
-                    Add New User
+                    Add User
                   </AppButton>
                   <AppButton variantStyle="outline" onClick={handlePrint}
                     startIcon={<Printer size={16} />}>
@@ -259,10 +313,16 @@ export default function UsersClient() {
 
           <AddUsersModal open={openAdd} setOpen={setOpenAdd} />
 
-          <DeleteUserModal
-            open={openDelete}
-            setOpen={setOpenDelete}
-            managedUserId={selectedUser?.id}
+          <ConfirmationPopup
+            isOpen={openDelete}
+            onClose={() => setOpenDelete(false)}
+            onConfirm={handleConfirmDelete}
+            title="Are you sure you want to delete this user?"
+            description="This action is permanent and cannot be undone"
+            confirmText="Delete User"
+            cancelText="Cancel"
+            variant="danger"
+            isLoading={deleteMutation.isPending}
           />
 
           {selectedUser && (
@@ -291,6 +351,18 @@ export default function UsersClient() {
           columns={printableColumns}
         />
       </div>
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.users.length ?? 0} user(s)?`}
+        description="The selected users will be permanently deleted. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
+      />
     </div>
   );
 }

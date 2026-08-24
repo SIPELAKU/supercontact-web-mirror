@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { ContactReq } from "@/lib/models/types";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2 } from "lucide-react";
 import router from "next/router";
 import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
@@ -30,23 +29,17 @@ const InputField: React.FC<InputProps> = ({
   error,
 }) => {
   return (
-    <div className="flex flex-col w-full gap-2">
-      <label className="font-medium text-gray-700">
-        {label}
-
-        {isRequired && <span className="text-red-500">*</span>}
-      </label>
-      <AppInput
-        required={isRequired}
-        type="text"
-        value={value ?? ""}
-        onChange={onChange}
-        placeholder={placeholder}
-        isBgWhite
-        className={error ? "border-red-500" : ""}
-      />
-      {error && <span className="text-red-500 text-sm">{error}</span>}
-    </div>
+    <AppInput
+      label={label}
+      required={isRequired}
+      type="text"
+      value={value ?? ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      isBgWhite
+      error={!!error}
+      helperText={error}
+    />
   );
 };
 
@@ -70,7 +63,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [isLoadiNg, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { getToken } = useAuth();
   const [local, setLocal] = useState<ContactReq>({
     name: "",
@@ -253,7 +246,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-[#5479EE]">Add New Contact</h2>
+            <h2 className="text-2xl font-bold text-[#5479EE]">Add Contact</h2>
             <p className="text-gray-600 text-md mt-1">
               Fill in the details below to add a new contact to your CRM.
             </p>
@@ -339,12 +332,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 Cancel
               </AppButton>
 
-              <AppButton onClick={handleSubmit} disabled={isLoadiNg}>
-                {isLoadiNg ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  "Save Contact"
-                )}
+              <AppButton onClick={handleSubmit} disabled={isLoading} isLoading={isLoading}>
+                Save Contact
               </AppButton>
             </div>
           </div>
@@ -362,7 +351,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         description="This will discard your current filled data."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

@@ -74,9 +74,11 @@ export async function fetchSmartCaptures(
     search?: string;
     status?: string | string[];
     target?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   } = {}
 ): Promise<SmartCaptureResponse> {
-  const { page = 1, limit = 10, search, status, target } = params;
+  const { page = 1, limit = 10, search, status, target, sort_by, sort_order } = params;
 
   try {
     const baseUrl = getFullUrl("/smart-captures");
@@ -96,6 +98,10 @@ export async function fetchSmartCaptures(
       }
     }
     if (target) queryParams.append('target', target);
+    if (sort_by) {
+      queryParams.append('sort_by', sort_by);
+      queryParams.append('sort_order', sort_order ?? 'asc');
+    }
 
     const url = `${baseUrl}?${queryParams.toString()}`;
 
@@ -311,9 +317,11 @@ export async function fetchSmartCaptureSubmissions(
     page?: number;
     limit?: number;
     search?: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
   } = {}
 ): Promise<SmartCaptureSubmissionsResponse> {
-  const { page = 1, limit = 10, search } = params;
+  const { page = 1, limit = 10, search, sort_by, sort_order } = params;
 
   try {
     const baseUrl = getFullUrl(`/smart-captures/${id}/submissions`);
@@ -325,6 +333,10 @@ export async function fetchSmartCaptureSubmissions(
     });
 
     if (search) queryParams.append('search', search);
+    if (sort_by) {
+      queryParams.append('sort_by', sort_by);
+      queryParams.append('sort_order', sort_order ?? 'asc');
+    }
 
     const url = `${baseUrl}?${queryParams.toString()}`;
 

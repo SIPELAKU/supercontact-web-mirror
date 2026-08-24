@@ -6,8 +6,6 @@ import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { useAuth } from "@/lib/context/AuthContext";
 import { fetchCompanyProfileKeyPeople } from "@/lib/api/company-profile";
 import { KeyPersonType } from "@/lib/types/Company";
-import { Button } from "@mui/material";
-import { Plus, Upload } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
@@ -110,14 +108,13 @@ export default function SettingsCompanyKeyPeoplePage() {
           <InputSearch placeholder="Search People" handleSearch={handleSearch} searchParams={searchParams} />
         </Suspense>
 
-        <div className="flex items-center gap-2">
-          <Button variant="contained" className="min-w-40! bg-[#5479EE]! pl-2! capitalize! hover:bg-[#5479EE]/80!">
-            <Plus className="mr-2 ml-1 h-3.5 w-3.5" /> Add People
-          </Button>
-          <Button variant="outlined" className="min-w-[98px]! border-gray-500! text-gray-500! capitalize!">
-            <Upload className="mr-2 ml-1 h-3.5 w-3.5" /> Export
-          </Button>
-        </div>
+        {/*
+          "Add People" / "Export" buttons removed: the backend only exposes
+          read-only key-people endpoints (GET /company-profile/key-people[/{id}]);
+          entries are derived from managed users, so there is no POST to wire an
+          add flow to and no export endpoint. Re-add these buttons once the API
+          supports those operations.
+        */}
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">

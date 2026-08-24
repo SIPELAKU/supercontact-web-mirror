@@ -4,19 +4,16 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/contact/modal/AddContactModal";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
-import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
 import { Contact } from "@/lib/models/types";
-import DeleteMultipleContactModal from "@/components/contact/modal/DeleteMultipleContactModal";
 import ImportContactModal from "@/components/contact/modal/ImportContactModal";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
 import { ContactTable } from "./ContactTable";
-import { useDeleteMultipleContacts, useDeleteContact, useDeleteAllContacts, useDuplicateContacts } from '@/lib/hooks/useContacts';
+import { useDeleteContact, useDeleteAllContacts, useDuplicateContacts } from '@/lib/hooks/useContacts';
+import { deleteContact } from "@/lib/api/contacts";
 import { useAuth } from "@/lib/context/AuthContext";
-import { AlertTriangle } from "lucide-react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, CircularProgress } from '@mui/material';
-import { AppButton } from "@/components/ui/app-button";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import type { SuperTableState } from "@/components/ui/super-table";
 
@@ -34,7 +31,6 @@ export const ContactClient = () => {
     const router = useRouter();
     const { getToken } = useAuth();
     const deleteMutation = useDeleteContact();
-    const bulkDeleteMutation = useDeleteMultipleContacts();
     const deleteAllMutation = useDeleteAllContacts();
     const duplicateMutation = useDuplicateContacts();
     const componentRef = useRef<HTMLDivElement>(null);
@@ -49,6 +45,7 @@ export const ContactClient = () => {
     const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
     const [bulkDeleteContacts, setBulkDeleteContacts] = useState<Contact[]>([]);
     const [bulkClearSelection, setBulkClearSelection] = useState<(() => void) | null>(null);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
     // --- Data State (server-side pagination + search) ---
     const [dataContact, setDataContact] = useState<Contact[]>([]);
@@ -59,16 +56,35 @@ export const ContactClient = () => {
     // --- Current table state from SuperTable ---
     const currentPageRef = useRef(0);
     const currentPageSizeRef = useRef(10);
+    const currentSearchRef = useRef("");
+    const currentSortByRef = useRef<string | undefined>(undefined);
+    const currentSortOrderRef = useRef<"asc" | "desc" | undefined>(undefined);
 
-    const loadData = useCallback(async (page: number, pageSize: number) => {
+    const loadData = useCallback(async (
+        page: number,
+        pageSize: number,
+        search?: string,
+        sortBy?: string,
+        sortOrder?: "asc" | "desc",
+    ) => {
         setLoading(true);
         setError(null);
         try {
             const token = await getToken();
             if (!token) throw new Error("No authentication token");
 
+            const params = new URLSearchParams({
+                page: String(page + 1),
+                limit: String(pageSize),
+            });
+            if (search) params.set("search", search);
+            if (sortBy) {
+                params.set("sort_by", sortBy);
+                params.set("sort_order", sortOrder ?? "asc");
+            }
+
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/contacts?page=${page + 1}&limit=${pageSize}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/contacts?${params.toString()}`,
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -99,19 +115,34 @@ export const ContactClient = () => {
         loadData(0, 10);
     }, [loadData]);
 
-    // --- SuperTable State Change Handler (pagination only, filters are client-side) ---
+    // --- SuperTable State Change Handler (server-side pagination + search + sorting) ---
     const handleStateChange = useCallback((state: SuperTableState) => {
-        const newPage = state.pagination?.pageIndex ?? 0;
         const newPageSize = state.pagination?.pageSize ?? 10;
+        const newSearch = state.globalFilter ?? "";
+        const sort = state.sorting?.[0];
+        const newSortBy = sort?.id;
+        const newSortOrder: "asc" | "desc" | undefined = sort
+            ? (sort.desc ? "desc" : "asc")
+            : undefined;
 
-        // Only refetch if pagination params actually changed
+        const searchChanged = newSearch !== currentSearchRef.current;
+        // Reset to first page when the search term changes
+        const newPage = searchChanged ? 0 : (state.pagination?.pageIndex ?? 0);
+
+        // Only refetch if server-side params actually changed
         if (
             newPage !== currentPageRef.current ||
-            newPageSize !== currentPageSizeRef.current
+            newPageSize !== currentPageSizeRef.current ||
+            searchChanged ||
+            newSortBy !== currentSortByRef.current ||
+            newSortOrder !== currentSortOrderRef.current
         ) {
             currentPageRef.current = newPage;
             currentPageSizeRef.current = newPageSize;
-            loadData(newPage, newPageSize);
+            currentSearchRef.current = newSearch;
+            currentSortByRef.current = newSortBy;
+            currentSortOrderRef.current = newSortOrder;
+            loadData(newPage, newPageSize, newSearch, newSortBy, newSortOrder);
         }
     }, [loadData]);
 
@@ -159,7 +190,13 @@ export const ContactClient = () => {
 
     // --- Reload helper ---
     const reloadCurrentPage = useCallback(() => {
-        loadData(currentPageRef.current, currentPageSizeRef.current);
+        loadData(
+            currentPageRef.current,
+            currentPageSizeRef.current,
+            currentSearchRef.current,
+            currentSortByRef.current,
+            currentSortOrderRef.current,
+        );
     }, [loadData]);
 
     // --- Handlers ---
@@ -183,6 +220,62 @@ export const ContactClient = () => {
         setBulkDeleteContacts(contacts);
         setBulkClearSelection(() => clearSelection);
         setOpenDeleteMultiple(true);
+    };
+
+    // Ported as-is from the deleted DeleteContactModal
+    const handleConfirmDelete = async () => {
+        if (!selectedItem) return;
+        try {
+            await deleteMutation.mutateAsync(selectedItem.id);
+            reloadCurrentPage();
+            setOpenDelete(false);
+            notify.success("Contact deleted!");
+        } catch (err: any) {
+            notify.error(err.message || "Failed to delete contact");
+        }
+    };
+
+    // Ported as-is from the deleted DeleteMultipleContactModal (sequential
+    // per-contact deletes with success/fail counting).
+    const handleConfirmBulkDelete = async () => {
+        if (!bulkDeleteContacts.length) {
+            notify.error("Please select at least one contact");
+            return;
+        }
+
+        setIsBulkDeleting(true);
+        let successCount = 0;
+        let failCount = 0;
+        const failMessages: string[] = [];
+
+        for (const contact of bulkDeleteContacts) {
+            try {
+                const token = await getToken();
+                if (!token) throw new Error("No authentication token");
+                await deleteContact(token, contact.id);
+                successCount++;
+            } catch (err: any) {
+                const message = err?.message || "Gagal menghapus contact";
+                failMessages.push(message);
+                failCount++;
+            }
+        }
+
+        setIsBulkDeleting(false);
+        setOpenDeleteMultiple(false);
+        bulkClearSelection?.();
+
+        if (successCount > 0) {
+            notify.success(`${successCount} contact(s) deleted successfully`);
+        }
+        if (failCount > 0) {
+            notify.error(
+                `${failCount} contact(s) failed to delete` +
+                (failMessages[0] ? `: ${failMessages[0]}` : "")
+            );
+        }
+
+        reloadCurrentPage();
     };
 
     const handleConfirmDeleteAll = async () => {
@@ -225,6 +318,15 @@ export const ContactClient = () => {
                     isLoading={loading}
                     isError={!!error}
                     errorMessage={error || undefined}
+                    onRetry={() =>
+                        loadData(
+                            currentPageRef.current,
+                            currentPageSizeRef.current,
+                            currentSearchRef.current,
+                            currentSortByRef.current,
+                            currentSortOrderRef.current,
+                        )
+                    }
                     rowCount={totalCount}
                     onStateChange={handleStateChange}
                     onExportRequest={handleExportRequest}
@@ -252,23 +354,28 @@ export const ContactClient = () => {
                 onClose={() => setOpenEdit(false)}
                 onSuccess={reloadCurrentPage}
             />
-            <DeleteContactModal
-                open={openDelete}
-                initialData={selectedItem}
+            <ConfirmationPopup
+                isOpen={openDelete}
                 onClose={() => setOpenDelete(false)}
-                onSuccess={reloadCurrentPage}
+                onConfirm={handleConfirmDelete}
+                title="Delete Contact"
+                description={`Are you sure you want to delete contact ${selectedItem?.name ?? ""}?`}
+                confirmText="Delete Contact"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
             />
-            <DeleteMultipleContactModal
-                open={openDeleteMultiple}
-                selected={bulkDeleteContacts}
+            <ConfirmationPopup
+                isOpen={openDeleteMultiple}
                 onClose={() => {
                     setOpenDeleteMultiple(false);
                     bulkClearSelection?.();
                 }}
-                onSuccess={() => {
-                    reloadCurrentPage();
-                    bulkClearSelection?.();
-                }}
+                onConfirm={handleConfirmBulkDelete}
+                title="Are you sure you want to delete all selected list?"
+                description="This action is permanent and cannot be undone"
+                confirmText={`Delete ${bulkDeleteContacts.length} Contact${bulkDeleteContacts.length > 1 ? "s" : ""}`}
+                variant="danger"
+                isLoading={isBulkDeleting}
             />
             <ImportContactModal
                 open={openImport}
@@ -276,36 +383,17 @@ export const ContactClient = () => {
                 onSuccess={reloadCurrentPage}
             />
 
-            {/* Delete All Confirmation Dialog */}
-            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-                <DialogTitle>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <AlertTriangle size={20} className="text-red-500" />
-                        <span>Delete All Contacts</span>
-                    </Stack>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        Are you sure you want to delete <strong>all contacts</strong>? This action cannot be undone.
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <AppButton variantStyle="outline" onClick={() => setConfirmAllOpen(false)}>
-                        Cancel
-                    </AppButton>
-                    <AppButton
-                        variantStyle="danger"
-                        onClick={handleConfirmDeleteAll}
-                        disabled={deleteAllMutation.isPending}
-                    >
-                        {deleteAllMutation.isPending ? (
-                            <CircularProgress size={16} color="inherit" />
-                        ) : (
-                            "Delete All"
-                        )}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+            {/* Delete All Confirmation */}
+            <ConfirmationPopup
+                isOpen={confirmAllOpen}
+                onClose={() => setConfirmAllOpen(false)}
+                onConfirm={handleConfirmDeleteAll}
+                title="Delete All Contacts"
+                description={<>Are you sure you want to delete <strong>all contacts</strong>? This action cannot be undone.</>}
+                confirmText="Delete All"
+                variant="danger"
+                isLoading={deleteAllMutation.isPending}
+            />
 
             {/* Hidden Printable Table */}
             <div style={{ display: "none" }}>

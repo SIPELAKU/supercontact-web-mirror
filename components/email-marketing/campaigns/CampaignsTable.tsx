@@ -7,11 +7,16 @@ import { Campaign } from "@/lib/types/email-marketing";
 import { DeleteButton, EditButton, ViewButton, DuplicateButton, ResendButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Mail, Plus } from "lucide-react";
 
 interface CampaignsTableProps {
   campaigns: Campaign[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<Campaign[]>;
@@ -57,6 +62,9 @@ export default function CampaignsTable({
   campaigns,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   onStateChange,
   onExportRequest,
@@ -99,7 +107,7 @@ export default function CampaignsTable({
     {
       id: "sent_at",
       accessorKey: "sent_at",
-      header: "Sent Date",
+      header: "Sent",
       enableColumnFilter: false,
       Cell: ({ row }) => (
         <span>
@@ -114,6 +122,9 @@ export default function CampaignsTable({
       accessorKey: "user_fullname",
       header: "Created By",
       enableColumnFilter: false,
+      // Creator comes from the joined User (selectinload, not a join) -
+      // the backend can't sort by it, so don't offer a lying sort arrow.
+      enableSorting: false,
       Cell: ({ row }) => <span>{row.original.user_fullname || 'N/A'}</span>,
     },
     {
@@ -179,6 +190,20 @@ export default function CampaignsTable({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Mail}
+            title="No campaigns found"
+            description="Create an email campaign to reach your subscribers."
+            action={
+              onAdd
+                ? { label: "Create Campaign", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
@@ -208,7 +233,7 @@ export default function CampaignsTable({
             >
               {isBulkDeleting
                 ? "Deleting..."
-                : `Delete ${selectedRows.length} Campaigns`}
+                : `Delete (${selectedRows.length})`}
             </AppButton>
           </Box>
         )}

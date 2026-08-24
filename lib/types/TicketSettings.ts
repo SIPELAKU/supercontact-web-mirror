@@ -27,6 +27,23 @@ export interface TicketTag {
 
 export type TicketCustomFieldType = "text" | "number" | "date" | "boolean" | "select";
 
+// Phase 5 / Inc 4: conditional custom fields. A definition may carry an optional
+// visibility_condition; when present, the field is only shown when ALL clauses
+// pass (logical AND). `field` is a built-in ticket field name (type/priority/status)
+// or another custom field's field_key. Comparison is string-based (see evaluator in
+// lib/utils/ticketFieldVisibility.ts) and mirrors the backend contract exactly.
+export type TicketVisibilityOp = "eq" | "neq" | "in";
+
+export interface TicketVisibilityClause {
+    field: string;
+    op: TicketVisibilityOp;
+    value: string | string[];
+}
+
+export interface TicketVisibilityCondition {
+    all: TicketVisibilityClause[];
+}
+
 export interface TicketCustomFieldDefinition {
     id: string;
     company_id: string;
@@ -37,6 +54,7 @@ export interface TicketCustomFieldDefinition {
     is_required: boolean;
     is_active: boolean;
     display_order: number;
+    visibility_condition?: TicketVisibilityCondition | null;
     created_at: string;
     updated_at: string;
 }
@@ -78,7 +96,7 @@ export interface BusinessHoursCalendar {
     updated_at: string;
 }
 
-export type TicketSlaPriority = "High" | "Medium" | "Low";
+export type TicketSlaPriority = "Urgent" | "High" | "Medium" | "Low";
 
 export interface TicketSlaPolicy {
     id: string;

@@ -1,41 +1,53 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package, Plus } from "lucide-react";
 
 export interface ProductTableProps {
     products: Product[];
     isLoading: boolean;
     isError?: boolean;
+    errorMessage?: string;
+    onRetry?: () => void;
+    onAdd?: () => void;
     rowCount?: number;
     onStateChange?: (state: SuperTableState) => void;
     onExportRequest?: (params: any) => Promise<Product[]>;
     renderTopLeftToolbar?: () => React.ReactNode;
     onBulkDelete?: (products: Product[], clearSelection: () => void) => Promise<void>;
     isBulkDeleting?: boolean;
+    onDuplicate?: (products: Product[], clearSelection?: () => void) => void;
+    isDuplicating?: boolean;
 }
 
 export default function ProductTable({
     products,
     isLoading,
     isError,
+    errorMessage,
+    onRetry,
+    onAdd,
     rowCount,
     onStateChange,
     onExportRequest,
     renderTopLeftToolbar,
     onBulkDelete,
-    isBulkDeleting
+    isBulkDeleting,
+    onDuplicate,
+    isDuplicating
 }: ProductTableProps) {
     const { setEditId, deleteProduct } = useGetProductStore();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
     const columns = useMemo<MRT_ColumnDef<Product>[]>(
@@ -89,11 +101,14 @@ export default function ProductTable({
                                 setIsModalOpen(true);
                                 setEditId(product.id);
                             }} />
+                            {onDuplicate && (
+                                <DuplicateButton onClick={() => onDuplicate([product])} />
+                            )}
                             <DeleteButton onClick={() => {
-                                showConfirmation({
-                                    type: "delete",
+                                confirm({
+                                    variant: "danger",
                                     title: "Delete Product",
-                                    message: `Are you sure you want to delete "${product.product_name}"? This action cannot be undone.`,
+                                    description: `Are you sure you want to delete "${product.product_name}"? This action cannot be undone.`,
                                     confirmText: "Delete",
                                     cancelText: "Cancel",
                                     onConfirm: async () => {
@@ -112,11 +127,12 @@ export default function ProductTable({
                 },
             },
         ],
-        [setEditId, deleteProduct, showConfirmation]
+        [setEditId, deleteProduct, confirm, onDuplicate]
     );
 
     return (
         <>
+            {confirmationPopup}
             <AddProductModal open={isModalOpen} onOpenChange={setIsModalOpen} />
             <SuperTable
                 tableId="products-table"
@@ -124,28 +140,54 @@ export default function ProductTable({
                 data={products || []}
                 isLoading={isLoading}
                 isError={isError}
+                errorMessage={errorMessage}
+                onRetry={onRetry}
                 rowCount={rowCount}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Package}
+                        title="No products found"
+                        description="Add products to build your catalog and use them in quotations."
+                        action={
+                            onAdd
+                                ? { label: "Add Product", onClick: onAdd, icon: <Plus size={16} /> }
+                                : undefined
+                        }
+                    />
+                )}
                 onStateChange={onStateChange}
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}
                 renderBulkActions={({ selectedRows, clearSelection }: { selectedRows: any[], clearSelection: () => void }) => (
-                    <AppButton 
-                        variantStyle="danger"
-                        disabled={isBulkDeleting}
-                        onClick={() => {
-                            if (onBulkDelete) {
-                                onBulkDelete(
-                                    selectedRows as Product[],
-                                    clearSelection
-                                );
-                            }
-                        }}
-                    >
-                        {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRows.length} Produk`}
-                    </AppButton>
+                    <div className="flex gap-2 items-center">
+                        {onDuplicate && (
+                            <AppButton
+                                variantStyle="primary"
+                                disabled={isDuplicating}
+                                onClick={() => onDuplicate(selectedRows as Product[], clearSelection)}
+                            >
+                                {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
+                            </AppButton>
+                        )}
+                        <AppButton
+                            variantStyle="danger"
+                            disabled={isBulkDeleting}
+                            onClick={() => {
+                                if (onBulkDelete) {
+                                    onBulkDelete(
+                                        selectedRows as Product[],
+                                        clearSelection
+                                    );
+                                }
+                            }}
+                        >
+                            {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
+                        </AppButton>
+                    </div>
                 )}
                 manualPagination={true}
                 manualFiltering={true}
+                manualSorting={true}
                 features={{
                     sorting: true,
                     globalFilter: true,

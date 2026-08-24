@@ -121,7 +121,7 @@ export default function CreateTemplateClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-20 space-y-6">
       <PageHeader
-        title="Create Template"
+        title="Add Template"
         breadcrumbs={[
           { label: 'Whatsapp Marketing' },
           { label: 'Template Broadcasting', href: '/whatsapp-marketing/template-broadcasting' },
@@ -200,13 +200,14 @@ export default function CreateTemplateClient() {
         onOpenChange={setIsModalOpen}
         formData={activeFormData}
         initialSamples={variables}
-        onSave={(samples: Record<string, string>) => {
+        isSaving={mutation.isPending}
+        onSave={async (samples: Record<string, string>) => {
+          await handleCreate(samples);
           setIsModalOpen(false);
-          handleCreate(samples);
         }}
-        onSaveWithoutSamples={() => {
+        onSaveWithoutSamples={async () => {
+          await handleCreate();
           setIsModalOpen(false);
-          handleCreate();
         }}
       />
     </div>

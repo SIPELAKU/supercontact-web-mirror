@@ -1,5 +1,5 @@
 import { SmartCapture } from "@/lib/models/types";
-import { CheckCircle, MailOpen, MousePointer2, AlertCircle } from "lucide-react";
+import { CheckCircle, MailOpen, MousePointer2, AlertCircle, FlaskConical } from "lucide-react";
 
 interface OutreachStatsProps {
   data: SmartCapture;
@@ -10,7 +10,8 @@ export const OutreachStats = ({ data }: OutreachStatsProps) => {
     delivered: 0,
     opened: 0,
     clicked: 0,
-    bounced: 0
+    bounced: 0,
+    simulated: 0
   };
 
   const openRate = stats.delivered > 0
@@ -84,6 +85,20 @@ export const OutreachStats = ({ data }: OutreachStatsProps) => {
             <p className="text-[10px] text-gray-400 mt-1.5 italic">Delivery failures or invalid contacts</p>
           </div>
         </div>
+
+        {/* Simulated Card - only shown when sandbox mode actually suppressed a send */}
+        {stats.simulated > 0 && (
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:border-gray-200 transition-colors group">
+            <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 shrink-0 group-hover:scale-110 transition-transform">
+              <FlaskConical size={24} />
+            </div>
+            <div className="flex-1">
+              <span className="text-[11px] font-medium text-gray-500 block mb-0.5 uppercase tracking-wider">Simulated (sandbox)</span>
+              <h2 className="text-xl font-bold text-gray-900 leading-none">{stats.simulated.toLocaleString()}</h2>
+              <p className="text-[10px] text-gray-400 mt-1.5 italic">No real email sent in this environment</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

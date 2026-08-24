@@ -3,8 +3,9 @@
 
 import { useMemo, useState } from 'react';
 import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Download, Eye, Pencil, Plus, Trash2, Save, History } from 'lucide-react';
+import { Download, Eye, Pencil, Plus, Trash2, Save, History, MailPlus } from 'lucide-react';
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
@@ -16,6 +17,9 @@ import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 interface SubscribersTableProps {
   subscribers: Subscriber[];
   isLoading: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   totalCount: number;
   onAdd: () => void;
   onEdit: (subscriber: Subscriber) => void;
@@ -24,7 +28,7 @@ interface SubscribersTableProps {
   onImportHistory: () => void;
   onDeleteAllRequest: () => void;
   onExportRequest?: (params: any) => Promise<Subscriber[]>;
-  onStateChange: (state: { page: number; limit: number; search: string }) => void;
+  onStateChange: (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => void;
   onDuplicate?: (ids: string[]) => void;
   isDuplicating?: boolean;
   onSuccess?: () => void;
@@ -33,6 +37,9 @@ interface SubscribersTableProps {
 const SubscribersTable = ({
   subscribers,
   isLoading,
+  isError,
+  errorMessage,
+  onRetry,
   totalCount,
   onAdd,
   onEdit,
@@ -91,14 +98,26 @@ const SubscribersTable = ({
         columns={columns}
         rowCount={totalCount}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={MailPlus}
+            title="No subscribers found"
+            description="Add subscribers manually or import a list to start emailing."
+            action={{ label: "Add Subscriber", onClick: onAdd, icon: <Plus size={16} /> }}
+          />
+        )}
         manualPagination={true}
-        manualSorting={false}
-        manualFiltering={false}
+        manualSorting={true}
+        manualFiltering={true}
         onStateChange={(state) => {
           onStateChange({
             page: state.pagination.pageIndex + 1,
             limit: state.pagination.pageSize,
             search: state.globalFilter || '',
+            sorting: state.sorting || [],
           });
         }}
         onExportRequest={onExportRequest}

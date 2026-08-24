@@ -18,11 +18,13 @@ export function useSmartCaptures(params: {
   search?: string;
   status?: string | string[];
   target?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 } = {}) {
-  const { page = 1, limit = 10, search, status, target } = params;
+  const { page = 1, limit = 10, search, status, target, sort_by, sort_order } = params;
 
   return useQuery<SmartCaptureResponse, Error>({
-    queryKey: ["smart-captures", page, limit, search, status, target],
+    queryKey: ["smart-captures", page, limit, search, status, target, sort_by, sort_order],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) {

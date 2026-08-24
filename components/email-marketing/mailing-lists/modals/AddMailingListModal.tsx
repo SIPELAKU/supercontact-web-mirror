@@ -13,7 +13,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  TextField
 } from '@mui/material';
 import { useState } from 'react';
 import { notify } from '@/lib/notifications';
@@ -60,7 +59,7 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
 
   return (
     <Dialog open={open} onClose={() => setShowCloseConfirmation(true)} maxWidth="sm" fullWidth>
-      <DialogTitle>Create New Mailing List</DialogTitle>
+      <DialogTitle>Add Mailing List</DialogTitle>
       <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <label htmlFor="name">Name</label>
@@ -106,7 +105,7 @@ const AddMailingListModal = ({ open, onClose, onSuccess }: AddMailingListModalPr
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

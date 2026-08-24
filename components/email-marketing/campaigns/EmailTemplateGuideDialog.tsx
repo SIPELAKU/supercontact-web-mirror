@@ -52,14 +52,14 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 const checklistItems: { ok: boolean; text: string; why: string }[] = [
-    { ok: true, text: "Semua layout (baris, kolom, grid kartu) pakai <table>/<tr>/<td>", why: "Satu-satunya primitif layout yang didukung hampir semua email client" },
-    { ok: true, text: "Gambar pakai URL eksternal (https://...), bukan data:image/...;base64,...", why: "Outlook desktop dan sebagian mail gateway memblokir/strip gambar base64" },
-    { ok: true, text: "Tiap <img> punya width, height, dan alt eksplisit", why: "Mencegah layout \"loncat\" dan gambar kosong tanpa makna saat diblokir" },
-    { ok: true, text: "Warna solid sebagai fallback untuk tiap gradient", why: "Outlook desktop tidak mendukung CSS gradient sama sekali" },
-    { ok: false, text: "Jangan pakai display:flex / display:grid untuk layout", why: "Tidak didukung reliable oleh client email manapun" },
-    { ok: false, text: "Jangan pakai backdrop-filter, CSS custom properties, position:fixed", why: "Fitur CSS modern ini tidak dikenal rendering engine email" },
-    { ok: false, text: "Jangan andalkan <style> block untuk sesuatu yang kritikal", why: "Banyak client membuang <style> sepenuhnya" },
-    { ok: false, text: "Jangan tempel section \"Custom HTML\" berisi flex/grid buatan sendiri", why: "Bagian ini tidak ikut ter-konversi otomatis oleh builder ke format email-safe" },
+    { ok: true, text: "All layout (rows, columns, card grids) uses <table>/<tr>/<td>", why: "The only layout primitive supported by nearly every email client" },
+    { ok: true, text: "Images use external URLs (https://...), not data:image/...;base64,...", why: "Outlook desktop and some mail gateways block/strip base64 images" },
+    { ok: true, text: "Every <img> has explicit width, height, and alt", why: "Prevents layout jumps and meaningless empty images when blocked" },
+    { ok: true, text: "Solid color as a fallback for every gradient", why: "Outlook desktop does not support CSS gradients at all" },
+    { ok: false, text: "Do not use display:flex / display:grid for layout", why: "Not reliably supported by any email client" },
+    { ok: false, text: "Do not use backdrop-filter, CSS custom properties, position:fixed", why: "Email rendering engines do not understand these modern CSS features" },
+    { ok: false, text: "Do not rely on <style> blocks for anything critical", why: "Many clients strip <style> entirely" },
+    { ok: false, text: "Do not paste \"Custom HTML\" sections built with your own flex/grid", why: "These sections are not auto-converted by the builder into an email-safe format" },
 ];
 
 export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplateGuideDialogProps) {
@@ -69,10 +69,10 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
                 <BookOpen size={22} />
                 <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                        Panduan Template Email Aman
+                        Email-Safe Template Guide
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Supaya campaign kamu tampil rapi di semua mailbox, bukan cuma di preview
+                        So your campaign renders cleanly in every mailbox, not just in the preview
                     </Typography>
                 </Box>
             </DialogTitle>
@@ -80,15 +80,15 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
             <DialogContent dividers>
                 <Box sx={{ bgcolor: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 2, p: 2, mb: 1 }}>
                     <Typography variant="body2" sx={{ color: "#9A3412" }}>
-                        <strong>Aturan emas:</strong> Email bukan halaman web. Gmail, Outlook, dan Apple Mail
-                        pakai rendering engine yang jauh lebih terbatas dari browser — Outlook desktop bahkan
-                        merender HTML pakai Microsoft Word. Kalau template ditulis seperti halaman web modern
-                        (flexbox, grid, CSS class di <code>&lt;style&gt;</code>), hasilnya bisa jadi teks polos
-                        tanpa styling sama sekali di banyak mailbox.
+                        <strong>Golden rule:</strong> An email is not a web page. Gmail, Outlook, and Apple Mail
+                        use rendering engines far more limited than a browser — Outlook desktop even
+                        renders HTML with Microsoft Word. If a template is written like a modern web page
+                        (flexbox, grid, CSS classes in <code>&lt;style&gt;</code>), it can end up as plain text
+                        with no styling at all in many mailboxes.
                     </Typography>
                 </Box>
 
-                <SectionTitle>Checklist Cepat</SectionTitle>
+                <SectionTitle>Quick Checklist</SectionTitle>
                 <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                         <TableBody>
@@ -115,15 +115,15 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
                     </Table>
                 </TableContainer>
 
-                <SectionTitle>Layout: Table, Bukan Flexbox/Grid</SectionTitle>
+                <SectionTitle>Layout: Tables, Not Flexbox/Grid</SectionTitle>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Contoh umum: header dengan logo di kiri dan badge di kanan.
+                    Common example: a header with the logo on the left and a badge on the right.
                 </Typography>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                    <Chip label="Salah" size="small" color="error" variant="outlined" />
+                    <Chip label="Wrong" size="small" color="error" variant="outlined" />
                     <Typography variant="caption" color="text.secondary">
-                        elemen jatuh ke baris terpisah di Gmail — display:flex diabaikan
+                        elements fall onto separate lines in Gmail — display:flex is ignored
                     </Typography>
                 </Box>
                 <CodeBlock>{`<style>.header{display:flex;justify-content:space-between}</style>
@@ -133,9 +133,9 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
 </div>`}</CodeBlock>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5, mt: 2 }}>
-                    <Chip label="Benar" size="small" color="success" variant="outlined" />
+                    <Chip label="Correct" size="small" color="success" variant="outlined" />
                     <Typography variant="caption" color="text.secondary">
-                        sejajar kiri-kanan di semua client
+                        aligned left-right in every client
                     </Typography>
                 </Box>
                 <CodeBlock>{`<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -151,18 +151,18 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
   </tr>
 </table>`}</CodeBlock>
 
-                <SectionTitle>Pola Konversi Flex/Grid → Table</SectionTitle>
+                <SectionTitle>Flex/Grid → Table Conversion Patterns</SectionTitle>
                 <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                         <TableHead>
                             <TableRow sx={{ bgcolor: "#F8FAFC" }}>
-                                <TableCell sx={{ fontWeight: 700 }}>Pola Flex/Grid</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Ganti Dengan</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Flex/Grid Pattern</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Replace With</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             <TableRow>
-                                <TableCell>display:flex (beberapa item sejajar)</TableCell>
+                                <TableCell>display:flex (items side by side)</TableCell>
                                 <TableCell>&lt;table&gt;&lt;tr&gt;&lt;td&gt;1&lt;/td&gt;&lt;td&gt;2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</TableCell>
                             </TableRow>
                             <TableRow>
@@ -171,61 +171,61 @@ export default function EmailTemplateGuideDialog({ open, onClose }: EmailTemplat
                             </TableRow>
                             <TableRow>
                                 <TableCell>display:grid; grid-template-columns:1fr 1fr</TableCell>
-                                <TableCell>&lt;td width="50%"&gt; per kartu, satu &lt;tr&gt;</TableCell>
+                                <TableCell>&lt;td width="50%"&gt; per card, in one &lt;tr&gt;</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell>flex:1 (lebar sama rata)</TableCell>
-                                <TableCell>width="50%" langsung di &lt;td&gt;</TableCell>
+                                <TableCell>flex:1 (equal widths)</TableCell>
+                                <TableCell>width="50%" directly on the &lt;td&gt;</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>gap:12px</TableCell>
-                                <TableCell>&lt;td&gt; kosong sebagai spacer, atau padding di tiap &lt;td&gt;</TableCell>
+                                <TableCell>empty &lt;td&gt; as a spacer, or padding on each &lt;td&gt;</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>justify-content:center / align-items:center</TableCell>
-                                <TableCell>align="center" / valign="middle" di &lt;td&gt;</TableCell>
+                                <TableCell>align="center" / valign="middle" on the &lt;td&gt;</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </TableContainer>
 
-                <SectionTitle>Gambar &amp; Gradient</SectionTitle>
+                <SectionTitle>Images &amp; Gradients</SectionTitle>
                 <Typography variant="body2" color="text.secondary" component="div" sx={{ "& ul": { pl: 2.5, m: 0 }, "& li": { mb: 0.5 } }}>
                     <ul>
-                        <li>Host gambar di URL publik (Vercel Blob, S3, CDN) — jangan base64. Base64 juga rawan terpotong saat disimpan.</li>
-                        <li>Isi <code>width</code>, <code>height</code>, dan <code>alt</code> di setiap <code>&lt;img&gt;</code>.</li>
-                        <li>Jangan taruh teks penting di dalam gambar — banyak client memblokir gambar sampai user klik &quot;tampilkan gambar&quot;.</li>
-                        <li>Gradient (<code>linear-gradient</code>) tidak didukung Outlook desktop — selalu tulis <code>background-color</code> solid dulu sebagai fallback, baru <code>background: linear-gradient(...)</code>.</li>
+                        <li>Host images at a public URL (Vercel Blob, S3, CDN) — never base64. Base64 is also prone to truncation when saved.</li>
+                        <li>Set <code>width</code>, <code>height</code>, and <code>alt</code> on every <code>&lt;img&gt;</code>.</li>
+                        <li>Do not put important text inside images — many clients block images until the user clicks &quot;show images&quot;.</li>
+                        <li>Gradients (<code>linear-gradient</code>) are not supported by Outlook desktop — always write a solid <code>background-color</code> first as a fallback, then <code>background: linear-gradient(...)</code>.</li>
                     </ul>
                 </Typography>
 
-                <SectionTitle>Pakai Visual Builder?</SectionTitle>
+                <SectionTitle>Using the Visual Builder?</SectionTitle>
                 <Typography variant="body2" color="text.secondary">
-                    Tab &quot;Visual Builder&quot; di atas otomatis menghasilkan HTML table-based yang aman — pakai
-                    block/kolom bawaannya untuk semua kebutuhan layout. Kalau perlu menambahkan HTML manual,
-                    ikuti pola table di atas, jangan tempel <code>&lt;div&gt;</code> dengan CSS flex/grid modern.
+                    The &quot;Visual Builder&quot; tab above automatically generates safe, table-based HTML — use
+                    its built-in blocks/columns for all layout needs. If you need to add manual HTML,
+                    follow the table patterns above; do not paste <code>&lt;div&gt;</code>s with modern flex/grid CSS.
                 </Typography>
 
-                <SectionTitle>Sebelum Kirim Massal</SectionTitle>
+                <SectionTitle>Before Sending in Bulk</SectionTitle>
                 <Typography variant="body2" color="text.secondary" component="div" sx={{ "& ol": { pl: 2.5, m: 0 }, "& li": { mb: 0.5 } }}>
                     <ol>
-                        <li>Kirim test ke akun Gmail pribadi dulu — preview di dashboard tidak merepresentasikan rendering email client asli.</li>
-                        <li>Kalau bisa, cek juga di Outlook dan Apple Mail.</li>
-                        <li>Buka juga di HP, bukan cuma desktop.</li>
+                        <li>Send a test to a personal Gmail account first — the dashboard preview does not represent real email client rendering.</li>
+                        <li>If possible, also check in Outlook and Apple Mail.</li>
+                        <li>Open it on a phone too, not just desktop.</li>
                     </ol>
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="caption" color="text.secondary">
-                    Sistem sudah otomatis meng-inline CSS (warna, background, spacing) sebelum email dikirim —
-                    tapi ini <strong>tidak</strong> memperbaiki susunan layout flex/grid. Layout yang benar tetap
-                    tanggung jawab pembuat template.
+                    The system automatically inlines CSS (colors, backgrounds, spacing) before the email is sent —
+                    but this does <strong>not</strong> fix flex/grid layout structure. Correct layout remains
+                    the template author&apos;s responsibility.
                 </Typography>
             </DialogContent>
 
             <DialogActions sx={{ p: 2 }}>
                 <AppButton onClick={onClose} variantStyle="primary">
-                    Mengerti
+                    Got It
                 </AppButton>
             </DialogActions>
         </Dialog>

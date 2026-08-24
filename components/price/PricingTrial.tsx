@@ -66,7 +66,7 @@ const PricingTrial = () => {
                         }}>
                             <Image
                                 src="/assets/pricing-illustration.png"
-                                alt="Start Trial"
+                                alt="Ilustrasi memulai uji coba gratis SmartSales"
                                 width={230}
                                 height={230}
                                 style={{

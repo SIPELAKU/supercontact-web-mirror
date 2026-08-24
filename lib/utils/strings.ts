@@ -66,8 +66,19 @@ export const strings = createLocalizedStrings({
         company: "Company",
         login: "Login",
         sign_in: "Sign In",
-        try_now: "Try Now",
+        try_now: "Try for Free",
         language: "Language",
+        // Homepage hero slider
+        hero_slider_label: "SmartSales product highlights",
+        hero_slider_prev: "Previous slide",
+        hero_slider_next: "Next slide",
+        hero_slider_goto: "Go to slide {0}",
+        hero_slider_slide_of: "Slide {0} of {1}",
+        hero_cta_free: "Try for Free",
+        hero_slide_learn_more: "Learn More",
+        hero_slide_badge_produk: "Product",
+        hero_slide_badge_solusi: "{0} Solution",
+        sticky_cta_text: "Start managing your sales",
         dark_mode: "Dark Mode",
         light_mode: "Light Mode",
         // Features Page
@@ -296,7 +307,6 @@ export const strings = createLocalizedStrings({
         pm_wa_blast_desc: "Reach thousands of customers automatically.",
 
         // CRM Sales Page
-        crm_sales_hero_badge: "CRM Sales",
         crm_sales_hero_title: "Close More Deals with Sales Automation",
         crm_sales_hero_desc: "Change how your team works. SmartSales CRM Sales automates your entire sales cycle—from managing new prospects to the negotiation stage and closing—in one smart platform.",
         crm_sales_btn_trial: "Start Free Trial",
@@ -379,8 +389,6 @@ export const strings = createLocalizedStrings({
         crm_services_cta_title: "Ready to Provide the Best Customer Service?",
         crm_services_cta_desc: "Join hundreds of CS teams that have switched to SmartSales CRM Services. Start your free evaluation today.",
         crm_services_cta_btn: "Try CRM Services Free",
-
-        omni_hero_badge: "Omnichannel App",
         omni_hero_title: "One Inbox for All Customer Messages",
         omni_hero_desc: "Stop switching between tabs. Manage WhatsApp and other channels in one unified platform. Turn conversations into service or sales tickets with just one click.",
         omni_hero_btn_trial: "Start Free Trial",
@@ -408,8 +416,6 @@ export const strings = createLocalizedStrings({
         omni_cta_title: "Don't keep your customers waiting.",
         omni_cta_desc: "Centralize all your business communications today. Faster response means happier customers and higher sales.",
         omni_cta_btn: "Try Omnichannel Free",
-
-        ticket_hero_badge: "Ticket Creation Integration",
         ticket_hero_title: "Turn Conversations into Concrete Actions",
         ticket_hero_desc: "Don't let customer complaints or requests drown in a pile of chats. Create task tickets directly from the chat panel, track their resolution, and increase your team's accountability.",
         ticket_hero_btn: "Try Feature Free",
@@ -437,7 +443,6 @@ export const strings = createLocalizedStrings({
         ticket_cta_btn: "Schedule Demo Now",
 
         // Finance Solution
-        fin_hero_badge: "Finance Industry Solution",
         fin_hero_title: "Increase Credit Disbursement & Customer Service",
         fin_hero_desc: "Leave manual methods and messy data behind. SmartSales helps banks, cooperatives, and multifinance companies manage credit prospects and customer communications securely and centrally.",
         fin_hero_btn1: "Start 14 Days Free",
@@ -485,7 +490,6 @@ export const strings = createLocalizedStrings({
         fin_cta_btn: "Try SmartSales Free",
 
         // Tour & Travel Solution
-        travel_hero_badge: "Tour & Travel Industry Solution",
         travel_hero_title: "Skyrocket Your Holiday Package Bookings",
         travel_hero_desc: "Turn prospects into loyal customers without exhausting manual processes. Manage tour package availability, customer inquiries, to reschedule matters centrally and efficiently with SmartSales.",
         travel_hero_btn_trial: "Start Free Trial",
@@ -536,7 +540,6 @@ export const strings = createLocalizedStrings({
         travel_cta_btn: "Try SmartSales for Free",
         
         // Hotel Solution
-        hotel_hero_badge: "Hotel Industry Solution",
         hotel_hero_title: "Boost Room Occupancy & Guest Satisfaction",
         hotel_hero_desc: "Turn every WhatsApp inquiry into a successful reservation. SmartSales helps hotels manage room bookings, guest services (room service), and complaints quickly and organized.",
         hotel_hero_btn_trial: "Start Free Trial",
@@ -587,7 +590,6 @@ export const strings = createLocalizedStrings({
         hotel_cta_btn: "Try SmartSales for Free",
 
         // Logistics Solution
-        logistics_hero_badge: "Logistics Industry Solution",
         logistics_hero_title: "Optimize Shipping & Customer Service",
         logistics_hero_desc: "Reduce admin burden answering receipt status messages. SmartSales helps shipping companies manage pickup requests, automated notifications via WhatsApp, and complaint investigation efficiently.",
         logistics_hero_btn_trial: "Start Free Trial",
@@ -638,7 +640,6 @@ export const strings = createLocalizedStrings({
         logistics_cta_btn: "Try SmartSales for Free",
 
         // FMCG Solution
-        fmcg_hero_badge: "FMCG Industry Solution",
         fmcg_hero_title: "Simplify Distribution & Increase Store Orders",
         fmcg_hero_desc: "Gain full control of your distribution chain. SmartSales helps distributors and principals manage orders via WhatsApp, track field team visits (canvassing), and handle product returns centrally.",
         fmcg_hero_btn_trial: "Start Free Trial",
@@ -753,7 +754,6 @@ export const strings = createLocalizedStrings({
         retail_cta_btn: 'Try SmartSales for Free',
 
         // IT Solution
-        it_hero_badge: "IT & SaaS Industry Solution",
         it_hero_title: "Close B2B Deals Faster & Automate IT Support",
         it_hero_desc: "B2B IT sales cycles are long, and technical support never stops. SmartSales helps IT companies manage project Sales Pipelines, unify Helpdesk services via WhatsApp, and streamline bug assignments.",
         it_hero_btn1: "Start Free Trial",
@@ -806,7 +806,6 @@ export const strings = createLocalizedStrings({
         it_cta_btn: "Try SmartSales for Free",
 
         // Sales Solution
-        sol_sales_hero_badge: "Solution for Sales Teams",
         sol_sales_hero_title: "Track Sales & Close More Deals",
         sol_sales_hero_desc: "Stop guessing the status of your prospects. SmartSales provides full visibility into your sales *pipeline*, automates *follow-ups*, and helps your *sales* team focus on what matters most: Selling.",
         sol_sales_hero_btn1: "Start Free Trial",
@@ -864,7 +863,6 @@ export const strings = createLocalizedStrings({
         sol_sales_cta_btn: "Try CRM Sales for Free",
 
         // CS Solution
-        sol_cs_hero_badge: "Solution for Customer Service Teams",
         sol_cs_hero_title: "Turn Every Complaint into Customer Satisfaction",
         sol_cs_hero_desc: "Provide fast, personalized, and efficient customer service. SmartSales brings all communication channels and *ticketing* systems into a single screen to ensure no customer is left behind.",
         sol_cs_hero_btn1: "Start Free Trial",
@@ -922,7 +920,6 @@ export const strings = createLocalizedStrings({
         sol_cs_cta_btn: "Try CRM Services for Free",
 
         // Marketing Solution
-        sol_mkt_hero_badge: "Solution for Marketing Teams",
         sol_mkt_hero_title: "Turn Every Campaign into a Lead Generation Engine",
         sol_mkt_hero_desc: "Send targeted promotions via WhatsApp and Email, manage customer replies in one inbox, and prove your marketing ROI (*Return on Investment*) when *leads* are successfully converted by the Sales team.",
         sol_mkt_hero_btn1: "Start Free Trial",
@@ -1002,7 +999,6 @@ export const strings = createLocalizedStrings({
         sol_mkt_cta_btn: "Try SmartSales for Free",
 
         // Human Resource Solution
-        sol_hr_hero_badge: "Solution for HR Teams",
         sol_hr_hero_title: "Manage Employee Feedback Professionally",
         sol_hr_hero_desc: "Make HR processes more transparent. SmartSales helps Human Resource teams manage internal support tickets, simplify recruitment, and centralize company information delivery via WhatsApp and Email.",
         sol_hr_hero_btn1: "Start Free Trial",
@@ -1077,7 +1073,6 @@ export const strings = createLocalizedStrings({
         sol_hr_mock_broadcast_msg: "Hello (Employee_Name). Informing that head office operations will be closed on August 17th. For field operational shift teams, please check schedule adjustments in the internal portal.",
 
         // Operations Solution
-        sol_op_hero_badge: "Solution for Operations Teams",
         sol_op_hero_title: "Automate Processes & Monitor Field Activities in Real-Time",
         sol_op_hero_desc: "Leave slow manual operational management behind. SmartSales helps you track field tasks, send automated *dispatch* notifications via WhatsApp, and handle incidents quickly.",
         sol_op_hero_btn1: "Start Free Trial",
@@ -1157,7 +1152,6 @@ export const strings = createLocalizedStrings({
         sol_op_mock_ticket_sla: "SLA: Physical check max 15 Mins",
 
         // Outsourcing Solution
-        out_hero_badge: "Outsourcing Industry Solution",
         out_hero_title: "Manage Thousands of Candidates & Clients in One Platform",
         out_hero_desc: "Stop managing workforce and B2B clients using confusing spreadsheets. SmartSales helps you automate recruitment, centralize WhatsApp communication, and handle complaints professionally.",
         out_hero_btn1: "Start Free Trial",
@@ -1250,7 +1244,6 @@ export const strings = createLocalizedStrings({
         sol_role_intmkt_desc: "Unify marketing and sales lead data.",
 
         // Integration Sales & Marketing Solution
-        sol_int_hero_badge: "Sales & Marketing Integration Solution",
         sol_int_hero_title: "Sales & Marketing Integration: Stop Losing Leads Between Two Teams",
         sol_int_hero_desc: "Leads from your marketing campaigns arrive via WhatsApp, Email, and Web Forms — but end up in a spreadsheet or a sales rep's personal phone and are never followed up. SmartSales unifies marketing and sales data in one CRM, so no lead falls through the cracks between the two teams.",
         sol_int_hero_btn1: "Start Free Trial",
@@ -1433,8 +1426,19 @@ export const strings = createLocalizedStrings({
         SmartSales_web: "SmartSales web",
         login: "Masuk",
         sign_in: "Masuk",
-        try_now: "Coba Sekarang",
+        try_now: "Coba Gratis",
         language: "Bahasa",
+        // Slider hero halaman utama
+        hero_slider_label: "Sorotan produk SmartSales",
+        hero_slider_prev: "Slide sebelumnya",
+        hero_slider_next: "Slide berikutnya",
+        hero_slider_goto: "Ke slide {0}",
+        hero_slider_slide_of: "Slide {0} dari {1}",
+        hero_cta_free: "Coba Gratis",
+        hero_slide_learn_more: "Selengkapnya",
+        hero_slide_badge_produk: "Produk",
+        hero_slide_badge_solusi: "Solusi {0}",
+        sticky_cta_text: "Mulai kelola penjualan Anda",
         dark_mode: "Mode Gelap",
         light_mode: "Mode Terang",
         // Halaman Fitur
@@ -1661,7 +1665,6 @@ export const strings = createLocalizedStrings({
         pm_wa_blast_desc: "Jangkau ribuan pelanggan secara otomatis",
 
         // CRM Sales Page
-        crm_sales_hero_badge: "CRM Sales",
         crm_sales_hero_title: "Tutup Lebih Banyak Deal dengan Otomatisasi Penjualan",
         crm_sales_hero_desc: "Ubah cara tim Anda bekerja. SmartSales CRM Sales mengotomatiskan seluruh siklus penjualan Anda—dari mengelola prospek baru hingga tahap negosiasi dan closing—dalam satu platform yang cerdas.",
         crm_sales_btn_trial: "Mulai Uji Coba Gratis",
@@ -1744,8 +1747,6 @@ export const strings = createLocalizedStrings({
         crm_services_cta_title: "Siap Memberikan Layanan Pelanggan Terbaik?",
         crm_services_cta_desc: "Bergabunglah dengan ratusan tim CS yang telah beralih ke SmartSales CRM Services. Mulai evaluasi gratis Anda hari ini.",
         crm_services_cta_btn: "Coba CRM Services Gratis",
-
-        omni_hero_badge: "Aplikasi Omnichannel",
         omni_hero_title: "Satu Kotak Masuk untuk Semua Pesan Pelanggan",
         omni_hero_desc: "Berhenti berpindah antar tab. Kelola WhatsApp dan saluran lainnya dalam satu platform terpadu. Ubah percakapan menjadi tiket layanan atau penjualan hanya dengan satu klik.",
         omni_hero_btn_trial: "Mulai Uji Coba Gratis",
@@ -1773,8 +1774,6 @@ export const strings = createLocalizedStrings({
         omni_cta_title: "Jangan biarkan pelanggan Anda menunggu.",
         omni_cta_desc: "Pusatkan semua komunikasi bisnis Anda hari ini. Respons lebih cepat berarti pelanggan yang lebih bahagia dan penjualan yang lebih tinggi.",
         omni_cta_btn: "Coba Omnichannel Gratis",
-
-        ticket_hero_badge: "Ticket Creation Integration",
         ticket_hero_title: "Ubah Percakapan Menjadi Tindakan Nyata",
         ticket_hero_desc: "Jangan biarkan keluhan atau permintaan pelanggan tenggelam dalam tumpukan chat. Buat tiket tugas langsung dari panel obrolan, pantau penyelesaiannya, dan tingkatkan akuntabilitas tim Anda.",
         ticket_hero_btn: "Coba Fitur Gratis",
@@ -1801,7 +1800,6 @@ export const strings = createLocalizedStrings({
         ticket_cta_btn: "Jadwalkan Demo Sekarang",
 
         // Finance Solution
-        fin_hero_badge: "Solusi Industri Keuangan",
         fin_hero_title: "Tingkatkan Penyaluran Kredit & Layanan Nasabah",
         fin_hero_desc: "Tinggalkan cara manual dan data yang berantakan. SmartSales membantu bank, koperasi, dan perusahaan multifinance mengelola prospek kredit serta komunikasi nasabah dengan aman dan terpusat.",
         fin_hero_btn1: "Mulai Gratis 14 Hari",
@@ -1849,7 +1847,6 @@ export const strings = createLocalizedStrings({
         fin_cta_btn: "Coba SmartSales Gratis",
 
         // Tour & Travel Solution
-        travel_hero_badge: "Solusi Industri Tour & Travel",
         travel_hero_title: "Meroketkan Pemesanan Paket Liburan Anda",
         travel_hero_desc: "Ubah prospek menjadi pelanggan setia tanpa proses manual yang melelahkan. Kelola ketersediaan paket tour, pertanyaan pelanggan, hingga urusan *reschedule* secara terpusat dan efisien bersama SmartSales.",
         travel_hero_btn_trial: "Mulai Uji Coba Gratis",
@@ -1900,7 +1897,6 @@ export const strings = createLocalizedStrings({
         travel_cta_btn: "Coba SmartSales Gratis",
 
         // Hotel Solution
-        hotel_hero_badge: "Solusi Industri Perhotelan",
         hotel_hero_title: "Tingkatkan Okupansi Kamar & Kepuasan Tamu",
         hotel_hero_desc: "Ubah setiap pertanyaan di WhatsApp menjadi reservasi yang sukses. SmartSales membantu hotel mengelola *booking* kamar, layanan tamu (*room service*), hingga komplain dengan cepat dan terorganisir.",
         hotel_hero_btn_trial: "Mulai Uji Coba Gratis",
@@ -1951,7 +1947,6 @@ export const strings = createLocalizedStrings({
         hotel_cta_btn: "Coba SmartSales Gratis",
 
         // Logistics Solution
-        logistics_hero_badge: "Solusi Industri Logistik",
         logistics_hero_title: "Optimalkan Pengiriman & Layanan Pelanggan",
         logistics_hero_desc: "Kurangi beban admin menjawab pesan status resi. SmartSales membantu perusahaan ekspedisi mengelola permintaan *pickup*, notifikasi otomatis via WhatsApp, dan investigasi komplain secara efisien.",
         logistics_hero_btn_trial: "Mulai Uji Coba Gratis",
@@ -2002,7 +1997,6 @@ export const strings = createLocalizedStrings({
         logistics_cta_btn: "Coba SmartSales Gratis",
 
         // FMCG Solution
-        fmcg_hero_badge: "Solusi Industri FMCG",
         fmcg_hero_title: "Sederhanakan Distribusi & Tingkatkan Pesanan Toko",
         fmcg_hero_desc: "Kendalikan penuh rantai distribusi Anda. SmartSales membantu distributor dan prinsipal mengelola *order* via WhatsApp, melacak kunjungan tim lapangan (*canvassing*), serta menangani retur barang secara terpusat.",
         fmcg_hero_btn_trial: "Mulai Uji Coba Gratis",
@@ -2117,7 +2111,6 @@ export const strings = createLocalizedStrings({
         retail_cta_btn: 'Coba SmartSales Gratis',
 
         // IT Solution
-        it_hero_badge: "Solusi Industri IT & SaaS",
         it_hero_title: "Tutup Deal B2B Lebih Cepat & Otomatiskan IT Support",
         it_hero_desc: "Siklus penjualan B2B IT memang panjang, dan dukungan teknis tidak pernah berhenti. SmartSales membantu perusahaan IT mengelola *Pipeline Sales* proyek, menyatukan layanan *Helpdesk* via WhatsApp, dan merampingkan penugasan *bug*.",
         it_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2170,7 +2163,6 @@ export const strings = createLocalizedStrings({
         it_cta_btn: "Coba SmartSales Gratis",
 
         // Outsourcing Solution
-        out_hero_badge: "Solusi Industri Outsourcing",
         out_hero_title: "Kelola Ribuan Kandidat & Klien dalam Satu Platform",
         out_hero_desc: "Tinggalkan pengelolaan tenaga kerja dan klien B2B menggunakan spreadsheet yang memusingkan. SmartSales membantu Anda mengotomatiskan rekrutmen, memusatkan komunikasi WhatsApp, dan menangani komplain secara profesional.",
         out_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2260,7 +2252,6 @@ export const strings = createLocalizedStrings({
         sol_role_ops_desc: "Otomatiskan proses operasional",
 
         // Sales Solution
-        sol_sales_hero_badge: "Solusi untuk Tim Sales",
         sol_sales_hero_title: "Lacak Penjualan & Tutup Lebih Banyak Target",
         sol_sales_hero_desc: "Berhenti menebak-nebak status prospek Anda. SmartSales memberikan visibilitas penuh atas *pipeline* penjualan, mengotomatiskan *follow-up*, dan membantu tim *sales* Anda fokus pada hal yang terpenting: Menjual.",
         sol_sales_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2318,7 +2309,6 @@ export const strings = createLocalizedStrings({
         sol_sales_cta_btn: "Coba CRM Sales Gratis",
 
         // CS Solution
-        sol_cs_hero_badge: "Solusi untuk Tim Customer Service",
         sol_cs_hero_title: "Ubah Setiap Keluhan Menjadi Kepuasan Pelanggan",
         sol_cs_hero_desc: "Berikan layanan pelanggan yang cepat, personal, dan efisien. SmartSales menyatukan semua saluran komunikasi dan sistem *ticketing* dalam satu layar untuk memastikan tidak ada pelanggan yang terabaikan.",
         sol_cs_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2376,7 +2366,6 @@ export const strings = createLocalizedStrings({
         sol_cs_cta_btn: "Coba CRM Services Gratis",
 
         // Marketing Solution
-        sol_mkt_hero_badge: "Solusi untuk Tim Marketing",
         sol_mkt_hero_title: "Ubah Setiap Kampanye Menjadi Mesin Penghasil Leads",
         sol_mkt_hero_desc: "Kirimkan promosi tertarget via WhatsApp dan Email, kelola balasan pelanggan dalam satu kotak masuk, dan buktikan ROI (*Return on Investment*) pemasaran Anda saat *leads* berhasil dikonversi oleh tim Sales.",
         sol_mkt_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2420,7 +2409,6 @@ export const strings = createLocalizedStrings({
         sol_mkt_chall2_title: "Buta Terhadap ROI Kampanye",
 
         // Human Resource Solution
-        sol_hr_hero_badge: "Solusi untuk Tim HRD",
         sol_hr_hero_title: "Kelola Feedback Karyawan Secara Profesional",
         sol_hr_hero_desc: "Jadikan proses HR lebih transparan. SmartSales membantu tim Human Resource mengelola tiket keluhan internal, menyederhanakan proses rekrutmen, dan menyebarkan informasi ke seluruh karyawan melalui WhatsApp dan Email secara terpusat.",
         sol_hr_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2495,7 +2483,6 @@ export const strings = createLocalizedStrings({
         sol_hr_mock_broadcast_msg: "Halo (Nama_Karyawan). Menginformasikan bahwa operasional kantor pusat akan diliburkan pada tanggal 17 Agustus. Untuk tim *shift* operasional lapangan, silakan cek penyesuaian jadwal di portal internal.",
 
         // Operations Solution
-        sol_op_hero_badge: "Solusi untuk Tim Operasional",
         sol_op_hero_title: "Otomatiskan Proses & Pantau Lapangan Secara Real-Time",
         sol_op_hero_desc: "Tinggalkan pengelolaan operasional manual yang lambat. SmartSales membantu Anda melacak tugas lapangan, mengirim notifikasi *dispatch* otomatis via WhatsApp, dan menangani insiden dengan cepat.",
         sol_op_hero_btn1: "Mulai Uji Coba Gratis",
@@ -2615,7 +2602,6 @@ export const strings = createLocalizedStrings({
         sol_role_intmkt_desc: "Satukan data leads marketing dan sales.",
 
         // Integration Sales & Marketing Solution
-        sol_int_hero_badge: "Solusi Integrasi Sales & Marketing",
         sol_int_hero_title: "Integrasi Sales dan Marketing: Hentikan Leads yang Hilang di Antara Dua Tim",
         sol_int_hero_desc: "Leads dari campaign marketing masuk lewat WhatsApp, Email, dan Web Form — tapi berakhir di spreadsheet atau HP pribadi sales dan tidak pernah di-*follow up*. SmartSales menyatukan data marketing dan sales dalam satu CRM, jadi tidak ada lagi leads yang hilang di antara dua tim.",
         sol_int_hero_btn1: "Coba SmartSales Gratis",

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { MRT_TableInstance } from 'material-react-table';
-import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { SuperTableCallbacks, SuperTableState } from '../types';
 
@@ -27,8 +26,19 @@ export function useTableExport<TData extends object>({
 }: UseTableExportParams<TData>): UseTableExportReturn<TData> {
   const [isExporting, setIsExporting] = useState(false);
 
-  // Fungsi helper sentral export ke SheetJS (AOA)
-  const executeExport = (table: MRT_TableInstance<TData>, rowsData: TData[], type: 'csv' | 'excel') => {
+  // Fungsi helper sentral export ke SheetJS (AOA).
+  //
+  // `xlsx` is imported DYNAMICALLY, not at module scope. SuperTable is used by
+  // ~66 screens, so a static import put the whole ~400 kB SheetJS bundle in
+  // the first load of every table route (they measured ~570 kB vs ~230 kB for
+  // non-table routes) purely for an Export button most sessions never press.
+  // Loading it here means the cost is paid on the click that needs it.
+  const executeExport = async (
+    table: MRT_TableInstance<TData>,
+    rowsData: TData[],
+    type: 'csv' | 'excel'
+  ) => {
+    const XLSX = await import('xlsx');
     // 1. Ambil kolom yang SEMUA terekspos ke layar viewer
     // Termasuk menghiraukan "select baris" dan "aksi kebab menu"
     const visibleColumns = table
@@ -118,7 +128,11 @@ export function useTableExport<TData extends object>({
            console.warn("[SuperTable] Data ekspor kosong atau fetch server gagal.");
         }
 
-        executeExport(table, finalDataToExport, type);
+        // MUST be awaited: executeExport now loads xlsx on demand, so without
+        // this the `finally` below clears the spinner before the file is
+        // written, and any failure inside becomes an unhandled rejection
+        // instead of hitting the catch.
+        await executeExport(table, finalDataToExport, type);
       } catch (error) {
         console.error(`[SuperTable Export] Gagal melakukan export ${type}`, error);
       } finally {

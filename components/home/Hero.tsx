@@ -12,6 +12,7 @@ import {
     CardActions,
 } from '@mui/material';
 import Image from 'next/image';
+import Link from 'next/link';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
@@ -66,31 +67,54 @@ const Hero = () => {
                             >
                                 {strings.hero_subtitle}
                             </Typography>
-                            <Button
-                                variant="contained"
-                                color="secondary"
-                                size="large"
-                                startIcon={<WhatsAppIcon />}
-                                onClick={() => {
-                                    trackCtaClick('home', 'hero_cta');
-                                    const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
-                                    window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
-                                }}
-                                sx={{
-                                    backgroundColor: 'white',
-                                    color: 'primary.main',
-                                    fontWeight: 600,
-                                    textTransform: 'none',
-                                    px: 4,
-                                    py: 1.5,
-                                    borderRadius: '50px',
-                                    '&:hover': {
-                                        backgroundColor: '#f5f5f5',
-                                    },
-                                }}
-                            >
-                                {strings.whatsapp_sales_button}
-                            </Button>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                                <Button
+                                    component={Link}
+                                    href="/register"
+                                    variant="contained"
+                                    size="large"
+                                    onClick={() => trackCtaClick('home', 'hero_register_cta')}
+                                    sx={{
+                                        backgroundColor: 'white',
+                                        color: 'primary.main',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        px: 4,
+                                        py: 1.5,
+                                        borderRadius: '50px',
+                                        '&:hover': {
+                                            backgroundColor: '#f5f5f5',
+                                        },
+                                    }}
+                                >
+                                    {strings.hero_cta_free}
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="large"
+                                    startIcon={<WhatsAppIcon />}
+                                    onClick={() => {
+                                        trackCtaClick('home', 'hero_cta');
+                                        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
+                                        window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
+                                    }}
+                                    sx={{
+                                        color: 'white',
+                                        borderColor: 'rgba(255,255,255,0.7)',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        px: 4,
+                                        py: 1.5,
+                                        borderRadius: '50px',
+                                        '&:hover': {
+                                            borderColor: 'white',
+                                            backgroundColor: 'rgba(255,255,255,0.08)',
+                                        },
+                                    }}
+                                >
+                                    {strings.whatsapp_sales_button}
+                                </Button>
+                            </Box>
                         </Box>
                     </Grid>
                     <Grid item xs={12} md={5} sx={{
@@ -108,7 +132,7 @@ const Hero = () => {
                         <Box
                             component="img"
                             src="/assets/banner-design.png"
-                            alt="SmartSales Analytics"
+                            alt="Dasbor analitik penjualan SmartSales dengan grafik performa tim sales"
                             sx={{
                                 width: { xs: '100%', md: '500px', lg: '715.23px' },
                                 maxWidth: 'none',
@@ -224,7 +248,7 @@ const Hero = () => {
                                 </Button>
                             </Box>
                             <Box sx={{ transform: 'translateX(10px)' }}>
-                                <Image src="/assets/Trophy.png" alt="Trophy" width={140} height={140} style={{ objectFit: 'contain' }} />
+                                <Image src="/assets/Trophy.png" alt="" width={140} height={140} style={{ objectFit: 'contain' }} />
                             </Box>
                         </Card>
                     </Grid>

@@ -46,6 +46,8 @@ type FetchQuotationParams = {
     status?: string;
     date_from?: string; // Client Side Injector prop
     date_to?: string;   // Client Side Injector prop
+    sort_by?: string;
+    sort_order?: "asc" | "desc";
 };
 
 type requestBody = {
@@ -56,6 +58,8 @@ type requestBody = {
     date_to?: string;
     quotation_status?: string;
     status?: string;
+    sort_by?: string;
+    sort_order?: "asc" | "desc";
 };
 
 export interface QuotationItem {
@@ -193,6 +197,11 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 (query as any).status_lower = status.toLowerCase();
                 (query as any).filter = status;
                 (query as any).quotation_status_lower = status.toLowerCase();
+            }
+
+            if (params?.sort_by) {
+                query.sort_by = params.sort_by;
+                query.sort_order = params.sort_order ?? "asc";
             }
 
             const search = params?.search ?? get().searchQuery;

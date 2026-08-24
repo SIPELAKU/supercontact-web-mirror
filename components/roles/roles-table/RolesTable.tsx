@@ -2,17 +2,18 @@ import { RoleType } from "@/lib/types/Role";
 import { Chip, SxProps, Theme, Tooltip, Typography } from "@mui/material";
 import DeleteRolesPermissionsButton from "../roles-button-open-modal/DeleteRolesPermissionsButton";
 import EditPermissionsButton from "../roles-button-open-modal/EditPermissionsButton";
-import RolesTableDataNotFound from "./RolesTableDataNotFound";
-import RolesTableError from "./RolesTableError";
-import RolesTableSkeleton from "./RolesTableSkeleton";
 import React from 'react';
 import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
-import { MRT_TableInstance } from 'material-react-table';
+import { MRT_TableInstance } from '@/components/ui/super-table';
+import { EmptyState } from "@/components/ui/empty-state";
+import { ShieldCheck } from "lucide-react";
 
 interface RolesTableProps {
   roles: RoleType[];
   isLoading: boolean;
   isError: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: {
@@ -68,6 +69,8 @@ export default function RolesTable({
   roles,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
   rowCount,
   onStateChange,
   onExportRequest,
@@ -165,7 +168,8 @@ export default function RolesTable({
         data={roles || []}
         isLoading={isLoading}
         isError={isError}
-        errorMessage="Failed to load roles data."
+        errorMessage={errorMessage ?? "Failed to load roles data."}
+        onRetry={onRetry}
         rowCount={rowCount}
         manualPagination={true}
         manualFiltering={true}
@@ -186,7 +190,13 @@ export default function RolesTable({
         initialState={{
           pagination: { pageIndex: 0, pageSize: 10 }
         }}
-        renderEmptyState={() => <Typography className="text-center p-4 text-gray-500">No roles data found.</Typography>}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={ShieldCheck}
+            title="No roles found"
+            description="Create roles to control what each team member can access."
+          />
+        )}
       />
     </div>
   );

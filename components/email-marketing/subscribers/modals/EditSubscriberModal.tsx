@@ -297,7 +297,7 @@ const EditSubscriberModal = ({ open, onClose, onSuccess, subscriberData }: EditS
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

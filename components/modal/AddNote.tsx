@@ -66,7 +66,7 @@ const ModalContent: React.FC<ModalContentProps> = ({ onClose, onSubmit }) => {
       className={`flex flex-col w-full p-5 md:p-6 text-start ${poppins.className}`}
     >
       <h2 className="text-xl md:text-2xl font-semibold text-[#5479EE]">
-        Add New Notes
+        Add Note
       </h2>
       <p className="text-gray-600 text-sm md:text-md mt-1">
         Fill in the details below to add a new Notes.

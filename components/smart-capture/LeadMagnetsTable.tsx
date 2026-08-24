@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { DeleteButton, DuplicateButton, EditButton } from '../ui/app-action-buttons-table';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw } from 'lucide-react';
+import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw, Magnet } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
 import {
   useUpdateSmartCaptureStatus,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/hooks/useSmartCaptures';
 import { notify } from '@/lib/notifications';
 import { BulkUpdateStatusModal } from '../modal/BulkUpdateStatusModal';
+import { ConfirmationPopup } from '../ui/confirmation-popup';
 
 export interface LeadMagnet extends Partial<SmartCapture> {
   id: string;
@@ -32,6 +34,9 @@ interface LeadMagnetsTableProps {
   rowCount?: number;
   isLoading?: boolean;
   isFetching?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   onStateChange?: (state: SuperTableState) => void;
   initialState?: any;
 }
@@ -136,6 +141,9 @@ const LeadMagnetsTable = ({
   rowCount = 0,
   isLoading = false,
   isFetching = false,
+  isError,
+  errorMessage,
+  onRetry,
   onStateChange,
   initialState
 }: LeadMagnetsTableProps) => {
@@ -147,6 +155,7 @@ const LeadMagnetsTable = ({
   const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; clearSelection?: () => void } | null>(null);
 
   const handleDuplicate = (ids: string[], clearSelection?: () => void) => {
     duplicateMutate(ids, {
@@ -159,12 +168,17 @@ const LeadMagnetsTable = ({
   };
 
   const handleDelete = (ids: string[], clearSelection?: () => void) => {
-    if (!window.confirm(`Are you sure you want to delete ${ids.length} item(s)? This action cannot be undone.`)) return;
+    setDeleteTarget({ ids, clearSelection });
+  };
 
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const { ids, clearSelection } = deleteTarget;
     deleteMutate(ids, {
       onSuccess: () => {
         notify.success(`Successfully deleted ${ids.length} item(s)`);
         if (clearSelection) clearSelection();
+        setDeleteTarget(null);
       },
       onError: (err: any) => notify.error(err.message || "Failed to delete")
     });
@@ -174,7 +188,7 @@ const LeadMagnetsTable = ({
     () => [
       {
         accessorKey: 'name',
-        header: 'Nama Magnet',
+        header: 'Magnet Name',
         Cell: ({ cell }) => (
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-500 rounded-md">
@@ -201,7 +215,7 @@ const LeadMagnetsTable = ({
       },
       {
         id: 'conversion',
-        header: 'Konversi',
+        header: 'Conversion',
         // accessorFn: (row) => (row as any).conversion ?? 0,
         accessorKey: 'conversions',
         Cell: ({ cell }) => <span className="text-gray-700">{cell.getValue<number>()}%</span>,
@@ -219,6 +233,21 @@ const LeadMagnetsTable = ({
         rowCount={rowCount}
         isLoading={isLoading}
         isFetching={isFetching || isDuplicating || isDeleting}
+        isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Magnet}
+            title="No lead magnets found"
+            description="Create a lead magnet to start capturing leads from your audience."
+            action={{
+              label: "Add Magnet",
+              onClick: () => router.push('/smart-capture/create'),
+              icon: <Plus size={16} />,
+            }}
+          />
+        )}
         manualPagination={true}
         manualSorting={true}
         manualFiltering={true}
@@ -301,7 +330,7 @@ const LeadMagnetsTable = ({
                   variantStyle="primary"
                   startIcon={<Plus size={16} />}
                 >
-                  Add New Magnet
+                  Add Magnet
                 </AppButton>
               </Link>
             </div>
@@ -311,7 +340,7 @@ const LeadMagnetsTable = ({
               <Link href="/smart-capture/create">
                 <button
                   className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
-                  title="Add New Magnet"
+                  title="Add Magnet"
                 >
                   <Plus size={16} />
                 </button>
@@ -327,6 +356,17 @@ const LeadMagnetsTable = ({
         onSuccess={() => {
           if (clearSelectionFn) clearSelectionFn();
         }}
+      />
+      <ConfirmationPopup
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title={`Delete ${deleteTarget?.ids.length ?? 0} item(s)?`}
+        description={`Are you sure you want to delete ${deleteTarget?.ids.length ?? 0} item(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </>
   );

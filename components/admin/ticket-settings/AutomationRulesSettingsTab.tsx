@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress, Switch } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Switch } from "@mui/material";
+import { Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useTicketAutomationRules,
     useCreateTicketAutomationRule,
     useUpdateTicketAutomationRule,
     useDeleteTicketAutomationRule,
+    useAutoCloseSetting,
+    useUpdateAutoCloseSetting,
 } from "@/lib/hooks/useTicketAutomationRules";
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
 import {
     TicketAutomationAction,
+    TicketAutomationRule,
     TicketAutomationTriggerType,
     TicketConditionClause,
     TicketConditionOp,
@@ -24,7 +30,14 @@ import {
 const TRIGGER_OPTIONS: { value: TicketAutomationTriggerType; label: string }[] = [
     { value: "on_create", label: "On Ticket Created" },
     { value: "on_update", label: "On Ticket Updated" },
+    { value: "time_based", label: "Time-based (scheduled)" },
 ];
+
+function triggerLabel(trigger: TicketAutomationTriggerType): string {
+    if (trigger === "on_create") return "On Create";
+    if (trigger === "on_update") return "On Update";
+    return "Time-based";
+}
 
 const FIELD_OPTIONS = [
     { value: "priority", label: "Priority" },
@@ -39,8 +52,8 @@ const OP_OPTIONS: { value: TicketConditionOp; label: string }[] = [
     { value: "changed_from", label: "changed from" },
 ];
 
-const PRIORITY_VALUES = ["High", "Medium", "Low"];
-const STATUS_VALUES = ["Open", "In Progress", "Closed"];
+const PRIORITY_VALUES = ["Urgent", "High", "Medium", "Low"];
+const STATUS_VALUES = ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"];
 
 const ACTION_TYPE_OPTIONS = [
     { value: "assign", label: "Assign to agent" },
@@ -64,7 +77,7 @@ function emptyAction(): TicketAutomationAction {
 }
 
 export default function AutomationRulesSettingsTab() {
-    const { data, isLoading } = useTicketAutomationRules();
+    const { data, isLoading, isError, refetch } = useTicketAutomationRules();
     const rules = data?.data?.data || [];
     const { data: agentsData } = useAssignableAgents();
     const agentOptions = ((agentsData?.data || agentsData || []) as any[]).map((a) => ({
@@ -76,18 +89,64 @@ export default function AutomationRulesSettingsTab() {
     const updateMutation = useUpdateTicketAutomationRule();
     const deleteMutation = useDeleteTicketAutomationRule();
 
+    // Auto-close solved tickets setting (companies.auto_close_solved_days).
+    const { data: autoCloseData } = useAutoCloseSetting();
+    const updateAutoCloseMutation = useUpdateAutoCloseSetting();
+    const [autoCloseDays, setAutoCloseDays] = useState("");
+
+    useEffect(() => {
+        const value = autoCloseData?.data?.auto_close_solved_days;
+        setAutoCloseDays(value === null || value === undefined ? "" : String(value));
+    }, [autoCloseData]);
+
+    const handleSaveAutoClose = async () => {
+        const trimmed = autoCloseDays.trim();
+        let value: number | null;
+        if (trimmed === "") {
+            value = null; // empty = disabled
+        } else {
+            const parsed = Number(trimmed);
+            if (!Number.isInteger(parsed) || parsed < 0 || parsed > 365) {
+                notify.warning("Validation Error", {
+                    description:
+                        "Enter a whole number of days between 0 and 365 (0 or empty disables auto-close).",
+                });
+                return;
+            }
+            value = parsed;
+        }
+        try {
+            await updateAutoCloseMutation.mutateAsync(value);
+            notify.success("Auto-close setting saved");
+        } catch (error: any) {
+            notify.error("Error", { description: error.message });
+        }
+    };
+
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [triggerType, setTriggerType] = useState<TicketAutomationTriggerType>("on_create");
     const [priority, setPriority] = useState("100");
     const [conditions, setConditions] = useState<TicketConditionClause[]>([emptyCondition()]);
     const [actions, setActions] = useState<TicketAutomationAction[]>([emptyAction()]);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
+        setEditingId(null);
         setName("");
         setTriggerType("on_create");
         setPriority("100");
         setConditions([emptyCondition()]);
         setActions([emptyAction()]);
+    };
+
+    const handleEdit = (rule: TicketAutomationRule) => {
+        setEditingId(rule.id);
+        setName(rule.name);
+        setTriggerType(rule.trigger_type);
+        setPriority(String(rule.priority));
+        setConditions((rule.conditions?.all || []).map((c) => ({ ...c })));
+        setActions((rule.actions || []).map((a) => ({ ...a })));
     };
 
     const updateCondition = (index: number, patch: Partial<TicketConditionClause>) => {
@@ -98,21 +157,35 @@ export default function AutomationRulesSettingsTab() {
         setActions((prev) => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)));
     };
 
-    const handleCreate = async () => {
+    const handleSave = async () => {
         if (!name.trim()) {
             notify.warning("Validation Error", { description: "Please enter a rule name." });
             return;
         }
         try {
-            await createMutation.mutateAsync({
-                name: name.trim(),
-                trigger_type: triggerType,
-                priority: Number(priority) || 100,
-                is_enabled: true,
-                conditions: { all: conditions },
-                actions,
-            });
-            notify.success("Automation rule added");
+            if (editingId) {
+                await updateMutation.mutateAsync({
+                    id: editingId,
+                    data: {
+                        name: name.trim(),
+                        trigger_type: triggerType,
+                        priority: Number(priority) || 100,
+                        conditions: { all: conditions },
+                        actions,
+                    },
+                });
+                notify.success("Automation rule updated");
+            } else {
+                await createMutation.mutateAsync({
+                    name: name.trim(),
+                    trigger_type: triggerType,
+                    priority: Number(priority) || 100,
+                    is_enabled: true,
+                    conditions: { all: conditions },
+                    actions,
+                });
+                notify.success("Automation rule added");
+            }
             resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
@@ -127,14 +200,37 @@ export default function AutomationRulesSettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        try {
-            await deleteMutation.mutateAsync(id);
-            notify.success("Automation rule removed");
-        } catch (error: any) {
-            notify.error("Error", { description: error.message });
-        }
-    };
+    const columns = useMemo<MRT_ColumnDef<TicketAutomationRule>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                id: "trigger",
+                accessorFn: (row) => triggerLabel(row.trigger_type),
+                header: "Trigger",
+            },
+            {
+                accessorKey: "priority",
+                header: "Priority",
+            },
+            {
+                id: "enabled",
+                accessorFn: (row) => (row.is_enabled ? "Yes" : "No"),
+                header: "Enabled",
+                Cell: ({ row }) => (
+                    <Switch
+                        checked={row.original.is_enabled}
+                        onChange={(e) => handleToggleEnabled(row.original.id, e.target.checked)}
+                        size="small"
+                    />
+                ),
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -143,6 +239,38 @@ export default function AutomationRulesSettingsTab() {
                 created or updated and match the conditions below. Every enabled matching rule runs, in
                 priority order (lower number = runs first).
             </p>
+
+            <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-800">Auto-close solved tickets</h3>
+                    <p className="text-xs text-gray-500 mt-1 max-w-2xl">
+                        Automatically move a ticket from Solved to Closed after it has stayed Solved for
+                        the number of days below. Set to 0 or leave empty to disable. Checked on a
+                        schedule (hourly).
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-500">
+                            Automatically close Solved tickets after (days)
+                        </label>
+                        <AppInput
+                            isBgWhite
+                            type="number"
+                            placeholder="Disabled"
+                            value={autoCloseDays}
+                            inputProps={{ min: 0, max: 365 }}
+                            onChange={(e) => setAutoCloseDays(e.target.value)}
+                        />
+                    </div>
+                    <AppButton
+                        onClick={handleSaveAutoClose}
+                        disabled={updateAutoCloseMutation.isPending}
+                    >
+                        Save
+                    </AppButton>
+                </div>
+            </div>
 
             <div className="rounded-xl border border-gray-200 p-4 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -165,6 +293,12 @@ export default function AutomationRulesSettingsTab() {
                             options={TRIGGER_OPTIONS}
                             onChange={(e) => setTriggerType(e.target.value as TicketAutomationTriggerType)}
                         />
+                        {triggerType === "time_based" && (
+                            <p className="text-xs text-gray-500">
+                                Time-based rules are re-evaluated on a schedule (hourly) against open
+                                tickets and fire at most once per ticket.
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-gray-500">Priority (lower runs first)</label>
@@ -294,69 +428,78 @@ export default function AutomationRulesSettingsTab() {
                     </button>
                 </div>
 
-                <div className="flex justify-end">
-                    <AppButton onClick={handleCreate} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                        Add Rule
+                <div className="flex justify-end gap-2">
+                    {editingId && (
+                        <AppButton variantStyle="outline" onClick={resetForm}>
+                            Cancel
+                        </AppButton>
+                    )}
+                    <AppButton
+                        onClick={handleSave}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                        startIcon={editingId ? undefined : <Plus size={16} />}
+                    >
+                        {editingId ? "Save Changes" : "Add Rule"}
                     </AppButton>
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Trigger</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Priority</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Enabled</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : rules.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No automation rules configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            rules.map((rule) => (
-                                <TableRow key={rule.id} hover>
-                                    <TableCell>{rule.name}</TableCell>
-                                    <TableCell>
-                                        {rule.trigger_type === "on_create" ? "On Create" : "On Update"}
-                                    </TableCell>
-                                    <TableCell>{rule.priority}</TableCell>
-                                    <TableCell>
-                                        <Switch
-                                            checked={rule.is_enabled}
-                                            onChange={(e) => handleToggleEnabled(rule.id, e.target.checked)}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => handleDelete(rule.id)}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete rule"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketAutomationRule>
+                tableId="ticket-automation-rules-table"
+                columns={columns}
+                data={rules}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load automation rules. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit rule"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete rule"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Zap}
+                        title="No automation rules configured yet"
+                        description="Rules you add run automatically when tickets are created or updated."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={async () => {
+                    if (!deleteTarget) return;
+                    try {
+                        await deleteMutation.mutateAsync(deleteTarget.id);
+                        notify.success("Automation rule removed");
+                        setDeleteTarget(null);
+                    } catch (error: any) {
+                        notify.error("Error", { description: error.message });
+                    }
+                }}
+                title="Delete Automation Rule"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

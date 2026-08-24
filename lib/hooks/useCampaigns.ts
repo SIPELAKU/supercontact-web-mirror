@@ -15,13 +15,20 @@ import type { CreateCampaignData, UpdateCampaignData } from '../types/email-mark
 import Cookies from 'js-cookie';
 
 // Fetch all campaigns
-export function useCampaigns(page: number = 1, limit: number = 10, search?: string) {
+export function useCampaigns(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+) {
   return useQuery({
-    queryKey: ['campaigns', page, limit, search],
+    queryKey: ['campaigns', page, limit, search, status, sortBy, sortOrder],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchCampaigns(token, page, limit, search);
+      return fetchCampaigns(token, page, limit, search, status, sortBy, sortOrder);
     },
   });
 }

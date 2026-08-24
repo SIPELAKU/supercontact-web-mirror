@@ -88,6 +88,17 @@ export async function createDsrRequest(
     return handle<DsrRequestItem>(res, "Failed to log request");
 }
 
+export async function deleteDsrRequest(
+    token: string,
+    id: string
+): Promise<{ deleted: boolean; id: string }> {
+    const res = await fetchWithTimeout(`${BASE_URL()}/dsr/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    return handle(res, "Failed to delete request");
+}
+
 export async function updateDsrRequestStatus(
     token: string,
     id: string,

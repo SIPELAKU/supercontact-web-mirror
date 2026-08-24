@@ -215,10 +215,9 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                    Broadcast Name <span style={{ color: 'red' }}>*</span>
-                  </Typography>
                   <AppInput
+                    label="Broadcast Name"
+                    required
                     isBgWhite
                     fullWidth
                     placeholder="e.g. Ramadan Promotion 2024"
@@ -229,7 +228,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
                 {accounts.length > 1 && (
                   <Grid item xs={12} md={6}>
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                      Send From <span style={{ color: 'red' }}>*</span>
+                      Send From <span className="text-red-500">*</span>
                     </Typography>
                     <AccountSelect
                       accounts={accounts}
@@ -275,7 +274,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
 
               <Box>
                 <Typography variant="body2" sx={{ mb: 2, fontWeight: 500 }}>
-                  Audience Selection <span style={{ color: 'red' }}>*</span>
+                  Audience Selection <span className="text-red-500">*</span>
                 </Typography>
                 <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                   <AppButton

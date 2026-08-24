@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
-import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 
@@ -286,12 +285,12 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 ">
                     <div className="mt-2">
                         <h2 className="text-2xl font-semibold text-[#5479EE]">
-                            {id ? "Update Product" : "Add New Product"}
+                            {id ? "Update Product" : "Add Product"}
                         </h2>
                     </div>
 
                     <div className="mt-6 space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-900">Product Name</label>
                                 <AppInput
@@ -316,7 +315,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-900">
                                     SKU
@@ -387,8 +386,9 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             color="primary"
                             onClick={handleSave}
                             disabled={loading}
+                            isLoading={loading}
                         >
-                            {loading ? <Spinner /> : id ? "Update Product" : "Save Product"}
+                            {id ? "Update Product" : "Save Product"}
                         </AppButton>
                     </div>
                 </DialogContent>
@@ -402,7 +402,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 description="This will discard your current record."
                 confirmText="Discard record"
                 cancelText="Cancel"
-                variant="danger"
+                variant="discard"
             />
         </>
     );

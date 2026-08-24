@@ -73,7 +73,7 @@ export default function SubscriptionClient() {
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-12 space-y-8">
             <SettingsPageHeader
-                title="My Subscription"
+                title="Billing"
                 description="Manage your billing, plans, and active subscriptions."
                 breadcrumbs={[{ label: "Settings", href: "/settings" }, { label: "Billing" }]}
             />
@@ -157,29 +157,29 @@ export default function SubscriptionClient() {
                                     <div className="bg-white rounded-[22px] border border-gray-200 p-8 flex flex-col h-full items-center text-center">
                                         <h3 className="text-2xl font-bold text-gray-800 mb-4">Free Trial</h3>
                                         <p className="text-sm text-gray-500 mb-6">
-                                            Mulai gunakan SmartSales secara<br />gratis dengan batasan<br />penggunaan.
+                                            Start using SmartSales for<br />free with usage<br />limits.
                                         </p>
                                         <div className="flex items-baseline justify-center mb-8">
                                             <span className="text-sm font-semibold text-gray-600 mr-2">Rp.</span>
                                             <span className="text-[64px] leading-none font-bold text-[#5479EE]">0</span>
-                                            <span className="text-sm text-gray-500 ml-1">/bulan</span>
+                                            <span className="text-sm text-gray-500 ml-1">/month</span>
                                         </div>
                                         <div className="flex flex-col gap-5 text-left w-full mb-8">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium text-gray-700 leading-tight">Hingga 100 kontak (batas<br />maksimum)</span>
+                                                <span className="text-[15px] font-medium text-gray-700 leading-tight">Up to 100 contacts<br />(maximum limit)</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium text-gray-700">1-2 pengguna per akun</span>
+                                                <span className="text-[15px] font-medium text-gray-700">1-2 users per account</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-400 mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium text-gray-700">Fitur CRM dasar</span>
+                                                <span className="text-[15px] font-medium text-gray-700">Basic CRM features</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-gray-300 mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium text-gray-400 line-through">Tanpa akses Data Intelligence</span>
+                                                <span className="text-[15px] font-medium text-gray-400 line-through">No Data Intelligence access</span>
                                             </div>
                                         </div>
                                         <div className="mt-auto w-full">
@@ -214,7 +214,7 @@ export default function SubscriptionClient() {
                                                         <CheckCircle2 size={18} className="text-[#25D366]" />
                                                         <span>Current Plan</span>
                                                     </div>
-                                                ) : "Whatsapp Sales"}
+                                                ) : "WhatsApp Sales"}
                                             </Button>
                                         </div>
                                     </div>
@@ -236,31 +236,31 @@ export default function SubscriptionClient() {
                                         </div>
                                         <h3 className="text-2xl font-bold text-white mb-4 mt-4">Exclusive</h3>
                                         <p className="text-sm font-medium text-white mb-6 px-1">
-                                            Maksimalkan potensi bisnis Anda<br />dengan solusi CRM yang dapat<br />dikustomisasi.
+                                            Maximize your business potential<br />with a fully customizable<br />CRM solution.
                                         </p>
                                         <div className="flex flex-col items-center justify-center mb-8 text-white min-h-[56px] w-full">
-                                            <div className="text-[34px] font-bold leading-tight">Hubungi</div>
+                                            <div className="text-[34px] font-bold leading-tight">Contact</div>
                                             <div className="flex items-baseline gap-2">
-                                                <span className="text-[34px] font-bold leading-tight">Kami</span>
-                                                <span className="text-[15px] font-semibold">/ sesuai kontrak</span>
+                                                <span className="text-[34px] font-bold leading-tight">Us</span>
+                                                <span className="text-[15px] font-semibold">/ per contract</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-5 text-left w-full mb-8 text-white">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium leading-tight">Kontak & pengguna tanpa<br />batas</span>
+                                                <span className="text-[15px] font-medium leading-tight">Unlimited contacts &<br />users</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium leading-tight">Akses penuh ke Data<br />Intelligence</span>
+                                                <span className="text-[15px] font-medium leading-tight">Full access to Data<br />Intelligence</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium leading-tight">Workflow & automasi kustom</span>
+                                                <span className="text-[15px] font-medium leading-tight">Custom workflows & automation</span>
                                             </div>
                                             <div className="flex items-start gap-3">
                                                 <div className="w-[18px] h-[18px] rounded-full border-2 border-white mt-0.5 shrink-0" />
-                                                <span className="text-[15px] font-medium leading-tight">Dukungan & onboarding khusus</span>
+                                                <span className="text-[15px] font-medium leading-tight">Dedicated support & onboarding</span>
                                             </div>
                                         </div>
                                         <div className="mt-auto w-full">
@@ -276,7 +276,7 @@ export default function SubscriptionClient() {
                                                 ) : (
                                                     <div className="flex items-center justify-center gap-2">
                                                         <WhatsAppIcon sx={{ fontSize: 20 }} />
-                                                        Whatsapp Sales
+                                                        WhatsApp Sales
                                                     </div>
                                                 )}
                                             </AppButton>

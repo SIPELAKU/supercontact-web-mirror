@@ -248,7 +248,7 @@ export default function DynamicFormTab({ formData, updateFormData }: DynamicForm
                     className="w-full py-4 border-2 border-dashed border-[#5479EE]/30 text-[#5479EE] hover:bg-[#5479EE]/5 rounded-2xl flex justify-center items-center gap-2 font-bold text-sm transition-all hover:border-[#5479EE] mt-4 group"
                   >
                     <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                    Add New Question
+                    Add Question
                   </button>
                 </div>
               </SortableContext>

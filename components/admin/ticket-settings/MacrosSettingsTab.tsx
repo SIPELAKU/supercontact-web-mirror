@@ -1,44 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { MessageSquare, Pencil, Plus, Trash2 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { AppSelect } from "@/components/ui/app-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { TicketMacro } from "@/lib/types/TicketSettings";
 import {
     useTicketMacros,
     useCreateTicketMacro,
+    useUpdateTicketMacro,
     useDeleteTicketMacro,
 } from "@/lib/hooks/useTicketMacros";
 
 const STATUS_OPTIONS = [
     { value: "", label: "No change" },
     { value: "Open", label: "Open" },
+    { value: "Pending", label: "Pending" },
+    { value: "On-hold", label: "On-hold" },
     { value: "In Progress", label: "In Progress" },
+    { value: "Solved", label: "Solved" },
     { value: "Closed", label: "Closed" },
 ];
 
 const PRIORITY_OPTIONS = [
     { value: "", label: "No change" },
+    { value: "Urgent", label: "Urgent" },
     { value: "High", label: "High" },
     { value: "Medium", label: "Medium" },
     { value: "Low", label: "Low" },
 ];
 
 export default function MacrosSettingsTab() {
-    const { data, isLoading } = useTicketMacros();
+    const { data, isLoading, isError, refetch } = useTicketMacros();
     const macros = data?.data?.data || [];
     const createMutation = useCreateTicketMacro();
+    const updateMutation = useUpdateTicketMacro();
     const deleteMutation = useDeleteTicketMacro();
 
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [name, setName] = useState("");
     const [bodyTemplate, setBodyTemplate] = useState("");
     const [statusChange, setStatusChange] = useState("");
     const [priorityChange, setPriorityChange] = useState("");
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    const handleAdd = async () => {
+    const resetForm = () => {
+        setEditingId(null);
+        setName("");
+        setBodyTemplate("");
+        setStatusChange("");
+        setPriorityChange("");
+    };
+
+    const handleEdit = (macro: TicketMacro) => {
+        setEditingId(macro.id);
+        setName(macro.name);
+        setBodyTemplate(macro.body_template);
+        setStatusChange(macro.field_changes?.status || "");
+        setPriorityChange(macro.field_changes?.priority || "");
+    };
+
+    const handleSave = async () => {
         if (!name.trim() || !bodyTemplate.trim()) {
             notify.warning("Validation Error", { description: "Please fill in name and reply body." });
             return;
@@ -48,29 +75,59 @@ export default function MacrosSettingsTab() {
         if (priorityChange) field_changes.priority = priorityChange;
 
         try {
-            await createMutation.mutateAsync({
-                name: name.trim(),
-                body_template: bodyTemplate.trim(),
-                field_changes,
-            });
-            notify.success("Macro added");
-            setName("");
-            setBodyTemplate("");
-            setStatusChange("");
-            setPriorityChange("");
+            if (editingId) {
+                await updateMutation.mutateAsync({
+                    id: editingId,
+                    data: {
+                        name: name.trim(),
+                        body_template: bodyTemplate.trim(),
+                        field_changes,
+                    },
+                });
+                notify.success("Macro updated");
+            } else {
+                await createMutation.mutateAsync({
+                    name: name.trim(),
+                    body_template: bodyTemplate.trim(),
+                    field_changes,
+                });
+                notify.success("Macro added");
+            }
+            resetForm();
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("Macro removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
     };
+
+    const columns = useMemo<MRT_ColumnDef<TicketMacro>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                accessorKey: "body_template",
+                header: "Reply Body",
+                Cell: ({ cell }) => (
+                    <div className="max-w-md truncate" title={cell.getValue<string>()}>
+                        {cell.getValue<string>()}
+                    </div>
+                ),
+            },
+        ],
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -124,56 +181,68 @@ export default function MacrosSettingsTab() {
                 </div>
             </div>
 
-            <div className="flex justify-end">
-                <AppButton onClick={handleAdd} disabled={createMutation.isPending} startIcon={<Plus size={16} />}>
-                    Add Macro
+            <div className="flex justify-end gap-2">
+                {editingId && (
+                    <AppButton variantStyle="outline" onClick={resetForm}>
+                        Cancel
+                    </AppButton>
+                )}
+                <AppButton
+                    onClick={handleSave}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    startIcon={editingId ? undefined : <Plus size={16} />}
+                >
+                    {editingId ? "Save Changes" : "Add Macro"}
                 </AppButton>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Reply Body</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : macros.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No macros configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            macros.map((macro) => (
-                                <TableRow key={macro.id} hover>
-                                    <TableCell>{macro.name}</TableCell>
-                                    <TableCell className="max-w-md truncate">{macro.body_template}</TableCell>
-                                    <TableCell align="right">
-                                        <button
-                                            onClick={() => handleDelete(macro.id)}
-                                            className="text-gray-300 hover:text-red-500"
-                                            aria-label="Delete macro"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<TicketMacro>
+                tableId="ticket-macros-table"
+                columns={columns}
+                data={macros}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load macros. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit macro"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete macro"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={MessageSquare}
+                        title="No macros configured yet"
+                        description="Saved replies you add can be applied from any ticket in one click."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Macro"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

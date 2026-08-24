@@ -6,11 +6,16 @@ import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/supe
 import { BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
 import { DeleteButton, EditButton, ViewButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Megaphone, Plus } from "lucide-react";
 
 interface BroadcastingWATableProps {
   broadcasts: BroadcastCampaign[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<BroadcastCampaign[]>;
@@ -39,6 +44,9 @@ export default function BroadcastingWATable({
   broadcasts,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   onStateChange,
   onExportRequest,
@@ -95,7 +103,7 @@ export default function BroadcastingWATable({
     {
       id: "created_at",
       accessorKey: "created_at",
-      header: "Created At",
+      header: "Created",
       enableColumnFilter: false,
       Cell: ({ row }) => (
         <Typography variant="caption">
@@ -137,8 +145,23 @@ export default function BroadcastingWATable({
         manualFiltering={true}
         manualPagination={true}
         manualSorting={true}
+        initialState={{ sorting: [{ id: "created_at", desc: true }] }}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Megaphone}
+            title="No broadcasts found"
+            description="Create a WhatsApp broadcast to message your recipients."
+            action={
+              onAdd
+                ? { label: "Create Broadcast", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}

@@ -7,11 +7,16 @@ import { DepartmentsType } from "@/lib/types/Departments";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Building2, Plus } from "lucide-react";
 
 interface DepartmentsTableListProps {
   departments: DepartmentsType[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   branchOptions?: string[];
   onStateChange?: (state: SuperTableState) => void;
@@ -27,6 +32,9 @@ export default function DepartmentsTableList({
   departments,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   branchOptions = [],
   onStateChange,
@@ -67,6 +75,9 @@ export default function DepartmentsTableList({
       accessorFn: (row) => row.manager?.fullname || "-",
       header: "Manager",
       enableColumnFilter: false,
+      // Manager/member metadata is resolved in a separate post-query on
+      // the backend - not sortable server-side, so no sort arrow.
+      enableSorting: false,
       Cell: ({ row }) =>
         row.original.manager === null ? (
           <span>-</span>
@@ -88,11 +99,13 @@ export default function DepartmentsTableList({
       accessorKey: "manager_code",
       header: "Manager ID",
       enableColumnFilter: false,
+      enableSorting: false,
     },
     {
       accessorKey: "member_count",
       header: "Member Count",
       enableColumnFilter: false,
+      enableSorting: false,
       muiTableBodyCellProps: { align: "center" },
       muiTableHeadCellProps: { align: "center" },
     },
@@ -126,6 +139,20 @@ export default function DepartmentsTableList({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Building2}
+            title="No departments found"
+            description="Create departments to organize your team structure."
+            action={
+              onAdd
+                ? { label: "Add Department", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
@@ -141,8 +168,8 @@ export default function DepartmentsTableList({
             }}
           >
             {isBulkDeleting
-              ? "Menghapus..."
-              : `Hapus ${selectedRows.length} Department`}
+              ? "Deleting..."
+              : `Delete (${selectedRows.length})`}
           </AppButton>
         ) : undefined}
         features={{

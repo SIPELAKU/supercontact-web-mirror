@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConversation, useMarkAsRead, useDeleteConversation, useCreateTicketFromConversation } from "@/lib/hooks/useOmnichannel";
-import { ArrowLeft, Trash2, CheckCheck, Mail, MessageCircle, Loader2, Ticket as TicketIcon } from "lucide-react";
+import { ArrowLeft, Trash2, CheckCheck, Mail, MessageCircle, Smartphone, Loader2, Ticket as TicketIcon } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import MessageList from "./MessageList";
@@ -102,6 +102,8 @@ const ConversationView: React.FC<ConversationViewProps> = ({ conversationId }) =
               <div className="p-2 bg-gray-100 rounded-lg">
                 {conversation.channel_type === 'whatsapp' ? (
                   <MessageCircle className="text-green-600" size={20} />
+                ) : conversation.channel_type === 'sms' ? (
+                  <Smartphone className="text-amber-600" size={20} />
                 ) : (
                   <Mail className="text-blue-600" size={20} />
                 )}

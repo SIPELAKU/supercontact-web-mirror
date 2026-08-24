@@ -19,7 +19,7 @@ export default function DepartmentsTableError({
           <TableCell>Branch</TableCell>
           <TableCell>Manager</TableCell>
           <TableCell>Members</TableCell>
-          <TableCell align="center">Action</TableCell>
+          <TableCell align="center">Actions</TableCell>
         </TableRow>
       </TableHead>
 

@@ -62,30 +62,35 @@ const menuData: MenuSection[] = [
         name: "Sales",
         icon: TrendingUp,
         children: [
-          { name: "Product", path: "/sales/product", permission: "products" },
-          { name: "Lead", path: "/lead-management", permission: "leads" },
+          { name: "Products", path: "/sales/product", permission: "products" },
+          { name: "Leads", path: "/lead-management", permission: "leads" },
           { name: "Pipeline", path: "/sales/pipeline", permission: "pipelines" },
-          { name: "Quotation", path: "/sales/quotation", permission: "quotations" },
+          { name: "Quotations", path: "/sales/quotation", permission: "quotations" },
         ],
       },
       {
+        // Intentionally ungated: the smart-capture API endpoints require
+        // authentication only (auth_require) - there is no permissions_require
+        // gate on any of them, so there is no permission string to mirror here.
         name: "Smart Capture",
         icon: Target,
         path: "/smart-capture",
       },
       {
-        name: "Contact",
+        name: "Contacts",
         icon: Contact,
         path: "/contact",
         permission: "contacts",
       },
       {
-        name: "Whatsapp Marketing",
+        name: "WhatsApp Marketing",
         icon: MessageCircle,
         children: [
           { name: "Recipients", path: "/whatsapp-marketing/recipients", permission: "recipients" },
-          { name: "Broadcast Template", path: "/whatsapp-marketing/template-broadcasting" },
-          { name: "Broadcast Group", path: "/whatsapp-marketing/group-broadcasting", permission: "broadcast_groups" },
+          // "omnichannel:setup" mirrors the gate on every /broadcast-templates
+          // API endpoint (permissions_require("omnichannel:setup")).
+          { name: "Templates", path: "/whatsapp-marketing/template-broadcasting", permission: "omnichannel:setup" },
+          { name: "Groups", path: "/whatsapp-marketing/group-broadcasting", permission: "broadcast_groups" },
           { name: "Broadcasts", path: "/whatsapp-marketing/broadcasting-wa", permission: "broadcasts" },
         ],
       },
@@ -93,9 +98,9 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
-          { name: "All Subscribers", path: "/email-marketing/subscribers", permission: "subscribers" },
-          { name: "Campaign", path: "/email-marketing/campaigns", permission: "campaigns" },
-          { name: "Mailing List", path: "/email-marketing/mailing-lists", permission: "mailing_lists" },
+          { name: "Subscribers", path: "/email-marketing/subscribers", permission: "subscribers" },
+          { name: "Campaigns", path: "/email-marketing/campaigns", permission: "campaigns" },
+          { name: "Mailing Lists", path: "/email-marketing/mailing-lists", permission: "mailing_lists" },
         ],
       },
       {
@@ -129,13 +134,18 @@ const menuData: MenuSection[] = [
         ],
       },
       {
+        // Flattened from a group with a single child ("Dashboard") - same
+        // rationale as Omnichannel above: a one-child group only added a
+        // click between the user and its single destination.
         name: "Analytics",
         icon: BarChart3,
-        children: [
-          { name: "Dashboard", path: "/analytics/dashboard", permission: "analytics" },
-        ],
+        path: "/analytics/dashboard",
+        permission: "analytics",
       },
       {
+        // Intentionally ungated: the notes API's permissions_require("notes")
+        // dependency is commented out server-side, so the API enforces
+        // authentication only. Re-gate this once the API does.
         name: "Notes",
         icon: FileText,
         path: "/notes",
@@ -144,8 +154,31 @@ const menuData: MenuSection[] = [
         name: "Support",
         icon: HelpCircle,
         children: [
+          // Unified cross-entity feed: tickets + omnichannel conversations in
+          // one read-only list (Increment 8). Visible to anyone who can read
+          // EITHER side, so the union gate mirrors the Tickets read grant plus
+          // the Omnichannel "use" grant (any-of).
+          { name: "All Work", path: "/support/all", permission: ["tickets:read:my", "tickets:read:team", "tickets", "omnichannel:use"] },
+          // Conversation-first agent workspace (sibling to the contact-first
+          // Omnichannel inbox above). Gated on the same "omnichannel:use"
+          // permission the Omnichannel entry uses.
+          { name: "Workspace", path: "/support/workspace", permission: "omnichannel:use" },
           { name: "Tickets", path: "/support/tickets", permission: ["tickets:read:my", "tickets:read:team", "tickets"] },
-          { name: "Ticket Dashboard", path: "/support/tickets/dashboard", permission: ["tickets:reports:view", "tickets"] },
+          // Phase 10 Support Analytics (tabs: Tickets / Conversations /
+          // Agents / CSAT). The old /support/tickets/dashboard route still
+          // renders the same Tickets dashboard, this entry just points at
+          // the tabbed page. Any-of union of the per-tab gates so anyone
+          // who can see at least one tab gets the entry.
+          { name: "Analytics", path: "/support/analytics", permission: ["tickets:reports:view", "tickets", "conversations:reports:view", "omnichannel:use"] },
+          // Phase 8D QA reviews - visible to anyone holding ANY qa grant
+          // (viewers, reviewers, and scorecard admins all land here).
+          { name: "QA Reviews", path: "/support/qa", permission: ["support:qa:view", "support:qa:review", "support:qa:manage"] },
+          // Flow Studio (F1) - visual automation flows. Same gate the backend
+          // /support/flows endpoints enforce.
+          { name: "Flows", path: "/support/flows", permission: "conversations:routing:manage" },
+          // Phase 6 Help Center / Knowledge Base authoring app. Gated on the
+          // base read grant (publish/manage imply read on the page itself).
+          { name: "Knowledge Base", path: "/knowledge-base", permission: ["knowledge:read", "knowledge:author", "knowledge:publish", "knowledge:manage"] },
         ],
       },
     ],

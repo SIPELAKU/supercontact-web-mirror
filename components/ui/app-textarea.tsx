@@ -2,6 +2,7 @@
 
 import React from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 
 // --- Design Tokens ---
@@ -77,25 +78,52 @@ const StyledTextArea = styled(TextField, {
   }),
 );
 
-export interface AppTextareaProps extends Omit<TextFieldProps, "variant"> {
+export interface AppTextareaProps extends Omit<TextFieldProps, "variant" | "label"> {
   isBgWhite?: boolean;
   rounded?: string;
+  /** Rendered as a static label above the field (AppSelect-style). */
+  label?: string;
+  /** Renders a standard red asterisk after the label. */
+  required?: boolean;
+  /** Mirrors AppSelect: paints the field border red. */
+  error?: boolean;
+  /** Mirrors AppSelect: message shown under the field (red when `error`). */
+  helperText?: React.ReactNode;
 }
 
 export const AppTextarea: React.FC<AppTextareaProps> = ({
   isBgWhite = false,
   rounded,
   rows = 4,
+  label,
+  required,
   ...props
 }) => {
-  return (
+  const field = (
     <StyledTextArea
       multiline
       fullWidth
       rows={rows}
+      required={required}
       isBgWhite={isBgWhite}
       rounded={rounded}
       {...props}
     />
+  );
+
+  if (!label) return field;
+
+  return (
+    <div style={{ width: "100%" }}>
+      <Typography
+        variant="body2"
+        component="label"
+        sx={{ mb: 1, display: "block", fontWeight: 500, color: "text.secondary" }}
+      >
+        {label}
+        {required && <span style={{ color: "#EF4444" }}> *</span>}
+      </Typography>
+      {field}
+    </div>
   );
 };

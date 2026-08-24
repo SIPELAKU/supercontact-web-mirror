@@ -54,7 +54,7 @@ export default function CreateSmartCaptureClient({
       options: f.options,
       sorting_id: f.sorting_id || `field_${Math.random().toString(36).substr(2, 9)}`
     })) || DEFAULT_FIELDS,
-    mail_sender_id: initialData?.mail_sender_id || '',
+    mail_server_id: initialData?.mail_server_id || '',
   });
 
   const TABS = [
@@ -124,7 +124,7 @@ export default function CreateSmartCaptureClient({
           </AppButton>
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              {mode === 'edit' ? 'Edit Lead Magnet' : 'Create New Lead Magnet'}
+              {mode === 'edit' ? 'Edit Smart Capture' : 'Add Smart Capture'}
             </h1>
             <p className="text-gray-500 text-xs mt-0.5">
               Lead Magnets

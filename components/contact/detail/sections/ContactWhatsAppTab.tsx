@@ -8,9 +8,12 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { fetchWithTimeout } from "@/lib/api/api-client";
 import { useCreateWaRecipient } from "@/lib/hooks/useWaRecipients";
 import type { GroupBroadcast, GroupBroadcastsResponse } from "@/lib/types/whatsapp-marketing";
+import { ContactChannelChat } from "./ContactChannelChat";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface ContactWhatsAppTabProps {
     contactId: string;
+    contactName?: string;
     isRecipient: boolean;
     broadcastGroups: { id: string; name: string }[];
     token: string;
@@ -46,6 +49,7 @@ async function deleteRecipientFromBroadcastGroup(
 
 export const ContactWhatsAppTab = ({
     contactId,
+    contactName,
     isRecipient,
     broadcastGroups,
     token,
@@ -55,6 +59,7 @@ export const ContactWhatsAppTab = ({
     const [loadingOptions, setLoadingOptions] = useState(false);
     const [selected, setSelected] = useState<GroupBroadcast | null>(null);
     const [removingId, setRemovingId] = useState<string | null>(null);
+    const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
     const createRecipient = useCreateWaRecipient();
 
     const joinedIds = useMemo(() => new Set(broadcastGroups.map((g) => g.id)), [broadcastGroups]);
@@ -88,11 +93,14 @@ export const ContactWhatsAppTab = ({
         }
     };
 
-    const handleRemove = async (group: { id: string; name: string }) => {
+    const handleConfirmRemove = async () => {
+        if (!removeTarget) return;
+        const group = removeTarget;
         setRemovingId(group.id);
         try {
             await deleteRecipientFromBroadcastGroup(token, group.id, contactId);
             notify.success("Removed", { description: `Removed from "${group.name}".` });
+            setRemoveTarget(null);
             onChanged();
         } catch (err) {
             notify.error("Error", { description: handleError(err, "Remove from Broadcast Group") });
@@ -103,6 +111,17 @@ export const ContactWhatsAppTab = ({
 
     return (
         <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-3">
+                <h3 className="text-sm font-semibold text-gray-700">Conversation</h3>
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+                    <ContactChannelChat
+                        contactId={contactId}
+                        contactName={contactName}
+                        channelType="whatsapp"
+                    />
+                </div>
+            </div>
+
             <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-500">Recipient status</span>
                 <span
@@ -131,7 +150,7 @@ export const ContactWhatsAppTab = ({
                                 component="a"
                                 href={`/whatsapp-marketing/group-broadcasting/${group.id}`}
                                 clickable
-                                onDelete={() => handleRemove(group)}
+                                onDelete={() => setRemoveTarget(group)}
                                 deleteIcon={
                                     removingId === group.id ? undefined : <X size={14} />
                                 }
@@ -167,6 +186,18 @@ export const ContactWhatsAppTab = ({
                     {createRecipient.isPending ? "Adding..." : "Add"}
                 </AppButton>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!removeTarget}
+                onClose={() => setRemoveTarget(null)}
+                onConfirm={handleConfirmRemove}
+                title="Remove from Broadcast Group"
+                description={`Remove this contact from "${removeTarget?.name ?? ""}"? They will no longer receive broadcasts sent to this group.`}
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={removingId === removeTarget?.id}
+            />
         </div>
     );
 };

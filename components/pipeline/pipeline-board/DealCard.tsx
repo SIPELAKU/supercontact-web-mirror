@@ -12,7 +12,7 @@ export const dealStages = [
   { label: "Negotiation", bgColor: "bg-[#72E128]/16", textColor: "text-[#72E128]" },
   { label: "Proposal", bgColor: "bg-[#6D788D]/16", textColor: "text-[#6D788D]" },
   { label: "Closed - Won", bgColor: "bg-[#666CFF]/16", textColor: "text-[#666CFF]" },
-  { label: "Closed - Lost", bgColor: "bg-[#FF4D49]/16", textColor: "text-[#FF4D49]" },
+  { label: "Closed - Lost", bgColor: "bg-[#EF4444]/16", textColor: "text-[#EF4444]" },
 ] as const
 
 function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product }: DealCardProps) {

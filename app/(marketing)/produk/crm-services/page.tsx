@@ -32,6 +32,30 @@ export const metadata: Metadata = {
     },
 };
 
+const softwareAppJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'SmartSales CRM Services',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: PAGE_URL,
+    description:
+        'Modul CRM Services SmartSales: sistem ticketing terpusat untuk tim Customer Service dengan SLA otomatis dan Quick Replies untuk WhatsApp, Instagram, dan Email.',
+    inLanguage: 'id-ID',
+    publisher: {
+        '@type': 'Organization',
+        name: 'SmartSales',
+        url: 'https://www.smartsales.id',
+    },
+    offers: {
+        '@type': 'Offer',
+        url: 'https://www.smartsales.id/price',
+        priceCurrency: 'IDR',
+        price: '0',
+        description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
+    },
+};
+
 const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -157,6 +181,10 @@ const faqJsonLd = {
 export default function CrmServicesPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

@@ -15,8 +15,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { notify } from "@/lib/notifications";
-import html2canvas from "html2canvas-pro";
-import jsPDF from "jspdf";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { Spinner } from "../ui/spinner";
@@ -338,6 +336,20 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     document.body.appendChild(element);
 
     try {
+      // html2canvas-pro and jsPDF are loaded HERE, not at module scope: both
+      // are large and are only needed by this one download handler, so a
+      // static import made every visitor of this page pay for them whether or
+      // not they ever export a PDF.
+      const [h2cMod, jspdfMod] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+      ]);
+      // Resolve defensively: the browser (ESM build) and Node (CJS build)
+      // expose these under different keys, so pin to whichever is a callable
+      // rather than assuming one bundler resolution.
+      const html2canvas = (h2cMod as any).default ?? (h2cMod as any);
+      const jsPDF = (jspdfMod as any).jsPDF ?? (jspdfMod as any).default;
+
       // Small timeout to ensure DOM render
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -383,7 +395,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         breadcrumbs={[
           { label: "Sales" },
           { label: "Quotation Builder" },
-          { label: "Add New Quotation" },
+          { label: "Add Quotation" },
         ]}
       />
 
@@ -412,8 +424,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
-          <div className="flex items-center justify-between px-6">
-            <section className="flex items-center gap-4">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-6">
+            <section className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <label htmlFor="salesperson" className="text-foreground font-medium">
                 Salesperson:
               </label>
@@ -439,7 +451,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <NotesCard notes={notes} onChange={setNotes} />
           <div className="flex justify-end items-center mb-8 px-6">
-            <div className="flex gap-3">
+            <div className="flex flex-wrap justify-end gap-3">
               <Link href="/sales/quotation">
                 <AppButton variantStyle="danger" color="danger">
                   Cancel

@@ -37,22 +37,17 @@ const InputField: React.FC<InputProps> = ({
   isRequired = false,
   error,
 }) => (
-  <div className="flex flex-col w-full gap-2">
-    <label className="font-medium text-gray-700">
-      {label}
-      {isRequired && <span className="text-red-500"> *</span>}
-    </label>
-    <AppInput
-      required={isRequired}
-      type="text"
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      isBgWhite
-      className={error ? "border-red-500" : ""}
-    />
-    {error && <span className="text-red-500 text-sm">{error}</span>}
-  </div>
+  <AppInput
+    label={label}
+    required={isRequired}
+    type="text"
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    isBgWhite
+    error={!!error}
+    helperText={error}
+  />
 );
 
 // ---------------------------------------------------------------------------
@@ -275,7 +270,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
         >
           <div className="p-6">
             <h2 className="text-2xl font-bold text-[#5479EE]">
-              {isEdit ? "Edit Recipient" : "Add New Recipient"}
+              {isEdit ? "Edit Recipient" : "Add Recipient"}
             </h2>
             <p className="text-gray-600 text-md mt-1">
               {isEdit
@@ -379,7 +374,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
                     setContactSearchQuery(newInputValue);
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  label="Pilih Kontak untuk di-import"
+                  label="Select contacts to import"
                   placeholder="Search name or email..."
                   error={Boolean(errors.contacts)}
                   helperText={errors.contacts}
@@ -434,7 +429,7 @@ const AddRecipientModal: React.FC<AddRecipientModalProps> = ({
         description="This will discard your current changes."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

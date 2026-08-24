@@ -3,20 +3,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
+import { Box, Typography } from '@mui/material';
 
 import PageHeader from '@/components/ui/page-header';
-import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { notify } from '@/lib/notifications';
 import {
   useBroadcastTemplates,
@@ -44,29 +34,20 @@ export default function BroadcastTemplatesClient() {
   }, [accounts, accountId]);
 
   // Pagination & search state
+  // (search is already debounced by SuperTable — no extra debounce layer here)
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Confirmation state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
   const { data, isLoading, isError, refetch } = useBroadcastTemplates(
     {
       page,
       limit,
-      search: debouncedSearch || undefined,
+      search: searchQuery || undefined,
       account_id: accountId || undefined,
     },
     { enabled: !!accountId }
@@ -81,12 +62,16 @@ export default function BroadcastTemplatesClient() {
 
   const handleStateChange = useCallback(
     (state: { page: number; limit: number; search: string }) => {
-      if (state.page !== page) setPage(state.page);
+      const searchChanged = state.search !== searchQuery;
+      if (searchChanged) setSearchQuery(state.search);
       if (state.limit !== limit) {
         setLimit(state.limit);
         setPage(1);
+      } else if (searchChanged) {
+        setPage(1); // Reset to first page on search
+      } else if (state.page !== page) {
+        setPage(state.page);
       }
-      if (state.search !== searchQuery) setSearchQuery(state.search);
     },
     [page, limit, searchQuery]
   );
@@ -160,56 +145,33 @@ export default function BroadcastTemplatesClient() {
         </Box>
       )}
 
-      {isError ? (
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="error">Failed to load broadcast templates.</Typography>
-          <AppButton onClick={() => refetch()} sx={{ mt: 2 }}>Try Again</AppButton>
-        </Box>
-      ) : (
-        <BroadcastTemplatesTable
-          templates={templates}
-          isLoading={isLoading}
-          totalCount={totalCount}
-          onStateChange={handleStateChange}
-          onCreate={handleCreate}
-          onEdit={handleEdit}
-          onDuplicate={handleDuplicate}
-          onDeleteRequest={handleDeleteRequest}
-        />
-      )}
+      {/* Error state renders inside the table (with Retry) — SuperTable owns it */}
+      <BroadcastTemplatesTable
+        templates={templates}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage="Failed to load broadcast templates."
+        onRetry={() => refetch()}
+        totalCount={totalCount}
+        onStateChange={handleStateChange}
+        onCreate={handleCreate}
+        onEdit={handleEdit}
+        onDuplicate={handleDuplicate}
+        onDeleteRequest={handleDeleteRequest}
+      />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedToDelete?.length} selected template(s)?{' '}
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle="outline">
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleConfirmDelete}
-            color="danger"
-            variantStyle="danger"
-            disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}
-          >
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Yes, Delete'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      {/* Delete Confirmation */}
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete ${selectedToDelete?.length} selected template(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+      />
     </div>
   );
 }

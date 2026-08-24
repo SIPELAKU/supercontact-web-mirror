@@ -58,25 +58,25 @@
 #   1. Tag versi (v1.5.0, v1.5.0-rc.1) → deployment normal
 #   2. Push ke staging/main             → hotfix urgent (oleh Lead)
 #
-# Push ke dev, feature/*, bugfix/* → TIDAK ada pipeline
+#   3. Push ke dev                      → deploy dev.smartsales.id
+#
+# Push ke feature/*, bugfix/* → TIDAK ada pipeline
 # (ditambah auto [skip ci] via .githooks/prepare-commit-msg)
 workflow:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+(-rc\.\d+)?$/'
       when: always
-    - if: '$CI_COMMIT_BRANCH =~ /^(staging|main|master)$/'
+    - if: '$CI_COMMIT_BRANCH =~ /^(dev|staging|main|master)$/'
       when: always
     - when: never
 
 # ---- Konfigurasi Global ----
-
-image: node:20-alpine
-
-# Caching untuk vercel CLI agar tidak install ulang setiap run
-cache:
-  key: vercel-cli
-  paths:
-    - /usr/local/lib/node_modules/vercel/
+#
+# 2026-08-19: dipindah dari shared runner (image node:20-alpine) ke
+# self-hosted shell runner (tags: active) karena kuota menit CI shared
+# runner GitLab Free habis. Shell runner mengabaikan `image:`; node
+# tersedia di host runner. Vercel CLI di-install lokal per job
+# (npm i -g butuh root di shell runner).
 
 stages:
   - deploy
@@ -84,6 +84,109 @@ stages:
 variables:
   NEXT_TELEMETRY_DISABLED: "1"
   NODE_OPTIONS: "--max-old-space-size=4096"
+  # Slug Environment Vercel untuk tier dev. TIDAK ditebak dan TIDAK punya
+  # fallback: kalau salah, `vercel pull` gagal dan job berhenti - jauh lebih
+  # baik daripada diam-diam membangun dev memakai env var milik preview
+  # (mis. NEXT_PUBLIC_API_URL menunjuk ke API yang salah).
+  # Ubah lewat GitLab → Settings → CI/CD → Variables bila slug-nya berbeda.
+  VERCEL_DEV_ENV: "development"
+
+# ============================================================
+# Deploy to DEV (Vercel Preview + alias dev.smartsales.id)
+# ============================================================
+#
+# Dipicu oleh: push/merge ke branch dev.
+#
+# Kenapa job ini ada: dev.smartsales.id dulu mengandalkan auto-deploy Vercel,
+# dan itu berhenti bekerja tanpa suara - push berhasil, pipeline "success"
+# dengan NOL job, dan domainnya tetap menyajikan build lama. Gejalanya baru
+# terlihat sebagai halaman error saat seseorang membuka rute baru.
+#
+# Langkah `vercel alias` di bawah adalah inti perbaikannya: `vercel deploy`
+# tanpa --prod menghasilkan deployment PREVIEW yang TIDAK otomatis mengambil
+# alih domain kustom. Ini bug yang sama persis dengan yang pernah terjadi di
+# brod-frontend.
+# ============================================================
+deploy_dev:
+  stage: deploy
+  tags: [active]
+  environment:
+    name: development
+    url: https://dev.smartsales.id
+  script:
+    - echo "🧪 Deploying to DEV"
+    - echo "   Branch  → $CI_COMMIT_BRANCH"
+    - echo "   Commit  → $CI_COMMIT_SHORT_SHA"
+    - VERSION=$(node -p "require('./package.json').version")
+    - echo "   Version → $VERSION"
+
+    # Vercel CLI ke prefix terpisah - meng-install ke node_modules proyek
+    # mencemari dependency tree dan mematahkan `vercel build`.
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
+
+    # Kalau slug environment salah, job berhenti DI SINI - bukan lanjut
+    # membangun dev dengan env var yang salah.
+    - echo "   Vercel env → $VERCEL_DEV_ENV"
+    - vercel pull --yes --environment=$VERCEL_DEV_ENV --token=$VERCEL_TOKEN
+
+    # `vercel build` hanya membaca .env.preview.local, jadi salin dari env dev.
+    - |
+      SRC=".vercel/.env.${VERCEL_DEV_ENV}.local"
+      if [ ! -f "$SRC" ]; then
+        echo "❌ $SRC tidak ada setelah vercel pull."
+        echo "   Slug environment '$VERCEL_DEV_ENV' kemungkinan salah."
+        echo "   Perbaiki variabel CI VERCEL_DEV_ENV, jangan tebak di sini."
+        ls -a .vercel || true
+        exit 1
+      fi
+      cp "$SRC" .vercel/.env.preview.local
+
+    # The marketing site dogfoods the Web Widget, and app/(marketing)/layout.tsx
+    # falls back to the PRODUCTION widget key when NEXT_PUBLIC_WIDGET_KEY is
+    # unset. On dev that key does not exist in the dev database, so the config
+    # fetch 404s and the widget silently renders nothing - it looks like the
+    # widget "isn't there" rather than like a misconfiguration.
+    #
+    # NEXT_PUBLIC_* is inlined at BUILD time, so it has to be in the env file
+    # `vercel build` reads, not just in the job environment.
+    - |
+      if [ -n "$NEXT_PUBLIC_WIDGET_KEY" ]; then
+        echo "NEXT_PUBLIC_WIDGET_KEY=\"$NEXT_PUBLIC_WIDGET_KEY\"" >> .vercel/.env.preview.local
+        echo "   Widget key → set for dev (${NEXT_PUBLIC_WIDGET_KEY:0:8}…)"
+      else
+        echo "   Widget key → NOT set; the marketing widget will fall back to"
+        echo "                the production key and stay invisible on dev."
+      fi
+
+    # The widget needs an ABSOLUTE ws:// base. data-api-url is "/api/proxy" - a
+    # relative path that cannot carry a WebSocket upgrade - and the widget's
+    # fallback (apiUrl with http->ws) leaves it relative, so `new WebSocket()`
+    # never connects. Symptom: replies only appear after a page refresh.
+    - |
+      if [ -n "$NEXT_PUBLIC_WS_URL" ]; then
+        echo "NEXT_PUBLIC_WS_URL=\"$NEXT_PUBLIC_WS_URL\"" >> .vercel/.env.preview.local
+        echo "   WS base   → $NEXT_PUBLIC_WS_URL"
+      else
+        echo "   WS base   → NOT set; the widget will have no realtime channel"
+        echo "                and messages will only appear on refresh."
+      fi
+
+    - vercel build --token=$VERCEL_TOKEN
+    - DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)
+    - echo "Preview URL → $DEPLOY_URL"
+
+    # WAJIB: tanpa ini deployment-nya jadi preview tak ber-alias dan
+    # dev.smartsales.id tetap menunjuk build lama.
+    - vercel alias $DEPLOY_URL dev.smartsales.id --token=$VERCEL_TOKEN
+
+    - echo ""
+    - echo "✅ Dev deployment selesai!"
+    - echo "   URL → https://dev.smartsales.id"
+    - echo "   Commit → $CI_COMMIT_SHORT_SHA"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
 
 # ============================================================
 # Deploy to STAGING (Vercel Preview)
@@ -103,6 +206,7 @@ variables:
 # ============================================================
 deploy_staging:
   stage: deploy
+  tags: [active]
   environment:
     name: staging
     url: https://solvera-supercontact-staging.vercel.app
@@ -119,8 +223,14 @@ deploy_staging:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI
-    - npm i -g vercel
+    # Install Vercel CLI ke prefix terpisah - meng-install ke node_modules
+    # proyek mencemari dependency tree dan mematahkan vercel build
+    # (ENOENT @vercel/next server-launcher.js)
+    # Shell runner memakai ulang build dir - bersihkan node_modules yang
+    # mungkin tercemar dari run sebelumnya (vercel build install sendiri).
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
 
     # Pull konfigurasi Vercel project (env vars staging)
     - vercel pull --yes --environment=staging --token=$VERCEL_TOKEN
@@ -171,6 +281,7 @@ deploy_staging:
 # ============================================================
 deploy_prod:
   stage: deploy
+  tags: [active]
   environment:
     name: production
     url: https://solvera-supercontact.vercel.app
@@ -187,8 +298,14 @@ deploy_prod:
     - VERSION=$(node -p "require('./package.json').version")
     - echo "   Version → $VERSION"
 
-    # Install Vercel CLI
-    - npm i -g vercel
+    # Install Vercel CLI ke prefix terpisah - meng-install ke node_modules
+    # proyek mencemari dependency tree dan mematahkan vercel build
+    # (ENOENT @vercel/next server-launcher.js)
+    # Shell runner memakai ulang build dir - bersihkan node_modules yang
+    # mungkin tercemar dari run sebelumnya (vercel build install sendiri).
+    - rm -rf node_modules
+    - mkdir -p .vercel-cli && npm install --prefix .vercel-cli vercel --no-audit --no-fund
+    - export PATH="$PWD/.vercel-cli/node_modules/.bin:$PATH"
 
     # Pull konfigurasi Vercel project
     - vercel pull --yes --environment=production --token=$VERCEL_TOKEN

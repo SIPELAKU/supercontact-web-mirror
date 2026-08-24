@@ -14,11 +14,13 @@ export function useSmartCaptureSubmissions(id: string, params: {
   page?: number;
   limit?: number;
   search?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 } = {}) {
-  const { page = 1, limit = 10, search } = params;
+  const { page = 1, limit = 10, search, sort_by, sort_order } = params;
 
   return useQuery<SmartCaptureSubmissionsResponse, Error>({
-    queryKey: ["smart-capture-submissions", id, page, limit, search],
+    queryKey: ["smart-capture-submissions", id, page, limit, search, sort_by, sort_order],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) {

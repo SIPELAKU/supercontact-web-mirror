@@ -4,10 +4,12 @@ import { useState, useCallback, useRef } from "react";
 import useDepartments, { useBranches } from "@/lib/hooks/useDepartments";
 import {
   AddDepartmentsButton,
-  DeleteDepartmentsModal,
+  AddDepartmentsModal,
   DepartmentsTableList,
   EditDepartmentsModal,
 } from "@/components/organization";
+import { useRouter } from "next/navigation";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { DepartmentsType } from "@/lib/types/Departments";
 import { AppButton } from "@/components/ui/app-button";
@@ -27,6 +29,7 @@ export default function OrganizationClient() {
     useState<DepartmentsType | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
+  const [openAddMobile, setOpenAddMobile] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Table state driven by SuperTable
@@ -34,6 +37,7 @@ export default function OrganizationClient() {
     pagination: { pageIndex: 0, pageSize: 10 },
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[],
   });
 
   // Extract filters from tableState
@@ -42,16 +46,48 @@ export default function OrganizationClient() {
   const branchFilter = tableState.columnFilters
     .find((f) => f.id === "branch")?.value as string | undefined;
 
+  // Server-side sorting (sort_by/sort_order contract). Sortable column ids
+  // (department, branch, created_at) match the backend whitelist directly;
+  // manager/manager_code/member_count are computed and have sorting disabled.
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: "asc" | "desc" | undefined = sortParam
+    ? (sortParam.desc ? "desc" : "asc")
+    : undefined;
+
   // Fetch departments with React Query
-  const { departments, total, isLoading, isError, error, deleteDepartment } = useDepartments(
+  const { departments, total, isLoading, isError, error, refetch, deleteDepartment, isDeleting } = useDepartments(
     tableState.pagination.pageIndex,
     tableState.pagination.pageSize,
     tableState.globalFilter,
     {
       department: departmentFilter || undefined,
       branch: branchFilter || undefined,
-    }
+    },
+    sortByParam,
+    sortOrderParam
   );
+  const router = useRouter();
+
+  // Ported as-is from the deleted DeleteDepartmentsModal (departments-modal/delete-departments)
+  const handleConfirmDelete = async () => {
+    if (!selectedDepartment?.id) return;
+    try {
+      if (!token) {
+        notify.error("No authentication token", {
+          description: "Please login to continue",
+        });
+        router.push("/login");
+        return;
+      }
+      await deleteDepartment(selectedDepartment.id);
+      notify.success("Department deleted successfully");
+      setOpenDelete(false);
+    } catch (error) {
+      console.error("Failed to delete department:", error);
+      notify.error("Failed to delete department");
+    }
+  };
 
   // Fetch branch options for filter dropdown
   const { data: branchesData } = useBranches();
@@ -72,6 +108,7 @@ export default function OrganizationClient() {
       },
       globalFilter: newState.globalFilter,
       columnFilters: (newState.columnFilters || []) as { id: string; value: unknown }[],
+      sorting: (newState.sorting || []) as { id: string; desc: boolean }[],
     });
   }, []);
 
@@ -121,10 +158,21 @@ export default function OrganizationClient() {
   };
 
   // Bulk delete handler
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    departments: DepartmentsType[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedDepts: DepartmentsType[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ departments: selectedDepts, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { departments: selectedDepts, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -139,13 +187,14 @@ export default function OrganizationClient() {
     }
 
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
 
     if (successCount > 0) {
-      notify.success(`${successCount} department berhasil dihapus`);
+      notify.success(`${successCount} department(s) deleted successfully`);
     }
     if (failCount > 0) {
-      notify.error(`${failCount} department gagal dihapus`);
+      notify.error(`${failCount} department(s) failed to delete`);
     }
   };
 
@@ -178,6 +227,9 @@ export default function OrganizationClient() {
         departments={departments}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={error || undefined}
+        onRetry={() => refetch()}
+        onAdd={() => setOpenAddMobile(true)}
         rowCount={total}
         branchOptions={branchOptions}
         onStateChange={handleTableStateChange}
@@ -210,13 +262,11 @@ export default function OrganizationClient() {
             {/* Mobile — icon only w-9 h-9 */}
             <div className="flex md:hidden gap-2">
               <button
-                onClick={() => {
-                  // Trigger add — AddDepartmentsButton has internal modal
-                  // For mobile, we render the full button for now
-                }}
-                className="flex items-center justify-center w-9 h-9 
-                           rounded-md bg-[#5479EE] text-white 
+                onClick={() => setOpenAddMobile(true)}
+                className="flex items-center justify-center w-9 h-9
+                           rounded-md bg-[#5479EE] text-white
                            hover:bg-[#3F66E0] transition-colors"
+                title="Add Department"
               >
                 <Plus size={16} />
               </button>
@@ -233,10 +283,32 @@ export default function OrganizationClient() {
         )}
       />
 
-      <DeleteDepartmentsModal
-        open={openDelete}
-        setOpen={setOpenDelete}
-        departmentId={selectedDepartment?.id}
+      <ConfirmationPopup
+        isOpen={openDelete}
+        onClose={() => setOpenDelete(false)}
+        onConfirm={handleConfirmDelete}
+        title="Are you sure you want to delete this department?"
+        description="This action is permanent and cannot be undone"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {openAddMobile && (
+        <AddDepartmentsModal open={openAddMobile} setOpen={setOpenAddMobile} />
+      )}
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.departments.length ?? 0} department(s)?`}
+        description="The selected departments will be permanently deleted. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
       />
 
       {selectedDepartment && (

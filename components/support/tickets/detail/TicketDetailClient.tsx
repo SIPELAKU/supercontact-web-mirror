@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Tabs, Tab } from "@mui/material";
-import { Pencil, Trash2, GitMerge, Link2 } from "lucide-react";
+import { Pencil, Trash2, GitMerge, Link2, ClipboardCheck } from "lucide-react";
+import { AppTabs } from "@/components/ui/app-tabs";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { notify } from "@/lib/notifications";
@@ -14,7 +14,7 @@ import { useTicket, useDeleteTicket } from "@/lib/hooks/useTickets";
 import { useConversation } from "@/lib/hooks/useOmnichannel";
 import { useTicketCustomFields } from "@/lib/hooks/useTicketCustomFields";
 import { useUploadTicketAttachments, useDeleteTicketAttachment } from "@/lib/hooks/useTicketAttachments";
-import { TicketPriorityBadge, TicketStatusBadge } from "../TicketBadges";
+import { TicketPriorityBadge, TicketStatusBadge, TicketTypeBadge } from "../TicketBadges";
 import { TicketSlaBadge } from "../TicketSlaBadge";
 import { EditTicketModal } from "../modals/EditTicketModal";
 import { TicketCommentThread } from "./TicketCommentThread";
@@ -23,9 +23,12 @@ import { TicketAttachmentUploader } from "./TicketAttachmentUploader";
 import { TicketViewersIndicator } from "./TicketViewersIndicator";
 import { ApplyMacroButton } from "./ApplyMacroButton";
 import { TicketLinksPanel } from "./TicketLinksPanel";
+import { TicketParticipantsPanel } from "./TicketParticipantsPanel";
+import { TicketSideConversationsPanel } from "./TicketSideConversationsPanel";
 import { TicketConversationPanel } from "./TicketConversationPanel";
 import { MergeTicketModal } from "../modals/MergeTicketModal";
 import { LinkTicketModal } from "../modals/LinkTicketModal";
+import { QaReviewFormDialog } from "@/components/support/qa/QaReviewFormDialog";
 
 interface TicketDetailClientProps {
     id: string;
@@ -38,9 +41,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { can } = usePermission();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
     const canDelete = can(["tickets:delete", "tickets"]);
+    const canQaReview = can("support:qa:review");
 
     const { data, isLoading, error } = useTicket(id);
     const deleteMutation = useDeleteTicket();
@@ -51,6 +55,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isMergeOpen, setIsMergeOpen] = useState(false);
     const [isLinkOpen, setIsLinkOpen] = useState(false);
+    const [isQaOpen, setIsQaOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<DetailTab>(() => {
         const requested = searchParams.get("tab") as DetailTab | null;
         return requested && VALID_TABS.includes(requested) ? requested : "overview";
@@ -76,10 +81,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
 
     const handleDelete = () => {
         if (!ticket) return;
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Ticket",
-            message: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
+            description: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -103,10 +108,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
     };
 
     const handleDeleteAttachment = (attachmentId: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove Attachment",
-            message: "Are you sure you want to remove this attachment?",
+            description: "Are you sure you want to remove this attachment?",
             confirmText: "Remove",
             onConfirm: async () => {
                 try {
@@ -155,7 +160,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                 title={`#${ticket.ticket_code} - ${ticket.subject}`}
                 breadcrumbs={[
                     { label: "Support" },
-                    { label: "Ticket", href: "/support/tickets" },
+                    { label: "Tickets", href: "/support/tickets" },
                     { label: ticket.ticket_code || ticket.id },
                 ]}
             />
@@ -176,6 +181,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
             <div className="flex flex-wrap items-center gap-3">
                 <TicketPriorityBadge priority={ticket.priority} />
                 <TicketStatusBadge status={ticket.status} />
+                <TicketTypeBadge type={ticket.type} />
                 <TicketSlaBadge sla={ticket.sla} />
                 <TicketViewersIndicator ticketId={ticket.id} />
                 {ticket.category && (
@@ -192,6 +198,15 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                     </span>
                 ))}
                 <div className="ml-auto flex items-center gap-2">
+                    {canQaReview && (
+                        <AppButton
+                            variantStyle="outline"
+                            onClick={() => setIsQaOpen(true)}
+                            startIcon={<ClipboardCheck size={14} />}
+                        >
+                            QA review
+                        </AppButton>
+                    )}
                     {canWrite && <ApplyMacroButton ticketId={ticket.id} />}
                     {canWrite && !ticket.merged_into_ticket_id && (
                         <AppButton
@@ -232,29 +247,15 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                 </div>
             </div>
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => handleTabChange(val)}
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            minWidth: "auto",
-                            padding: "10px 4px",
-                            marginRight: "28px",
-                            color: "#6B7280",
-                        },
-                        "& .Mui-selected": { color: "#5479EE!important" },
-                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
-                    }}
-                >
-                    <Tab label="Overview" value="overview" disableRipple />
-                    <Tab label="Activity" value="activity" disableRipple />
-                    <Tab label="Conversation" value="conversation" disableRipple />
-                </Tabs>
-            </Box>
+            <AppTabs<DetailTab>
+                value={activeTab}
+                onChange={handleTabChange}
+                tabs={[
+                    { value: "overview", label: "Overview" },
+                    { value: "activity", label: "Activity" },
+                    { value: "conversation", label: "Conversation" },
+                ]}
+            />
 
             {activeTab === "overview" && (
                 <div className="space-y-6">
@@ -321,6 +322,10 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
                         </div>
                     </div>
 
+                    <TicketParticipantsPanel ticketId={id} />
+
+                    <TicketSideConversationsPanel ticketId={id} />
+
                     <TicketLinksPanel ticketId={id} />
                 </div>
             )}
@@ -340,6 +345,21 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
             <EditTicketModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} ticket={ticket} />
             <MergeTicketModal isOpen={isMergeOpen} onClose={() => setIsMergeOpen(false)} ticket={ticket} />
             <LinkTicketModal isOpen={isLinkOpen} onClose={() => setIsLinkOpen(false)} ticket={ticket} />
+            {canQaReview && (
+                <QaReviewFormDialog
+                    isOpen={isQaOpen}
+                    onClose={() => setIsQaOpen(false)}
+                    defaultSubjectType="ticket"
+                    defaultSubjectId={ticket.id}
+                    lockSubject
+                    defaultAgent={
+                        ticket.assigned_agent
+                            ? { id: ticket.assigned_agent.id, name: ticket.assigned_agent.fullname }
+                            : null
+                    }
+                />
+            )}
+            {confirmationPopup}
         </div>
     );
 }

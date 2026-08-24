@@ -1,7 +1,8 @@
 import { TicketCategory, TicketTag } from "./TicketSettings";
 
-export type TicketPriority = "High" | "Medium" | "Low";
-export type TicketStatus = "Open" | "In Progress" | "Closed";
+export type TicketPriority = "Urgent" | "High" | "Medium" | "Low";
+export type TicketStatus = "Open" | "Pending" | "On-hold" | "In Progress" | "Solved" | "Closed";
+export type TicketType = "Question" | "Incident" | "Problem" | "Task";
 
 export interface Agent {
     id: string;
@@ -39,9 +40,41 @@ export interface LinkedTicketSummary {
     status: TicketStatus;
 }
 
+// Phase 5 / Inc 3: typed link vocabulary. Each link is stored inverse-mirrored
+// on the backend, so a ticket's own row already carries its perspective's type
+// (e.g. the "blocks" side sees "blocks", the other side sees "blocked_by").
+export type TicketLinkType =
+    | "related"
+    | "duplicate"
+    | "blocks"
+    | "blocked_by"
+    | "parent_of"
+    | "child_of";
+
+// Human labels used both when creating a link (picker) and when rendering an
+// existing one (panel), e.g. "Blocks #123", "Blocked by #45", "Related to #9".
+export const TICKET_LINK_TYPE_LABELS: Record<TicketLinkType, string> = {
+    related: "Related to",
+    duplicate: "Duplicate of",
+    blocks: "Blocks",
+    blocked_by: "Blocked by",
+    parent_of: "Parent of",
+    child_of: "Child of",
+};
+
+// Options offered in the link-type picker (this ticket's own perspective).
+export const TICKET_LINK_TYPE_OPTIONS: { value: TicketLinkType; label: string }[] = [
+    { value: "related", label: "Related to" },
+    { value: "duplicate", label: "Duplicate of" },
+    { value: "blocks", label: "Blocks" },
+    { value: "blocked_by", label: "Blocked by" },
+    { value: "parent_of", label: "Parent of" },
+    { value: "child_of", label: "Child of" },
+];
+
 export interface TicketLink {
     id: string;
-    link_type: string;
+    link_type: TicketLinkType;
     created_at: string;
     other_ticket: LinkedTicketSummary;
 }
@@ -69,6 +102,7 @@ export interface Ticket {
     customer_email: string;
     priority: TicketPriority;
     status: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     assigned_agent?: Agent;
     created_by?: Agent;
@@ -80,6 +114,8 @@ export interface Ticket {
     sla?: TicketSlaSummary | null;
     merged_into_ticket_id?: string | null;
     source_conversation_id?: string | null;
+    // Phase 5 / Inc 7: optional ticket form this ticket was created with.
+    form_id?: string | null;
     created_at?: string;
     updated_at?: string;
 }
@@ -91,10 +127,12 @@ export interface CreateTicketDTO {
     customer_email: string;
     priority: TicketPriority;
     status: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     category_id?: string | null;
     tags?: string[];
     custom_fields?: Record<string, any>;
+    form_id?: string | null;
 }
 
 export interface UpdateTicketDTO {
@@ -104,10 +142,12 @@ export interface UpdateTicketDTO {
     customer_email?: string;
     priority?: TicketPriority;
     status?: TicketStatus;
+    type?: TicketType | null;
     assigned_agent_id?: string;
     category_id?: string | null;
     tags?: string[];
     custom_fields?: Record<string, any>;
+    form_id?: string | null;
 }
 
 export interface TicketResponse {

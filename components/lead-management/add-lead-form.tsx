@@ -16,10 +16,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { GrAdd } from "react-icons/gr";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
-import { Autocomplete, Paper, TextField, createTheme, ThemeProvider } from "@mui/material";
+import { Paper, createTheme, ThemeProvider } from "@mui/material";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
+import { AppAutocomplete } from "../ui/app-autocomplete";
 import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -338,7 +339,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         color="primary"
         onClick={() => setOpen(true)}
       >
-        <GrAdd className="text-lg mr-2" /> Add New Lead
+        <GrAdd className="text-lg sm:mr-2" />
+        <span className="hidden sm:inline">Add Lead</span>
       </AppButton>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -354,7 +356,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         >
           <div className="mt-2">
             <h2 className="text-2xl font-semibold text-[#5479EE]">
-              Add New Leads
+              Add Lead
             </h2>
           </div>
 
@@ -365,8 +367,11 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Name with Autocomplete */}
                 <div className="space-y-2 relative">
                   <Label className="text-sm font-medium text-gray-700">Name</Label>
-                  <Autocomplete
+                  <AppAutocomplete<Contact, false, false, true>
                     freeSolo
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                     options={displayContacts}
                     filterOptions={(x) => x}
                     getOptionLabel={(option) => {
@@ -387,10 +392,10 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     loading={isLoadingContacts}
                     onInputChange={handleContactSearchChange}
                     renderOption={(props, option) => (
-                      <li {...props} key={option.id}>
+                      <li {...props} key={typeof option === 'string' ? option : option.id}>
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-900">{option.name}</span>
-                          {option.company && (
+                          <span className="font-medium text-gray-900">{typeof option === 'string' ? option : option.name}</span>
+                          {typeof option !== 'string' && option.company && (
                             <span className="text-sm text-gray-500">{option.company}</span>
                           )}
                         </div>
@@ -412,29 +417,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                         )}
                       </Paper>
                     )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Search existing contacts or enter new name"
-                        error={!!errors.name}
-                        helperText={errors.name || "Search by name, email, or company"}
-                        variant="outlined"
-                        fullWidth
-                      />
-                    )}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#d1d5db',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#9ca3af',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: errors.name ? '#ef4444' : '#5479EE',
-                        },
-                      },
-                    }}
+                    placeholder="Search existing contacts or enter new name"
+                    error={!!errors.name}
+                    helperText={errors.name || "Search by name, email, or company"}
                   />
                 </div>
 
@@ -592,7 +577,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                 {/* Assigned To with Autocomplete */}
                 <div className="space-y-2 relative">
                   <Label className="text-sm font-medium text-gray-700">Assigned To</Label>
-                  <TextField
+                  <AppInput
+                    type="text"
                     placeholder="Search and select user"
                     value={assignedToName}
                     onChange={(e) => handleAssignedToChange(e.target.value)}
@@ -602,22 +588,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     onBlur={() => setTimeout(() => setShowUserDropdown(false), 200)}
                     error={!!errors.assignedTo}
                     helperText={errors.assignedTo || "Please assign this lead to a user"}
-                    variant="outlined"
-                    fullWidth
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '48px',
-                        '& fieldset': {
-                          borderColor: errors.assignedTo ? '#ef4444' : '#d1d5db',
-                        },
-                        '&:hover fieldset': {
-                          borderColor: errors.assignedTo ? '#ef4444' : '#9ca3af',
-                        },
-                        '&.Mui-focused fieldset': {
-                          borderColor: errors.assignedTo ? '#ef4444' : '#5479EE',
-                        },
-                      },
-                    }}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
                   />
                   {/* User Dropdown */}
                   {showUserDropdown && (
@@ -723,7 +696,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

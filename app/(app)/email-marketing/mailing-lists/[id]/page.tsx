@@ -6,6 +6,7 @@ import ImportSubscriberModal from '@/components/email-marketing/subscribers/moda
 import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import PageHeader from '@/components/ui/page-header';
 import { useMailingListDetail, useDeleteMailingListSubscriber, useBulkDeleteMailingListSubscribers, useDeleteAllMailingListSubscribers, useMailingListCampaigns } from '@/lib/hooks/useMailingLists';
 import { Campaign, Subscriber } from '@/lib/types/email-marketing';
@@ -16,41 +17,34 @@ import {
     Box,
     Chip,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
     IconButton,
-    Paper,
-    Tab,
-    Tabs,
     Tooltip,
-    Typography,
-    Stack
+    Typography
 } from '@mui/material';
+import { AppTabs } from '@/components/ui/app-tabs';
 import { format }
     from 'date-fns';
-import { AlertTriangle, ArrowLeft, Download, Eye, Search, Trash2, UserPlus, History } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Mail, Search, Trash2, UserPlus, History } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { notify } from '@/lib/notifications';
-import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+
+type ListTab = 'subscribers' | 'campaigns';
+const VALID_TABS: ListTab[] = ['subscribers', 'campaigns'];
 
 const MailingListDetailPage = () => {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const listId = String(params.id);
 
-    const [activeTab, setActiveTab] = useState(0);
+    const [activeTab, setActiveTab] = useState<ListTab>(() => {
+        const fromUrl = searchParams.get('tab') as ListTab | null;
+        return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'subscribers';
+    });
+    // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
 
     // Pagination for subscribers
     const [subscriberPage, setSubscriberPage] = useState(0);
@@ -60,13 +54,13 @@ const MailingListDetailPage = () => {
     const [campaignPage, setCampaignPage] = useState(0);
     const [campaignRowsPerPage, setCampaignRowsPerPage] = useState(10);
 
-    const { data: mailingListData, isLoading, isFetching, error } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 0 ? debouncedSearch : undefined);
+    const { data: mailingListData, isLoading, isFetching, error, refetch } = useMailingListDetail(listId, subscriberPage + 1, subscriberRowsPerPage, activeTab === 'subscribers' ? searchQuery : undefined);
     const deleteSubscriberMutation = useDeleteMailingListSubscriber();
     const bulkDeleteSubscriberMutation = useBulkDeleteMailingListSubscribers();
     const deleteAllSubscriberMutation = useDeleteAllMailingListSubscribers();
     const [subscriberToDelete, setSubscriberToDelete] = useState<any>(null);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 1 ? debouncedSearch : undefined, activeTab === 1);
+    const { data: campaignsData, isLoading: isLoadingCampaigns, isFetching: isFetchingCampaigns, isError: isErrorCampaigns, error: errorCampaigns, refetch: refetchCampaigns } = useMailingListCampaigns(listId, campaignPage + 1, campaignRowsPerPage, activeTab === 'campaigns' ? searchQuery : undefined, activeTab === 'campaigns');
 
     // Modals
     const [showAddSubscriberModal, setShowAddSubscriberModal] = useState(false);
@@ -82,9 +76,10 @@ const MailingListDetailPage = () => {
     const campaigns: Campaign[] = campaignsData?.data?.campaigns || [];
     const totalCampaigns = campaignsData?.data?.total || 0;
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-        setActiveTab(newValue);
+    const handleTabChange = (tab: ListTab) => {
+        setActiveTab(tab);
         setSearchQuery('');
+        router.replace(`/email-marketing/mailing-lists/${listId}?tab=${tab}`, { scroll: false });
     };
 
     const handleDeleteSubscriber = async () => {
@@ -161,7 +156,9 @@ const MailingListDetailPage = () => {
     const filteredSubscribers = subscribers;
     const totalSubscribers = mailingList?.subscribers?.total || 0;
 
-    if (error) {
+    // Full-page fallback only for a hard initial failure — once the list is
+    // loaded, later query errors surface inside the tables (with Retry).
+    if (error && !mailingListData) {
         return (
             <Box sx={{ p: 3 }}>
                 <Typography color="error">Failed to load mailing list details</Typography>
@@ -205,7 +202,7 @@ const MailingListDetailPage = () => {
                     onClick={() => router.push('/email-marketing/mailing-lists')}
                     sx={{ textTransform: 'none' }}
                 >
-                    Kembali ke Mailing List
+                    Back to Mailing Lists
                 </AppButton>
             </Box>
 
@@ -222,31 +219,54 @@ const MailingListDetailPage = () => {
             </Box>
 
             {/* Tabs */}
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-                <Tabs value={activeTab} onChange={handleTabChange}>
-                    <Tab label="Subscribers" />
-                    <Tab label="Campaign Terkirim" />
-                </Tabs>
+            <Box sx={{ mb: 3 }}>
+                <AppTabs<ListTab>
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    tabs={[
+                        { value: 'subscribers', label: 'Subscribers' },
+                        { value: 'campaigns', label: 'Sent Campaigns' },
+                    ]}
+                />
             </Box>
 
             {/* Tab Content */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Subscribers Tab */}
-                {activeTab === 0 && (
+                {activeTab === 'subscribers' && (
                     <SuperTable<Subscriber>
+                        tableId="mailing-list-subscribers-table"
                         data={subscribers}
                         columns={subscriberColumns}
                         isLoading={isLoading}
                         isFetching={isFetching}
+                        isError={!!error}
+                        errorMessage={error instanceof Error ? error.message : undefined}
+                        onRetry={() => refetch()}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={UserPlus}
+                                title="No subscribers in this list"
+                                description="Add subscribers or import a list to grow this mailing list."
+                                action={{
+                                    label: "Add Subscriber",
+                                    onClick: () => setShowAddSubscriberModal(true),
+                                    icon: <UserPlus size={16} />,
+                                }}
+                            />
+                        )}
                         rowCount={totalSubscribers}
                         manualPagination={true}
+                        manualFiltering={true}
                         onStateChange={(state) => {
-                            if (state.pagination) {
+                            const searchChanged = state.globalFilter !== undefined && state.globalFilter !== searchQuery;
+                            if (searchChanged) {
+                                setSearchQuery(state.globalFilter);
+                                setSubscriberPage(0); // Reset to first page on search
+                                setSubscriberRowsPerPage(state.pagination?.pageSize ?? subscriberRowsPerPage);
+                            } else if (state.pagination) {
                                 setSubscriberPage(state.pagination.pageIndex);
                                 setSubscriberRowsPerPage(state.pagination.pageSize);
-                            }
-                            if (state.globalFilter !== undefined) {
-                                setSearchQuery(state.globalFilter);
                             }
                         }}
                         features={{
@@ -302,7 +322,7 @@ const MailingListDetailPage = () => {
                                     onClick={() => setShowAddSubscriberModal(true)}
                                     sx={{ height: '40px' }}
                                 >
-                                    Tambah Subscriber
+                                    Add Subscriber
                                 </AppButton>
                             </div>
                         )}
@@ -314,7 +334,7 @@ const MailingListDetailPage = () => {
                                     onClick={() => handleBulkDelete(selectedRows, clearSelection)}
                                     sx={{ height: '40px' }}
                                 >
-                                    Delete Selected ({selectedRows.length})
+                                    Delete ({selectedRows.length})
                                 </AppButton>
                                 <AppButton
                                     variantStyle="soft"
@@ -331,21 +351,35 @@ const MailingListDetailPage = () => {
                 )}
 
                 {/* Campaigns Tab */}
-                {activeTab === 1 && (
+                {activeTab === 'campaigns' && (
                     <SuperTable<Campaign>
+                        tableId="mailing-list-campaigns-table"
                         data={campaigns}
                         columns={campaignColumns}
                         isLoading={isLoadingCampaigns}
                         isFetching={isFetchingCampaigns}
+                        isError={isErrorCampaigns}
+                        errorMessage={errorCampaigns instanceof Error ? errorCampaigns.message : undefined}
+                        onRetry={() => refetchCampaigns()}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={Mail}
+                                title="No campaigns sent to this list"
+                                description="Campaigns sent to this mailing list will appear here."
+                            />
+                        )}
                         rowCount={totalCampaigns}
                         manualPagination={true}
+                        manualFiltering={true}
                         onStateChange={(state) => {
-                            if (state.pagination) {
+                            const searchChanged = state.globalFilter !== undefined && state.globalFilter !== searchQuery;
+                            if (searchChanged) {
+                                setSearchQuery(state.globalFilter);
+                                setCampaignPage(0); // Reset to first page on search
+                                setCampaignRowsPerPage(state.pagination?.pageSize ?? campaignRowsPerPage);
+                            } else if (state.pagination) {
                                 setCampaignPage(state.pagination.pageIndex);
                                 setCampaignRowsPerPage(state.pagination.pageSize);
-                            }
-                            if (state.globalFilter !== undefined) {
-                                setSearchQuery(state.globalFilter);
                             }
                         }}
                         features={{
@@ -401,33 +435,27 @@ const MailingListDetailPage = () => {
                 mailingListIds={[listId]}
             />
 
-            <Dialog
-                open={Boolean(subscriberToDelete) || selectedToDelete.length > 0 && Boolean(subscriberToDelete?.id === 'BULK')}
+            <ConfirmationPopup
+                isOpen={Boolean(subscriberToDelete) || selectedToDelete.length > 0 && Boolean(subscriberToDelete?.id === 'BULK')}
                 onClose={() => {
                     if (!deleteSubscriberMutation.isPending && !bulkDeleteSubscriberMutation.isPending) {
                         setSubscriberToDelete(null);
                     }
                 }}
-            >
-                <DialogTitle>Remove Subscriber{selectedToDelete.length > 1 ? 's' : ''}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        {selectedToDelete.length > 0 && subscriberToDelete?.id === 'BULK' ? (
-                            <>Are you sure you want to remove <strong>{selectedToDelete.length}</strong> selected subscriber(s) from this mailing list?</>
-                        ) : (
-                            <>Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?</>
-                        )}
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <AppButton variantStyle="outline" onClick={() => setSubscriberToDelete(null)} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
-                        Cancel
-                    </AppButton>
-                    <AppButton variantStyle="danger" onClick={handleDeleteSubscriber} disabled={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}>
-                        {deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending ? <CircularProgress size={20} color="inherit" /> : 'Remove'}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleDeleteSubscriber}
+                title={`Remove Subscriber${selectedToDelete.length > 1 ? 's' : ''}`}
+                description={
+                    selectedToDelete.length > 0 && subscriberToDelete?.id === 'BULK' ? (
+                        <>Are you sure you want to remove <strong>{selectedToDelete.length}</strong> selected subscriber(s) from this mailing list?</>
+                    ) : (
+                        <>Are you sure you want to remove <strong>{subscriberToDelete?.email}</strong> from this mailing list?</>
+                    )
+                }
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteSubscriberMutation.isPending || bulkDeleteSubscriberMutation.isPending}
+            />
 
             <ViewCampaignStatsModal
                 open={isViewModalOpen}
@@ -443,25 +471,17 @@ const MailingListDetailPage = () => {
                 onClose={() => setPreviewSubscriber(null)}
             />
 
-            <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-                <DialogTitle>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <AlertTriangle className="w-5 h-5 text-red-600" />
-                        <Typography variant="h6" color="error">Remove All Subscribers</Typography>
-                    </Stack>
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        <strong>WARNING:</strong> Are you sure you want to remove <strong>all subscribers</strong> from this mailing list? This action will only remove them from this list, it will not delete the contacts themselves.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline' disabled={deleteAllSubscriberMutation.isPending}>Cancel</AppButton>
-                    <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllSubscriberMutation.isPending}>
-                        {deleteAllSubscriberMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Remove All'}
-                    </AppButton>
-                </DialogActions>
-            </Dialog>
+            <ConfirmationPopup
+                isOpen={confirmAllOpen}
+                onClose={() => setConfirmAllOpen(false)}
+                onConfirm={handleConfirmDeleteAll}
+                title="Remove All Subscribers"
+                description={<><strong>WARNING:</strong> Are you sure you want to remove <strong>all subscribers</strong> from this mailing list? This action will only remove them from this list, it will not delete the contacts themselves.</>}
+                confirmText="Delete All"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteAllSubscriberMutation.isPending}
+            />
         </Box>
     );
 };

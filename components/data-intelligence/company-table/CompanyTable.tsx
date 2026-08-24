@@ -78,6 +78,7 @@ interface CompanyTableProps {
   isLoading: boolean;
   isError?: boolean;
   errorMessage?: string;
+  onRetry?: () => void;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
   emptyStateAction?: { label: string; onClick: () => void; icon?: React.ReactNode };
@@ -116,6 +117,7 @@ export default function CompanyTable({
   isLoading,
   isError,
   errorMessage,
+  onRetry,
   emptyStateTitle,
   emptyStateDescription,
   emptyStateAction,
@@ -241,6 +243,7 @@ export default function CompanyTable({
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage ?? "Failed to load companies. Please try again."}
+        onRetry={onRetry}
         renderEmptyState={() => (
           <EmptyState
             icon={Building2}

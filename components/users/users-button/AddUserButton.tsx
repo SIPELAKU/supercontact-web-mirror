@@ -17,7 +17,7 @@ export default function AddUserButton() {
         onClick={handleOpen}
         className="bg-[#5479EE]! capitalize! hover:bg-[#5479EE]/80!"
       >
-        <Plus size={14} className="mr-2 h-3 w-4" /> Add New User
+        <Plus size={14} className="mr-2 h-3 w-4" /> Add User
       </Button>
 
       <AddUsersModal open={open} setOpen={setOpen} />

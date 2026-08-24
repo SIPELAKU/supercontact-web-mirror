@@ -54,7 +54,8 @@ const FAQ = () => {
             <Box
                 component="img"
                 src="/assets/polygon-faqs.png"
-                alt="Polygon Background"
+                alt=""
+                aria-hidden="true"
                 sx={{
                     position: 'absolute',
                     top: 0,
@@ -78,7 +79,8 @@ const FAQ = () => {
                         <Box
                             component="img"
                             src="/assets/element.png"
-                            alt="Star Element"
+                            alt=""
+                            aria-hidden="true"
                             sx={{
                                 position: 'absolute',
                                 top: -20,
@@ -106,7 +108,7 @@ const FAQ = () => {
                             <Box
                                 component="img"
                                 src="/assets/faqs-illustration.png"
-                                alt="FAQ Illustration"
+                                alt="Ilustrasi tim customer support SmartSales menjawab pertanyaan pelanggan"
                                 sx={{
                                     maxWidth: '100%',
                                     height: 'auto',

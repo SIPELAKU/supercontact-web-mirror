@@ -119,7 +119,7 @@ export default function NotificationPage() {
     return (
         <div className="w-full flex flex-col p-4 md:p-8 min-h-screen overflow-y-scroll">
             <PageHeader
-                title="Notification"
+                title="Notifications"
                 breadcrumbs={[{ label: "Home", href: "/" }, { label: "Notification" }]}
             />
             <div className="flex flex-col md:flex-row md:items-center md:justify-between py-8">
@@ -128,7 +128,7 @@ export default function NotificationPage() {
                         type="button"
                         onClick={() => setOnlyUnread(!onlyUnread)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-            ${onlyUnread ? "bg-indigo-600" : "bg-gray-300"}`}
+            ${onlyUnread ? "bg-[#5479EE]" : "bg-gray-300"}`}
                     >
                         <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
@@ -140,7 +140,7 @@ export default function NotificationPage() {
 
                 <button
                     onClick={markAllAsRead}
-                    className="text-sm text-indigo-600 hover:underline self-start md:self-auto"
+                    className="text-sm text-[#5479EE] hover:underline self-start md:self-auto"
                 >
                     Mark All as Read
                 </button>
@@ -156,7 +156,7 @@ export default function NotificationPage() {
                     <p className="text-red-500">Couldn't load notifications.</p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="mt-2 text-sm text-indigo-600 hover:underline"
+                        className="mt-2 text-sm text-[#5479EE] hover:underline"
                     >
                         Try again
                     </button>
@@ -183,7 +183,7 @@ export default function NotificationPage() {
                         ${item.is_read ? "bg-white" : "bg-indigo-50/40"}`}
                                     >
                                         {!item.is_read && (
-                                            <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-indigo-600 shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+                                            <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#5479EE] shadow-[0_0_8px_rgba(84,121,238,0.5)]" />
                                         )}
 
                                         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">

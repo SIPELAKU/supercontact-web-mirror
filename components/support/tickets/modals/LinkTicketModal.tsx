@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AppButton } from "@/components/ui/app-button";
+import { AppSelect } from "@/components/ui/app-select";
 import { TicketPickerAutocomplete } from "../detail/TicketPickerAutocomplete";
 import { useCreateTicketLink } from "@/lib/hooks/useTickets";
 import { notify } from "@/lib/notifications";
-import { Ticket } from "@/lib/types/Ticket";
+import { Ticket, TicketLinkType, TICKET_LINK_TYPE_OPTIONS } from "@/lib/types/Ticket";
 
 interface LinkTicketModalProps {
     isOpen: boolean;
@@ -16,17 +17,19 @@ interface LinkTicketModalProps {
 
 export function LinkTicketModal({ isOpen, onClose, ticket }: LinkTicketModalProps) {
     const [related, setRelated] = useState<Ticket | null>(null);
+    const [linkType, setLinkType] = useState<TicketLinkType>("related");
     const linkMutation = useCreateTicketLink(ticket.id);
 
     const handleClose = () => {
         setRelated(null);
+        setLinkType("related");
         onClose();
     };
 
     const handleLink = async () => {
         if (!related) return;
         try {
-            await linkMutation.mutateAsync(related.id);
+            await linkMutation.mutateAsync({ linkedTicketId: related.id, linkType });
             notify.success("Tickets linked");
             handleClose();
         } catch (error: any) {
@@ -46,12 +49,28 @@ export function LinkTicketModal({ isOpen, onClose, ticket }: LinkTicketModalProp
                     </p>
                 </DialogHeader>
 
-                <div className="py-4">
-                    <TicketPickerAutocomplete
-                        excludeTicketId={ticket.id}
-                        value={related}
-                        onChange={setRelated}
-                    />
+                <div className="py-4 space-y-4">
+                    <div>
+                        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                            Relationship
+                        </label>
+                        <AppSelect
+                            options={TICKET_LINK_TYPE_OPTIONS}
+                            value={linkType}
+                            isBgWhite={true}
+                            onChange={(e) => setLinkType(e.target.value as TicketLinkType)}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                            Ticket
+                        </label>
+                        <TicketPickerAutocomplete
+                            excludeTicketId={ticket.id}
+                            value={related}
+                            onChange={setRelated}
+                        />
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2">

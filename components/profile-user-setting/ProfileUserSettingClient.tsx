@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Avatar,
   Box,
@@ -23,9 +24,22 @@ import { useAuth } from "@/lib/context/AuthContext";
 import PageHeader from "../ui/page-header";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
+type SettingsTab = "account" | "security";
+const VALID_TABS: SettingsTab[] = ["account", "security"];
+
 export default function ProfileUserSettingClient() {
   const { getToken, reloadProfile, logout } = useAuth();
-  const [tab, setTab] = useState("account");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<SettingsTab>(() => {
+    const fromUrl = searchParams.get("tab") as SettingsTab | null;
+    return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : "account";
+  });
+
+  const handleTabChange = (newTab: SettingsTab) => {
+    setTab(newTab);
+    router.replace(`/profile-user-setting?tab=${newTab}`, { scroll: false });
+  };
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -339,9 +353,7 @@ export default function ProfileUserSettingClient() {
         <Box sx={{ width: "fit-content" }}>
           <Tabs
             value={tab}
-            onChange={(_, val) =>
-              setTab(val as "account" | "security")
-            }
+            onChange={(_, val) => handleTabChange(val as SettingsTab)}
             sx={{
               minHeight: "unset",
               padding: "4px",

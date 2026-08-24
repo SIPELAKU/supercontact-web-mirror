@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Chip } from '@mui/material';
-import { Calendar, Save, Trash2 } from 'lucide-react';
+import { Calendar, Save, Trash2, Inbox } from 'lucide-react';
 import { format } from 'date-fns';
+import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table/types';
@@ -40,7 +41,13 @@ export const CapturedLeadsTable = () => {
   const params = useParams();
   const id = params.id as string;
 
-  const [tableParams, setTableParams] = useState({
+  const [tableParams, setTableParams] = useState<{
+    page: number;
+    limit: number;
+    search: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+  }>({
     page: 1,
     limit: 10,
     search: '',
@@ -52,7 +59,7 @@ export const CapturedLeadsTable = () => {
   const [resendingSubmissionId, setResendingSubmissionId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
 
-  const { data: response, isLoading, isFetching, refetch } = useSmartCaptureSubmissions(id, tableParams);
+  const { data: response, isLoading, isFetching, isError, error, refetch } = useSmartCaptureSubmissions(id, tableParams);
   const resendMutation = useResendSmartCaptureSubmission();
   const deleteMutation = useDeleteSmartCaptureSubmissions();
 
@@ -108,11 +115,14 @@ export const CapturedLeadsTable = () => {
   };
 
   const handleStateChange = (state: SuperTableState) => {
+    const sort = state.sorting?.[0];
     setTableParams((prev) => ({
       ...prev,
       page: state.pagination.pageIndex + 1,
       limit: state.pagination.pageSize,
       search: state.globalFilter || '',
+      sort_by: sort?.id,
+      sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
     }));
   };
 
@@ -193,11 +203,11 @@ export const CapturedLeadsTable = () => {
       },
       {
         accessorKey: 'captured_at',
-        header: 'Captured At',
+        header: 'Captured',
         Cell: ({ cell }) => (
           <div className="flex items-center gap-1.5 text-gray-500 text-[13px]">
             <Calendar size={14} className="opacity-70" />
-            <span>{format(new Date(cell.getValue<string>()), 'dd MM yyyy HH:mm')}</span>
+            <span>{format(new Date(cell.getValue<string>()), 'dd MMM yyyy, HH:mm')}</span>
           </div>
         ),
       },
@@ -208,12 +218,22 @@ export const CapturedLeadsTable = () => {
         enableColumnFilter: false,
         Cell: ({ row }) => {
           const submission = row.original;
-          const isFailed = (submission.email_status || '').toLowerCase() === 'failed';
+          const emailStatus = (submission.email_status || '').toLowerCase();
+          const isFailed = emailStatus === 'failed';
+          // A pending older than 30 minutes is an orphaned delivery (its
+          // in-process send task was killed by an API restart and nothing
+          // will ever move it) - the backend accepts resends for it, so
+          // surface the same button. Mirrors STALE_PENDING_RESEND_THRESHOLD
+          // in smart_capture_service.py.
+          const isStalePending =
+            emailStatus === 'pending' &&
+            !!submission.captured_at &&
+            Date.now() - new Date(submission.captured_at).getTime() > 30 * 60 * 1000;
           return (
             <div className="flex items-center gap-1">
-              {isFailed && (
+              {(isFailed || isStalePending) && (
                 <ResendButton
-                  customTitle="Resend email"
+                  customTitle={isStalePending ? 'Delivery stuck in pending - resend email' : 'Resend email'}
                   isLoading={resendingSubmissionId === submission.id}
                   onClick={() => handleResend(submission)}
                 />
@@ -247,6 +267,16 @@ export const CapturedLeadsTable = () => {
             rowCount={totalCount}
             isLoading={isLoading}
             isFetching={isFetching}
+            isError={isError}
+            errorMessage={error instanceof Error ? error.message : undefined}
+            onRetry={() => refetch()}
+            renderEmptyState={() => (
+              <EmptyState
+                icon={Inbox}
+                title="No captured leads yet"
+                description="Leads submitted through this magnet's form will appear here."
+              />
+            )}
             manualPagination={true}
             manualSorting={true}
             manualFiltering={true}
@@ -291,7 +321,7 @@ export const CapturedLeadsTable = () => {
                   startIcon={<Trash2 size={16} />}
                   onClick={() => handleBulkDeleteRequest(selectedRows, clearSelection)}
                 >
-                  Delete Selected
+                  Delete ({selectedRows.length})
                 </AppButton>
               </div>
             )}
@@ -315,7 +345,7 @@ export const CapturedLeadsTable = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
-        title={deleteTarget && deleteTarget.ids.length > 1 ? 'Delete Selected Leads' : 'Delete Lead'}
+        title={deleteTarget && deleteTarget.ids.length > 1 ? `Delete (${deleteTarget.ids.length})` : 'Delete Lead'}
         description={
           deleteTarget
             ? deleteTarget.ids.length > 1

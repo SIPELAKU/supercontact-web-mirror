@@ -4,10 +4,10 @@
 # ============================================================
 #
 # Hook ini otomatis menambahkan [skip ci] ke commit message
-# jika branch BUKAN staging/main/master/prod.
+# jika branch BUKAN dev/staging/main/master/prod.
 #
 # Ini mencegah GitLab pipeline jalan (dan error) di branch
-# dev, feature/*, bugfix/*, dll.
+# feature/*, bugfix/*, dll.
 #
 # Setup (sekali per developer):
 #   git config core.hooksPath .githooks
@@ -34,8 +34,13 @@ fi
 
 # Daftar branch yang BOLEH menjalankan CI
 # (jangan tambah [skip ci] untuk branch ini)
+#
+# `dev` ditambahkan karena sekarang ada job deploy_dev yang men-deploy
+# dev.smartsales.id. Tanpa ini, hook akan menempelkan [skip ci] pada setiap
+# commit dev dan job itu tidak akan pernah jalan - dua mekanisme yang saling
+# meniadakan, dengan gejala "pipeline sukses tapi nol job".
 case "$BRANCH" in
-  staging|main|master|prod)
+  dev|staging|main|master|prod)
     exit 0
     ;;
 esac

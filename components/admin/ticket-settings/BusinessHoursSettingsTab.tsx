@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableRow, CircularProgress } from "@mui/material";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { Clock, Plus, Trash2, Pencil } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { notify } from "@/lib/notifications";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import {
     useBusinessHours,
     useCreateBusinessHours,
@@ -22,7 +25,7 @@ import {
 const WEEKDAY_ORDER = ["1", "2", "3", "4", "5", "6", "7"];
 
 export default function BusinessHoursSettingsTab() {
-    const { data, isLoading } = useBusinessHours();
+    const { data, isLoading, isError, refetch } = useBusinessHours();
     const calendars = data?.data?.data || [];
     const createMutation = useCreateBusinessHours();
     const updateMutation = useUpdateBusinessHours();
@@ -34,6 +37,7 @@ export default function BusinessHoursSettingsTab() {
     const [timezone, setTimezone] = useState("Asia/Jakarta");
     const [isDefault, setIsDefault] = useState(false);
     const [weeklyHours, setWeeklyHours] = useState<Record<string, WeekdayHours>>(DEFAULT_WEEKLY_HOURS);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
     const resetForm = () => {
         setEditingId(null);
@@ -84,14 +88,35 @@ export default function BusinessHoursSettingsTab() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
         try {
-            await deleteMutation.mutateAsync(id);
+            await deleteMutation.mutateAsync(deleteTarget.id);
             notify.success("Calendar removed");
+            setDeleteTarget(null);
         } catch (error: any) {
             notify.error("Error", { description: error.message });
         }
     };
+
+    const columns = useMemo<MRT_ColumnDef<BusinessHoursCalendar>[]>(
+        () => [
+            {
+                accessorKey: "name",
+                header: "Name",
+            },
+            {
+                accessorKey: "timezone",
+                header: "Timezone",
+            },
+            {
+                id: "is_default",
+                accessorFn: (row) => (row.is_default ? "Yes" : "No"),
+                header: "Default",
+            },
+        ],
+        []
+    );
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-6">
@@ -143,6 +168,7 @@ export default function BusinessHoursSettingsTab() {
                         </div>
                     </div>
 
+                    {/* Weekly-hours editor - a form grid, deliberately not a SuperTable */}
                     <div className="overflow-x-auto rounded-lg border border-gray-200">
                         <Table>
                             <TableHead>
@@ -206,61 +232,53 @@ export default function BusinessHoursSettingsTab() {
                 </div>
             )}
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <Table>
-                    <TableHead>
-                        <TableRow className="bg-[#EEF2FD]!">
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Name</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Timezone</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600 }}>Default</TableCell>
-                            <TableCell sx={{ color: "#6B7280", fontWeight: 600, textAlign: "right" }}>
-                                Action
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                                    <CircularProgress size={24} />
-                                </TableCell>
-                            </TableRow>
-                        ) : calendars.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                                    <p className="text-gray-500">No business hours calendars configured yet.</p>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            calendars.map((calendar) => (
-                                <TableRow key={calendar.id} hover>
-                                    <TableCell>{calendar.name}</TableCell>
-                                    <TableCell>{calendar.timezone}</TableCell>
-                                    <TableCell>{calendar.is_default ? "Yes" : "No"}</TableCell>
-                                    <TableCell align="right">
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(calendar)}
-                                                className="text-gray-300 hover:text-gray-700"
-                                                aria-label="Edit calendar"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(calendar.id)}
-                                                className="text-gray-300 hover:text-red-500"
-                                                aria-label="Delete calendar"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <SuperTable<BusinessHoursCalendar>
+                tableId="business-hours-table"
+                columns={columns}
+                data={calendars}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load business hours calendars. Please try again."
+                onRetry={() => refetch()}
+                renderRowActions={({ row }) => (
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => handleEdit(row.original)}
+                            className="text-gray-300 hover:text-gray-700"
+                            aria-label="Edit calendar"
+                        >
+                            <Pencil size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
+                            className="text-gray-300 hover:text-red-500"
+                            aria-label="Delete calendar"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                )}
+                renderEmptyState={() => (
+                    <EmptyState
+                        icon={Clock}
+                        title="No business hours calendars configured yet"
+                        description="SLA due dates run 24/7 until you add a working-hours calendar."
+                    />
+                )}
+                features={{ columnFilters: false }}
+            />
+
+            <ConfirmationPopup
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Calendar"
+                description={`Are you sure you want to delete "${deleteTarget?.name ?? ""}"? SLA policies using this calendar will fall back to 24/7.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

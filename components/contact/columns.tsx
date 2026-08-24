@@ -1,7 +1,7 @@
 "use client";
 
 import { Contact } from "@/lib/models/types";
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 
 export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {

@@ -10,10 +10,9 @@ import { handleError } from "@/lib/utils/errorHandler";
 
 interface ConnectEmailFormProps {
   onSuccess?: () => void;
-  hasExistingEmail: boolean;
 }
 
-const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExistingEmail }) => {
+const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     email: "",
     app_password: "",
@@ -28,13 +27,6 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (hasExistingEmail) {
-      notify.warning("Email Limit Reached", { 
-        description: "Only one email account can be connected per company. Please delete the existing email account first." 
-      });
-      return;
-    }
 
     // Validation
     if (!formData.email || !formData.app_password || !formData.display_name) {
@@ -78,14 +70,6 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {hasExistingEmail && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-800">
-            You already have an email account connected. Only one email account is allowed per company.
-          </p>
-        </div>
-      )}
-
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700">
@@ -98,7 +82,7 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
             value={formData.email}
             onChange={(e) => handleChange("email", e.target.value)}
             placeholder="your.email@gmail.com"
-            disabled={connectEmailMutation.isPending || hasExistingEmail}
+            disabled={connectEmailMutation.isPending}
           />
           <p className="text-xs text-gray-500">Your Gmail address</p>
         </div>
@@ -114,7 +98,7 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
             value={formData.app_password}
             onChange={(e) => handleChange("app_password", e.target.value)}
             placeholder="••••••••••••••••"
-            disabled={connectEmailMutation.isPending || hasExistingEmail}
+            disabled={connectEmailMutation.isPending}
           />
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <span>Generate an App Password from your Google Account</span>
@@ -140,7 +124,7 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
             value={formData.display_name}
             onChange={(e) => handleChange("display_name", e.target.value)}
             placeholder="My Gmail Account"
-            disabled={connectEmailMutation.isPending || hasExistingEmail}
+            disabled={connectEmailMutation.isPending}
           />
           <p className="text-xs text-gray-500">A friendly name to identify this email account</p>
         </div>
@@ -158,7 +142,7 @@ const ConnectEmailForm: React.FC<ConnectEmailFormProps> = ({ onSuccess, hasExist
       <div className="flex justify-end">
         <AppButton
           type="submit"
-          disabled={connectEmailMutation.isPending || hasExistingEmail}
+          disabled={connectEmailMutation.isPending}
           variantStyle="primary"
         >
           {connectEmailMutation.isPending ? (

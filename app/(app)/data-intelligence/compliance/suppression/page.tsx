@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { format } from 'date-fns';
+import { useMemo, useState } from "react";
 import { Plus, ShieldOff } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import AddSuppressionEntryModal from "@/components/data-intelligence/compliance/AddSuppressionEntryModal";
 import { useSuppressionEntries, useDeleteSuppressionEntry } from "@/lib/hooks/useCompliance";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
+import { SuppressionEntryItem } from "@/lib/types/compliance";
 
 const TYPE_LABELS: Record<string, string> = {
     email: "Email",
@@ -21,18 +23,20 @@ const TYPE_LABELS: Record<string, string> = {
     organization_id: "Organization ID",
 };
 
+const TYPE_OPTIONS = Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }));
+
 export default function SuppressionListPage() {
-    const { data: response, isLoading } = useSuppressionEntries();
+    const { data: response, isLoading, isError, refetch } = useSuppressionEntries();
     const entries = response?.data || [];
     const [openAdd, setOpenAdd] = useState(false);
     const deleteEntry = useDeleteSuppressionEntry();
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     const handleDelete = (id: string) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Remove Suppression Entry",
-            message: "Remove this entry from the suppression list?",
+            description: "Remove this entry from the suppression list?",
             confirmText: "Remove",
             cancelText: "Cancel",
             onConfirm: async () => {
@@ -45,6 +49,42 @@ export default function SuppressionListPage() {
             },
         });
     };
+
+    const columns = useMemo<MRT_ColumnDef<SuppressionEntryItem>[]>(
+        () => [
+            {
+                accessorKey: "entry_type",
+                header: "Type",
+                filterVariant: "select",
+                filterSelectOptions: TYPE_OPTIONS,
+                filterFn: "equals",
+                Cell: ({ cell }) => (
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                        {TYPE_LABELS[cell.getValue<string>()] || cell.getValue<string>()}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: "reason",
+                header: "Reason",
+                enableColumnFilter: false,
+                Cell: ({ cell }) => (
+                    <span className="text-sm text-gray-600">{cell.getValue<string>() || "-"}</span>
+                ),
+            },
+            {
+                accessorKey: "created_at",
+                header: "Added",
+                enableColumnFilter: false,
+                Cell: ({ cell }) => (
+                    <span className="text-sm text-gray-600">
+                        {format(new Date(cell.getValue<string>()), "dd MMM yyyy, HH:mm")}
+                    </span>
+                ),
+            },
+        ],
+        []
+    );
 
     return (
         <div className="w-full flex flex-col gap-4 p-4 md:p-8">
@@ -73,62 +113,38 @@ export default function SuppressionListPage() {
                     </p>
                 </section>
 
-                {!isLoading && entries.length === 0 ? (
-                    <div className="mx-6 my-6">
-                        <EmptyState
-                            icon={ShieldOff}
-                            title="Suppression list is empty"
-                            description="Values you add here are excluded from future search results and CRM saves."
-                            action={{ label: "Add Entry", onClick: () => setOpenAdd(true), icon: <Plus size={16} /> }}
-                        />
-                    </div>
-                ) : (
-                <div className="mx-6 my-6 overflow-x-auto rounded-lg border border-gray-200">
-                    <Table sx={{ minWidth: 640 }}>
-                        <TableHead>
-                            <TableRow className="bg-[#EEF2FD]!">
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Type</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Reason</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Added</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, textAlign: "center" }}>
-                                    Action
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                                        <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                entries.map((entry) => (
-                                    <TableRow key={entry.id} hover>
-                                        <TableCell>
-                                            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                                                {TYPE_LABELS[entry.entry_type] || entry.entry_type}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                            {entry.reason || "-"}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                            {new Date(entry.created_at).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <DeleteButton onClick={() => handleDelete(entry.id)} />
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                <div className="mx-6 my-6">
+                    <SuperTable<SuppressionEntryItem>
+                        tableId="suppression-list-table"
+                        columns={columns}
+                        data={entries}
+                        isLoading={isLoading}
+                        isError={isError}
+                        errorMessage="Failed to load the suppression list. Please try again."
+                        onRetry={() => refetch()}
+                        renderRowActions={({ row }) => (
+                            <DeleteButton onClick={() => handleDelete(row.original.id)} />
+                        )}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={ShieldOff}
+                                title="Suppression list is empty"
+                                description="Values you add here are excluded from future search results and CRM saves."
+                                action={{ label: "Add Entry", onClick: () => setOpenAdd(true), icon: <Plus size={16} /> }}
+                            />
+                        )}
+                        initialState={{ sorting: [{ id: "created_at", desc: true }] }}
+                        features={{
+                            globalFilter: true,
+                            columnFilters: true,
+                            pagination: true,
+                        }}
+                    />
                 </div>
-                )}
             </div>
 
             <AddSuppressionEntryModal open={openAdd} onClose={() => setOpenAdd(false)} />
+            {confirmationPopup}
         </div>
     );
 }

@@ -91,7 +91,7 @@ export default function ChatInput({
                                 </button>
                                 <button
                                     onClick={stopRecording}
-                                    className="p-1.5 ml-1 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 shadow-sm"
+                                    className="p-1.5 ml-1 bg-[#5479EE] text-white rounded-full hover:bg-[#3F66E0] shadow-sm"
                                 >
                                     <Send className="w-3.5 h-3.5" />
                                 </button>
@@ -113,7 +113,7 @@ export default function ChatInput({
                     </div>
                     <button
                         onClick={handleSendMessage}
-                        className="bg-indigo-600 text-white p-2.5 rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 px-5 shadow-sm hover:shadow-md active:scale-95"
+                        className="bg-[#5479EE] text-white p-2.5 rounded-xl hover:bg-[#3F66E0] transition-all flex items-center gap-2 px-5 shadow-sm hover:shadow-md active:scale-95"
                     >
                         <span className="text-sm font-semibold hidden md:inline">
                             Send

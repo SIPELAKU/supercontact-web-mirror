@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Users } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog,
   DialogTitle,
@@ -226,6 +227,14 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
               columns={columns}
               rowCount={totalRecipients}
               isLoading={isLoading}
+              onRetry={() => refetch()}
+              renderEmptyState={() => (
+                <EmptyState
+                  icon={Users}
+                  title="No recipients"
+                  description="Recipients and their delivery status will appear here."
+                />
+              )}
               manualPagination={true}
               onStateChange={(state) => {
                 setTableState({

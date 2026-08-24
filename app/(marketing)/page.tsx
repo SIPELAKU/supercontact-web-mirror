@@ -58,9 +58,50 @@ const websiteSchema = {
   inLanguage: "id-ID",
 };
 
+// Mirrors the FAQ section rendered on the homepage (components/layout/FAQ.tsx,
+// Indonesian strings faq_q1..q4) so the markup stays truthful.
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Apa itu Omnichannel?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Omnichannel adalah integrasi antara saluran komunikasi yang berbeda untuk memberikan pengalaman yang konsisten kepada pelanggan.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Bagaimana cara aplikasi SmartSales bekerja?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "SmartSales mengintegrasikan berbagai saluran komunikasi ke dalam satu platform untuk pengelolaan yang efisien.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Siapa saja yang bisa menggunakan aplikasi SmartSales?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Bisnis dari semua ukuran, dari startup hingga perusahaan besar, dapat menggunakan SmartSales.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Apakah SmartSales terjamin keamanannya?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ya, kami memprioritaskan keamanan data dan mematuhi standar industri.",
+      },
+    },
+  ],
+};
+
 const combinedSchema = {
   "@context": "https://schema.org",
-  "@graph": [organizationSchema, websiteSchema],
+  "@graph": [organizationSchema, websiteSchema, faqSchema],
 };
 
 export default function Home() {

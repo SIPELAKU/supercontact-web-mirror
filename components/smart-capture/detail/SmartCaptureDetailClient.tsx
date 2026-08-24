@@ -6,6 +6,7 @@ import { ArrowLeft, Share2 } from "lucide-react";
 import { Box, Divider, CircularProgress } from "@mui/material";
 
 import { AppButton } from "@/components/ui/app-button";
+import PageHeader from "@/components/ui/page-header";
 import { LeadMagnet } from "../LeadMagnetsTable";
 import { DetailHeader } from "./sections/DetailHeader";
 import { PerformanceStats } from "./sections/PerformanceStats";
@@ -58,7 +59,7 @@ export const SmartCaptureDetailClient = () => {
                     onClick={() => router.push('/smart-capture')}
                     variantStyle="primary"
                 >
-                    Back to List
+                    Back to Smart Capture
                 </AppButton>
             </div>
         );
@@ -66,6 +67,14 @@ export const SmartCaptureDetailClient = () => {
 
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-12 space-y-6 bg-gray-50/30 min-h-screen">
+
+            <PageHeader
+                title={data.name}
+                breadcrumbs={[
+                    { label: "Smart Capture", href: "/smart-capture" },
+                    { label: data.name },
+                ]}
+            />
 
             {/* Top Navigation Bar */}
             <div className="flex items-center justify-between">

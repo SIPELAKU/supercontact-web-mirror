@@ -2,14 +2,13 @@ import { useState, useRef } from 'react';
 import { Upload, X, File as FileIcon, Loader2, Eye } from 'lucide-react';
 import Cookies from 'js-cookie';
 
-import { AppButton } from '@/components/ui/app-button';
 import { AppSelect } from '@/components/ui/app-select';
+import { AppButton } from '@/components/ui/app-button';
 import { SmartCaptureCreateReq, SmartCaptureFile } from '@/lib/models/types';
 import { uploadSmartCaptureFiles, deleteSmartCaptureFiles } from '@/lib/api';
-import { useMailSenders } from '@/lib/hooks/useMailSenders';
+import { useMailServers } from '@/lib/hooks/useMailServers';
 import { notify } from '@/lib/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import AddMailSenderDialog from '@/components/email-marketing/campaigns/modals/AddMailSenderDialog';
 
 interface RewardSetupTabProps {
   formData: SmartCaptureCreateReq;
@@ -17,19 +16,18 @@ interface RewardSetupTabProps {
   initialFiles?: SmartCaptureFile[];
 }
 
-export default function RewardSetupTab({ 
-  formData, 
+export default function RewardSetupTab({
+  formData,
   updateFormData,
   initialFiles = []
 }: RewardSetupTabProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<SmartCaptureFile[]>(initialFiles);
   const [previewFile, setPreviewFile] = useState<SmartCaptureFile | null>(null);
-  const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
-  const mailSenders = mailSendersData?.data?.mail_senders || [];
+  const { data: mailServersData, isLoading: isLoadingMailServers } = useMailServers(1, 100);
+  const mailServers = mailServersData?.data?.mail_servers || [];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -79,27 +77,16 @@ export default function RewardSetupTab({
       <h2 className="text-lg font-bold text-gray-900 mb-6">Reward (Lead Magnet) Setup</h2>
 
       <div className="space-y-6">
-        {/* Mail Sender Selection */}
+        {/* SMTP Selection */}
         <div className="space-y-1.5">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-gray-700">Mail Sender</label>
-            <AppButton
-              size="small"
-              onClick={() => setIsAddMailSenderOpen(true)}
-              variantStyle="text"
-              color="primary"
-              className="text-xs p-0 min-h-0 h-auto font-semibold"
-            >
-              + Add New Mail Sender
-            </AppButton>
-          </div>
+          <label className="text-sm font-medium text-gray-700">SMTP Server</label>
           <AppSelect
-            placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
-            value={formData.mail_sender_id || ''}
-            onChange={(e) => updateFormData({ mail_sender_id: e.target.value as string })}
-            options={mailSenders.map(sender => ({
-              value: sender.id,
-              label: `${sender.name} (${sender.email})`
+            placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select SMTP Server"}
+            value={formData.mail_server_id || ''}
+            onChange={(e) => updateFormData({ mail_server_id: e.target.value as string })}
+            options={mailServers.map(server => ({
+              value: server.id,
+              label: `${server.name} (${server.from_email})`
             }))}
             isBgWhite
           />
@@ -245,14 +232,6 @@ export default function RewardSetupTab({
           </div>
         </DialogContent>
       </Dialog>
-
-      <AddMailSenderDialog
-        open={isAddMailSenderOpen}
-        onClose={() => setIsAddMailSenderOpen(false)}
-        onSuccess={(sender) => {
-          updateFormData({ mail_sender_id: sender.id });
-        }}
-      />
     </div>
   );
 }

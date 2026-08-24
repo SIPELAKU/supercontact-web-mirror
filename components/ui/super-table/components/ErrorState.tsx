@@ -8,7 +8,7 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ 
-  message = "Terjadi kesalahan saat memuat data.", 
+  message = "Something went wrong while loading data.",
   onRetry 
 }: ErrorStateProps) {
   return (
@@ -35,7 +35,7 @@ export function ErrorState({
           onClick={onRetry}
           size="small"
         >
-          Coba Lagi
+          Try Again
         </Button>
       )}
     </Box>

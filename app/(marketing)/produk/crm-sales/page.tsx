@@ -34,6 +34,30 @@ export const metadata: Metadata = {
     },
 };
 
+const softwareAppJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "SmartSales CRM Sales",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: PAGE_URL,
+    description:
+        "Modul CRM Sales SmartSales untuk mengelola pipeline penjualan, otomatisasi follow-up, dan analitik performa tim sales, terintegrasi WhatsApp Business API.",
+    inLanguage: "id-ID",
+    publisher: {
+        "@type": "Organization",
+        name: "SmartSales",
+        url: "https://www.smartsales.id",
+    },
+    offers: {
+        "@type": "Offer",
+        url: "https://www.smartsales.id/price",
+        priceCurrency: "IDR",
+        price: "0",
+        description: "Uji coba gratis; paket berbayar tersedia di halaman harga.",
+    },
+};
+
 const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -143,6 +167,10 @@ const faqJsonLd = {
 export default function CrmSalesPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

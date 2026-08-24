@@ -1,5 +1,7 @@
 "use client";
 
+import { notFound } from "next/navigation";
+
 import React from "react";
 import { AppButton } from "@/components/ui/app-button";
 import { Box, Typography, Paper, Grid } from "@mui/material";
@@ -11,6 +13,9 @@ import FileCopyIcon from "@mui/icons-material/FileCopy";
 import CloseIcon from "@mui/icons-material/Close";
 
 export default function ButtonTestPage() {
+  // Dev-only page: hidden in production builds
+  if (process.env.NODE_ENV === "production") notFound();
+
   return (
     <Box sx={{ p: 4, bgcolor: "#f5f5f5", minHeight: "100vh" }}>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold" }}>

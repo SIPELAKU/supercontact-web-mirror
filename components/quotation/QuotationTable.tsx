@@ -7,11 +7,16 @@ import { Quotation } from "@/lib/store/quotation";
 import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 import { formatRupiah } from "@/lib/helper/currency";
 import { format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FileText, Plus } from "lucide-react";
 
 interface QuotationTableProps {
   quotations: Quotation[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<Quotation[]>;
@@ -35,6 +40,9 @@ export default function QuotationTable({
   quotations,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   onStateChange,
   onExportRequest,
@@ -130,6 +138,20 @@ export default function QuotationTable({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={FileText}
+            title="No quotations found"
+            description="Create a quotation to send pricing to your clients."
+            action={
+              onAdd
+                ? { label: "Create Quotation", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}

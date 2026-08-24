@@ -14,6 +14,7 @@ const useRoles = (page: number = 1, limit: number = 10, search?: string) => {
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["roles", page, limit, search],
     queryFn: async () => {
@@ -172,6 +173,7 @@ const useRoles = (page: number = 1, limit: number = 10, search?: string) => {
     isLoading,
     isError,
     error: error ? (error instanceof Error ? error.message : String(error)) : null,
+    refetch,
     addRole,
     editRole,
     deleteRole,

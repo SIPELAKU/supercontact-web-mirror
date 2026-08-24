@@ -1,25 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { format } from 'date-fns';
+import { useMemo, useState } from "react";
 import { Plus, FileClock } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import CreateDsrRequestModal from "@/components/data-intelligence/compliance/CreateDsrRequestModal";
-import { useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
+import { useDeleteDsrRequest, useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
-import { DsrRequestStatus } from "@/lib/types/compliance";
+import { DsrRequestItem, DsrRequestStatus } from "@/lib/types/compliance";
 
 const TYPE_LABELS: Record<string, string> = {
     access: "Access",
     deletion: "Deletion",
     correction: "Correction",
 };
+
+const TYPE_OPTIONS = [
+    { value: "access", label: "Access" },
+    { value: "deletion", label: "Deletion" },
+    { value: "correction", label: "Correction" },
+];
 
 const STATUS_OPTIONS: { value: DsrRequestStatus; label: string }[] = [
     { value: "pending", label: "Pending" },
@@ -29,11 +37,30 @@ const STATUS_OPTIONS: { value: DsrRequestStatus; label: string }[] = [
 ];
 
 export default function DsrRequestsPage() {
-    const { data: response, isLoading } = useDsrRequests();
+    const { data: response, isLoading, isError, refetch } = useDsrRequests();
     const requests = response?.data || [];
     const [openCreate, setOpenCreate] = useState(false);
     const updateStatus = useUpdateDsrRequestStatus();
-    const { showConfirmation } = useConfirmation();
+    const deleteRequest = useDeleteDsrRequest();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
+
+    const handleDelete = (id: string) => {
+        confirm({
+            variant: "danger",
+            title: "Delete Request",
+            description: "Delete this data subject request? This action cannot be undone.",
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            onConfirm: async () => {
+                try {
+                    await deleteRequest.mutateAsync(id);
+                    notify.success("Deleted", { description: "Request removed." });
+                } catch (err: any) {
+                    notify.error("Error", { description: handleError(err, "Delete DSR Request") });
+                }
+            },
+        });
+    };
 
     const applyStatusChange = async (id: string, status: DsrRequestStatus) => {
         try {
@@ -46,10 +73,10 @@ export default function DsrRequestsPage() {
 
     const handleStatusChange = (id: string, status: DsrRequestStatus, requestType: string) => {
         if (status === "completed" && requestType === "deletion") {
-            showConfirmation({
-                type: "warning",
+            confirm({
+                variant: "warning",
                 title: "Complete Deletion Request",
-                message:
+                description:
                     "Marking this deletion request completed will add the subject to your suppression list, so future searches and CRM saves exclude them. Continue?",
                 confirmText: "Continue",
                 cancelText: "Cancel",
@@ -59,6 +86,73 @@ export default function DsrRequestsPage() {
         }
         applyStatusChange(id, status);
     };
+
+    const columns = useMemo<MRT_ColumnDef<DsrRequestItem>[]>(
+        () => [
+            {
+                accessorKey: "subject_name",
+                header: "Subject",
+                enableColumnFilter: false,
+                Cell: ({ row }) => (
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-gray-900">
+                            {row.original.subject_name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                            {row.original.subject_email_or_phone}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: "request_type",
+                header: "Type",
+                filterVariant: "select",
+                filterSelectOptions: TYPE_OPTIONS,
+                filterFn: "equals",
+                Cell: ({ cell }) => (
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                        {TYPE_LABELS[cell.getValue<string>()] || cell.getValue<string>()}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: "created_at",
+                header: "Received",
+                enableColumnFilter: false,
+                Cell: ({ cell }) => (
+                    <span className="text-sm text-gray-600">
+                        {format(new Date(cell.getValue<string>()), "dd MMM yyyy, HH:mm")}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: "status",
+                header: "Status",
+                filterVariant: "select",
+                filterSelectOptions: STATUS_OPTIONS,
+                filterFn: "equals",
+                size: 200,
+                Cell: ({ row }) => (
+                    <AppSelect
+                        value={row.original.status}
+                        onChange={(e) =>
+                            handleStatusChange(
+                                row.original.id,
+                                e.target.value as DsrRequestStatus,
+                                row.original.request_type
+                            )
+                        }
+                        options={STATUS_OPTIONS}
+                        height="34px"
+                        isBgWhite
+                    />
+                ),
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
 
     return (
         <div className="w-full flex flex-col gap-4 p-4 md:p-8">
@@ -90,81 +184,38 @@ export default function DsrRequestsPage() {
                     </p>
                 </section>
 
-                {!isLoading && requests.length === 0 ? (
-                    <div className="mx-6 my-6">
-                        <EmptyState
-                            icon={FileClock}
-                            title="No requests logged yet"
-                            description="Access, deletion, and correction requests from data subjects will appear here."
-                            action={{ label: "Log Request", onClick: () => setOpenCreate(true), icon: <Plus size={16} /> }}
-                        />
-                    </div>
-                ) : (
-                <div className="mx-6 my-6 overflow-x-auto rounded-lg border border-gray-200">
-                    <Table sx={{ minWidth: 760 }}>
-                        <TableHead>
-                            <TableRow className="bg-[#EEF2FD]!">
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Subject</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Type</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Received</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, width: 200 }}>
-                                    Status
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} align="center" sx={{ py: 10 }}>
-                                        <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                requests.map((request) => (
-                                    <TableRow key={request.id} hover>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-medium text-gray-900">
-                                                    {request.subject_name}
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {request.subject_email_or_phone}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                                                {TYPE_LABELS[request.request_type] || request.request_type}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                            {new Date(request.created_at).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <AppSelect
-                                                value={request.status}
-                                                onChange={(e) =>
-                                                    handleStatusChange(
-                                                        request.id,
-                                                        e.target.value as DsrRequestStatus,
-                                                        request.request_type
-                                                    )
-                                                }
-                                                options={STATUS_OPTIONS}
-                                                height="34px"
-                                                isBgWhite
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                <div className="mx-6 my-6">
+                    <SuperTable<DsrRequestItem>
+                        tableId="dsr-requests-table"
+                        columns={columns}
+                        data={requests}
+                        isLoading={isLoading}
+                        isError={isError}
+                        errorMessage="Failed to load data subject requests. Please try again."
+                        onRetry={() => refetch()}
+                        renderRowActions={({ row }) => (
+                            <DeleteButton onClick={() => handleDelete(row.original.id)} />
+                        )}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={FileClock}
+                                title="No requests logged yet"
+                                description="Access, deletion, and correction requests from data subjects will appear here."
+                                action={{ label: "Log Request", onClick: () => setOpenCreate(true), icon: <Plus size={16} /> }}
+                            />
+                        )}
+                        initialState={{ sorting: [{ id: "created_at", desc: true }] }}
+                        features={{
+                            globalFilter: true,
+                            columnFilters: true,
+                            pagination: true,
+                        }}
+                    />
                 </div>
-                )}
             </div>
 
             <CreateDsrRequestModal open={openCreate} onClose={() => setOpenCreate(false)} />
+            {confirmationPopup}
         </div>
     );
 }

@@ -14,7 +14,7 @@ import {
 import { TicketStatus } from "@/lib/types/Ticket";
 import { AddTicketModal } from "@/components/support/tickets/modals/AddTicketModal";
 import { EditTicketModal } from "@/components/support/tickets/modals/EditTicketModal";
-import { useConfirmation } from "@/components/ui/confirm-modal";
+import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { Ticket } from "@/lib/types/Ticket";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -40,10 +40,11 @@ export default function TicketManagementPage() {
         pageSize: 10,
         globalFilter: "",
         columnFilters: [] as { id: string; value: unknown }[],
+        sorting: [{ id: "updated_at", desc: true }] as { id: string; desc: boolean }[],
     });
 
     // Confirmation Hook
-    const { showConfirmation } = useConfirmation();
+    const { confirm, confirmationPopup } = useConfirmationPopup();
 
     // Helper to extract specific column filter value
     const getFilterValue = (id: string) => {
@@ -51,14 +52,24 @@ export default function TicketManagementPage() {
         return filter ? (filter.value as string) : "";
     };
 
+    // Server-side sorting (sort_by/sort_order contract)
+    const sortParam = tableState.sorting[0];
+    const sortByParam = sortParam?.id;
+    const sortOrderParam: "asc" | "desc" | undefined = sortParam
+        ? (sortParam.desc ? "desc" : "asc")
+        : undefined;
+
     // Data Fetching
-    const { data: ticketData, isLoading, isError } = useTickets(
+    const { data: ticketData, isLoading, isError, refetch } = useTickets(
         tableState.pageIndex + 1, // API is 1-indexed
         tableState.pageSize,
         tableState.globalFilter,
         getFilterValue("status"),
         getFilterValue("priority"),
-        getFilterValue("assigned_agent")
+        getFilterValue("type"),
+        getFilterValue("assigned_agent"),
+        sortByParam,
+        sortOrderParam
     );
 
     const deleteMutation = useDeleteTicket();
@@ -72,10 +83,10 @@ export default function TicketManagementPage() {
     // Handlers
     const handleEdit = (ticket: Ticket) => setEditingTicket(ticket);
     const handleDeleteClick = (ticket: Ticket) => {
-        showConfirmation({
-            type: "delete",
+        confirm({
+            variant: "danger",
             title: "Delete Ticket",
-            message: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
+            description: `Are you sure you want to delete ticket #${ticket.ticket_code}? This action cannot be undone.`,
             confirmText: "Delete",
             onConfirm: async () => {
                 try {
@@ -94,10 +105,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil dihapus` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) deleted successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal dihapus` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to delete` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal menghapus tiket" });
@@ -113,10 +124,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil ditugaskan` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) assigned successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal ditugaskan` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to assign` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal menugaskan tiket" });
@@ -132,10 +143,10 @@ export default function TicketManagementPage() {
             const { succeeded, failed } = res.data;
             clearSelection();
             if (succeeded.length > 0) {
-                notify.success("Success", { description: `${succeeded.length} tiket berhasil diperbarui` });
+                notify.success("Success", { description: `${succeeded.length} ticket(s) updated successfully` });
             }
             if (failed.length > 0) {
-                notify.error("Error", { description: `${failed.length} tiket gagal diperbarui` });
+                notify.error("Error", { description: `${failed.length} ticket(s) failed to update` });
             }
         } catch (error: any) {
             notify.error("Error", { description: error?.message || "Gagal memperbarui tiket" });
@@ -148,6 +159,7 @@ export default function TicketManagementPage() {
             pageSize: state.pagination.pageSize,
             globalFilter: state.globalFilter,
             columnFilters: state.columnFilters,
+            sorting: state.sorting || [],
         });
     };
 
@@ -156,6 +168,7 @@ export default function TicketManagementPage() {
             const search = params.currentState.globalFilter;
             const status = getFilterValue("status");
             const priority = getFilterValue("priority");
+            const type = getFilterValue("type");
             const agentId = getFilterValue("assigned_agent");
 
             const LIMIT_PER_PAGE = 100;
@@ -170,7 +183,12 @@ export default function TicketManagementPage() {
                 if (search) urlParams.set("search", search);
                 if (status) urlParams.set("status", status);
                 if (priority) urlParams.set("priority", priority);
+                if (type) urlParams.set("type", type);
                 if (agentId) urlParams.set("assigned_agent_id", agentId);
+                if (sortByParam) {
+                    urlParams.set("sort_by", sortByParam);
+                    urlParams.set("sort_order", sortOrderParam ?? "asc");
+                }
                 
                 const response = await fetch(
                     `/api/proxy/tickets?${urlParams.toString()}`,
@@ -213,8 +231,8 @@ export default function TicketManagementPage() {
     return (
         <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
             <PageHeader
-                title="Ticket Management"
-                breadcrumbs={[{ label: "Support" }, { label: "Ticket" }]}
+                title="Tickets"
+                breadcrumbs={[{ label: "Support" }, { label: "Tickets" }]}
             />
 
             <div className="w-full overflow-x-auto">
@@ -222,6 +240,8 @@ export default function TicketManagementPage() {
                     tickets={tickets}
                     isLoading={isLoading}
                     isError={isError}
+                    onRetry={() => refetch()}
+                    onAdd={() => setIsAddModalOpen(true)}
                     rowCount={totalTickets}
                     onStateChange={handleTableStateChange}
                     onExportRequest={handleExportRequest}
@@ -291,11 +311,12 @@ export default function TicketManagementPage() {
             <div style={{ display: "none" }}>
                 <PrintableTable
                     ref={componentRef}
-                    title="Ticket Management"
+                    title="Tickets"
                     data={tickets}
                     columns={printableColumns}
                 />
             </div>
+            {confirmationPopup}
         </div>
     );
 }

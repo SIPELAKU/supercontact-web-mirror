@@ -1,8 +1,6 @@
 "use client";
 
-import { CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import Cookies from 'js-cookie';
 
@@ -15,7 +13,7 @@ import PageHeader from '@/components/ui/page-header';
 import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
 import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
-import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 export default function SubscribersClient() {
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -27,23 +25,18 @@ export default function SubscribersClient() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Server-side pagination & search state
+  // Server-side pagination, search & sorting state
+  // (search is already debounced by SuperTable — no extra debounce layer here)
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1); // Reset to first page on search
-    }, 500);
+  const sort = sorting[0];
+  const sortBy = sort?.id;
+  const sortOrder: 'asc' | 'desc' | undefined = sort ? (sort.desc ? 'desc' : 'asc') : undefined;
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const { data, isLoading, refetch } = useSubscribers(page, limit, debouncedSearch);
+  const { data, isLoading, isError, error, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
 
   const subscribers = data?.data?.contacts || [];
   const totalCount = data?.data?.total || 0;
@@ -131,13 +124,18 @@ export default function SubscribersClient() {
   };
 
   // Handle state changes from SuperTable
-  const handleStateChange = useCallback((state: { page: number; limit: number; search: string }) => {
-    if (state.page !== page) setPage(state.page);
+  const handleStateChange = useCallback((state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => {
+    const searchChanged = state.search !== searchQuery;
+    if (searchChanged) setSearchQuery(state.search);
     if (state.limit !== limit) {
       setLimit(state.limit);
       setPage(1);
+    } else if (searchChanged) {
+      setPage(1); // Reset to first page on search
+    } else if (state.page !== page) {
+      setPage(state.page);
     }
-    if (state.search !== searchQuery) setSearchQuery(state.search);
+    setSorting(state.sorting || []);
   }, [page, limit, searchQuery]);
 
   // Export handler: loop pagination to fetch all data
@@ -151,7 +149,7 @@ export default function SubscribersClient() {
       let totalPages = 1;
 
       do {
-        const result = await fetchSubscribers(token, currentPage, 50, debouncedSearch || undefined);
+        const result = await fetchSubscribers(token, currentPage, 50, searchQuery || undefined, sortBy, sortOrder);
 
         const items = result?.data?.contacts || [];
         const total = result?.data?.total || 0;
@@ -168,7 +166,7 @@ export default function SubscribersClient() {
 
       return [];
     }
-  }, [debouncedSearch]);
+  }, [searchQuery, sortBy, sortOrder]);
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -183,6 +181,9 @@ export default function SubscribersClient() {
       <SubscribersTable
         subscribers={subscribers}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetch()}
         totalCount={totalCount}
         onAdd={handleOpenAddModal}
         onEdit={handleOpenEditModal}
@@ -213,45 +214,29 @@ export default function SubscribersClient() {
         />
       )}
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedToDelete?.length} selected subscriber(s)? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDelete} color="danger" variantStyle='danger' disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}>
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete ${selectedToDelete?.length} selected subscriber(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+      />
 
-      <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <Typography variant="h6" color="error">Delete All Data</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            <strong>WARNING:</strong> Are you sure you want to delete <strong>all subscribers</strong> in your account? This action is highly destructive and cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle='outline'>Cancel</AppButton>
-          <AppButton onClick={handleConfirmDeleteAll} color="danger" variantStyle='danger' disabled={deleteAllMutation.isPending}>
-            {deleteAllMutation.isPending ? <CircularProgress size={24} color="inherit" /> : 'Yes, Delete All Data!'}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationPopup
+        isOpen={confirmAllOpen}
+        onClose={() => setConfirmAllOpen(false)}
+        onConfirm={handleConfirmDeleteAll}
+        title="Delete All Data"
+        description={<><strong>WARNING:</strong> Are you sure you want to delete <strong>all subscribers</strong> in your account? This action is highly destructive and cannot be undone.</>}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteAllMutation.isPending}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import TextField, { TextFieldProps } from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
+import Typography from "@mui/material/Typography";
 import Checkbox, { CheckboxProps } from "@mui/material/Checkbox";
 import { styled } from "@mui/material/styles";
 import Visibility from "@mui/icons-material/Visibility";
@@ -16,7 +17,10 @@ const FOCUS_COLOR = "#5479EE";
 
 // --- Types ---
 type BaseInputProps = {
+  /** Rendered as a static label above the field (AppSelect-style). */
   label?: string;
+  /** Renders a standard red asterisk after the label. */
+  required?: boolean;
   isBgWhite?: boolean;
   rounded?: string;
   height?: string;
@@ -29,6 +33,10 @@ type TextInputProps = BaseInputProps &
     startIcon?: React.ReactNode;
     endIcon?: React.ReactNode;
     inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+    /** Mirrors AppSelect: paints the field border red. */
+    error?: boolean;
+    /** Mirrors AppSelect: message shown under the field (red when `error`). */
+    helperText?: React.ReactNode;
   };
 
 type CheckboxInputProps = BaseInputProps &
@@ -183,6 +191,7 @@ export const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>((props
   const {
     type = "text",
     label,
+    required,
     isBgWhite = false,
     startIcon,
     endIcon,
@@ -195,10 +204,10 @@ export const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>((props
 
   const isPassword = type === "password";
 
-  return (
+  const field = (
     <StyledTextField
       fullWidth
-      label={label}
+      required={required}
       isBgWhite={isBgWhite}
       rounded={rounded}
       height={height}
@@ -229,6 +238,22 @@ export const AppInput = React.forwardRef<HTMLInputElement, AppInputProps>((props
       inputProps={inputProps}
       {...textFieldProps}
     />
+  );
+
+  if (!label) return field;
+
+  return (
+    <div style={{ width: width ?? "100%" }}>
+      <Typography
+        variant="body2"
+        component="label"
+        sx={{ mb: 1, display: "block", fontWeight: 500, color: "text.secondary" }}
+      >
+        {label}
+        {required && <span style={{ color: "#EF4444" }}> *</span>}
+      </Typography>
+      {field}
+    </div>
   );
 });
 

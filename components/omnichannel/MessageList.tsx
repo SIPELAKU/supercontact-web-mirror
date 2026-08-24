@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Message } from "@/lib/types/omnichannel";
+import { ChannelType, Message } from "@/lib/types/omnichannel";
 import { format } from "date-fns";
 import { CheckCheck, Check, X, Clock, ZoomIn, ZoomOut, RotateCcw, FileText, Download, Play, Pause, Volume2 } from "lucide-react";
 import Image from "next/image";
 
 interface MessageListProps {
   messages: Message[];
-  channelType: 'whatsapp' | 'email';
+  channelType: ChannelType;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
@@ -119,7 +119,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
                         />
                       </div>
                     ) : isVoiceAttachment(message.media_type) ? (
-                      <div className={`flex items-center gap-3 p-2 rounded-lg ${isOutbound ? 'bg-blue-700/50' : 'bg-gray-200'}`}>
+                      <div className={`flex items-center gap-3 p-2 rounded-lg ${isOutbound ? 'bg-[#3F66E0]/50' : 'bg-gray-200'}`}>
                         <button className="p-1.5 rounded-full bg-primary text-white hover:scale-105 transition-transform">
                           <Play size={16} fill="white" />
                         </button>
@@ -129,9 +129,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
                         <Volume2 size={16} className={isOutbound ? 'text-blue-200' : 'text-gray-500'} />
                       </div>
                     ) : isFileAttachment(message.media_type) || true ? (
-                      <div className={`flex items-center gap-3 p-3 rounded-lg border ${isOutbound ? 'bg-blue-700/30 border-blue-500/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-                        <div className={`p-2 rounded-lg ${isOutbound ? 'bg-blue-600' : 'bg-gray-100'}`}>
-                          <FileText size={20} className={isOutbound ? 'text-white' : 'text-blue-600'} />
+                      <div className={`flex items-center gap-3 p-3 rounded-lg border ${isOutbound ? 'bg-[#3F66E0]/30 border-[#5479EE]/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+                        <div className={`p-2 rounded-lg ${isOutbound ? 'bg-[#5479EE]' : 'bg-gray-100'}`}>
+                          <FileText size={20} className={isOutbound ? 'text-white' : 'text-[#5479EE]'} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className={`text-xs font-medium truncate ${isOutbound ? 'text-white' : 'text-gray-900'}`}>{message.media_url.split('/').pop()}</p>
@@ -142,7 +142,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, channelType }) => {
                           download
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`p-2 rounded-full hover:scale-110 transition-transform ${isOutbound ? 'bg-blue-600/50 text-white' : 'bg-gray-100 text-gray-700'}`}
+                          className={`p-2 rounded-full hover:scale-110 transition-transform ${isOutbound ? 'bg-[#5479EE]/50 text-white' : 'bg-gray-100 text-gray-700'}`}
                         >
                           <Download size={16} />
                         </a>

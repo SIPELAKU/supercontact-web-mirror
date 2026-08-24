@@ -47,15 +47,36 @@ export interface UnreadCountResponse {
  * notification payload doesn't carry the parent contact_id needed to build
  * that link, so those are intentionally left unmapped (returns null, no
  * navigation) rather than guessing a wrong URL.
+ *
+ * Conversation notifications are split by channel: the backend tags
+ * "omnichannel_conversation" for WhatsApp/SMS/Email (-> contact-first
+ * Omnichannel Inbox) and "widget_conversation" / "messenger_conversation" /
+ * "instagram_conversation" for web-widget, Messenger and Instagram chats
+ * (-> Support Desk Workspace), matching
+ * where each conversation actually lives in the UI.
  */
 export function getNotificationRoute(notif: NotificationData): string | null {
     switch (notif.entity_type) {
         case "omnichannel_conversation":
-            // Route into the main omnichannel workspace (left: contacts, center:
-            // conversation, right: contact details) rather than the standalone
+            // WhatsApp/SMS/Email conversations. Route into the contact-first
+            // Omnichannel Inbox (left: contacts, center: conversation, right:
+            // contact details) rather than the standalone
             // /omnichannel/conversations/[id] page, which only renders the message
             // thread on its own with no contact list or details panel.
             return notif.entity_id ? `/omnichannel?conversation=${notif.entity_id}` : null;
+        case "widget_conversation":
+            // Web-widget conversations live in the Support Desk Workspace (not
+            // the contact-first Omnichannel Inbox). Deep-link straight to the
+            // thread; WorkspaceClient reads ?conversation=<id> and opens it.
+            return notif.entity_id ? `/support/workspace?conversation=${notif.entity_id}` : "/support/workspace";
+        case "messenger_conversation":
+            // Messenger follows the web-widget precedent: a PSID carries no
+            // phone/email contact identity, so its conversations live in the
+            // Workspace too (backend conversation_notification_entity_type).
+            return notif.entity_id ? `/support/workspace?conversation=${notif.entity_id}` : "/support/workspace";
+        case "instagram_conversation":
+            // Instagram DMs mirror Messenger exactly (IGSID identity).
+            return notif.entity_id ? `/support/workspace?conversation=${notif.entity_id}` : "/support/workspace";
         case "chat_message":
             return "/inbox";
         case "ticket":

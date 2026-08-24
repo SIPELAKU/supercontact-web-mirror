@@ -16,7 +16,7 @@ export interface Subscriber {
 }
 
 export interface CampaignSubscriber extends Subscriber {
-  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed' | 'simulated';
   error_message: string | null;
 }
 
@@ -170,6 +170,7 @@ export interface Campaign {
     opened: number;
     clicked: number;
     bounced: number;
+    simulated: number;
   };
   created_at: string;
   updated_at: string;

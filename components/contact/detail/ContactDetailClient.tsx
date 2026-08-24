@@ -6,11 +6,13 @@ import { Contact, Note, Task } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import AddTaskModal from "@/components/contact/modal/AddTaskModal";
-import DeleteContactModal from "@/components/contact/modal/DeleteContactModal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { useDeleteContact } from "@/lib/hooks/useContacts";
 import { useAuth } from "@/lib/context/AuthContext";
-import { CircularProgress, Box, Tab, Tabs } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { handleError } from "@/lib/utils/errorHandler";
 import PageHeader from "@/components/ui/page-header";
+import { AppTabs } from "@/components/ui/app-tabs";
 
 import { ContactHeader } from "./sections/ContactHeader";
 import { ContactInfo } from "./sections/ContactInfo";
@@ -47,6 +49,7 @@ export const ContactDetailClient = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [openTaskModal, setOpenTaskModal] = useState(false);
     const [isloadingCreateNote, setisloadingCreateNote] = useState(false);
+    const deleteMutation = useDeleteContact();
 
     const fetchContact = async () => {
         try {
@@ -76,6 +79,19 @@ export const ContactDetailClient = () => {
         setLoading(true);
         await fetchContact();
         setLoading(false);
+    };
+
+    // Ported as-is from the deleted DeleteContactModal
+    const handleConfirmDelete = async () => {
+        if (!contact) return;
+        try {
+            await deleteMutation.mutateAsync(contact.id);
+            reloadData();
+            setOpenDelete(false);
+            notify.success("Contact deleted!");
+        } catch (err: any) {
+            notify.error(err.message || "Failed to delete contact");
+        }
     };
 
     useEffect(() => {
@@ -169,31 +185,17 @@ export const ContactDetailClient = () => {
 
             <ContactHeader contact={contact} onEdit={() => setOpenEdit(true)} />
 
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_, val) => handleTabChange(val)}
-                    sx={{
-                        "& .MuiTab-root": {
-                            textTransform: "none",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            minWidth: "auto",
-                            padding: "10px 4px",
-                            marginRight: "28px",
-                            color: "#6B7280",
-                        },
-                        "& .Mui-selected": { color: "#5479EE!important" },
-                        "& .MuiTabs-indicator": { backgroundColor: "#5479EE" },
-                    }}
-                >
-                    <Tab label="Overview" value="overview" disableRipple />
-                    <Tab label="Activity" value="activity" disableRipple />
-                    <Tab label="Email" value="email" disableRipple />
-                    <Tab label="WhatsApp" value="whatsapp" disableRipple />
-                    <Tab label="Conversations" value="conversations" disableRipple />
-                </Tabs>
-            </Box>
+            <AppTabs<ProfileTab>
+                value={activeTab}
+                onChange={handleTabChange}
+                tabs={[
+                    { value: "overview", label: "Overview" },
+                    { value: "activity", label: "Activity" },
+                    { value: "email", label: "Email" },
+                    { value: "whatsapp", label: "WhatsApp" },
+                    { value: "conversations", label: "Conversations" },
+                ]}
+            />
 
             {activeTab === "overview" && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -231,6 +233,7 @@ export const ContactDetailClient = () => {
             {activeTab === "whatsapp" && token && (
                 <ContactWhatsAppTab
                     contactId={id}
+                    contactName={contact.name}
                     isRecipient={contact.is_recipient}
                     broadcastGroups={contact.broadcast_groups || []}
                     token={token}
@@ -239,7 +242,7 @@ export const ContactDetailClient = () => {
             )}
 
             {activeTab === "conversations" && (
-                <ContactConversationsTab conversations={contact.conversations || []} />
+                <ContactConversationsTab contactId={id} contactName={contact.name} />
             )}
 
             <EditContactModal
@@ -248,11 +251,15 @@ export const ContactDetailClient = () => {
                 onClose={() => setOpenEdit(false)}
                 onSuccess={reloadData}
             />
-            <DeleteContactModal
-                open={openDelete}
-                initialData={contact}
+            <ConfirmationPopup
+                isOpen={openDelete}
                 onClose={() => setOpenDelete(false)}
-                onSuccess={reloadData}
+                onConfirm={handleConfirmDelete}
+                title="Delete Contact"
+                description={`Are you sure you want to delete contact ${contact?.name ?? ""}?`}
+                confirmText="Delete Contact"
+                variant="danger"
+                isLoading={deleteMutation.isPending}
             />
             <AddTaskModal
                 open={openTaskModal}

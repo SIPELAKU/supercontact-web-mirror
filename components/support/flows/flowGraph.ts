@@ -1,0 +1,372 @@
+// components/support/flows/flowGraph.ts
+// Conversion between the backend graph contract (lib/api/flows.ts FlowGraph -
+// the exact shape the engine executes) and @xyflow/react canvas state.
+//
+// Load direction is defensive (missing/garbled fields never crash the studio);
+// save direction is strict (only contract fields are emitted, so xyflow
+// internals like selected/measured/dragging/sourceHandle never reach the API).
+
+import type { Edge, Node } from "@xyflow/react";
+import type {
+    ConditionKind,
+    FlowEdgeBranch,
+    FlowGraph,
+    FlowGraphEdge,
+    FlowGraphNode,
+    KbGrounding,
+    MenuOption,
+    TicketActionKind,
+    TicketPriority,
+} from "@/lib/api/flows";
+
+// One loose data bag shared by every node type (union of the per-type contract
+// fields). Typed as a type alias (not interface) so it satisfies xyflow v12's
+// `Record<string, unknown>` constraint via the implicit index signature.
+export type StudioNodeData = {
+    // send_message
+    text?: string;
+    // condition
+    kind?: ConditionKind;
+    keywords?: string[];
+    match?: "any";
+    channels?: string[];
+    // handoff
+    queue_id?: string | null;
+    note?: string;
+    // kb_answer
+    grounding?: KbGrounding;
+    max_articles?: number;
+    min_confidence?: number;
+    fallback_text?: string;
+    // menu
+    prompt?: string;
+    options?: MenuOption[];
+    // ticket_action
+    action?: TicketActionKind;
+    priority?: TicketPriority;
+    tag?: string;
+    // delay
+    minutes?: number;
+    // unknown node types keep whatever the backend sent
+    [key: string]: unknown;
+};
+
+export type StudioEdgeData = {
+    branch?: FlowEdgeBranch;
+    [key: string]: unknown;
+};
+
+export type StudioNode = Node<StudioNodeData>;
+export type StudioEdge = Edge<StudioEdgeData>;
+
+export const KNOWN_NODE_TYPES = [
+    "trigger",
+    "send_message",
+    "condition",
+    "handoff",
+    "kb_answer",
+    "menu",
+    "ticket_action",
+    "delay",
+] as const;
+
+// Only the FIXED vocabularies have friendly labels; a menu branch is an
+// author-defined option key and renders as itself.
+export const BRANCH_LABEL: Record<string, string> = {
+    yes: "Ya",
+    no: "Tidak",
+    found: "Ketemu",
+    not_found: "Tidak",
+};
+
+/** Edge label for a branch: a known vocabulary word, else the raw key. */
+export function branchLabel(branch: FlowEdgeBranch): string {
+    return BRANCH_LABEL[branch] ?? String(branch);
+}
+
+/** Branches rendered green (the "positive" outcome of a branching node). */
+const POSITIVE_BRANCHES: FlowEdgeBranch[] = ["yes", "found"];
+
+/**
+ * The branch vocabulary of a branching node type: its source-handle ids ARE
+ * these branch values (mirroring condition's yes/no pattern), so an edge's
+ * branch can be mirrored onto sourceHandle and back.
+ */
+export function branchesForNodeType(
+    nodeType: string | undefined,
+    data?: StudioNodeData
+): FlowEdgeBranch[] {
+    if (nodeType === "condition") return ["yes", "no"];
+    if (nodeType === "kb_answer") return ["found", "not_found"];
+    // F4: a menu routes the customer's reply along one edge per option, so
+    // its vocabulary is its own option keys rather than a fixed pair.
+    if (nodeType === "menu") {
+        return (Array.isArray(data?.options) ? data!.options : [])
+            .map((option) => (option && typeof option === "object" ? option.key : ""))
+            .filter((key): key is string => typeof key === "string" && key.length > 0);
+    }
+    return [];
+}
+
+function parseBranch(value: unknown): FlowEdgeBranch | undefined {
+    // Menu keys are author-defined, so any non-empty string is a valid branch;
+    // whether it BELONGS on a given edge is decided by the source node's
+    // vocabulary at the call site.
+    return typeof value === "string" && value.trim().length > 0
+        ? (value.trim() as FlowEdgeBranch)
+        : undefined;
+}
+
+let idCounter = 0;
+
+/** Collision-safe-enough client-side id for new nodes/edges. */
+export function makeGraphId(prefix: string): string {
+    idCounter += 1;
+    return `${prefix}_${Date.now().toString(36)}_${idCounter}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function toFiniteNumber(value: unknown, fallback: number): number {
+    const n = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+/** Default data bag for a node freshly dropped from the palette. */
+export function defaultNodeData(type: string): StudioNodeData {
+    switch (type) {
+        case "send_message":
+            return { text: "" };
+        case "condition":
+            return { kind: "keyword", keywords: [], match: "any" };
+        case "handoff":
+            return { queue_id: null, note: "" };
+        case "kb_answer":
+            return { grounding: "public", max_articles: 3, min_confidence: 0.5, fallback_text: "" };
+        case "menu":
+            return {
+                prompt: "",
+                options: [
+                    { key: "1", label: "" },
+                    { key: "2", label: "" },
+                ],
+            };
+        case "ticket_action":
+            return { action: "create_ticket" };
+        case "delay":
+            return { minutes: 15 };
+        case "trigger":
+        default:
+            return {};
+    }
+}
+
+/** Visual styling shared by every edge the studio renders/creates. */
+export function edgeDisplayProps(branch?: FlowEdgeBranch): Partial<StudioEdge> {
+    return {
+        type: "smoothstep",
+        label: branch ? branchLabel(branch) : undefined,
+        labelStyle: {
+            fontSize: 11,
+            fontWeight: 600,
+            fill: branch && POSITIVE_BRANCHES.includes(branch) ? "#15803d" : "#b91c1c",
+        },
+        labelBgStyle: { fill: "#ffffff", stroke: "#e5e7eb" },
+        labelBgPadding: [4, 2] as [number, number],
+        labelBgBorderRadius: 4,
+        style: { strokeWidth: 1.5, stroke: "#94a3b8" },
+    };
+}
+
+/**
+ * API graph -> xyflow state. Tolerates null/partial graphs: rows without an
+ * id are dropped, positions are coerced to finite numbers, data defaults to
+ * {}. Branch info is mirrored onto sourceHandle so condition edges visually
+ * attach to their Ya/Tidak handle.
+ */
+export function toStudioGraph(graph: FlowGraph | null | undefined): {
+    nodes: StudioNode[];
+    edges: StudioEdge[];
+} {
+    const rawNodes = Array.isArray(graph?.nodes) ? graph!.nodes : [];
+    const rawEdges = Array.isArray(graph?.edges) ? graph!.edges : [];
+
+    const nodes: StudioNode[] = rawNodes
+        .filter((n): n is FlowGraphNode => !!n && typeof n.id === "string" && n.id.length > 0)
+        .map((n, index) => ({
+            id: n.id,
+            type: typeof n.type === "string" && n.type ? n.type : "unknown",
+            position: {
+                x: toFiniteNumber(n.position?.x, 80 + index * 40),
+                y: toFiniteNumber(n.position?.y, 80 + index * 60),
+            },
+            data: (n.data && typeof n.data === "object" ? n.data : {}) as StudioNodeData,
+        }));
+
+    const nodeTypeById = new Map(nodes.map((n) => [n.id, n.type ?? "unknown"]));
+    const nodeDataById = new Map(nodes.map((n) => [n.id, n.data]));
+
+    const edges: StudioEdge[] = rawEdges
+        .filter(
+            (e): e is FlowGraphEdge =>
+                !!e &&
+                typeof e.id === "string" &&
+                e.id.length > 0 &&
+                typeof e.source === "string" &&
+                typeof e.target === "string" &&
+                nodeTypeById.has(e.source) &&
+                nodeTypeById.has(e.target)
+        )
+        .map((e) => {
+            const branch = parseBranch(e.data?.branch);
+            // Only branching nodes (condition: yes/no, kb_answer: found/
+            // not_found) render branch handles; attaching a branch handle id
+            // to another node type (or the wrong vocabulary) would detach
+            // the edge, so mirror branch -> sourceHandle only when it belongs.
+            const sourceBranches = branchesForNodeType(
+                nodeTypeById.get(e.source),
+                nodeDataById.get(e.source)
+            );
+            const handleBranch = branch && sourceBranches.includes(branch) ? branch : undefined;
+            return {
+                id: e.id,
+                source: e.source,
+                target: e.target,
+                sourceHandle: handleBranch,
+                data: branch ? { branch } : {},
+                ...edgeDisplayProps(handleBranch),
+            };
+        });
+
+    return { nodes, edges };
+}
+
+/** Serializes one node's data down to exactly the contract fields. */
+function serializeNodeData(node: StudioNode): Record<string, unknown> {
+    const data = node.data ?? {};
+    switch (node.type) {
+        case "trigger":
+            // Trigger semantics live in flow.trigger_config, never on the node.
+            return {};
+        case "send_message":
+            return { text: typeof data.text === "string" ? data.text : "" };
+        case "condition": {
+            const kind: ConditionKind =
+                data.kind === "business_hours" || data.kind === "channel" ? data.kind : "keyword";
+            if (kind === "keyword") {
+                const keywords = Array.isArray(data.keywords)
+                    ? data.keywords.map((k) => String(k).trim()).filter(Boolean)
+                    : [];
+                return { kind, keywords, match: "any" };
+            }
+            if (kind === "channel") {
+                // Raw channel strings ("whatsapp"/"web_widget") - the engine
+                // compares the inbound channel against exactly these values.
+                const channels = Array.isArray(data.channels)
+                    ? data.channels.map((c) => String(c).trim()).filter(Boolean)
+                    : [];
+                return { kind, channels };
+            }
+            return { kind };
+        }
+        case "handoff": {
+            const out: Record<string, unknown> = {
+                queue_id: typeof data.queue_id === "string" && data.queue_id ? data.queue_id : null,
+            };
+            if (typeof data.note === "string" && data.note.trim()) {
+                out.note = data.note.trim();
+            }
+            return out;
+        }
+        case "kb_answer": {
+            const out: Record<string, unknown> = {
+                grounding: data.grounding === "internal" ? "internal" : "public",
+            };
+            const maxArticles = Math.round(toFiniteNumber(data.max_articles, NaN));
+            if (Number.isFinite(maxArticles)) {
+                out.max_articles = Math.min(5, Math.max(1, maxArticles));
+            }
+            const minConfidence = toFiniteNumber(data.min_confidence, NaN);
+            if (Number.isFinite(minConfidence)) {
+                out.min_confidence = Math.min(1, Math.max(0, minConfidence));
+            }
+            if (typeof data.fallback_text === "string" && data.fallback_text.trim()) {
+                out.fallback_text = data.fallback_text.trim();
+            }
+            return out;
+        }
+        case "menu": {
+            const options = Array.isArray(data.options)
+                ? data.options
+                      .filter((o): o is MenuOption => !!o && typeof o === "object")
+                      .map((o) => ({
+                          key: String(o.key ?? "").trim(),
+                          label: String(o.label ?? "").trim(),
+                      }))
+                      .filter((o) => o.key.length > 0)
+                : [];
+            return {
+                prompt: typeof data.prompt === "string" ? data.prompt : "",
+                // 2..5 items is enforced by the editor + server validation;
+                // the serializer only caps runaway lists defensively.
+                options: options.slice(0, 5),
+            };
+        }
+        case "ticket_action": {
+            const action: TicketActionKind =
+                data.action === "set_priority" || data.action === "add_tag"
+                    ? data.action
+                    : "create_ticket";
+            const out: Record<string, unknown> = { action };
+            if (action === "set_priority") {
+                const priority: TicketPriority =
+                    data.priority === "Urgent" ||
+                    data.priority === "High" ||
+                    data.priority === "Low"
+                        ? data.priority
+                        : "Medium";
+                out.priority = priority;
+            }
+            if (action === "add_tag") {
+                out.tag = typeof data.tag === "string" ? data.tag.trim() : "";
+            }
+            return out;
+        }
+        case "delay": {
+            // Must reach the server as a real integer - the backend rejects
+            // "15" and 15.5 alike, so a number input's string value would
+            // otherwise fail validation on save.
+            const raw = Number(data.minutes);
+            const minutes = Number.isFinite(raw) ? Math.round(raw) : 15;
+            return { minutes };
+        }
+        default:
+            // Unknown node type: round-trip its data untouched.
+            return { ...data };
+    }
+}
+
+/**
+ * xyflow state -> API graph. Emits ONLY the contract fields; everything
+ * xyflow bolts on (selected, measured, dragging, width/height, sourceHandle,
+ * labels, styles) is stripped by constructing fresh objects.
+ */
+export function toApiGraph(nodes: StudioNode[], edges: StudioEdge[]): FlowGraph {
+    return {
+        nodes: nodes.map((n) => ({
+            id: n.id,
+            type: n.type ?? "unknown",
+            position: {
+                x: Math.round(toFiniteNumber(n.position?.x, 0)),
+                y: Math.round(toFiniteNumber(n.position?.y, 0)),
+            },
+            data: serializeNodeData(n),
+        })),
+        edges: edges.map((e) => {
+            const branch = parseBranch(e.data?.branch);
+            const out: FlowGraphEdge = { id: e.id, source: e.source, target: e.target };
+            if (branch) {
+                out.data = { branch };
+            }
+            return out;
+        }),
+    };
+}

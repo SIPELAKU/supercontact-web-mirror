@@ -1,21 +1,11 @@
 // components/whatsapp-marketing/recipients/RecipientsClient.tsx
 "use client";
 
-import {
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { notify } from '@/lib/notifications';
 import PageHeader from '@/components/ui/page-header';
-import { AppButton } from '@/components/ui/app-button';
+import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import {
   useWaRecipients,
   useDeleteWaRecipient,
@@ -29,11 +19,12 @@ import ImportWaRecipientModal from './ImportWaRecipientModal';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
 
 export default function RecipientsClient() {
-  // Pagination & search state
+  // Pagination, search & sorting state
+  // (limit matches the table's default pageSize of 10)
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(5);
+  const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
 
   // Modal / confirm state
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -44,20 +35,16 @@ export default function RecipientsClient() {
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
+  const sort = sorting[0];
 
-  const { data, isLoading, refetch } = useWaRecipients({
+  const { data, isLoading, isError, error, refetch } = useWaRecipients({
     recipient_type: 'whatsapp',
     page,
     limit,
-    search: debouncedSearch || undefined,
+    search: searchQuery || undefined,
+    sort_by: sort?.id as import('@/lib/types/whatsapp-marketing').WaRecipientSortBy | undefined,
+    sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
   });
 
   const recipients = data?.data?.recipients || [];
@@ -134,13 +121,18 @@ export default function RecipientsClient() {
   };
 
   const handleStateChange = useCallback(
-    (state: { page: number; limit: number; search: string }) => {
-      if (state.page !== page) setPage(state.page);
+    (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => {
+      const searchChanged = state.search !== searchQuery;
+      if (searchChanged) setSearchQuery(state.search);
       if (state.limit !== limit) {
         setLimit(state.limit);
         setPage(1);
+      } else if (searchChanged) {
+        setPage(1); // Reset to first page on search
+      } else if (state.page !== page) {
+        setPage(state.page);
       }
-      if (state.search !== searchQuery) setSearchQuery(state.search);
+      setSorting(state.sorting || []);
     },
     [page, limit, searchQuery]
   );
@@ -158,6 +150,9 @@ export default function RecipientsClient() {
       <RecipientsTable
         recipients={recipients}
         isLoading={isLoading}
+        isError={isError}
+        errorMessage={error instanceof Error ? error.message : undefined}
+        onRetry={() => refetch()}
         totalCount={totalCount}
         onAdd={handleOpenAddModal}
         onImport={() => setImportModalOpen(true)}
@@ -191,71 +186,31 @@ export default function RecipientsClient() {
         onSuccess={handleSuccess}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Deletion</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete {selectedToDelete?.length} selected recipient(s)?{' '}
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmOpen(false)} color="gray" variantStyle="outline">
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleConfirmDelete}
-            color="danger"
-            variantStyle="danger"
-            disabled={deleteMutation.isPending || bulkDeleteMutation.isPending}
-          >
-            {deleteMutation.isPending || bulkDeleteMutation.isPending ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Yes, Delete'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      {/* Delete Confirmation */}
+      <ConfirmationPopup
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirm Deletion"
+        description={`Are you sure you want to delete ${selectedToDelete?.length} selected recipient(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteMutation.isPending || bulkDeleteMutation.isPending}
+      />
 
-      {/* Delete All Confirmation Dialog */}
-      <Dialog open={confirmAllOpen} onClose={() => setConfirmAllOpen(false)}>
-        <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Typography variant="h6">Confirm Delete All</Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete <strong>all recipients</strong>?{' '}
-            This action cannot be undone and will clear all data from this table.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <AppButton onClick={() => setConfirmAllOpen(false)} color="gray" variantStyle="outline">
-            Cancel
-          </AppButton>
-          <AppButton
-            onClick={handleConfirmDeleteAll}
-            color="danger"
-            variantStyle="danger"
-            disabled={deleteAllMutation.isPending}
-          >
-            {deleteAllMutation.isPending ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Yes, Delete All'
-            )}
-          </AppButton>
-        </DialogActions>
-      </Dialog>
+      {/* Delete All Confirmation */}
+      <ConfirmationPopup
+        isOpen={confirmAllOpen}
+        onClose={() => setConfirmAllOpen(false)}
+        onConfirm={handleConfirmDeleteAll}
+        title="Confirm Delete All"
+        description={<>Are you sure you want to delete <strong>all recipients</strong>? This action cannot be undone and will clear all data from this table.</>}
+        confirmText="Delete All"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={deleteAllMutation.isPending}
+      />
     </div>
   );
 }

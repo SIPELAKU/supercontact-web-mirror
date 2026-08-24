@@ -22,7 +22,8 @@ import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
 import { useCampaignDetail, useCampaignSubscribers } from '@/lib/hooks/useCampaigns';
 import { Campaign, CampaignSubscriber } from '@/lib/types/email-marketing';
 import { format } from 'date-fns';
-import { Activity, Mail, MousePointerClick, RefreshCcw } from 'lucide-react';
+import { Activity, FlaskConical, Mail, MousePointerClick, RefreshCcw, Users } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface ViewCampaignStatsModalProps {
     open: boolean;
@@ -121,6 +122,7 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
                     case 'clicked': color = "success"; break;
                     case 'bounced':
                     case 'failed': color = "error"; break;
+                    case 'simulated': color = "default"; break;
                     default: color = "default";
                 }
 
@@ -147,7 +149,8 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
         delivered: 0,
         opened: 0,
         clicked: 0,
-        bounced: 0
+        bounced: 0,
+        simulated: 0
     };
 
     const handleRefresh = () => {
@@ -241,6 +244,12 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
                                     </Alert>
                                 )}
 
+                                {stats.simulated > 0 && (
+                                    <Alert severity="info" variant="outlined" icon={<FlaskConical size={18} />}>
+                                        {stats.simulated.toLocaleString()} email{stats.simulated === 1 ? '' : 's'} simulated in this environment&apos;s sandbox mode - no real email was sent, and delivered/opened/clicked stats won&apos;t update for {stats.simulated === 1 ? 'it' : 'them'}.
+                                    </Alert>
+                                )}
+
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
                                         <StatCard
@@ -274,6 +283,16 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
                                             color="#ef4444"
                                         />
                                     </Grid>
+                                    {stats.simulated > 0 && (
+                                        <Grid item xs={12} sm={6}>
+                                            <StatCard
+                                                title="Simulated (sandbox)"
+                                                value={stats.simulated.toLocaleString()}
+                                                icon={FlaskConical}
+                                                color="#6b7280"
+                                            />
+                                        </Grid>
+                                    )}
                                 </Grid>
                             </Stack>
                         </Grid>
@@ -321,6 +340,14 @@ const ViewCampaignStatsModal = ({ open, onClose, campaign, onResend, isResending
                                 columns={columns}
                                 rowCount={subscribersData?.data?.total || 0}
                                 isLoading={isLoadingSubscribers}
+                                onRetry={() => refetchSubscribers()}
+                                renderEmptyState={() => (
+                                    <EmptyState
+                                        icon={Users}
+                                        title="No subscribers"
+                                        description="No subscribers match this campaign yet."
+                                    />
+                                )}
                                 manualPagination={true}
                                 onStateChange={(state) => {
                                     setTableState({

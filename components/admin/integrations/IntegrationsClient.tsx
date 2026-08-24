@@ -1,19 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/ui/app-button";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { handleError } from "@/lib/utils/errorHandler";
-import { useIntegrations, useTestIntegrationConnection } from "@/lib/hooks/useIntegrations";
+import { useIntegrations, useTestIntegrationConnection, useDeleteIntegration } from "@/lib/hooks/useIntegrations";
 import { Integration, IntegrationProvider } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
-import { CircularProgress, Table, TableBody, TableCell, TableHead, TableRow, Tooltip } from "@mui/material";
-import { AlertCircle, CheckCircle2, HelpCircle, Play, Plus } from "lucide-react";
+import { CircularProgress, Tooltip } from "@mui/material";
+import { AlertCircle, CheckCircle2, HelpCircle, Play, Plug, Plus } from "lucide-react";
 import AddIntegrationModal from "./AddIntegrationModal";
 import EditIntegrationModal from "./EditIntegrationModal";
-import DeleteIntegrationModal from "./DeleteIntegrationModal";
 import ConnectionStatusModal from "./ConnectionStatusModal";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 // B6: pluggable adapter stubs - schema-reserved (see AVAILABLE_PROVIDERS
 // below, which deliberately excludes these) but no client is wired up yet.
@@ -50,10 +52,25 @@ export const IntegrationsClient = () => {
     const [openAdd, setOpenAdd] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
+    const deleteIntegrationMutation = useDeleteIntegration();
     const [openStatus, setOpenStatus] = useState(false);
     const [selected, setSelected] = useState<Integration | null>(null);
 
     const testConnectionMutation = useTestIntegrationConnection();
+
+    // Ported as-is from the deleted DeleteIntegrationModal
+    const handleConfirmDelete = async () => {
+        if (!selected) return;
+        try {
+            await deleteIntegrationMutation.mutateAsync(selected.id);
+            notify.success("Integration Deleted", { description: "Searches for this provider will fall back to the shared platform key." });
+            refetch();
+            setOpenDelete(false);
+        } catch (err: any) {
+            const message = handleError(err, "Delete Integration");
+            notify.error("Error", { description: message });
+        }
+    };
 
     const handleTestConnection = async (item: Integration) => {
         notify.info("Testing Connection...", {
@@ -88,6 +105,69 @@ export const IntegrationsClient = () => {
     const configuredProviders = integrations.map((i) => i.provider);
     const canAddMore = AVAILABLE_PROVIDERS.some((p) => !configuredProviders.includes(p));
 
+    const columns = useMemo<MRT_ColumnDef<Integration>[]>(
+        () => [
+            {
+                id: "provider",
+                accessorFn: (row) => PROVIDER_LABELS[row.provider],
+                header: "Provider",
+                Cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex flex-col gap-1">
+                            <span className="font-medium text-gray-900">
+                                {PROVIDER_LABELS[item.provider]}
+                            </span>
+                            {item.status === "Error" ? (
+                                <button
+                                    onClick={() => handleViewLog(item)}
+                                    className="flex items-center gap-1 text-xs text-red-500 hover:underline cursor-pointer"
+                                >
+                                    <AlertCircle size={12} className="text-red-500" />
+                                    Check log connection
+                                </button>
+                            ) : item.status === "Active" ? (
+                                <button
+                                    onClick={() => handleViewLog(item)}
+                                    className="flex items-center gap-1 text-xs text-emerald-500 hover:underline cursor-pointer"
+                                >
+                                    <CheckCircle2 size={12} className="text-emerald-500" />
+                                    Check log connection
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => handleViewLog(item)}
+                                    className="flex items-center gap-1 text-xs text-gray-400 hover:underline cursor-pointer"
+                                >
+                                    <HelpCircle size={12} className="text-gray-400" />
+                                    Check log connection
+                                </button>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: "status",
+                header: "Status",
+                Cell: ({ row }) => (
+                    <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${row.original.status === "Active"
+                            ? "bg-emerald-100 text-emerald-600"
+                            : row.original.status === "Error"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                    >
+                        {row.original.status}
+                    </span>
+                ),
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    );
+
     return (
         <div className="w-full flex flex-col gap-4 p-4 md:p-8">
             <SettingsPageHeader
@@ -114,100 +194,53 @@ export const IntegrationsClient = () => {
                     </AppButton>
                 </section>
 
-                <div className="overflow-x-auto rounded-lg border border-gray-200 mx-6 mb-6">
-                    <Table sx={{ minWidth: 640 }}>
-                        <TableHead>
-                            <TableRow className="bg-[#EEF2FD]!">
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2 }}>Provider</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, textAlign: "center" }}>Status</TableCell>
-                                <TableCell sx={{ color: "#6B7280", fontWeight: 600, py: 2, pr: 3, textAlign: "center" }}>Action</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} align="center" sx={{ py: 10 }}>
-                                        <CircularProgress />
-                                    </TableCell>
-                                </TableRow>
-                            ) : integrations.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} align="center" sx={{ py: 10 }}>
-                                        <p className="text-gray-500">No integrations configured yet - searches use the shared platform key.</p>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                integrations.map((item) => (
-                                    <TableRow key={item.id} hover sx={{ "&:hover": { bgcolor: "#f9fafb" } }}>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="font-medium text-gray-900">
-                                                    {PROVIDER_LABELS[item.provider]}
-                                                </span>
-                                                {item.status === "Error" ? (
-                                                    <button
-                                                        onClick={() => handleViewLog(item)}
-                                                        className="flex items-center gap-1 text-xs text-red-500 hover:underline cursor-pointer"
-                                                    >
-                                                        <AlertCircle size={12} className="text-red-500" />
-                                                        Check log connection
-                                                    </button>
-                                                ) : item.status === "Active" ? (
-                                                    <button
-                                                        onClick={() => handleViewLog(item)}
-                                                        className="flex items-center gap-1 text-xs text-emerald-500 hover:underline cursor-pointer"
-                                                    >
-                                                        <CheckCircle2 size={12} className="text-emerald-500" />
-                                                        Check log connection
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleViewLog(item)}
-                                                        className="flex items-center gap-1 text-xs text-gray-400 hover:underline cursor-pointer"
-                                                    >
-                                                        <HelpCircle size={12} className="text-gray-400" />
-                                                        Check log connection
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-xs font-medium ${item.status === "Active"
-                                                        ? "bg-emerald-100 text-emerald-600"
-                                                        : item.status === "Error"
-                                                            ? "bg-red-100 text-red-600"
-                                                            : "bg-gray-100 text-gray-600"
-                                                    }`}
-                                            >
-                                                {item.status}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleTestConnection(item)}
-                                                    className="cursor-pointer p-1 hover:bg-gray-100 rounded-lg text-emerald-500 transition-colors disabled:opacity-50"
-                                                    title="Test Connection"
-                                                    disabled={testConnectionMutation.isPending}
-                                                >
-                                                    {testConnectionMutation.isPending && testConnectionMutation.variables === item.id ? (
-                                                        <CircularProgress size={18} color="inherit" />
-                                                    ) : (
-                                                        <Tooltip title="Test Connection">
-                                                            <Play size={18} />
-                                                        </Tooltip>
-                                                    )}
-                                                </button>
-                                                <EditButton onClick={() => handleEdit(item)} />
-                                                <DeleteButton onClick={() => handleDelete(item)} />
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                <div className="mx-6 mb-6">
+                    <SuperTable<Integration>
+                        tableId="integrations-table"
+                        columns={columns}
+                        data={integrations}
+                        isLoading={isLoading}
+                        isError={isError}
+                        errorMessage="Failed to load integrations. Please try again."
+                        onRetry={() => refetch()}
+                        renderRowActions={({ row }) => {
+                            const item = row.original;
+                            return (
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleTestConnection(item)}
+                                        className="cursor-pointer p-1 hover:bg-gray-100 rounded-lg text-emerald-500 transition-colors disabled:opacity-50"
+                                        title="Test Connection"
+                                        disabled={testConnectionMutation.isPending}
+                                    >
+                                        {testConnectionMutation.isPending && testConnectionMutation.variables === item.id ? (
+                                            <CircularProgress size={18} color="inherit" />
+                                        ) : (
+                                            <Tooltip title="Test Connection">
+                                                <Play size={18} />
+                                            </Tooltip>
+                                        )}
+                                    </button>
+                                    <EditButton onClick={() => handleEdit(item)} />
+                                    <DeleteButton onClick={() => handleDelete(item)} />
+                                </div>
+                            );
+                        }}
+                        renderEmptyState={() => (
+                            <EmptyState
+                                icon={Plug}
+                                title="No integrations configured yet"
+                                description="Searches use the shared platform key until you add your own."
+                                action={canAddMore ? { label: "Add Integration", onClick: () => setOpenAdd(true), icon: <Plus size={16} /> } : undefined}
+                            />
+                        )}
+                        features={{
+                            // A handful of providers at most - no search/pagination noise
+                            globalFilter: false,
+                            columnFilters: false,
+                            pagination: false,
+                        }}
+                    />
                 </div>
 
                 <section className="px-6 pb-6">
@@ -244,14 +277,17 @@ export const IntegrationsClient = () => {
                 integration={selected}
             />
 
-            {openDelete && (
-                <DeleteIntegrationModal
-                    open={openDelete}
-                    onClose={() => setOpenDelete(false)}
-                    onSuccess={() => refetch()}
-                    integration={selected}
-                />
-            )}
+            <ConfirmationPopup
+                isOpen={openDelete}
+                onClose={() => setOpenDelete(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Integration"
+                description={<>Are you sure you want to remove the <span className="font-semibold text-gray-900">{selected ? PROVIDER_LABELS[selected.provider] : ""}</span> integration? This cannot be undone.</>}
+                confirmText="Delete Integration"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={deleteIntegrationMutation.isPending}
+            />
 
             {openStatus && (
                 <ConnectionStatusModal

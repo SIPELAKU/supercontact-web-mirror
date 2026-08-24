@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Loader2, Upload, FileSpreadsheet, Download, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
-import * as XLSX from "xlsx";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -151,6 +150,10 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
 
     try {
       const data = await file.arrayBuffer();
+      // xlsx is loaded on demand: this modal only needs it once the user
+      // actually picks a file, and a static import put ~400 kB of SheetJS
+      // into the first load of every page that can open this modal.
+      const XLSX = await import("xlsx");
       const workbook = XLSX.read(data);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
@@ -616,7 +619,7 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
         description="This will cancel your import process."
         confirmText="Discard"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>,
     document.body

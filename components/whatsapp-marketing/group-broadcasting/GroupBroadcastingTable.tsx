@@ -3,19 +3,16 @@
 
 import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
 import { useGroupBroadcasts, useDuplicateGroupBroadcasts } from '@/lib/hooks/useGroupBroadcasts';
 import { GroupBroadcast } from '@/lib/types/whatsapp-marketing';
-import {
-  Box,
-  CircularProgress,
-  Paper,
-  Typography,
-  Checkbox
-} from '@mui/material';
-import { ChevronRight, Plus, Copy, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import { Box } from '@mui/material';
+import { format } from 'date-fns';
+import { Megaphone, Plus, Copy, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { notify } from '@/lib/notifications';
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface GroupBroadcastingTableProps {
   onAdd: () => void;
@@ -26,149 +23,155 @@ interface GroupBroadcastingTableProps {
 }
 
 const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRequest }: GroupBroadcastingTableProps) => {
-  const { data, isLoading, error } = useGroupBroadcasts();
+  const router = useRouter();
+
+  // Server-side pagination (gained in Phase 1) driven by SuperTable state
+  const [tableState, setTableState] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading, isError, error, refetch } = useGroupBroadcasts({
+    page: tableState.pageIndex + 1,
+    limit: tableState.pageSize,
+  });
   const duplicateMutation = useDuplicateGroupBroadcasts();
-  
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (error) {
+    if (isError && error) {
       notify.error('Failed to fetch group broadcasts.');
     }
-  }, [error]);
+  }, [isError, error]);
 
   const broadcasts = data?.data?.broadcast_groups || [];
+  const totalCount = data?.data?.total || 0;
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(broadcasts.map(b => b.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectOne = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds(prev => [...prev, id]);
-    } else {
-      setSelectedIds(prev => prev.filter(i => i !== id));
-    }
-  };
-
-  const handleDuplicate = async (ids: string[]) => {
+  const handleDuplicate = async (ids: string[], clearSelection?: () => void) => {
     try {
       await duplicateMutation.mutateAsync({ broadcast_group_ids: ids });
       notify.success(`${ids.length} group(s) duplicated successfully.`);
-      setSelectedIds([]);
+      clearSelection?.();
     } catch (err: any) {
       notify.error(err.message || 'Failed to duplicate group(s).');
     }
   };
 
-  const allSelected = broadcasts.length > 0 && selectedIds.length === broadcasts.length;
-  const isSomeSelected = selectedIds.length > 0;
+  const columns = useMemo<MRT_ColumnDef<GroupBroadcast>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        Cell: ({ cell }) => (
+          <span className="font-semibold text-gray-900">{cell.getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'recipient_count',
+        header: 'Recipients',
+        size: 120,
+        Cell: ({ cell }) => <>{cell.getValue<number>()?.toLocaleString() ?? 0}</>,
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Created',
+        Cell: ({ cell }) => {
+          const value = cell.getValue<string>();
+          return (
+            <span className="text-sm text-gray-600">
+              {value ? format(new Date(value), 'dd MMM yyyy, HH:mm') : '-'}
+            </span>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
-    <Box sx={{ width: '100%' }}>
-      {/* Toolbar */}
-      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Checkbox 
-            checked={allSelected}
-            indeterminate={isSomeSelected && !allSelected}
-            onChange={(e) => handleSelectAll(e.target.checked)}
-          />
-          <Typography variant="h6">Group Broadcasts ({broadcasts.length})</Typography>
-          {isSomeSelected && (
-            <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-              <AppButton
-                variantStyle="outline"
-                color="primary"
-                startIcon={<Copy className="w-4 h-4" />}
-                onClick={() => handleDuplicate(selectedIds)}
-                disabled={duplicateMutation.isPending}
-              >
-                Duplicate ({selectedIds.length})
-              </AppButton>
-              <AppButton
-                variantStyle="danger"
-                color="danger"
-                startIcon={<Trash2 className="w-4 h-4" />}
-                onClick={() => onBulkDeleteRequest(selectedIds)}
-              >
-                Delete ({selectedIds.length})
-              </AppButton>
-            </Box>
-          )}
-        </Box>
+    <SuperTable<GroupBroadcast>
+      tableId="group-broadcasting-table"
+      columns={columns}
+      data={broadcasts}
+      isLoading={isLoading}
+      isError={isError}
+      errorMessage="Failed to load group broadcasts. Please try again."
+      onRetry={() => refetch()}
+      manualPagination={true}
+      rowCount={totalCount}
+      onStateChange={(state) => {
+        setTableState({
+          pageIndex: state.pagination.pageIndex,
+          pageSize: state.pagination.pageSize,
+        });
+      }}
+      onRowClick={(row) => router.push(`/whatsapp-marketing/group-broadcasting/${row.id}`)}
+      renderTopLeftToolbar={() => (
         <AppButton
           variantStyle="primary"
           startIcon={<Plus className="w-4 h-4" />}
           onClick={onAdd}
         >
-          Create New Group Broadcast
+          Add Group
         </AppButton>
-      </Box>
-
-      {/* Lists */}
-      <Box sx={{ px: 3, pb: 3 }}>
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : broadcasts.length === 0 ? (
-          <Typography sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-            No group broadcasts yet.
-          </Typography>
-        ) : (
-          broadcasts.map((broadcast) => (
-            <Paper
-              key={broadcast.id}
-              variant="outlined"
-              sx={{
-                mb: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: 2,
-                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
+      )}
+      renderBulkActions={({ selectedRows, clearSelection }) => {
+        const rows = selectedRows as GroupBroadcast[];
+        return (
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <AppButton
+              variantStyle="outline"
+              color="primary"
+              startIcon={<Copy className="w-4 h-4" />}
+              onClick={() => handleDuplicate(rows.map((b) => b.id), clearSelection)}
+              disabled={duplicateMutation.isPending}
+            >
+              Duplicate ({rows.length})
+            </AppButton>
+            <AppButton
+              variantStyle="danger"
+              color="danger"
+              startIcon={<Trash2 className="w-4 h-4" />}
+              onClick={() => {
+                // Parent owns the confirmation + delete; clear here so no
+                // stale selection lingers over the refreshed list.
+                onBulkDeleteRequest(rows.map((b) => b.id));
+                clearSelection();
               }}
             >
-              <Checkbox 
-                checked={selectedIds.includes(broadcast.id)}
-                onChange={(e) => handleSelectOne(broadcast.id, e.target.checked)}
-                sx={{ ml: 1 }}
-              />
-              <Link
-                href={`/whatsapp-marketing/group-broadcasting/${broadcast.id}`}
-                style={{
-                  flex: 1,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '16px'
-                }}
-              >
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>{broadcast.name}</Typography>
-                </Box>
-                <Box sx={{ textAlign: 'center', mx: 2, minWidth: '80px' }}>
-                  <Typography variant="body1" fontWeight={600}>{broadcast.recipient_count}</Typography>
-                  <Typography variant="caption" color="text.secondary">Recipients</Typography>
-                </Box>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </Link>
-
-              <Box sx={{ borderLeft: 1, borderColor: 'divider', p: 1, display: 'flex', gap: 0.5 }}>
-                <DuplicateButton onClick={() => handleDuplicate([broadcast.id])} isLoading={duplicateMutation.isPending && selectedIds.includes(broadcast.id)} />
-                <EditButton onClick={() => onEdit(broadcast)} />
-                <DeleteButton onClick={() => onDeleteRequest(broadcast)} />
-              </Box>
-            </Paper>
-          ))
-        )}
-      </Box>
-    </Box>
+              Delete ({rows.length})
+            </AppButton>
+          </Box>
+        );
+      }}
+      renderRowActions={({ row }) => (
+        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+          <DuplicateButton
+            onClick={() => handleDuplicate([row.original.id])}
+            isLoading={duplicateMutation.isPending && (duplicateMutation.variables?.broadcast_group_ids || []).includes(row.original.id)}
+          />
+          <EditButton onClick={() => onEdit(row.original)} />
+          <DeleteButton onClick={() => onDeleteRequest(row.original)} />
+        </Box>
+      )}
+      renderEmptyState={() => (
+        <EmptyState
+          icon={Megaphone}
+          title="No group broadcasts yet"
+          description="Create a broadcast group to send WhatsApp campaigns to a set of recipients."
+          action={{ label: 'Add Group', onClick: onAdd, icon: <Plus size={16} /> }}
+        />
+      )}
+      initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+      features={{
+        // API has no sort/search params yet - keep both off rather than
+        // offering controls that only act on the loaded page
+        sorting: false,
+        globalFilter: false,
+        columnFilters: false,
+        pagination: true,
+        rowSelection: 'multi',
+      }}
+    />
   );
 };
 

@@ -122,7 +122,7 @@ const EditGroupBroadcastModal = ({ open, onClose, onSuccess, broadcast }: EditGr
         description="This will discard your current changes."
         confirmText="Discard changes"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

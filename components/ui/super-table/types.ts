@@ -62,32 +62,18 @@ export interface SuperTableFeatures {
    * @default true 
    */
   globalFilter?: boolean;
-  /** 
+  /**
    * Munculkan filter input khusus untuk tiap-tiap kolom di bawah row header.
-   * @default false 
+   * @default false
    */
   columnFilters?: boolean;
-  /** 
-   * Munculkan chip/lencana yang menandakan ada filter aktif, bisa dihapus satu per satu.
-   * @default true 
-   */
-  filterChips?: boolean;
-  /** 
+  /**
    * Aktifkan kemampuan menyimpan preset kombinasi filter di localStorage.
    * @default false 
    */
   savedFilters?: boolean;
 
   // ─── Advanced Filtering ─────────────────────────────────────────────
-  /**
-   * Aktifkan filter variants otomatis berdasar tipe data kolom.
-   * Kolom dengan tipe 'number' → range slider
-   * Kolom dengan tipe 'date' → date range picker
-   * Kolom dengan enum/select → multi-select dropdown
-   * Kolom text biasa → text contains filter
-   * @default true
-   */
-  smartFilterVariants?: boolean;
   /**
    * Gunakan faceted values untuk filter dropdown —
    * dropdown otomatis berisi nilai unik dari data yang ada.
@@ -119,25 +105,13 @@ export interface SuperTableFeatures {
    * @default false 
    */
   grouping?: boolean;
-  /** 
-   * Aktifkan kalkulasi otomatis agregasi kolom yang digabung (misal Count, Sum).
-   * @default true 
-   */
-  groupingAggregation?: boolean;
 
   // ─── Selection ──────────────────────────────────────────────────────
-  /** 
+  /**
    * Tipe selection baris: 'none' (mati), 'single' (radio/satu per satu), atau 'multi' (checkbox).
-   * @default 'none' 
+   * @default 'none'
    */
   rowSelection?: 'none' | 'single' | 'multi';
-  /** 
-   * Mengatur behavior "Select All". 
-   * 'page' akan select hanya dihalaman aktif.
-   * 'all' akan select seluruh row di semua paginasi (data penuh).
-   * @default 'page' 
-   */
-  selectAllMode?: 'page' | 'all';
 
   // ─── Editing ────────────────────────────────────────────────────────
   /**
@@ -433,8 +407,16 @@ export interface SuperTableProps<TData extends object>
   getRowClassName?: (row: TData) => string;
 
   // ─── UTILS ──────────────────────────────────────────────────────────
-  /** 
-   * ID Unik agar browser bisa melacak table (URL Query keys / Storage keys). 
+  /**
+   * Menghasilkan ID unik & stabil per row untuk selection/expansion state.
+   * WAJIB stabil antar halaman saat `manualPagination` aktif — tanpa ini
+   * MRT memakai index baris, sehingga selection di page 1 "nempel" ke
+   * baris page 2 saat pindah halaman.
+   * @default (row, index) => String(row.id ?? index)
+   */
+  getRowId?: (row: TData, index: number) => string;
+  /**
+   * ID Unik agar browser bisa melacak table (URL Query keys / Storage keys).
    * Sangat Wajib dipasang apabila `urlSync` dan `savedFilters` di-On-kan.
    */
   tableId?: string;

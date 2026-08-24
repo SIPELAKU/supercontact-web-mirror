@@ -1,180 +1,165 @@
-# Panduan Pembaruan Reusable Components - Supercontact Web
+# Reusable Components Guide — Supercontact Web
 
-Dokumen ini berisi daftar komponen UI yang telah diperbarui/distandarisasi untuk meningkatkan konsistensi desain dan kemudahan pengembangan. Semua komponen ini berbasis **Material UI (MUI)** dengan kustomisasi gaya menggunakan **Tailwind CSS** atau **MUI Styled Components**.
-
----
-
-## 🚀 Ringkasan Perubahan Utama
-
-1.  **Standardisasi Desain**: Penggunaan token warna yang konsisten (`#5479EE` untuk Primary, `#FAFAF6` untuk Background Input).
-2.  **MUI Integration**: Migrasi dari Radix UI/Native HTML ke MUI untuk aksesibilitas yang lebih baik.
-3.  **Type Safety**: Definisi Props yang lebih ketat menggunakan TypeScript.
+Standard reference for the shared UI layer. All shared components live in `components/ui/`
+and are built on **Material UI (MUI)** themed by `lib/theme.ts`, with layout utility
+classes from Tailwind. Use these instead of hand-rolling per-page equivalents.
 
 ---
 
-## 🛠 Daftar Komponen & Cara Penggunaan
+## 1. Theme tokens (`lib/theme.ts`)
 
-### 1. `AppButton`
+Single source of truth for brand colors — never hard-code hex values in components.
 
-Komponen tombol utama dengan berbagai varian gaya.
+| Token | Value | Use |
+|---|---|---|
+| `BRAND_PRIMARY` | `#5479EE` | Primary actions, active states, links |
+| `BRAND_PRIMARY_HOVER` | `#3F66E0` | Primary hover / `palette.primary.dark` |
+| `BRAND_PRIMARY_LIGHT` | `#DDE4FC` | Tints, selected backgrounds |
+| `DANGER` | `#EF4444` | Destructive actions, errors |
+| `DANGER_HOVER` | `#DC2626` | Danger hover |
 
-**Fitur Baru:**
+The exported `theme` (MUI `createTheme`) wires these into `palette.primary` /
+`palette.error`, so plain MUI `color="primary"` / `color="error"` already match the brand.
 
-- Mendukung varian: `primary`, `outline`, `danger`, `text`.
-- Integrasi icon otomatis (`startIcon`, `endIcon`).
-- Loading state (via MUI props).
+---
 
-**Contoh Penggunaan:**
+## 2. Language policy
+
+**The authenticated app is English-only** — labels, buttons, empty states, error copy,
+confirmation dialogs, table headers, toasts. Marketing/public pages may differ; anything
+behind login must be English. Do not let MUI/MRT fall back to non-English defaults
+(see `EmptyState` and SuperTable `errorMessage` below).
+
+---
+
+## 3. Form components
+
+### `AppButton` (`components/ui/app-button.tsx`)
+- `variantStyle`: `"primary" | "outline" | "danger" | "text" | "soft" | "white"`.
+- `startIcon` / `endIcon`, MUI loading props supported.
 
 ```tsx
-import { AppButton } from "@/components/ui/app-button";
-import { Plus } from "lucide-react";
-
-// Tombol Primary
-<AppButton onClick={() => {}}>Simpan Data</AppButton>
-
-// Tombol Outline dengan Icon
-<AppButton
-  variantStyle="outline"
-  startIcon={<Plus size={18} />}
->
-  Tambah Item
-</AppButton>
-
-// Tombol Bahaya (Delete)
-<AppButton variantStyle="danger">Hapus</AppButton>
+<AppButton variantStyle="outline" startIcon={<Plus size={18} />}>Add Item</AppButton>
+<AppButton variantStyle="danger">Delete</AppButton>
 ```
 
----
-
-### 2. `AppInput`
-
-Input field standar dengan label dan dukungan untuk berbagai tipe input termasuk password dan checkbox.
-
-**Fitur Baru:**
-
-- **Checkbox Support**: Mendukung `type="checkbox"` yang merender MUI Checkbox secara otomatis.
-- **Icon Support**: Mendukung `startIcon` dan `endIcon` untuk menambahkan elemen visual di dalam input.
-- **Password Toggle**: Otomatis menampilkan icon mata untuk sembunyikan/tampilkan password jika `type="password"`.
-- **isBgWhite**: Opsi untuk mengubah background menjadi putih bersih (default: soft ivory).
-
-**Contoh Penggunaan:**
+### `AppInput` (`components/ui/app-input.tsx`)
+- `label` — static label rendered above the field (AppSelect-style).
+- `required` — renders the standard red asterisk after the label.
+- `error` (boolean) — paints the field border red; `helperText` shows the message under
+  the field (red while `error` is set). Mirrors `AppSelect`'s API.
+- `type="password"` gets an automatic show/hide toggle; `type="checkbox"` renders the
+  styled MUI checkbox variant.
+- `startIcon` / `endIcon`, `isBgWhite` (white instead of the soft-ivory default background).
 
 ```tsx
-import { AppInput } from "@/components/ui/app-input";
-import { Search, Mail } from "lucide-react";
-
-// Input dengan Start Icon
-<AppInput
-  label="Email"
-  startIcon={<Mail size={18} />}
-  placeholder="example@mail.com"
-/>
-
-// Input Password (Otomatis ada End Icon Mata)
-<AppInput
-  label="Kata Sandi"
-  type="password"
-/>
-
-// Checkbox
-<AppInput
-  type="checkbox"
-  checked={accepted}
-  onChange={(e) => setAccepted(e.target.checked)}
-/>
+<AppInput label="Email" required type="email"
+  error={!!errors.email} helperText={errors.email} />
 ```
+
+### `AppSelect`, `AppTextarea`, `AppAutocomplete`, `AppDatePicker`
+Same conventions as `AppInput`: `label` + `required` + `error`/`helperText`.
+`AppDatePicker` works with `DatePickerValue` (single date or range).
+
+### `AppTabs` (`components/ui/app-tabs.tsx`)
+Brand-standard underline tab bar: `value`, `onChange(value)`, `tabs: AppTabItem[]`
+(`{ value, label, icon? }`). Not for segmented-pill surfaces or route-based tabs —
+those are deliberately different patterns.
 
 ---
 
-### 3. `AppSelect`
+## 4. Feedback components
 
-Komponen dropdown/select yang lebih rapi menggunakan MUI Select.
+### `ConfirmationPopup` + `useConfirmationPopup` (`components/ui/confirmation-popup.tsx`)
+All confirmations go through this — never `window.confirm` or ad-hoc dialogs.
 
-**Fitur Baru:**
-
-- Render value kustom untuk placeholder yang lebih baik.
-- Icon `ChevronDown` yang konsisten.
-
-**Contoh Penggunaan:**
+- Variants: `"danger"` (destructive, confirm defaults to **Delete**), `"discard"`
+  (unsaved-changes guard, defaults to **Discard**), `"warning"`, `"info"`.
+- Declarative: render `<ConfirmationPopup isOpen onClose onConfirm title description … />`.
+- Imperative one-off confirms:
 
 ```tsx
-import { AppSelect } from "@/components/ui/app-select";
-
-const options = [
-  { value: "admin", label: "Administrator" },
-  { value: "user", label: "Standard User" },
-];
-
-<AppSelect
-  label="Pilih Role"
-  placeholder="Pilih satu..."
-  options={options}
-  value={selectedRole}
-  onChange={(e) => setSelectedRole(e.target.value)}
-/>;
+const { confirm, confirmationPopup } = useConfirmationPopup();
+confirm({ title: "Delete contact?", description: "…", variant: "danger",
+  onConfirm: async () => { await remove(id); } });
+// render {confirmationPopup} anywhere in the tree
 ```
+
+Async `onConfirm` gets automatic loading state; the popup won't close mid-flight.
+
+### `EmptyState` (`components/ui/empty-state.tsx`)
+Shared empty-state treatment (icon + title + description + optional CTA `action`) in a
+dashed-border box. Pass through SuperTable's `renderEmptyState`, or render directly for
+non-table empty surfaces. Prevents MRT's non-English fallback copy.
+
+### Toasts — `notify` (`lib/notifications.tsx`)
+Use `notify.success/error/…` for transient feedback; `AppAlert` for inline alerts.
 
 ---
 
-### 4. `AppDatePicker`
+## 5. Page scaffolding
 
-Input tanggal yang mendukung mode single dan range.
-
-**Fitur Baru:**
-
-- **Mode Range**: Memungkinkan pemilihan rentang tanggal (Start - End) dalam satu kalender.
-- **Clearable**: Tombol 'X' untuk menghapus tanggal yang dipilih.
-
-**Contoh Penggunaan:**
-
-```tsx
-import { AppDatePicker } from "@/components/ui/app-datepicker";
-
-// Single Date
-<AppDatePicker
-  label="Tanggal Lahir"
-  value={birthDate}
-  onChange={(date) => setBirthDate(date)}
-/>
-
-// Date Range
-<AppDatePicker
-  label="Periode Laporan"
-  mode="range"
-  value={[startDate, endDate]}
-  onChange={([start, end]) => {
-     setStartDate(start);
-     setEndDate(end);
-  }}
-/>
-```
+### `PageHeader` (`components/ui/page-header.tsx`)
+Every page starts with one: `title`, `description`, `breadcrumbs`
+(`{ label, href? }[]`), and either `actions` (primary page buttons — takes precedence)
+or a decorative `image`, never both.
 
 ---
 
-### 5. `AppAlert`
+## 6. SuperTable (`components/ui/super-table/`)
 
-Komponen feedback/notifikasi inline dengan desain vibrant.
+The standard data table (wraps Material React Table). Golden rules:
 
-**Fitur Baru:**
+1. **`tableId` is required** whenever `features.urlSync`, `features.savedFilters`, or
+   export are enabled — it namespaces URL query keys and storage keys. Use a stable,
+   unique, kebab-case id per table (e.g. `"contacts-table"`).
+2. **`renderEmptyState`** — always provide one, using `EmptyState`, with English copy.
+3. **Error state** — pass `isError` + `errorMessage` (English) + `onRetry` so users get
+   the standard error panel with a working Retry button, not a blank table.
+4. **`getRowId`** — provide a stable id (`(row) => row.id`). Mandatory with
+   `manualPagination`: without it MRT keys rows by index and selections "stick" to the
+   wrong rows across pages.
+5. **Server-side contract** — for server-driven tables set `manualPagination` +
+   `manualSorting` + `manualFiltering`, supply `rowCount`, and translate
+   `onStateChange(state)` into API params:
+   - search: `state.globalFilter` → `search`
+   - sort: `state.sorting[0]` → `sort_by` (column id) + `sort_order`
+     (`"asc" | "desc"`)
+   - pagination: `state.pagination.pageIndex/pageSize` → `page` / `page_size`
+   Reset to page 1 whenever search or filters change.
+6. Loading: `isLoading` for first load (skeleton), `isFetching` for background refetch.
+7. Slots: `renderTopLeftToolbar` (Add/Import buttons), `renderBulkActions` (shown while
+   rows are selected), `renderRowActions` (right-most actions column),
+   `renderDetailPanel`.
 
-- 4 Varian: `success`, `failed`, `warning`, `info`.
-- Desain modern dengan icon box dan bayangan.
-
-**Contoh Penggunaan:**
-
-```tsx
-import { AppAlert } from "@/components/ui/app-alert";
-
-<AppAlert
-  variant="success"
-  title="Berhasil!"
-  description="Data telah disimpan ke server."
-  onClose={() => setShowAlert(false)}
-/>;
-```
+See `components/ui/super-table/README.md` and `types.ts` for the full API, and
+`app/(app)/demo/super-table` (dev-only) for a live playground.
 
 ---
 
-> [!TIP]
-> Semua komponen di atas terletak di folder `components/ui/`. Sangat disarankan untuk menggunakan komponen ini daripada elemen HTML standar untuk menjaga konsistensi UI Supercontact.
+## 7. Naming & formatting conventions
+
+- **Add buttons**: `Add <Noun>` — e.g. "Add Contact", "Add Department" (not "New",
+  "Create", or bare "+").
+- **Bulk delete**: `Delete (n)` with the selected count.
+- **Actions column**: header text is exactly `Actions`.
+- **Dates**: `dd MMM yyyy` (e.g. `19 Aug 2026`); with time: `dd MMM yyyy, HH:mm`
+  (24-hour clock). Use one shared formatter, not per-page `toLocaleString` variants.
+- **Table ids / storage keys**: kebab-case; permission strings mirror the API's
+  `permissions_require(...)` values exactly (see `lib/constants/permissions.ts`).
+- Sidebar entries are permission-gated with the same string the backing API endpoints
+  enforce; if the API endpoint has no permission gate, the menu entry stays ungated with
+  a comment explaining why (see `components/layout/Sidebar.tsx`).
+
+---
+
+## 8. Do / Don't
+
+| Do | Don't |
+|---|---|
+| `AppInput` + `required`/`error` | Raw `<input>` or legacy `components/ui/input.tsx` in new code |
+| `ConfirmationPopup` / `useConfirmationPopup` | `window.confirm`, bespoke delete modals |
+| `EmptyState` via `renderEmptyState` | MRT default empty text |
+| `errorMessage` + `onRetry` on SuperTable | Silent empty table on fetch failure |
+| Theme tokens from `lib/theme.ts` | Hard-coded `#5479EE` etc. |
+| English copy in the authenticated app | Mixed-language UI strings |

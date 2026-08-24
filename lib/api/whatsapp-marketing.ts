@@ -20,7 +20,9 @@ export async function fetchBroadcasts(
   page: number = 1,
   limit: number = 10,
   search?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
 ): Promise<BroadcastsResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -33,6 +35,11 @@ export async function fetchBroadcasts(
 
   if (status) {
     queryParams.append('status', status);
+  }
+
+  if (sortBy) {
+    queryParams.append('sort_by', sortBy);
+    queryParams.append('sort_order', sortOrder ?? 'asc');
   }
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcasts?${queryParams.toString()}`;

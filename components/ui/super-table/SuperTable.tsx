@@ -11,9 +11,6 @@ import { useSavedFilters } from './hooks/useSavedFilters';
 import { useUrlSync } from './hooks/useUrlSync';
 import { useTableConfig } from './hooks/useTableConfig';
 
-// Localization
-import { MRT_Localization_ID } from './localization';
-
 export function SuperTable<TData extends object>(
   props: SuperTableProps<TData>
 ) {
@@ -63,7 +60,6 @@ export function SuperTable<TData extends object>(
     columns: props.columns || [],
     data: props.data || [],
     ...mrtConfig,
-    localization: MRT_Localization_ID,
   } as any);
 
   // 7. Render UI

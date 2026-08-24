@@ -9,6 +9,7 @@ import { fetchMailingLists } from "@/lib/api/email-marketing/mailing-lists";
 import { createSubscriber } from "@/lib/api/email-marketing/subscribers";
 import { deleteMailingListSubscriber } from "@/lib/api/email-marketing/mailing-lists";
 import type { MailingList } from "@/lib/types/email-marketing";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
 interface ContactEmailTabProps {
     contactId: string;
@@ -30,6 +31,7 @@ export const ContactEmailTab = ({
     const [selected, setSelected] = useState<MailingList | null>(null);
     const [isAdding, setIsAdding] = useState(false);
     const [removingId, setRemovingId] = useState<string | null>(null);
+    const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
 
     const joinedIds = useMemo(() => new Set(mailingLists.map((l) => l.id)), [mailingLists]);
     const availableOptions = options.filter((o) => !joinedIds.has(o.id));
@@ -66,11 +68,14 @@ export const ContactEmailTab = ({
         }
     };
 
-    const handleRemove = async (list: { id: string; name: string }) => {
+    const handleConfirmRemove = async () => {
+        if (!removeTarget) return;
+        const list = removeTarget;
         setRemovingId(list.id);
         try {
             await deleteMailingListSubscriber(token, list.id, contactId);
             notify.success("Removed", { description: `Removed from "${list.name}".` });
+            setRemoveTarget(null);
             onChanged();
         } catch (err) {
             notify.error("Error", { description: handleError(err, "Remove from Mailing List") });
@@ -109,7 +114,7 @@ export const ContactEmailTab = ({
                                 component="a"
                                 href={`/email-marketing/mailing-lists/${list.id}`}
                                 clickable
-                                onDelete={() => handleRemove(list)}
+                                onDelete={() => setRemoveTarget(list)}
                                 deleteIcon={
                                     removingId === list.id ? undefined : <X size={14} />
                                 }
@@ -145,6 +150,18 @@ export const ContactEmailTab = ({
                     {isAdding ? "Adding..." : "Add"}
                 </AppButton>
             </div>
+
+            <ConfirmationPopup
+                isOpen={!!removeTarget}
+                onClose={() => setRemoveTarget(null)}
+                onConfirm={handleConfirmRemove}
+                title="Remove from Mailing List"
+                description={`Remove this contact from "${removeTarget?.name ?? ""}"? They will no longer receive campaigns sent to this list.`}
+                confirmText="Remove"
+                cancelText="Cancel"
+                variant="danger"
+                isLoading={removingId === removeTarget?.id}
+            />
         </div>
     );
 };

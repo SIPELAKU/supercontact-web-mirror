@@ -24,6 +24,7 @@ interface AddVariableSamplesModalProps {
   onSave: (variables: Record<string, string>) => void;
   onSaveWithoutSamples: () => void;
   initialSamples?: Record<string, string>;
+  isSaving?: boolean;
 }
 
 export default function AddVariableSamplesModal({
@@ -32,7 +33,8 @@ export default function AddVariableSamplesModal({
   formData,
   onSave,
   onSaveWithoutSamples,
-  initialSamples = {}
+  initialSamples = {},
+  isSaving = false
 }: AddVariableSamplesModalProps) {
   const [samples, setSamples] = useState<Record<string, string>>({});
 
@@ -173,14 +175,14 @@ export default function AddVariableSamplesModal({
 
         <DialogFooter sx={{ p: 3, pt: 1 }}>
           <Stack direction="row" spacing={2} width="100%" justifyContent="space-between">
-            <AppButton variantStyle="outline" onClick={() => onOpenChange(false)}>
+            <AppButton variantStyle="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </AppButton>
             <Stack direction="row" spacing={2}>
-              <AppButton variantStyle="outline" onClick={onSaveWithoutSamples}>
+              <AppButton variantStyle="outline" onClick={onSaveWithoutSamples} disabled={isSaving}>
                 Save without samples
               </AppButton>
-              <AppButton variantStyle="primary" onClick={handleSaveWithSamples}>
+              <AppButton variantStyle="primary" onClick={handleSaveWithSamples} disabled={isSaving} isLoading={isSaving}>
                 Save with samples
               </AppButton>
             </Stack>

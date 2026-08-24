@@ -1,7 +1,8 @@
 // lib/types/whatsapp-marketing.ts
 
 export type WaRecipientType = 'subscribers' | 'whatsapp';
-export type WaRecipientSortBy = 'name' | 'created_at';
+// Matches the backend sort_by contract (unknown keys silently fall back to default)
+export type WaRecipientSortBy = 'name' | 'email' | 'phone_number' | 'position' | 'company' | 'created_at';
 export type WaRecipientSortOrder = 'asc' | 'desc';
 
 export interface WaRecipient {

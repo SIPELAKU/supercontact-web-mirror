@@ -15,7 +15,6 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { notify } from '@/lib/notifications';
@@ -136,7 +135,7 @@ const EditMailingListModal = ({ open, onClose, onSuccess, mailingList }: EditMai
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </Dialog>
   );

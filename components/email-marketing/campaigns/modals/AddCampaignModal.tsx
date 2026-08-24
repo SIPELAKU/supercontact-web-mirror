@@ -8,10 +8,7 @@ import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { useCreateCampaign } from '@/lib/hooks/useCampaigns';
 import { useMailingLists } from '@/lib/hooks/useMailingLists';
 import { useSubscribers } from '@/lib/hooks/useSubscribers';
-import { useMailSenders } from '@/lib/hooks/useMailSenders';
 import { useMailServers } from '@/lib/hooks/useMailServers';
-import AddMailSenderDialog from './AddMailSenderDialog';
-import MailSenderManager from './MailSenderManager';
 import RecipientSourceSelector from './RecipientSourceSelector';
 import { CAMPAIGN_ERROR_MESSAGES } from '@/lib/constants/campaign';
 import {
@@ -31,9 +28,7 @@ import {
   Radio,
   RadioGroup,
   Stack,
-  TextField,
   Typography,
-  InputAdornment,
   Grid,
   Paper,
   Tooltip
@@ -58,8 +53,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const [recipientSource, setRecipientSource] = useState<'mailing_list' | 'subscriber'>('mailing_list');
   const [selectedMailingLists, setSelectedMailingLists] = useState<string[]>([]);
   const [selectedSubscribers, setSelectedSubscribers] = useState<string[]>([]);
-  const [selectedMailSender, setSelectedMailSender] = useState<string>('');
-  const [selectedSmtp, setSelectedSmtp] = useState<string>('brevo');
+  const [selectedSmtp, setSelectedSmtp] = useState<string>('');
   const [error, setError] = useState<string | any[] | null>(null);
   const [subscriberPage, setSubscriberPage] = useState(1);
   const [subscriberLimit] = useState(10);
@@ -71,21 +65,13 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
   const createMutation = useCreateCampaign();
   const { data: mailingListsData } = useMailingLists();
   const { data: subscribersData, isLoading: isLoadingSubscribers } = useSubscribers(subscriberPage, subscriberLimit, subscriberSearch);
-  const { data: mailSendersData, isLoading: isLoadingMailSenders } = useMailSenders();
   const { data: mailServersData, isLoading: isLoadingMailServers } = useMailServers(1, 100);
 
   const mailingLists = mailingListsData?.data?.mailing_lists || [];
   const subscribers = subscribersData?.data?.contacts || []; // API returns contacts field
-  const mailSenders = mailSendersData?.data?.mail_senders || [];
   const mailServers = mailServersData?.data?.mail_servers || [];
   const totalSubscribers = subscribersData?.data?.total || 0;
   const totalSubscriberPages = Math.ceil(totalSubscribers / subscriberLimit);
-
-  const [isAddMailSenderOpen, setIsAddMailSenderOpen] = useState(false);
-
-  // Debug log to see what we're getting
-  // console.log('Subscribers data:', subscribersData);
-  // console.log('Subscribers array:', subscribers);
 
   const handleClose = () => {
     setSubject('');
@@ -93,8 +79,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     setRecipientSource('mailing_list');
     setSelectedMailingLists([]);
     setSelectedSubscribers([]);
-    setSelectedMailSender('');
-    setSelectedSmtp('brevo');
+    setSelectedSmtp('');
     setError('');
     setMailingListSearch('');
     setSubscriberSearch('');
@@ -160,7 +145,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
     }
 
     if (action === 'send') {
-      if (selectedSmtp === 'brevo' && !selectedMailSender) {
+      if (!selectedSmtp) {
         setError(CAMPAIGN_ERROR_MESSAGES.SENDER_REQUIRED);
         return;
       }
@@ -189,8 +174,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         action,
         mailing_list_ids: recipientSource === 'mailing_list' && selectedMailingLists.length > 0 ? selectedMailingLists : undefined,
         contact_ids: recipientSource === 'subscriber' && selectedSubscribers.length > 0 ? selectedSubscribers : undefined,
-        mail_sender_id: selectedSmtp === 'brevo' ? (selectedMailSender || undefined) : undefined,
-        mail_server_id: selectedSmtp === 'brevo' ? null : selectedSmtp,
+        mail_server_id: selectedSmtp || undefined,
       });
 
       notify.success(action === 'draft' ? 'Campaign saved as draft.' : 'Campaign created and sent!');
@@ -231,7 +215,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
       {!isFocusMode && (
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-            Create New Campaigns
+            Add Campaign
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton
@@ -284,62 +268,17 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               placeholder={isLoadingMailServers ? "Loading mail servers..." : "Select SMTP"}
               value={selectedSmtp}
               onChange={(e) => setSelectedSmtp(e.target.value as string)}
-              options={[
-                { value: 'brevo', label: 'Brevo (Mail-Sender)' },
-                ...mailServers.map(server => ({
-                  value: server.id,
-                  label: `${server.name} (${server.from_email})`
-                }))
-              ]}
+              options={mailServers.map(server => ({
+                value: server.id,
+                label: `${server.name} (${server.from_email})`
+              }))}
               isBgWhite
+              error={Boolean(typeof error === 'string' && error.includes("SMTP") && !selectedSmtp)}
+              helperText={typeof error === 'string' && error.includes("SMTP") && !selectedSmtp ? "SMTP server is required" : ""}
             />
-            {selectedSmtp !== 'brevo' && (
-              <Alert severity="info" sx={{ mt: 1.5, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
-                When using an external SMTP server, advanced tracking features such as delivery confirmation, open rates, click-through tracking, and bounce reporting are not available.
-              </Alert>
-            )}
-          </Box>
-
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
-                Mail Sender
-              </Typography>
-              <AppButton
-                size="small"
-                onClick={() => setIsAddMailSenderOpen(true)}
-                variantStyle="text"
-                color="primary"
-                disabled={selectedSmtp !== 'brevo'}
-              >
-                + Add New Mail Sender
-              </AppButton>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ flex: 1 }}>
-                <AppSelect
-                  disabled={selectedSmtp !== 'brevo'}
-                  placeholder={isLoadingMailSenders ? "Loading mail senders..." : "Select Mail Sender"}
-                  value={selectedMailSender}
-                  onChange={(e) => setSelectedMailSender(e.target.value as string)}
-                  options={mailSenders.map(sender => ({
-                    value: sender.id,
-                    label: `${sender.name} (${sender.email})`
-                  }))}
-                  isBgWhite
-                  error={Boolean(typeof error === 'string' && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo')}
-                  helperText={typeof error === 'string' && error.includes("Mail Sender") && !selectedMailSender && selectedSmtp === 'brevo' ? "Mail sender is required" : ""}
-                />
-              </Box>
-              {selectedMailSender && mailSenders.find(s => s.id === selectedMailSender) && (
-                <MailSenderManager
-                  mailSenderId={selectedMailSender}
-                  mailSenderName={mailSenders.find(s => s.id === selectedMailSender)!.name}
-                  mailSenderEmail={mailSenders.find(s => s.id === selectedMailSender)!.email}
-                  onDelete={() => setSelectedMailSender('')}
-                />
-              )}
-            </Box>
+            <Alert severity="info" sx={{ mt: 1.5, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
+              Advanced tracking features such as delivery confirmation, open rates, click-through tracking, and bounce reporting are not available.
+            </Alert>
           </Box>
 
           <Box>
@@ -392,7 +331,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                         SMTP SERVER
                       </Typography>
                       <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                        {selectedSmtp === 'brevo' ? 'Brevo (Mail-Sender)' : (mailServers.find(s => s.id === selectedSmtp)?.name || 'Default')}
+                        {mailServers.find(s => s.id === selectedSmtp)?.name || 'Not selected'}
                       </Typography>
                    </Box>
                 </Box>
@@ -477,20 +416,14 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               </Box>
 
               {mailingLists.length > 0 && (
-                <TextField
+                <AppInput
                   fullWidth
-                  size="small"
                   placeholder="Search mailing lists..."
                   value={mailingListSearch}
                   onChange={(e) => setMailingListSearch(e.target.value)}
                   sx={{ mb: 2 }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Search className="w-4 h-4 text-gray-400" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  isBgWhite
+                  startIcon={<Search className="w-4 h-4 text-gray-400" />}
                 />
               )}
 
@@ -582,9 +515,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                 )}
               </Box>
 
-              <TextField
+              <AppInput
                 fullWidth
-                size="small"
                 placeholder="Search subscribers by email or name..."
                 value={subscriberSearch}
                 onChange={(e) => {
@@ -592,13 +524,8 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
                   setSubscriberPage(1); // Reset to first page on search
                 }}
                 sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search className="w-4 h-4 text-gray-400" />
-                    </InputAdornment>
-                  ),
-                }}
+                isBgWhite
+                startIcon={<Search className="w-4 h-4 text-gray-400" />}
               />
               {isLoadingSubscribers ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -698,8 +625,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
               setRecipientSource('mailing_list');
               setSelectedMailingLists([]);
               setSelectedSubscribers([]);
-              setSelectedMailSender('');
-              setSelectedSmtp('brevo');
+              setSelectedSmtp('');
               setError('');
               onClose();
             }}
@@ -739,14 +665,7 @@ const AddCampaignModal = ({ open, onClose, onSuccess }: AddCampaignModalProps) =
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
-      />
-      <AddMailSenderDialog
-        open={isAddMailSenderOpen}
-        onClose={() => setIsAddMailSenderOpen(false)}
-        onSuccess={(sender) => {
-          setSelectedMailSender(sender.id);
-        }}
+        variant="discard"
       />
     </Dialog>
   );

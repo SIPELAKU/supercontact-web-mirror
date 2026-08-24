@@ -2,7 +2,7 @@
 
 
 import { Card, Typography } from '@mui/material';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { notify } from '@/lib/notifications';
 import { handleError } from '@/lib/utils/errorHandler';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -44,6 +44,7 @@ export default function CampaignsClient() {
     pageSize: 10,
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [] as { id: string; desc: boolean }[],
   });
 
   const handleTableStateChange = (state: SuperTableState) => {
@@ -52,6 +53,7 @@ export default function CampaignsClient() {
       pageSize: state.pagination.pageSize,
       globalFilter: state.globalFilter,
       columnFilters: state.columnFilters || [],
+      sorting: state.sorting || [],
     });
   };
 
@@ -65,28 +67,23 @@ export default function CampaignsClient() {
   const searchParam = tableState.globalFilter || "";
   const statusParam = getFilterValue("status") || undefined;
 
-  // React Query Fetcher (Main Table Data)
+  // Server-side sorting (sort_by/sort_order contract)
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: 'asc' | 'desc' | undefined = sortParam
+    ? (sortParam.desc ? 'desc' : 'asc')
+    : undefined;
+
+  // React Query Fetcher (Main Table Data) — status filter + sorting are server-side
   const {
     data: campaignsResponse,
     isLoading,
     isError,
     error,
-  } = useCampaigns(pageParam, limitParam, searchParam);
+    refetch,
+  } = useCampaigns(pageParam, limitParam, searchParam, statusParam, sortByParam, sortOrderParam);
 
-  // Extract status filter dari columnFilters
-  const statusFilter = tableState.columnFilters
-    .find((f: {id: string; value: unknown}) => f.id === 'status')
-    ?.value as string | undefined;
-
-  // Filter campaigns berdasarkan status jika ada
-  const filteredCampaigns = useMemo(() => {
-    if (!statusFilter || statusFilter === '') {
-      return campaignsResponse?.data?.campaigns || [];
-    }
-    return (campaignsResponse?.data?.campaigns || []).filter(
-      (c: Campaign) => c.status === statusFilter
-    );
-  }, [campaignsResponse, statusFilter]);
+  const filteredCampaigns = campaignsResponse?.data?.campaigns || [];
 
   const totalCount = campaignsResponse?.data?.total || 0;
 
@@ -98,7 +95,7 @@ export default function CampaignsClient() {
     let totalPages = 1;
     
     do {
-      const resp = await fetchCampaigns(token, currentPage, 1000, searchParam);
+      const resp = await fetchCampaigns(token, currentPage, 1000, searchParam, statusParam, sortByParam, sortOrderParam);
       
       if (!resp.success) {
         throw new Error("Failed to fetch page data for export");
@@ -113,10 +110,21 @@ export default function CampaignsClient() {
     return allData;
   };
 
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    campaigns: Campaign[];
+    clearSelection: () => void;
+  } | null>(null);
+
   const handleBulkDelete = async (
     selectedCampaigns: Campaign[],
     clearSelection: () => void
   ) => {
+    setBulkDeleteTarget({ campaigns: selectedCampaigns, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { campaigns: selectedCampaigns, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
     let successCount = 0;
     let failCount = 0;
@@ -142,13 +150,14 @@ export default function CampaignsClient() {
     }
     
     setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
     clearSelection();
-    
-    if (successCount > 0) notify.success(`${successCount} kampanye berhasil dihapus`);
-    if (failCount > 0) notify.error(`${failCount} kampanye gagal dihapus`);
+
+    if (successCount > 0) notify.success(`${successCount} campaign(s) deleted successfully`);
+    if (failCount > 0) notify.error(`${failCount} campaign(s) failed to delete`);
     if (skippedCount > 0) {
       notify.warning(
-        `${skippedCount} kampanye dilewati karena tidak dapat dihapus`,
+        `${skippedCount} campaign(s) skipped because they cannot be deleted`,
         { description: skippedNames.join(', ') }
       );
     }
@@ -162,7 +171,7 @@ export default function CampaignsClient() {
       notify.success(`Campaign "${campaign.subject}" duplicated successfully.`);
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Duplicate Campaign");
+      notify.error(handleError(err, "Duplicate Campaign"));
     }
   };
 
@@ -176,7 +185,7 @@ export default function CampaignsClient() {
       notify.success(`Campaign "${campaign.subject}" has been queued for resending.`);
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Resend Campaign");
+      notify.error(handleError(err, "Resend Campaign"));
     } finally {
       setResendingCampaignId(null);
     }
@@ -194,7 +203,7 @@ export default function CampaignsClient() {
       clearSelection();
       forceRefetch();
     } catch (err: any) {
-      handleError(err, "Bulk Duplicate Campaigns");
+      notify.error(handleError(err, "Bulk Duplicate Campaigns"));
     } finally {
       setIsBulkDuplicating(false);
     }
@@ -259,6 +268,9 @@ export default function CampaignsClient() {
         campaigns={filteredCampaigns}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={isError && error ? handleError(error, "Fetch Campaigns") : undefined}
+        onRetry={() => refetch()}
+        onAdd={handleOpenAddModal}
         rowCount={totalCount}
         onStateChange={handleTableStateChange}
         onExportRequest={handleExportRequest}
@@ -318,10 +330,22 @@ export default function CampaignsClient() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         description={`Are you sure you want to delete campaign "${campaignToDelete?.subject}"? This action cannot be undone.`}
-        confirmText="Yes, Delete"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deleteMutation.isPending}
+      />
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.campaigns.length ?? 0} campaign(s)?`}
+        description="Only Draft campaigns will be deleted; campaigns in other statuses will be skipped. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
       />
     </div>
   );

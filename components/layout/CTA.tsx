@@ -49,7 +49,8 @@ const CTA = () => {
                     <Box
                         component="img"
                         src="/assets/vector.png"
-                        alt="Vector"
+                        alt=""
+                        aria-hidden="true"
                         sx={{
                             width: 30, // Adjusted size
                             height: 'auto',

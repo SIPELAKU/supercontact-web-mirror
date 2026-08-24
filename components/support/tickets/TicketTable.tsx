@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MRT_ColumnDef } from "material-react-table";
 import { formatDistanceToNow } from "date-fns";
+import { Ticket as TicketGlyph, Plus } from "lucide-react";
 
 import { Ticket, TicketStatus } from "@/lib/types/Ticket";
-import { TicketPriorityBadge, TicketStatusBadge } from "./TicketBadges";
+import { TicketPriorityBadge, TicketStatusBadge, TicketTypeBadge } from "./TicketBadges";
 import { TicketSlaBadge } from "./TicketSlaBadge";
 import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
-import { SuperTable, SuperTableState } from "@/components/ui/super-table";
+import { SuperTable, SuperTableState, MRT_ColumnDef } from "@/components/ui/super-table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { useAssignableAgents } from "@/lib/hooks/useTickets";
@@ -15,7 +16,10 @@ import { usePermission } from "@/lib/hooks/usePermission";
 
 const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
     { value: "Open", label: "Open" },
+    { value: "Pending", label: "Pending" },
+    { value: "On-hold", label: "On-hold" },
     { value: "In Progress", label: "In Progress" },
+    { value: "Solved", label: "Solved" },
     { value: "Closed", label: "Closed" },
 ];
 
@@ -23,6 +27,9 @@ interface TicketTableProps {
     tickets: Ticket[];
     isLoading: boolean;
     isError?: boolean;
+    errorMessage?: string;
+    onRetry?: () => void;
+    onAdd?: () => void;
     rowCount?: number;
     onStateChange?: (state: SuperTableState) => void;
     onExportRequest?: (params: { format: "csv" | "excel", currentState: SuperTableState }) => Promise<Ticket[]>;
@@ -41,6 +48,9 @@ export function TicketTable({
     tickets,
     isLoading,
     isError,
+    errorMessage,
+    onRetry,
+    onAdd,
     rowCount,
     onStateChange,
     onExportRequest,
@@ -101,7 +111,7 @@ export function TicketTable({
                 accessorKey: "priority",
                 header: "Priority",
                 filterVariant: "select",
-                filterSelectOptions: ["High", "Medium", "Low"],
+                filterSelectOptions: ["Urgent", "High", "Medium", "Low"],
                 Cell: ({ cell }) => (
                     <TicketPriorityBadge priority={cell.getValue<any>()} />
                 ),
@@ -110,13 +120,26 @@ export function TicketTable({
                 accessorKey: "status",
                 header: "Status",
                 filterVariant: "select",
-                filterSelectOptions: ["Open", "In Progress", "Closed"],
+                filterSelectOptions: ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"],
                 Cell: ({ cell }) => (
                     <TicketStatusBadge status={cell.getValue<any>()} />
                 ),
             },
             {
+                accessorKey: "type",
+                header: "Type",
+                filterVariant: "select",
+                filterSelectOptions: ["Question", "Incident", "Problem", "Task"],
+                // Nullable — the badge renders nothing when the value is unset.
+                Cell: ({ cell }) => (
+                    <TicketTypeBadge type={cell.getValue<any>()} />
+                ),
+            },
+            {
                 id: "assigned_agent", // Filter is using this string
+                // Agent name lives on the joined User (selectinload, not a
+                // join) - backend can't sort by it, so no sort arrow.
+                enableSorting: false,
                 accessorFn: (row: Ticket) => row.assigned_agent?.fullname || "Unassigned",
                 header: "Assigned Agent",
                 filterVariant: "select",
@@ -135,7 +158,7 @@ export function TicketTable({
             },
             {
                 accessorKey: "updated_at",
-                header: "Last Updated",
+                header: "Updated",
                 enableColumnFilter: false,
                 Cell: ({ cell }) => {
                     const dateVal = cell.getValue<string>();
@@ -166,11 +189,26 @@ export function TicketTable({
 
     return (
         <SuperTable<Ticket>
+            tableId="tickets-table"
             columns={columns}
             data={tickets || []}
             isLoading={isLoading}
             isError={isError}
+            errorMessage={errorMessage}
+            onRetry={onRetry}
             rowCount={rowCount}
+            renderEmptyState={() => (
+                <EmptyState
+                    icon={TicketGlyph}
+                    title="No tickets found"
+                    description="Support tickets will appear here once created or received."
+                    action={
+                        canWrite && onAdd
+                            ? { label: "Add Ticket", onClick: onAdd, icon: <Plus size={16} /> }
+                            : undefined
+                    }
+                />
+            )}
             onStateChange={onStateChange}
             onExportRequest={onExportRequest as any}
             renderTopLeftToolbar={renderTopLeftToolbar}
@@ -235,18 +273,19 @@ export function TicketTable({
                                 }
                             }}
                         >
-                            {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRows.length} Tiket`}
+                            {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
                         </AppButton>
                     )}
                 </div>
             )}
             manualPagination={true}
             manualFiltering={true}
+            manualSorting={true}
+            initialState={{ sorting: [{ id: "updated_at", desc: true }] }}
             features={{
                 sorting: true,
                 globalFilter: true,
                 columnFilters: true,
-                smartFilterVariants: true,
                 pagination: true,
                 rowSelection: 'multi',
                 export: { excel: true, csv: true },

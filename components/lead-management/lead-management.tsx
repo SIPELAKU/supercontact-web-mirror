@@ -13,7 +13,7 @@ import type { SuperTableState } from "@/components/ui/super-table";
 export default function LeadManagement() {
   const { viewMode, setViewMode } = useViewMode();
 
-  const { data: leadsResponse, isLoading, error } = useLeads(1, 100);
+  const { data: leadsResponse, isLoading, error, refetch } = useLeads(1, 100);
   const leadsRaw = leadsResponse?.data?.leads;
   const leads = useMemo(() => leadsRaw || [], [leadsRaw]);
 
@@ -81,7 +81,7 @@ export default function LeadManagement() {
           if (Array.isArray(dateFilter) && (dateFilter[0] || dateFilter[1])) {
             const [start, end] = dateFilter;
             filtered = filtered.filter((l) => {
-              const dateString = l.contact.last_contacted?.created_at;
+              const dateString = l.contact?.last_contacted?.created_at;
               if (!dateString) return false;
               const leadDate = new Date(dateString);
               if (start && leadDate < new Date(start)) return false;
@@ -172,7 +172,17 @@ export default function LeadManagement() {
       </Box>
 
       <Box sx={{ p: viewMode === "table-view" ? 0 : 2 }}>
-        {isLoading ? (
+        {viewMode === "table-view" ? (
+          // Table view: SuperTable owns loading skeleton, error + retry states
+          <DataTable
+            initialData={leads}
+            isLoading={isLoading}
+            isError={!!error}
+            errorMessage={error?.message}
+            onRetry={() => refetch()}
+            onStateChange={handleTableStateChange}
+          />
+        ) : isLoading ? (
           <Box
             sx={{
               display: "flex",
@@ -189,13 +199,6 @@ export default function LeadManagement() {
           </Box>
         ) : (
           <>
-            {viewMode === "table-view" && (
-              <DataTable
-                initialData={leads}
-                onStateChange={handleTableStateChange}
-              />
-            )}
-
             {viewMode === "kanban-view" && (
               <div className="overflow-x-auto">
                 <KanbanView

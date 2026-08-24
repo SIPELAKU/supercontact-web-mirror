@@ -5,6 +5,8 @@ import { Avatar, Box } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Users, Plus } from "lucide-react";
 
 interface FormattedMember {
   id: string;
@@ -21,6 +23,9 @@ interface DepartmentsTableMemberProps {
   members: FormattedMember[];
   isLoading: boolean;
   isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  onAdd?: () => void;
   rowCount?: number;
   departmentId: string;
   onStateChange?: (state: SuperTableState) => void;
@@ -43,6 +48,9 @@ export default function DepartmentsTableMember({
   members,
   isLoading,
   isError,
+  errorMessage,
+  onRetry,
+  onAdd,
   rowCount = 0,
   departmentId,
   onStateChange,
@@ -127,6 +135,20 @@ export default function DepartmentsTableMember({
         manualSorting={true}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={errorMessage}
+        onRetry={onRetry}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Users}
+            title="No members in this department"
+            description="Add members to this department to see them here."
+            action={
+              onAdd
+                ? { label: "Add Member", onClick: onAdd, icon: <Plus size={16} /> }
+                : undefined
+            }
+          />
+        )}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
@@ -142,8 +164,8 @@ export default function DepartmentsTableMember({
             }}
           >
             {isBulkDeleting
-              ? "Menghapus..."
-              : `Hapus ${selectedRows.length} Member`}
+              ? "Deleting..."
+              : `Delete (${selectedRows.length})`}
           </AppButton>
         ) : undefined}
         features={{

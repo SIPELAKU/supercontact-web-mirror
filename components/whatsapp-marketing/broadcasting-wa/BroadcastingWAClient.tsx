@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Box, Stack } from '@mui/material';
-import { Plus, Copy } from 'lucide-react';
+import { Plus, Copy, Trash2 } from 'lucide-react';
 import { AppButton } from '@/components/ui/app-button';
 import PageHeader from '@/components/ui/page-header';
 import { SuperTableState } from '@/components/ui/super-table';
@@ -28,6 +28,11 @@ export default function BroadcastingWAClient() {
   const [selectedBroadcast, setSelectedBroadcast] = useState<BroadcastCampaign | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [broadcastToDelete, setBroadcastToDelete] = useState<BroadcastCampaign | null>(null);
+  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+    broadcasts: BroadcastCampaign[];
+    clearSelection: () => void;
+  } | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const { token } = useAuth();
   const deleteMutation = useDeleteBroadcast();
@@ -39,6 +44,7 @@ export default function BroadcastingWAClient() {
     pageSize: 10,
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
+    sorting: [{ id: "created_at", desc: true }] as { id: string; desc: boolean }[],
   });
 
   const handleTableStateChange = (state: SuperTableState) => {
@@ -47,6 +53,7 @@ export default function BroadcastingWAClient() {
       pageSize: state.pagination.pageSize,
       globalFilter: state.globalFilter,
       columnFilters: state.columnFilters || [],
+      sorting: state.sorting || [],
     });
   };
 
@@ -60,12 +67,21 @@ export default function BroadcastingWAClient() {
   const searchParam = tableState.globalFilter || "";
   const statusParam = getFilterValue("status") || undefined;
 
+  // Server-side sorting (sort_by/sort_order contract)
+  const sortParam = tableState.sorting[0];
+  const sortByParam = sortParam?.id;
+  const sortOrderParam: 'asc' | 'desc' | undefined = sortParam
+    ? (sortParam.desc ? 'desc' : 'asc')
+    : undefined;
+
   // React Query Fetcher (Main Table Data)
   const {
     data: broadcastsResponse,
     isLoading,
     isError,
-  } = useBroadcasts(pageParam, limitParam, searchParam, statusParam);
+    error,
+    refetch,
+  } = useBroadcasts(pageParam, limitParam, searchParam, statusParam, sortByParam, sortOrderParam);
 
   const totalCount = broadcastsResponse?.data?.total || 0;
   const broadcasts = broadcastsResponse?.data?.broadcasts || [];
@@ -127,6 +143,56 @@ export default function BroadcastingWAClient() {
     }
   };
 
+  // Mirrors CampaignsClient's bulk delete: only Draft rows are deletable,
+  // others are skipped and reported (no bulk delete endpoint — loop singles).
+  const handleBulkDelete = (
+    selectedRows: BroadcastCampaign[],
+    clearSelection: () => void
+  ) => {
+    setBulkDeleteTarget({ broadcasts: selectedRows, clearSelection });
+  };
+
+  const performBulkDelete = async () => {
+    if (!bulkDeleteTarget) return;
+    const { broadcasts: selectedBroadcasts, clearSelection } = bulkDeleteTarget;
+    setIsBulkDeleting(true);
+    let successCount = 0;
+    let failCount = 0;
+    let skippedCount = 0;
+    const skippedNames: string[] = [];
+
+    for (const broadcast of selectedBroadcasts) {
+      // Skip if status is not deletable (backend only allows Draft)
+      if (broadcast.status.toLowerCase() !== 'draft') {
+        skippedCount++;
+        skippedNames.push(`${broadcast.name} (${broadcast.status})`);
+        continue;
+      }
+
+      try {
+        await deleteMutation.mutateAsync(broadcast.id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    setIsBulkDeleting(false);
+    setBulkDeleteTarget(null);
+    clearSelection();
+
+    if (successCount > 0) notify.success(`${successCount} broadcast(s) deleted successfully`);
+    if (failCount > 0) notify.error(`${failCount} broadcast(s) failed to delete`);
+    if (skippedCount > 0) {
+      notify.warning(
+        `${skippedCount} broadcast(s) skipped because they cannot be deleted`,
+        { description: skippedNames.join(', ') }
+      );
+    }
+
+    refetch();
+  };
+
   const handleDeleteRequest = (broadcast: BroadcastCampaign) => {
     setBroadcastToDelete(broadcast);
     setConfirmOpen(true);
@@ -159,6 +225,9 @@ export default function BroadcastingWAClient() {
         broadcasts={broadcasts}
         isLoading={isLoading}
         isError={isError}
+        errorMessage={isError && error ? handleError(error, "Fetch Broadcasts") : undefined}
+        onRetry={() => refetch()}
+        onAdd={handleOpenAddModal}
         rowCount={totalCount}
         onStateChange={handleTableStateChange}
         onExportRequest={handleExportRequest}
@@ -172,7 +241,7 @@ export default function BroadcastingWAClient() {
               onClick={handleOpenAddModal}
               startIcon={<Plus size={16} />}
             >
-              Create Broadcast
+              <span className="hidden sm:inline">Create Broadcast</span>
             </AppButton>
           </Box>
         )}
@@ -185,6 +254,14 @@ export default function BroadcastingWAClient() {
               isLoading={duplicateMutation.isPending}
             >
               Duplicate ({selectedRows.length})
+            </AppButton>
+            <AppButton
+              variantStyle="danger"
+              onClick={() => handleBulkDelete(selectedRows, clearSelection)}
+              startIcon={<Trash2 size={16} />}
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
             </AppButton>
           </Box>
         )}
@@ -210,10 +287,22 @@ export default function BroadcastingWAClient() {
         onConfirm={handleConfirmDelete}
         title="Confirm Deletion"
         description={`Are you sure you want to delete broadcast "${broadcastToDelete?.name}"? This action cannot be undone.`}
-        confirmText="Yes, Delete"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deleteMutation.isPending}
+      />
+
+      <ConfirmationPopup
+        isOpen={!!bulkDeleteTarget}
+        onClose={() => setBulkDeleteTarget(null)}
+        onConfirm={performBulkDelete}
+        title={`Delete ${bulkDeleteTarget?.broadcasts.length ?? 0} broadcast(s)?`}
+        description="Only Draft broadcasts will be deleted; broadcasts in other statuses will be skipped. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isBulkDeleting}
       />
     </div>
   );

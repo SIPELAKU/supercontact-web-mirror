@@ -386,7 +386,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         >
           <div className="mt-2">
             <h2 className="text-2xl font-semibold text-[#5479EE]">
-              {id === "" ? "Add New Pipeline" : "Update Pipeline"}
+              {id === "" ? "Add Deal" : "Update Pipeline"}
             </h2>
           </div>
 
@@ -617,7 +617,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         description="This will discard your current record."
         confirmText="Discard record"
         cancelText="Cancel"
-        variant="danger"
+        variant="discard"
       />
     </>
   );

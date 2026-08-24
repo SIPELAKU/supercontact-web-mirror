@@ -3,56 +3,84 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { AppButton } from '@/components/ui/app-button';
 import LeadMagnetsTable from './LeadMagnetsTable';
 import PageHeader from '../ui/page-header';
 import { useSmartCaptures } from '@/lib/hooks/useSmartCaptures';
 import { SuperTableState } from '@/components/ui/super-table/types';
-import { Tabs, Tab, Box, Badge, Chip } from '@mui/material';
+import { Box, Chip } from '@mui/material';
+import { AppTabs } from '@/components/ui/app-tabs';
+
+type CaptureTab = 'active' | 'inactive';
+const VALID_TABS: CaptureTab[] = ['active', 'inactive'];
 
 export default function SmartCaptureClient() {
-  const [tabIndex, setTabIndex] = useState(0);
-  const [params, setParams] = useState({
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<CaptureTab>(() => {
+    const fromUrl = searchParams.get('tab') as CaptureTab | null;
+    return fromUrl && VALID_TABS.includes(fromUrl) ? fromUrl : 'active';
+  });
+  const [params, setParams] = useState<{
+    page: number;
+    limit: number;
+    search: string;
+    status: string;
+    target: string;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+  }>({
     page: 1,
     limit: 10,
     search: '',
     status: '',
     target: '',
+    sort_by: undefined,
+    sort_order: undefined,
   });
 
   // Query for Active campaigns
-  const { data: activeRes, isLoading: activeLoading, isFetching: activeFetching } = useSmartCaptures({
+  const { data: activeRes, isLoading: activeLoading, isFetching: activeFetching, isError: activeError, error: activeErrorObj, refetch: refetchActive } = useSmartCaptures({
     ...params,
     status: 'Active'
   });
 
   // Query for Inactive campaigns (Draft + Inactive)
-  const { data: inactiveRes, isLoading: inactiveLoading, isFetching: inactiveFetching } = useSmartCaptures({
+  const { data: inactiveRes, isLoading: inactiveLoading, isFetching: inactiveFetching, isError: inactiveError, error: inactiveErrorObj, refetch: refetchInactive } = useSmartCaptures({
     ...params,
     status: ['Draft', 'Inactive']
   });
 
   const handleStateChange = (state: SuperTableState) => {
+    const sort = state.sorting?.[0];
     setParams((prev) => ({
       ...prev,
       page: state.pagination.pageIndex + 1,
       limit: state.pagination.pageSize,
       search: state.globalFilter,
+      sort_by: sort?.id,
+      sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
     }));
   };
 
-  const handleTabChange = (_: any, newIndex: number) => {
-    setTabIndex(newIndex);
+  const handleTabChange = (tab: CaptureTab) => {
+    setActiveTab(tab);
     setParams(prev => ({ ...prev, page: 1 })); // Reset page on tab switch
+    router.replace(`/smart-capture?tab=${tab}`, { scroll: false });
   };
 
   const activeCount = activeRes?.data?.total || 0;
   const inactiveCount = inactiveRes?.data?.total || 0;
 
-  const currentData = tabIndex === 0 ? activeRes : inactiveRes;
-  const currentLoading = tabIndex === 0 ? activeLoading : inactiveLoading;
-  const currentFetching = tabIndex === 0 ? activeFetching : inactiveFetching;
+  const isActiveTab = activeTab === 'active';
+  const currentData = isActiveTab ? activeRes : inactiveRes;
+  const currentLoading = isActiveTab ? activeLoading : inactiveLoading;
+  const currentFetching = isActiveTab ? activeFetching : inactiveFetching;
+  const currentIsError = isActiveTab ? activeError : inactiveError;
+  const currentError = isActiveTab ? activeErrorObj : inactiveErrorObj;
+  const currentRefetch = isActiveTab ? refetchActive : refetchInactive;
 
   const stats = currentData?.data?.stats;
   const totalViews = stats?.total_views || 0;
@@ -67,7 +95,7 @@ export default function SmartCaptureClient() {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
-          title="Lead Magnets"
+          title="Smart Capture"
           description="Manage your forms and soft-selling assets to get validated prospects."
           breadcrumbs={[
             {
@@ -109,67 +137,53 @@ export default function SmartCaptureClient() {
 
       {/* Tabs and Table Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 overflow-hidden">
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
-          <Tabs
-            value={tabIndex}
+        <Box sx={{ px: 2, pt: 1 }}>
+          <AppTabs<CaptureTab>
+            value={activeTab}
             onChange={handleTabChange}
-            sx={{
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                minWidth: 100,
-                py: 2,
+            tabs={[
+              {
+                value: 'active',
+                label: (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Active
+                    <Chip
+                      label={activeCount}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        bgcolor: isActiveTab ? '#EEF2FF' : '#F8FAFC',
+                        color: isActiveTab ? '#5479EE' : '#94A3B8',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  </Box>
+                ),
               },
-              '& .Mui-selected': {
-                color: '#5479EE !important',
+              {
+                value: 'inactive',
+                label: (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Inactive
+                    <Chip
+                      label={inactiveCount}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        bgcolor: !isActiveTab ? '#EEF2FF' : '#F8FAFC',
+                        color: !isActiveTab ? '#5479EE' : '#94A3B8',
+                        transition: 'all 0.2s'
+                      }}
+                    />
+                  </Box>
+                ),
               },
-              '& .MuiTabs-indicator': {
-                backgroundColor: '#5479EE',
-                height: 3,
-                borderRadius: '3px 3px 0 0',
-              }
-            }}
-          >
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Active
-                  <Chip
-                    label={activeCount}
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      bgcolor: tabIndex === 0 ? '#EEF2FF' : '#F8FAFC',
-                      color: tabIndex === 0 ? '#5479EE' : '#94A3B8',
-                      transition: 'all 0.2s'
-                    }}
-                  />
-                </Box>
-              }
-            />
-            <Tab
-              label={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  Inactive
-                  <Chip
-                    label={inactiveCount}
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      bgcolor: tabIndex === 1 ? '#EEF2FF' : '#F8FAFC',
-                      color: tabIndex === 1 ? '#5479EE' : '#94A3B8',
-                      transition: 'all 0.2s'
-                    }}
-                  />
-                </Box>
-              }
-            />
-          </Tabs>
+            ]}
+          />
         </Box>
 
         <LeadMagnetsTable
@@ -177,6 +191,9 @@ export default function SmartCaptureClient() {
           rowCount={currentData?.data?.total || 0}
           isLoading={currentLoading}
           isFetching={currentFetching}
+          isError={currentIsError}
+          errorMessage={currentError instanceof Error ? currentError.message : undefined}
+          onRetry={() => currentRefetch()}
           onStateChange={handleStateChange}
           initialState={{
             pagination: {

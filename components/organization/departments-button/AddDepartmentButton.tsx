@@ -18,7 +18,7 @@ export default function AddDepartmentButton() {
         onClick={handleOpen}
         startIcon={<Plus size={14} />}
       >
-        Add New Department
+        Add Department
       </AppButton>
 
       {open && (

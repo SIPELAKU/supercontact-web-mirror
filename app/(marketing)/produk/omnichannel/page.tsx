@@ -32,6 +32,30 @@ export const metadata: Metadata = {
     },
 };
 
+const softwareAppSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'SmartSales Omnichannel',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: PAGE_URL,
+    description:
+        'Modul Omnichannel SmartSales: satu inbox untuk WhatsApp Business API, Instagram DM, dan Email dengan routing otomatis ke agen dan konversi chat menjadi tiket atau pipeline sales.',
+    inLanguage: 'id-ID',
+    publisher: {
+        '@type': 'Organization',
+        name: 'SmartSales',
+        url: 'https://www.smartsales.id',
+    },
+    offers: {
+        '@type': 'Offer',
+        url: 'https://www.smartsales.id/price',
+        priceCurrency: 'IDR',
+        price: '0',
+        description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
+    },
+};
+
 const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -157,6 +181,10 @@ const faqSchema = {
 export default function OmnichannelAppPage() {
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}

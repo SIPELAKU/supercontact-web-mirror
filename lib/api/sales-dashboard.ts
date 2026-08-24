@@ -122,7 +122,6 @@ export async function fetchTopDeals(params?: DashboardDateParams & { limit?: num
  * GET /sales/dashboard/export
  * Handles CSV (direct download) and Excel (client-side conversion from CSV)
  */
-import * as XLSX from "xlsx";
 
 export async function exportDashboard(
   params?: DashboardDateParams & { format?: "csv" | "excel" }
@@ -138,6 +137,8 @@ export async function exportDashboard(
   if (format === "excel") {
     // Client-side conversion: CSV -> Excel
     const csvData = response.data;
+    // Loaded on demand - only the Excel branch of this export needs SheetJS.
+    const XLSX = await import("xlsx");
     const wb = XLSX.read(csvData, { type: "string" });
     XLSX.writeFile(wb, "sales_dashboard.xlsx");
     return;

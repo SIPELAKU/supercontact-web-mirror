@@ -10,11 +10,16 @@ const PROTECTED_ROUTES_PREFIX = [
     '/email-marketing',
     '/inbox',
     '/lead-management',
+    '/notes',
+    '/notifications',
     '/omnichannel',
     '/profile',
     '/sales',
     '/settings',
+    '/smart-capture',
     '/support',
+    '/test',
+    '/whatsapp-marketing',
 ];
 
 const AUTH_ROUTES = [
@@ -38,7 +43,7 @@ export function middleware(request: NextRequest) {
     if (token) {
         // If accessing root '/' or auth routes, redirect to dashboard
         if (pathname === '/' || isAuthRoute) {
-            return NextResponse.redirect(new URL('/analytics/dashboard', request.url));
+            return NextResponse.redirect(new URL('/dashboard', request.url));
         }
     }
     // Case 2: User is NOT authenticated

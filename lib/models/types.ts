@@ -7,8 +7,10 @@ export interface Lead {
   lead_source: LeadSource;
   created_at: string;
   assigned_to: string;
-  contact: Contact;
-  user: User
+  // Nullable at runtime: a lead's contact can be SET NULL when the contact is
+  // deleted, and an unassigned lead has no user. The UI must guard both.
+  contact: Contact | null;
+  user: User | null;
   industry: string;
   company_size: string;
   office_location: string;
@@ -61,7 +63,7 @@ export interface Contact {
   broadcast_groups?: { id: string; name: string }[],
   conversations?: {
     id: string;
-    channel_type: "whatsapp" | "email";
+    channel_type: "whatsapp" | "sms" | "email" | "web_widget";
     status: "open" | "closed" | "archived";
     last_message_at: string | null;
     last_message_preview: string | null;
@@ -280,6 +282,7 @@ export interface LogStats {
   opened: number;
   clicked: number;
   bounced: number;
+  simulated: number;
 }
 
 export interface SmartCapture {
@@ -301,6 +304,7 @@ export interface SmartCapture {
   created_at: string;
   updated_at: string;
   mail_sender_id?: string;
+  mail_server_id?: string;
   files?: SmartCaptureFile[];
   form_fields?: FormField[];
   log_stats?: LogStats;
@@ -358,6 +362,7 @@ export interface SmartCaptureCreateReq {
   content_template?: string;
   file_ids?: string[];
   mail_sender_id?: string;
+  mail_server_id?: string;
   form_fields?: FormField[];
 }
 

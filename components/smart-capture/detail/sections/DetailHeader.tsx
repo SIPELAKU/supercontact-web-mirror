@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Chip, Menu, MenuItem } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
 import { SmartCapture, SmartCaptureStatus } from "@/lib/models/types";
-import { Trash2, ChevronDown, Play, Pause } from "lucide-react";
+import { Trash2, ChevronDown, Play, Pause, Pencil } from "lucide-react";
 import { useUpdateSmartCaptureStatus } from "@/lib/hooks/useSmartCaptures";
 import { notify } from "@/lib/notifications";
 
@@ -12,7 +12,7 @@ interface DetailHeaderProps {
   onDelete: () => void;
 }
 
-export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
+export const DetailHeader = ({ data, onEdit, onDelete }: DetailHeaderProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { mutate, isPending } = useUpdateSmartCaptureStatus();
 
@@ -169,6 +169,15 @@ export const DetailHeader = ({ data, onDelete }: DetailHeaderProps) => {
             </AppButton>
           </>
         )}
+        <AppButton
+          onClick={onEdit}
+          color="primary"
+          variantStyle="outline"
+          startIcon={<Pencil size={16} />}
+          className="flex-1 md:flex-none"
+        >
+          Edit
+        </AppButton>
         <AppButton
           onClick={onDelete}
           color="danger"

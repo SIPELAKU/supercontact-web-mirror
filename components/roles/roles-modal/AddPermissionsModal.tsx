@@ -1,6 +1,7 @@
 import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
-import { Autocomplete, Chip, TextField } from "@mui/material";
+import { Chip } from "@mui/material";
+import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -68,35 +69,24 @@ export default function AddPermissionsDialog({
       <form onSubmit={handleSubmit}>
         <DialogContent className="space-y-3! px-0! pt-6 pb-8">
           <div>
-            <label
-              htmlFor="permission-name"
-              className="text-sm font-medium text-gray-700"
-            >
-              Permission Name
-            </label>
             <AppInput
+              label="Permission Name"
               placeholder="Enter permission name"
-              className="mt-2"
               fullWidth
             />
           </div>
           <div>
-            <label
-              htmlFor="assigned"
-              className="text-sm font-medium text-gray-700"
-            >
-              Role Access
-            </label>
-            <Autocomplete
+            <AppAutocomplete
               multiple
+              isBgWhite
+              label="Role Access"
+              placeholder="Add roles"
               options={[
                 "Administrator",
                 "Manager",
                 "Support",
                 "Restricted User",
               ]}
-              // value={assigned}
-              // onChange={(_, newValue) => setAssigned(newValue)}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => {
                   const tagProps = getTagProps({ index });
@@ -113,31 +103,6 @@ export default function AddPermissionsDialog({
                   );
                 })
               }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  placeholder="Add roles"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "7px",
-                      marginTop: "8px",
-                      paddingX: "12px",
-                      paddingY: "1px",
-                      fontSize: "14px",
-                    },
-                    "& .MuiButtonBase-root": {
-                      height: "20px",
-                    },
-                    "& .MuiChip-label": {
-                      paddingX: "8px",
-                    },
-                    "& .MuiSvgIcon-root": {
-                      width: "12px",
-                      height: "12px",
-                    },
-                  }}
-                />
-              )}
             />
           </div>
         </DialogContent>

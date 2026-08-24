@@ -7,7 +7,8 @@ import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
 import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Users } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
@@ -16,6 +17,7 @@ interface ContactTableProps {
   isLoading: boolean;
   isError?: boolean;
   errorMessage?: string;
+  onRetry?: () => void;
   rowCount: number;
 
   onStateChange?: (state: SuperTableState) => void;
@@ -39,6 +41,7 @@ export const ContactTable = ({
   isLoading,
   isError,
   errorMessage,
+  onRetry,
   rowCount,
   onStateChange,
   onExportRequest,
@@ -73,13 +76,25 @@ export const ContactTable = ({
   return (
     <>
       <SuperTable<Contact>
+        tableId="contacts-table"
         data={data}
         columns={contactColumns}
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage}
+        onRetry={onRetry}
         rowCount={rowCount}
+        renderEmptyState={() => (
+          <EmptyState
+            icon={Users}
+            title="No contacts found"
+            description="Add your first contact or import an existing list to get started."
+            action={{ label: "Add Contact", onClick: onOpenAdd, icon: <Plus size={16} /> }}
+          />
+        )}
         manualPagination={true}
+        manualFiltering={true}
+        manualSorting={true}
         autoResetPageIndex={false}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
@@ -342,7 +357,7 @@ export const ContactTable = ({
                   <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                     Additional Info
                   </Typography>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {Object.entries(previewContact.custom_fields).map(([key, value]) => (
                       <div key={key} className="bg-gray-50 rounded-lg p-2.5">
                         <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, " ")}</p>

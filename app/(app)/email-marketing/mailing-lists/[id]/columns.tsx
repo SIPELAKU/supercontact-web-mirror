@@ -1,4 +1,4 @@
-import { MRT_ColumnDef } from "material-react-table";
+import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { Subscriber, Campaign } from "@/lib/types/email-marketing";
 import { format } from "date-fns";
 
@@ -10,13 +10,13 @@ export const subscriberColumns: MRT_ColumnDef<Subscriber>[] = [
   },
   {
     accessorKey: "name",
-    header: "Nama",
+    header: "Name",
     enableColumnFilter: true,
     Cell: ({ cell }) => cell.getValue<string>() || "-",
   },
   {
     accessorKey: "company",
-    header: "Nama Perusahaan",
+    header: "Company",
     enableColumnFilter: true,
     Cell: ({ cell }) => cell.getValue<string>() || "-",
   },
@@ -30,7 +30,7 @@ export const campaignColumns: MRT_ColumnDef<Campaign>[] = [
   },
   {
     accessorKey: "sent_at",
-    header: "Sent Date",
+    header: "Sent",
     enableColumnFilter: false,
     Cell: ({ cell }) =>
       cell.getValue<string>()

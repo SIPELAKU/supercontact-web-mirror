@@ -1,10 +1,15 @@
 "use client";
 
+import { notFound } from "next/navigation";
+
 import React, { useState } from "react";
 import { AppDatePicker, DatePickerValue } from "@/components/ui/app-datepicker";
 import { Box, Typography, Divider } from "@mui/material";
 
 export default function DatePickerTestPage() {
+  // Dev-only page: hidden in production builds
+  if (process.env.NODE_ENV === "production") notFound();
+
   const [singleDate, setSingleDate] = useState<DatePickerValue>(new Date());
   const [rangeDate, setRangeDate] = useState<DatePickerValue>([
     new Date(),

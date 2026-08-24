@@ -419,6 +419,15 @@ export interface WebWidgetConfig {
   answer_bot_min_confidence: number;
   answer_bot_intro_text: string | null;
   answer_bot_no_answer_text: string | null;
+  /** Idle auto-close. A widget chat is a session, not a mailbox: a visitor
+   *  who walks away otherwise leaves it OPEN forever, holding the
+   *  assignee's capacity and never producing CSAT. Off by default. */
+  auto_close_idle_enabled: boolean;
+  idle_warn_minutes: number;
+  idle_close_minutes: number;
+  /** Empty disables the whole cycle - closing a chat that was never asked
+   *  reads as the chat vanishing. */
+  idle_warn_text: string | null;
   // i18n: admin-configurable widget language. null/undefined = "Automatic"
   // (the widget uses its embed data-locale attribute or its own default);
   // otherwise one of the shipped string-pack locales ("id" | "en").

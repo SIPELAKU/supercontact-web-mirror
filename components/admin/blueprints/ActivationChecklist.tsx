@@ -29,6 +29,13 @@ const DESTINATION: Record<ChecklistKind, { label: string; href: string }> = {
         label: "Mode automation akun",
         href: "/settings/web-widget",
     },
+    kb_article: {
+        // The article LIST lives at /knowledge-base itself. There is no
+        // articles/page.tsx - that path only holds [id] and new - so
+        // /knowledge-base/articles is a 404.
+        label: "Knowledge Base",
+        href: "/knowledge-base",
+    },
 };
 
 export default function ActivationChecklist() {
@@ -89,7 +96,11 @@ export default function ActivationChecklist() {
                     <section key={kind} className="rounded-lg border">
                         <header className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5">
                             <h3 className="text-sm font-medium">
-                                {dest?.label || kind} ({items.length})
+                                {/* An aggregated kind (kb_article) is ONE row standing
+                                    for many, so items.length would read "(1)" next to a
+                                    row that says "32 artikel". Prefer the real total. */}
+                                {dest?.label || kind} (
+                                {items.reduce((sum, i) => sum + (i.count ?? 1), 0)})
                             </h3>
                             {dest && (
                                 <Link

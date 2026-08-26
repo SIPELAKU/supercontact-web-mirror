@@ -11,7 +11,6 @@ import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
 import { Subscriber } from '@/lib/types/email-marketing';
-import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 
 interface SubscribersTableProps {
   subscribers: Subscriber[];
@@ -48,7 +47,6 @@ const SubscribersTable = ({
   isDuplicating,
   onSuccess,
 }: SubscribersTableProps) => {
-  const [previewSubscriber, setPreviewSubscriber] = useState<Subscriber | null>(null);
   const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
@@ -121,6 +119,9 @@ const SubscribersTable = ({
             sorting: state.sorting || [],
           });
         }}
+        // Class A in the README rule: a scalar record with no route of its
+        // own, so the row opens the edit modal rather than navigating.
+        onRowClick={(row) => onEdit(row)}
         onExportRequest={onExportRequest}
         initialState={{
           pagination: {
@@ -209,10 +210,6 @@ const SubscribersTable = ({
         ]}
       />
 
-      <SubscriberPreviewPopup
-        subscriber={previewSubscriber}
-        onClose={() => setPreviewSubscriber(null)}
-      />
 
       <SaveAsModal
         open={isSaveAsModalOpen}

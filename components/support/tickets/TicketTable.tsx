@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Ticket as TicketGlyph, Plus } from "lucide-react";
+import { Ticket as TicketGlyph, Pencil, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Ticket, TicketStatus } from "@/lib/types/Ticket";
 import { TicketPriorityBadge, TicketStatusBadge, TicketTypeBadge } from "./TicketBadges";
@@ -64,6 +65,7 @@ export function TicketTable({
     onBulkStatusChange,
     isBulkChangingStatus,
 }: TicketTableProps) {
+    const router = useRouter();
     const { data: agentsData } = useAssignableAgents();
     const { can } = usePermission();
     const canWrite = can(["tickets:write:my", "tickets:write:team", "tickets"]);
@@ -169,27 +171,39 @@ export function TicketTable({
                     );
                 },
             },
-            {
-                id: "actions",
-                header: "Action",
-                enableColumnFilter: false,
-                enableSorting: false,
-                enableHiding: false,
-                size: 100, // Make it compact
-                Cell: ({ row }) => (
-                    <div className="flex justify-start gap-1">
-                        {canWrite && <EditButton onClick={() => onEdit(row.original)} />}
-                        {canDelete && <DeleteButton onClick={() => onDelete(row.original)} />}
-                    </div>
-                ),
-            },
         ],
-        [onEdit, onDelete, agentOptions, canWrite, canDelete]
+        [agentOptions]
     );
 
     return (
         <SuperTable<Ticket>
             tableId="tickets-table"
+            // Class B: this module has the best record page in the app and,
+            // until now, no way to reach it from the row. The ticket_code
+            // column was already a real Link - primaryColumn makes that the
+            // documented pattern rather than a one-off.
+            primaryColumn={{
+                accessorKey: "ticket_code",
+                href: (row) => `/support/tickets/${row.id}`,
+            }}
+            onRowClick={(row) => router.push(`/support/tickets/${row.id}`)}
+            rowActions={[
+                {
+                    id: "edit",
+                    label: "Edit",
+                    icon: <Pencil size={16} />,
+                    hidden: () => !canWrite,
+                    onClick: (row) => onEdit(row),
+                },
+                {
+                    id: "delete",
+                    label: "Delete",
+                    icon: <Trash2 size={16} />,
+                    hidden: () => !canDelete,
+                    destructive: true,
+                    onClick: (row) => onDelete(row),
+                },
+            ]}
             columns={columns}
             data={tickets || []}
             isLoading={isLoading}

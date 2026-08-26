@@ -22,7 +22,6 @@ interface TableListUsersProps {
   onExportRequest?: (params: any) => Promise<ManageUser[]>;
   onEdit: (user: ManageUser) => void;
   onDelete: (user: ManageUser) => void;
-  onView: (user: ManageUser) => void;
   onBulkDelete?: (users: ManageUser[], clearSelection: () => void) => Promise<void>;
   isBulkDeleting?: boolean;
   renderTopLeftToolbar?: () => React.ReactNode;
@@ -41,7 +40,6 @@ export default function TableListUsers({
   onExportRequest,
   onEdit,
   onDelete,
-  onView,
   onBulkDelete,
   isBulkDeleting,
   renderTopLeftToolbar,
@@ -117,13 +115,12 @@ export default function TableListUsers({
       },
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-          <ViewButton onClick={() => onView(row.original)} />
           <EditButton onClick={() => onEdit(row.original)} />
           <DeleteButton onClick={() => onDelete(row.original)} />
         </Box>
       ),
     },
-  ], [onDelete, onEdit, onView]);
+  ], [onDelete, onEdit]);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">

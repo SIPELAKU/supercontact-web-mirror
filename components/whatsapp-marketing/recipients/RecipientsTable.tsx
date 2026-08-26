@@ -3,15 +3,13 @@
 
 import { useMemo, useState } from 'react';
 import { Box, Stack, IconButton, Tooltip } from '@mui/material';
-import { Plus, Trash2, Upload, Eye, Save, MessageSquare } from 'lucide-react';
+import { Copy, MessageSquare, Pencil, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
-import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
-import { WaRecipientPreviewPopup } from './WaRecipientPreviewPopup';
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 interface RecipientsTableProps {
@@ -49,7 +47,6 @@ const RecipientsTable = ({
   isDuplicating,
   onSuccess,
 }: RecipientsTableProps) => {
-  const [previewRecipient, setPreviewRecipient] = useState<WaRecipient | null>(null);
   const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
@@ -222,31 +219,29 @@ const RecipientsTable = ({
             </AppButton>
           </Stack>
         )}
-        renderRowActions={({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-            <Tooltip title="Preview">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewRecipient(row.original);
-                }}
-                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
-              >
-                <Eye size={18} />
-              </IconButton>
-            </Tooltip>
-            <EditButton onClick={() => onEdit(row.original)} />
-            <DuplicateButton onClick={() => onDuplicate && onDuplicate([row.original.id], 'recipient')} />
-            <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
-          </Box>
-        )}
+        // Class A: no route of its own, so the row opens the edit modal.
+        onRowClick={(row) => onEdit(row)}
+        rowActions={[
+          { id: 'edit', label: 'Edit', icon: <Pencil size={16} />, onClick: (row) => onEdit(row) },
+          {
+            id: 'duplicate',
+            label: 'Duplicate',
+            icon: <Copy size={16} />,
+            hidden: () => !onDuplicate,
+            onClick: (row) => onDuplicate?.([row.id], 'recipient'),
+          },
+          {
+            // Pinned: this is one of the lists people cull daily.
+            id: 'delete',
+            label: 'Delete',
+            icon: <Trash2 size={16} />,
+            placement: 'quick',
+            destructive: true,
+            onClick: (row) => onDeleteRequest([row.id]),
+          },
+        ]}
       />
 
-      <WaRecipientPreviewPopup
-        recipient={previewRecipient}
-        onClose={() => setPreviewRecipient(null)}
-      />
 
       <SaveAsModal
         open={isSaveAsModalOpen}

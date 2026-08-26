@@ -56,7 +56,6 @@ export const ContactTable = ({
   isDuplicating,
   onSuccess,
 }: ContactTableProps) => {
-  const [previewContact, setPreviewContact] = useState<Contact | null>(null);
   const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
@@ -118,15 +117,6 @@ export const ContactTable = ({
         onRowClick={(row) => onDetail(row)}
         renderRowActions={({ row }) => (
           <div className="flex gap-1">
-            <IconButton
-              size="small"
-              onClick={() => {
-                setPreviewContact(row.original);
-              }}
-              sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }}
-            >
-              <Eye size={18} />
-            </IconButton>
             <EditButton onClick={() => onEdit(row.original)} />
             <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
             <DeleteButton onClick={() => onDelete(row.original)} />
@@ -214,185 +204,6 @@ export const ContactTable = ({
         )}
       />
 
-      {/* Contact Preview Dialog */}
-      <Dialog
-        open={Boolean(previewContact)}
-        onClose={() => setPreviewContact(null)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 3, overflow: 'hidden' }
-        }}
-      >
-        {previewContact && (
-          <>
-            {/* Header */}
-            <DialogTitle
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                pb: 1, pt: 3, px: 3,
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#5479EE] flex items-center justify-center text-white text-lg font-bold">
-                  {previewContact.name?.charAt(0)?.toUpperCase() || "?"}
-                </div>
-                <div>
-                  <Typography variant="h6" fontWeight={700}>{previewContact.name}</Typography>
-                  {previewContact.position && (
-                    <Typography variant="body2" color="text.secondary">{previewContact.position}</Typography>
-                  )}
-                </div>
-              </div>
-              <IconButton onClick={() => setPreviewContact(null)} size="small">
-                <X size={20} />
-              </IconButton>
-            </DialogTitle>
-
-            <DialogContent sx={{ px: 3, pb: 3 }}>
-              <Divider sx={{ mb: 2.5 }} />
-
-              {/* Contact Info Grid */}
-              <div className="space-y-3">
-                {previewContact.email && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                      <Mail size={16} className="text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Email</p>
-                      <p className="text-sm font-medium text-gray-900">{previewContact.email}</p>
-                    </div>
-                  </div>
-                )}
-                {previewContact.phone_number && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-                      <Phone size={16} className="text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Phone</p>
-                      <p className="text-sm font-medium text-gray-900">{previewContact.phone_number}</p>
-                    </div>
-                  </div>
-                )}
-                {previewContact.company && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                      <Building2 size={16} className="text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Company</p>
-                      <p className="text-sm font-medium text-gray-900">{previewContact.company}</p>
-                    </div>
-                  </div>
-                )}
-                {previewContact.position && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                      <Briefcase size={16} className="text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Position</p>
-                      <p className="text-sm font-medium text-gray-900">{previewContact.position}</p>
-                    </div>
-                  </div>
-                )}
-                {previewContact.address && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
-                      <MapPin size={16} className="text-rose-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Address</p>
-                      <p className="text-sm font-medium text-gray-900">{previewContact.address}</p>
-                    </div>
-                  </div>
-                )}
-                {previewContact.created_at && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                      <Calendar size={16} className="text-gray-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Created</p>
-                      <p className="text-sm font-medium text-gray-900">{formatDate(previewContact.created_at)}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                {/* Subscription Status */}
-                <div className="flex items-center gap-2">
-                  <Chip
-                    label={previewContact.is_subscriber ? "Subscribed" : "Not Subscribed"}
-                    size="small"
-                    color={previewContact.is_subscriber ? "success" : "default"}
-                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                  />
-                </div>
-                {/* Recipient Status */}
-                <div className="flex items-center gap-2">
-                  <Chip
-                    label={previewContact.is_recipient ? "Recipient" : "Not Recipient"}
-                    size="small"
-                    color={previewContact.is_recipient ? "success" : "default"}
-                    sx={{ fontWeight: 600, fontSize: '0.75rem' }}
-                  />
-                </div>
-              </Stack>
-
-              {/* Custom Fields */}
-              {previewContact.custom_fields && Object.keys(previewContact.custom_fields).length > 0 && (
-                <>
-                  <Divider sx={{ my: 2.5 }} />
-                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                    Additional Info
-                  </Typography>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {Object.entries(previewContact.custom_fields).map(([key, value]) => (
-                      <div key={key} className="bg-gray-50 rounded-lg p-2.5">
-                        <p className="text-xs text-gray-500 capitalize">{key.replace(/_/g, " ")}</p>
-                        <p className="text-sm font-medium text-gray-900">{value || "-"}</p>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 mt-5">
-                <AppButton
-                  variantStyle="primary"
-                  color="primary"
-                  className="flex-1"
-                  onClick={() => {
-                    const contact = previewContact;
-                    setPreviewContact(null);
-                    onDetail(contact);
-                  }}
-                >
-                  View Full Details
-                </AppButton>
-                <AppButton
-                  variantStyle="outline"
-                  color="primary"
-                  onClick={() => {
-                    const contact = previewContact;
-                    setPreviewContact(null);
-                    onEdit(contact);
-                  }}
-                >
-                  Edit
-                </AppButton>
-              </div>
-            </DialogContent>
-          </>
-        )}
-      </Dialog>
 
       <SaveAsModal
         open={isSaveAsModalOpen}

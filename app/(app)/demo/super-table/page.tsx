@@ -551,6 +551,77 @@ const ServerSideDemo = () => {
 // ========================================================================
 // PAGE EXPORT
 // ========================================================================
+// ── rowActions + primaryColumn, proved here before any customer screen ──────
+// Every state the renderer has to get right, on one table: a plain action, a
+// hidden one, one disabled WITH a readable reason, a pinned "quick" one, and a
+// destructive one below the divider. Narrow the window past 720px and the same
+// array renders as a labelled bottom sheet.
+function RowActionsDemo() {
+  const rows = React.useMemo(
+    () => [
+      { id: '1', name: 'Kampanye Promo Agustus', status: 'Sent' },
+      { id: '2', name: 'Newsletter Mingguan', status: 'Draft' },
+      { id: '3', name: 'Blast Akhir Pekan', status: 'In Queue' },
+    ],
+    []
+  );
+
+  const columns = React.useMemo(
+    () => [
+      { accessorKey: 'name', header: 'Nama' },
+      { accessorKey: 'status', header: 'Status' },
+    ],
+    []
+  );
+
+  return (
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          Row Actions — satu kebab, bukan gerombolan ikon
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Nama barisnya adalah tautan asli (primaryColumn). Aksi dideklarasikan
+          sebagai array, jadi varian mobile-nya ditulis sekali di SuperTable.
+          Perhatikan Edit pada baris &ldquo;Sent&rdquo;: alasannya TERBACA, bukan
+          bersembunyi di tooltip pada tombol yang tak bisa difokus.
+        </Typography>
+        <SuperTable
+          tableId="demo-row-actions"
+          data={rows}
+          columns={columns}
+          primaryColumn={{ accessorKey: 'name', href: (row: any) => `/demo/super-table#${row.id}` }}
+          rowActions={(row: any) => [
+            { id: 'open', label: 'Buka', onClick: () => {} },
+            {
+              id: 'stop',
+              label: 'Hentikan pengiriman',
+              hidden: () => row.status !== 'In Queue',
+              onClick: () => {},
+            },
+            {
+              id: 'edit',
+              label: 'Edit',
+              disabled: () =>
+                row.status === 'Sent' ? 'Hanya Draft dan Failed yang bisa diedit' : false,
+              onClick: () => {},
+            },
+            {
+              id: 'delete',
+              label: 'Hapus',
+              placement: 'quick',
+              destructive: true,
+              onClick: () => {},
+            },
+          ]}
+          features={{ pagination: false, globalFilter: false }}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+
 export default function SuperTableDemoPage() {
   // Dev-only page: hidden in production builds
   if (process.env.NODE_ENV === "production") notFound();
@@ -607,6 +678,7 @@ export default function SuperTableDemoPage() {
         </CardContent>
       </Card>
 
+      <RowActionsDemo />
       <AccessorFnFormattingDemo />
       <BulkDeleteDemo />
 

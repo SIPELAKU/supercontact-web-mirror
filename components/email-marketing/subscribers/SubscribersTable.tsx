@@ -2,15 +2,14 @@
 "use client";
 
 import { useMemo, useState } from 'react';
-import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Copy, Eye, MailPlus, Plus, Save, Trash2 } from 'lucide-react';
+import { Stack } from '@mui/material';
+import { Copy, MailPlus, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
-import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 
@@ -182,26 +181,32 @@ const SubscribersTable = ({
             </AppButton>
           </Stack>
         )}
-        renderRowActions={({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-            <Tooltip title="Preview">
-              <IconButton
-                size="small"
-                aria-label="Preview subscriber"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewSubscriber(row.original);
-                }}
-                sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }}
-              >
-                <Eye size={18} />
-              </IconButton>
-            </Tooltip>
-            <EditButton onClick={() => onEdit(row.original)} />
-            <DuplicateButton onClick={() => onDuplicate && onDuplicate([row.original.id])} />
-            <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
-          </Box>
-        )}
+        rowActions={[
+          {
+            id: 'edit',
+            label: 'Edit',
+            icon: <Pencil size={16} />,
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: 'duplicate',
+            label: 'Duplicate',
+            icon: <Copy size={16} />,
+            hidden: () => !onDuplicate,
+            onClick: (row) => onDuplicate?.([row.id]),
+          },
+          {
+            // Pinned rather than tucked into the menu: culling a subscriber
+            // list is daily work here, and burying Delete behind two clicks
+            // would be a real regression for the people who do it.
+            id: 'delete',
+            label: 'Delete',
+            icon: <Trash2 size={16} />,
+            placement: 'quick',
+            destructive: true,
+            onClick: (row) => onDeleteRequest([row.id]),
+          },
+        ]}
       />
 
       <SubscriberPreviewPopup

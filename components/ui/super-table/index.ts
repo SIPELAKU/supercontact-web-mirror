@@ -13,6 +13,7 @@ export type {
   SuperTableCallbacks,
   SuperTableSlots,
   SuperTableServerProps,
+  SuperTableRowAction,
 } from './types';
 
 // -------------------------------------------------------------

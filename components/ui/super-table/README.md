@@ -75,6 +75,8 @@ export default function ProductTable() {
 | `isLoading` | `boolean` | Menampilkan skeleton loading otomatis | `false` |
 | `enableRowSelection` | `boolean` | Memunculkan checkbox tiap row | `false` |
 | `enableGlobalFilter` | `boolean` | Memunculkan search bar | `true` |
+| `rowActions` | `SuperTableRowAction[]` atau `(row) => …` | Aksi baris sebagai DATA. Dirender jadi satu kebab di desktop dan drawer bawah berlabel 48px di layar sempit. `disabled` boleh mengembalikan string - string itu jadi alasan yang terbaca. `placement:'quick'` menyematkan di luar menu (pakai hemat). Lebih disukai daripada `renderRowActions`. | - |
+| `primaryColumn` | `{ accessorKey, href }` | Membungkus satu kolom jadi `<a href>` asli menuju rekamannya - titik masuk yang benar secara aksesibilitas. JANGAN pakai `role="link"` di `<tr>`. | - |
 | `renderFilters` | `function` | Kontrol filter di dalam toolbar tabel, paling kiri. TIDAK digantikan BulkActionsBar saat ada baris tercentang, jadi filter aktif tetap terlihat selama bulk action. Jangan dipakai bersama `features.columnFilters: true`. Wajib MENGEMBALIKAN `null` bila kosong. | - |
 | `renderTopLeftToolbar` | `function` | Injeksi tombol Add/Import ke kiri toolbar. Diganti total oleh BulkActionsBar saat ada seleksi - jangan taruh filter di sini. | - |
 | `renderBulkActions` | `function` | Memunculkan action ketika ada baris yang dicentang | - |

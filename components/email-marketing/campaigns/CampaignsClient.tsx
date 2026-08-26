@@ -256,10 +256,11 @@ export default function CampaignsClient() {
   const handleEdit = (campaign: Campaign) =>
     router.push(`/email-marketing/campaigns/${campaign.id}/edit`);
 
-  const handleView = (campaign: Campaign) => {
-    setSelectedCampaign(campaign);
-    setViewModalOpen(true);
-  };
+  // The record now has a page of its own, so this navigates instead of
+  // opening a dialog. A Draft has no statistics to read; that page sends it
+  // straight to the composer.
+  const handleView = (campaign: Campaign) =>
+    router.push(`/email-marketing/campaigns/${campaign.id}`);
 
   const handleDeleteRequest = (campaign: Campaign) => {
     setCampaignToDelete(campaign);

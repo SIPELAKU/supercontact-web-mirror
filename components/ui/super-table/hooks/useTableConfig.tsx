@@ -1,6 +1,7 @@
 import React from 'react';
 import { IconButton, Tooltip, Box } from '@mui/material';
 import { Pencil } from 'lucide-react';
+import Link from 'next/link';
 import {
   MRT_TableInstance,
   MRT_TableOptions,
@@ -15,6 +16,7 @@ import { useSavedFilters } from './useSavedFilters';
 import { BulkActionsBar } from '../components/BulkActionsBar';
 import { ErrorState } from '../components/ErrorState';
 import { TableToolbarActions } from '../components/TableToolbarActions';
+import { RowActionsCell } from '../components/RowActionsCell';
 
 export function useTableConfig<TData extends object>(
   props: SuperTableProps<TData>,
@@ -67,11 +69,35 @@ export function useTableConfig<TData extends object>(
     );
   }
 
+  // The accessible entry point into a record: ONE real <a> per row, whose
+  // accessible name is the record's own title. Deliberately not role="link"
+  // on the <tr> - that breaks the rowgroup>row>cell tree and nests the
+  // selection checkbox inside a link.
+  const columns = props.primaryColumn
+    ? (props.columns || []).map((col: any) => {
+        if (col.accessorKey !== props.primaryColumn!.accessorKey) return col;
+        const Original = col.Cell;
+        return {
+          ...col,
+          Cell: (cellProps: any) => (
+            <Link
+              href={props.primaryColumn!.href(cellProps.row.original)}
+              className="font-medium text-[color:var(--brand,#5479EE)] hover:underline"
+            >
+              {Original
+                ? Original(cellProps)
+                : String(cellProps.cell.getValue() ?? '')}
+            </Link>
+          ),
+        };
+      })
+    : props.columns || [];
+
   // 2. BUILD CORE OPTIONS
   const mrtConfig: Partial<MRT_TableOptions<TData>> = {
     // ─── Data & State Pointers ────────
     data: props.data || [],
-    columns: props.columns || [],
+    columns,
     layoutMode: 'semantic',
     state: {
       isLoading: props.isLoading,
@@ -105,7 +131,9 @@ export function useTableConfig<TData extends object>(
     // ─── Force Native Internal Columns Size (FIX Spacer Bug) ─
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        size: 80,
+        // MRT turns `size` into a hard min-width. Six 26px IconButtons forced
+        // ~176px; one kebab needs ~56.
+        size: props.rowActions ? 56 : 80,
         grow: false,
       },
       'mrt-row-select': {
@@ -238,7 +266,7 @@ export function useTableConfig<TData extends object>(
   }
 
   // Row Actions (Tombol Save/Cancel saat Update atau Render prop parent)
-  if (props.renderRowActions || inlineEditing === 'row') {
+  if (props.renderRowActions || props.rowActions || inlineEditing === 'row') {
     mrtConfig.enableRowActions = true;
     mrtConfig.positionActionsColumn = 'last';
 
@@ -264,6 +292,16 @@ export function useTableConfig<TData extends object>(
             {props.renderRowActions?.({ row, table })}
           </Box>
         );
+      }
+
+      // Declarative form wins: it is the one SuperTable can render as a
+      // menu on desktop and a labelled bottom sheet on a phone.
+      if (props.rowActions) {
+        const list =
+          typeof props.rowActions === 'function'
+            ? props.rowActions(row.original)
+            : props.rowActions;
+        return <RowActionsCell row={row.original} table={table} actions={list} />;
       }
 
       const actions = props.renderRowActions?.({ row, table });

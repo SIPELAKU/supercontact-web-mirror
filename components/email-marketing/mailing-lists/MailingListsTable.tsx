@@ -1,14 +1,12 @@
 // components/email-marketing/mailing-lists/MailingListsTable.tsx
 "use client";
 
-import { Box } from '@mui/material';
 import { format } from 'date-fns';
-import { Mail, Plus } from 'lucide-react';
+import { Mail, Pencil, Plus, Trash2 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
 import { fetchMailingLists } from '@/lib/api';
@@ -141,13 +139,28 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
         });
       }}
       onExportRequest={handleExportRequest as any}
+      // The name is the way in: a real link, so it works with middle-click,
+      // Cmd-click and the keyboard. Row click stays as a mouse convenience.
+      primaryColumn={{
+        accessorKey: 'name',
+        href: (row) => `/email-marketing/mailing-lists/${row.id}`,
+      }}
       onRowClick={(row) => router.push(`/email-marketing/mailing-lists/${row.id}`)}
-      renderRowActions={({ row }) => (
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <EditButton onClick={() => onEdit(row.original)} />
-          <DeleteButton onClick={() => onDeleteRequest(row.original)} />
-        </Box>
-      )}
+      rowActions={[
+        {
+          id: 'edit',
+          label: 'Edit',
+          icon: <Pencil size={16} />,
+          onClick: (row) => onEdit(row),
+        },
+        {
+          id: 'delete',
+          label: 'Delete',
+          icon: <Trash2 size={16} />,
+          destructive: true,
+          onClick: (row) => onDeleteRequest(row),
+        },
+      ]}
       renderEmptyState={() => (
         <EmptyState
           icon={Mail}

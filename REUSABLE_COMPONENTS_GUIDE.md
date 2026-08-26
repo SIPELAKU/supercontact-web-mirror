@@ -145,6 +145,47 @@ The standard data table (wraps Material React Table). Golden rules:
    page 1 **and** clears the row selection, so the bulk bar can't keep counting rows
    the server no longer returns.
 
+8. **Row actions**: prefer `rowActions` (an array of `SuperTableRowAction`, or a
+   function of the row) over `renderRowActions`. Declaring them as data is what
+   lets SuperTable render one kebab on desktop and a labelled 48px bottom sheet
+   on a phone — written once, instead of per screen. `renderRowActions` stays
+   supported with no end date, for genuinely odd cases such as a table nested
+   inside a modal.
+   - `disabled` may return a **string**: it disables the action *and* becomes the
+     reason, shown as readable text under the label. Never put the reason in a
+     tooltip on a disabled icon button — MUI lands the accessible name on a
+     non-focusable `<span>` and the button leaves the tab order, so keyboard,
+     screen-reader and touch users never see it.
+     Prefer `disabled` over `hidden` when the user could plausibly expect the
+     action: an explained absence teaches, a silent one confuses.
+   - `placement: 'quick'` pins an action outside the menu. Spend it sparingly —
+     every pinned icon puts back some of the noise the kebab just removed. It is
+     earned by actions performed dozens of times a day on that screen (Delete on
+     Subscribers, Contacts and WA Recipients qualifies; Delete elsewhere does not).
+   - `destructive: true` colours it and moves it below a divider.
+
+9. **The row opens the record — do not also ship a View icon.** Give the table a
+   `primaryColumn` and the named column becomes a real `<a href>`: one tab stop
+   per row, accessible name = the record's own title, and middle-click and
+   open-in-new-tab work for free. Add `onRowClick` on top as a mouse
+   convenience. Never put `role="link"` or `tabIndex` on the `<tr>` — it breaks
+   the rowgroup>row>cell tree, collapses the whole row into one accessible name,
+   and nests the selection checkbox inside a link.
+
+   **Where the click goes — three classes.** The gesture is standard; the
+   destination follows the record:
+   - **A — scalar record, no detail route** (most screens): opens the existing
+     edit modal. Do not build a page for 3-6 fields nobody asked for.
+   - **B — a real `[id]` page exists**: routes there, and that page reads *and*
+     edits in place.
+   - **C — the editor is the page** (campaign composer, flow studio, template
+     builder, smart-capture wizard): routes to the read surface, and the kebab
+     carries the state-dependent call to action. Route by state where it helps —
+     a Draft campaign goes to the composer, a sent one to its statistics.
+
+   Anything inside `data-st-no-row-click` never triggers the row click; the
+   actions cell carries it for you, so a caller does not need `stopPropagation`.
+
 See `components/ui/super-table/README.md` and `types.ts` for the full API, and
 `app/(app)/demo/super-table` (dev-only) for a live playground.
 

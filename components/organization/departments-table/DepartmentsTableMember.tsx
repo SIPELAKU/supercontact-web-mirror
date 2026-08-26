@@ -3,10 +3,9 @@
 import React, { useMemo } from "react";
 import { Avatar, Box } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Trash2 } from "lucide-react";
 
 interface FormattedMember {
   id: string;
@@ -109,19 +108,7 @@ export default function DepartmentsTableMember({
       columnFilterModeOptions: undefined,
       Cell: ({ row }) => getStatusBadge(row.original.status),
     },
-    {
-      id: "actions",
-      header: "Actions",
-      enableColumnFilter: false,
-      enableSorting: false,
-      size: 80,
-      Cell: ({ row }) => (
-        <Box onClick={(e) => e.stopPropagation()}>
-          <DeleteButton onClick={() => onDelete(departmentId, row.original.id)} />
-        </Box>
-      ),
-    },
-  ], [departmentId, onDelete]);
+  ], []);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
@@ -152,6 +139,15 @@ export default function DepartmentsTableMember({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        rowActions={[
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => onDelete(departmentId, row.id),
+          },
+        ]}
         renderBulkActions={onBulkDelete ? ({ selectedRows, clearSelection }) => (
           <AppButton
             variantStyle="danger"

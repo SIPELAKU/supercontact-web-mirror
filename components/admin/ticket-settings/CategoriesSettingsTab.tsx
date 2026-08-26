@@ -114,24 +114,21 @@ export default function CategoriesSettingsTab() {
                 isError={isError}
                 errorMessage="Failed to load ticket categories. Please try again."
                 onRetry={() => refetch()}
-                renderRowActions={({ row }) => (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => handleEdit(row.original)}
-                            className="text-gray-300 hover:text-gray-700"
-                            aria-label="Edit category"
-                        >
-                            <Pencil size={16} />
-                        </button>
-                        <button
-                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                            className="text-gray-300 hover:text-red-500"
-                            aria-label="Delete category"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                )}
+                rowActions={[
+                    {
+                        id: "edit",
+                        label: "Edit",
+                        icon: <Pencil size={16} />,
+                        onClick: (row) => handleEdit(row),
+                    },
+                    {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 size={16} />,
+                        destructive: true,
+                        onClick: (row) => setDeleteTarget({ id: row.id, name: row.name }),
+                    },
+                ]}
                 renderEmptyState={() => (
                     <EmptyState
                         icon={Tags}

@@ -5,9 +5,8 @@ import { Contact } from "@/lib/models/types";
 import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
-import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Users } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Users, Pencil, Copy } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
@@ -115,13 +114,27 @@ export const ContactTable = ({
           },
         }}
         onRowClick={(row) => onDetail(row)}
-        renderRowActions={({ row }) => (
-          <div className="flex gap-1">
-            <EditButton onClick={() => onEdit(row.original)} />
-            <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
-            <DeleteButton onClick={() => onDelete(row.original)} />
-          </div>
-        )}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: "duplicate",
+            label: "Duplicate",
+            icon: <Copy size={16} />,
+            onClick: (row) => onDuplicate?.([row]),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => onDelete(row),
+          },
+        ]}
         renderTopLeftToolbar={() => (
           <>
             {/* Desktop */}

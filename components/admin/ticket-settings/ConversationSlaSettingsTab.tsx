@@ -222,13 +222,15 @@ export default function ConversationSlaSettingsTab() {
         header: "Active",
         enableColumnFilter: false,
         Cell: ({ row }) => (
-          <Switch
-            size="small"
-            checked={row.original.is_active}
-            onChange={() => handleToggleActive(row.original)}
-            disabled={!canManage || updateMutation.isPending}
-            inputProps={{ "aria-label": `Toggle ${row.original.name} active` }}
-          />
+          <span data-st-no-row-click>
+            <Switch
+              size="small"
+              checked={row.original.is_active}
+              onChange={() => handleToggleActive(row.original)}
+              disabled={!canManage || updateMutation.isPending}
+              inputProps={{ "aria-label": `Toggle ${row.original.name} active` }}
+            />
+          </span>
         ),
       },
     ],
@@ -272,28 +274,24 @@ export default function ConversationSlaSettingsTab() {
         isError={isError}
         errorMessage="Failed to load conversation SLA policies. Please try again."
         onRetry={() => refetch()}
-        renderRowActions={
-          canManage
-            ? ({ row }) => (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEdit(row.original)}
-                    className="text-gray-300 hover:text-gray-700"
-                    aria-label="Edit SLA policy"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(row.original)}
-                    className="text-gray-300 hover:text-red-500"
-                    aria-label="Delete SLA policy"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )
-            : undefined
-        }
+        onRowClick={canManage ? (row) => openEdit(row) : undefined}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            hidden: () => !canManage,
+            onClick: (row) => openEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            hidden: () => !canManage,
+            destructive: true,
+            onClick: (row) => setDeleteTarget(row),
+          },
+        ]}
         renderEmptyState={() => (
           <EmptyState
             icon={Timer}

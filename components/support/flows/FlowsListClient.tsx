@@ -256,20 +256,23 @@ export default function FlowsListClient() {
                 isError={isError}
                 errorMessage="Failed to load flows. Please try again."
                 onRetry={() => refetch()}
+                // The name is the way into the studio: a real link, so
+                // middle-click and open-in-new-tab work. Row click stays on top
+                // as a mouse convenience.
+                primaryColumn={{
+                    accessorKey: "name",
+                    href: (row) => `/support/flows/${row.id}/studio`,
+                }}
                 onRowClick={(row) => router.push(`/support/flows/${row.id}/studio`)}
-                renderRowActions={({ row }) => (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => {
-                                setDeleteTarget(row.original);
-                            }}
-                            className="text-gray-300 hover:text-red-500"
-                            aria-label="Delete flow"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                )}
+                rowActions={[
+                    {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 size={16} />,
+                        destructive: true,
+                        onClick: (row) => setDeleteTarget(row),
+                    },
+                ]}
                 renderEmptyState={() => (
                     <EmptyState
                         icon={Workflow}

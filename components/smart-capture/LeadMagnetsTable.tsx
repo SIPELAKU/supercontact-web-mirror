@@ -5,12 +5,11 @@ import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table/types';
 import { AppButton } from '../ui/app-button';
 import Link from 'next/link';
-import { DeleteButton, DuplicateButton, EditButton } from '../ui/app-action-buttons-table';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Eye, FileText, Plus, ChevronDown, Trash2, Copy, Edit3, RefreshCcw, Magnet } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Box, Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
+import { Chip, IconButton, Tooltip, Menu, MenuItem, CircularProgress } from '@mui/material';
 import {
   useUpdateSmartCaptureStatus,
   useDeleteMultipleSmartCaptures,
@@ -281,12 +280,28 @@ const LeadMagnetsTable = ({
             : `/smart-capture/detail/${row.id}`;
           router.push(path);
         }}
-        renderRowActions={({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-            <DuplicateButton onClick={() => handleDuplicate([row.original.id])} />
-            <DeleteButton onClick={() => handleDelete([row.original.id])} />
-          </Box>
-        )}
+        primaryColumn={{
+          accessorKey: 'name',
+          href: (row) =>
+            row.status === 'Draft'
+              ? `/smart-capture/edit/${row.id}`
+              : `/smart-capture/detail/${row.id}`,
+        }}
+        rowActions={[
+          {
+            id: 'duplicate',
+            label: 'Duplicate',
+            icon: <Copy size={16} />,
+            onClick: (row) => handleDuplicate([row.id]),
+          },
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => handleDelete([row.id]),
+          },
+        ]}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <div className="flex gap-2 items-center">
             <AppButton

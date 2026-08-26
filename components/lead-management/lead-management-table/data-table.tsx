@@ -8,8 +8,6 @@ import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Target, Trash2 } from "lucide-react";
-import { Box } from "@mui/material";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { deleteLead } from "@/lib/api";
@@ -154,15 +152,15 @@ export function DataTable({
         onStateChange={onStateChange}
         autoResetPageIndex={false}
         onRowClick={(row) => openDetail(row)}
-        renderRowActions={({ row }) => (
-          <div className="flex gap-1">
-            <Box onClick={(e) => e.stopPropagation()}>
-            </Box>
-            <Box onClick={(e) => e.stopPropagation()}>
-              <DeleteButton onClick={() => setLeadToDelete(row.original)} />
-            </Box>
-          </div>
-        )}
+        rowActions={[
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => setLeadToDelete(row),
+          },
+        ]}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <div className="flex gap-2 items-center">
             <AppButton

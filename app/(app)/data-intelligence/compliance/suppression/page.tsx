@@ -2,13 +2,12 @@
 
 import { format } from 'date-fns';
 import { useMemo, useState } from "react";
-import { Plus, ShieldOff } from "lucide-react";
+import { Plus, ShieldOff, Trash2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import AddSuppressionEntryModal from "@/components/data-intelligence/compliance/AddSuppressionEntryModal";
 import { useSuppressionEntries, useDeleteSuppressionEntry } from "@/lib/hooks/useCompliance";
@@ -123,9 +122,15 @@ export default function SuppressionListPage() {
                         isError={isError}
                         errorMessage="Failed to load the suppression list. Please try again."
                         onRetry={() => refetch()}
-                        renderRowActions={({ row }) => (
-                            <DeleteButton onClick={() => handleDelete(row.original.id)} />
-                        )}
+                        rowActions={[
+                            {
+                                id: "remove",
+                                label: "Remove",
+                                icon: <Trash2 size={16} />,
+                                destructive: true,
+                                onClick: (row) => handleDelete(row.id),
+                            },
+                        ]}
                         renderEmptyState={() => (
                             <EmptyState
                                 icon={ShieldOff}

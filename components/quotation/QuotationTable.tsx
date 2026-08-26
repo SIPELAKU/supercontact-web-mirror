@@ -4,11 +4,10 @@ import React, { useMemo } from "react";
 import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Quotation } from "@/lib/store/quotation";
-import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 import { formatRupiah } from "@/lib/helper/currency";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { FileText, Plus } from "lucide-react";
+import { Eye, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 
 interface QuotationTableProps {
   quotations: Quotation[];
@@ -104,27 +103,7 @@ export default function QuotationTable({
         align: "right",
       },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      enableColumnFilter: false,
-      enableSorting: false,
-      size: 150,
-      muiTableBodyCellProps: {
-        align: "right",
-      },
-      muiTableHeadCellProps: {
-        align: "right",
-      },
-      Cell: ({ row }) => (
-        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-          <ViewButton onClick={() => onView(row.original)} />
-          <EditButton onClick={() => onEdit(row.original)} />
-          {onDelete && <DeleteButton onClick={() => onDelete(row.original)} />}
-        </Box>
-      ),
-    },
-  ], [onView, onEdit, onDelete]);
+  ], []);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
@@ -155,6 +134,30 @@ export default function QuotationTable({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        // No row click here: this table's only way into a quotation is this
+        // action - the [id] route renders the create form, not the record.
+        rowActions={[
+          {
+            id: "view",
+            label: "View",
+            icon: <Eye size={16} />,
+            onClick: (row) => onView(row),
+          },
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            hidden: () => !onDelete,
+            onClick: (row) => onDelete?.(row),
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,

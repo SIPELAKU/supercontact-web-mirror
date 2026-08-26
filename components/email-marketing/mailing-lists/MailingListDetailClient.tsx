@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 import Cookies from 'js-cookie';
 import { Eye, History, Mail, Trash2, Upload, UserPlus } from 'lucide-react';
 
@@ -334,30 +334,23 @@ export default function MailingListDetailClient() {
             urlSync: true,
             export: { excel: true, csv: true },
           }}
-          renderRowActions={({ row }) => (
-            <div className="flex gap-1">
-              <Tooltip title="Preview">
-                <IconButton
-                  size="small"
-                  aria-label="Preview subscriber"
-                  onClick={() => setPreviewSubscriber(row.original)}
-                  sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }}
-                >
-                  <Eye size={18} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Remove from list">
-                <IconButton
-                  size="small"
-                  color="error"
-                  aria-label="Remove from list"
-                  onClick={() => setSubscriberToDelete(row.original)}
-                >
-                  <Trash2 size={18} />
-                </IconButton>
-              </Tooltip>
-            </div>
-          )}
+          // Preview stays: this tab has no subscriber detail route, so the
+          // popup is the only way to read a member from here.
+          rowActions={[
+            {
+              id: 'preview',
+              label: 'Preview',
+              icon: <Eye size={16} />,
+              onClick: (row) => setPreviewSubscriber(row),
+            },
+            {
+              id: 'remove',
+              label: 'Remove from list',
+              icon: <Trash2 size={16} />,
+              destructive: true,
+              onClick: (row) => setSubscriberToDelete(row),
+            },
+          ]}
           renderBulkActions={({ selectedRows, clearSelection }) => (
             <div className="flex gap-2 items-center flex-wrap">
               <AppButton
@@ -438,20 +431,17 @@ export default function MailingListDetailClient() {
             fullScreenToggle: true,
             urlSync: true,
           }}
-          renderRowActions={({ row }) => (
-            <Tooltip title="View statistics">
-              <IconButton
-                size="small"
-                aria-label="View campaign statistics"
-                onClick={() => {
-                  setSelectedCampaign(row.original);
-                  setViewModalOpen(true);
-                }}
-              >
-                <Eye size={18} />
-              </IconButton>
-            </Tooltip>
-          )}
+          rowActions={[
+            {
+              id: 'view-stats',
+              label: 'View statistics',
+              icon: <Eye size={16} />,
+              onClick: (row) => {
+                setSelectedCampaign(row);
+                setViewModalOpen(true);
+              },
+            },
+          ]}
         />
       )}
 

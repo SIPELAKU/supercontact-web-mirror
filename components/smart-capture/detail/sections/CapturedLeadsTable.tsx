@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Chip } from '@mui/material';
-import { Calendar, Save, Trash2, Inbox } from 'lucide-react';
+import { Calendar, Save, Trash2, Inbox, RotateCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -14,7 +14,6 @@ import {
 } from '@/lib/hooks/useSmartCaptureSubmissions';
 import { SmartCaptureSubmission, EmailStatus, PhoneStatus } from '@/lib/models/types';
 import { AppButton } from '@/components/ui/app-button';
-import { ResendButton, DeleteButton } from '@/components/ui/app-action-buttons-table';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { SaveAsModal } from '@/components/modal/SaveAsModal';
 import { notify } from '@/lib/notifications';
@@ -211,43 +210,8 @@ export const CapturedLeadsTable = () => {
           </div>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        enableSorting: false,
-        enableColumnFilter: false,
-        Cell: ({ row }) => {
-          const submission = row.original;
-          const emailStatus = (submission.email_status || '').toLowerCase();
-          const isFailed = emailStatus === 'failed';
-          // A pending older than 30 minutes is an orphaned delivery (its
-          // in-process send task was killed by an API restart and nothing
-          // will ever move it) - the backend accepts resends for it, so
-          // surface the same button. Mirrors STALE_PENDING_RESEND_THRESHOLD
-          // in smart_capture_service.py.
-          const isStalePending =
-            emailStatus === 'pending' &&
-            !!submission.captured_at &&
-            Date.now() - new Date(submission.captured_at).getTime() > 30 * 60 * 1000;
-          return (
-            <div className="flex items-center gap-1">
-              {(isFailed || isStalePending) && (
-                <ResendButton
-                  customTitle={isStalePending ? 'Delivery stuck in pending - resend email' : 'Resend email'}
-                  isLoading={resendingSubmissionId === submission.id}
-                  onClick={() => handleResend(submission)}
-                />
-              )}
-              <DeleteButton
-                customTitle="Delete lead"
-                onClick={() => handleDeleteRequest(submission)}
-              />
-            </div>
-          );
-        },
-      },
     ],
-    [resendingSubmissionId]
+    []
   );
 
   return (
@@ -301,6 +265,38 @@ export const CapturedLeadsTable = () => {
               densityToggle: false,
               fullScreenToggle: false,
               export: { excel: false, csv: false },
+            }}
+            rowActions={(submission) => {
+              const emailStatus = (submission.email_status || '').toLowerCase();
+              const isFailed = emailStatus === 'failed';
+              // A pending older than 30 minutes is an orphaned delivery (its
+              // in-process send task was killed by an API restart and nothing
+              // will ever move it) - the backend accepts resends for it, so
+              // surface the same action. Mirrors STALE_PENDING_RESEND_THRESHOLD
+              // in smart_capture_service.py.
+              const isStalePending =
+                emailStatus === 'pending' &&
+                !!submission.captured_at &&
+                Date.now() - new Date(submission.captured_at).getTime() > 30 * 60 * 1000;
+              return [
+                {
+                  id: 'resend',
+                  label: isStalePending
+                    ? 'Delivery stuck in pending - resend email'
+                    : 'Resend email',
+                  icon: <RotateCw size={16} />,
+                  hidden: () => !(isFailed || isStalePending),
+                  isLoading: () => resendingSubmissionId === submission.id,
+                  onClick: (row) => handleResend(row),
+                },
+                {
+                  id: 'delete',
+                  label: 'Delete lead',
+                  icon: <Trash2 size={16} />,
+                  destructive: true,
+                  onClick: (row) => handleDeleteRequest(row),
+                },
+              ];
             }}
             renderBulkActions={({ selectedRows, clearSelection }) => (
               <div className="flex gap-2 items-center">

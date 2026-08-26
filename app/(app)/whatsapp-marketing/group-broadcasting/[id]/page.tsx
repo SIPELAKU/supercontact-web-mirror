@@ -10,7 +10,6 @@ import {
     Box,
     Chip,
     CircularProgress,
-    IconButton,
     Typography
 } from '@mui/material';
 import { AppTabs } from '@/components/ui/app-tabs';
@@ -299,17 +298,21 @@ const GroupBroadcastDetailPage = () => {
                             setCampaignRowsPerPage(state.pagination.pageSize);
                             setCampaignSearch(state.globalFilter);
                         }}
-                        renderRowActions={({ row }) => (
-                            <IconButton
-                                size="small"
-                                onClick={() => {
-                                    setSelectedCampaign(row.original);
+                        onRowClick={(row) => {
+                            setSelectedCampaign(row);
+                            setViewModalOpen(true);
+                        }}
+                        rowActions={[
+                            {
+                                id: 'view',
+                                label: 'View',
+                                icon: <Eye size={16} />,
+                                onClick: (row) => {
+                                    setSelectedCampaign(row);
                                     setViewModalOpen(true);
-                                }}
-                            >
-                                <Eye size={16} />
-                            </IconButton>
-                        )}
+                                },
+                            },
+                        ]}
                         renderEmptyState={() => (
                             <EmptyState
                                 icon={Send}

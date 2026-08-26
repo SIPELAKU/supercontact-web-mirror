@@ -5,13 +5,12 @@ import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
 import { Product, useGetProductStore } from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
-import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Package, Plus } from "lucide-react";
+import { Copy, Package, Pencil, Plus, Trash2 } from "lucide-react";
 
 export interface ProductTableProps {
     products: Product[];
@@ -89,46 +88,14 @@ export default function ProductTable({
                     </span>
                 ),
             },
-            {
-                id: "actions",
-                header: "Actions",
-                enableColumnFilter: false,
-                Cell: ({ row }) => {
-                    const product = row.original;
-                    return (
-                        <div className="flex gap-2">
-                            <EditButton onClick={() => {
-                                setIsModalOpen(true);
-                                setEditId(product.id);
-                            }} />
-                            {onDuplicate && (
-                                <DuplicateButton onClick={() => onDuplicate([product])} />
-                            )}
-                            <DeleteButton onClick={() => {
-                                confirm({
-                                    variant: "danger",
-                                    title: "Delete Product",
-                                    description: `Are you sure you want to delete "${product.product_name}"? This action cannot be undone.`,
-                                    confirmText: "Delete",
-                                    cancelText: "Cancel",
-                                    onConfirm: async () => {
-                                        await new Promise((resolve) => setTimeout(resolve, 1000));
-                                        const res = await deleteProduct(product.id);
-                                        if (res.success) {
-                                            notify.success("Product Deleted", { description: `Product "${product.product_name}" has been successfully deleted.` });
-                                        } else {
-                                            notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
-                                        }
-                                    },
-                                });
-                            }} />
-                        </div>
-                    );
-                },
-            },
         ],
-        [setEditId, deleteProduct, confirm, onDuplicate]
+        []
     );
+
+    const openEditModal = (product: Product) => {
+        setIsModalOpen(true);
+        setEditId(product.id);
+    };
 
     return (
         <>
@@ -158,6 +125,46 @@ export default function ProductTable({
                 onStateChange={onStateChange}
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}
+                onRowClick={(row) => openEditModal(row)}
+                rowActions={[
+                    {
+                        id: "edit",
+                        label: "Edit",
+                        icon: <Pencil size={16} />,
+                        onClick: (row) => openEditModal(row),
+                    },
+                    {
+                        id: "duplicate",
+                        label: "Duplicate",
+                        icon: <Copy size={16} />,
+                        hidden: () => !onDuplicate,
+                        onClick: (row) => onDuplicate?.([row]),
+                    },
+                    {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 size={16} />,
+                        destructive: true,
+                        onClick: (row) => {
+                            confirm({
+                                variant: "danger",
+                                title: "Delete Product",
+                                description: `Are you sure you want to delete "${row.product_name}"? This action cannot be undone.`,
+                                confirmText: "Delete",
+                                cancelText: "Cancel",
+                                onConfirm: async () => {
+                                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                                    const res = await deleteProduct(row.id);
+                                    if (res.success) {
+                                        notify.success("Product Deleted", { description: `Product "${row.product_name}" has been successfully deleted.` });
+                                    } else {
+                                        notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
+                                    }
+                                },
+                            });
+                        },
+                    },
+                ]}
                 renderBulkActions={({ selectedRows, clearSelection }: { selectedRows: any[], clearSelection: () => void }) => (
                     <div className="flex gap-2 items-center">
                         {onDuplicate && (

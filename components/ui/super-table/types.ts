@@ -52,9 +52,13 @@ export interface SuperTableFeatures {
    * @default true 
    */
   sorting?: boolean;
-  /** 
+  /**
    * Aktifkan sort ganda pada beberapa kolom sekaligus dengan Shift+Click.
-   * @default true 
+   *
+   * Default OFF: setiap endpoint di app ini hanya menerima satu pasang
+   * `sort_by`/`sort_order`, jadi panah sort kedua tidak pernah sampai ke
+   * server. Nyalakan hanya untuk tabel client-side.
+   * @default false
    */
   multiSort?: boolean;
   /** 
@@ -309,6 +313,11 @@ export interface SuperTableCallbacks<TData extends object> {
   onExportRequest?: (params: {
     format: 'csv' | 'excel';
     currentState: SuperTableState;
+    /**
+     * Call while walking pages so the export dialog can show real progress
+     * instead of an indeterminate bar. Safe to ignore.
+     */
+    onProgress?: (fetched: number, total: number) => void;
   }) => Promise<TData[]> | TData[] | void;
 }
 
@@ -420,8 +429,28 @@ export interface SuperTableProps<TData extends object>
    * Sangat Wajib dipasang apabila `urlSync` dan `savedFilters` di-On-kan.
    */
   tableId?: string;
+  /**
+   * Namespace untuk query key `urlSync`. Isi `''` (default yang dianjurkan
+   * untuk halaman dengan satu tabel) supaya URL-nya jadi `?p=2&q=budi`, bukan
+   * `?subscribers-table_p=2&subscribers-table_gf=budi`. Kalau tidak diisi,
+   * `tableId` yang dipakai.
+   */
+  urlKey?: string;
+  /**
+   * Nama dasar file hasil export, dalam bahasa manusia ("Subscribers").
+   * Default-nya diturunkan dari `tableId`, jadi `subscribers-table` menjadi
+   * `Subscribers` - bukan `subscribers-table_20260826_1030.xlsx`.
+   */
+  exportFileName?: string;
   /** 
    * Overwrite default start table state, ex: `{ sorting: [ {id: 'date', desc: true} ] }`. 
    */
   initialState?: Partial<SuperTableState>;
+  /**
+   * Change this whenever a filter the PAGE owns (outside the table) changes -
+   * e.g. a status filter bar. SuperTable resets to page 1, the same way it
+   * does for its own search box, so the paginator can't keep highlighting a
+   * page the new result set no longer has.
+   */
+  resetPageKey?: string | number;
 }

@@ -1,15 +1,9 @@
 import React from 'react';
-import { IconButton, Tooltip, Box, Typography } from '@mui/material';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import DescriptionIcon from '@mui/icons-material/Description';
-import EditIcon from '@mui/icons-material/Edit';
+import { IconButton, Tooltip, Box } from '@mui/material';
+import { Pencil } from 'lucide-react';
 import {
+  MRT_TableInstance,
   MRT_TableOptions,
-  MRT_ToggleGlobalFilterButton,
-  MRT_ToggleFiltersButton,
-  MRT_ShowHideColumnsButton,
-  MRT_ToggleDensePaddingButton,
-  MRT_ToggleFullScreenButton,
   MRT_EditActionButtons,
 } from 'material-react-table';
 
@@ -20,13 +14,18 @@ import { useSavedFilters } from './useSavedFilters';
 
 import { BulkActionsBar } from '../components/BulkActionsBar';
 import { ErrorState } from '../components/ErrorState';
+import { TableToolbarActions } from '../components/TableToolbarActions';
 
 export function useTableConfig<TData extends object>(
   props: SuperTableProps<TData>,
   tableState: ReturnType<typeof useTableState>,
   exportUtils: UseTableExportReturn<TData>,
-  savedFilters: ReturnType<typeof useSavedFilters>
+  savedFilters: ReturnType<typeof useSavedFilters>,
+  onExportClick: (table: MRT_TableInstance<TData>) => void
 ): Partial<MRT_TableOptions<TData>> {
+  const exportEnabled = !!(
+    props.features?.export?.excel || props.features?.export?.csv
+  );
   // 1. EXTRACT DEFAULTS (Mengambil default per spesifikasi Odoo standards)
   const {
     columnVisibility = true,
@@ -34,7 +33,10 @@ export function useTableConfig<TData extends object>(
     columnResizing = true,
     columnPinning = false,
     sorting = true,
-    multiSort = true,
+    // The server contract everywhere in this app is a single sort_by +
+    // sort_order pair, and every caller forwards sorting[0] only. Leaving
+    // multi-sort on rendered a second sort arrow the backend then ignored.
+    multiSort = false,
     globalFilter = true,
     columnFilters = false,
     grouping = false,
@@ -134,8 +136,16 @@ export function useTableConfig<TData extends object>(
     enableSelectAll: rowSelection === 'multi',
 
     // ─── Pagination UI ───────────────
+    // 'pages' replaces MUI's bare prev/next pair with numbered pages; without
+    // first/last, reaching page 60 of a subscriber list meant 59 clicks.
+    paginationDisplayMode: 'pages',
     muiPaginationProps: {
       rowsPerPageOptions: pageSizeOptions,
+      showFirstButton: true,
+      showLastButton: true,
+      shape: 'rounded',
+      variant: 'outlined',
+      color: 'primary',
     },
 
     // ─── Filter Specific Handling ─────
@@ -237,7 +247,7 @@ export function useTableConfig<TData extends object>(
           <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
             <Tooltip title="Edit">
               <IconButton onClick={() => table.setEditingRow(row)}>
-                <EditIcon />
+                <Pencil size={18} />
               </IconButton>
             </Tooltip>
             {props.renderRowActions?.({ row, table })}
@@ -269,41 +279,21 @@ export function useTableConfig<TData extends object>(
     return props.renderTopLeftToolbar?.(table) ?? null;
   };
 
-  // Top Right Toolbar. Isinya Toggle Panel MRT + Export + Tombol custom
+  // Top Right Toolbar: search toggle (only when the field is hidden by
+  // default), column-filter toggle, one Export button, one View menu.
   mrtConfig.renderToolbarInternalActions = ({ table }) => (
-    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-      {/* 4.A Render Built-in Custom Export XLS/CSV if Enabled */}
-      {props.features?.export?.excel && (
-        <Tooltip arrow title="Export Excel (.xlsx)">
-          <IconButton
-            onClick={() => exportUtils.exportToExcel(table)}
-            disabled={exportUtils.isExporting}
-          >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {props.features?.export?.csv && (
-        <Tooltip arrow title="Export CSV (.csv)">
-          <IconButton
-            onClick={() => exportUtils.exportToCsv(table)}
-            disabled={exportUtils.isExporting}
-          >
-            <DescriptionIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-
-      {/* 4.B Render OOTB Material-React-Table Action Toggles (respects flags) */}
-      {globalFilter && <MRT_ToggleGlobalFilterButton table={table} />}
-      {columnFilters && <MRT_ToggleFiltersButton table={table} />}
-      {columnVisibility && <MRT_ShowHideColumnsButton table={table} />}
-      {densityToggle && <MRT_ToggleDensePaddingButton table={table} />}
-      {fullScreenToggle && <MRT_ToggleFullScreenButton table={table} />}
-
-      {/* 4.C Render Tambahan Parent Custom Slot Kanan (Contoh: Menu Saved Filter) */}
-      {props.renderTopRightToolbar?.(table)}
-    </Box>
+    <TableToolbarActions
+      table={table}
+      showSearchToggle={globalFilter && !globalFilterAlwaysVisible}
+      showColumnFilterToggle={columnFilters}
+      showColumnVisibility={columnVisibility}
+      showDensity={densityToggle}
+      showFullScreen={fullScreenToggle}
+      exportEnabled={exportEnabled}
+      isExporting={exportUtils.isExporting}
+      onExportClick={() => onExportClick(table)}
+      extra={props.renderTopRightToolbar?.(table)}
+    />
   );
 
   // Error States / Custom No-Record component

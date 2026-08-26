@@ -17,6 +17,7 @@ export function useTableState<TData extends object>(
     | 'onStateChange'
     | 'features'
     | 'tableId'
+    | 'resetPageKey'
   >
 ) {
   // ─── INIT STATES DENGAN FALLBACK INTERFACES ───────────────────────
@@ -54,14 +55,45 @@ export function useTableState<TData extends object>(
   );
 
   // ─── DEBOUNCE GLOBAL SEARCH LOGIC ─────────────────────────────────
-  const debounceTime = props.features?.globalFilterDebounce ?? 500;
+  // 300ms, down from 500. Previously the table also blanked to a skeleton on
+  // every keystroke-triggered refetch, so a longer pause hid the flashing;
+  // with keepPreviousData in place the old rows stay put and a shorter debounce
+  // just reads as faster.
+  const debounceTime = props.features?.globalFilterDebounce ?? 300;
   
+  // The first debounce tick is the mount itself, not a search. It must NOT
+  // reset the page, or a deep link like `?p=3&q=budi` would land on page 1
+  // 300ms after useUrlSync restored page 3.
+  const debounceSettled = useRef(false);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedGlobalFilter(globalFilter);
+      if (!debounceSettled.current) {
+        debounceSettled.current = true;
+        return;
+      }
+      // Reset to page 1 in the SAME batch as the search change. With
+      // manualPagination, TanStack sets autoResetPageIndex to false, so nothing
+      // does this for us: searching from page 5 used to keep pageIndex at 4,
+      // which asked the server for page 5 of a smaller result set (an empty
+      // table) and left the paginator highlighting a page that no longer
+      // existed. Batching both keeps it to a single fetch.
+      setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
     }, debounceTime);
     return () => clearTimeout(handler);
   }, [globalFilter, debounceTime]);
+
+  // Same rule for column filters and for filters the page owns outside the
+  // table (`resetPageKey`), which cannot be batched into the debounce above.
+  const skipFirstReset = useRef(true);
+  useEffect(() => {
+    if (skipFirstReset.current) {
+      skipFirstReset.current = false;
+      return;
+    }
+    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
+  }, [columnFilters, props.resetPageKey]);
 
   // ─── ON STATE CHANGE (SERVER-SIDE BRIDGE) ─────────────────────────
   const isMounted = useRef(false);

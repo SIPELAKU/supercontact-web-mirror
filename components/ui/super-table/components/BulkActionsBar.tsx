@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, IconButton, useTheme } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { X } from 'lucide-react';
 import { SuperTableSlots } from '../types';
 
 interface BulkActionsBarProps<TData extends object> {
@@ -25,15 +25,17 @@ export function BulkActionsBar<TData extends object>({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        width: '100%',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        height: '100%',
-        zIndex: 10, // menutupi tombol add/left toolbar
-        px: 2,
+        flexWrap: 'wrap',
+        gap: 1,
+        // Sits INSIDE the left toolbar slot, replacing the Add/Import buttons
+        // only. It used to be position:absolute at 100% width and height with
+        // zIndex 10, which covered search, export and the column controls -
+        // so selecting a row made it impossible to search or export, which is
+        // exactly when you want both.
+        borderRadius: 2,
+        px: 1.5,
+        py: 0.75,
         backgroundColor: theme.palette.primary.light,
-        // Odoo style keyframes anim slide-down
         animation: 'slideDown 0.15s ease-out forwards',
         '@keyframes slideDown': {
           from: {
@@ -47,14 +49,14 @@ export function BulkActionsBar<TData extends object>({
         },
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
         <Typography
           variant="subtitle2"
           sx={{
-            fontWeight: 500,
-            color: theme.palette.primary.contrastText,
-            // Hilangkan gaya text-transform yang aneh kalau ada
+            fontWeight: 600,
+            color: theme.palette.text.primary,
             textTransform: 'none',
+            whiteSpace: 'nowrap',
           }}
         >
           {selectedCount} selected
@@ -68,10 +70,11 @@ export function BulkActionsBar<TData extends object>({
       <IconButton
         onClick={clearSelection}
         size="small"
-        sx={{ color: theme.palette.primary.contrastText }}
-        title="Cancel"
+        sx={{ color: theme.palette.text.secondary }}
+        title="Clear selection"
+        aria-label="Clear selection"
       >
-        <CloseIcon fontSize="small" />
+        <X size={16} />
       </IconButton>
     </Box>
   );

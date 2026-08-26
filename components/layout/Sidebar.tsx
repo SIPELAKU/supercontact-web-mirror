@@ -98,6 +98,10 @@ const menuData: MenuSection[] = [
         name: "Email Marketing",
         icon: Mail,
         children: [
+          // Ungated on purpose: /email-marketing/overview accepts any of the
+          // three module permissions, matching permissions_require() on the
+          // endpoint. Each child below keeps its own specific gate.
+          { name: "Overview", path: "/email-marketing" },
           { name: "Subscribers", path: "/email-marketing/subscribers", permission: "subscribers" },
           { name: "Campaigns", path: "/email-marketing/campaigns", permission: "campaigns" },
           { name: "Mailing Lists", path: "/email-marketing/mailing-lists", permission: "mailing_lists" },

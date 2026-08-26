@@ -1,149 +1,190 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { MRT_TableInstance } from 'material-react-table';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
+import { notify } from '@/lib/notifications';
 import { SuperTableCallbacks, SuperTableState } from '../types';
+import type { ExportFormat, ExportScope } from '../components/ExportDialog';
 
 interface UseTableExportParams<TData extends object> {
   enabled: boolean;
   isManual: boolean; // manualPagination = true
   tableId?: string;
+  /** Human-readable base for the file name; falls back to the tableId. */
+  exportFileName?: string;
   onExportRequest?: SuperTableCallbacks<TData>['onExportRequest'];
   currentState: SuperTableState;
 }
 
 export interface UseTableExportReturn<TData extends object> {
-  exportToExcel: (table: MRT_TableInstance<TData>) => Promise<void>;
-  exportToCsv: (table: MRT_TableInstance<TData>) => Promise<void>;
+  runExport: (
+    table: MRT_TableInstance<TData>,
+    options: { scope: ExportScope; format: ExportFormat; columnIds: string[] }
+  ) => Promise<void>;
   isExporting: boolean;
+  progress: [number, number] | null;
+}
+
+/** `subscribers-table` → `Subscribers`. Falls back to a generic label. */
+function humaniseFileBase(raw?: string): string {
+  if (!raw) return 'Export';
+  return (
+    raw
+      .replace(/[-_]?table$/i, '')
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ') || 'Export'
+  );
 }
 
 export function useTableExport<TData extends object>({
   enabled,
   isManual,
   tableId,
+  exportFileName,
   onExportRequest,
   currentState,
 }: UseTableExportParams<TData>): UseTableExportReturn<TData> {
   const [isExporting, setIsExporting] = useState(false);
+  const [progress, setProgress] = useState<[number, number] | null>(null);
 
-  // Fungsi helper sentral export ke SheetJS (AOA).
-  //
   // `xlsx` is imported DYNAMICALLY, not at module scope. SuperTable is used by
   // ~66 screens, so a static import put the whole ~400 kB SheetJS bundle in
   // the first load of every table route (they measured ~570 kB vs ~230 kB for
   // non-table routes) purely for an Export button most sessions never press.
   // Loading it here means the cost is paid on the click that needs it.
-  const executeExport = async (
+  const writeFile = async (
     table: MRT_TableInstance<TData>,
     rowsData: TData[],
-    type: 'csv' | 'excel'
+    columnIds: string[],
+    type: ExportFormat
   ) => {
     const XLSX = await import('xlsx');
-    // 1. Ambil kolom yang SEMUA terekspos ke layar viewer
-    // Termasuk menghiraukan "select baris" dan "aksi kebab menu"
-    const visibleColumns = table
-      .getVisibleFlatColumns()
+
+    // Honour the user's column picks, but keep the table's own column order
+    // and skip MRT's structural columns plus any hand-rolled "actions"
+    // column — buttons don't belong in a spreadsheet.
+    const chosen = new Set(columnIds);
+    const columns = table
+      .getAllLeafColumns()
       .filter(
         (col) =>
+          chosen.has(col.id) &&
           col.id !== 'mrt-row-select' &&
           col.id !== 'mrt-row-actions' &&
           col.id !== 'mrt-row-expand' &&
           col.id !== 'actions'
       );
 
-    // 2. Headings Text Baris Pertama
-    const headers = visibleColumns.map((col) =>
-      typeof col.columnDef.header === 'string'
-        ? col.columnDef.header
-        : col.id
+    const headers = columns.map((col) =>
+      typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
     );
 
-    // 3. Mapping data ke 2D array baris kolom
     const dataRows = rowsData.map((row) =>
-      visibleColumns.map((col) => {
-        // Ambil val via accessorKey/accessorFn lewat method instan MRT (jika tersedia di baris cache)
-        // Kalau data dilempar langsung via Server-Side, fallback baca object row raw
-        const val = typeof row === 'object' && (col.columnDef as any).accessorKey 
-            ? (row as any)[(col.columnDef as any).accessorKey as string]
-            : typeof row === 'object' && typeof (col.columnDef as any).accessorFn === 'function'
-            ? (col.columnDef as any).accessorFn(row)
-            : (row as any)?.[col.id]; // fallback ultimate
-            
-        // Type casting for Excel cell comfort readability
-        if (val instanceof Date) return format(val, 'dd/MM/yyyy HH:mm');
+      columns.map((col) => {
+        const def = col.columnDef as any;
+        // Server-side rows arrive as plain objects, so read them directly
+        // rather than through MRT's row cache (which only holds the page).
+        const val =
+          typeof row === 'object' && def.accessorKey
+            ? (row as any)[def.accessorKey as string]
+            : typeof row === 'object' && typeof def.accessorFn === 'function'
+              ? def.accessorFn(row)
+              : (row as any)?.[col.id];
+
+        if (val instanceof Date) return formatDate(val, 'dd MMM yyyy HH:mm');
         if (typeof val === 'string' && val.match(/^\d{4}-\d{2}-\d{2}T/)) {
           try {
-            return format(new Date(val), 'dd/MM/yyyy HH:mm');
-          } catch { return val; }
+            return formatDate(new Date(val), 'dd MMM yyyy HH:mm');
+          } catch {
+            return val;
+          }
         }
-        if (typeof val === 'boolean') return val ? 'Ya' : 'Tidak';
+        // The authenticated app is English-only, and these files leave the
+        // product — they used to say "Ya"/"Tidak".
+        if (typeof val === 'boolean') return val ? 'Yes' : 'No';
         if (Array.isArray(val)) return val.join(', ');
-        
         if (val === null || val === undefined) return '';
+        if (typeof val === 'object') return JSON.stringify(val);
 
         return val;
       })
     );
 
-    // 4. Transform ke format array of arrays SheetJS
+    const base = humaniseFileBase(exportFileName ?? tableId);
     const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Data Ekspor');
+    // Excel rejects sheet names over 31 chars or containing []:*?/\
+    XLSX.utils.book_append_sheet(wb, ws, base.replace(/[[\]:*?/\\]/g, '').slice(0, 31) || 'Data');
 
-    // 5. Generate fileName + Date format
-    const timeStamp = format(new Date(), 'yyyyMMdd_HHmm');
-    const fileName = `${tableId || 'Export_Tabel'}_${timeStamp}`;
-
-    // 6. Write to File
+    const fileName = `${base.replace(/\s+/g, '_')}_${formatDate(new Date(), 'yyyy-MM-dd')}`;
     if (type === 'excel') {
       XLSX.writeFile(wb, `${fileName}.xlsx`);
     } else {
       XLSX.writeFile(wb, `${fileName}.csv`, { bookType: 'csv' });
     }
+    return dataRows.length;
   };
 
-  const startExportProcess = useCallback(
-    async (table: MRT_TableInstance<TData>, type: 'csv' | 'excel') => {
+  const runExport = useCallback(
+    async (
+      table: MRT_TableInstance<TData>,
+      options: { scope: ExportScope; format: ExportFormat; columnIds: string[] }
+    ) => {
       if (!enabled) return;
       setIsExporting(true);
+      setProgress(null);
 
       try {
-        let finalDataToExport: TData[] = [];
+        let rows: TData[] = [];
 
-        if (isManual && onExportRequest) {
-          // Server-Side: Tembak ke API buat dapetin seluruh baris data full (all pages)
+        if (options.scope === 'selected') {
+          rows = table.getSelectedRowModel().rows.map((r) => r.original);
+        } else if (options.scope === 'page') {
+          rows = table.getRowModel().rows.map((r) => r.original);
+        } else if (isManual && onExportRequest) {
+          // Server-side: ask the page to walk every page of the current query.
           const serverData = await onExportRequest({
-            format: type,
+            format: options.format,
             currentState,
+            onProgress: (fetched: number, total: number) =>
+              setProgress([fetched, total]),
+          } as any);
+          if (serverData && Array.isArray(serverData)) rows = serverData;
+        } else {
+          rows = table.getFilteredRowModel().rows.map((r) => r.original);
+        }
+
+        if (rows.length === 0) {
+          notify.warning('Nothing to export', {
+            description: 'No rows matched the selection you chose.',
           });
-          if (serverData && Array.isArray(serverData)) {
-            finalDataToExport = serverData;
+          return;
+        }
+
+        const written = await writeFile(table, rows, options.columnIds, options.format);
+        notify.success(
+          `Exported ${written.toLocaleString()} row${written === 1 ? '' : 's'}`,
+          {
+            description: `Saved as ${options.format === 'excel' ? '.xlsx' : '.csv'}.`,
           }
-        } else if (!isManual) {
-          // Client-Side: Cukup ambil data yang sudah difilter oleh react-table internal
-          finalDataToExport = table.getFilteredRowModel().rows.map((r) => r.original);
-        }
-
-        if (finalDataToExport.length === 0) {
-           console.warn("[SuperTable] Data ekspor kosong atau fetch server gagal.");
-        }
-
-        // MUST be awaited: executeExport now loads xlsx on demand, so without
-        // this the `finally` below clears the spinner before the file is
-        // written, and any failure inside becomes an unhandled rejection
-        // instead of hitting the catch.
-        await executeExport(table, finalDataToExport, type);
-      } catch (error) {
-        console.error(`[SuperTable Export] Gagal melakukan export ${type}`, error);
+        );
+      } catch (error: any) {
+        // This used to be console.error only, so a failed export looked
+        // identical to a successful one that produced no download.
+        console.error('[SuperTable Export] failed', error);
+        notify.error('Export failed', {
+          description:
+            error?.message || 'Could not build the file. Please try again.',
+        });
       } finally {
         setIsExporting(false);
+        setProgress(null);
       }
     },
-    [enabled, isManual, onExportRequest, currentState]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [enabled, isManual, onExportRequest, currentState, exportFileName, tableId]
   );
 
-  const exportToExcel = useCallback((table: MRT_TableInstance<TData>) => startExportProcess(table, 'excel'), [startExportProcess]);
-  const exportToCsv = useCallback((table: MRT_TableInstance<TData>) => startExportProcess(table, 'csv'), [startExportProcess]);
-
-  return { exportToExcel, exportToCsv, isExporting };
+  return { runExport, isExporting, progress };
 }

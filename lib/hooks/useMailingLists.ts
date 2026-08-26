@@ -19,13 +19,19 @@ import type {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 
-export function useMailingLists(page: number = 1, limit: number = 10, search?: string) {
+export function useMailingLists(
+  page: number = 1,
+  limit: number = 10,
+  search?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+) {
   return useQuery<MailingListsResponse>({
-    queryKey: ['mailing-lists', page, limit, search],
+    queryKey: ['mailing-lists', page, limit, search, sortBy, sortOrder],
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchMailingLists(token, page, limit, search);
+      return fetchMailingLists(token, page, limit, search, sortBy, sortOrder);
     },
     placeholderData: keepPreviousData,
   });

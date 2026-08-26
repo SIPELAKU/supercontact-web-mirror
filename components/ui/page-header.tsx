@@ -61,7 +61,7 @@ export default function PageHeader({
         {/* actions takes precedence over the illustration image - a header
             shows one or the other, not both. */}
         {actions ? (
-          <div className="flex shrink-0 items-center gap-3">{actions}</div>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">{actions}</div>
         ) : (
           image && (
             <div className="hidden sm:block">

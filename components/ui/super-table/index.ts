@@ -1,4 +1,5 @@
 export { SuperTable } from './SuperTable';
+export type { ExportScope, ExportFormat } from './components/ExportDialog';
 export { useTableState } from './hooks/useTableState';
 
 // -------------------------------------------------------------

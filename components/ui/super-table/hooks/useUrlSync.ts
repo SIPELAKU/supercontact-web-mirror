@@ -6,6 +6,15 @@ import { MRT_SortingState, MRT_ColumnFiltersState } from 'material-react-table';
 interface UseUrlSyncParams {
   enabled: boolean;
   tableId: string;
+  /**
+   * Namespace for the query keys. Empty string (the default for a page with a
+   * single table) produces bare `?p=2&q=budi` instead of the old
+   * `?subscribers-table_p=2&subscribers-table_gf=budi`, which was long enough
+   * that nobody wanted to share the link.
+   */
+  urlKey?: string;
+  /** Page size that is considered the default and therefore omitted from the URL. */
+  defaultPageSize?: number;
   state: SuperTableState;
   onRestoreState: (state: Partial<SuperTableState>) => void;
 }
@@ -13,12 +22,19 @@ interface UseUrlSyncParams {
 export function useUrlSync({
   enabled,
   tableId,
+  urlKey,
+  defaultPageSize = 10,
   state,
   onRestoreState,
 }: UseUrlSyncParams) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+
+  // `urlKey` may legitimately be '' (bare keys); only fall back to tableId
+  // when it was not supplied at all.
+  const ns = urlKey === undefined ? tableId : urlKey;
+  const key = (name: string) => (ns ? `${ns}_${name}` : name);
 
   const isRestored = useRef(false);
   const [lastSavedUrl, setLastSavedUrl] = useState('');
@@ -31,17 +47,17 @@ export function useUrlSync({
     const restoredState: Partial<SuperTableState> = {};
 
     // p: pageIndex, ps: pageSize
-    const p = searchParams.get(`${tableId}_p`);
-    const ps = searchParams.get(`${tableId}_ps`);
+    const p = searchParams.get(key('p'));
+    const ps = searchParams.get(key('ps'));
     if (p || ps) {
       restoredState.pagination = {
         pageIndex: p ? parseInt(p, 10) - 1 : 0, // di URL page 1 berarti index 0
-        pageSize: ps ? parseInt(ps, 10) : 10,
+        pageSize: ps ? parseInt(ps, 10) : defaultPageSize,
       };
     }
 
     // s: sorting (contoh format "name:asc,date:desc")
-    const s = searchParams.get(`${tableId}_s`);
+    const s = searchParams.get(key('sort'));
     if (s) {
       const parsedSorting: MRT_SortingState = s.split(',').map((sortPart) => {
         const [id, descStr] = sortPart.split(':');
@@ -51,13 +67,13 @@ export function useUrlSync({
     }
 
     // gf: global filter
-    const gf = searchParams.get(`${tableId}_gf`);
+    const gf = searchParams.get(key('q'));
     if (gf) {
       restoredState.globalFilter = decodeURIComponent(gf);
     }
 
     // cf: column filters (contoh fomat "status:active,type:premium", array format "industry:Tech|Finance")
-    const cf = searchParams.get(`${tableId}_cf`);
+    const cf = searchParams.get(key('f'));
     if (cf) {
       const parsedFilters: MRT_ColumnFiltersState = cf.split(',').map((f) => {
         const colonIdx = f.indexOf(':');
@@ -76,7 +92,7 @@ export function useUrlSync({
     }
 
     // g: grouping (misal "status,type")
-    const g = searchParams.get(`${tableId}_g`);
+    const g = searchParams.get(key('g'));
     if (g) {
       restoredState.grouping = g.split(',');
     }
@@ -87,7 +103,8 @@ export function useUrlSync({
     }
 
     isRestored.current = true;
-  }, [enabled, tableId, searchParams, onRestoreState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, tableId, ns, searchParams, onRestoreState]);
 
   // 2. MENULIS STATE KEDALAM URL BROWSER HISTORY
   useEffect(() => {
@@ -99,14 +116,14 @@ export function useUrlSync({
 
       // Pagination
       if (state.pagination.pageIndex > 0) {
-        currentParams.set(`${tableId}_p`, (state.pagination.pageIndex + 1).toString());
+        currentParams.set(key('p'), (state.pagination.pageIndex + 1).toString());
       } else {
-        currentParams.delete(`${tableId}_p`);
+        currentParams.delete(key('p'));
       }
-      if (state.pagination.pageSize !== 10) {
-         currentParams.set(`${tableId}_ps`, state.pagination.pageSize.toString());
+      if (state.pagination.pageSize !== defaultPageSize) {
+         currentParams.set(key('ps'), state.pagination.pageSize.toString());
       } else {
-         currentParams.delete(`${tableId}_ps`);
+         currentParams.delete(key('ps'));
       }
 
       // Sort
@@ -114,16 +131,16 @@ export function useUrlSync({
         const sortString = state.sorting
           .map((s) => `${s.id}:${s.desc ? 'desc' : 'asc'}`)
           .join(',');
-        currentParams.set(`${tableId}_s`, sortString);
+        currentParams.set(key('sort'), sortString);
       } else {
-        currentParams.delete(`${tableId}_s`);
+        currentParams.delete(key('sort'));
       }
 
       // Filter global
       if (state.globalFilter) {
-        currentParams.set(`${tableId}_gf`, encodeURIComponent(state.globalFilter));
+        currentParams.set(key('q'), encodeURIComponent(state.globalFilter));
       } else {
-        currentParams.delete(`${tableId}_gf`);
+        currentParams.delete(key('q'));
       }
 
       // Column filters
@@ -136,16 +153,16 @@ export function useUrlSync({
             return `${id}:${encodeURIComponent(String(value))}`;
           })
           .join(',');
-        currentParams.set(`${tableId}_cf`, filterStr);
+        currentParams.set(key('f'), filterStr);
       } else {
-        currentParams.delete(`${tableId}_cf`);
+        currentParams.delete(key('f'));
       }
 
       // Grouping
       if (state.grouping.length > 0) {
-        currentParams.set(`${tableId}_g`, state.grouping.join(','));
+        currentParams.set(key('g'), state.grouping.join(','));
       } else {
-         currentParams.delete(`${tableId}_g`);
+         currentParams.delete(key('g'));
       }
 
       const queryString = currentParams.toString();
@@ -159,5 +176,6 @@ export function useUrlSync({
     }, 300); // 300ms debounce push url state filter/search
 
     return () => clearTimeout(serializeToUrl);
-  }, [enabled, tableId, state, searchParams, pathname, router, lastSavedUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, tableId, ns, defaultPageSize, state, searchParams, pathname, router, lastSavedUrl]);
 }

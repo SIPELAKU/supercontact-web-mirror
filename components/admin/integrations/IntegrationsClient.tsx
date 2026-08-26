@@ -197,6 +197,7 @@ export const IntegrationsClient = () => {
                 <div className="mx-6 mb-6">
                     <SuperTable<Integration>
                         tableId="integrations-table"
+                        urlKey=""
                         columns={columns}
                         data={integrations}
                         isLoading={isLoading}
@@ -235,6 +236,7 @@ export const IntegrationsClient = () => {
                             />
                         )}
                         features={{
+          urlSync: true,
                             // A handful of providers at most - no search/pagination noise
                             globalFilter: false,
                             columnFilters: false,

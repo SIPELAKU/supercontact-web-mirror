@@ -107,6 +107,7 @@ export default function CategoriesSettingsTab() {
 
             <SuperTable<TicketCategory>
                 tableId="ticket-categories-table"
+                urlKey="cats"
                 columns={columns}
                 data={categories}
                 isLoading={isLoading}
@@ -138,7 +139,8 @@ export default function CategoriesSettingsTab() {
                         description="Categories you add appear as a dropdown on every ticket."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

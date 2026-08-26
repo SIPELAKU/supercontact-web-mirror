@@ -309,6 +309,7 @@ export const MailServerClient = () => {
 
             <SuperTable<MailServer>
                 tableId="mail-servers-table"
+                urlKey=""
                 columns={columns}
                 data={visibleData}
                 isLoading={isLoading}
@@ -378,6 +379,7 @@ export const MailServerClient = () => {
                 )}
                 initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                 features={{
+          urlSync: true,
                     // API has no sort params - avoid a misleading page-only sort
                     sorting: false,
                     globalFilter: true,

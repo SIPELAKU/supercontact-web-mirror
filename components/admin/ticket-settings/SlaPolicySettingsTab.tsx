@@ -240,6 +240,7 @@ export default function SlaPolicySettingsTab() {
 
             <SuperTable<TicketSlaPolicy>
                 tableId="ticket-sla-policies-table"
+                urlKey="sla"
                 columns={columns}
                 data={policies}
                 isLoading={isLoading}
@@ -271,7 +272,8 @@ export default function SlaPolicySettingsTab() {
                         description="Add response and resolution targets to track SLA compliance on tickets."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

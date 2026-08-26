@@ -228,6 +228,7 @@ const LeadMagnetsTable = ({
     <>
       <SuperTable<SmartCapture>
         tableId="lead-magnets-table"
+        urlKey=""
         data={data}
         columns={columns}
         rowCount={rowCount}
@@ -259,6 +260,7 @@ const LeadMagnetsTable = ({
           },
         }}
         features={{
+          urlSync: true,
           pagination: true,
           globalFilter: true,
           globalFilterAlwaysVisible: true,
@@ -269,7 +271,6 @@ const LeadMagnetsTable = ({
           densityToggle: false,
           fullScreenToggle: false,
           export: { excel: false, csv: false },
-          urlSync: false,
         }}
         // The guard that used to live here - sniffing for closest('button')
         // and closest('.MuiChip-root'), plus a stray console.log - is now

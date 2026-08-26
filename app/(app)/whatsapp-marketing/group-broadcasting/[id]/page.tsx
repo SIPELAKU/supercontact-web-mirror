@@ -27,6 +27,16 @@ import { BroadcastCampaign, WaRecipient } from '@/lib/types/whatsapp-marketing';
 type GroupTab = 'recipients' | 'campaigns';
 const VALID_TABS: GroupTab[] = ['recipients', 'campaigns'];
 
+
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+  const params = new URLSearchParams(current.toString());
+  params.set("tab", tab);
+  return `${pathname}?${params.toString()}`;
+}
+
 const GroupBroadcastDetailPage = () => {
     const params = useParams();
     const router = useRouter();
@@ -77,7 +87,7 @@ const GroupBroadcastDetailPage = () => {
 
     const handleTabChange = (tab: GroupTab) => {
         setActiveTab(tab);
-        router.replace(`/whatsapp-marketing/group-broadcasting/${broadcastGroupId}?tab=${tab}`, { scroll: false });
+        router.replace(withTab(`/whatsapp-marketing/group-broadcasting/${broadcastGroupId}`, searchParams, tab), { scroll: false });
     };
 
     const handleSuccess = () => {
@@ -224,6 +234,7 @@ const GroupBroadcastDetailPage = () => {
                     // supports it.
                     <SuperTable<WaRecipient>
                         tableId="group-broadcast-recipients-table"
+                        urlKey=""
                         columns={recipientColumns}
                         data={recipients}
                         isLoading={isLoadingDetail}
@@ -262,6 +273,7 @@ const GroupBroadcastDetailPage = () => {
                         )}
                         initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                         features={{
+          urlSync: true,
                             // API has no sort params - avoid a misleading page-only sort
                             sorting: false,
                             globalFilter: true,

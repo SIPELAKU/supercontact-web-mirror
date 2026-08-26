@@ -27,6 +27,16 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 type SettingsTab = "account" | "security";
 const VALID_TABS: SettingsTab[] = ["account", "security"];
 
+
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+  const params = new URLSearchParams(current.toString());
+  params.set("tab", tab);
+  return `${pathname}?${params.toString()}`;
+}
+
 export default function ProfileUserSettingClient() {
   const { getToken, reloadProfile, logout } = useAuth();
   const router = useRouter();
@@ -38,7 +48,7 @@ export default function ProfileUserSettingClient() {
 
   const handleTabChange = (newTab: SettingsTab) => {
     setTab(newTab);
-    router.replace(`/profile-user-setting?tab=${newTab}`, { scroll: false });
+    router.replace(withTab(`/profile-user-setting`, searchParams, newTab), { scroll: false });
   };
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);

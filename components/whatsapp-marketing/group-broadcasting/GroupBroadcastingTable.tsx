@@ -90,6 +90,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
   return (
     <SuperTable<GroupBroadcast>
       tableId="group-broadcasting-table"
+      urlKey=""
       columns={columns}
       data={broadcasts}
       isLoading={isLoading}
@@ -163,6 +164,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
       )}
       initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
       features={{
+          urlSync: true,
         // API has no sort/search params yet - keep both off rather than
         // offering controls that only act on the loaded page
         sorting: false,

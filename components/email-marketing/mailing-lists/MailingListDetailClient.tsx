@@ -33,6 +33,16 @@ import { campaignColumns, subscriberColumns } from './detail-columns';
 type ListTab = 'subscribers' | 'campaigns';
 const VALID_TABS: ListTab[] = ['subscribers', 'campaigns'];
 
+
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+  const params = new URLSearchParams(current.toString());
+  params.set("tab", tab);
+  return `${pathname}?${params.toString()}`;
+}
+
 export default function MailingListDetailClient() {
   const params = useParams();
   const router = useRouter();
@@ -109,7 +119,7 @@ export default function MailingListDetailClient() {
   const handleTabChange = (tab: ListTab) => {
     setActiveTab(tab);
     setSearchQuery('');
-    router.replace(`/email-marketing/mailing-lists/${listId}?tab=${tab}`, { scroll: false });
+    router.replace(withTab(`/email-marketing/mailing-lists/${listId}`, searchParams, tab), { scroll: false });
   };
 
   const handleRemoveOne = async () => {

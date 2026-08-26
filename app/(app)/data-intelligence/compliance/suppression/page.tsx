@@ -116,6 +116,7 @@ export default function SuppressionListPage() {
                 <div className="mx-6 my-6">
                     <SuperTable<SuppressionEntryItem>
                         tableId="suppression-list-table"
+                        urlKey=""
                         columns={columns}
                         data={entries}
                         isLoading={isLoading}
@@ -135,6 +136,7 @@ export default function SuppressionListPage() {
                         )}
                         initialState={{ sorting: [{ id: "created_at", desc: true }] }}
                         features={{
+          urlSync: true,
                             globalFilter: true,
                             columnFilters: true,
                             pagination: true,

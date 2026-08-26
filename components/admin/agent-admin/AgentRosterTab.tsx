@@ -199,6 +199,7 @@ export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
 
       <SuperTable<AgentRosterItem>
         tableId="agent-roster-table"
+        urlKey="roster"
         columns={columns}
         data={agents}
         isLoading={isLoading}
@@ -228,7 +229,8 @@ export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
             description="Agents added to your workspace will appear here."
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {canManage && (

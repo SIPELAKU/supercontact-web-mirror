@@ -141,6 +141,7 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
 
       <SuperTable<AgentGroup>
         tableId="agent-groups-table"
+        urlKey="groups"
         columns={columns}
         data={groups}
         isLoading={isLoading}
@@ -191,7 +192,8 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
             }
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {/* Create / edit modal - only mounted for managers */}

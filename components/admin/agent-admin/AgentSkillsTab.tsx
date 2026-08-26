@@ -128,6 +128,7 @@ export default function AgentSkillsTab({ canManage }: AgentSkillsTabProps) {
 
       <SuperTable<AgentSkill>
         tableId="agent-skills-table"
+        urlKey="skills"
         columns={columns}
         data={skills}
         isLoading={isLoading}
@@ -172,7 +173,8 @@ export default function AgentSkillsTab({ canManage }: AgentSkillsTabProps) {
             }
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {/* Create / edit modal - only mounted for managers */}

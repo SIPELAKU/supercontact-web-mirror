@@ -77,6 +77,7 @@ export const ContactTable = ({
     <>
       <SuperTable<Contact>
         tableId="contacts-table"
+        urlKey=""
         data={data}
         columns={contactColumns}
         isLoading={isLoading}
@@ -99,6 +100,7 @@ export const ContactTable = ({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         features={{
+          urlSync: true,
           globalFilter: true,
           globalFilterAlwaysVisible: false,
           columnFilters: true,

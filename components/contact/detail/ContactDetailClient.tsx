@@ -29,6 +29,15 @@ const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
 type ProfileTab = "overview" | "activity" | "email" | "whatsapp" | "conversations";
 const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp", "conversations"];
 
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+    const params = new URLSearchParams(current.toString());
+    params.set("tab", tab);
+    return `${pathname}?${params.toString()}`;
+}
+
 export const ContactDetailClient = () => {
     const params = useParams();
     const router = useRouter();
@@ -104,7 +113,7 @@ export const ContactDetailClient = () => {
     const handleTabChange = useCallback(
         (tab: ProfileTab) => {
             setActiveTab(tab);
-            router.replace(`/contact/detail/${id}?tab=${tab}`, { scroll: false });
+            router.replace(withTab(`/contact/detail/${id}`, searchParams, tab), { scroll: false });
         },
         [id, router]
     );

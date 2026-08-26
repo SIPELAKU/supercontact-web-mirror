@@ -234,6 +234,7 @@ export default function BusinessHoursSettingsTab() {
 
             <SuperTable<BusinessHoursCalendar>
                 tableId="business-hours-table"
+                urlKey="hours"
                 columns={columns}
                 data={calendars}
                 isLoading={isLoading}
@@ -265,7 +266,8 @@ export default function BusinessHoursSettingsTab() {
                         description="SLA due dates run 24/7 until you add a working-hours calendar."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

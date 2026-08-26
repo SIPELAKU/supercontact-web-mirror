@@ -476,6 +476,7 @@ export default function RoutingQueuesSettingsTab() {
 
         <SuperTable<ConversationQueue>
           tableId="conversation-queues-table"
+          urlKey="queues"
           columns={columns}
           data={queues}
           isLoading={isLoading}
@@ -536,7 +537,8 @@ export default function RoutingQueuesSettingsTab() {
               }
             />
           )}
-          features={{ columnFilters: false }}
+          features={{          urlSync: true,
+ columnFilters: false }}
         />
       </div>
 

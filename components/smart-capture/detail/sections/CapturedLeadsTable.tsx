@@ -262,6 +262,7 @@ export const CapturedLeadsTable = () => {
         <div className="p-1">
           <SuperTable<SmartCaptureSubmission>
             tableId="captured-leads-table"
+            urlKey="leads"
             data={submissions}
             columns={columns}
             rowCount={totalCount}
@@ -289,6 +290,7 @@ export const CapturedLeadsTable = () => {
               globalFilter: tableParams.search,
             }}
             features={{
+          urlSync: true,
               pagination: true,
               globalFilter: true,
               globalFilterAlwaysVisible: true,
@@ -299,7 +301,6 @@ export const CapturedLeadsTable = () => {
               densityToggle: false,
               fullScreenToggle: false,
               export: { excel: false, csv: false },
-              urlSync: false,
             }}
             renderBulkActions={({ selectedRows, clearSelection }) => (
               <div className="flex gap-2 items-center">

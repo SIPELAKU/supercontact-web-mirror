@@ -198,6 +198,7 @@ export default function MacrosSettingsTab() {
 
             <SuperTable<TicketMacro>
                 tableId="ticket-macros-table"
+                urlKey="macros"
                 columns={columns}
                 data={macros}
                 isLoading={isLoading}
@@ -229,7 +230,8 @@ export default function MacrosSettingsTab() {
                         description="Saved replies you add can be applied from any ticket in one click."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

@@ -249,6 +249,7 @@ export default function FlowsListClient() {
 
             <SuperTable<FlowSummary>
                 tableId="support-flows-table"
+                urlKey=""
                 columns={columns}
                 data={flows}
                 isLoading={isLoading}
@@ -281,7 +282,8 @@ export default function FlowsListClient() {
                         }}
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             {/* ---- New Flow dialog ---- */}

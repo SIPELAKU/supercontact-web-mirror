@@ -446,6 +446,7 @@ export default function AutomationRulesSettingsTab() {
 
             <SuperTable<TicketAutomationRule>
                 tableId="ticket-automation-rules-table"
+                urlKey="rules"
                 columns={columns}
                 data={rules}
                 isLoading={isLoading}
@@ -477,7 +478,8 @@ export default function AutomationRulesSettingsTab() {
                         description="Rules you add run automatically when tickets are created or updated."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

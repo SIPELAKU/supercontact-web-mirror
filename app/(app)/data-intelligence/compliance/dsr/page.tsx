@@ -187,6 +187,7 @@ export default function DsrRequestsPage() {
                 <div className="mx-6 my-6">
                     <SuperTable<DsrRequestItem>
                         tableId="dsr-requests-table"
+                        urlKey=""
                         columns={columns}
                         data={requests}
                         isLoading={isLoading}
@@ -206,6 +207,7 @@ export default function DsrRequestsPage() {
                         )}
                         initialState={{ sorting: [{ id: "created_at", desc: true }] }}
                         features={{
+          urlSync: true,
                             globalFilter: true,
                             columnFilters: true,
                             pagination: true,

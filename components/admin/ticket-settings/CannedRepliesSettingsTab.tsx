@@ -179,6 +179,7 @@ export default function CannedRepliesSettingsTab() {
 
       <SuperTable<CannedReply>
         tableId="canned-replies-table"
+        urlKey="canned"
         columns={columns}
         data={replies}
         isLoading={isLoading}
@@ -210,7 +211,8 @@ export default function CannedRepliesSettingsTab() {
             description="Add saved replies your agents can insert into any conversation in one click."
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       <Dialog open={modalOpen} onOpenChange={(next) => (next ? undefined : closeModal())} maxWidth="sm">

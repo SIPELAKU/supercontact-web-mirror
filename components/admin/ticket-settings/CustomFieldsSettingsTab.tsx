@@ -441,6 +441,7 @@ export default function CustomFieldsSettingsTab() {
 
             <SuperTable<TicketCustomFieldDefinition>
                 tableId="ticket-custom-fields-table"
+                urlKey="fields"
                 columns={columns}
                 data={definitions}
                 isLoading={isLoading}
@@ -472,7 +473,8 @@ export default function CustomFieldsSettingsTab() {
                         description="Fields you define here appear on every ticket and are validated on save."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

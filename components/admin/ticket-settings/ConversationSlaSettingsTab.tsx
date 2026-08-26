@@ -265,6 +265,7 @@ export default function ConversationSlaSettingsTab() {
 
       <SuperTable<ConversationSlaPolicy>
         tableId="conversation-sla-policies-table"
+        urlKey="convsla"
         columns={columns}
         data={policies}
         isLoading={isLoading}
@@ -300,7 +301,8 @@ export default function ConversationSlaSettingsTab() {
             description="Add first-response and resolution targets to track SLA compliance across your conversations."
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       <Dialog open={modalOpen} onOpenChange={(next) => (next ? undefined : closeModal())} maxWidth="sm">

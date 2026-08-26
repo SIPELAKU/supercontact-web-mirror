@@ -121,6 +121,7 @@ export function DataTable({
     <div className="w-full">
       <SuperTable
         tableId="leads-table"
+        urlKey=""
         data={data}
         columns={leadColumns}
         isLoading={isLoading}
@@ -135,6 +136,7 @@ export function DataTable({
           />
         )}
         features={{
+          urlSync: true,
           globalFilter: true,
           globalFilterAlwaysVisible: false,
           columnFilters: true,

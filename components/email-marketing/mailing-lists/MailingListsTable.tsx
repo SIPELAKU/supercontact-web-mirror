@@ -143,7 +143,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
       onExportRequest={handleExportRequest as any}
       onRowClick={(row) => router.push(`/email-marketing/mailing-lists/${row.id}`)}
       renderRowActions={({ row }) => (
-        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
           <EditButton onClick={() => onEdit(row.original)} />
           <DeleteButton onClick={() => onDeleteRequest(row.original)} />
         </Box>

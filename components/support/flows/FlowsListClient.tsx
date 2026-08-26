@@ -259,18 +259,7 @@ export default function FlowsListClient() {
                 renderRowActions={({ row }) => (
                     <div className="flex gap-2">
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(`/support/flows/${row.original.id}/studio`);
-                            }}
-                            className="text-gray-300 hover:text-[#5479EE]"
-                            aria-label="Open in studio"
-                        >
-                            <Workflow size={16} />
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
+                            onClick={() => {
                                 setDeleteTarget(row.original);
                             }}
                             className="text-gray-300 hover:text-red-500"

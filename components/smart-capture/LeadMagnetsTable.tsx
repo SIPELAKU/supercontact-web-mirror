@@ -271,14 +271,10 @@ const LeadMagnetsTable = ({
           export: { excel: false, csv: false },
           urlSync: false,
         }}
-        onRowClick={(row, event) => {
-          console.log("clicked");
-          // Prevent navigation if clicking on interactive elements like chips or buttons
-          const target = event.target as HTMLElement;
-          if (target.closest('button') || target.closest('.MuiChip-root')) {
-            return;
-          }
-
+        // The guard that used to live here - sniffing for closest('button')
+        // and closest('.MuiChip-root'), plus a stray console.log - is now
+        // SuperTable's job via data-st-no-row-click.
+        onRowClick={(row) => {
           const path = row.status === 'Draft'
             ? `/smart-capture/edit/${row.id}`
             : `/smart-capture/detail/${row.id}`;

@@ -266,7 +266,16 @@ export function useTableConfig<TData extends object>(
         );
       }
 
-      return props.renderRowActions?.({ row, table }) ?? null;
+      const actions = props.renderRowActions?.({ row, table });
+      if (!actions) return null;
+
+      // Wrapped once here so all ~30 callers are safe at the same time; a
+      // caller no longer has to remember stopPropagation on every button.
+      return (
+        <Box data-st-no-row-click sx={{ display: 'contents' }}>
+          {actions}
+        </Box>
+      );
     };
   }
 
@@ -417,20 +426,39 @@ export function useTableConfig<TData extends object>(
     }),
   };
 
-  mrtConfig.muiTableBodyRowProps = ({ row }) => ({
-    onClick: (e) => props.onRowClick?.(row.original, e),
-    onDoubleClick: (e) => props.onRowDoubleClick?.(row.original, e),
-    sx: {
-      cursor: props.onRowClick || props.onRowDoubleClick ? 'pointer' : 'default',
-      transition: 'background-color 0.2s',
-      '&:hover': {
-        backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  mrtConfig.muiTableBodyRowProps = ({ row, isDetailPanel }) => {
+    // MRT reuses these props for the detail-panel row too. Without this, a
+    // click anywhere inside an expanded panel counts as a click on the row
+    // that owns it.
+    if (isDetailPanel) return {};
+
+    return {
+      onClick: (e) => {
+        // ONE guard, here, instead of every caller inventing its own. Before
+        // this, three tables each solved it differently: a Box wrapper with
+        // stopPropagation, stopPropagation sprinkled per button, and DOM
+        // sniffing for `closest('button')`. Anything inside an element marked
+        // `data-st-no-row-click` - the actions cell is marked for you - no
+        // longer opens the row.
+        if ((e.target as HTMLElement).closest?.('[data-st-no-row-click]')) return;
+        props.onRowClick?.(row.original, e);
       },
-      // Injeksi object overrides specific dari property parents
-      ...props.getRowStyles?.(row.original),
-    },
-    className: props.getRowClassName?.(row.original),
-  });
+      onDoubleClick: (e) => {
+        if ((e.target as HTMLElement).closest?.('[data-st-no-row-click]')) return;
+        props.onRowDoubleClick?.(row.original, e);
+      },
+      sx: {
+        cursor: props.onRowClick || props.onRowDoubleClick ? 'pointer' : 'default',
+        transition: 'background-color 0.2s',
+        '&:hover': {
+          backgroundColor: 'rgba(0, 0, 0, 0.02)',
+        },
+        // Injeksi object overrides specific dari property parents
+        ...props.getRowStyles?.(row.original),
+      },
+      className: props.getRowClassName?.(row.original),
+    };
+  };
 
   return mrtConfig;
 }

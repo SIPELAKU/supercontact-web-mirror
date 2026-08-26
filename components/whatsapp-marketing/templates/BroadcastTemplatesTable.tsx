@@ -189,8 +189,8 @@ const BroadcastTemplatesTable = ({
       )}
       renderRowActions={({ row }) => (
         <Stack direction="row" spacing={0.5} alignItems="center">
-          <DuplicateButton onClick={(e) => { e.stopPropagation(); onDuplicate([row.original.id]); }} />
-          <DeleteButton onClick={(e) => { e.stopPropagation(); onDeleteRequest([row.original.id]); }} />
+          <DuplicateButton onClick={() => onDuplicate([row.original.id])} />
+          <DeleteButton onClick={() => onDeleteRequest([row.original.id])} />
         </Stack>
       )}
       onRowClick={(row) => onEdit(row)}

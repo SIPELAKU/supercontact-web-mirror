@@ -144,7 +144,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
         );
       }}
       renderRowActions={({ row }) => (
-        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
           <DuplicateButton
             onClick={() => handleDuplicate([row.original.id])}
             isLoading={duplicateMutation.isPending && (duplicateMutation.variables?.broadcast_group_ids || []).includes(row.original.id)}

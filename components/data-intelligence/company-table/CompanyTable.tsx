@@ -223,7 +223,7 @@ export default function CompanyTable({
         size: 80,
         Cell: ({ row }) =>
           renderRowActions ? (
-            <Box onClick={(e) => e.stopPropagation()}>{renderRowActions(row.original)}</Box>
+            <Box data-st-no-row-click>{renderRowActions(row.original)}</Box>
           ) : null,
       },
     ],

@@ -9,7 +9,7 @@ import { DeleteButton, EditButton, DuplicateButton } from "@/components/ui/app-a
 import { AppButton } from "@/components/ui/app-button";
 import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Users } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
+import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 
 interface ContactTableProps {
@@ -118,23 +118,16 @@ export const ContactTable = ({
           <div className="flex gap-1">
             <IconButton
               size="small"
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={() => {
                 setPreviewContact(row.original);
               }}
-              sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+              sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }}
             >
               <Eye size={18} />
             </IconButton>
-            <Box onClick={(e) => e.stopPropagation()}>
-              <EditButton onClick={() => onEdit(row.original)} />
-            </Box>
-            <Box onClick={(e) => e.stopPropagation()}>
-              <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
-            </Box>
-            <Box onClick={(e) => e.stopPropagation()}>
-              <DeleteButton onClick={() => onDelete(row.original)} />
-            </Box>
+            <EditButton onClick={() => onEdit(row.original)} />
+            <DuplicateButton onClick={() => onDuplicate?.([row.original])} />
+            <DeleteButton onClick={() => onDelete(row.original)} />
           </div>
         )}
         renderTopLeftToolbar={() => (

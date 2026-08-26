@@ -154,8 +154,7 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
             ? ({ row }) => (
                 <div className="flex gap-2">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       openEdit(row.original);
                     }}
                     className="text-gray-300 hover:text-gray-700"
@@ -164,8 +163,7 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
                     <Pencil size={16} />
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       setDeleteTarget(row.original);
                     }}
                     className="text-gray-300 hover:text-red-500"

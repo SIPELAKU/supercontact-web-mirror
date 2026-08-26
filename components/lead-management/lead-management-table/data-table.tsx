@@ -9,7 +9,7 @@ import type { SuperTableState } from "@/components/ui/super-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Target, Trash2 } from "lucide-react";
 import { Box } from "@mui/material";
-import { DeleteButton, ViewButton } from "@/components/ui/app-action-buttons-table";
+import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { deleteLead } from "@/lib/api";
@@ -155,7 +155,6 @@ export function DataTable({
         renderRowActions={({ row }) => (
           <div className="flex gap-1">
             <Box onClick={(e) => e.stopPropagation()}>
-              <ViewButton onClick={() => openDetail(row.original)} />
             </Box>
             <Box onClick={(e) => e.stopPropagation()}>
               <DeleteButton onClick={() => setLeadToDelete(row.original)} />

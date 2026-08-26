@@ -153,21 +153,36 @@ export default function CampaignsTable({
       // row all along; you previously had to open a modal per campaign to see
       // any of it, while the mailing-list detail tab showed the same numbers as
       // columns.
+      // These three need an `accessorFn`, not just an `id`. TanStack ends
+      // `getCanSort()` with `&& !!column.accessorFn` (table-core
+      // RowSorting.js:178), so a column defined with id + Cell alone renders
+      // no sort arrow however `enableSorting` is set. The value it returns is
+      // also what the spreadsheet export writes, which is otherwise blank for
+      // any column without an accessor.
       {
         id: "delivered",
         header: "Delivered",
+        accessorFn: (row) => row.stats?.delivered ?? 0,
         size: 110,
         Cell: ({ row }) => (row.original.stats?.delivered ?? 0).toLocaleString(),
       },
       {
         id: "opened",
         header: "Opened",
+        accessorFn: (row) => row.stats?.opened ?? 0,
         size: 100,
         Cell: ({ row }) => (row.original.stats?.opened ?? 0).toLocaleString(),
       },
       {
         id: "open_rate",
         header: "Open Rate",
+        // A number, not "25.0%", so the exported column stays computable in a
+        // spreadsheet. `null` when nothing was delivered: no rate, not zero.
+        accessorFn: (row) => {
+          const delivered = row.stats?.delivered ?? 0;
+          if (!delivered) return null;
+          return Number((((row.stats?.opened ?? 0) / delivered) * 100).toFixed(1));
+        },
         size: 110,
         Cell: ({ row }) =>
           percent(row.original.stats?.opened ?? 0, row.original.stats?.delivered ?? 0),

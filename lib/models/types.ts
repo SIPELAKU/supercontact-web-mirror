@@ -162,6 +162,17 @@ export interface MailServer {
   limit_per_month?: number;
 }
 
+/** The platform's own sender, offered to a tenant as a read-only choice.
+ *  Carries no credentials on purpose - only what recipients will see. It is
+ *  changed in the backoffice, never here. */
+export type PlatformSenderOption = {
+  available: boolean;
+  selected: boolean;
+  provider_label: string;
+  from_email: string;
+  from_name: string | null;
+};
+
 export type MailServerResponse = {
   success: boolean;
   data: {
@@ -169,6 +180,7 @@ export type MailServerResponse = {
     page: number;
     limit: number;
     mail_servers: MailServer[];
+    platform_sender?: PlatformSenderOption | null;
   };
   error?: {
     code: string;

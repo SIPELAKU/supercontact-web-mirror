@@ -192,3 +192,22 @@ export async function testMailServerConnection(token: string, mailServerId: stri
 
     return json;
 }
+
+export async function setUsePlatformSender(
+    token: string,
+    enabled: boolean
+): Promise<{ success: boolean; message?: string }> {
+    const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/mail-servers/use-platform-sender`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.success === false) {
+        throw new Error(json.error?.message || json.message || "Gagal mengubah pengirim");
+    }
+    return json;
+}

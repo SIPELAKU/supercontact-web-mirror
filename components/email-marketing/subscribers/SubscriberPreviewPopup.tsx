@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Subscriber } from "@/lib/types/email-marketing";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider } from "@mui/material";
 import { X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, UserRound } from "lucide-react";
+import { format } from "date-fns";
 
 interface SubscriberPreviewPopupProps {
     subscriber: Subscriber | null;
@@ -9,13 +10,12 @@ interface SubscriberPreviewPopupProps {
 }
 
 export const SubscriberPreviewPopup = ({ subscriber, onClose }: SubscriberPreviewPopupProps) => {
+    // House format: dd MMM yyyy, and English like the rest of the
+    // authenticated app — this was the one place still rendering an
+    // Indonesian ("id-ID") date.
     const formatDate = (dateStr: string) => {
         try {
-            return new Date(dateStr).toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-            });
+            return format(new Date(dateStr), "dd MMM yyyy");
         } catch {
             return "-";
         }
@@ -45,7 +45,7 @@ export const SubscriberPreviewPopup = ({ subscriber, onClose }: SubscriberPrevie
                         }}
                     >
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-[#5479EE] flex items-center justify-center text-white text-lg font-bold">
+                            <div className="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-white text-lg font-bold">
                                 {subscriber.name?.charAt(0)?.toUpperCase() || subscriber.email?.charAt(0)?.toUpperCase() || "?"}
                             </div>
                             <div>

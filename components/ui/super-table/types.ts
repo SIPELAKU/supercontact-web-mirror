@@ -52,9 +52,13 @@ export interface SuperTableFeatures {
    * @default true 
    */
   sorting?: boolean;
-  /** 
+  /**
    * Aktifkan sort ganda pada beberapa kolom sekaligus dengan Shift+Click.
-   * @default true 
+   *
+   * Default OFF: setiap endpoint di app ini hanya menerima satu pasang
+   * `sort_by`/`sort_order`, jadi panah sort kedua tidak pernah sampai ke
+   * server. Nyalakan hanya untuk tabel client-side.
+   * @default false
    */
   multiSort?: boolean;
   /** 
@@ -309,6 +313,11 @@ export interface SuperTableCallbacks<TData extends object> {
   onExportRequest?: (params: {
     format: 'csv' | 'excel';
     currentState: SuperTableState;
+    /**
+     * Call while walking pages so the export dialog can show real progress
+     * instead of an indeterminate bar. Safe to ignore.
+     */
+    onProgress?: (fetched: number, total: number) => void;
   }) => Promise<TData[]> | TData[] | void;
 }
 
@@ -326,6 +335,27 @@ export interface SuperTableSlots<TData extends object> {
    * Disuntikkan di toolbar kanan di deretan icon toggle MRT. 
    */
   renderTopRightToolbar?: (table: MRT_TableInstance<TData>) => React.ReactNode;
+
+  /**
+   * Kontrol filter yang dirender DI DALAM toolbar tabel, paling kiri, sebelum
+   * tombol aksi `renderTopLeftToolbar`.
+   *
+   * Bedanya dengan `renderTopLeftToolbar`: slot ini TIDAK digantikan saat ada
+   * baris tercentang. `BulkActionsBar` hanya mengambil alih tombol aksi di
+   * sebelahnya, bukan filternya - jadi user yang mencentang checkbox tetap
+   * melihat (dan bisa mengubah) filter yang sedang aktif. Itulah alasan slot
+   * ini ada dan bukan sekadar memakai `renderTopLeftToolbar`.
+   *
+   * Hanya untuk filter yang dikirim halaman ke server. JANGAN dipakai bersama
+   * `features.columnFilters: true` - user akan mendapat dua afordansi filter
+   * sekaligus (kontrol ini + tombol corong bawaan MRT).
+   *
+   * PENTING: kembalikan `null` (bukan elemen yang kebetulan me-render null)
+   * bila tidak ada filter untuk ditampilkan. MRT memasang spacer `<span/>`
+   * hanya saat render prop ini MENGEMBALIKAN null; elemen yang me-render null
+   * tetap truthy dan membuat cluster search/Export/View tertarik ke kiri.
+   */
+  renderFilters?: (table: MRT_TableInstance<TData>) => React.ReactNode;
 
   /** 
    * Sebuah block element yang akan menggantikan TopLeftToolbar SEPENUHNYA
@@ -420,8 +450,33 @@ export interface SuperTableProps<TData extends object>
    * Sangat Wajib dipasang apabila `urlSync` dan `savedFilters` di-On-kan.
    */
   tableId?: string;
+  /**
+   * Namespace untuk query key `urlSync`. Isi `''` (default yang dianjurkan
+   * untuk halaman dengan satu tabel) supaya URL-nya jadi `?p=2&q=budi`, bukan
+   * `?subscribers-table_p=2&subscribers-table_gf=budi`. Kalau tidak diisi,
+   * `tableId` yang dipakai.
+   */
+  urlKey?: string;
+  /**
+   * Nama dasar file hasil export, dalam bahasa manusia ("Subscribers").
+   * Default-nya diturunkan dari `tableId`, jadi `subscribers-table` menjadi
+   * `Subscribers` - bukan `subscribers-table_20260826_1030.xlsx`.
+   */
+  exportFileName?: string;
   /** 
    * Overwrite default start table state, ex: `{ sorting: [ {id: 'date', desc: true} ] }`. 
    */
   initialState?: Partial<SuperTableState>;
+  /**
+   * Change this whenever a filter the PAGE owns (outside the table) changes -
+   * e.g. a status filter bar. SuperTable resets to page 1, the same way it
+   * does for its own search box, so the paginator can't keep highlighting a
+   * page the new result set no longer has.
+   *
+   * It ALSO clears the row selection. `rowSelection` is keyed by `getRowId`
+   * and survives a refetch, so without this the bulk bar could keep reading
+   * "3 selected" for rows the server no longer returns - a real hazard now
+   * that `renderFilters` puts the filter control right next to that bar.
+   */
+  resetPageKey?: string | number;
 }

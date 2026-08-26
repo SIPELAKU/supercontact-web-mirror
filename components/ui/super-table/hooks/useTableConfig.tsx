@@ -1,15 +1,9 @@
 import React from 'react';
-import { IconButton, Tooltip, Box, Typography } from '@mui/material';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import DescriptionIcon from '@mui/icons-material/Description';
-import EditIcon from '@mui/icons-material/Edit';
+import { IconButton, Tooltip, Box } from '@mui/material';
+import { Pencil } from 'lucide-react';
 import {
+  MRT_TableInstance,
   MRT_TableOptions,
-  MRT_ToggleGlobalFilterButton,
-  MRT_ToggleFiltersButton,
-  MRT_ShowHideColumnsButton,
-  MRT_ToggleDensePaddingButton,
-  MRT_ToggleFullScreenButton,
   MRT_EditActionButtons,
 } from 'material-react-table';
 
@@ -20,13 +14,18 @@ import { useSavedFilters } from './useSavedFilters';
 
 import { BulkActionsBar } from '../components/BulkActionsBar';
 import { ErrorState } from '../components/ErrorState';
+import { TableToolbarActions } from '../components/TableToolbarActions';
 
 export function useTableConfig<TData extends object>(
   props: SuperTableProps<TData>,
   tableState: ReturnType<typeof useTableState>,
   exportUtils: UseTableExportReturn<TData>,
-  savedFilters: ReturnType<typeof useSavedFilters>
+  savedFilters: ReturnType<typeof useSavedFilters>,
+  onExportClick: (table: MRT_TableInstance<TData>) => void
 ): Partial<MRT_TableOptions<TData>> {
+  const exportEnabled = !!(
+    props.features?.export?.excel || props.features?.export?.csv
+  );
   // 1. EXTRACT DEFAULTS (Mengambil default per spesifikasi Odoo standards)
   const {
     columnVisibility = true,
@@ -34,7 +33,10 @@ export function useTableConfig<TData extends object>(
     columnResizing = true,
     columnPinning = false,
     sorting = true,
-    multiSort = true,
+    // The server contract everywhere in this app is a single sort_by +
+    // sort_order pair, and every caller forwards sorting[0] only. Leaving
+    // multi-sort on rendered a second sort arrow the backend then ignored.
+    multiSort = false,
     globalFilter = true,
     columnFilters = false,
     grouping = false,
@@ -53,6 +55,17 @@ export function useTableConfig<TData extends object>(
     popoverFilters = false,
     globalFilterAlwaysVisible = true,
   } = props.features || {};
+
+  // Two filter affordances on one table is always a mistake: the page-owned
+  // control plus MRT's built-in funnel toggle, each filtering by different
+  // rules. Dev-only, so it costs nothing in production.
+  if (process.env.NODE_ENV !== 'production' && props.renderFilters && columnFilters) {
+    console.warn(
+      `[SuperTable${props.tableId ? ` ${props.tableId}` : ''}] renderFilters is set together with ` +
+        'features.columnFilters: true. Pick one - two filter UIs on the same table ' +
+        'give the user two ways to filter that do not agree.'
+    );
+  }
 
   // 2. BUILD CORE OPTIONS
   const mrtConfig: Partial<MRT_TableOptions<TData>> = {
@@ -134,8 +147,16 @@ export function useTableConfig<TData extends object>(
     enableSelectAll: rowSelection === 'multi',
 
     // ─── Pagination UI ───────────────
+    // 'pages' replaces MUI's bare prev/next pair with numbered pages; without
+    // first/last, reaching page 60 of a subscriber list meant 59 clicks.
+    paginationDisplayMode: 'pages',
     muiPaginationProps: {
       rowsPerPageOptions: pageSizeOptions,
+      showFirstButton: true,
+      showLastButton: true,
+      shape: 'rounded',
+      variant: 'outlined',
+      color: 'primary',
     },
 
     // ─── Filter Specific Handling ─────
@@ -237,7 +258,7 @@ export function useTableConfig<TData extends object>(
           <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
             <Tooltip title="Edit">
               <IconButton onClick={() => table.setEditingRow(row)}>
-                <EditIcon />
+                <Pencil size={18} />
               </IconButton>
             </Tooltip>
             {props.renderRowActions?.({ row, table })}
@@ -250,60 +271,91 @@ export function useTableConfig<TData extends object>(
   }
 
   // ─── 4. CUSTOM SLOTS, BULK ACTIONS, & EMPTY STATES ────────────────
-  // Top Left (Default: Search Bar / Tombol Plus). 
-  // Jika tersorot baris maka terganti Bulk Action (seperti Gmail/Odoo).
+  // MRT hands us ONE node for the entire left half of the toolbar
+  // (renderTopToolbarCustomActions = the first child of MRT_TopToolbar).
+  // Three things compete for it:
+  //   1. renderFilters        - filter controls; always shown, always first
+  //   2. renderTopLeftToolbar - Add / Import / Print buttons
+  //   3. BulkActionsBar       - takes over (2) ONLY, while rows are selected
+  //
+  // Pinning filters at index 0 is the whole point of the separate slot: put
+  // them in renderTopLeftToolbar instead and ticking a single checkbox
+  // unmounts them, hiding both the control and which filter is active exactly
+  // when someone is about to run a bulk delete. Keeping the element type at
+  // index 0 stable across renders also means an OPEN filter popover survives
+  // a checkbox click.
+  //
+  // DO NOT make the assignment below conditional. MRT computes
+  // `stackAlertBanner = isMobile || !!renderTopToolbarCustomActions || ...`
+  // and uses it to pick position: relative vs absolute for the toolbar row -
+  // guarding this would flip every table to an absolutely positioned toolbar
+  // sitting on top of the first data row.
   mrtConfig.renderTopToolbarCustomActions = ({ table }) => {
     const selectedRows = table.getSelectedRowModel().rows.map(r => r.original);
     const hasSelection = selectedRows.length > 0;
 
-    if (hasSelection && props.renderBulkActions) {
-      return (
+    const filtersNode = props.renderFilters?.(table) ?? null;
+
+    const actionsNode =
+      hasSelection && props.renderBulkActions ? (
         <BulkActionsBar
           selectedRows={selectedRows}
           clearSelection={tableState.clearSelection}
           renderBulkActions={props.renderBulkActions}
         />
+      ) : (
+        props.renderTopLeftToolbar?.(table) ?? null
       );
-    }
 
-    return props.renderTopLeftToolbar?.(table) ?? null;
+    // No filter slot -> emit exactly what this returned before the slot
+    // existed, raw `null` included, so MRT's `?? <span/>` spacer stays alive
+    // and `justify-content: space-between` keeps the search/Export/View
+    // cluster pinned right. This early return is the zero-regression story
+    // for every SuperTable screen that does not opt in.
+    if (!filtersNode) return actionsNode;
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          // MRT's toolbar row does not wrap and its container is
+          // overflow:hidden, so this wrapper is the only wrap point on the
+          // left half - chips and the bulk bar drop to a second line here
+          // instead of being clipped.
+          flexWrap: 'wrap',
+          columnGap: 1,
+          rowGap: 0.75,
+          minHeight: 40, // matches the 40px search field opposite it
+          // Where the old <span/> spacer had zero width, this wrapper has
+          // real content. Without these two it would refuse to shrink and
+          // push the search/Export/View cluster past the clipped right edge
+          // on a narrow viewport; with them it shrinks and wraps internally.
+          minWidth: 0,
+          flexShrink: 1,
+        }}
+      >
+        {filtersNode}
+        {actionsNode}
+      </Box>
+    );
   };
 
-  // Top Right Toolbar. Isinya Toggle Panel MRT + Export + Tombol custom
+  // Top Right Toolbar: search toggle (only when the field is hidden by
+  // default), column-filter toggle, one Export button, one View menu.
   mrtConfig.renderToolbarInternalActions = ({ table }) => (
-    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-      {/* 4.A Render Built-in Custom Export XLS/CSV if Enabled */}
-      {props.features?.export?.excel && (
-        <Tooltip arrow title="Export Excel (.xlsx)">
-          <IconButton
-            onClick={() => exportUtils.exportToExcel(table)}
-            disabled={exportUtils.isExporting}
-          >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {props.features?.export?.csv && (
-        <Tooltip arrow title="Export CSV (.csv)">
-          <IconButton
-            onClick={() => exportUtils.exportToCsv(table)}
-            disabled={exportUtils.isExporting}
-          >
-            <DescriptionIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-
-      {/* 4.B Render OOTB Material-React-Table Action Toggles (respects flags) */}
-      {globalFilter && <MRT_ToggleGlobalFilterButton table={table} />}
-      {columnFilters && <MRT_ToggleFiltersButton table={table} />}
-      {columnVisibility && <MRT_ShowHideColumnsButton table={table} />}
-      {densityToggle && <MRT_ToggleDensePaddingButton table={table} />}
-      {fullScreenToggle && <MRT_ToggleFullScreenButton table={table} />}
-
-      {/* 4.C Render Tambahan Parent Custom Slot Kanan (Contoh: Menu Saved Filter) */}
-      {props.renderTopRightToolbar?.(table)}
-    </Box>
+    <TableToolbarActions
+      table={table}
+      showSearchToggle={globalFilter && !globalFilterAlwaysVisible}
+      showColumnFilterToggle={columnFilters}
+      showColumnVisibility={columnVisibility}
+      showDensity={densityToggle}
+      showFullScreen={fullScreenToggle}
+      exportEnabled={exportEnabled}
+      isExporting={exportUtils.isExporting}
+      onExportClick={() => onExportClick(table)}
+      extra={props.renderTopRightToolbar?.(table)}
+    />
   );
 
   // Error States / Custom No-Record component

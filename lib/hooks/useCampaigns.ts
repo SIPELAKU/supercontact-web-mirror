@@ -1,7 +1,7 @@
 // lib/hooks/useCampaigns.ts
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createCampaign,
   deleteCampaign,
@@ -30,6 +30,9 @@ export function useCampaigns(
       if (!token) throw new Error('No authentication token');
       return fetchCampaigns(token, page, limit, search, status, sortBy, sortOrder);
     },
+    // Keep the current page rendered while the next one loads; see
+    // useSubscribers for why every server-driven list here needs this.
+    placeholderData: keepPreviousData,
   });
 }
 

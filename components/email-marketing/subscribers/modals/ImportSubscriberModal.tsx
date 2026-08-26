@@ -2,11 +2,12 @@
 
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X, Download } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { AppDialog } from "@/components/ui/app-dialog";
 
 interface ImportSubscriberModalProps {
   open: boolean;
@@ -121,6 +122,20 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     }
   };
 
+  // People were guessing the column names. A template removes the guess, and
+  // the auto-mapper below recognises exactly these headers.
+  const downloadTemplate = async () => {
+    const XLSX = await import("xlsx");
+    const rows = [
+      ["Name", "Email", "Phone Number"],
+      ["Budi Santoso", "budi@example.com", "081234567890"],
+      ["Sari Dewi", "sari@example.com", "081298765432"],
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), "Subscribers");
+    XLSX.writeFile(wb, "Subscribers_Import_Template.xlsx");
+  };
+
   const suggestMapping = (header: string): string | null => {
     const h = header.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -226,6 +241,38 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     setStep("preview");
   };
 
+  // Rows the API would reject, plus duplicates *within the file* — the latter
+  // used to sail through and turn into "skipped" rows in the job result long
+  // after the user had walked away.
+  const previewSummary = (() => {
+    const seen = new Set<string>();
+    let valid = 0;
+    let missingName = 0;
+    let missingEmail = 0;
+    let duplicates = 0;
+
+    for (const row of previewData) {
+      const name = row.name?.trim();
+      const email = row.email?.trim().toLowerCase();
+      if (!name) { missingName++; continue; }
+      if (!email) { missingEmail++; continue; }
+      if (seen.has(email)) { duplicates++; continue; }
+      seen.add(email);
+      valid++;
+    }
+    return { valid, missingName, missingEmail, duplicates, total: previewData.length };
+  })();
+
+  const rowIssue = (row: SubscriberData, index: number): string | null => {
+    if (!row.name?.trim()) return "Missing name";
+    if (!row.email?.trim()) return "Missing email";
+    const email = row.email.trim().toLowerCase();
+    const firstIndex = previewData.findIndex(
+      (r) => r.email?.trim().toLowerCase() === email && r.name?.trim()
+    );
+    return firstIndex !== -1 && firstIndex < index ? "Duplicate email" : null;
+  };
+
   const hasNameMapping = columnMappings.some((m) => m.apiField === "name");
   const hasEmailMapping = columnMappings.some((m) => m.apiField === "email");
 
@@ -239,7 +286,16 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
   };
 
   const uploadSubscribers = async () => {
-    const validSubscribers = previewData.filter((s) => s.name && s.name.trim() && s.email && s.email.trim());
+    // Must match what the preview counted, duplicates included — otherwise the
+    // button promises "Import 900" and quietly posts 1,000.
+    const seenEmails = new Set<string>();
+    const validSubscribers = previewData.filter((s) => {
+      const name = s.name?.trim();
+      const email = s.email?.trim().toLowerCase();
+      if (!name || !email || seenEmails.has(email)) return false;
+      seenEmails.add(email);
+      return true;
+    });
 
     if (validSubscribers.length === 0) {
       notify.error("No valid subscribers found. Name and Email fields are required.");
@@ -360,44 +416,41 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     }
   };
 
-  if (!open) return null;
-
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200 cursor-pointer"
-        style={{ minHeight: '100vh', minWidth: '100vw' }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowCloseConfirmation(true);
-        }}
+      {/* AppDialog, not a hand-rolled `fixed inset-0` overlay: this wizard had
+          no role="dialog", no aria-modal, no focus trap and no close-on-Escape,
+          so a keyboard user could tab straight out of it into the page behind
+          and had no way to dismiss it. */}
+      <AppDialog
+        open={open}
+        onClose={() => setShowCloseConfirmation(true)}
+        title="Import Subscribers"
+        description={
+          step === "upload"
+            ? "Upload an Excel or CSV file to import subscribers in bulk."
+            : step === "mapping"
+              ? "Map your file columns to subscriber fields."
+              : "Review the data before importing."
+        }
+        maxWidth="md"
       >
-        <div
-          className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col animate-in zoom-in-95 duration-200 cursor-default max-h-[90vh] overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6 flex flex-col h-full overflow-hidden">
-            <h2 className="text-2xl font-bold text-[#5479EE]">Import Subscribers</h2>
-            <p className="text-gray-600 text-md mt-1 mb-4">
-              {step === "upload" && "Upload an Excel or CSV file to import subscribers in bulk."}
-              {step === "mapping" && "Map your file columns to subscriber fields."}
-              {step === "preview" && "Review the data before importing."}
-            </p>
-
+        <div className="flex flex-col" style={{ maxHeight: "62vh" }}>
+          <div className="flex flex-col overflow-hidden">
             {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
-              <div className={`flex items-center gap-1 text-sm ${step === "upload" ? "text-[#5479EE] font-medium" : "text-gray-400"}`}>
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "upload" ? "bg-[#5479EE] text-white" : "bg-gray-200"}`}>1</span>
+              <div className={`flex items-center gap-1 text-sm ${step === "upload" ? "text-brand font-medium" : "text-gray-400"}`}>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "upload" ? "bg-brand text-white" : "bg-gray-200"}`}>1</span>
                 Upload
               </div>
               <div className="w-8 h-px bg-gray-300" />
-              <div className={`flex items-center gap-1 text-sm ${step === "mapping" ? "text-[#5479EE] font-medium" : "text-gray-400"}`}>
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "mapping" ? "bg-[#5479EE] text-white" : "bg-gray-200"}`}>2</span>
+              <div className={`flex items-center gap-1 text-sm ${step === "mapping" ? "text-brand font-medium" : "text-gray-400"}`}>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "mapping" ? "bg-brand text-white" : "bg-gray-200"}`}>2</span>
                 Map Columns
               </div>
               <div className="w-8 h-px bg-gray-300" />
-              <div className={`flex items-center gap-1 text-sm ${step === "preview" ? "text-[#5479EE] font-medium" : "text-gray-400"}`}>
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "preview" ? "bg-[#5479EE] text-white" : "bg-gray-200"}`}>3</span>
+              <div className={`flex items-center gap-1 text-sm ${step === "preview" ? "text-brand font-medium" : "text-gray-400"}`}>
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "preview" ? "bg-brand text-white" : "bg-gray-200"}`}>3</span>
                 Preview
               </div>
             </div>
@@ -406,7 +459,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
             {step === "upload" && (
               <>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${dragActive ? "border-[#5479EE] bg-purple-50" : "border-gray-300 bg-white"}`}
+                  className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${dragActive ? "border-brand bg-brand-light/40" : "border-gray-300 bg-white"}`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -414,7 +467,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                 >
                   {file ? (
                     <div className="flex flex-col items-center gap-3">
-                      <FileSpreadsheet className="w-12 h-12 text-[#5479EE]" />
+                      <FileSpreadsheet className="w-12 h-12 text-brand" />
                       <p className="font-medium text-gray-900">{file.name}</p>
                       <p className="text-sm text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
                       <button onClick={() => setFile(null)} className="mt-2 text-red-500 text-sm hover:underline">
@@ -426,12 +479,12 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                       <div className="w-12 h-12 rounded-lg border border-gray-200 flex items-center justify-center mb-4">
                         <Upload className="w-6 h-6 text-gray-600" />
                       </div>
-                      <h3 className="text-gray-900 font-medium mb-1">Choose a file or drag & drop it here</h3>
-                      <p className="text-gray-500 text-sm mb-4">Support format .xlsx or .csv</p>
+                      <h3 className="text-gray-900 font-medium mb-1">Choose a file or drag &amp; drop it here</h3>
+                      <p className="text-gray-500 text-sm mb-4">Supports .xlsx and .csv</p>
                       <input ref={inputRef} type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleChange} />
                       <button
                         onClick={() => inputRef.current?.click()}
-                        className="px-6 py-2 border border-[#5479EE] text-[#5479EE] rounded-lg font-medium hover:bg-[#5479EE] hover:text-white transition-colors"
+                        className="px-6 py-2 border border-brand text-brand rounded-lg font-medium hover:bg-brand hover:text-white transition-colors"
                       >
                         Browse File
                       </button>
@@ -439,7 +492,20 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex justify-end gap-3 mt-8 font-medium">
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-6">
+                  <AppButton
+                    onClick={downloadTemplate}
+                    variantStyle="text"
+                    startIcon={<Download className="w-4 h-4" />}
+                  >
+                    Download template
+                  </AppButton>
+                  <span className="text-xs text-gray-500">
+                    Name and Email are required; other columns are optional.
+                  </span>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4 font-medium">
                   <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                     Cancel
                   </AppButton>
@@ -468,7 +534,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     <span className="text-sm font-medium text-gray-700">Available Fields</span>
                     <button
                       onClick={() => setShowAddField(true)}
-                      className="text-sm text-[#5479EE] hover:underline flex items-center gap-1"
+                      className="text-sm text-brand hover:underline flex items-center gap-1"
                     >
                       <Plus className="w-4 h-4" /> Add Custom Field
                     </button>
@@ -481,12 +547,12 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                         value={newFieldName}
                         onChange={(e) => setNewFieldName(e.target.value)}
                         placeholder="Enter field name (e.g., Company, Address)"
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
                         onKeyDown={(e) => e.key === "Enter" && addCustomField()}
                       />
                       <button
                         onClick={addCustomField}
-                        className="px-3 py-2 bg-[#5479EE] text-white rounded-lg text-sm hover:bg-[#4368d9]"
+                        className="px-3 py-2 bg-brand text-white rounded-lg text-sm hover:bg-brand-hover"
                       >
                         Add
                       </button>
@@ -502,7 +568,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                   {/* Show custom fields as tags */}
                   <div className="flex flex-wrap gap-2">
                     {apiFields.filter(f => f.isCustom).map(field => (
-                      <span key={field.value} className="inline-flex items-center gap-1 px-2 py-1 bg-[#5479EE]/10 text-[#5479EE] rounded text-xs">
+                      <span key={field.value} className="inline-flex items-center gap-1 px-2 py-1 bg-brand/10 text-brand rounded text-xs">
                         {field.label}
                         <button onClick={() => removeCustomField(field.value!)} className="hover:text-red-500">
                           <X className="w-3 h-3" />
@@ -532,7 +598,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                             <select
                               value={mapping.apiField || ""}
                               onChange={(e) => updateMapping(mapping.excelColumn, e.target.value || null)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none"
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
                             >
                               {apiFields.map((field) => (
                                 <option key={field.label} value={field.value || ""}>
@@ -598,7 +664,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     </thead>
                     <tbody>
                       {previewData.slice(0, 50).map((row, idx) => {
-                        const isValid = row.name && row.name.trim() && row.email && row.email.trim();
+                        const issue = rowIssue(row, idx);
                         return (
                           <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                             <td className="p-3 text-gray-500">{idx + 1}</td>
@@ -608,10 +674,18 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                               </td>
                             ))}
                             <td className="p-3">
-                              {isValid ? (
+                              {!issue ? (
                                 <span className="text-green-600 text-xs bg-green-50 px-2 py-1 rounded">Valid</span>
                               ) : (
-                                <span className="text-red-600 text-xs bg-red-50 px-2 py-1 rounded">{!row.name?.trim() ? "Missing name" : "Missing email"}</span>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded ${
+                                    issue === "Duplicate email"
+                                      ? "text-amber-700 bg-amber-50"
+                                      : "text-red-600 bg-red-50"
+                                  }`}
+                                >
+                                  {issue}
+                                </span>
                               )}
                             </td>
                           </tr>
@@ -622,10 +696,31 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                 </div>
 
                 <div className="mt-3 text-sm text-gray-500">
-                  Showing {Math.min(50, previewData.length)} of {previewData.length} rows.
-                  {" "}{previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} valid, {previewData.filter((r) => !r.name?.trim() || !r.email?.trim()).length} will be skipped.
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <span>
+                      Showing {Math.min(50, previewSummary.total)} of {previewSummary.total} rows
+                    </span>
+                    <span className="text-green-700 font-medium">
+                      {previewSummary.valid} will be imported
+                    </span>
+                    {previewSummary.missingName > 0 && (
+                      <span className="text-red-600">
+                        {previewSummary.missingName} skipped — no name
+                      </span>
+                    )}
+                    {previewSummary.missingEmail > 0 && (
+                      <span className="text-red-600">
+                        {previewSummary.missingEmail} skipped — no email
+                      </span>
+                    )}
+                    {previewSummary.duplicates > 0 && (
+                      <span className="text-amber-700">
+                        {previewSummary.duplicates} skipped — duplicate email in this file
+                      </span>
+                    )}
+                  </div>
 
-                  {previewData.filter((r) => r.name?.trim() && r.email?.trim()).length > 10000 && (
+                  {previewSummary.valid > 10000 && (
                     <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-start gap-2">
                       <div className="w-5 h-5 shrink-0 mt-0.5">ℹ️</div>
                       <p>
@@ -645,14 +740,19 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     <AppButton onClick={handleClose} variantStyle="outline" color="primary">
                       Cancel
                     </AppButton>
-                    <AppButton onClick={uploadSubscribers} disabled={isLoading || previewData.filter((r) => r.name?.trim() && r.email?.trim()).length === 0} variantStyle="primary" color="primary">
+                    <AppButton
+                      onClick={uploadSubscribers}
+                      disabled={isLoading || previewSummary.valid === 0}
+                      variantStyle="primary"
+                      color="primary"
+                    >
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="animate-spin w-5 h-5" />
-                          Importing...
+                          Importing…
                         </div>
                       ) : (
-                        `Import ${previewData.filter((r) => r.name?.trim() && r.email?.trim()).length} Subscribers`
+                        `Import ${previewSummary.valid} subscriber${previewSummary.valid === 1 ? "" : "s"}`
                       )}
                     </AppButton>
                   </div>
@@ -661,7 +761,7 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </AppDialog>
 
       <ConfirmationPopup
         isOpen={showCloseConfirmation}

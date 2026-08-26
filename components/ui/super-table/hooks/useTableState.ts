@@ -84,16 +84,54 @@ export function useTableState<TData extends object>(
     return () => clearTimeout(handler);
   }, [globalFilter, debounceTime]);
 
-  // Same rule for column filters and for filters the page owns outside the
-  // table (`resetPageKey`), which cannot be batched into the debounce above.
-  const skipFirstReset = useRef(true);
+  // Same rule for the table's own column filters.
+  //
+  // These two effects compare against the PREVIOUS value rather than using a
+  // one-shot "skip the first run" flag. A one-shot flag is wrong twice over:
+  // React 18 StrictMode runs effects twice on mount and refs survive that
+  // simulated remount, so the second pass would fire the body for real; and
+  // any later no-op re-run would too.
+  //
+  // `suppressNextColumnFilterReset` covers the one case where columnFilters
+  // genuinely changes but the page must NOT move: useUrlSync restoring `?f=`
+  // on mount. Eight tables in this app enable columnFilters AND urlSync
+  // together, and without this a deep link carrying both `?f=` and `?p=3`
+  // would snap straight back to page 1.
+  const prevColumnFilters = useRef(columnFilters);
+  const suppressNextColumnFilterReset = useRef(false);
   useEffect(() => {
-    if (skipFirstReset.current) {
-      skipFirstReset.current = false;
+    if (prevColumnFilters.current === columnFilters) return;
+    prevColumnFilters.current = columnFilters;
+    if (suppressNextColumnFilterReset.current) {
+      suppressNextColumnFilterReset.current = false;
       return;
     }
     setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
-  }, [columnFilters, props.resetPageKey]);
+  }, [columnFilters]);
+
+  /**
+   * Called by SuperTable right before useUrlSync applies a restored
+   * columnFilters value, so restoring `?f=` does not throw away the `?p=3`
+   * restored on the same navigation.
+   */
+  const suppressNextFilterReset = useCallback(() => {
+    suppressNextColumnFilterReset.current = true;
+  }, []);
+
+  // Filters the PAGE owns, outside the table (`resetPageKey`). Besides going
+  // back to page 1, this clears the row selection: rowSelection is keyed by
+  // getRowId and survives a refetch, so without it the bulk bar could keep
+  // reading "3 selected" for rows the server no longer returns - easy to hit
+  // now that renderFilters puts the filter control beside that bar.
+  const prevResetPageKey = useRef(props.resetPageKey);
+  useEffect(() => {
+    if (prevResetPageKey.current === props.resetPageKey) return;
+    prevResetPageKey.current = props.resetPageKey;
+    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
+    // Keep the same object when nothing was selected, so this cannot cause an
+    // extra render and a phantom onStateChange on every filter change.
+    setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+  }, [props.resetPageKey]);
 
   // ─── ON STATE CHANGE (SERVER-SIDE BRIDGE) ─────────────────────────
   const isMounted = useRef(false);
@@ -172,6 +210,7 @@ export function useTableState<TData extends object>(
     setRowSelection,
     // Utilities
     clearSelection,
+    suppressNextFilterReset,
     currentState,
   };
 }

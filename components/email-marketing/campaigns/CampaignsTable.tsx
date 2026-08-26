@@ -39,6 +39,14 @@ interface CampaignsTableProps {
   onExportRequest?: (params: any) => Promise<Campaign[]>;
   /** Bumped by the page when the status filter changes. */
   resetPageKey?: string | number;
+  /** Filter controls rendered inside the table toolbar, left of any actions. */
+  renderFilters?: () => React.ReactNode;
+  /** Active filter in words, e.g. "Draft" — used by the empty state. */
+  activeFilterSummary?: string;
+  /** Active search term — the empty state has to account for it too. */
+  activeSearch?: string;
+  /** Offered from the empty state when a filter matched nothing. */
+  onClearFilters?: () => void;
   onEdit: (campaign: Campaign) => void;
   onDelete: (campaign: Campaign) => void;
   onView?: (campaign: Campaign) => void;
@@ -85,6 +93,10 @@ export default function CampaignsTable({
   onStateChange,
   onExportRequest,
   resetPageKey,
+  renderFilters,
+  activeFilterSummary,
+  activeSearch,
+  onClearFilters,
   onEdit,
   onDelete,
   onView,
@@ -198,19 +210,57 @@ export default function CampaignsTable({
       isError={isError}
       errorMessage={errorMessage}
       onRetry={onRetry}
-      renderEmptyState={() => (
-        <EmptyState
-          icon={Mail}
-          title="No campaigns found"
-          description="Create an email campaign to reach your subscribers."
-          action={
-            onAdd ? { label: "Add Campaign", onClick: onAdd, icon: <Plus size={16} /> } : undefined
-          }
-        />
-      )}
+      // A filtered-to-zero table used to read as "you have no campaigns",
+      // which is a different and much more alarming statement.
+      //
+      // Two things this has to get right. First, while a refetch is in flight
+      // the rows on screen belong to the PREVIOUS query (keepPreviousData), so
+      // pairing them with the new filter's name would state something false
+      // like "No Stopped campaigns" about a set that was never queried. Say
+      // nothing until the answer is in. Second, the search box filters this
+      // list too, so clearing the status filter while a search is still active
+      // must not fall through to "you have no campaigns".
+      renderEmptyState={() =>
+        isFetching ? (
+          <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
+            Loading campaigns…
+          </Box>
+        ) : activeFilterSummary || activeSearch ? (
+          <EmptyState
+            icon={Mail}
+            title={
+              activeFilterSummary && !activeSearch
+                ? `No ${activeFilterSummary} campaigns`
+                : "No matching campaigns"
+            }
+            description={
+              activeSearch && activeFilterSummary
+                ? `No campaign matches "${activeSearch}" with status ${activeFilterSummary}.`
+                : activeSearch
+                  ? `No campaign matches "${activeSearch}".`
+                  : "No campaign matches the filter you have applied."
+            }
+            action={
+              activeFilterSummary && onClearFilters
+                ? { label: "Clear filter", onClick: onClearFilters }
+                : undefined
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={Mail}
+            title="No campaigns found"
+            description="Create an email campaign to reach your subscribers."
+            action={
+              onAdd ? { label: "Add Campaign", onClick: onAdd, icon: <Plus size={16} /> } : undefined
+            }
+          />
+        )
+      }
       onStateChange={onStateChange}
       onExportRequest={onExportRequest}
       resetPageKey={resetPageKey}
+      renderFilters={renderFilters}
       initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
       renderBulkActions={({ selectedRows, clearSelection }) => (
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>

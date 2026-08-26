@@ -45,6 +45,20 @@ interface TableFilterBarProps {
   onChange: (values: TableFilterValues) => void;
   /** Rendered after the chips — e.g. a result count. */
   children?: React.ReactNode;
+  /**
+   * `"strip"`   — standalone band above the table (default): keeps a bottom
+   *               margin and always shows "Clear all".
+   * `"toolbar"` — embedded in SuperTable's toolbar via the `renderFilters`
+   *               slot: no bottom margin, and "Clear all" hides below `md`.
+   *
+   * Only spacing and the "Clear all" breakpoint differ between them. The
+   * trigger's active state, labelling and popover semantics are shared — those
+   * are fixes rather than layout, and both variants want them.
+   *
+   * The chips stay visible at every width on purpose: they are what tells you
+   * WHICH filter is on, while the trigger only tells you that one is.
+   */
+  layout?: "strip" | "toolbar";
 }
 
 export function TableFilterBar({
@@ -52,7 +66,9 @@ export function TableFilterBar({
   values,
   onChange,
   children,
+  layout = "strip",
 }: TableFilterBarProps) {
+  const inToolbar = layout === "toolbar";
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const active = useMemo(
@@ -73,22 +89,44 @@ export function TableFilterBar({
   const setOne = (id: string, value: string | undefined) =>
     onChange({ ...values, [id]: value || undefined });
 
+  const triggerLabel = active.length > 0 ? `Filters (${active.length})` : "Filters";
+
   return (
     <Stack
       direction="row"
       alignItems="center"
       flexWrap="wrap"
-      sx={{ gap: 1, mb: 1.5 }}
+      sx={{ gap: 1, mb: inToolbar ? 0 : 1.5 }}
     >
       <AppButton
         variantStyle="outline"
         color="gray"
         startIcon={<ListFilter size={16} />}
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        aria-haspopup="true"
+        aria-haspopup="dialog"
         aria-expanded={Boolean(anchorEl)}
+        // Extends the visible label rather than replacing it (WCAG 2.5.3
+        // Label in Name), so voice control still matches on "Filters".
+        aria-label={
+          active.length > 0
+            ? `${triggerLabel}: ${active.map((a) => `${a.label} ${a.text}`).join(", ")}`
+            : triggerLabel
+        }
+        sx={{
+          flexShrink: 0,
+          // The active state is carried by the BORDER, not a background tint.
+          // A tint would (a) be wiped on hover by AppButton's own
+          // `&:hover { backgroundColor: alpha(main, .04) }` and (b) leave 16px
+          // text on primary.light at ~3.1:1, under WCAG AA. A border is a UI
+          // component, so 3:1 is the bar and #5479EE on white clears it — and
+          // the chips beside the button already carry the colour signal.
+          ...(active.length > 0 && {
+            borderColor: "primary.main",
+            "&:hover": { borderColor: "primary.main" },
+          }),
+        }}
       >
-        {active.length > 0 ? `Filters (${active.length})` : "Filters"}
+        {triggerLabel}
       </AppButton>
 
       {active.map((chip) => (
@@ -129,7 +167,12 @@ export function TableFilterBar({
       ))}
 
       {active.length > 0 && (
-        <AppButton variantStyle="text" color="gray" onClick={() => onChange({})}>
+        <AppButton
+          variantStyle="text"
+          color="gray"
+          onClick={() => onChange({})}
+          sx={inToolbar ? { display: { xs: "none", md: "inline-flex" } } : undefined}
+        >
           Clear all
         </AppButton>
       )}
@@ -141,7 +184,16 @@ export function TableFilterBar({
         anchorEl={anchorEl}
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        slotProps={{ paper: { sx: { p: 2, minWidth: 260, borderRadius: 2 } } }}
+        // `aria-haspopup="dialog"` on the trigger has to be true: give the
+        // Paper the role and an accessible name, otherwise the trigger
+        // promises a widget that never appears in the accessibility tree.
+        slotProps={{
+          paper: {
+            role: "dialog",
+            "aria-label": "Filters",
+            sx: { p: 2, minWidth: 260, borderRadius: 2 },
+          },
+        }}
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
           Filters

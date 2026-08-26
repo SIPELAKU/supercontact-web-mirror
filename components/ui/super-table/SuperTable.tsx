@@ -65,7 +65,12 @@ export function SuperTable<TData extends object>(
       if (state.pagination) tableState.setPagination(state.pagination);
       if (state.sorting) tableState.setSorting(state.sorting);
       if (state.globalFilter !== undefined) tableState.setGlobalFilter(state.globalFilter);
-      if (state.columnFilters) tableState.setColumnFilters(state.columnFilters);
+      if (state.columnFilters) {
+        // Restoring `?f=` is not a user filter change, so it must not send the
+        // table back to page 1 and discard the `?p=3` we just restored above.
+        tableState.suppressNextFilterReset();
+        tableState.setColumnFilters(state.columnFilters);
+      }
       if (state.grouping) tableState.setGrouping(state.grouping);
     },
   });

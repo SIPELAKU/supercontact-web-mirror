@@ -336,6 +336,27 @@ export interface SuperTableSlots<TData extends object> {
    */
   renderTopRightToolbar?: (table: MRT_TableInstance<TData>) => React.ReactNode;
 
+  /**
+   * Kontrol filter yang dirender DI DALAM toolbar tabel, paling kiri, sebelum
+   * tombol aksi `renderTopLeftToolbar`.
+   *
+   * Bedanya dengan `renderTopLeftToolbar`: slot ini TIDAK digantikan saat ada
+   * baris tercentang. `BulkActionsBar` hanya mengambil alih tombol aksi di
+   * sebelahnya, bukan filternya - jadi user yang mencentang checkbox tetap
+   * melihat (dan bisa mengubah) filter yang sedang aktif. Itulah alasan slot
+   * ini ada dan bukan sekadar memakai `renderTopLeftToolbar`.
+   *
+   * Hanya untuk filter yang dikirim halaman ke server. JANGAN dipakai bersama
+   * `features.columnFilters: true` - user akan mendapat dua afordansi filter
+   * sekaligus (kontrol ini + tombol corong bawaan MRT).
+   *
+   * PENTING: kembalikan `null` (bukan elemen yang kebetulan me-render null)
+   * bila tidak ada filter untuk ditampilkan. MRT memasang spacer `<span/>`
+   * hanya saat render prop ini MENGEMBALIKAN null; elemen yang me-render null
+   * tetap truthy dan membuat cluster search/Export/View tertarik ke kiri.
+   */
+  renderFilters?: (table: MRT_TableInstance<TData>) => React.ReactNode;
+
   /** 
    * Sebuah block element yang akan menggantikan TopLeftToolbar SEPENUHNYA
    * jika dan hanya jika kotak row selection ada yang tercentang.
@@ -451,6 +472,11 @@ export interface SuperTableProps<TData extends object>
    * e.g. a status filter bar. SuperTable resets to page 1, the same way it
    * does for its own search box, so the paginator can't keep highlighting a
    * page the new result set no longer has.
+   *
+   * It ALSO clears the row selection. `rowSelection` is keyed by `getRowId`
+   * and survives a refetch, so without this the bulk bar could keep reading
+   * "3 selected" for rows the server no longer returns - a real hazard now
+   * that `renderFilters` puts the filter control right next to that bar.
    */
   resetPageKey?: string | number;
 }

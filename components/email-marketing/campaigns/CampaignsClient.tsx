@@ -295,39 +295,56 @@ export default function CampaignsClient() {
         }
       />
 
-      <div>
-        <TableFilterBar
-          filters={statusFilters}
-          values={filters}
-          onChange={handleFiltersChange}
-        />
-
-        <CampaignsTable
-          campaigns={campaigns}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          isError={isError}
-          errorMessage={isError && error ? handleError(error, "Fetch Campaigns") : undefined}
-          onRetry={() => refetch()}
-          onAdd={handleAdd}
-          rowCount={totalCount}
-          onStateChange={handleTableStateChange}
-          onExportRequest={handleExportRequest as any}
-          resetPageKey={statusParam ?? ''}
-          onEdit={handleEdit}
-          onDelete={handleDeleteRequest}
-          onView={handleView}
-          onDuplicate={handleDuplicate}
-          onResend={handleResend}
-          onStop={handleStop}
-          resendingCampaignId={resendingCampaignId}
-          stoppingCampaignId={stoppingCampaignId}
-          onBulkDelete={handleBulkDelete}
-          onBulkDuplicate={handleBulkDuplicate}
-          isBulkDeleting={isBulkDeleting}
-          isBulkDuplicating={isBulkDuplicating}
-        />
-      </div>
+      <CampaignsTable
+        // The status filter renders INSIDE the table toolbar. It uses the
+        // renderFilters slot rather than renderTopLeftToolbar because the
+        // left slot is replaced wholesale by the bulk-actions bar the moment
+        // a row is ticked — which would hide the active filter exactly when
+        // someone is about to bulk-delete a filtered set.
+        //
+        // The `.length` guard matters: TableFilterBar returns null when it
+        // has no filters, and SuperTable needs this prop to RETURN null so
+        // MRT keeps its <span/> spacer and the search/Export/View cluster
+        // stays pinned right.
+        renderFilters={
+        statusFilters.length > 0
+          ? () => (
+              <TableFilterBar
+                layout="toolbar"
+                filters={statusFilters}
+                values={filters}
+                onChange={handleFiltersChange}
+              />
+              )
+            : undefined
+        }
+        activeFilterSummary={statusParam}
+        activeSearch={searchParam}
+        onClearFilters={() => handleFiltersChange({})}
+        campaigns={campaigns}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isError={isError}
+        errorMessage={isError && error ? handleError(error, "Fetch Campaigns") : undefined}
+        onRetry={() => refetch()}
+        onAdd={handleAdd}
+        rowCount={totalCount}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest as any}
+        resetPageKey={statusParam ?? ''}
+        onEdit={handleEdit}
+        onDelete={handleDeleteRequest}
+        onView={handleView}
+        onDuplicate={handleDuplicate}
+        onResend={handleResend}
+        onStop={handleStop}
+        resendingCampaignId={resendingCampaignId}
+        stoppingCampaignId={stoppingCampaignId}
+        onBulkDelete={handleBulkDelete}
+        onBulkDuplicate={handleBulkDuplicate}
+        isBulkDeleting={isBulkDeleting}
+        isBulkDuplicating={isBulkDuplicating}
+      />
 
       <ViewCampaignStatsModal
         open={isViewModalOpen}

@@ -57,6 +57,16 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/sales/pipeline-stages",
         permission: "pipelines",
       },
+      {
+        // Gated on the channel-setup grant, not "pipelines": this changes how
+        // conversations behave, which is the same authority as configuring a
+        // channel. A section's own permission is not checked when it has
+        // children, so an omnichannel admin sees Sales with just this entry.
+        id: "sales-assistant",
+        title: "Asisten Penjualan",
+        path: "/settings/sales/assistant",
+        permission: "omnichannel:setup",
+      },
     ],
   },
   {

@@ -16,6 +16,7 @@ import { notify } from '@/lib/notifications';
 import { CircularProgress, Tooltip } from '@mui/material';
 import { AlertCircle, CheckCircle2, HelpCircle, Play, Plus, Server } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import PlatformSenderCard from './PlatformSenderCard';
 import AddMailServerModal from './AddMailServerModal';
 import EditMailServerModal from './EditMailServerModal';
 import ConnectionStatusModal from './ConnectionStatusModal';
@@ -303,6 +304,8 @@ export const MailServerClient = () => {
                     { label: "Servers" }
                 ]}
             />
+
+            <PlatformSenderCard option={response?.data?.platform_sender} />
 
             <SuperTable<MailServer>
                 tableId="mail-servers-table"

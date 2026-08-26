@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { MailServerResponse, MailServer, MailServerConnectionLogResponse } from "../models/types";
-import { fetchMailServers, createMailServer, updateMailServer, fetchMailServerConnectionLog, testMailServerConnection, deleteMailServer, updateMailServerStatus } from "../api/mail-servers";
+import { setUsePlatformSender, fetchMailServers, createMailServer, updateMailServer, fetchMailServerConnectionLog, testMailServerConnection, deleteMailServer, updateMailServerStatus } from "../api/mail-servers";
 
 export function useMailServers(
     page: number,
@@ -109,5 +109,19 @@ export function useTestMailServerConnection() {
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["mail-servers"] });
         },
+    });
+}
+
+export function useSetUsePlatformSender() {
+    const { token } = useAuth();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (enabled: boolean) => {
+            if (!token) throw new Error('No authentication token');
+            return setUsePlatformSender(token, enabled);
+        },
+        // The tenant's own rows lose their default when the platform sender is
+        // picked, so the table is stale too - not just this card.
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mail-servers"] }),
     });
 }

@@ -134,11 +134,18 @@ export default function CampaignsTable({
         enableColumnFilter: false,
         Cell: ({ row }) => getStatusChip(row.original.status, row.original.failure_reason),
       },
+      // Every column id below is a sort key the API honours (see
+      // SORTABLE_COLUMNS / DERIVED_SORT_KEYS in campaign_repository.py).
+      // Recipients is a stored column; Delivered / Opened / Open Rate are
+      // aggregated from email_logs by the SAME timestamp-presence rule these
+      // cells display, so the arrow can never sort by one number while the
+      // column shows another. Campaigns with no delivery data sort to the
+      // bottom in BOTH directions - they have no open rate, rather than one
+      // of zero.
       {
         id: "total_target",
         accessorKey: "total_target",
         header: "Recipients",
-        enableSorting: false,
         size: 110,
         Cell: ({ row }) => (row.original.total_target ?? 0).toLocaleString(),
       },
@@ -149,21 +156,18 @@ export default function CampaignsTable({
       {
         id: "delivered",
         header: "Delivered",
-        enableSorting: false,
         size: 110,
         Cell: ({ row }) => (row.original.stats?.delivered ?? 0).toLocaleString(),
       },
       {
         id: "opened",
         header: "Opened",
-        enableSorting: false,
         size: 100,
         Cell: ({ row }) => (row.original.stats?.opened ?? 0).toLocaleString(),
       },
       {
         id: "open_rate",
         header: "Open Rate",
-        enableSorting: false,
         size: 110,
         Cell: ({ row }) =>
           percent(row.original.stats?.opened ?? 0, row.original.stats?.delivered ?? 0),
@@ -184,9 +188,9 @@ export default function CampaignsTable({
         id: "user_fullname",
         accessorKey: "user_fullname",
         header: "Created By",
-        // Creator comes from the joined User (selectinload, not a join) -
-        // the backend can't sort by it, so don't offer a lying sort arrow.
-        enableSorting: false,
+        // The author used to arrive via selectinload only, which is a separate
+        // query and cannot be ordered on; the repository now joins users when
+        // this key is requested, so the arrow is real.
         Cell: ({ row }) => <span>{row.original.user_fullname || "N/A"}</span>,
       },
     ],

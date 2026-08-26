@@ -32,7 +32,11 @@ export default function NewCampaignClient() {
           payload.recipientSource === "subscriber" && payload.subscriberIds.length > 0
             ? payload.subscriberIds
             : undefined,
-        mail_server_id: payload.mailServerId || undefined,
+        // null, not undefined: an empty choice means "follow the company
+        // default", and `undefined` is dropped from the JSON, which on a PATCH
+        // reads as "leave it alone" - so picking the default silently kept the
+        // old server.
+        mail_server_id: payload.mailServerId || null,
       });
 
       notify.success(

@@ -161,7 +161,6 @@ export function CampaignComposer({
     if (!draft.subject.trim()) next.subject = "Subject is required";
 
     if (action === "send") {
-      if (!draft.mailServerId) next.mailServer = "Pick the SMTP server to send from";
       if (!html.trim()) next.content = "Write the email content before sending";
       if (draft.recipientSource === "mailing_list" && draft.mailingListIds.length === 0) {
         next.recipients = "Select at least one mailing list";
@@ -199,14 +198,27 @@ export function CampaignComposer({
   const leave = () => router.push(backHref);
   const handleBack = () => (dirty ? setConfirmLeave(true) : leave());
 
-  const mailServerOptions = useMemo(
-    () =>
-      mailServers.map((server: any) => ({
-        value: server.id,
-        label: `${server.name} (${server.from_email})`,
-      })),
-    [mailServers]
-  );
+  const platformSender = mailServersData?.data?.platform_sender;
+
+  // An empty value means "whatever this company sends through", which the
+  // backend resolves at send time - so it follows the tenant's choice instead
+  // of pinning the campaign to a row that may stop being the default.
+  const mailServerOptions = useMemo(() => {
+    const options = mailServers.map((server: any) => ({
+      value: server.id,
+      label: `${server.name} (${server.from_email})`,
+    }));
+    // Gated on `selected`, not `available`: the backend only routes through the
+    // platform sender for companies that actually chose it, so offering it to
+    // everyone would be an option that silently does nothing.
+    if (platformSender?.selected) {
+      options.unshift({
+        value: "",
+        label: `Pengirim default perusahaan (${platformSender.from_email})`,
+      });
+    }
+    return options;
+  }, [mailServers, platformSender]);
 
   const recipientCount =
     draft.recipientSource === "mailing_list"
@@ -328,7 +340,7 @@ export function CampaignComposer({
                 Send from
               </Typography>
               <AppSelect
-                placeholder={isLoadingMailServers ? "Loading mail servers…" : "Select SMTP server"}
+                placeholder={isLoadingMailServers ? "Loading mail servers…" : "Pengirim default perusahaan"}
                 value={draft.mailServerId}
                 onChange={(e) => {
                   set("mailServerId", e.target.value as string);
@@ -340,8 +352,11 @@ export function CampaignComposer({
                 helperText={errors.mailServer}
               />
               <Alert severity="info" sx={{ mt: 1.5, "& .MuiAlert-message": { fontSize: "0.8rem" } }}>
-                Delivery, open and click tracking depend on the SMTP server you pick — some
-                servers report none of it.
+                {draft.mailServerId
+                  ? "Delivery, open and click tracking depend on the SMTP server you pick — some servers report none of it."
+                  : platformSender?.available
+                    ? `Dikirim lewat pengirim default perusahaan — saat ini ${platformSender.from_email}. Penerima melihat alamat itu, dan campaign ikut berubah kalau default perusahaan diganti.`
+                    : "Belum ada pengirim. Tambahkan mail server di Settings › Email › Servers, atau pakai pengirim platform."}
               </Alert>
             </Paper>
 

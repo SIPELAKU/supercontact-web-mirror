@@ -17,7 +17,7 @@ import type {
   SubscribersResponse,
   BulkJobsResponse
 } from '@/lib/types/email-marketing';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 import { UpdateSubscriberData } from '@/lib/api/email-marketing/subscribers';
 
@@ -35,6 +35,10 @@ export function useSubscribers(
       if (!token) throw new Error('No authentication token');
       return fetchSubscribers(token, page, limit, search, sortBy, sortOrder);
     },
+    // Without this the table dropped to a skeleton on every keystroke, page
+    // change and sort - the single biggest source of the "kaku" feel. Keeping
+    // the previous rows visible turns those into a progress bar over live data.
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
+import {
+  MaterialReactTable,
+  MRT_TableInstance,
+  useMaterialReactTable,
+} from 'material-react-table';
 import { SuperTableProps } from './types';
 
 // Hooks
@@ -11,6 +15,9 @@ import { useSavedFilters } from './hooks/useSavedFilters';
 import { useUrlSync } from './hooks/useUrlSync';
 import { useTableConfig } from './hooks/useTableConfig';
 
+// Components
+import { ExportDialog } from './components/ExportDialog';
+
 export function SuperTable<TData extends object>(
   props: SuperTableProps<TData>
 ) {
@@ -18,13 +25,22 @@ export function SuperTable<TData extends object>(
   const tableState = useTableState(props);
 
   // 2. Inisialisasi Exporting features
+  const exportEnabled = !!(
+    props.features?.export?.excel || props.features?.export?.csv
+  );
   const exportUtils = useTableExport<TData>({
-    enabled: !!(props.features?.export?.excel || props.features?.export?.csv),
+    enabled: exportEnabled,
     isManual: !!props.manualPagination,
     tableId: props.tableId,
+    exportFileName: props.exportFileName,
     onExportRequest: props.onExportRequest,
     currentState: tableState.currentState,
   });
+
+  // The dialog needs the live table instance, which only exists after
+  // useMaterialReactTable below - hold it in a ref the opener fills in.
+  const [exportOpen, setExportOpen] = React.useState(false);
+  const tableRef = React.useRef<MRT_TableInstance<TData> | null>(null);
 
   // 3. Inisialisasi Saved Filters Custom logic
   const savedFilters = useSavedFilters({
@@ -42,26 +58,89 @@ export function SuperTable<TData extends object>(
   useUrlSync({
     enabled: !!(props.features?.urlSync && props.tableId),
     tableId: props.tableId ?? '',
+    urlKey: props.urlKey,
+    defaultPageSize: props.initialState?.pagination?.pageSize ?? 10,
     state: tableState.currentState,
     onRestoreState: (state) => {
       if (state.pagination) tableState.setPagination(state.pagination);
       if (state.sorting) tableState.setSorting(state.sorting);
       if (state.globalFilter !== undefined) tableState.setGlobalFilter(state.globalFilter);
-      if (state.columnFilters) tableState.setColumnFilters(state.columnFilters);
+      if (state.columnFilters) {
+        // Restoring `?f=` is not a user filter change, so it must not send the
+        // table back to page 1 and discard the `?p=3` we just restored above.
+        tableState.suppressNextFilterReset();
+        tableState.setColumnFilters(state.columnFilters);
+      }
       if (state.grouping) tableState.setGrouping(state.grouping);
     },
   });
 
   // 5. Susun dan Build Konfigurasi MRT raksasa
-  const mrtConfig = useTableConfig(props, tableState, exportUtils, savedFilters);
+  const mrtConfig = useTableConfig(
+    props,
+    tableState,
+    exportUtils,
+    savedFilters,
+    (table: MRT_TableInstance<TData>) => {
+      tableRef.current = table;
+      setExportOpen(true);
+    }
+  );
 
   // 6. Instansiasi MRT Table
   const table = useMaterialReactTable({
     columns: props.columns || [],
     data: props.data || [],
     ...mrtConfig,
-  } as any);
+  } as any) as MRT_TableInstance<TData>;
+
+  const exportColumns = React.useMemo(() => {
+    if (!exportOpen) return [];
+    return table
+      .getAllLeafColumns()
+      .filter(
+        (col) =>
+          col.id !== 'mrt-row-select' &&
+          col.id !== 'mrt-row-actions' &&
+          col.id !== 'mrt-row-expand' &&
+          col.id !== 'actions'
+      )
+      .map((col) => ({
+        id: col.id,
+        label:
+          typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id,
+      }));
+  }, [exportOpen, table]);
 
   // 7. Render UI
-  return <MaterialReactTable table={table} />;
+  return (
+    <>
+      <MaterialReactTable table={table as any} />
+
+      {exportEnabled && (
+        <ExportDialog
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          columns={exportColumns}
+          pageCount={table.getRowModel().rows.length}
+          totalCount={
+            props.manualPagination
+              ? (props.rowCount ?? props.data?.length ?? 0)
+              : table.getFilteredRowModel().rows.length
+          }
+          selectedCount={table.getSelectedRowModel().rows.length}
+          allowedFormats={{
+            excel: !!props.features?.export?.excel,
+            csv: !!props.features?.export?.csv,
+          }}
+          isExporting={exportUtils.isExporting}
+          progress={exportUtils.progress}
+          onConfirm={async (options) => {
+            await exportUtils.runExport(tableRef.current ?? table, options);
+            setExportOpen(false);
+          }}
+        />
+      )}
+    </>
+  );
 }

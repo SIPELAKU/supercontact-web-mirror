@@ -3,6 +3,15 @@
 import { useCallback, useState } from 'react';
 import { notify } from '@/lib/notifications';
 import Cookies from 'js-cookie';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+} from '@mui/material';
+import { History, MoreVertical, Plus, Trash2, Upload } from 'lucide-react';
 
 import SubscribersTable from '@/components/email-marketing/subscribers/SubscribersTable';
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
@@ -10,17 +19,22 @@ import EditSubscriberModal from '@/components/email-marketing/subscribers/modals
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
 import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
 import PageHeader from '@/components/ui/page-header';
+import { AppButton } from '@/components/ui/app-button';
 import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
 import { fetchSubscribers } from '@/lib/api/email-marketing/subscribers';
 import { Subscriber } from '@/lib/types/email-marketing';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
+import { EXPORT_MAX_PAGES, EXPORT_PAGE_SIZE } from '@/lib/constants/export';
 
 export default function SubscribersClient() {
+  const queryClient = useQueryClient();
+
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [isHistoryModalOpen, setHistoryModalOpen] = useState(false);
   const [selectedSubscriber, setSelectedSubscriber] = useState<Subscriber | null>(null);
+  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
@@ -36,7 +50,7 @@ export default function SubscribersClient() {
   const sortBy = sort?.id;
   const sortOrder: 'asc' | 'desc' | undefined = sort ? (sort.desc ? 'desc' : 'asc') : undefined;
 
-  const { data, isLoading, isError, error, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
+  const { data, isLoading, isFetching, isError, error, refetch } = useSubscribers(page, limit, searchQuery, sortBy, sortOrder);
 
   const subscribers = data?.data?.contacts || [];
   const totalCount = data?.data?.total || 0;
@@ -57,12 +71,21 @@ export default function SubscribersClient() {
     setSelectedSubscriber(null);
   };
 
+  // Invalidate rather than the old blind `setTimeout(refetch, 2000)` — a guess
+  // that was always either too early for an import or too slow for a single
+  // add.
   const handleSuccess = () => {
     handleCloseModals();
-    // Delay refetch to allow background async processes to reflect in the database
-    setTimeout(() => {
-      refetch();
-    }, 2000);
+    queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+  };
+
+  // An import runs as a background job, so there is nothing to refetch yet when
+  // the wizard closes. Hand the user straight to Import History, which polls
+  // the job and invalidates ['subscribers'] the moment it finishes — the
+  // mechanism the 2-second timer was blindly guessing at.
+  const handleImportSuccess = () => {
+    handleCloseModals();
+    setHistoryModalOpen(true);
   };
 
   const handleOpenEditModal = (subscriber: Subscriber) => {
@@ -138,49 +161,115 @@ export default function SubscribersClient() {
     setSorting(state.sorting || []);
   }, [page, limit, searchQuery]);
 
-  // Export handler: loop pagination to fetch all data
-  const handleExportRequest = useCallback(async (): Promise<Subscriber[]> => {
-    try {
-      const token = Cookies.get('access_token');
-      if (!token) throw new Error('No authentication token');
+  // Export handler: walk every page of the current query, reporting progress
+  // so the export dialog can show "Fetched 3,000 of 12,400 rows".
+  const handleExportRequest = useCallback(async ({
+    onProgress,
+  }: {
+    onProgress?: (fetched: number, total: number) => void;
+  }): Promise<Subscriber[]> => {
+    const token = Cookies.get('access_token');
+    if (!token) throw new Error('No authentication token');
 
-      let allData: Subscriber[] = [];
-      let currentPage = 1;
-      let totalPages = 1;
+    let allData: Subscriber[] = [];
+    let currentPage = 1;
+    let totalPages = 1;
 
-      do {
-        const result = await fetchSubscribers(token, currentPage, 50, searchQuery || undefined, sortBy, sortOrder);
+    do {
+      const result = await fetchSubscribers(
+        token,
+        currentPage,
+        EXPORT_PAGE_SIZE,
+        searchQuery || undefined,
+        sortBy,
+        sortOrder
+      );
 
-        const items = result?.data?.contacts || [];
-        const total = result?.data?.total || 0;
-        totalPages = Math.ceil(total / 50) || 1;
+      const items = result?.data?.contacts || [];
+      const total = result?.data?.total || 0;
+      totalPages = Math.min(
+        Math.ceil(total / EXPORT_PAGE_SIZE) || 1,
+        EXPORT_MAX_PAGES
+      );
 
-        allData = [...allData, ...items];
-        currentPage++;
-      } while (currentPage <= totalPages);
+      allData = [...allData, ...items];
+      onProgress?.(allData.length, total);
+      currentPage++;
+    } while (currentPage <= totalPages);
 
-      return allData;
-    } catch (err) {
-      console.error('Export error:', err);
-      notify.error('Failed to export subscribers.');
-
-      return [];
-    }
+    return allData;
   }, [searchQuery, sortBy, sortOrder]);
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <PageHeader
         title="Subscribers"
+        description="Everyone who can receive an email campaign. Add them one at a time, or import a spreadsheet."
         breadcrumbs={[
-          { label: "Email Marketing" },
+          { label: "Email Marketing", href: "/email-marketing" },
           { label: "Subscribers" },
         ]}
+        actions={
+          <>
+            <AppButton
+              variantStyle="outline"
+              color="gray"
+              onClick={handleOpenHistoryModal}
+              startIcon={<History size={16} />}
+              className="whitespace-nowrap"
+            >
+              History
+            </AppButton>
+            <AppButton
+              variantStyle="outline"
+              onClick={handleOpenImportModal}
+              startIcon={<Upload size={16} />}
+              className="whitespace-nowrap"
+            >
+              Import
+            </AppButton>
+            <AppButton
+              variantStyle="primary"
+              onClick={handleOpenAddModal}
+              startIcon={<Plus size={16} />}
+              className="whitespace-nowrap"
+            >
+              Add Subscriber
+            </AppButton>
+            <IconButton
+              aria-label="More actions"
+              aria-haspopup="true"
+              onClick={(e) => setMoreAnchor(e.currentTarget)}
+              size="small"
+            >
+              <MoreVertical size={18} />
+            </IconButton>
+            <Menu
+              anchorEl={moreAnchor}
+              open={Boolean(moreAnchor)}
+              onClose={() => setMoreAnchor(null)}
+            >
+              <MenuItem
+                onClick={() => {
+                  setMoreAnchor(null);
+                  setConfirmAllOpen(true);
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <ListItemIcon sx={{ color: 'error.main', minWidth: 32 }}>
+                  <Trash2 size={16} />
+                </ListItemIcon>
+                <ListItemText primary="Delete all subscribers" />
+              </MenuItem>
+            </Menu>
+          </>
+        }
       />
 
       <SubscribersTable
         subscribers={subscribers}
         isLoading={isLoading}
+        isFetching={isFetching}
         isError={isError}
         errorMessage={error instanceof Error ? error.message : undefined}
         onRetry={() => refetch()}
@@ -188,20 +277,18 @@ export default function SubscribersClient() {
         onAdd={handleOpenAddModal}
         onEdit={handleOpenEditModal}
         onDeleteRequest={handleDeleteRequest}
-        onImport={handleOpenImportModal}
-        onImportHistory={handleOpenHistoryModal}
-        onDeleteAllRequest={() => setConfirmAllOpen(true)}
         onDuplicate={handleDuplicate}
-        onExportRequest={handleExportRequest}
+        onExportRequest={handleExportRequest as any}
         onStateChange={handleStateChange}
+        onSuccess={handleSuccess}
         isDuplicating={duplicateMutation.isPending}
       />
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      <ImportHistoryModal 
-        open={isHistoryModalOpen} 
-        onClose={() => setHistoryModalOpen(false)} 
+      <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleImportSuccess} />
+      <ImportHistoryModal
+        open={isHistoryModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
         targetFilter={["subscriber", "contact"]}
         storageKey="import_interval_subscriber"
       />

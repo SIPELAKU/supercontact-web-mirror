@@ -128,9 +128,22 @@ The standard data table (wraps Material React Table). Golden rules:
    - pagination: `state.pagination.pageIndex/pageSize` → `page` / `page_size`
    Reset to page 1 whenever search or filters change.
 6. Loading: `isLoading` for first load (skeleton), `isFetching` for background refetch.
-7. Slots: `renderTopLeftToolbar` (Add/Import buttons), `renderBulkActions` (shown while
-   rows are selected), `renderRowActions` (right-most actions column),
-   `renderDetailPanel`.
+7. Slots, and which of them survive a row selection:
+   - `renderFilters` — filter controls, far left **inside** the table toolbar. **Not**
+     replaced when rows are selected, so an active filter stays visible (and
+     changeable) while a bulk action is being set up. For server-driven filter
+     params only, and never together with `features.columnFilters: true` — two
+     filter affordances on one table is always a bug. Must **return** `null` when
+     there is nothing to show.
+   - `renderTopLeftToolbar` — Add/Import buttons. **Replaced wholesale** by the bulk
+     bar while rows are selected, so never put a filter here.
+   - `renderBulkActions` — shown while rows are selected.
+   - `renderRowActions` — right-most actions column.
+   - `renderDetailPanel`.
+
+   Pair a page-owned filter with `resetPageKey`: changing it sends the table back to
+   page 1 **and** clears the row selection, so the bulk bar can't keep counting rows
+   the server no longer returns.
 
 See `components/ui/super-table/README.md` and `types.ts` for the full API, and
 `app/(app)/demo/super-table` (dev-only) for a live playground.

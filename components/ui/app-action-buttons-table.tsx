@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Pencil, Trash2, Copy, RotateCw } from "lucide-react";
+import { Eye, Pencil, Trash2, Copy, RotateCw, CircleStop } from "lucide-react";
 import { AppButtonIconProps } from "./app-button-icon";
 import { Spinner } from "./spinner";
 
@@ -65,6 +65,18 @@ export const ResendButton: React.FC<ActionButtonProps> = ({ onClick, color, vari
             <span>
                 <IconButton size="small" color="primary" onClick={onClick} disabled={isLoading} {...props}>
                     {isLoading ? <Spinner /> : <RotateCw className="w-4 h-4" />}
+                </IconButton>
+            </span>
+        </Tooltip>
+    );
+};
+
+export const StopButton: React.FC<ActionButtonProps> = ({ onClick, color, variantStyle, isLoading, customTitle, ...props }) => {
+    return (
+        <Tooltip title={customTitle || "Stop"}>
+            <span>
+                <IconButton size="small" color="warning" onClick={onClick} disabled={isLoading} {...props}>
+                    {isLoading ? <Spinner /> : <CircleStop className="w-4 h-4" />}
                 </IconButton>
             </span>
         </Tooltip>

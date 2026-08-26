@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Box, IconButton, Stack, Tooltip } from '@mui/material';
-import { Download, Eye, Pencil, Plus, Trash2, Save, History, MailPlus } from 'lucide-react';
+import { Copy, Eye, MailPlus, Plus, Save, Trash2 } from 'lucide-react';
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -17,6 +17,7 @@ import { SubscriberPreviewPopup } from './SubscriberPreviewPopup';
 interface SubscribersTableProps {
   subscribers: Subscriber[];
   isLoading: boolean;
+  isFetching?: boolean;
   isError?: boolean;
   errorMessage?: string;
   onRetry?: () => void;
@@ -24,9 +25,6 @@ interface SubscribersTableProps {
   onAdd: () => void;
   onEdit: (subscriber: Subscriber) => void;
   onDeleteRequest: (ids: string[]) => void;
-  onImport: () => void;
-  onImportHistory: () => void;
-  onDeleteAllRequest: () => void;
   onExportRequest?: (params: any) => Promise<Subscriber[]>;
   onStateChange: (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => void;
   onDuplicate?: (ids: string[]) => void;
@@ -37,6 +35,7 @@ interface SubscribersTableProps {
 const SubscribersTable = ({
   subscribers,
   isLoading,
+  isFetching,
   isError,
   errorMessage,
   onRetry,
@@ -44,9 +43,6 @@ const SubscribersTable = ({
   onAdd,
   onEdit,
   onDeleteRequest,
-  onImport,
-  onImportHistory,
-  onDeleteAllRequest,
   onExportRequest,
   onStateChange,
   onDuplicate,
@@ -58,12 +54,17 @@ const SubscribersTable = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [clearSelectionFn, setClearSelectionFn] = useState<(() => void) | null>(null);
 
+  // No `filterVariant` here on purpose. Those four text inputs used to render
+  // as an always-visible subheader row, but `manualFiltering` meant MRT never
+  // filtered locally and the page only forwarded page/limit/search/sorting to
+  // the API - so typing in any of them did nothing at all. The subscribers
+  // endpoint supports search and sort, and that is exactly what the toolbar
+  // now offers.
   const columns = useMemo<MRT_ColumnDef<Subscriber>[]>(
     () => [
       {
         accessorKey: 'email',
         header: 'Email',
-        filterVariant: 'text',
         Cell: ({ cell }) => (
           <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
         ),
@@ -71,20 +72,17 @@ const SubscribersTable = ({
       {
         accessorKey: 'name',
         header: 'Name',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'company',
         header: 'Company',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'position',
         header: 'Position',
-        filterVariant: 'text',
-        Cell: ({ cell }) => cell.getValue<string>() || 'N/A',
+        Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
     ],
     []
@@ -94,13 +92,17 @@ const SubscribersTable = ({
     <>
       <SuperTable<Subscriber>
         tableId="subscribers-table"
+        urlKey=""
+        exportFileName="Subscribers"
         data={subscribers}
         columns={columns}
         rowCount={totalCount}
         isLoading={isLoading}
+        isFetching={isFetching}
         isError={isError}
         errorMessage={errorMessage}
         onRetry={onRetry}
+        getRowId={(row) => row.id}
         renderEmptyState={() => (
           <EmptyState
             icon={MailPlus}
@@ -131,7 +133,7 @@ const SubscribersTable = ({
           pagination: true,
           globalFilter: true,
           globalFilterAlwaysVisible: true,
-          columnFilters: true,
+          columnFilters: false,
           sorting: true,
           rowSelection: 'multi',
           columnVisibility: true,
@@ -140,64 +142,8 @@ const SubscribersTable = ({
           export: { excel: true, csv: true },
           urlSync: true,
         }}
-        renderTopLeftToolbar={() => (
-          <>
-            {/* Desktop: Tombol dengan label */}
-            <div className="hidden md:flex gap-2">
-              <AppButton
-                variantStyle="outline"
-                onClick={onImportHistory}
-                startIcon={<History size={16} />}
-                className="whitespace-nowrap"
-              >
-                History
-              </AppButton>
-              <AppButton
-                variantStyle="outline"
-                onClick={onImport}
-                startIcon={<Download size={16} />}
-                className="whitespace-nowrap"
-              >
-                Import
-              </AppButton>
-              <AppButton
-                variantStyle="primary"
-                onClick={onAdd}
-                startIcon={<Plus size={16} />}
-                className="whitespace-nowrap"
-              >
-                Add Subscriber
-              </AppButton>
-            </div>
-
-            {/* Mobile: Icon only */}
-            <div className="flex md:hidden gap-2">
-              <button
-                onClick={onImportHistory}
-                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
-                title="History"
-              >
-                <History size={16} />
-              </button>
-              <button
-                onClick={onImport}
-                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
-                title="Import"
-              >
-                <Download size={16} />
-              </button>
-              <button
-                onClick={onAdd}
-                className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
-                title="Add Subscriber"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </>
-        )}
         renderBulkActions={({ selectedRows, clearSelection }) => (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
             <AppButton
               variantStyle="primary"
               color="success"
@@ -211,7 +157,8 @@ const SubscribersTable = ({
               Save As
             </AppButton>
             <AppButton
-              variantStyle="primary"
+              variantStyle="outline"
+              startIcon={<Copy size={16} />}
               disabled={isDuplicating}
               onClick={() => {
                 const ids = (selectedRows as Subscriber[]).map((r) => r.id);
@@ -219,7 +166,7 @@ const SubscribersTable = ({
                 clearSelection();
               }}
             >
-              {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
+              {isDuplicating ? "Duplicating…" : `Duplicate (${selectedRows.length})`}
             </AppButton>
             <AppButton
               variantStyle="danger"
@@ -240,11 +187,12 @@ const SubscribersTable = ({
             <Tooltip title="Preview">
               <IconButton
                 size="small"
+                aria-label="Preview subscriber"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPreviewSubscriber(row.original);
                 }}
-                sx={{ color: '#5479EE', '&:hover': { bgcolor: '#EEF2FF' } }}
+                sx={{ color: 'primary.main', '&:hover': { bgcolor: 'primary.light' } }}
               >
                 <Eye size={18} />
               </IconButton>

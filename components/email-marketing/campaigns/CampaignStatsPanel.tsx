@@ -205,7 +205,7 @@ export function CampaignStatsPanel({
 
             <Grid container sx={{ height }}>
                 {/* Left Column: Stats */}
-                <Grid item xs={12} md={6} sx={{ p: 3, borderRight: '1px solid #E5E7EB', overflowY: 'auto', height: '100%' }}>
+                <Grid item xs={12} md={6} sx={{ p: 3, borderRight: '1px solid #E5E7EB', overflowY: 'auto', minHeight: 0 }}>
                     <Stack spacing={3}>
                         <Box
                             sx={{
@@ -303,13 +303,27 @@ export function CampaignStatsPanel({
                 </Grid>
 
                 {/* Right Column: Preview */}
-                <Grid item xs={12} md={6} sx={{ height: '100%', bgcolor: '#F9FAFB' }}>
-                    <Box sx={{ p: 2, borderBottom: '1px solid #E5E7EB', bgcolor: 'white' }}>
+                <Grid
+                    item
+                    xs={12}
+                    md={6}
+                    sx={{
+                        bgcolor: '#F9FAFB',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        // Stretching to the Status column beside it is what makes
+                        // the two panels line up; minHeight only matters when a
+                        // campaign has so little to report that the left column is
+                        // shorter than a readable preview.
+                        minHeight: 320,
+                    }}
+                >
+                    <Box sx={{ p: 2, borderBottom: '1px solid #E5E7EB', bgcolor: 'white', flexShrink: 0 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                             Message Preview
                         </Typography>
                     </Box>
-                    <Box sx={{ height: 'calc(100% - 49px)', p: 2 }}>
+                    <Box sx={{ flex: 1, minHeight: 0, p: 2, display: 'flex' }}>
                         {currentCampaign.html_content ? (
                             <iframe
                                 srcDoc={currentCampaign.html_content}
@@ -321,8 +335,9 @@ export function CampaignStatsPanel({
                                 // scripts. Images and CSS still load.
                                 sandbox=""
                                 style={{
+                                    flex: 1,
                                     width: '100%',
-                                    height: '100%',
+                                    minHeight: 0,
                                     border: '1px solid #E5E7EB',
                                     borderRadius: '8px',
                                     backgroundColor: '#fff'
@@ -330,7 +345,7 @@ export function CampaignStatsPanel({
                                 title="Campaign Preview"
                             />
                         ) : (
-                            <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', border: '1px dashed #D1D5DB', borderRadius: 2 }}>
+                            <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', border: '1px dashed #D1D5DB', borderRadius: 2 }}>
                                 <Typography variant="body2" color="text.secondary">
                                     No preview available
                                 </Typography>

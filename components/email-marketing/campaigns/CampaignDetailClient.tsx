@@ -12,9 +12,10 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Alert, CircularProgress, Box } from "@mui/material";
-import { Pencil, RotateCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, RotateCw, Trash2 } from "lucide-react";
 
 import PageHeader from "@/components/ui/page-header";
+import { resolveListHref } from "@/components/ui/super-table";
 import { AppButton } from "@/components/ui/app-button";
 import { CampaignStatsPanel } from "./CampaignStatsPanel";
 import { useCampaignDetail, useUpdateCampaign, useDeleteCampaign } from "@/lib/hooks/useCampaigns";
@@ -111,6 +112,19 @@ export default function CampaignDetailClient() {
         breadcrumbs={crumbs}
         actions={
           <>
+            {/* The breadcrumb already goes back, but it is small grey text at
+                the top of the card. A record page needs one obvious way out,
+                and it resolves through the list cursor for the same reason the
+                breadcrumb does: return to the page, search and filters the
+                user left, not to page 1 of everything. */}
+            <AppButton
+              variantStyle="outline"
+              color="gray"
+              startIcon={<ArrowLeft size={16} />}
+              onClick={() => router.push(resolveListHref("/email-marketing/campaigns"))}
+            >
+              Back
+            </AppButton>
             {canResendCampaign(campaign.status) && (
               <AppButton
                 variantStyle="outline"

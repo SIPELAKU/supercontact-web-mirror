@@ -404,13 +404,15 @@ export default function RoutingQueuesSettingsTab() {
         header: "Active",
         enableColumnFilter: false,
         Cell: ({ row }) => (
-          <Switch
-            size="small"
-            checked={row.original.is_active}
-            onChange={() => handleToggleActive(row.original)}
-            disabled={!canManage || updateMutation.isPending}
-            inputProps={{ "aria-label": `Toggle ${row.original.name} active` }}
-          />
+          <span data-st-no-row-click>
+            <Switch
+              size="small"
+              checked={row.original.is_active}
+              onChange={() => handleToggleActive(row.original)}
+              disabled={!canManage || updateMutation.isPending}
+              inputProps={{ "aria-label": `Toggle ${row.original.name} active` }}
+            />
+          </span>
         ),
       },
     ],
@@ -476,50 +478,42 @@ export default function RoutingQueuesSettingsTab() {
 
         <SuperTable<ConversationQueue>
           tableId="conversation-queues-table"
+          urlKey="queues"
           columns={columns}
           data={queues}
           isLoading={isLoading}
           isError={isError}
           errorMessage="Failed to load conversation queues. Please try again."
           onRetry={() => refetch()}
-          renderRowActions={
-            canManage
-              ? ({ row }) => (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleRouteNow(row.original)}
-                      className="text-gray-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-gray-300"
-                      aria-label={`Route ${row.original.name} now`}
-                      title={
-                        row.original.is_active
-                          ? "Route now - assign matching conversations to eligible online agents"
-                          : "Activate the queue to route"
-                      }
-                      disabled={
-                        !row.original.is_active ||
-                        (routeNowMutation.isPending && routingId === row.original.id)
-                      }
-                    >
-                      <Zap size={16} />
-                    </button>
-                    <button
-                      onClick={() => openEdit(row.original)}
-                      className="text-gray-300 hover:text-gray-700"
-                      aria-label="Edit queue"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(row.original)}
-                      className="text-gray-300 hover:text-red-500"
-                      aria-label="Delete queue"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                )
-              : undefined
-          }
+          onRowClick={canManage ? (row) => openEdit(row) : undefined}
+          rowActions={[
+            {
+              id: "route-now",
+              label: "Route now",
+              icon: <Zap size={16} />,
+              hidden: () => !canManage,
+              // A string disables AND explains, in place of the old title on a
+              // disabled button nobody could focus.
+              disabled: (row) => (row.is_active ? false : "Activate the queue to route"),
+              isLoading: (row) => routeNowMutation.isPending && routingId === row.id,
+              onClick: (row) => handleRouteNow(row),
+            },
+            {
+              id: "edit",
+              label: "Edit",
+              icon: <Pencil size={16} />,
+              hidden: () => !canManage,
+              onClick: (row) => openEdit(row),
+            },
+            {
+              id: "delete",
+              label: "Delete",
+              icon: <Trash2 size={16} />,
+              hidden: () => !canManage,
+              destructive: true,
+              onClick: (row) => setDeleteTarget(row),
+            },
+          ]}
           renderEmptyState={() => (
             <EmptyState
               icon={ListOrdered}
@@ -536,7 +530,8 @@ export default function RoutingQueuesSettingsTab() {
               }
             />
           )}
-          features={{ columnFilters: false }}
+          features={{          urlSync: true,
+ columnFilters: false }}
         />
       </div>
 

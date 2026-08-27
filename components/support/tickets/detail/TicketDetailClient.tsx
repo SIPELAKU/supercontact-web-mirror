@@ -37,6 +37,16 @@ interface TicketDetailClientProps {
 type DetailTab = "overview" | "activity" | "conversation";
 const VALID_TABS: DetailTab[] = ["overview", "activity", "conversation"];
 
+
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+  const params = new URLSearchParams(current.toString());
+  params.set("tab", tab);
+  return `${pathname}?${params.toString()}`;
+}
+
 export function TicketDetailClient({ id }: TicketDetailClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -76,7 +86,7 @@ export function TicketDetailClient({ id }: TicketDetailClientProps) {
 
     const handleTabChange = (tab: DetailTab) => {
         setActiveTab(tab);
-        router.replace(`/support/tickets/${id}?tab=${tab}`, { scroll: false });
+        router.replace(withTab(`/support/tickets/${id}`, searchParams, tab), { scroll: false });
     };
 
     const handleDelete = () => {

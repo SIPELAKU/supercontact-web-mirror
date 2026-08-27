@@ -1,8 +1,42 @@
 "use client";
+import { useEffect, useState } from "react";
 import { PageHeaderProps } from "@/lib/types/Pipeline";
 import { cn } from "@/lib/utils";
+import { resolveListHref } from "@/components/ui/super-table";
 import Image from "next/image";
 import Link from "next/link";
+
+/**
+ * A breadcrumb href is a bare path, so pressing "Contacts" from a contact
+ * detail page used to land on page 1 of an unfiltered list - losing the page,
+ * search, sort and filters the user had set before they clicked in.
+ *
+ * SuperTable parks the list's real URL under its pathname (useListCursor);
+ * this hands it back. Resolved in an effect with the plain href as the initial
+ * value, so the server and the first client render agree and a visitor with no
+ * stored cursor simply gets today's behaviour.
+ */
+function useResolvedHref(href?: string) {
+  const [resolved, setResolved] = useState(href);
+
+  useEffect(() => {
+    setResolved(href ? resolveListHref(href) : href);
+  }, [href]);
+
+  return resolved;
+}
+
+function BreadcrumbLink({ href, label }: { href: string; label: string }) {
+  const resolved = useResolvedHref(href);
+  return (
+    <Link
+      href={resolved ?? href}
+      className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+    >
+      {label}
+    </Link>
+  );
+}
 // import LogoHeader from "@/assets/icons/headicon.png"
 
 export default function PageHeader({
@@ -33,9 +67,7 @@ export default function PageHeader({
               {breadcrumbs.map((item, i) => (
                 <span key={i} className="flex items-center gap-2">
                   {item.href ? (
-                    <Link href={item.href} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                      {item.label}
-                    </Link>
+                    <BreadcrumbLink href={item.href} label={item.label} />
                   ) : (
                     <span className="text-sm text-gray-400">{item.label}</span>
                   )}

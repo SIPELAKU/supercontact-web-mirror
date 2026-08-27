@@ -322,6 +322,47 @@ export interface SuperTableCallbacks<TData extends object> {
 }
 
 /**
+ * Satu aksi baris, dideklarasikan sebagai DATA - bukan JSX.
+ *
+ * Kenapa data: renderer-nya jadi milik SuperTable, sehingga varian mobile
+ * (drawer berlabel 48px) cukup ditulis sekali dan seluruh tabel ikut. Selama
+ * ini tiap layar merender sendiri gerombolan IconButton-nya, jadi tak ada satu
+ * tempat pun untuk memperbaiki target sentuh, urutan, atau label.
+ */
+export interface SuperTableRowAction<TData extends object> {
+  /** Stabil, dipakai sebagai React key. */
+  id: string;
+  /** Boleh fungsi bila labelnya bergantung pada barisnya. */
+  label: string | ((row: TData) => string);
+  icon?: React.ReactNode;
+  onClick: (row: TData, ctx: { table: MRT_TableInstance<TData> }) => void;
+  /**
+   * `'quick'` menyematkan aksi sebagai ikon di luar menu. Sediakan hanya untuk
+   * aksi yang benar-benar dipakai berulang seharian pada layar itu - tiap ikon
+   * yang disematkan mengembalikan sebagian keramaian yang baru saja dihapus.
+   * @default 'menu'
+   */
+  placement?: 'quick' | 'menu';
+  /** Sembunyikan total untuk baris ini (mis. aksi yang tak berlaku). */
+  hidden?: (row: TData) => boolean;
+  /**
+   * `true` menonaktifkan tanpa penjelasan; **string** menonaktifkan DAN
+   * menjadi alasan yang terbaca di bawah labelnya.
+   *
+   * Ini menutup cacat nyata: pola lama
+   * `<Tooltip><span><IconButton disabled>` menaruh nama aksesibel pada `span`
+   * yang tak bisa difokus, dan tombol disabled keluar dari urutan tab - jadi
+   * alasannya tak terjangkau keyboard, pembaca layar, maupun sentuhan.
+   */
+  disabled?: (row: TData) => boolean | string;
+  /** Diberi warna error dan ditaruh di bawah pemisah. */
+  destructive?: boolean;
+  isLoading?: (row: TData) => boolean;
+  /** Disembunyikan bila pengguna tak punya permission ini. */
+  permission?: string | string[];
+}
+
+/**
  * SuperTableSlots mengatur inject/insert Element UI React bebas (children slots).
  */
 export interface SuperTableSlots<TData extends object> {
@@ -356,6 +397,20 @@ export interface SuperTableSlots<TData extends object> {
    * tetap truthy dan membuat cluster search/Export/View tertarik ke kiri.
    */
   renderFilters?: (table: MRT_TableInstance<TData>) => React.ReactNode;
+
+  /**
+   * Aksi baris sebagai DATA. SuperTable merendernya sebagai satu kebab di
+   * desktop dan drawer bawah berlabel di layar sempit.
+   *
+   * Lebih disukai daripada `renderRowActions`, yang tetap didukung tanpa
+   * tanggal kedaluwarsa sebagai jalan keluar untuk kasus yang benar-benar
+   * tidak umum (mis. tabel bersarang di dalam modal).
+   *
+   * Boleh berupa fungsi bila daftar aksinya bergantung pada barisnya.
+   */
+  rowActions?:
+    | SuperTableRowAction<TData>[]
+    | ((row: TData) => SuperTableRowAction<TData>[]);
 
   /** 
    * Sebuah block element yang akan menggantikan TopLeftToolbar SEPENUHNYA
@@ -463,6 +518,24 @@ export interface SuperTableProps<TData extends object>
    * `Subscribers` - bukan `subscribers-table_20260826_1030.xlsx`.
    */
   exportFileName?: string;
+  /**
+   * `accessorKey` satu kolom yang dibungkus menjadi tautan `<a href>` asli
+   * menuju rekamannya. Ini titik masuk yang benar secara aksesibilitas: satu
+   * perhentian tab per baris, nama aksesibel = judul rekaman itu sendiri, plus
+   * klik-tengah dan buka-di-tab-baru gratis.
+   *
+   * JANGAN diganti dengan `role="link"` pada `<tr>`: itu merusak pohon
+   * rowgroup>row>cell, meruntuhkan seluruh teks baris jadi satu nama
+   * aksesibel, dan menyarangkan checkbox seleksi di dalam sebuah tautan.
+   *
+   * `onRowClick` tetap boleh dipasang sebagai kemudahan untuk mouse di atasnya.
+   */
+  primaryColumn?: {
+    /** Kolom mana yang jadi tautan. */
+    accessorKey: string;
+    /** Tujuan tautannya untuk baris ini. */
+    href: (row: TData) => string;
+  };
   /** 
    * Overwrite default start table state, ex: `{ sorting: [ {id: 'date', desc: true} ] }`. 
    */

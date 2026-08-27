@@ -1,6 +1,7 @@
 export { SuperTable } from './SuperTable';
 export type { ExportScope, ExportFormat } from './components/ExportDialog';
 export { useTableState } from './hooks/useTableState';
+export { resolveListHref } from './hooks/useListCursor';
 
 // -------------------------------------------------------------
 // RE-EXPORT SUPER TABLE TYPE & INTERFACE UTILITIES
@@ -12,6 +13,7 @@ export type {
   SuperTableCallbacks,
   SuperTableSlots,
   SuperTableServerProps,
+  SuperTableRowAction,
 } from './types';
 
 // -------------------------------------------------------------

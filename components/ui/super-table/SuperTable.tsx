@@ -13,6 +13,7 @@ import { useTableState } from './hooks/useTableState';
 import { useTableExport } from './hooks/useTableExport';
 import { useSavedFilters } from './hooks/useSavedFilters';
 import { useUrlSync } from './hooks/useUrlSync';
+import { useListCursor } from './hooks/useListCursor';
 import { useTableConfig } from './hooks/useTableConfig';
 
 // Components
@@ -74,6 +75,11 @@ export function SuperTable<TData extends object>(
       if (state.grouping) tableState.setGrouping(state.grouping);
     },
   });
+
+  // 4b. Remember where this list was, so a breadcrumb back from a record
+  // returns to the same page/search/sort instead of page 1. Only meaningful
+  // for tables that put their state in the URL in the first place.
+  useListCursor({ enabled: !!(props.features?.urlSync && props.tableId) });
 
   // 5. Susun dan Build Konfigurasi MRT raksasa
   const mrtConfig = useTableConfig(

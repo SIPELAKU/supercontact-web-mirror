@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { AppButton } from "@/components/ui/app-button";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
@@ -10,8 +9,7 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { useIntegrations, useTestIntegrationConnection, useDeleteIntegration } from "@/lib/hooks/useIntegrations";
 import { Integration, IntegrationProvider } from "@/lib/models/types";
 import { notify } from "@/lib/notifications";
-import { CircularProgress, Tooltip } from "@mui/material";
-import { AlertCircle, CheckCircle2, HelpCircle, Play, Plug, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, Pencil, Play, Plug, Plus, Trash2 } from "lucide-react";
 import AddIntegrationModal from "./AddIntegrationModal";
 import EditIntegrationModal from "./EditIntegrationModal";
 import ConnectionStatusModal from "./ConnectionStatusModal";
@@ -197,35 +195,44 @@ export const IntegrationsClient = () => {
                 <div className="mx-6 mb-6">
                     <SuperTable<Integration>
                         tableId="integrations-table"
+                        urlKey=""
                         columns={columns}
                         data={integrations}
                         isLoading={isLoading}
                         isError={isError}
                         errorMessage="Failed to load integrations. Please try again."
                         onRetry={() => refetch()}
-                        renderRowActions={({ row }) => {
-                            const item = row.original;
-                            return (
-                                <div className="flex items-center gap-1">
-                                    <button
-                                        onClick={() => handleTestConnection(item)}
-                                        className="cursor-pointer p-1 hover:bg-gray-100 rounded-lg text-emerald-500 transition-colors disabled:opacity-50"
-                                        title="Test Connection"
-                                        disabled={testConnectionMutation.isPending}
-                                    >
-                                        {testConnectionMutation.isPending && testConnectionMutation.variables === item.id ? (
-                                            <CircularProgress size={18} color="inherit" />
-                                        ) : (
-                                            <Tooltip title="Test Connection">
-                                                <Play size={18} />
-                                            </Tooltip>
-                                        )}
-                                    </button>
-                                    <EditButton onClick={() => handleEdit(item)} />
-                                    <DeleteButton onClick={() => handleDelete(item)} />
-                                </div>
-                            );
-                        }}
+                        rowActions={[
+                            {
+                                id: "test",
+                                label: "Test Connection",
+                                icon: <Play size={16} />,
+                                // The old button disabled every row while any test
+                                // was in flight; the reason now says so out loud
+                                // instead of hiding in a title attribute.
+                                disabled: () =>
+                                    testConnectionMutation.isPending
+                                        ? "A connection test is already running"
+                                        : false,
+                                isLoading: (row) =>
+                                    testConnectionMutation.isPending &&
+                                    testConnectionMutation.variables === row.id,
+                                onClick: (row) => handleTestConnection(row),
+                            },
+                            {
+                                id: "edit",
+                                label: "Edit",
+                                icon: <Pencil size={16} />,
+                                onClick: (row) => handleEdit(row),
+                            },
+                            {
+                                id: "delete",
+                                label: "Delete",
+                                icon: <Trash2 size={16} />,
+                                destructive: true,
+                                onClick: (row) => handleDelete(row),
+                            },
+                        ]}
                         renderEmptyState={() => (
                             <EmptyState
                                 icon={Plug}
@@ -235,6 +242,7 @@ export const IntegrationsClient = () => {
                             />
                         )}
                         features={{
+          urlSync: true,
                             // A handful of providers at most - no search/pagination noise
                             globalFilter: false,
                             columnFilters: false,

@@ -4,10 +4,9 @@ import React, { useMemo } from "react";
 import { Avatar, Box } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { ManageUser } from "@/lib/types/manage-users";
-import { DeleteButton, EditButton, ViewButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { UserRound, Plus } from "lucide-react";
+import { UserRound, Pencil, Plus, Trash2 } from "lucide-react";
 
 interface TableListUsersProps {
   users: ManageUser[];
@@ -22,7 +21,6 @@ interface TableListUsersProps {
   onExportRequest?: (params: any) => Promise<ManageUser[]>;
   onEdit: (user: ManageUser) => void;
   onDelete: (user: ManageUser) => void;
-  onView: (user: ManageUser) => void;
   onBulkDelete?: (users: ManageUser[], clearSelection: () => void) => Promise<void>;
   isBulkDeleting?: boolean;
   renderTopLeftToolbar?: () => React.ReactNode;
@@ -41,7 +39,6 @@ export default function TableListUsers({
   onExportRequest,
   onEdit,
   onDelete,
-  onView,
   onBulkDelete,
   isBulkDeleting,
   renderTopLeftToolbar,
@@ -103,27 +100,7 @@ export default function TableListUsers({
         );
       },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      enableColumnFilter: false,
-      enableSorting: false,
-      enableHiding: false,
-      muiTableBodyCellProps: {
-        align: "right",
-      },
-      muiTableHeadCellProps: {
-        align: "right",
-      },
-      Cell: ({ row }) => (
-        <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-          <ViewButton onClick={() => onView(row.original)} />
-          <EditButton onClick={() => onEdit(row.original)} />
-          <DeleteButton onClick={() => onDelete(row.original)} />
-        </Box>
-      ),
-    },
-  ], [onDelete, onEdit, onView]);
+  ], [positionOptions]);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
@@ -154,6 +131,22 @@ export default function TableListUsers({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        onRowClick={(row) => onEdit(row)}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => onDelete(row),
+          },
+        ]}
         renderBulkActions={({ selectedRows, clearSelection }) => (
           <AppButton
             variantStyle="danger"

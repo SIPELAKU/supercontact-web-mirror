@@ -1,7 +1,6 @@
 // components/whatsapp-marketing/group-broadcasting/GroupBroadcastingTable.tsx
 "use client";
 
-import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
@@ -9,7 +8,7 @@ import { useGroupBroadcasts, useDuplicateGroupBroadcasts } from '@/lib/hooks/use
 import { GroupBroadcast } from '@/lib/types/whatsapp-marketing';
 import { Box } from '@mui/material';
 import { format } from 'date-fns';
-import { Megaphone, Plus, Copy, Trash2 } from 'lucide-react';
+import { Megaphone, Plus, Copy, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { notify } from '@/lib/notifications';
 import { useEffect, useMemo, useState } from 'react';
@@ -90,6 +89,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
   return (
     <SuperTable<GroupBroadcast>
       tableId="group-broadcasting-table"
+      urlKey=""
       columns={columns}
       data={broadcasts}
       isLoading={isLoading}
@@ -103,6 +103,10 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
           pageIndex: state.pagination.pageIndex,
           pageSize: state.pagination.pageSize,
         });
+      }}
+      primaryColumn={{
+        accessorKey: 'name',
+        href: (row) => `/whatsapp-marketing/group-broadcasting/${row.id}`,
       }}
       onRowClick={(row) => router.push(`/whatsapp-marketing/group-broadcasting/${row.id}`)}
       renderTopLeftToolbar={() => (
@@ -143,16 +147,30 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
           </Box>
         );
       }}
-      renderRowActions={({ row }) => (
-        <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
-          <DuplicateButton
-            onClick={() => handleDuplicate([row.original.id])}
-            isLoading={duplicateMutation.isPending && (duplicateMutation.variables?.broadcast_group_ids || []).includes(row.original.id)}
-          />
-          <EditButton onClick={() => onEdit(row.original)} />
-          <DeleteButton onClick={() => onDeleteRequest(row.original)} />
-        </Box>
-      )}
+      rowActions={[
+        {
+          id: 'duplicate',
+          label: 'Duplicate',
+          icon: <Copy size={16} />,
+          isLoading: (row) =>
+            duplicateMutation.isPending &&
+            (duplicateMutation.variables?.broadcast_group_ids || []).includes(row.id),
+          onClick: (row) => handleDuplicate([row.id]),
+        },
+        {
+          id: 'edit',
+          label: 'Edit',
+          icon: <Pencil size={16} />,
+          onClick: (row) => onEdit(row),
+        },
+        {
+          id: 'delete',
+          label: 'Delete',
+          icon: <Trash2 size={16} />,
+          destructive: true,
+          onClick: (row) => onDeleteRequest(row),
+        },
+      ]}
       renderEmptyState={() => (
         <EmptyState
           icon={Megaphone}
@@ -163,6 +181,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
       )}
       initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
       features={{
+          urlSync: true,
         // API has no sort/search params yet - keep both off rather than
         // offering controls that only act on the loaded page
         sorting: false,

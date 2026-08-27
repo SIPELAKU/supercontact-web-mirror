@@ -4,24 +4,14 @@ import React, { useMemo } from "react";
 import { Box, Chip, Tooltip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Campaign } from "@/lib/types/email-marketing";
-import {
-  DeleteButton,
-  EditButton,
-  ViewButton,
-  DuplicateButton,
-  ResendButton,
-  StopButton,
-} from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Copy, Mail, Plus, Trash2 } from "lucide-react";
+import { CircleStop, Copy, Mail, Pencil, Plus, RotateCw, Trash2 } from "lucide-react";
 import {
   campaignDeleteBlockedReason,
   campaignEditBlockedReason,
   campaignStatusChipColor,
-  canDeleteCampaign,
-  canEditCampaign,
   canResendCampaign,
   canStopCampaign,
 } from "@/lib/constants/campaign-status";
@@ -301,44 +291,56 @@ export default function CampaignsTable({
           </AppButton>
         </Box>
       )}
-      renderRowActions={({ row }) => {
-        const campaign = row.original;
-        const editable = canEditCampaign(campaign.status);
-        const deletable = canDeleteCampaign(campaign.status);
-
-        return (
-          <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-            {onView && <ViewButton onClick={() => onView(campaign)} />}
-            {canStopCampaign(campaign.status) && onStop && (
-              <StopButton
-                onClick={() => onStop(campaign)}
-                isLoading={stoppingCampaignId === campaign.id}
-                customTitle="Stop sending"
-              />
-            )}
-            {canResendCampaign(campaign.status) && onResend && (
-              <ResendButton
-                onClick={() => onResend(campaign)}
-                isLoading={resendingCampaignId === campaign.id}
-                customTitle="Resend"
-              />
-            )}
-            <EditButton
-              onClick={() => onEdit(campaign)}
-              disabled={!editable}
-              customTitle={editable ? "Edit" : campaignEditBlockedReason(campaign.status)}
-            />
-            {onDuplicate && (
-              <DuplicateButton onClick={() => onDuplicate(campaign)} customTitle="Duplicate" />
-            )}
-            <DeleteButton
-              onClick={() => onDelete(campaign)}
-              disabled={!deletable}
-              customTitle={deletable ? "Delete" : campaignDeleteBlockedReason(campaign.status)}
-            />
-          </Box>
-        );
+      // The subject is the way into the record - a real link, so middle-click
+      // and Cmd-click work and the accessible name is the campaign's own
+      // subject. That link replaces the old View icon entirely.
+      primaryColumn={{
+        accessorKey: "subject",
+        href: (row) => `/email-marketing/campaigns/${row.id}`,
       }}
+      onRowClick={(row) => onView?.(row)}
+      rowActions={(campaign) => [
+        {
+          id: "stop",
+          label: "Stop sending",
+          icon: <CircleStop size={16} />,
+          hidden: () => !onStop || !canStopCampaign(campaign.status),
+          isLoading: () => stoppingCampaignId === campaign.id,
+          onClick: (row) => onStop?.(row),
+        },
+        {
+          id: "resend",
+          label: "Resend",
+          icon: <RotateCw size={16} />,
+          hidden: () => !onResend || !canResendCampaign(campaign.status),
+          isLoading: () => resendingCampaignId === campaign.id,
+          onClick: (row) => onResend?.(row),
+        },
+        {
+          id: "edit",
+          label: "Edit",
+          icon: <Pencil size={16} />,
+          // A string here becomes readable text under the label, instead of a
+          // tooltip on a disabled button nobody can focus.
+          disabled: (row) => campaignEditBlockedReason(row.status) ?? false,
+          onClick: (row) => onEdit(row),
+        },
+        {
+          id: "duplicate",
+          label: "Duplicate",
+          icon: <Copy size={16} />,
+          hidden: () => !onDuplicate,
+          onClick: (row) => onDuplicate?.(row),
+        },
+        {
+          id: "delete",
+          label: "Delete",
+          icon: <Trash2 size={16} />,
+          destructive: true,
+          disabled: (row) => campaignDeleteBlockedReason(row.status) ?? false,
+          onClick: (row) => onDelete(row),
+        },
+      ]}
       features={{
         pagination: true,
         globalFilter: true,

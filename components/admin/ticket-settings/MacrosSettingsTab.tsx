@@ -198,30 +198,28 @@ export default function MacrosSettingsTab() {
 
             <SuperTable<TicketMacro>
                 tableId="ticket-macros-table"
+                urlKey="macros"
                 columns={columns}
                 data={macros}
                 isLoading={isLoading}
                 isError={isError}
                 errorMessage="Failed to load macros. Please try again."
                 onRetry={() => refetch()}
-                renderRowActions={({ row }) => (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => handleEdit(row.original)}
-                            className="text-gray-300 hover:text-gray-700"
-                            aria-label="Edit macro"
-                        >
-                            <Pencil size={16} />
-                        </button>
-                        <button
-                            onClick={() => setDeleteTarget({ id: row.original.id, name: row.original.name })}
-                            className="text-gray-300 hover:text-red-500"
-                            aria-label="Delete macro"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                )}
+                rowActions={[
+                    {
+                        id: "edit",
+                        label: "Edit",
+                        icon: <Pencil size={16} />,
+                        onClick: (row) => handleEdit(row),
+                    },
+                    {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 size={16} />,
+                        destructive: true,
+                        onClick: (row) => setDeleteTarget({ id: row.id, name: row.name }),
+                    },
+                ]}
                 renderEmptyState={() => (
                     <EmptyState
                         icon={MessageSquare}
@@ -229,7 +227,8 @@ export default function MacrosSettingsTab() {
                         description="Saved replies you add can be applied from any ticket in one click."
                     />
                 )}
-                features={{ columnFilters: false }}
+                features={{          urlSync: true,
+ columnFilters: false }}
             />
 
             <ConfirmationPopup

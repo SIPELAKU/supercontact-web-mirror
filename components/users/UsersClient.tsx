@@ -11,7 +11,6 @@ import { useAuth } from "@/lib/context/AuthContext";
 import {
   AddUsersModal,
   CardStatUsers,
-  DetailUsersModal,
   EditUsersModal,
   TableListUsers,
 } from "@/components/users";
@@ -33,7 +32,6 @@ export default function UsersClient() {
   const [selectedUser, setSelectedUser] = useState<ManageUser | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
-  const [openDetail, setOpenDetail] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
 
   // Bulk Delete State & Hook
@@ -269,10 +267,6 @@ export default function UsersClient() {
               setSelectedUser(user);
               setOpenEdit(true);
             }}
-            onView={(user) => {
-              setSelectedUser(user);
-              setOpenDetail(true);
-            }}
             onDelete={(user) => {
               setSelectedUser(user);
               setOpenDelete(true);
@@ -333,13 +327,6 @@ export default function UsersClient() {
             />
           )}
 
-          {selectedUser && (
-            <DetailUsersModal
-              open={openDetail}
-              setOpen={setOpenDetail}
-              user={selectedUser}
-            />
-          )}
         </div>
       </Card>
 

@@ -3,7 +3,12 @@
 import React, { useMemo } from "react";
 import { Box, Chip, SxProps, Theme } from "@mui/material";
 import { Building2 } from "lucide-react";
-import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
+import {
+  SuperTable,
+  MRT_ColumnDef,
+  SuperTableState,
+  SuperTableRowAction,
+} from "@/components/ui/super-table";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -91,9 +96,18 @@ interface CompanyTableProps {
    * (namespaced "{tableId}_*") don't collide when Discover/Saved/Lists
    * each render their own CompanyTable within the same workspace page. */
   tableId?: string;
-  /** Custom action buttons in the row's right-most column - callers decide
-   * what "acting on a row" means here (Save to CRM on Discover, Delete on
-   * Saved, Remove on a list) rather than this component assuming Delete. */
+  /** Row actions as DATA - callers decide what "acting on a row" means here
+   * (Save to CRM on Discover, Delete on Saved, Remove on a list) rather than
+   * this component assuming Delete. Preferred over `renderRowActions`:
+   * SuperTable renders these as one kebab on desktop and a labelled bottom
+   * sheet on a phone. */
+  rowActions?:
+    | SuperTableRowAction<CompanyIntelligenceItem>[]
+    | ((row: CompanyIntelligenceItem) => SuperTableRowAction<CompanyIntelligenceItem>[]);
+  /** Escape hatch for callers that still need raw JSX in the actions column.
+   * Ignored when `rowActions` is given. Kept because it is this component's
+   * public API; SuperTable's own slot wraps it in `data-st-no-row-click`, so
+   * a caller still does not need `stopPropagation`. */
   renderRowActions?: (row: CompanyIntelligenceItem) => React.ReactNode;
   /** Passed straight through to SuperTable - same reasoning as
    * renderRowActions, generalized for bulk/selected-rows actions. */
@@ -127,6 +141,7 @@ export default function CompanyTable({
   onRowClick,
   renderTopLeftToolbar,
   tableId = "companies-table",
+  rowActions,
   renderRowActions,
   renderBulkActions,
   enableColumnFilters = true,
@@ -215,19 +230,8 @@ export default function CompanyTable({
           return <Chip label={label} sx={getDynamicChipStyle(label)} />;
         },
       },
-      {
-        id: "actions",
-        header: "Actions",
-        enableColumnFilter: false,
-        enableSorting: false,
-        size: 80,
-        Cell: ({ row }) =>
-          renderRowActions ? (
-            <Box onClick={(e) => e.stopPropagation()}>{renderRowActions(row.original)}</Box>
-          ) : null,
-      },
     ],
-    [renderRowActions, enableColumnFilters]
+    [enableColumnFilters]
   );
 
   return (
@@ -255,6 +259,10 @@ export default function CompanyTable({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         onRowClick={onRowClick ? (row) => onRowClick(row) : undefined}
+        rowActions={rowActions}
+        renderRowActions={
+          renderRowActions ? ({ row }) => renderRowActions(row.original) : undefined
+        }
         renderTopLeftToolbar={renderTopLeftToolbar}
         renderBulkActions={renderBulkActions}
         initialState={{

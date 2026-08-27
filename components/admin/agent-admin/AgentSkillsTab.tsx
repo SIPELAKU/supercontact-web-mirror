@@ -128,34 +128,30 @@ export default function AgentSkillsTab({ canManage }: AgentSkillsTabProps) {
 
       <SuperTable<AgentSkill>
         tableId="agent-skills-table"
+        urlKey="skills"
         columns={columns}
         data={skills}
         isLoading={isLoading}
         isError={isError}
         errorMessage="Failed to load skills. Please try again."
         onRetry={() => refetch()}
-        renderRowActions={
-          canManage
-            ? ({ row }) => (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEdit(row.original)}
-                    className="text-gray-300 hover:text-gray-700"
-                    aria-label="Edit skill"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(row.original)}
-                    className="text-gray-300 hover:text-red-500"
-                    aria-label="Delete skill"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )
-            : undefined
-        }
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            hidden: () => !canManage,
+            onClick: (row) => openEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            hidden: () => !canManage,
+            destructive: true,
+            onClick: (row) => setDeleteTarget(row),
+          },
+        ]}
         renderEmptyState={() => (
           <EmptyState
             icon={Tags}
@@ -172,7 +168,8 @@ export default function AgentSkillsTab({ canManage }: AgentSkillsTabProps) {
             }
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {/* Create / edit modal - only mounted for managers */}

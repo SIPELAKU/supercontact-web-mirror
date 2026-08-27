@@ -4,10 +4,9 @@ import React, { useMemo } from "react";
 import { Box, Chip, Typography, Stack } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
-import { DeleteButton, EditButton, ViewButton, DuplicateButton } from "@/components/ui/app-action-buttons-table";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Megaphone, Plus } from "lucide-react";
+import { Copy, Eye, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
 
 interface BroadcastingWATableProps {
   broadcasts: BroadcastCampaign[];
@@ -113,27 +112,7 @@ export default function BroadcastingWATable({
         </Typography>
       ),
     },
-    {
-      id: "actions",
-      header: "Actions",
-      enableColumnFilter: false,
-      enableSorting: false,
-      size: 120,
-      muiTableBodyCellProps: { align: "right" },
-      muiTableHeadCellProps: { align: "right" },
-      Cell: ({ row }) => {
-        const isDraft = row.original.status.toLowerCase() === 'draft';
-        return (
-          <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-            {onView && <ViewButton onClick={() => onView(row.original)} />}
-            {onDuplicate && <DuplicateButton onClick={() => onDuplicate(row.original)} />}
-            <EditButton onClick={() => onEdit(row.original)} disabled={!isDraft} />
-            <DeleteButton onClick={() => onDelete(row.original)} disabled={!isDraft} />
-          </Box>
-        );
-      },
-    },
-  ], [onDelete, onEdit, onView, onDuplicate]);
+  ], []);
 
   return (
     <Box sx={{ width: "100%" }} className="super-table-container">
@@ -166,6 +145,44 @@ export default function BroadcastingWATable({
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
         renderBulkActions={renderBulkActions}
+        onRowClick={(row) => onView?.(row)}
+        rowActions={[
+          {
+            id: "view",
+            label: "View",
+            icon: <Eye size={16} />,
+            hidden: () => !onView,
+            onClick: (row) => onView?.(row),
+          },
+          {
+            id: "duplicate",
+            label: "Duplicate",
+            icon: <Copy size={16} />,
+            hidden: () => !onDuplicate,
+            onClick: (row) => onDuplicate?.(row),
+          },
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            disabled: (row) =>
+              row.status.toLowerCase() === "draft"
+                ? false
+                : "Only Draft broadcasts can be edited",
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            disabled: (row) =>
+              row.status.toLowerCase() === "draft"
+                ? false
+                : "Only Draft broadcasts can be deleted",
+            onClick: (row) => onDelete(row),
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,

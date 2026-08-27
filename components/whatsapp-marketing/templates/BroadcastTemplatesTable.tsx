@@ -9,10 +9,9 @@ import { format } from 'date-fns';
 import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
-import { DeleteButton, EditButton, DuplicateButton } from '@/components/ui/app-action-buttons-table';
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 import { Stack } from '@mui/material';
-import { Trash2, LayoutTemplate } from 'lucide-react';
+import { Copy, Trash2, LayoutTemplate } from 'lucide-react';
 import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -187,12 +186,21 @@ const BroadcastTemplatesTable = ({
           </AppButton>
         </Stack>
       )}
-      renderRowActions={({ row }) => (
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <DuplicateButton onClick={(e) => { e.stopPropagation(); onDuplicate([row.original.id]); }} />
-          <DeleteButton onClick={(e) => { e.stopPropagation(); onDeleteRequest([row.original.id]); }} />
-        </Stack>
-      )}
+      rowActions={[
+        {
+          id: 'duplicate',
+          label: 'Duplicate',
+          icon: <Copy size={16} />,
+          onClick: (row) => onDuplicate([row.id]),
+        },
+        {
+          id: 'delete',
+          label: 'Delete',
+          icon: <Trash2 size={16} />,
+          destructive: true,
+          onClick: (row) => onDeleteRequest([row.id]),
+        },
+      ]}
       onRowClick={(row) => onEdit(row)}
       getRowClassName={() => 'group'}
     />

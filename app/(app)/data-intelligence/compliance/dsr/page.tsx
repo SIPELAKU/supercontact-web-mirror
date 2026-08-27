@@ -2,14 +2,13 @@
 
 import { format } from 'date-fns';
 import { useMemo, useState } from "react";
-import { Plus, FileClock } from "lucide-react";
+import { Plus, FileClock, Trash2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef } from "@/components/ui/super-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import ComplianceTabs from "@/components/data-intelligence/compliance/ComplianceTabs";
 import CreateDsrRequestModal from "@/components/data-intelligence/compliance/CreateDsrRequestModal";
 import { useDeleteDsrRequest, useDsrRequests, useUpdateDsrRequestStatus } from "@/lib/hooks/useCompliance";
@@ -187,15 +186,22 @@ export default function DsrRequestsPage() {
                 <div className="mx-6 my-6">
                     <SuperTable<DsrRequestItem>
                         tableId="dsr-requests-table"
+                        urlKey=""
                         columns={columns}
                         data={requests}
                         isLoading={isLoading}
                         isError={isError}
                         errorMessage="Failed to load data subject requests. Please try again."
                         onRetry={() => refetch()}
-                        renderRowActions={({ row }) => (
-                            <DeleteButton onClick={() => handleDelete(row.original.id)} />
-                        )}
+                        rowActions={[
+                            {
+                                id: "delete",
+                                label: "Delete",
+                                icon: <Trash2 size={16} />,
+                                destructive: true,
+                                onClick: (row) => handleDelete(row.id),
+                            },
+                        ]}
                         renderEmptyState={() => (
                             <EmptyState
                                 icon={FileClock}
@@ -206,6 +212,7 @@ export default function DsrRequestsPage() {
                         )}
                         initialState={{ sorting: [{ id: "created_at", desc: true }] }}
                         features={{
+          urlSync: true,
                             globalFilter: true,
                             columnFilters: true,
                             pagination: true,

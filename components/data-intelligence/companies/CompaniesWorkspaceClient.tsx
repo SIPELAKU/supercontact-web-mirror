@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, Tab, CircularProgress } from "@mui/material";
-import { Plus, ListPlus, Save as SaveIcon, Printer, Radar, ListChecks } from "lucide-react";
+import { Plus, ListPlus, Save as SaveIcon, Printer, Radar, ListChecks, Trash2 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DeleteButton } from "@/components/ui/app-action-buttons-table";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
@@ -473,16 +472,15 @@ export default function CompaniesWorkspaceClient() {
                                 setDiscoverTableState({ pagination: s.pagination, globalFilter: s.globalFilter || "" })
                             }
                             onRowClick={(row) => handleRowClick(row, "search")}
-                            renderRowActions={(row) => (
-                                <AppButton
-                                    size="small"
-                                    variantStyle="outline"
-                                    disabled={savingId === row.id}
-                                    onClick={() => handleSaveToCrm(row.id)}
-                                >
-                                    {savingId === row.id ? "Saving..." : "Save"}
-                                </AppButton>
-                            )}
+                            rowActions={[
+                                {
+                                    id: "save-to-crm",
+                                    label: "Save to CRM",
+                                    icon: <SaveIcon size={16} />,
+                                    isLoading: (row) => savingId === row.id,
+                                    onClick: (row) => handleSaveToCrm(row.id),
+                                },
+                            ]}
                             renderBulkActions={({ selectedRows, clearSelection }) => (
                                 <AppButton
                                     variantStyle="primary"
@@ -536,9 +534,15 @@ export default function CompaniesWorkspaceClient() {
                                     <span className="hidden sm:inline">Print PDF</span>
                                 </AppButton>
                             )}
-                            renderRowActions={(row) => (
-                                <DeleteButton onClick={() => handleDeleteSaved(row.id)} />
-                            )}
+                            rowActions={[
+                                {
+                                    id: "delete",
+                                    label: "Delete",
+                                    icon: <Trash2 size={16} />,
+                                    destructive: true,
+                                    onClick: (row) => handleDeleteSaved(row.id),
+                                },
+                            ]}
                             renderBulkActions={({ selectedRows, clearSelection }) => (
                                 <>
                                     <AppButton
@@ -659,9 +663,15 @@ export default function CompaniesWorkspaceClient() {
                                     : undefined
                             }
                             onRowClick={(row) => handleRowClick(row, "saved")}
-                            renderRowActions={(row) => (
-                                <DeleteButton onClick={() => handleRemoveMember(row.id, row.name)} />
-                            )}
+                            rowActions={[
+                                {
+                                    id: "remove",
+                                    label: "Remove",
+                                    icon: <Trash2 size={16} />,
+                                    destructive: true,
+                                    onClick: (row) => handleRemoveMember(row.id, row.name),
+                                },
+                            ]}
                         />
                     </div>
                 </div>

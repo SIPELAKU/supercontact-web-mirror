@@ -16,6 +16,16 @@ import { AppTabs } from '@/components/ui/app-tabs';
 type CaptureTab = 'active' | 'inactive';
 const VALID_TABS: CaptureTab[] = ['active', 'inactive'];
 
+
+// Rebuilding the URL from a template silently discards every OTHER query
+// param - the table's own ?p / ?q / ?sort included - so switching tabs threw
+// away the page and search the user had set. Merge instead of replace.
+function withTab(pathname: string, current: URLSearchParams, tab: string) {
+  const params = new URLSearchParams(current.toString());
+  params.set("tab", tab);
+  return `${pathname}?${params.toString()}`;
+}
+
 export default function SmartCaptureClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,7 +78,7 @@ export default function SmartCaptureClient() {
   const handleTabChange = (tab: CaptureTab) => {
     setActiveTab(tab);
     setParams(prev => ({ ...prev, page: 1 })); // Reset page on tab switch
-    router.replace(`/smart-capture?tab=${tab}`, { scroll: false });
+    router.replace(withTab(`/smart-capture`, searchParams, tab), { scroll: false });
   };
 
   const activeCount = activeRes?.data?.total || 0;

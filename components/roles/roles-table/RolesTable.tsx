@@ -1,12 +1,30 @@
+"use client";
+
 import { RoleType } from "@/lib/types/Role";
 import { Chip, SxProps, Theme, Tooltip, Typography } from "@mui/material";
-import DeleteRolesPermissionsButton from "../roles-button-open-modal/DeleteRolesPermissionsButton";
-import EditPermissionsButton from "../roles-button-open-modal/EditPermissionsButton";
 import React from 'react';
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
 import { MRT_TableInstance } from '@/components/ui/super-table';
 import { EmptyState } from "@/components/ui/empty-state";
-import { ShieldCheck } from "lucide-react";
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { useAuth } from "@/lib/context/AuthContext";
+import useRoles from "@/lib/hooks/useRoles";
+import { notify } from "@/lib/notifications";
+import { Pencil, ShieldCheck, Trash2 } from "lucide-react";
+
+// Was mounted per row by EditPermissionsButton; one instance now serves the
+// row action for whichever role is selected.
+const EditPermissionsDialog = dynamic(
+  () => import("../roles-modal/EditPermissionsModal"),
+  { ssr: false },
+);
+
+// The three seeded roles the API refuses to change - same list the old
+// Edit/Delete buttons gated on.
+const DEFAULT_ROLE_NAMES = ["Staff", "Manager", "Admin"];
+const isDefaultRole = (roleName: string) => DEFAULT_ROLE_NAMES.includes(roleName);
 
 interface RolesTableProps {
   roles: RoleType[];
@@ -76,6 +94,35 @@ export default function RolesTable({
   onExportRequest,
   renderTopLeftToolbar,
 }: RolesTableProps) {
+  const { token } = useAuth();
+  const router = useRouter();
+  const { deleteRole, isDeleting } = useRoles();
+  const [editTarget, setEditTarget] = React.useState<RoleType | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<RoleType | null>(null);
+
+  // Ported as-is from DeleteRolesPermissionsButton, which owned this flow
+  // while the action still lived in a column.
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    try {
+      if (!token) {
+        notify.error("You are not authenticated", {
+          description: "Please login to continue",
+        });
+        router.push("/login");
+        return;
+      }
+
+      deleteRole(deleteTarget.id);
+      notify.success("Role deleted successfully");
+      setDeleteTarget(null);
+    } catch (error) {
+      notify.error("Failed to delete role", {
+        description: "Please try again later",
+      });
+    }
+  };
+
   const columns = React.useMemo<MRT_ColumnDef<RoleType>[]>(() => [
     {
       accessorKey: "role_name",
@@ -141,23 +188,6 @@ export default function RolesTable({
         );
       },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      Cell: ({ row }) => {
-        const role = row.original;
-        return (
-          <div className="flex items-center gap-1">
-            <EditPermissionsButton
-              roleId={role.id}
-              roleName={role.role_name}
-              assignedPermissions={role.permission_names}
-            />
-            <DeleteRolesPermissionsButton roleId={role.id} roleName={role.role_name} />
-          </div>
-        );
-      },
-    },
   ], []);
 
   return (
@@ -176,6 +206,27 @@ export default function RolesTable({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit Permissions",
+            icon: <Pencil size={16} />,
+            // The reason reads under the label instead of hiding in a tooltip
+            // on a button that had left the tab order.
+            disabled: (row) =>
+              isDefaultRole(row.role_name) ? "Default role cannot be edited" : false,
+            onClick: (row) => setEditTarget(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            disabled: (row) =>
+              isDefaultRole(row.role_name) ? "Default role cannot be deleted" : false,
+            onClick: (row) => setDeleteTarget(row),
+          },
+        ]}
         features={{
           sorting: true,
           globalFilter: true,
@@ -197,6 +248,28 @@ export default function RolesTable({
             description="Create roles to control what each team member can access."
           />
         )}
+      />
+
+      <EditPermissionsDialog
+        open={Boolean(editTarget)}
+        setOpen={(open: boolean) => {
+          if (!open) setEditTarget(null);
+        }}
+        roleId={editTarget?.id ?? ""}
+        initialRoleName={editTarget?.role_name ?? ""}
+        initialPermissions={editTarget?.permission_names ?? []}
+      />
+
+      <ConfirmationPopup
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Are you sure you want to delete this role?"
+        description="This action is permanent and cannot be undone"
+        confirmText="Delete Role"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

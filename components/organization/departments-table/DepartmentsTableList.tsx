@@ -4,11 +4,11 @@ import React, { useMemo } from "react";
 import { Avatar, Box } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { DepartmentsType } from "@/lib/types/Departments";
-import { DeleteButton, EditButton } from "@/components/ui/app-action-buttons-table";
 import { AppButton } from "@/components/ui/app-button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Building2, Plus } from "lucide-react";
+import { Building2, Pencil, Plus, Trash2 } from "lucide-react";
 
 interface DepartmentsTableListProps {
   departments: DepartmentsType[];
@@ -45,6 +45,8 @@ export default function DepartmentsTableList({
   isBulkDeleting = false,
   renderTopLeftToolbar,
 }: DepartmentsTableListProps) {
+  const router = useRouter();
+
   const columns = useMemo<MRT_ColumnDef<DepartmentsType>[]>(() => [
     {
       accessorKey: "department",
@@ -109,23 +111,7 @@ export default function DepartmentsTableList({
       muiTableBodyCellProps: { align: "center" },
       muiTableHeadCellProps: { align: "center" },
     },
-    {
-      id: "actions",
-      header: "Actions",
-      enableColumnFilter: false,
-      enableSorting: false,
-      size: 120,
-      Cell: ({ row }) => (
-        <Box
-          sx={{ display: "flex", gap: 1 }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <EditButton onClick={() => onEdit(row.original)} />
-          <DeleteButton onClick={() => onDelete(row.original)} />
-        </Box>
-      ),
-    },
-  ], [branchOptions, onEdit, onDelete]);
+  ], [branchOptions]);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
@@ -156,6 +142,22 @@ export default function DepartmentsTableList({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         renderTopLeftToolbar={renderTopLeftToolbar}
+        onRowClick={(row) => router.push(`/settings/organization/${row.id}`)}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            onClick: (row) => onEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => onDelete(row),
+          },
+        ]}
         renderBulkActions={onBulkDelete ? ({ selectedRows, clearSelection }) => (
           <AppButton
             variantStyle="danger"

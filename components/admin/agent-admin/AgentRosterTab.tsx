@@ -199,28 +199,26 @@ export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
 
       <SuperTable<AgentRosterItem>
         tableId="agent-roster-table"
+        urlKey="roster"
         columns={columns}
         data={agents}
         isLoading={isLoading}
         isError={isError}
         errorMessage="Failed to load agents. Please try again."
         onRetry={() => refetch()}
-        renderRowActions={
-          canManage
-            ? ({ row }) => (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setManageId(row.original.id)}
-                    className="text-gray-300 hover:text-gray-700"
-                    aria-label={`Manage ${row.original.fullname}`}
-                    title="Manage seat, capacity and skills"
-                  >
-                    <SlidersHorizontal size={16} />
-                  </button>
-                </div>
-              )
-            : undefined
-        }
+        // Class A: the agent record is scalar and has no page of its own, so the
+        // row opens the same manage modal the kebab does. Only for managers -
+        // the modal below is not even mounted for a read-only viewer.
+        onRowClick={canManage ? (row) => setManageId(row.id) : undefined}
+        rowActions={[
+          {
+            id: "manage",
+            label: "Manage",
+            icon: <SlidersHorizontal size={16} />,
+            hidden: () => !canManage,
+            onClick: (row) => setManageId(row.id),
+          },
+        ]}
         renderEmptyState={() => (
           <EmptyState
             icon={Users}
@@ -228,7 +226,8 @@ export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
             description="Agents added to your workspace will appear here."
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {canManage && (

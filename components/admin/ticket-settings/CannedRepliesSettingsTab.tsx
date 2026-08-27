@@ -148,13 +148,15 @@ export default function CannedRepliesSettingsTab() {
         header: "Active",
         enableColumnFilter: false,
         Cell: ({ row }) => (
-          <Switch
-            size="small"
-            checked={row.original.is_active}
-            onChange={() => handleToggleActive(row.original)}
-            disabled={updateMutation.isPending}
-            inputProps={{ "aria-label": `Toggle ${row.original.title} active` }}
-          />
+          <span data-st-no-row-click>
+            <Switch
+              size="small"
+              checked={row.original.is_active}
+              onChange={() => handleToggleActive(row.original)}
+              disabled={updateMutation.isPending}
+              inputProps={{ "aria-label": `Toggle ${row.original.title} active` }}
+            />
+          </span>
         ),
       },
     ],
@@ -179,30 +181,29 @@ export default function CannedRepliesSettingsTab() {
 
       <SuperTable<CannedReply>
         tableId="canned-replies-table"
+        urlKey="canned"
         columns={columns}
         data={replies}
         isLoading={isLoading}
         isError={isError}
         errorMessage="Failed to load canned replies. Please try again."
         onRetry={() => refetch()}
-        renderRowActions={({ row }) => (
-          <div className="flex gap-2">
-            <button
-              onClick={() => openEdit(row.original)}
-              className="text-gray-300 hover:text-gray-700"
-              aria-label="Edit canned reply"
-            >
-              <Pencil size={16} />
-            </button>
-            <button
-              onClick={() => setDeleteTarget(row.original)}
-              className="text-gray-300 hover:text-red-500"
-              aria-label="Delete canned reply"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
+        onRowClick={(row) => openEdit(row)}
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            onClick: (row) => openEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            destructive: true,
+            onClick: (row) => setDeleteTarget(row),
+          },
+        ]}
         renderEmptyState={() => (
           <EmptyState
             icon={MessageSquareText}
@@ -210,7 +211,8 @@ export default function CannedRepliesSettingsTab() {
             description="Add saved replies your agents can insert into any conversation in one click."
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       <Dialog open={modalOpen} onOpenChange={(next) => (next ? undefined : closeModal())} maxWidth="sm">

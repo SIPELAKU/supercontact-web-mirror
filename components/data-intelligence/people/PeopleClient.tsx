@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Chip } from "@mui/material";
+import { Chip } from "@mui/material";
 import { Save as SaveIcon, Users, Mail, Phone, Linkedin } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
@@ -259,28 +259,9 @@ export default function PeopleClient() {
                 enableColumnFilter: false,
                 Cell: ({ row }) => <>{row.original.industry || "-"}</>,
             },
-            {
-                id: "actions",
-                header: "Actions",
-                enableColumnFilter: false,
-                enableSorting: false,
-                size: 100,
-                Cell: ({ row }) => (
-                    <Box onClick={(e) => e.stopPropagation()}>
-                        <AppButton
-                            size="small"
-                            variantStyle="outline"
-                            disabled={savingRowId === row.original.rowId}
-                            onClick={() => handleSaveOne(row.original)}
-                        >
-                            {savingRowId === row.original.rowId ? "Saving..." : "Save"}
-                        </AppButton>
-                    </Box>
-                ),
-            },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [savingRowId]
+        []
     );
 
     return (
@@ -336,6 +317,15 @@ export default function PeopleClient() {
                     onStateChange={(s: SuperTableState) =>
                         setTableState({ pagination: s.pagination, globalFilter: s.globalFilter || "" })
                     }
+                    rowActions={[
+                        {
+                            id: "save-contact",
+                            label: "Save as Contact",
+                            icon: <SaveIcon size={16} />,
+                            isLoading: (row) => savingRowId === row.rowId,
+                            onClick: (row) => handleSaveOne(row),
+                        },
+                    ]}
                     renderBulkActions={({ selectedRows, clearSelection }) => (
                         <AppButton
                             variantStyle="primary"

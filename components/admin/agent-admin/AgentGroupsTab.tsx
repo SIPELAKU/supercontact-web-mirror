@@ -141,6 +141,7 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
 
       <SuperTable<AgentGroup>
         tableId="agent-groups-table"
+        urlKey="groups"
         columns={columns}
         data={groups}
         isLoading={isLoading}
@@ -149,34 +150,23 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
         onRetry={() => refetch()}
         onRowClick={(row) => setDetailGroupId(row.id)}
         getRowClassName={() => "cursor-pointer"}
-        renderRowActions={
-          canManage
-            ? ({ row }) => (
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEdit(row.original);
-                    }}
-                    className="text-gray-300 hover:text-gray-700"
-                    aria-label="Edit group"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteTarget(row.original);
-                    }}
-                    className="text-gray-300 hover:text-red-500"
-                    aria-label="Delete group"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )
-            : undefined
-        }
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <Pencil size={16} />,
+            hidden: () => !canManage,
+            onClick: (row) => openEdit(row),
+          },
+          {
+            id: "delete",
+            label: "Delete",
+            icon: <Trash2 size={16} />,
+            hidden: () => !canManage,
+            destructive: true,
+            onClick: (row) => setDeleteTarget(row),
+          },
+        ]}
         renderEmptyState={() => (
           <EmptyState
             icon={UsersRound}
@@ -193,7 +183,8 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
             }
           />
         )}
-        features={{ columnFilters: false }}
+        features={{          urlSync: true,
+ columnFilters: false }}
       />
 
       {/* Create / edit modal - only mounted for managers */}

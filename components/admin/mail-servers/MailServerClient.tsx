@@ -1,7 +1,6 @@
 "use client";
 
 import { handleError } from '@/lib/utils/errorHandler';
-import { DeleteButton, EditButton } from '@/components/ui/app-action-buttons-table';
 import { AppButton } from '@/components/ui/app-button';
 import SettingsPageHeader from '@/components/settings/SettingsPageHeader';
 import { Switch } from '@/components/ui/switch';
@@ -13,8 +12,8 @@ import { fetchMailServers } from '@/lib/api/mail-servers';
 import { useAuth } from '@/lib/context/AuthContext';
 import { MailServer } from '@/lib/models/types';
 import { notify } from '@/lib/notifications';
-import { CircularProgress, Tooltip } from '@mui/material';
-import { AlertCircle, CheckCircle2, HelpCircle, Play, Plus, Server } from 'lucide-react';
+import { CircularProgress } from '@mui/material';
+import { AlertCircle, CheckCircle2, HelpCircle, Pencil, Play, Plus, Server, Trash2 } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import PlatformSenderCard from './PlatformSenderCard';
 import AddMailServerModal from './AddMailServerModal';
@@ -309,6 +308,7 @@ export const MailServerClient = () => {
 
             <SuperTable<MailServer>
                 tableId="mail-servers-table"
+                urlKey=""
                 columns={columns}
                 data={visibleData}
                 isLoading={isLoading}
@@ -336,29 +336,39 @@ export const MailServerClient = () => {
                         Add Server
                     </AppButton>
                 )}
-                renderRowActions={({ row }) => {
-                    const item = row.original;
-                    return (
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => handleTestConnection(item)}
-                                className="cursor-pointer p-1 hover:bg-gray-100 rounded-lg text-emerald-500 transition-colors disabled:opacity-50"
-                                title="Test Connection"
-                                disabled={testConnectionMutation.isPending}
-                            >
-                                {testConnectionMutation.isPending && testConnectionMutation.variables === item.id ? (
-                                    <CircularProgress size={18} color="inherit" />
-                                ) : (
-                                    <Tooltip title="Test Connection">
-                                        <Play size={18} />
-                                    </Tooltip>
-                                )}
-                            </button>
-                            <EditButton onClick={() => handleEdit(item)} disabled={item.is_system_mail_server} customTitle={item.is_system_mail_server ? 'System Mail Server' : 'Edit'} />
-                            <DeleteButton onClick={() => handleDelete(item)} disabled={item.is_system_mail_server} customTitle={item.is_system_mail_server ? 'System Mail Server' : 'Delete'} />
-                        </div>
-                    );
-                }}
+                rowActions={[
+                    {
+                        id: "test",
+                        label: "Test Connection",
+                        icon: <Play size={16} />,
+                        // The old button disabled every row while any test was in
+                        // flight; the reason now says so out loud instead of
+                        // hiding in a title attribute.
+                        disabled: () =>
+                            testConnectionMutation.isPending
+                                ? "A connection test is already running"
+                                : false,
+                        isLoading: (row) =>
+                            testConnectionMutation.isPending &&
+                            testConnectionMutation.variables === row.id,
+                        onClick: (row) => handleTestConnection(row),
+                    },
+                    {
+                        id: "edit",
+                        label: "Edit",
+                        icon: <Pencil size={16} />,
+                        disabled: (row) => (row.is_system_mail_server ? "System Mail Server" : false),
+                        onClick: (row) => handleEdit(row),
+                    },
+                    {
+                        id: "delete",
+                        label: "Delete",
+                        icon: <Trash2 size={16} />,
+                        destructive: true,
+                        disabled: (row) => (row.is_system_mail_server ? "System Mail Server" : false),
+                        onClick: (row) => handleDelete(row),
+                    },
+                ]}
                 renderBulkActions={({ selectedRows, clearSelection }) => (
                     <AppButton
                         variantStyle="danger"
@@ -378,6 +388,7 @@ export const MailServerClient = () => {
                 )}
                 initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                 features={{
+          urlSync: true,
                     // API has no sort params - avoid a misleading page-only sort
                     sorting: false,
                     globalFilter: true,

@@ -30,6 +30,7 @@ import { AppSelect } from "@/components/ui/app-select";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import PageHeader from "@/components/ui/page-header";
+import { resolveListHref } from "@/components/ui/super-table";
 import EmailTabbedEditor, { EmailTabbedEditorRef } from "./EmailTabbedEditor";
 import RecipientPicker, { RecipientSource } from "./RecipientPicker";
 import { useMailServers } from "@/lib/hooks/useMailServers";
@@ -195,7 +196,11 @@ export function CampaignComposer({
   };
 
   const backHref = "/email-marketing/campaigns";
-  const leave = () => router.push(backHref);
+  // Resolved at click time, not render time: the breadcrumb beside this button
+  // already returns to the list the user left, and Back losing that position
+  // while the breadcrumb keeps it is the kind of split behaviour nobody can
+  // predict. sessionStorage is client-only, so it has to be read on the click.
+  const leave = () => router.push(resolveListHref(backHref));
   const handleBack = () => (dirty ? setConfirmLeave(true) : leave());
 
   const platformSender = mailServersData?.data?.platform_sender;

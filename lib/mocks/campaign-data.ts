@@ -47,13 +47,25 @@ export const generateMockCampaign = (id: number): Campaign => {
     editor_type: Math.random() > 0.5 ? 'visual_builder' : 'simple_editor',
     mail_sender_id: `sender-${Math.floor(Math.random() * 5) + 1}`,
     sent_at: isSent ? new Date(Date.now() - Math.random() * 1000000000).toISOString() : null,
-    stats: {
-      delivered: isSent ? Math.floor(Math.random() * 1000) : 0,
-      opened: isSent ? Math.floor(Math.random() * 500) : 0,
-      clicked: isSent ? Math.floor(Math.random() * 100) : 0,
-      bounced: isSent ? Math.floor(Math.random() * 20) : 0,
-      simulated: 0,
-    },
+    stats: (() => {
+      const delivered = isSent ? Math.floor(Math.random() * 1000) : 0;
+      const bounced = isSent ? Math.floor(Math.random() * 20) : 0;
+      const dropped = isSent ? Math.floor(Math.random() * 5) : 0;
+      const complained = isSent ? Math.floor(Math.random() * 2) : 0;
+      const sent = delivered + bounced + dropped;
+      return {
+        sent,
+        delivered,
+        opened: isSent ? Math.floor(Math.random() * 500) : 0,
+        clicked: isSent ? Math.floor(Math.random() * 100) : 0,
+        bounced,
+        dropped,
+        complained,
+        simulated: 0,
+        bounce_rate: sent > 0 ? bounced / sent : 0,
+        complaint_rate: delivered > 0 ? complained / delivered : 0,
+      };
+    })(),
     created_at: new Date(Date.now() - 2000000000).toISOString(),
     updated_at: new Date().toISOString()
   };

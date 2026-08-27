@@ -16,7 +16,7 @@ export interface Subscriber {
 }
 
 export interface CampaignSubscriber extends Subscriber {
-  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed' | 'simulated';
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'dropped' | 'complained' | 'failed' | 'simulated';
   error_message: string | null;
 }
 
@@ -166,11 +166,19 @@ export interface Campaign {
   mail_server_id?: string;
   sent_at: string | null;
   stats: {
+    sent: number;
     delivered: number;
     opened: number;
     clicked: number;
     bounced: number;
+    dropped: number;
+    complained: number;
     simulated: number;
+    // Server-computed - see CampaignLogStats.bounce_rate/complaint_rate.
+    // bounce_rate is measured against `sent`, complaint_rate against
+    // `delivered` - deliberately different denominators, not a typo.
+    bounce_rate: number;
+    complaint_rate: number;
   };
   created_at: string;
   updated_at: string;

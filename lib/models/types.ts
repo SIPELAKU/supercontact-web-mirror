@@ -448,7 +448,7 @@ export type SmartCapturePublicSubmitResponse = {
     details?: any;
   };
 };
-export type EmailStatus = "pending" | "sent" | "delivered" | "opened" | "clicked" | "bounced" | "failed" | "unknown";
+export type EmailStatus = "pending" | "sent" | "delivered" | "opened" | "clicked" | "bounced" | "dropped" | "complained" | "failed" | "unknown";
 export type PhoneStatus = "valid" | "invalid" | "unknown";
 
 export interface SmartCaptureSubmission {

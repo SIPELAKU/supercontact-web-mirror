@@ -23,7 +23,7 @@ import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
 import { useCampaignDetail, useCampaignSubscribers } from '@/lib/hooks/useCampaigns';
 import { Campaign, CampaignSubscriber } from '@/lib/types/email-marketing';
 import { format } from 'date-fns';
-import { Activity, FlaskConical, Mail, MousePointerClick, RefreshCcw, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Ban, FlaskConical, Mail, MousePointerClick, Percent, RefreshCcw, ShieldAlert, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 
 const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: number | string, icon: any, color: string }) => (
@@ -127,6 +127,8 @@ export function CampaignStatsPanel({
                     case 'opened':
                     case 'clicked': color = "success"; break;
                     case 'bounced':
+                    case 'dropped':
+                    case 'complained':
                     case 'failed': color = "error"; break;
                     case 'simulated': color = "default"; break;
                     default: color = "default";
@@ -288,6 +290,45 @@ export function CampaignStatsPanel({
                                     color="#ef4444"
                                 />
                             </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <StatCard
+                                    title="Bounce Rate"
+                                    value={`${(stats.bounce_rate * 100).toFixed(1)}%`}
+                                    icon={Percent}
+                                    // Industry reference points, not this
+                                    // campaign's own history - see the
+                                    // deliverability monitoring plan.
+                                    color={stats.bounce_rate > 0.05 ? '#ef4444' : '#0ea5e9'}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <StatCard
+                                    title="Complaint Rate"
+                                    value={`${(stats.complaint_rate * 100).toFixed(2)}%`}
+                                    icon={ShieldAlert}
+                                    color={stats.complaint_rate > 0.001 ? '#ef4444' : '#0ea5e9'}
+                                />
+                            </Grid>
+                            {stats.dropped > 0 && (
+                                <Grid item xs={12} sm={6}>
+                                    <StatCard
+                                        title="Dropped"
+                                        value={stats.dropped.toLocaleString()}
+                                        icon={Ban}
+                                        color="#f97316"
+                                    />
+                                </Grid>
+                            )}
+                            {stats.complained > 0 && (
+                                <Grid item xs={12} sm={6}>
+                                    <StatCard
+                                        title="Marked as Spam"
+                                        value={stats.complained.toLocaleString()}
+                                        icon={AlertTriangle}
+                                        color="#ef4444"
+                                    />
+                                </Grid>
+                            )}
                             {stats.simulated > 0 && (
                                 <Grid item xs={12} sm={6}>
                                     <StatCard

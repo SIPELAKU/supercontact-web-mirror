@@ -53,6 +53,27 @@ export default function ForgotPasswordVerifyOTPPage() {
     }
   };
 
+  // Pasting into any one box used to do nothing: the clipboard's full string
+  // hit onChange, and handleOtpChange's `value.length > 1` guard discarded it
+  // outright. A 6-digit code copied from an email or authenticator app is the
+  // normal way people arrive here - distribute it across the boxes instead of
+  // silently eating the paste.
+  const handlePaste = (index: number, e: React.ClipboardEvent) => {
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "");
+    if (!digits) return;
+    e.preventDefault();
+
+    const newOtp = [...otp];
+    let next = index;
+    for (const digit of digits) {
+      if (next > 5) break;
+      newOtp[next] = digit;
+      next++;
+    }
+    setOtp(newOtp);
+    inputRefs.current[Math.min(next, 5)]?.focus();
+  };
+
   const handleVerifyOtp = async () => {
     const otpCode = otp.join("");
     if (otpCode.length !== 6) {
@@ -166,6 +187,7 @@ export default function ForgotPasswordVerifyOTPPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={(e) => handlePaste(index, e)}
                     className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none transition-all"
                   />
                 ))}

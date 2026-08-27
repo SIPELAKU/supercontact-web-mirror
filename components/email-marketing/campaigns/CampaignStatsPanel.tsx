@@ -313,6 +313,13 @@ export function CampaignStatsPanel({
                         {currentCampaign.html_content ? (
                             <iframe
                                 srcDoc={currentCampaign.html_content}
+                                // A bare srcDoc inherits this page's origin, so a
+                                // <script> in a pasted template would run here with
+                                // access to a non-httpOnly access_token. Nothing needs
+                                // to reach into a read-only preview, so it gets the
+                                // strongest sandbox there is: opaque origin, no
+                                // scripts. Images and CSS still load.
+                                sandbox=""
                                 style={{
                                     width: '100%',
                                     height: '100%',

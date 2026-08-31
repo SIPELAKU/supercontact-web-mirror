@@ -317,3 +317,32 @@ export async function resolveKbFlag(token: string, id: string): Promise<KbFlag> 
   });
   return handle<KbFlag>(res, "Failed to resolve flag");
 }
+
+export async function attachQuestionToKbArticle(
+  token: string,
+  articleId: string,
+  question: string,
+  keywords?: string[],
+): Promise<KbArticle> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/articles/${articleId}/attach-question`,
+    {
+      method: "POST",
+      headers: jsonHeaders(token),
+      body: JSON.stringify({ question, keywords }),
+    },
+  );
+  return handle<KbArticle>(res, "Failed to attach the question to the article");
+}
+
+export async function fillKbPlaceholders(
+  token: string,
+  values: Record<string, string>,
+): Promise<{ articles_updated: number; variables_applied: string[]; articles_remaining: number }> {
+  const res = await fetchWithTimeout(`${API_BASE}/articles/fill-placeholders`, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ values }),
+  });
+  return handle(res, "Failed to fill placeholders");
+}

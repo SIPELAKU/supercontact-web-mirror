@@ -59,6 +59,9 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   answer_bot_min_confidence: 0.3,
   answer_bot_intro_text: null,
   answer_bot_no_answer_text: null,
+  answer_bot_greeting_text: null,
+  answer_bot_closing_text: null,
+  answer_bot_deflect: false,
   auto_close_idle_enabled: false,
   idle_warn_minutes: 30,
   idle_close_minutes: 30,
@@ -154,6 +157,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       answer_bot_min_confidence: config.answer_bot_min_confidence ?? DEFAULT_FORM.answer_bot_min_confidence,
       answer_bot_intro_text: config.answer_bot_intro_text ?? null,
       answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
+      answer_bot_greeting_text: config.answer_bot_greeting_text ?? null,
+      answer_bot_closing_text: config.answer_bot_closing_text ?? null,
+      answer_bot_deflect: config.answer_bot_deflect ?? false,
       auto_close_idle_enabled:
         config.auto_close_idle_enabled ?? DEFAULT_FORM.auto_close_idle_enabled,
       idle_warn_minutes: config.idle_warn_minutes ?? DEFAULT_FORM.idle_warn_minutes,
@@ -597,6 +603,16 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
           />
         </div>
 
+        <div className="border-t border-gray-100">
+          <ToggleRow
+            label="Hold the ticket until the visitor asks (true deflection)"
+            description="When AI gives a confident answer, no ticket is created yet - the visitor gets a 'Was this helpful? / Talk to a human' choice, and a ticket is only opened if they escalate. Off = a ticket is always created alongside the bot's answer."
+            checked={form.answer_bot_deflect ?? false}
+            onChange={(checked) => setField("answer_bot_deflect", checked)}
+            disabled={!form.answer_bot_enabled || !form.answer_bot_use_llm}
+          />
+        </div>
+
         {form.answer_bot_enabled && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -639,6 +655,37 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               </div>
             </div>
 
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Greeting Reply (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_greeting_text ?? ""}
+                onChange={(e) => setField("answer_bot_greeting_text", e.target.value || null)}
+                placeholder="Hai! 👋 Ada yang bisa kami bantu?"
+              />
+              <p className="text-xs text-gray-500">
+                Sent when a visitor opens with just a greeting (&quot;halo&quot;, &quot;selamat pagi&quot;).
+                Leave blank for the default in the widget&apos;s language.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Closing Reply (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_closing_text ?? ""}
+                onChange={(e) => setField("answer_bot_closing_text", e.target.value || null)}
+                placeholder="Baik, terima kasih! Tim kami akan menindaklanjuti secepatnya."
+              />
+              <p className="text-xs text-gray-500">
+                Sent when a visitor wraps up (&quot;sudah cukup&quot;, &quot;terima kasih&quot;,
+                &quot;saya tunggu follow up-nya&quot;). Leave blank for the default in the
+                widget&apos;s language.
+              </p>
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Intro Text (optional)</label>

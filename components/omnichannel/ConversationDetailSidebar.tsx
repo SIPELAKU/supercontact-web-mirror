@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import SalesReadingSection from "./SalesReadingSection";
 import { X, UserPlus, Mail, Phone, Briefcase, Building, UserRound } from "lucide-react";
 import { Chip } from "@mui/material";
 import { format } from "date-fns";
@@ -150,6 +151,7 @@ function ConversationDetailExtras({
                 currentUserFullname={conversation?.assigned_user_fullname || selectedContact.assigned_user_fullname}
             />
             <StatusSection conversationId={conversationId} status={conversation?.status} />
+            <SalesReadingSection conversationId={conversationId} />
             <PrioritySection conversationId={conversationId} priority={conversation?.priority} />
             <TagsSection conversationId={conversationId} tags={conversation?.tags || []} />
             <NotesSection conversationId={conversationId} notes={conversation?.notes || []} />

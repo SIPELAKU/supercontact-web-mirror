@@ -47,7 +47,7 @@ const COPY = {
             },
             {
                 q: "Apakah tersedia trial gratis untuk mencoba Omnichannel?",
-                a: "Ya, Anda bisa mencoba SmartSales secara gratis. Hubungi tim kami melalui WhatsApp untuk memulai.",
+                a: "Ya — Anda bisa mencoba SmartSales secara gratis dengan mendaftar sendiri di smartsales.id/register, tanpa kartu kredit. Masa trial berlaku 14 hari; bila butuh pendampingan, tim kami siap membantu melalui WhatsApp.",
             },
             {
                 q: "Selain WhatsApp dan Instagram, saluran apa lagi yang bisa masuk ke satu inbox ini?",
@@ -100,7 +100,7 @@ const COPY = {
             },
             {
                 q: "Is a free trial available to try Omnichannel?",
-                a: "Yes, you can try SmartSales for free. Contact our team via WhatsApp to get started.",
+                a: "Yes — you can try SmartSales for free by signing up yourself at smartsales.id/register, no credit card required. The trial runs for 14 days, and our team is happy to help over WhatsApp if you'd like guidance.",
             },
             {
                 q: "Besides WhatsApp and Instagram, what other channels can come into this one inbox?",

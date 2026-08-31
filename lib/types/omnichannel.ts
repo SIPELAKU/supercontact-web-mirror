@@ -423,6 +423,8 @@ export interface WebWidgetConfig {
   answer_bot_no_answer_text: string | null;
   /** Reply to a greeting-only opener ("halo"). null = locale default. */
   answer_bot_greeting_text?: string | null;
+  /** Reply to a closing/farewell ("sudah cukup, terima kasih"). null = locale default. */
+  answer_bot_closing_text?: string | null;
   /** 7B.2 true deflection: hold the ticket until visitor feedback. */
   answer_bot_deflect?: boolean;
   /** Fase C shadow mode: while the live bot is off, log what it WOULD have

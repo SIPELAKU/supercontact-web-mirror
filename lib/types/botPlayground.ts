@@ -7,6 +7,7 @@ export interface BotPlaygroundOverrides {
   intro_text?: string | null;
   no_answer_text?: string | null;
   greeting_text?: string | null;
+  closing_text?: string | null;
   include_sales?: boolean | null;
 }
 
@@ -64,12 +65,13 @@ export interface PlaygroundEffectiveConfig {
   intro_text?: string | null;
   no_answer_text?: string | null;
   greeting_text?: string | null;
+  closing_text?: string | null;
   answer_bot_enabled: boolean;
   answer_bot_deflect: boolean;
   is_widget_enabled: boolean;
 }
 
-export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting" | "contact_ack";
+export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting" | "contact_ack" | "closing";
 
 export interface BotPlaygroundAskResponse {
   reply_text: string;

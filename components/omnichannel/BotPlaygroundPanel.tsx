@@ -75,6 +75,7 @@ const SOURCE_LABEL: Record<string, { label: string; className: string }> = {
   silence: { label: "Silence", className: "bg-red-100 text-red-700" },
   greeting: { label: "Greeting", className: "bg-violet-100 text-violet-700" },
   contact_ack: { label: "Contact noted", className: "bg-teal-100 text-teal-700" },
+  closing: { label: "Closing", className: "bg-slate-200 text-slate-700" },
 };
 
 function triToBool(v: TriState): boolean | undefined {

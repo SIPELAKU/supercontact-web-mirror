@@ -60,6 +60,7 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   answer_bot_intro_text: null,
   answer_bot_no_answer_text: null,
   answer_bot_greeting_text: null,
+  answer_bot_closing_text: null,
   answer_bot_deflect: false,
   auto_close_idle_enabled: false,
   idle_warn_minutes: 30,
@@ -157,6 +158,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       answer_bot_intro_text: config.answer_bot_intro_text ?? null,
       answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
       answer_bot_greeting_text: config.answer_bot_greeting_text ?? null,
+      answer_bot_closing_text: config.answer_bot_closing_text ?? null,
       answer_bot_deflect: config.answer_bot_deflect ?? false,
       auto_close_idle_enabled:
         config.auto_close_idle_enabled ?? DEFAULT_FORM.auto_close_idle_enabled,
@@ -666,6 +668,22 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               <p className="text-xs text-gray-500">
                 Sent when a visitor opens with just a greeting (&quot;halo&quot;, &quot;selamat pagi&quot;).
                 Leave blank for the default in the widget&apos;s language.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Closing Reply (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_closing_text ?? ""}
+                onChange={(e) => setField("answer_bot_closing_text", e.target.value || null)}
+                placeholder="Baik, terima kasih! Tim kami akan menindaklanjuti secepatnya."
+              />
+              <p className="text-xs text-gray-500">
+                Sent when a visitor wraps up (&quot;sudah cukup&quot;, &quot;terima kasih&quot;,
+                &quot;saya tunggu follow up-nya&quot;). Leave blank for the default in the
+                widget&apos;s language.
               </p>
             </div>
 

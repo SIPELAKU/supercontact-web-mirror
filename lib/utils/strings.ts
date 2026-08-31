@@ -1392,7 +1392,7 @@ export const strings = createLocalizedStrings({
         sol_int_faq_q10: "How much does this sales and marketing integration feature cost?",
         sol_int_faq_a10: "This capability is included in SmartSales' CRM Sales and Omnichannel packages. Plan and pricing details are on our pricing page.",
         sol_int_faq_q11: "Is a free trial available?",
-        sol_int_faq_a11: "Yes — you can try SmartSales for free by signing up yourself at smartsales.id/register, no credit card required. The trial runs for 30 days, and our team is happy to help over WhatsApp if you'd like guidance.",
+        sol_int_faq_a11: "Yes — you can try SmartSales for free by signing up yourself at smartsales.id/register, no credit card required. The trial runs for 14 days, and our team is happy to help over WhatsApp if you'd like guidance.",
         sol_int_faq_q12: "What's the difference versus just using regular WhatsApp Business?",
         sol_int_faq_a12: "Regular WhatsApp Business only handles conversations one at a time, disconnected from sales data. SmartSales unifies WhatsApp, Email, and the sales pipeline in one CRM, so inbound leads are automatically logged and routed to the right team.",
 
@@ -2750,7 +2750,7 @@ export const strings = createLocalizedStrings({
         sol_int_faq_q10: "Berapa biaya untuk fitur integrasi sales dan marketing ini?",
         sol_int_faq_a10: "Fitur ini termasuk dalam paket CRM Sales dan Omnichannel SmartSales. Detail paket dan harga bisa dilihat di halaman harga kami.",
         sol_int_faq_q11: "Apakah tersedia trial gratis?",
-        sol_int_faq_a11: "Ya — Anda bisa mencoba SmartSales secara gratis dengan mendaftar sendiri di smartsales.id/register, tanpa kartu kredit. Masa trial berlaku 30 hari; bila butuh pendampingan, tim kami siap membantu melalui WhatsApp.",
+        sol_int_faq_a11: "Ya — Anda bisa mencoba SmartSales secara gratis dengan mendaftar sendiri di smartsales.id/register, tanpa kartu kredit. Masa trial berlaku 14 hari; bila butuh pendampingan, tim kami siap membantu melalui WhatsApp.",
         sol_int_faq_q12: "Apa bedanya dengan sekadar menggunakan WhatsApp Business biasa?",
         sol_int_faq_a12: "WhatsApp Business biasa hanya menangani percakapan satu per satu tanpa terhubung ke data sales. SmartSales menyatukan percakapan WhatsApp, Email, dan pipeline sales dalam satu CRM, sehingga leads yang masuk otomatis tercatat dan bisa di-routing ke tim yang tepat.",
 

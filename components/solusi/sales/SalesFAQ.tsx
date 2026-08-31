@@ -64,7 +64,7 @@ const COPY = {
             },
             {
                 q: 'Bagaimana cara memulai jika kami tertarik?',
-                a: 'Cara tercepat: daftar trial gratis secara mandiri di smartsales.id/register (tanpa kartu kredit, masa trial 30 hari). Ingin didampingi? Klik tombol WhatsApp di halaman ini — tim kami bantu memahami kebutuhan tim sales Anda dan menjelaskan langkah selanjutnya.',
+                a: 'Cara tercepat: daftar trial gratis secara mandiri di smartsales.id/register (tanpa kartu kredit, masa trial 14 hari). Ingin didampingi? Klik tombol WhatsApp di halaman ini — tim kami bantu memahami kebutuhan tim sales Anda dan menjelaskan langkah selanjutnya.',
             },
         ],
     },
@@ -119,7 +119,7 @@ const COPY = {
             },
             {
                 q: 'How do we get started if we\'re interested?',
-                a: 'The fastest way: sign up for the free trial yourself at smartsales.id/register (no credit card, 30-day trial). Prefer guidance? Click the WhatsApp button on this page — our team will help understand your sales team\'s needs and walk you through the next steps.',
+                a: 'The fastest way: sign up for the free trial yourself at smartsales.id/register (no credit card, 14-day trial). Prefer guidance? Click the WhatsApp button on this page — our team will help understand your sales team\'s needs and walk you through the next steps.',
             },
         ],
     },

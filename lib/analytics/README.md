@@ -1,5 +1,13 @@
 # Analytics & Google Ads measurement
 
+## Account registry
+
+- **GA4 property:** G-PWP9LQW138 (live in production)
+- **Google Ads account:** 263-511-6386 → site tag `AW-2635116386`
+  (`NEXT_PUBLIC_GOOGLE_ADS_ID=AW-2635116386` in the Vercel **Production**
+  environment only). The "Registration completed" conversion label goes in
+  `NEXT_PUBLIC_GOOGLE_ADS_REGISTER_LABEL` once the conversion action exists.
+
 ## Canonical event schema (GA4)
 
 ```

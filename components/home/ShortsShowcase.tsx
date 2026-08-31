@@ -34,6 +34,10 @@ const N = VIDEO_IDS.length;
 const IDLE_MAX_SLIDE_MS = 30_000;
 const ENGAGED_MAX_SLIDE_MS = 90_000;
 const SWIPE_THRESHOLD_PX = 50;
+// The stationary center frame is enlarged relative to --frame-w; side frames
+// shrink so the active video clearly dominates the row.
+const CENTER_SCALE = 1.12;
+const SIDE_SCALE = 0.8;
 
 // oardefault.jpg is the portrait Shorts thumbnail but isn't guaranteed for
 // every video; onError falls back once to the always-present hqdefault.jpg.
@@ -76,7 +80,7 @@ function PhoneFrame({
                 width: '100%',
                 aspectRatio: '9 / 16',
                 borderRadius: '36px',
-                border: '10px solid #111',
+                border: '6px solid #111',
                 backgroundColor: '#000',
                 overflow: 'hidden',
                 boxShadow: elevated
@@ -390,7 +394,7 @@ const ShortsShowcase = () => {
                         xs: 'calc(var(--frame-w) * 0.82)',
                         md: 'calc(var(--frame-w) + 40px)',
                     },
-                    height: 'calc(var(--frame-w) * 16 / 9 + 48px)',
+                    height: `calc(var(--frame-w) * 16 / 9 * ${CENTER_SCALE} + 48px)`,
                 }}
             >
                 {/* Sliding thumbnail track. Signed modular offset: the only slide
@@ -415,7 +419,7 @@ const ShortsShowcase = () => {
                                 top: '50%',
                                 left: '50%',
                                 width: 'var(--frame-w)',
-                                transform: `translate(-50%, -50%) translateX(calc(${rel} * var(--step))) scale(${isCenter ? 1 : 0.85})`,
+                                transform: `translate(-50%, -50%) translateX(calc(${rel} * var(--step))) scale(${isCenter ? CENTER_SCALE : SIDE_SCALE})`,
                                 transition:
                                     abs <= 2 && !reducedMotion
                                         ? 'transform 550ms ease-in-out, opacity 550ms ease-in-out'
@@ -460,7 +464,7 @@ const ShortsShowcase = () => {
                         position: 'absolute',
                         top: '50%',
                         left: '50%',
-                        transform: 'translate(-50%, -50%)',
+                        transform: `translate(-50%, -50%) scale(${CENTER_SCALE})`,
                         width: 'var(--frame-w)',
                         zIndex: 2,
                     }}

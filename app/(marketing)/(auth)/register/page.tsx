@@ -100,7 +100,7 @@ export default function RegisterPage() {
   ];
 
   return (
-    <AuthShell>
+    <AuthShell wide>
       <div className="text-center">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
           {strings.auth_register_title}
@@ -118,64 +118,66 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <div>
-          <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
-            {strings.auth_fullname_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="fullname"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={strings.auth_fullname_placeholder}
-            required
-            autoFocus
-          />
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
+              {strings.auth_fullname_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="fullname"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={strings.auth_fullname_placeholder}
+              required
+              autoFocus
+            />
+          </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            {strings.auth_work_email_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={strings.auth_work_email_placeholder}
-            required
-          />
-        </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              {strings.auth_work_email_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={strings.auth_work_email_placeholder}
+              required
+            />
+          </div>
 
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-            {strings.auth_phone_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="phone"
-            type="tel"
-            inputProps={{ inputMode: "tel" }}
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder={strings.auth_phone_placeholder}
-            required
-            error={phoneInvalid}
-            helperText={phoneInvalid ? strings.auth_phone_invalid : undefined}
-          />
-        </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              {strings.auth_phone_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="phone"
+              type="tel"
+              inputProps={{ inputMode: "tel" }}
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder={strings.auth_phone_placeholder}
+              required
+              error={phoneInvalid}
+              helperText={phoneInvalid ? strings.auth_phone_invalid : undefined}
+            />
+          </div>
 
-        <div>
-          <label htmlFor="company" className="block text-sm font-medium text-gray-700">
-            {strings.auth_company_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="company"
-            type="text"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            placeholder={strings.auth_company_placeholder}
-            required
-          />
+          <div>
+            <label htmlFor="company" className="block text-sm font-medium text-gray-700">
+              {strings.auth_company_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="company"
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder={strings.auth_company_placeholder}
+              required
+            />
+          </div>
         </div>
 
         <div>
@@ -193,38 +195,40 @@ export default function RegisterPage() {
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-            {strings.auth_password_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={strings.auth_password_placeholder}
-            required
-            error={passwordInvalid}
-            helperText={
-              passwordInvalid ? strings.auth_password_rule_error : strings.auth_password_helper
-            }
-          />
-        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              {strings.auth_password_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={strings.auth_password_placeholder}
+              required
+              error={passwordInvalid}
+              helperText={
+                passwordInvalid ? strings.auth_password_rule_error : strings.auth_password_helper
+              }
+            />
+          </div>
 
-        <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
-            {strings.auth_confirm_password_label} <span className="text-red-500">*</span>
-          </label>
-          <AppInput
-            id="confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder={strings.auth_confirm_password_placeholder}
-            required
-            error={confirmMismatch}
-            helperText={confirmMismatch ? strings.auth_password_mismatch : undefined}
-          />
+          <div>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+              {strings.auth_confirm_password_label} <span className="text-red-500">*</span>
+            </label>
+            <AppInput
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder={strings.auth_confirm_password_placeholder}
+              required
+              error={confirmMismatch}
+              helperText={confirmMismatch ? strings.auth_password_mismatch : undefined}
+            />
+          </div>
         </div>
 
         <div className="flex justify-start items-center mt-6 text-sm text-gray-600 text-start">

@@ -10,6 +10,7 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-light: var(--brand-light);
+  --color-brand-green: var(--brand-green);
   --color-brand-primary-subtle: var(--brand-primary-subtle);
   --color-surface-base: var(--surface-base);
   --color-surface-alt: var(--surface-alt);
@@ -74,6 +75,8 @@
   --brand: #5479EE;
   --brand-hover: #3F66E0;
   --brand-light: #DDE4FC;
+  /* The green half of the SmartSales wordmark. */
+  --brand-green: #5BC557;
   /* Marketing surface system — keep in sync with the SURFACE_* /
      BRAND_DEEP / GRADIENT_* exports in lib/theme.ts. Section bands on
      public pages must use these (never raw hexes) and adjacent sections

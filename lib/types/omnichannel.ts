@@ -419,6 +419,8 @@ export interface WebWidgetConfig {
   answer_bot_min_confidence: number;
   answer_bot_intro_text: string | null;
   answer_bot_no_answer_text: string | null;
+  /** Reply to a greeting-only opener ("halo"). null = locale default. */
+  answer_bot_greeting_text?: string | null;
   /** 7B.2 true deflection: hold the ticket until visitor feedback. */
   answer_bot_deflect?: boolean;
   /** Fase C shadow mode: while the live bot is off, log what it WOULD have

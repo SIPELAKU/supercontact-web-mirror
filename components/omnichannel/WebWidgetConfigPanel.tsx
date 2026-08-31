@@ -59,6 +59,7 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   answer_bot_min_confidence: 0.3,
   answer_bot_intro_text: null,
   answer_bot_no_answer_text: null,
+  answer_bot_greeting_text: null,
   auto_close_idle_enabled: false,
   idle_warn_minutes: 30,
   idle_close_minutes: 30,
@@ -154,6 +155,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       answer_bot_min_confidence: config.answer_bot_min_confidence ?? DEFAULT_FORM.answer_bot_min_confidence,
       answer_bot_intro_text: config.answer_bot_intro_text ?? null,
       answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
+      answer_bot_greeting_text: config.answer_bot_greeting_text ?? null,
       auto_close_idle_enabled:
         config.auto_close_idle_enabled ?? DEFAULT_FORM.auto_close_idle_enabled,
       idle_warn_minutes: config.idle_warn_minutes ?? DEFAULT_FORM.idle_warn_minutes,
@@ -639,6 +641,21 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               </div>
             </div>
 
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Greeting Reply (optional)</label>
+              <AppInput
+                fullWidth
+                isBgWhite
+                value={form.answer_bot_greeting_text ?? ""}
+                onChange={(e) => setField("answer_bot_greeting_text", e.target.value || null)}
+                placeholder="Hai! 👋 Ada yang bisa kami bantu?"
+              />
+              <p className="text-xs text-gray-500">
+                Sent when a visitor opens with just a greeting (&quot;halo&quot;, &quot;selamat pagi&quot;).
+                Leave blank for the default in the widget&apos;s language.
+              </p>
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Intro Text (optional)</label>

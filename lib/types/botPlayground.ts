@@ -14,6 +14,8 @@ export interface BotPlaygroundAskRequest {
   account_id: string;
   question: string;
   overrides?: BotPlaygroundOverrides | null;
+  /** Prior tester turns, oldest first - makes multi-turn behaviour testable. */
+  history?: { role: "user" | "assistant"; content: string }[] | null;
 }
 
 export interface PlaygroundArticleHit {
@@ -196,4 +198,19 @@ export interface FillPlaceholdersReport {
   articles_updated: number;
   variables_applied: string[];
   articles_remaining: number;
+}
+
+
+export interface ArticlePerformanceItem {
+  article_id: string;
+  title: string;
+  suggested: number;
+  deflected: number;
+  escalated: number;
+  helpful_rate_pct: number | null;
+}
+
+export interface ArticlePerformanceResponse {
+  days: number;
+  items: ArticlePerformanceItem[];
 }

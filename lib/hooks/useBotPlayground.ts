@@ -224,3 +224,20 @@ export function useFillPlaceholders(accountId?: string) {
     },
   });
 }
+
+
+import { getArticlePerformance } from "@/lib/api/bot-playground";
+
+export function useArticlePerformance(days = 30) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["bot-playground", "article-performance", days],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return getArticlePerformance(token, days);
+    },
+    enabled: !!token,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+}

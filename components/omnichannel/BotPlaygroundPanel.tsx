@@ -33,6 +33,7 @@ import {
   useFillPlaceholders,
   useBotPlaygroundAsk,
   useBotReadiness,
+  useArticlePerformance,
   useBotShadow,
   useBotTestCases,
   useCreateBotTestCase,
@@ -1033,6 +1034,47 @@ function ContentGapsTab({ accountId }: { accountId: string }) {
           </ul>
         </>
       )}
+
+      <ArticlePerformanceBlock />
+    </div>
+  );
+}
+
+function ArticlePerformanceBlock() {
+  const { data } = useArticlePerformance(30);
+  const items = (data?.items ?? []).filter((i) => i.helpful_rate_pct !== null);
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2 pt-2">
+      <p className="text-sm font-medium text-gray-800">
+        Article performance (last {data?.days ?? 30} days)
+      </p>
+      <p className="text-xs text-gray-500">
+        How visitors judged the bot&apos;s top article - worst first. A low rate
+        means the article (or its wording) needs work: edit it, or attach the
+        real questions to a better one from the Tester tab.
+      </p>
+      <ul className="flex flex-col divide-y divide-gray-100 border border-gray-200 rounded-xl bg-white">
+        {items.slice(0, 8).map((i) => (
+          <li key={i.article_id} className="flex items-center gap-3 p-2.5 text-sm">
+            <span
+              className={`shrink-0 w-14 text-right font-semibold tabular-nums ${
+                (i.helpful_rate_pct ?? 0) >= 70
+                  ? "text-emerald-600"
+                  : (i.helpful_rate_pct ?? 0) >= 40
+                    ? "text-amber-600"
+                    : "text-red-600"
+              }`}
+            >
+              {i.helpful_rate_pct}%
+            </span>
+            <span className="flex-1 min-w-0 truncate text-gray-800">{i.title}</span>
+            <span className="shrink-0 text-[11px] text-gray-400">
+              👍{i.deflected} · 👎{i.escalated}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -1165,10 +1207,22 @@ export default function BotPlaygroundPanel({ accountId }: BotPlaygroundPanelProp
     setQuestion("");
     setTimeout(() => bottomRef.current?.scrollIntoView({ block: "nearest" }), 50);
     try {
+      // Multi-turn parity with the live widget: prior tester turns ride
+      // along so a follow-up like "harganya berapa?" is answered in context.
+      const history = exchanges
+        .filter((e) => e.result)
+        .flatMap((e) => [
+          { role: "user" as const, content: e.question },
+          ...(e.result!.reply_text
+            ? [{ role: "assistant" as const, content: e.result!.reply_text }]
+            : []),
+        ])
+        .slice(-6);
       const result = await askMutation.mutateAsync({
         account_id: accountId,
         question: q,
         overrides: buildOverrides(),
+        history: history.length ? history : undefined,
       });
       setExchanges((prev) => prev.map((e) => (e.id === id ? { ...e, result } : e)));
     } catch (error: unknown) {

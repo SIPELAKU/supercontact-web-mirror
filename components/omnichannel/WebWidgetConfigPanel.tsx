@@ -60,6 +60,7 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   answer_bot_intro_text: null,
   answer_bot_no_answer_text: null,
   answer_bot_greeting_text: null,
+  answer_bot_deflect: false,
   auto_close_idle_enabled: false,
   idle_warn_minutes: 30,
   idle_close_minutes: 30,
@@ -156,6 +157,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       answer_bot_intro_text: config.answer_bot_intro_text ?? null,
       answer_bot_no_answer_text: config.answer_bot_no_answer_text ?? null,
       answer_bot_greeting_text: config.answer_bot_greeting_text ?? null,
+      answer_bot_deflect: config.answer_bot_deflect ?? false,
       auto_close_idle_enabled:
         config.auto_close_idle_enabled ?? DEFAULT_FORM.auto_close_idle_enabled,
       idle_warn_minutes: config.idle_warn_minutes ?? DEFAULT_FORM.idle_warn_minutes,
@@ -596,6 +598,16 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             description="Let AI write a grounded reply from the matched articles instead of just linking them. Applies to the answer bot and to Knowledge Base steps in your conversation flows. When off, replies use article-based content only."
             checked={form.answer_bot_use_llm}
             onChange={(checked) => setField("answer_bot_use_llm", checked)}
+          />
+        </div>
+
+        <div className="border-t border-gray-100">
+          <ToggleRow
+            label="Hold the ticket until the visitor asks (true deflection)"
+            description="When AI gives a confident answer, no ticket is created yet - the visitor gets a 'Was this helpful? / Talk to a human' choice, and a ticket is only opened if they escalate. Off = a ticket is always created alongside the bot's answer."
+            checked={form.answer_bot_deflect ?? false}
+            onChange={(checked) => setField("answer_bot_deflect", checked)}
+            disabled={!form.answer_bot_enabled || !form.answer_bot_use_llm}
           />
         </div>
 

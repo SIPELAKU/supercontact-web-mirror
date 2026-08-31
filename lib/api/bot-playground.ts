@@ -166,3 +166,17 @@ export async function getContentGaps(token: string): Promise<ContentGapsResponse
   });
   return handle<ContentGapsResponse>(res, "Failed to load content gaps");
 }
+
+
+import type { ArticlePerformanceResponse } from "@/lib/types/botPlayground";
+
+export async function getArticlePerformance(
+  token: string,
+  days = 30,
+): Promise<ArticlePerformanceResponse> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/article-performance?days=${days}`,
+    { headers: authHeaders(token) },
+  );
+  return handle<ArticlePerformanceResponse>(res, "Failed to load article performance");
+}

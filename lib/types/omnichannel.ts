@@ -376,6 +376,8 @@ export interface QuickAction {
   icon: string;
   target_queue_id: string | null;
   prefill: string | null;
+  /** B3k: scope the answer bot to these KB categories for visitors arriving via this button. */
+  kb_category_ids?: string[] | null;
 }
 
 export interface WebWidgetConfig {

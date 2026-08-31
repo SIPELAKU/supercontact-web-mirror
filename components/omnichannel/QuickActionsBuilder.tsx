@@ -20,6 +20,7 @@ import type { SelectChangeEvent } from "@mui/material";
 import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
+import { useKbCategories } from "@/lib/hooks/useKnowledge";
 import type { QuickAction } from "@/lib/types/omnichannel";
 
 // FIXED icon key set the widget client (widget/) knows how to render. These
@@ -102,6 +103,7 @@ export function makeEmptyQuickAction(): QuickAction {
     icon: "chat",
     target_queue_id: null,
     prefill: null,
+    kb_category_ids: null,
   };
 }
 
@@ -119,6 +121,13 @@ const QuickActionsBuilder: React.FC<QuickActionsBuilderProps> = ({
   queueOptions,
   disabled,
 }) => {
+  // B3k: per-button KB scoping - a Billing button answers from billing
+  // articles instead of whatever shares its wording. Max 10 per button.
+  const { data: kbCategories } = useKbCategories();
+  const categoryOptions = (kbCategories ?? []).map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
   const patch = (index: number, changes: Partial<QuickAction>) => {
     onChange(actions.map((a, i) => (i === index ? { ...a, ...changes } : a)));
   };
@@ -240,6 +249,28 @@ const QuickActionsBuilder: React.FC<QuickActionsBuilderProps> = ({
                   patch(index, { target_queue_id: (e.target.value as string) || null })
                 }
               />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-600">
+                Answer from KB categories (optional)
+              </label>
+              <AppSelect
+                isBgWhite
+                multiple
+                value={action.kb_category_ids ?? []}
+                disabled={disabled || categoryOptions.length === 0}
+                options={categoryOptions}
+                onChange={(e: SelectChangeEvent<unknown>) => {
+                  const picked = (e.target.value as string[]).slice(0, 10);
+                  patch(index, {
+                    kb_category_ids: picked.length ? picked : null,
+                  });
+                }}
+              />
+              <p className="text-[11px] text-gray-400">
+                Visitors tapping this button get bot answers scoped to these
+                categories. Empty = search the whole public KB.
+              </p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-600">Prefill message (optional)</label>

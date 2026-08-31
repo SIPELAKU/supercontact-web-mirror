@@ -1263,3 +1263,36 @@ export async function deleteConversationDraft(token: string, conversationId: str
     throw json || new Error('Failed to delete draft');
   }
 }
+
+export interface ConversationSalesReading {
+  exists: boolean;
+  score?: number;
+  base_score?: number;
+  stage?: string | null;
+  sales_state?: string | null;
+  veto?: string | null;
+  needs_human?: boolean;
+  archetype?: string | null;
+  last_signal_at?: string | null;
+  signals?: {
+    signal_id: string;
+    category: string;
+    weight: number;
+    matched_cue: string;
+    detected_at?: string | null;
+  }[];
+}
+
+export async function fetchConversationSalesReading(
+  token: string,
+  conversationId: string,
+): Promise<ConversationSalesReading> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/conversations/${conversationId}/sales-reading`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  const json = await res.json();
+  if (res.status === 401) throw new Error('UNAUTHORIZED');
+  if (!res.ok) throw json || new Error('Failed to fetch sales reading');
+  return json.data || json;
+}

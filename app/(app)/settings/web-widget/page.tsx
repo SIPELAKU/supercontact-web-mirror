@@ -6,6 +6,7 @@ import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import ConnectWebWidgetForm from "@/components/omnichannel/ConnectWebWidgetForm";
 import WebWidgetConfigPanel from "@/components/omnichannel/WebWidgetConfigPanel";
 import WebWidgetEmbedGuide from "@/components/omnichannel/WebWidgetEmbedGuide";
+import BotPlaygroundPanel from "@/components/omnichannel/BotPlaygroundPanel";
 import AccountList from "@/components/omnichannel/AccountList";
 import { useAccounts, useReactivateAccount } from "@/lib/hooks/useOmnichannel";
 import { notify } from "@/lib/notifications";
@@ -126,6 +127,10 @@ export default function SettingsWebWidgetPage() {
               Customize how the widget looks and behaves for your visitors.
             </p>
             <WebWidgetConfigPanel key={selectedAccount.id} accountId={selectedAccount.id} />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <BotPlaygroundPanel key={`playground-${selectedAccount.id}`} accountId={selectedAccount.id} />
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">

@@ -376,6 +376,8 @@ export interface QuickAction {
   icon: string;
   target_queue_id: string | null;
   prefill: string | null;
+  /** B3k: scope the answer bot to these KB categories for visitors arriving via this button. */
+  kb_category_ids?: string[] | null;
 }
 
 export interface WebWidgetConfig {
@@ -419,6 +421,15 @@ export interface WebWidgetConfig {
   answer_bot_min_confidence: number;
   answer_bot_intro_text: string | null;
   answer_bot_no_answer_text: string | null;
+  /** Reply to a greeting-only opener ("halo"). null = locale default. */
+  answer_bot_greeting_text?: string | null;
+  /** Reply to a closing/farewell ("sudah cukup, terima kasih"). null = locale default. */
+  answer_bot_closing_text?: string | null;
+  /** 7B.2 true deflection: hold the ticket until visitor feedback. */
+  answer_bot_deflect?: boolean;
+  /** Fase C shadow mode: while the live bot is off, log what it WOULD have
+   *  answered each opening message, for admin review in the playground. */
+  answer_bot_shadow?: boolean;
   /** Idle auto-close. A widget chat is a session, not a mailbox: a visitor
    *  who walks away otherwise leaves it OPEN forever, holding the
    *  assignee's capacity and never producing CSAT. Off by default. */

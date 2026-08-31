@@ -84,6 +84,7 @@ import {
   CreateSavedViewRequest,
   UpdateSavedViewRequest,
   ConversationDraft,
+  fetchConversationSalesReading,
 } from "../api/omnichannel";
 import { ConversationViewer, ConversationListItem } from "../types/omnichannel";
 
@@ -867,5 +868,22 @@ export function useDeleteConversationDraft() {
     onSuccess: (_, conversationId) => {
       queryClient.setQueryData(['omnichannels', 'drafts', conversationId], { body: '' });
     },
+  });
+}
+
+// Sales layer's reading of one conversation (agent view). Silent by design:
+// exists=false or any error just hides the section.
+export function useConversationSalesReading(conversationId: string | null) {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['omnichannels', 'sales-reading', conversationId],
+    queryFn: () => {
+      if (!token || !conversationId) throw new Error('No authentication token');
+      return fetchConversationSalesReading(token, conversationId);
+    },
+    enabled: !!token && !!conversationId,
+    staleTime: 1000 * 15,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 }

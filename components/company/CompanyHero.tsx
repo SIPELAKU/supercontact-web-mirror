@@ -9,7 +9,7 @@ import { trackCtaClick } from '@/lib/analytics/events';
 const CompanyHero = () => {
     return (
         <Box sx={{
-            background: 'linear-gradient(180deg, #4264D0 0%, #2A408E 100%)',
+            background: 'var(--gradient-deep)',
             color: 'white',
             height: { xs: 'auto', md: '583px' },
             minHeight: { xs: '450px', md: '583px' },

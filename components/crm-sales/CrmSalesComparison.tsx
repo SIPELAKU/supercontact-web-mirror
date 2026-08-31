@@ -106,13 +106,13 @@ export default function CrmSalesComparison() {
 
     return (
         <>
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 }, maxWidth: '700px', mx: 'auto' }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -156,7 +156,7 @@ export default function CrmSalesComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#3854D6' }}>
+                            <TableRow sx={{ bgcolor: 'var(--brand-deep)' }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', width: '22%' }}>
                                     {t.colAspect}
                                 </TableCell>

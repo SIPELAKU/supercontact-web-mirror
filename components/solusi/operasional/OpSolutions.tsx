@@ -16,7 +16,7 @@ export default function OpSolutions() {
         <Grid container spacing={{ xs: 6, md: 10 }} alignItems="center" direction={reverse ? 'row-reverse' : 'row'} sx={{ mb: { xs: 10, md: 15 } }}>
             <Grid item xs={12} md={6}>
                 <Stack spacing={3}>
-                    <Box sx={{ display: 'inline-flex', p: 1.5, borderRadius: '16px', bgcolor: '#EEF2FF', width: 'fit-content' }}>
+                    <Box sx={{ display: 'inline-flex', p: 1.5, borderRadius: '16px', bgcolor: 'var(--surface-tint)', width: 'fit-content' }}>
                         {icon}
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.75rem', md: '2.25rem' }, color: '#0F172A' }}>
@@ -44,10 +44,10 @@ export default function OpSolutions() {
     );
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: { xs: 8, md: 12 }, textAlign: 'center' }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2 }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 800, letterSpacing: 2 }}>
                         {strings.sol_op_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -57,14 +57,14 @@ export default function OpSolutions() {
 
                 {/* Section 1: Tasks */}
                 <SolutionItem
-                    icon={<MapIcon sx={{ color: '#3854D6' }} />}
+                    icon={<MapIcon sx={{ color: 'var(--brand-deep)' }} />}
                     title={strings.sol_op_sol1_title}
                     desc={strings.sol_op_sol1_desc}
                     bullets={[strings.sol_op_sol1_li1, strings.sol_op_sol1_li2, strings.sol_op_sol1_li3]}
                     mockup={
                         <Paper elevation={16} sx={{ p: 4, borderRadius: '20px', border: '1px solid #E2E8F0' }}>
                             <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', mb: 3 }}>{strings.sol_op_mock_task_title}</Typography>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '16px', border: '1px solid #F1F5F9', mb: 3 }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '16px', border: '1px solid #F1F5F9', mb: 3 }}>
                                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
                                     <Avatar sx={{ bgcolor: '#DBEAFE', color: '#3B82F6' }}><PersonIcon /></Avatar>
                                     <Box>
@@ -91,13 +91,13 @@ export default function OpSolutions() {
                 {/* Section 2: WhatsApp Alerts */}
                 <SolutionItem
                     reverse
-                    icon={<ChatBubbleOutlineIcon sx={{ color: '#3854D6' }} />}
+                    icon={<ChatBubbleOutlineIcon sx={{ color: 'var(--brand-deep)' }} />}
                     title={strings.sol_op_sol2_title}
                     desc={strings.sol_op_sol2_desc}
                     bullets={[strings.sol_op_sol2_li1, strings.sol_op_sol2_li2]}
                     mockup={
                         <Paper elevation={16} sx={{ p: 0, borderRadius: '24px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
-                            <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <Box sx={{ p: 2.5, bgcolor: 'var(--surface-alt)', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <ChatBubbleOutlineIcon sx={{ color: '#22C55E' }} />
                                 <Typography sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{strings.sol_op_mock_wa_title}</Typography>
                             </Box>
@@ -112,7 +112,7 @@ export default function OpSolutions() {
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                    <Box sx={{ p: 2, border: '1px solid #F1F5F9', borderRadius: '12px', bgcolor: '#F8FAFC', maxWidth: '80%' }}>
+                                    <Box sx={{ p: 2, border: '1px solid #F1F5F9', borderRadius: '12px', bgcolor: 'var(--surface-alt)', maxWidth: '80%' }}>
                                         <Typography variant="body2" sx={{ fontSize: '0.85rem', color: '#475569' }}>{strings.sol_op_mock_wa_reply}</Typography>
                                     </Box>
                                 </Box>
@@ -123,7 +123,7 @@ export default function OpSolutions() {
 
                 {/* Section 3: Ticketing */}
                 <SolutionItem
-                    icon={<ReportProblemIcon sx={{ color: '#3854D6' }} />}
+                    icon={<ReportProblemIcon sx={{ color: 'var(--brand-deep)' }} />}
                     title={strings.sol_op_sol3_title}
                     desc={strings.sol_op_sol3_desc}
                     bullets={[strings.sol_op_sol3_li1, strings.sol_op_sol3_li2]}
@@ -138,7 +138,7 @@ export default function OpSolutions() {
                             </Box>
                             <Box sx={{ p: 4 }}>
                                 <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, mb: 1, display: 'block' }}>{strings.sol_op_mock_ticket_report}</Typography>
-                                <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9', mb: 3 }}>
+                                <Box sx={{ p: 2.5, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #F1F5F9', mb: 3 }}>
                                     <Typography variant="body2" sx={{ color: '#475569', fontStyle: 'italic', lineHeight: 1.6 }}>
                                         {strings.sol_op_mock_ticket_msg}
                                     </Typography>

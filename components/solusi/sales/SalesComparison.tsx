@@ -64,7 +64,7 @@ export default function SalesComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -102,7 +102,7 @@ export default function SalesComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                            <TableRow sx={{ bgcolor: 'var(--surface-alt)' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '0.95rem', py: 2.5 }}>
                                     {t.colAspect}
                                 </TableCell>
@@ -112,7 +112,7 @@ export default function SalesComparison() {
                                 <TableCell
                                     sx={{
                                         fontWeight: 800,
-                                        color: '#3854D6',
+                                        color: 'var(--brand-deep)',
                                         fontSize: '0.95rem',
                                         py: 2.5,
                                         bgcolor: 'rgba(89, 124, 255, 0.06)',

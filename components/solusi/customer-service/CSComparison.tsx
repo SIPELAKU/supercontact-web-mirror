@@ -113,7 +113,7 @@ export default function CSComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -149,10 +149,10 @@ export default function CSComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                            <TableRow sx={{ bgcolor: 'var(--surface-alt)' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '0.875rem' }}>{t.colAspect}</TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: '#64748B', fontSize: '0.875rem' }}>{t.colManual}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#3854D6', fontSize: '0.875rem' }}>{t.colSmartSales}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: 'var(--brand-deep)', fontSize: '0.875rem' }}>{t.colSmartSales}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -161,7 +161,7 @@ export default function CSComparison() {
                                     key={index}
                                     sx={{
                                         '&:last-child td': { border: 0 },
-                                        '&:hover': { bgcolor: '#F8FAFC' }
+                                        '&:hover': { bgcolor: 'var(--surface-alt)' }
                                     }}
                                 >
                                     <TableCell sx={{ fontWeight: 700, color: '#0F172A', verticalAlign: 'top', width: { md: '20%' } }}>

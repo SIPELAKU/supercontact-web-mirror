@@ -10,6 +10,11 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-light: var(--brand-light);
+  --color-brand-primary-subtle: var(--brand-primary-subtle);
+  --color-surface-base: var(--surface-base);
+  --color-surface-alt: var(--surface-alt);
+  --color-surface-tint: var(--surface-tint);
+  --color-surface-inverse: var(--surface-inverse);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -69,6 +74,26 @@
   --brand: #5479EE;
   --brand-hover: #3F66E0;
   --brand-light: #DDE4FC;
+  /* Marketing surface system — keep in sync with the SURFACE_* /
+     BRAND_DEEP / GRADIENT_* exports in lib/theme.ts. Section bands on
+     public pages must use these (never raw hexes) and adjacent sections
+     must not share the same surface:
+       base    → default white band
+       alt     → grey band alternating with base
+       tint    → brand-tinted band (stats strips, trial banner, final CTA)
+       inverse → footer navy (deep = its darker bottom bar)
+       deep    → dark-blue CTA bands
+     brand-primary-subtle backs small chips/tiles sitting on any surface. */
+  --surface-base: #ffffff;
+  --surface-alt: #F8FAFC;
+  --surface-tint: #EEF2FF;
+  --surface-inverse: #062141;
+  --surface-inverse-deep: #04162d;
+  --brand-deep: #3854D6;
+  --brand-primary-subtle: rgba(84, 121, 238, 0.08);
+  --gradient-brand: linear-gradient(135deg, #597CFF 0%, #7692FF 100%);
+  --gradient-brand-h: linear-gradient(90deg, #597CFF 0%, #7692FF 100%);
+  --gradient-deep: linear-gradient(135deg, #4264D0 0%, #2A408E 100%);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

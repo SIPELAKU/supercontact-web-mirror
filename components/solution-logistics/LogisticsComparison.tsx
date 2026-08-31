@@ -112,7 +112,7 @@ export default function LogisticsComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: "#3854D6",
+                            color: "var(--brand-deep)",
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -155,7 +155,7 @@ export default function LogisticsComparison() {
                                     sx={{
                                         fontWeight: 800,
                                         color: "#111827",
-                                        bgcolor: "#F8FAFC",
+                                        bgcolor: "var(--surface-alt)",
                                         fontSize: "0.9rem",
                                         width: { md: "22%" },
                                     }}
@@ -166,7 +166,7 @@ export default function LogisticsComparison() {
                                     sx={{
                                         fontWeight: 800,
                                         color: "#94A3B8",
-                                        bgcolor: "#F8FAFC",
+                                        bgcolor: "var(--surface-alt)",
                                         fontSize: "0.9rem",
                                         width: { md: "36%" },
                                     }}
@@ -177,7 +177,7 @@ export default function LogisticsComparison() {
                                     sx={{
                                         fontWeight: 800,
                                         color: "white",
-                                        background: "linear-gradient(135deg, #597CFF 0%, #7692FF 100%)",
+                                        background: "var(--gradient-brand)",
                                         fontSize: "0.9rem",
                                         width: { md: "42%" },
                                     }}
@@ -207,7 +207,7 @@ export default function LogisticsComparison() {
                                     </TableCell>
                                     <TableCell sx={{ verticalAlign: "top", bgcolor: "#F5F7FF" }}>
                                         <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-                                            <CheckCircleIcon sx={{ color: "#3854D6", fontSize: 18, mt: "2px", flexShrink: 0 }} />
+                                            <CheckCircleIcon sx={{ color: "var(--brand-deep)", fontSize: 18, mt: "2px", flexShrink: 0 }} />
                                             <Typography sx={{ color: "#334155", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 500 }}>
                                                 {row.smartsales}
                                             </Typography>

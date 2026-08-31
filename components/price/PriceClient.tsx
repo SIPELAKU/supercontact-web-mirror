@@ -21,22 +21,22 @@ export const PriceClient = () => {
     };
 
     return (
-        <Box sx={{ bgcolor: '#FFFFFF', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
 
-            <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: 6, sm: 8, md: 4, lg: 6 }}>
+            <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: '56px', sm: '64px' }}>
                 <PricingHeader />
                 <Container maxWidth="lg">
                     {/* <PricingTabs value={tabValue} onChange={handleTabChange} /> */}
                     <PricingCards />
                 </Container>
-                <Box mt={"150px"}>
+                <Box mt={{ xs: 10, md: 18 }}>
                     <PricingTrial />
                 </Box>
-                <Box pt={"150px"} bgcolor="#F7F7F9">
+                <Box pt={{ xs: 10, md: 18 }}>
                     <FAQ />
                 </Box>
-                <Box pt={"50px"} bgcolor="#F7F7F9">
+                <Box>
                     <CTA />
                 </Box>
             </Box>

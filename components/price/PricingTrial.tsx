@@ -9,7 +9,7 @@ import { trackCtaClick } from '@/lib/analytics/events';
 const PricingTrial = () => {
     return (
         <Box sx={{
-            bgcolor: '#EEF2FF',
+            bgcolor: 'var(--surface-tint)',
             minHeight: { xs: 'auto', md: '238px' },
             py: { xs: 10, md: 0 },
             borderRadius: { xs: 0, md: '24px' },

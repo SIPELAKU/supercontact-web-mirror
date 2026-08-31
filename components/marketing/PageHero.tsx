@@ -40,7 +40,7 @@ interface PageHeroProps {
 /**
  * Standard marketing page hero for every /produk/* and /solusi/* page.
  * Reproduces the homepage HeroSlider's slide design (components/home/HeroSlider.tsx)
- * as a standalone section: same #5479EE background, container, spacing, badge pill,
+ * as a standalone section: same var(--brand) background, container, spacing, badge pill,
  * typography scale, and CTA styling — but the headline is the page's <h1>
  * (on the slider it is an <h2> so the homepage keeps a single h1).
  */
@@ -62,7 +62,7 @@ export default function PageHero({
             sx={{
                 width: '100%',
                 overflow: 'hidden',
-                backgroundColor: '#5479EE',
+                backgroundColor: 'var(--brand)',
                 color: 'white',
                 // Clearance for the fixed white Navbar (MUI Toolbar: 56px xs / 64px sm+)
                 pt: { xs: '56px', sm: '64px' },

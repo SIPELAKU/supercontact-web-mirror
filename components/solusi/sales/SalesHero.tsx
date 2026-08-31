@@ -85,7 +85,7 @@ export function SalesHeroVisual() {
             {/* Bottom Cards */}
             <Grid container spacing={2}>
                 <Grid item xs={6}>
-                    <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #F1F5F9' }}>
+                    <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #F1F5F9' }}>
                         <Box sx={{ bgcolor: '#FFEDD5', color: '#EA580C', p: 1, borderRadius: '8px', display: 'flex' }}>
                             <TrackChangesIcon fontSize="small" />
                         </Box>

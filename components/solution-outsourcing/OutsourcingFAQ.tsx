@@ -136,13 +136,13 @@ export default function OutsourcingFAQ() {
     };
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -185,7 +185,7 @@ export default function OutsourcingFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: 'var(--brand-deep)' }} />}
                                 id={`faq-summary-${index}`}
                                 aria-controls={`faq-panel-${index}`}
                                 sx={{ px: 3, py: 1 }}

@@ -45,7 +45,7 @@ export default function HotelChallenges() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,

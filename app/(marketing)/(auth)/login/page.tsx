@@ -104,7 +104,7 @@ export default function LoginPage() {
           <h2
             className={`text-2xl md:text-[32px] font-bold mt-1 ${poppins.className}`}
           >
-            <span className="text-[#5479EE]">Smart</span>
+            <span className="text-[var(--brand)]">Smart</span>
             <span className="text-[#5BC557]">Sales</span>
           </h2>
 

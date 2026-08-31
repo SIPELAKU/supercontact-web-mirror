@@ -117,13 +117,13 @@ export default function RetailFAQ() {
     };
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'white' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 800,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -164,7 +164,7 @@ export default function RetailFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: 'var(--brand-deep)' }} />}
                                 id={`faq-summary-${index}`}
                                 aria-controls={`faq-panel-${index}`}
                                 sx={{ px: 3, py: 1 }}

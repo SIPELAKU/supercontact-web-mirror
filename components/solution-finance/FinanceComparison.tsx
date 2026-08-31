@@ -106,13 +106,13 @@ export default function FinanceComparison() {
 
     return (
         <>
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 }, maxWidth: '800px', mx: 'auto' }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -152,7 +152,7 @@ export default function FinanceComparison() {
                         <TableHead>
                             <TableRow
                                 sx={{
-                                    background: 'linear-gradient(90deg, #597CFF 0%, #7692FF 100%)',
+                                    background: 'var(--gradient-brand-h)',
                                 }}
                             >
                                 <TableCell sx={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', border: 0 }}>
@@ -171,7 +171,7 @@ export default function FinanceComparison() {
                                 <TableRow
                                     key={index}
                                     sx={{
-                                        bgcolor: index % 2 === 0 ? 'white' : '#F8FAFC',
+                                        bgcolor: index % 2 === 0 ? 'white' : 'var(--surface-alt)',
                                         '&:last-child td': { border: 0 },
                                     }}
                                 >

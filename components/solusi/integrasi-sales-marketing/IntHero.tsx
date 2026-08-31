@@ -91,7 +91,7 @@ export function IntHeroVisual() {
                     </Box>
                 </Stack>
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ p: 1.5, borderRadius: '12px', bgcolor: '#F0F7FF' }}>
-                    <EmailIcon sx={{ color: '#3854D6' }} />
+                    <EmailIcon sx={{ color: 'var(--brand-deep)' }} />
                     <Box sx={{ flexGrow: 1 }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, display: 'block' }}>Email Campaign</Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>Balasan → masuk ke pipeline sales</Typography>

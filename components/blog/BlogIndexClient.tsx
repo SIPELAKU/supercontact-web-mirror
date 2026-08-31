@@ -41,7 +41,7 @@ export default function BlogIndexClient() {
                 sx={{
                     pt: { xs: 12, md: 16 },
                     pb: { xs: 8, md: 10 },
-                    background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)',
+                    background: 'var(--gradient-brand)',
                     color: 'white',
                     textAlign: 'center',
                 }}
@@ -81,7 +81,7 @@ export default function BlogIndexClient() {
                                 <Chip
                                     label={article.category[language]}
                                     size="small"
-                                    sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700, mb: 2 }}
+                                    sx={{ bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', fontWeight: 700, mb: 2 }}
                                 />
                                 <Typography variant="h6" component="h2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
                                     {article.h1[language]}

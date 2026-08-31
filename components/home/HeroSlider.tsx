@@ -269,7 +269,7 @@ const HeroSlider = () => {
             onTouchEnd={handleTouchEnd}
             // Single shared background for ALL slides; every slide wrapper below
             // is transparent so the section reads as one uniform surface.
-            sx={{ position: 'relative', width: '100%', overflow: 'hidden', backgroundColor: '#5479EE' }}
+            sx={{ position: 'relative', width: '100%', overflow: 'hidden', backgroundColor: 'var(--brand)' }}
         >
             {/* Track: every slide stays in the DOM (crawlable); movement is a CSS transform. */}
             <Box

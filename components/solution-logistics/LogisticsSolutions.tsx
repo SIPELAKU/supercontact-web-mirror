@@ -22,7 +22,7 @@ export default function LogisticsSolutions() {
                 {lists.map((item, index) => (
                     <ListItem key={index} sx={{ px: 0, py: 1.5, alignItems: 'flex-start' }}>
                         <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                            <CheckCircleOutlineIcon sx={{ color: '#3854D6' }} />
+                            <CheckCircleOutlineIcon sx={{ color: 'var(--brand-deep)' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary={item}
@@ -35,10 +35,10 @@ export default function LogisticsSolutions() {
     );
 
     return (
-        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 }, maxWidth: '800px', mx: 'auto' }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
                         {strings.logistics_sol_badge}
                     </Typography>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 800, color: '#111827', fontSize: { xs: '2rem', md: '2.75rem' } }}>
@@ -140,7 +140,7 @@ export default function LogisticsSolutions() {
                             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', mb: 1.5, textTransform: 'uppercase' }}>
                                 LAPORAN PELANGGAN:
                             </Typography>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
                                 <Typography sx={{ fontSize: '0.9rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.5 }}>
                                     "Min, di status resi tertera 'Delivered', padahal saya belum terima paketnya sama sekali. Tolong di cek ke kurirnya."
                                 </Typography>

@@ -11,7 +11,6 @@ import HeroSlider from "./HeroSlider";
 import ShortsShowcase from "./ShortsShowcase";
 import Footer from "../layout/Footer";
 import Productivity from "./Productivity";
-import TrustedBy from "../layout/TrustedBy";
 import FAQ from "../layout/FAQ";
 import CTA from "../layout/CTA";
 import { ClientLogos } from "../ui/ClientLogos";
@@ -60,7 +59,6 @@ export default function HomeClient() {
           <Productivity />
         </FadeIn>
         <FadeIn direction="up" delay={0.3} fullWidth>
-          {/* <TrustedBy /> */}
           <ClientLogos />
         </FadeIn>
         <FadeIn direction="up" delay={0.35} fullWidth>

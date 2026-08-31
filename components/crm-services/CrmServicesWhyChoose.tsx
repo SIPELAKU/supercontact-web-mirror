@@ -31,7 +31,7 @@ export default function CrmServicesWhyChoose() {
     ];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Grid container spacing={8} alignItems="center">
 
@@ -99,7 +99,7 @@ export default function CrmServicesWhyChoose() {
                         <Paper
                             elevation={12}
                             sx={{
-                                bgcolor: '#3854D6', // Standard blue
+                                bgcolor: 'var(--brand-deep)', // Standard blue
                                 borderRadius: '24px',
                                 p: { xs: 3, md: 5 },
                                 color: 'white',

@@ -31,7 +31,7 @@ export default function MarketingImpactCTA() {
     return (
         <Box>
             {/* Impact Section */}
-            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F1F5F9' }}>
+            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-tint)' }}>
                 <Container maxWidth="lg">
                     <Typography
                         variant="h3"
@@ -52,7 +52,7 @@ export default function MarketingImpactCTA() {
                                         variant="h2"
                                         sx={{
                                             fontWeight: 800,
-                                            color: '#3854D6',
+                                            color: 'var(--brand-deep)',
                                             fontSize: { xs: '1.75rem', md: '2.5rem' },
                                             lineHeight: 1.2,
                                             wordBreak: 'break-word',
@@ -82,7 +82,7 @@ export default function MarketingImpactCTA() {
             <Box
                 sx={{
                     py: { xs: 8, md: 15 },
-                    background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)',
+                    background: 'var(--gradient-brand)',
                     textAlign: 'center',
                     color: 'white'
                 }}
@@ -118,7 +118,7 @@ export default function MarketingImpactCTA() {
                         onClick={() => trackCtaClick('solusi/marketing', 'impact_cta')}
                         sx={{
                             bgcolor: 'white',
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

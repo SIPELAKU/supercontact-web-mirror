@@ -348,7 +348,7 @@ const ShortsShowcase = () => {
             role="region"
             aria-roledescription="carousel"
             aria-label={strings.shorts_showcase_label}
-            sx={{ py: { xs: 6, md: 10 }, overflow: 'hidden' }}
+            sx={{ py: { xs: 6, md: 10 }, overflow: 'hidden', bgcolor: 'var(--surface-alt)' }}
         >
             <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 } }}>
                 <Box sx={{ maxWidth: { xs: '600px', lg: '1120px' }, mx: 'auto', textAlign: 'center' }}>

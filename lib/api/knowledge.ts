@@ -317,3 +317,20 @@ export async function resolveKbFlag(token: string, id: string): Promise<KbFlag> 
   });
   return handle<KbFlag>(res, "Failed to resolve flag");
 }
+
+export async function attachQuestionToKbArticle(
+  token: string,
+  articleId: string,
+  question: string,
+  keywords?: string[],
+): Promise<KbArticle> {
+  const res = await fetchWithTimeout(
+    `${API_BASE}/articles/${articleId}/attach-question`,
+    {
+      method: "POST",
+      headers: jsonHeaders(token),
+      body: JSON.stringify({ question, keywords }),
+    },
+  );
+  return handle<KbArticle>(res, "Failed to attach the question to the article");
+}

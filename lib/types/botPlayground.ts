@@ -82,3 +82,96 @@ export interface BotPlaygroundAskResponse {
   effective_config: PlaygroundEffectiveConfig;
   warnings: string[];
 }
+
+// ---------- Fase B: tenant test set ----------
+export type BotTestExpectation = "answered" | "article" | "no_answer";
+
+export interface BotTestCase {
+  id: string;
+  account_id: string;
+  question: string;
+  expectation: BotTestExpectation;
+  expected_article_id?: string | null;
+  expected_article_title?: string | null;
+  note?: string | null;
+  last_passed?: boolean | null;
+  last_outcome?: string | null;
+  last_confidence?: number | null;
+  last_top_article_id?: string | null;
+  last_top_article_title?: string | null;
+  last_run_at?: string | null;
+  created_at?: string | null;
+}
+
+export interface CreateBotTestCaseRequest {
+  account_id: string;
+  question: string;
+  expectation?: BotTestExpectation;
+  expected_article_id?: string | null;
+  note?: string | null;
+}
+
+export interface BotTestCaseRunResult {
+  case_id: string;
+  question: string;
+  expectation: BotTestExpectation;
+  passed: boolean;
+  outcome: string;
+  confidence: number;
+  reply_source: string;
+  top_article_id?: string | null;
+  top_article_title?: string | null;
+  detail: string;
+}
+
+export interface BotTestSetRunResponse {
+  total: number;
+  passed: number;
+  failed: number;
+  pass_rate_pct: number;
+  results: BotTestCaseRunResult[];
+}
+
+// ---------- Fase C: shadow + readiness ----------
+export interface BotShadowResult {
+  id: string;
+  account_id: string;
+  conversation_id?: string | null;
+  question: string;
+  reply_text: string;
+  reply_source: string;
+  outcome: string;
+  confidence: number;
+  used_llm: boolean;
+  articles: { article_id: string; title: string; rank: number }[];
+  review_status: "pending" | "approved" | "rejected";
+  created_at?: string | null;
+}
+
+export interface BotShadowListResponse {
+  total_pending: number;
+  total_reviewed: number;
+  total_approved: number;
+  approval_rate_pct?: number | null;
+  results: BotShadowResult[];
+}
+
+export interface ReadinessItem {
+  id: string;
+  label: string;
+  status: "pass" | "warn" | "fail" | "off";
+  required: boolean;
+  detail: string;
+}
+
+export interface BotReadinessResponse {
+  ready: boolean;
+  items: ReadinessItem[];
+}
+
+export interface BotActivateResponse {
+  activated: boolean;
+  answer_bot_enabled: boolean;
+  answer_bot_shadow: boolean;
+  failing: ReadinessItem[];
+}

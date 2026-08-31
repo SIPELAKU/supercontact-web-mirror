@@ -204,6 +204,7 @@ export function useContentGaps() {
       return getContentGaps(token);
     },
     enabled: !!token,
+    retry: 1,
     refetchOnWindowFocus: false,
   });
 }

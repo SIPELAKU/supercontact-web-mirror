@@ -108,6 +108,23 @@ function TriSelect({
   );
 }
 
+function TabError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-2 py-8 text-center">
+      <p className="text-sm text-red-600">
+        Failed to load — the server may still be deploying or unreachable.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        <RotateCcw size={13} /> Retry
+      </button>
+    </div>
+  );
+}
+
 function ResultDetails({ result }: { result: BotPlaygroundAskResponse }) {
   const sales = result.sales;
   return (
@@ -661,7 +678,7 @@ function ApplyConfigDialog({
 // Tab: test set
 // --------------------------------------------------------------------------
 function TestSetTab({ accountId }: { accountId: string }) {
-  const { data: cases, isLoading } = useBotTestCases(accountId);
+  const { data: cases, isLoading, isError, refetch } = useBotTestCases(accountId);
   const runMutation = useRunBotTestSet(accountId);
   const deleteMutation = useDeleteBotTestCase(accountId);
 
@@ -720,7 +737,9 @@ function TestSetTab({ accountId }: { accountId: string }) {
         </p>
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <TabError onRetry={() => void refetch()} />
+      ) : isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="animate-spin text-gray-400" size={22} />
         </div>
@@ -780,7 +799,7 @@ function TestSetTab({ accountId }: { accountId: string }) {
 function ShadowTab({ accountId }: { accountId: string }) {
   const { data: config } = useWebWidgetConfig(accountId);
   const updateMutation = useUpdateWebWidgetConfig(accountId);
-  const { data: shadow, isLoading } = useBotShadow(accountId, "pending");
+  const { data: shadow, isLoading, isError, refetch } = useBotShadow(accountId, "pending");
   const reviewMutation = useReviewBotShadow(accountId);
 
   const shadowOn = !!config?.answer_bot_shadow;
@@ -850,7 +869,9 @@ function ShadowTab({ accountId }: { accountId: string }) {
         </p>
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <TabError onRetry={() => void refetch()} />
+      ) : isLoading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="animate-spin text-gray-400" size={22} />
         </div>
@@ -907,7 +928,7 @@ function ShadowTab({ accountId }: { accountId: string }) {
 // Tab: content gaps - fill raw {{VAR}} template placeholders in place
 // --------------------------------------------------------------------------
 function ContentGapsTab({ accountId }: { accountId: string }) {
-  const { data: gaps, isLoading } = useContentGaps();
+  const { data: gaps, isLoading, isError, refetch } = useContentGaps();
   const fillMutation = useFillPlaceholders(accountId);
   const [values, setValues] = useState<Record<string, string>>({});
   const [openVar, setOpenVar] = useState<string | null>(null);
@@ -958,7 +979,9 @@ function ContentGapsTab({ accountId }: { accountId: string }) {
         </button>
       </div>
 
-      {isLoading || !gaps ? (
+      {isError ? (
+        <TabError onRetry={() => void refetch()} />
+      ) : isLoading || !gaps ? (
         <div className="flex justify-center py-8">
           <Loader2 className="animate-spin text-gray-400" size={22} />
         </div>
@@ -1024,7 +1047,7 @@ const STATUS_PILL: Record<ReadinessItem["status"], string> = {
 };
 
 function GoLiveTab({ accountId }: { accountId: string }) {
-  const { data: readiness, isLoading, refetch } = useBotReadiness(accountId);
+  const { data: readiness, isLoading, isError, refetch } = useBotReadiness(accountId);
   const { data: config } = useWebWidgetConfig(accountId);
   const activateMutation = useActivateBot(accountId);
 
@@ -1055,7 +1078,9 @@ function GoLiveTab({ accountId }: { accountId: string }) {
         passes — so what reaches your visitors is what your tests approved.
       </p>
 
-      {isLoading || !readiness ? (
+      {isError ? (
+        <TabError onRetry={() => void refetch()} />
+      ) : isLoading || !readiness ? (
         <div className="flex justify-center py-8">
           <Loader2 className="animate-spin text-gray-400" size={22} />
         </div>

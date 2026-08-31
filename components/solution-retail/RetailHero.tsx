@@ -78,7 +78,7 @@ export function RetailHeroVisual() {
             <Grid container spacing={1.5}>
                 {/* Col 1: Target Broadcast */}
                 <Grid item xs={4}>
-                    <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '12px', height: '100%' }}>
+                    <Box sx={{ p: 1.5, bgcolor: 'var(--surface-alt)', borderRadius: '12px', height: '100%' }}>
                         <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, fontSize: '0.65rem', color: '#64748B', mb: 1.5 }}>
                             {strings.retail_hero_mock_col1}
                         </Typography>
@@ -97,7 +97,7 @@ export function RetailHeroVisual() {
 
                 {/* Col 2: Sent & Read */}
                 <Grid item xs={4}>
-                    <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '12px', height: '100%' }}>
+                    <Box sx={{ p: 1.5, bgcolor: 'var(--surface-alt)', borderRadius: '12px', height: '100%' }}>
                         <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, fontSize: '0.65rem', color: '#F59E0B', mb: 1.5 }}>
                             {strings.retail_hero_mock_col2}
                         </Typography>
@@ -110,7 +110,7 @@ export function RetailHeroVisual() {
 
                 {/* Col 3: Success */}
                 <Grid item xs={4}>
-                    <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '12px', height: '100%' }}>
+                    <Box sx={{ p: 1.5, bgcolor: 'var(--surface-alt)', borderRadius: '12px', height: '100%' }}>
                         <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, fontSize: '0.65rem', color: '#10B981', mb: 1.5 }}>
                             {strings.retail_hero_mock_col3}
                         </Typography>

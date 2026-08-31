@@ -45,10 +45,10 @@ export default function IntSolution() {
     ];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_sol_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A', maxWidth: '800px', mx: 'auto', mb: 3 }}>
@@ -64,7 +64,7 @@ export default function IntSolution() {
                         <Grid item xs={12} md={6} key={index}>
                             <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '24px', bgcolor: 'white', border: '1px solid #E2E8F0' }}>
                                 <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ mb: 2.5 }}>
-                                    <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: '#EEF2FF', color: '#3854D6', display: 'flex' }}>
+                                    <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', display: 'flex' }}>
                                         {feature.icon}
                                     </Box>
                                     <Box sx={{ flexGrow: 1 }}>
@@ -79,7 +79,7 @@ export default function IntSolution() {
                                 <Stack spacing={1.2} sx={{ mb: 2.5 }}>
                                     {feature.li.map((item, i) => (
                                         <Stack key={i} direction="row" spacing={1} alignItems="flex-start">
-                                            <CheckIcon sx={{ fontSize: 18, color: '#3854D6', mt: 0.2, flexShrink: 0 }} />
+                                            <CheckIcon sx={{ fontSize: 18, color: 'var(--brand-deep)', mt: 0.2, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ color: '#334155', lineHeight: 1.6 }}>
                                                 {item}
                                             </Typography>
@@ -92,7 +92,7 @@ export default function IntSolution() {
                                     clickable
                                     label={feature.link.label}
                                     size="small"
-                                    sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700 }}
+                                    sx={{ bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', fontWeight: 700 }}
                                 />
                             </Paper>
                         </Grid>

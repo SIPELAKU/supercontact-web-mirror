@@ -107,7 +107,7 @@ export function CSHeroVisual() {
             </Grid>
 
             {/* Bottom Card */}
-            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #F1F5F9' }}>
+            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #F1F5F9' }}>
                 <Box sx={{ color: '#E2E8F0', display: 'flex' }}>
                     <AccessTimeIcon fontSize="medium" />
                 </Box>

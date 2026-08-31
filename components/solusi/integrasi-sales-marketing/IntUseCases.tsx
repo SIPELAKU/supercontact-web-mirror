@@ -48,7 +48,7 @@ export default function IntUseCases() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_uc_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -61,7 +61,7 @@ export default function IntUseCases() {
                         <Grid item xs={12} md={4} key={index}>
                             <Paper elevation={0} sx={{ p: { xs: 3, md: 4 }, height: '100%', borderRadius: '24px', border: '1px solid #E2E8F0' }}>
                                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
-                                    <Box sx={{ p: 1.2, borderRadius: '12px', bgcolor: '#EEF2FF', color: '#3854D6', display: 'flex' }}>
+                                    <Box sx={{ p: 1.2, borderRadius: '12px', bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', display: 'flex' }}>
                                         {uc.icon}
                                     </Box>
                                     <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 800, color: '#0F172A' }}>

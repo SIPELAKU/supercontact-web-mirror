@@ -26,7 +26,7 @@ const Hero = () => {
 
     return (
         <Box sx={{
-            backgroundColor: "#5479EE",
+            backgroundColor: "var(--brand)",
             color: "white",
             width: "100%",
             position: "relative",

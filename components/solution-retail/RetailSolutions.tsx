@@ -12,13 +12,13 @@ export default function RetailSolutions() {
     useLanguage();
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 15 } }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 800,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -55,7 +55,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol1_li1, strings.retail_sol1_li2, strings.retail_sol1_li3].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}
@@ -66,7 +66,7 @@ export default function RetailSolutions() {
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 3, color: '#64748B' }}>
                                     {strings.retail_sol1_mock_title}
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3, p: 2, bgcolor: '#F8FAFC', borderRadius: '16px' }}>
+                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3, p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '16px' }}>
                                     <Box sx={{ width: 48, height: 48, bgcolor: '#F59E0B', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>SM</Box>
                                     <Box>
                                         <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>{strings.retail_sol1_mock_name}</Typography>
@@ -76,7 +76,7 @@ export default function RetailSolutions() {
                                 <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.6, fontWeight: 600 }}>
                                     {strings.retail_sol1_mock_history}
                                     <br />
-                                    <Typography component="span" sx={{ color: '#3854D6', fontWeight: 800 }}>Rp 2.450.000</Typography>
+                                    <Typography component="span" sx={{ color: 'var(--brand-deep)', fontWeight: 800 }}>Rp 2.450.000</Typography>
                                 </Typography>
                             </Paper>
                         </Grid>
@@ -113,7 +113,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol2_li1, strings.retail_sol2_li2].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}
@@ -136,7 +136,7 @@ export default function RetailSolutions() {
                             <Stack spacing={2}>
                                 {[strings.retail_sol3_li1, strings.retail_sol3_li2].map((text, i) => (
                                     <Box key={i} sx={{ display: 'flex', gap: 2 }}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569' }}>{text}</Typography>
                                     </Box>
                                 ))}
@@ -148,11 +148,11 @@ export default function RetailSolutions() {
                                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#8B5CF6' }}>{strings.retail_sol3_mock_title}</Typography>
                                     </Box>
-                                    <Box sx={{ px: 1, py: 0.2, bgcolor: '#EEF2FF', color: '#6366F1', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                                    <Box sx={{ px: 1, py: 0.2, bgcolor: 'var(--surface-tint)', color: '#6366F1', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                                         {strings.retail_sol3_mock_status}
                                     </Box>
                                 </Box>
-                                <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '8px', mb: 2 }}>
+                                <Box sx={{ p: 1.5, bgcolor: 'var(--surface-alt)', borderRadius: '8px', mb: 2 }}>
                                     <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', color: '#475569' }}>{strings.retail_sol3_mock_desc}</Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>

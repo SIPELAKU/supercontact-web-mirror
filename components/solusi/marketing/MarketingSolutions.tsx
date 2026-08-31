@@ -14,10 +14,10 @@ export default function MarketingSolutions() {
     useLanguage();
 
     return (
-        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 10 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_mkt_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -52,7 +52,7 @@ export default function MarketingSolutions() {
                         <Grid item xs={12} md={6}>
                             <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', bgcolor: 'white', border: '1px solid #E2E8F0', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)' }}>
                                 <Typography sx={{ fontWeight: 800, fontSize: '1rem', mb: 3 }}>{strings.sol_mkt_mock_new_lead}</Typography>
-                                <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '16px', border: '1px solid #F1F5F9', mb: 3 }}>
+                                <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '16px', border: '1px solid #F1F5F9', mb: 3 }}>
                                     <Stack direction="row" spacing={2} alignItems="center">
                                         <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#166534' }}>
                                             <WhatsAppIcon fontSize="small" />
@@ -91,7 +91,7 @@ export default function MarketingSolutions() {
                                     <Box sx={{ px: 1, py: 0.5, bgcolor: '#DBEAFE', color: '#1E40AF', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, border: '1px solid #BFDBFE' }}>{strings.sol_mkt_mock_tag2} ✕</Box>
                                 </Stack>
 
-                                <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', mb: 3, border: '1px dashed #E2E8F0' }}>
+                                <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', mb: 3, border: '1px dashed #E2E8F0' }}>
                                     <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, mb: 1, display: 'block' }}>{strings.sol_mkt_mock_preview_label}</Typography>
                                     <Box sx={{ p: 2, bgcolor: 'white', borderRadius: '8px', border: '1px solid #E2E8F0', position: 'relative' }}>
                                         <Typography variant="body2" sx={{ color: '#334155', fontSize: '0.8rem' }}>
@@ -162,7 +162,7 @@ export default function MarketingSolutions() {
                                         <Typography sx={{ color: '#1E40AF', fontWeight: 800 }}>1,200</Typography>
                                     </Box>
                                     <Box sx={{ px: 4 }}>
-                                        <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '3px solid #64748B' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '3px solid #64748B' }}>
                                             <Typography variant="caption" sx={{ color: '#334155', fontWeight: 800 }}>{strings.sol_mkt_mock_sql}</Typography>
                                             <Typography sx={{ color: '#334155', fontWeight: 800 }}>850</Typography>
                                         </Box>

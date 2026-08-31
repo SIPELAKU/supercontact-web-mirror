@@ -29,7 +29,7 @@ export default function TicketIntegration() {
     ];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Grid container spacing={8} alignItems="center">
 
@@ -100,7 +100,7 @@ export default function TicketIntegration() {
 
                             {/* Node 1: Inbox */}
                             <Box sx={{ width: '100%', mb: 2 }}>
-                                <Paper variant="outlined" sx={{ p: 2, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                                <Paper variant="outlined" sx={{ p: 2, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'var(--surface-alt)', borderColor: '#E2E8F0' }}>
                                     <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', flexShrink: 0 }}>
                                         <ChatBubbleOutlineIcon sx={{ fontSize: 20 }} />
                                     </Box>
@@ -115,7 +115,7 @@ export default function TicketIntegration() {
 
                             {/* Node 2: Ticket Creation (Highlighted) */}
                             <Box sx={{ width: '100%', mb: 2 }}>
-                                <Paper variant="outlined" sx={{ p: 2, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#EEF2FF', borderColor: '#C7D2FE' }}>
+                                <Paper variant="outlined" sx={{ p: 2, borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'var(--surface-tint)', borderColor: '#C7D2FE' }}>
                                     <Box sx={{ width: 40, height: 40, borderRadius: '8px', bgcolor: 'transparent', border: '1px dashed #818CF8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366F1', flexShrink: 0 }}>
                                         <ConfirmationNumberOutlinedIcon sx={{ fontSize: 20 }} />
                                     </Box>

@@ -114,12 +114,12 @@ export default function HotelFAQ() {
     const t = COPY[language];
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'white' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2, display: 'block' }}
+                        sx={{ color: 'var(--brand-deep)', fontWeight: 800, letterSpacing: 2, display: 'block' }}
                     >
                         {t.badge}
                     </Typography>
@@ -154,7 +154,7 @@ export default function HotelFAQ() {
                             }}
                         >
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: 'var(--brand-deep)' }} />}
                                 sx={{ px: 3, py: 1 }}
                                 id={`faq-summary-${index}`}
                                 aria-controls={`faq-panel-${index}`}

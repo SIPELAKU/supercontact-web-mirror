@@ -106,13 +106,13 @@ export default function CrmSalesFAQ() {
     const t = COPY[language];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.default' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 } }}>
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -167,7 +167,7 @@ export default function CrmSalesFAQ() {
                             <AccordionSummary
                                 id={`faq-summary-${index}`}
                                 aria-controls={`faq-panel-${index}`}
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: 'var(--brand-deep)' }} />}
                                 sx={{
                                     px: { xs: 2.5, md: 3 },
                                     py: 1,

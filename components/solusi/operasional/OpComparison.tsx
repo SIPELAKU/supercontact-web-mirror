@@ -100,7 +100,7 @@ export default function OpComparison() {
                 <Stack spacing={2} sx={{ mb: { xs: 6, md: 8 }, textAlign: 'center' }}>
                     <Typography
                         variant="overline"
-                        sx={{ color: '#3854D6', fontWeight: 800, letterSpacing: 2, display: 'block' }}
+                        sx={{ color: 'var(--brand-deep)', fontWeight: 800, letterSpacing: 2, display: 'block' }}
                     >
                         {t.badge}
                     </Typography>
@@ -127,17 +127,17 @@ export default function OpComparison() {
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 800, color: '#0F172A', bgcolor: '#F8FAFC', fontSize: '0.9rem', width: { md: '26%' } }}>
+                                <TableCell sx={{ fontWeight: 800, color: '#0F172A', bgcolor: 'var(--surface-alt)', fontSize: '0.9rem', width: { md: '26%' } }}>
                                     {t.colProcess}
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#64748B', bgcolor: '#F8FAFC', fontSize: '0.9rem', width: { md: '37%' } }}>
+                                <TableCell sx={{ fontWeight: 800, color: '#64748B', bgcolor: 'var(--surface-alt)', fontSize: '0.9rem', width: { md: '37%' } }}>
                                     {t.colManual}
                                 </TableCell>
                                 <TableCell
                                     sx={{
                                         fontWeight: 800,
                                         color: 'white',
-                                        background: 'linear-gradient(135deg, #597CFF 0%, #7B99FF 100%)',
+                                        background: 'var(--gradient-brand)',
                                         fontSize: '0.9rem',
                                         width: { md: '37%' }
                                     }}

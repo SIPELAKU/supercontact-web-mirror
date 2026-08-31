@@ -15,10 +15,10 @@ import { ClientLogos } from '../ui/ClientLogos';
 export const CompanyClient = () => {
     useLanguage();
     return (
-        <Box sx={{ bgcolor: '#ffffff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Navbar />
 
-            <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: 8, sm: 8, md: 4, lg: 6 }}>
+            <Box component="main" sx={{ flexGrow: 1 }} pt={{ xs: '56px', sm: '64px' }}>
                 <CompanyHero />
                 <CompanyVision />
                 <ClientLogos />

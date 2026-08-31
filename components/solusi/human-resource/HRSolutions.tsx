@@ -16,7 +16,7 @@ export default function HRSolutions() {
         <Grid container spacing={{ xs: 6, md: 10 }} alignItems="center" direction={reverse ? 'row-reverse' : 'row'} sx={{ mb: { xs: 10, md: 15 } }}>
             <Grid item xs={12} md={6}>
                 <Stack spacing={3}>
-                    <Box sx={{ display: 'inline-flex', p: 1.5, borderRadius: '16px', bgcolor: '#EEF2FF', width: 'fit-content' }}>
+                    <Box sx={{ display: 'inline-flex', p: 1.5, borderRadius: '16px', bgcolor: 'var(--surface-tint)', width: 'fit-content' }}>
                         {icon}
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 800, fontSize: { xs: '1.75rem', md: '2.25rem' }, color: '#0F172A' }}>
@@ -44,7 +44,7 @@ export default function HRSolutions() {
     );
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: { xs: 8, md: 12 }, textAlign: 'center' }}>
                     <Typography variant="overline" sx={{ color: '#6366F1', fontWeight: 800, letterSpacing: 2 }}>
@@ -68,7 +68,7 @@ export default function HRSolutions() {
                                 <Chip label={strings.sol_hr_mock_ticket_status} size="small" sx={{ height: 20, fontSize: '0.625rem', fontWeight: 900, bgcolor: '#FFF1F2', color: '#E11D48' }} />
                             </Box>
                             <Box sx={{ p: 3 }}>
-                                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, p: 2, bgcolor: '#F8FAFC', borderRadius: '12px' }}>
+                                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2, p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px' }}>
                                     <Box sx={{ width: 40, height: 40, borderRadius: '12px', bgcolor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#64748B' }}>JD</Box>
                                     <Box>
                                         <Typography sx={{ fontWeight: 800, fontSize: '0.875rem' }}>{strings.sol_hr_mock_ticket_user}</Typography>
@@ -141,7 +141,7 @@ export default function HRSolutions() {
                         <Paper elevation={16} sx={{ p: 0, borderRadius: '20px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
                             <Box sx={{ p: 2, borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography sx={{ fontWeight: 800, fontSize: '0.875rem' }}>{strings.sol_hr_mock_broadcast_title}</Typography>
-                                <Chip label="Kirim Internal" size="small" sx={{ height: 20, fontSize: '0.625rem', fontWeight: 700, bgcolor: '#EEF2FF', color: '#6366F1' }} />
+                                <Chip label="Kirim Internal" size="small" sx={{ height: 20, fontSize: '0.625rem', fontWeight: 700, bgcolor: 'var(--surface-tint)', color: '#6366F1' }} />
                             </Box>
                             <Box sx={{ p: 3 }}>
                                 <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, display: 'block', mb: 1, fontSize: '0.65rem' }}>TARGET SEGMEN:</Typography>

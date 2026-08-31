@@ -97,7 +97,7 @@ const Navbar = () => {
         bgcolor: scrolled ? alpha('#ffffff', 0.8) : '#ffffff',
         backdropFilter: scrolled ? 'blur(20px)' : 'none',
         borderBottom: scrolled ? '1px solid' : 'none',
-        borderColor: alpha(theme.palette.divider, 0.1),
+        borderColor: 'divider',
         transition: 'all 0.3s ease-in-out',
         top: 0,
         left: 0,

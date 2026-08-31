@@ -22,7 +22,7 @@ export default function HotelSolutions() {
                 {lists.map((item, index) => (
                     <ListItem key={index} sx={{ px: 0, py: 1.5, alignItems: 'flex-start' }}>
                         <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                            <CheckCircleOutlineIcon sx={{ color: '#3854D6' }} />
+                            <CheckCircleOutlineIcon sx={{ color: 'var(--brand-deep)' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary={item}
@@ -35,10 +35,10 @@ export default function HotelSolutions() {
     );
 
     return (
-        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 }, maxWidth: '800px', mx: 'auto' }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
                         {strings.hotel_sol_badge}
                     </Typography>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 800, color: '#111827', fontSize: { xs: '2rem', md: '2.75rem' } }}>
@@ -72,7 +72,7 @@ export default function HotelSolutions() {
                                     DP TERVERIFIKASI
                                 </Box>
                             </Box>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                                 <Typography sx={{ fontSize: '0.85rem', color: '#475569' }}>
                                     <span style={{ fontWeight: 700, color: '#1E293B' }}>Aktivitas Terakhir:</span> Pembayaran DP berhasil diverifikasi (Hari ini, 09:12).
                                 </Typography>
@@ -139,7 +139,7 @@ export default function HotelSolutions() {
                             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', mb: 1, textTransform: 'uppercase' }}>
                                 Permintaan Tamu:
                             </Typography>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
                                 <Typography sx={{ fontSize: '0.9rem', color: '#334155', fontStyle: 'italic' }}>
                                     "Tamu di kamar 302 meminta tambahan 2 handuk dan air mineral."
                                 </Typography>

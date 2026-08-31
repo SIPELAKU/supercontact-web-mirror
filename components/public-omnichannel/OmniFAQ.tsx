@@ -124,7 +124,7 @@ export default function OmniFAQ() {
     };
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "#F8FAFC" }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: "var(--surface-alt)" }}>
             <Container maxWidth="md">
                 <Typography
                     variant="h2"

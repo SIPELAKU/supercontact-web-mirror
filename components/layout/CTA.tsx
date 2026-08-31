@@ -42,7 +42,7 @@ const CTA = () => {
     };
 
     return (
-        <Box sx={{ py: { xs: 0, md: 10 }, pb: { xs: 10 }, backgroundColor: '#F7F7F9' }}>
+        <Box sx={{ py: { xs: 0, md: 10 }, pb: { xs: 10 }, backgroundColor: 'var(--surface-tint)' }}>
             <Container>
                 <Box sx={{ textAlign: 'center', mb: 6, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: { xs: '100%', md: '70%' } }}>
                     {/* Vector Element */}
@@ -76,7 +76,7 @@ const CTA = () => {
                     <Grid item xs={12} md={5}>
                         <Box sx={{
                             height: '100%',
-                            backgroundColor: '#5479EE',
+                            backgroundColor: 'var(--brand)',
                             color: 'white',
                             p: { xs: 4, md: 5 },
                             display: 'flex',

@@ -36,7 +36,7 @@ const PlanCard = ({
         <Paper
             elevation={0} // Clean look from image
             sx={{
-                bgcolor: isContactPrice ? "#5479EE" : "#FFFFFF",
+                bgcolor: isContactPrice ? "var(--brand)" : "#FFFFFF",
                 p: 4,
                 height: '100%',
                 display: 'flex',
@@ -46,7 +46,7 @@ const PlanCard = ({
                 border: '1px solid #E5E7EB',
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
-                    borderColor: '#5570F1', // Subtle blue border on hover
+                    borderColor: 'var(--brand)', // Subtle blue border on hover
                     boxShadow: '0px 20px 40px rgba(0,0,0,0.06)'
                 }
             }}
@@ -119,7 +119,7 @@ const PlanCard = ({
                             variant="h3"
                             sx={{
                                 fontWeight: 700,
-                                color: '#5479EE'
+                                color: 'var(--brand)'
                             }}
                         >
                             {price.replace("Rp ", "").replace("Rp. ", "").replace("k", "")}

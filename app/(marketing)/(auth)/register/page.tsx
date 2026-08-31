@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/context/LanguageContext";
 import { strings } from "@/lib/utils/strings";
 import { handleError } from "@/lib/utils/errorHandler";
 import { trackSignUp } from "@/lib/analytics/events";
+import { trackAdsRegistration } from "@/lib/analytics/ads";
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 const PHONE_REGEX = /^\+?[0-9][0-9\s-]{6,}$/;
@@ -76,6 +77,10 @@ export default function RegisterPage() {
 
       if (response.success) {
         trackSignUp();
+        // Google Ads primary conversion + enhanced-conversion user data.
+        // Safe here: the redirect below is an SPA router.push, so the hit
+        // is not raced by a full page unload.
+        trackAdsRegistration({ email, phone: phoneNumber });
         // Registration successful - redirect to email verification page with email
         router.push(`/email-verification?email=${encodeURIComponent(email)}`);
       } else {

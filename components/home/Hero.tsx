@@ -18,8 +18,8 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import ArrowOutwardIcon from '@mui/icons-material/ArrowOutward';
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import { NO_WA } from '@/lib/constants/constants';
-import { trackCtaClick } from '@/lib/analytics/events';
+import { waHref } from '@/lib/utils/wa-link';
+import { trackCtaClick, trackWhatsAppClick } from '@/lib/analytics/events';
 
 const Hero = () => {
     useLanguage();
@@ -94,9 +94,9 @@ const Hero = () => {
                                     size="large"
                                     startIcon={<WhatsAppIcon />}
                                     onClick={() => {
-                                        trackCtaClick('home', 'hero_cta');
-                                        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
-                                        window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
+                                        trackWhatsAppClick('home', 'hero_whatsapp_cta');
+                                        const message = strings.formatString(strings.wa_interest_msg, "SmartSales") as string;
+                                        window.open(waHref(message), '_blank');
                                     }}
                                     sx={{
                                         color: 'white',

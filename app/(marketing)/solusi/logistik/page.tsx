@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import LogisticsClient from '@/components/solution-logistics/LogisticsClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/logistik';
+const PAGE_URL = 'https://smartsales.id/solusi/logistik';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi Logistik: Pickup, Resi & CS B2B', category: 'Solusi Logistik' });
 
@@ -40,7 +40,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

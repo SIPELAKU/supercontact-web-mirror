@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import HRClient from '@/components/solusi/human-resource/HRClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = "https://www.smartsales.id/solusi/human-resource";
+const PAGE_URL = "https://smartsales.id/solusi/human-resource";
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi Tim Human Resource', category: 'Solusi Human Resource' });
 
@@ -37,7 +37,7 @@ const breadcrumbSchema = {
       "@type": "ListItem",
       "position": 1,
       "name": "Beranda",
-      "item": "https://www.smartsales.id/",
+      "item": "https://smartsales.id",
     },
     {
       "@type": "ListItem",

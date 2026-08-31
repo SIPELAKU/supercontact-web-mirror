@@ -2,7 +2,7 @@ import TravelClient from '@/components/solution-travel/TravelClient';
 import { Metadata } from 'next';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/tour-travel';
+const PAGE_URL = 'https://smartsales.id/solusi/tour-travel';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Tour & Travel', category: 'Solusi Tour & Travel' });
 
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id/',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

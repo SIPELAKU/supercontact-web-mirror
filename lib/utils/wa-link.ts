@@ -1,5 +1,11 @@
 import { NO_WA } from '../constants/constants';
 
+// wa.me requires the number WITHOUT the leading '+' — with it, some clients
+// land on a broken "invalid number" screen. Every wa.me href must go through
+// this helper so the number lives in exactly one place.
+export const waHref = (message: string): string =>
+  `https://wa.me/${NO_WA.replace('+', '')}?text=${encodeURIComponent(message)}`;
+
 export const getWhatsAppLink = (pathname: string): string => {
   let message = "Halo, saya tertarik dengan layanan Smartsales.";
 
@@ -31,6 +37,5 @@ export const getWhatsAppLink = (pathname: string): string => {
     message = "Halo, saya tertarik untuk mencoba solusi Integrasi Sales & Marketing di Smartsales.";
   }
 
-  const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${NO_WA.replace('+', '')}?text=${encodedMessage}`;
+  return waHref(message);
 };

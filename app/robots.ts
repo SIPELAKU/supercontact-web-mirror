@@ -1,12 +1,24 @@
 import type { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://www.smartsales.id';
+const BASE_URL = 'https://smartsales.id';
 
 // /register is deliberately allowed and indexable: it is the site's main
 // conversion target and is listed in the sitemap with its own metadata.
 // /help is the public Help Center portal (app/(help)/) - unlike /m/ (per-lead
 // campaign pages, disallowed below) it is meant to be indexable/SEO content.
-const ALLOW = ['/', '/company', '/price', '/produk/', '/solusi/', '/blog', '/register', '/help', '/api/og'];
+const ALLOW = [
+    '/',
+    '/company',
+    '/price',
+    '/produk/',
+    '/solusi/',
+    '/blog',
+    '/register',
+    '/help',
+    '/api/og',
+    '/privacy-policy',
+    '/terms-conditions',
+];
 
 const DISALLOW = [
     '/dashboard',

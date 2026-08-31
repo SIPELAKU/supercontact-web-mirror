@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import HomeClient from "@/components/home/HomeClient";
 import { ogImageUrl } from "@/lib/utils/og-image";
 
-const PAGE_URL = "https://www.smartsales.id/";
+const PAGE_URL = "https://smartsales.id";
 
 const OG_IMAGE = ogImageUrl({
   title: "CRM, Chat & Call Center untuk Sales, Marketing, dan Customer Support",
@@ -39,8 +39,8 @@ const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "SmartSales",
-  url: "https://www.smartsales.id",
-  logo: "https://www.smartsales.id/assets/sc-icon-512.png",
+  url: "https://smartsales.id",
+  logo: "https://smartsales.id/assets/sc-icon-512.png",
   description:
     "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia.",
   areaServed: "ID",
@@ -54,7 +54,7 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "SmartSales",
-  url: "https://www.smartsales.id",
+  url: "https://smartsales.id",
   inLanguage: "id-ID",
 };
 

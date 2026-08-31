@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { blogArticles } from '@/content/blog/registry';
 
-const BASE_URL = 'https://www.smartsales.id';
+const BASE_URL = 'https://smartsales.id';
 
 const solusiRoutes = [
     'customer-service',
@@ -28,12 +28,16 @@ const LAST_MODIFIED = new Date();
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const staticRoutes: MetadataRoute.Sitemap = [
-        { url: `${BASE_URL}/`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 1 },
+        { url: `${BASE_URL}`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 1 },
         { url: `${BASE_URL}/company`, lastModified: LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.6 },
         { url: `${BASE_URL}/price`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 0.9 },
         { url: `${BASE_URL}/blog`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 0.7 },
         // Conversion target — indexable on purpose (see robots.ts).
         { url: `${BASE_URL}/register`, lastModified: LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.9 },
+        // Legal pages — low priority but indexable (Google Ads policy reviewers
+        // and privacy-conscious visitors must be able to find them).
+        { url: `${BASE_URL}/privacy-policy`, lastModified: LAST_MODIFIED, changeFrequency: 'yearly', priority: 0.3 },
+        { url: `${BASE_URL}/terms-conditions`, lastModified: LAST_MODIFIED, changeFrequency: 'yearly', priority: 0.3 },
     ];
 
     const blog: MetadataRoute.Sitemap = blogArticles

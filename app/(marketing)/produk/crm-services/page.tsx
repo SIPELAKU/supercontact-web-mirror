@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import CrmServicesClient from '@/components/crm-services/CrmServicesClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/produk/crm-services';
+const PAGE_URL = 'https://smartsales.id/produk/crm-services';
 
 const OG_IMAGE = ogImageUrl({ title: 'CRM Services: Ticketing & SLA Pelanggan', category: 'Produk' });
 
@@ -45,11 +45,11 @@ const softwareAppJsonLd = {
     publisher: {
         '@type': 'Organization',
         name: 'SmartSales',
-        url: 'https://www.smartsales.id',
+        url: 'https://smartsales.id',
     },
     offers: {
         '@type': 'Offer',
-        url: 'https://www.smartsales.id/price',
+        url: 'https://smartsales.id/price',
         priceCurrency: 'IDR',
         price: '0',
         description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
@@ -64,7 +64,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id/',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

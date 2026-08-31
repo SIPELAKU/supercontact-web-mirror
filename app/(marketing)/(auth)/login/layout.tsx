@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Masuk ke akun SmartSales Anda untuk mengelola CRM Sales, Omnichannel WhatsApp & Email, dan tiket pelanggan.",
   robots: { index: false, follow: true },
   alternates: {
-    canonical: "https://www.smartsales.id/login",
+    canonical: "https://smartsales.id/login",
   },
 };
 

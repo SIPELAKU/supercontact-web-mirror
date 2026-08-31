@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import OpClient from "@/components/solusi/operasional/OpClient";
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = "https://www.smartsales.id/solusi/operasional";
+const PAGE_URL = "https://smartsales.id/solusi/operasional";
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Operasional Lapangan', category: 'Solusi Operasional' });
 
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
             "@type": "ListItem",
             position: 1,
             name: "Beranda",
-            item: "https://www.smartsales.id/",
+            item: "https://smartsales.id",
         },
         {
             "@type": "ListItem",

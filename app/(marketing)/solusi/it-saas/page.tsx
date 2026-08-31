@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import ITSaaSClient from '@/components/solution-it-saas/ITSaaSClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/it-saas';
+const PAGE_URL = 'https://smartsales.id/solusi/it-saas';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM & Helpdesk untuk Perusahaan IT', category: 'Solusi IT & SaaS' });
 
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
       '@type': 'ListItem',
       position: 1,
       name: 'Beranda',
-      item: 'https://www.smartsales.id/',
+      item: 'https://smartsales.id',
     },
     {
       '@type': 'ListItem',

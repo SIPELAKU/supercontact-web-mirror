@@ -1,4 +1,4 @@
-const BASE_URL = 'https://www.smartsales.id';
+const BASE_URL = 'https://smartsales.id';
 
 export function ogImageUrl(params: { title: string; category?: string }): string {
     const search = new URLSearchParams({ title: params.title });

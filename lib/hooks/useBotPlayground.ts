@@ -190,3 +190,36 @@ export function useAttachQuestionToArticle(accountId?: string) {
     },
   });
 }
+
+// ---------- Jalur C: Content Gaps ----------
+import { getContentGaps } from "@/lib/api/bot-playground";
+import { fillKbPlaceholders } from "@/lib/api/knowledge";
+
+export function useContentGaps() {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ["bot-playground", "content-gaps"],
+    queryFn: () => {
+      if (!token) throw new Error("No authentication token");
+      return getContentGaps(token);
+    },
+    enabled: !!token,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useFillPlaceholders(accountId?: string) {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (values: Record<string, string>) => {
+      if (!token) throw new Error("No authentication token");
+      return fillKbPlaceholders(token, values);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bot-playground", "content-gaps"] });
+      queryClient.invalidateQueries({ queryKey: keys.readiness(accountId) });
+      queryClient.invalidateQueries({ queryKey: ["knowledge", "articles"] });
+    },
+  });
+}

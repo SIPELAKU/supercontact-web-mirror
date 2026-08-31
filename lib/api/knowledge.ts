@@ -334,3 +334,15 @@ export async function attachQuestionToKbArticle(
   );
   return handle<KbArticle>(res, "Failed to attach the question to the article");
 }
+
+export async function fillKbPlaceholders(
+  token: string,
+  values: Record<string, string>,
+): Promise<{ articles_updated: number; variables_applied: string[]; articles_remaining: number }> {
+  const res = await fetchWithTimeout(`${API_BASE}/articles/fill-placeholders`, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ values }),
+  });
+  return handle(res, "Failed to fill placeholders");
+}

@@ -177,3 +177,23 @@ export interface BotActivateResponse {
   answer_bot_shadow: boolean;
   failing: ReadinessItem[];
 }
+
+// ---------- Jalur C: Content Gaps (placeholder template) ----------
+export interface ContentGapVariable {
+  key: string;
+  label: string;
+  example: string;
+  context: string;
+  articles: { id: string; title: string }[];
+}
+
+export interface ContentGapsResponse {
+  articles_with_placeholders: number;
+  variables: ContentGapVariable[];
+}
+
+export interface FillPlaceholdersReport {
+  articles_updated: number;
+  variables_applied: string[];
+  articles_remaining: number;
+}

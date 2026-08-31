@@ -157,3 +157,12 @@ export async function activateBot(
   });
   return handle<BotActivateResponse>(res, "Failed to activate the bot");
 }
+
+import type { ContentGapsResponse } from "@/lib/types/botPlayground";
+
+export async function getContentGaps(token: string): Promise<ContentGapsResponse> {
+  const res = await fetchWithTimeout(`${API_BASE}/content-gaps`, {
+    headers: authHeaders(token),
+  });
+  return handle<ContentGapsResponse>(res, "Failed to load content gaps");
+}

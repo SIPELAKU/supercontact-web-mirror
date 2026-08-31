@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/sales';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Tim Sales', category: 'Solusi Sales' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM Tim Sales - SmartSales',
+  title: 'Solusi CRM Tim Sales',
   description: 'Pantau pipeline penjualan dan otomatiskan follow-up dalam satu sistem. SmartSales membantu tim sales berhenti kehilangan prospek karena catatan tercecer.',
   alternates: {
     canonical: PAGE_URL,

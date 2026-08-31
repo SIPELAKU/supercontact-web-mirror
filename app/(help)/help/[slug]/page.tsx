@@ -7,8 +7,9 @@ import HelpHomeClient from "@/components/help-center/public/HelpHomeClient";
 // build, avoiding a build-time fetch by an unknown slug.
 export const dynamic = "force-dynamic";
 
-// Indexable portal metadata derived from the tenant's config. Unlike /m/, the
-// help center is meant to be found by search engines (see robots.ts ALLOW).
+// Portal metadata derived from the tenant's config. Currently noindexed (see
+// robots note below) because the page body is client-fetched — crawlers only
+// receive a spinner.
 export async function generateMetadata({
   params,
 }: {
@@ -23,7 +24,11 @@ export async function generateMetadata({
         config.welcome_subtext ||
         config.welcome_headline ||
         `Guides, answers and support for ${name}.`,
-      robots: { index: true, follow: true },
+      // noindex until article bodies are server-rendered: these routes are
+      // force-dynamic client-fetch, so crawlers receive a spinner with no
+      // content — indexable spinner pages read as soft-404 noise. Flip back
+      // to index:true when the Help Center gets real SSR (roadmap backlog).
+      robots: { index: false, follow: true },
       icons: config.favicon_url ? { icon: config.favicon_url } : undefined,
     };
   } catch {

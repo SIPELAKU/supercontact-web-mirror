@@ -7,7 +7,7 @@ const PAGE_URL = "https://smartsales.id/solusi/perhotelan";
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Reservasi & Layanan Tamu Hotel', category: 'Solusi Perhotelan' });
 
 export const metadata: Metadata = {
-  title: "Solusi CRM Reservasi & Layanan Tamu Hotel - SmartSales",
+  title: "Solusi CRM Reservasi & Layanan Tamu Hotel",
   description:
     "Kelola reservasi kamar, chat tamu via WhatsApp, dan komplain layanan hotel dalam satu sistem. Tingkatkan okupansi dan kepuasan tamu. Coba gratis.",
   alternates: {

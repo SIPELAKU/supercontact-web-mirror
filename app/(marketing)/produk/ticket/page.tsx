@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/produk/ticket';
 const OG_IMAGE = ogImageUrl({ title: 'Ticket Creation dari Chat', category: 'Produk' });
 
 export const metadata: Metadata = {
-    title: 'Ticket Creation dari Chat - SmartSales',
+    title: 'Ticket Creation dari Chat',
     description: 'Ubah chat pelanggan jadi tiket tugas terlacak lengkap dengan status, eskalasi antar tim, dan SLA. Tidak ada lagi keluhan yang tenggelam di kolom chat.',
     alternates: {
         canonical: PAGE_URL,

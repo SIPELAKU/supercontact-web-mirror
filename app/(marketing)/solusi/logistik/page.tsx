@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/logistik';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi Logistik: Pickup, Resi & CS B2B', category: 'Solusi Logistik' });
 
 export const metadata: Metadata = {
-    title: 'Solusi Logistik: Pickup, Resi & CS B2B | SmartSales',
+    title: 'Solusi Logistik: Pickup, Resi & CS B2B',
     description:
         'Kelola jadwal pickup B2B, notifikasi status paket, dan cek resi otomatis via WhatsApp Business API. Ubah komplain pelanggan jadi tiket kerja dengan SmartSales.',
     alternates: {

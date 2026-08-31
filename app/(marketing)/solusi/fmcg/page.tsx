@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/fmcg';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Distribusi FMCG', category: 'Solusi FMCG' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM Distribusi FMCG - SmartSales',
+  title: 'Solusi CRM Distribusi FMCG',
   description: 'Kelola order via WhatsApp, canvassing sales lapangan, dan retur barang FMCG dalam satu sistem. Coba gratis, tanpa komitmen di awal.',
   alternates: {
     canonical: PAGE_URL,

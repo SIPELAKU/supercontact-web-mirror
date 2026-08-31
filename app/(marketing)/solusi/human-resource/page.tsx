@@ -7,7 +7,7 @@ const PAGE_URL = "https://smartsales.id/solusi/human-resource";
 const OG_IMAGE = ogImageUrl({ title: 'Solusi Tim Human Resource', category: 'Solusi Human Resource' });
 
 export const metadata: Metadata = {
-  title: 'Solusi Tim Human Resource - SmartSales',
+  title: 'Solusi Tim Human Resource',
   description: 'Kelola feedback karyawan secara profesional. Satukan setiap pertanyaan internal dan proses rekrutmen dalam satu sistem terpusat.',
   alternates: {
     canonical: PAGE_URL,

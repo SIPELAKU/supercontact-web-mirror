@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/keuangan';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Bank, Koperasi & Multifinance', category: 'Solusi Keuangan' });
 
 export const metadata: Metadata = {
-    title: 'Solusi CRM untuk Bank, Koperasi & Multifinance - SmartSales',
+    title: 'Solusi CRM untuk Bank, Koperasi & Multifinance',
     description: 'Kelola prospek kredit bank, koperasi, dan multifinance dalam satu sistem CRM. Follow-up otomatis via WhatsApp API, tanpa spreadsheet. Coba gratis 14 hari.',
     alternates: {
         canonical: PAGE_URL,

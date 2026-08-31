@@ -10,7 +10,7 @@ const PAGE_DESC =
 const OG_IMAGE = ogImageUrl({ title: 'Omnichannel WhatsApp, Instagram & Email', category: 'Produk' });
 
 export const metadata: Metadata = {
-    title: PAGE_TITLE,
+    title: 'Omnichannel WhatsApp, Instagram & Email',
     description: PAGE_DESC,
     alternates: {
         canonical: PAGE_URL,

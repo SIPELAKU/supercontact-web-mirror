@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/outsourcing';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Perusahaan Outsourcing', category: 'Solusi Outsourcing' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Perusahaan Outsourcing - SmartSales',
+  title: 'Solusi CRM untuk Perusahaan Outsourcing',
   description: 'Kelola ribuan kandidat, pekerja, dan klien B2B dalam satu platform. Otomatiskan rekrutmen, broadcast WhatsApp, dan komplain klien dengan SmartSales.',
   alternates: {
     canonical: PAGE_URL,

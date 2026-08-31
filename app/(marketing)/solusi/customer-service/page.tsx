@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/customer-service';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Tim Customer Service', category: 'Solusi Customer Service' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Tim Customer Service - SmartSales',
+  title: 'Solusi CRM untuk Tim Customer Service',
   description: 'Satukan chat WhatsApp, Instagram, dan Email dalam satu inbox, kelola tiket keluhan dengan SLA, dan percepat balasan dengan Quick Replies bersama SmartSales.',
   alternates: {
     canonical: PAGE_URL,

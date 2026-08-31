@@ -20,7 +20,11 @@ export async function generateMetadata({
     return {
       title: `${article.title} - ${siteName}`,
       description: article.excerpt || `${article.title} - ${siteName}`,
-      robots: { index: true, follow: true },
+      // noindex until article bodies are server-rendered: these routes are
+      // force-dynamic client-fetch, so crawlers receive a spinner with no
+      // content — indexable spinner pages read as soft-404 noise. Flip back
+      // to index:true when the Help Center gets real SSR (roadmap backlog).
+      robots: { index: false, follow: true },
       icons: config?.favicon_url ? { icon: config.favicon_url } : undefined,
     };
   } catch {

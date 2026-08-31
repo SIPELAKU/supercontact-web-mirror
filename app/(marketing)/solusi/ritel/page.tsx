@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/ritel';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Toko Ritel', category: 'Solusi Ritel' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Toko Ritel - SmartSales',
+  title: 'Solusi CRM untuk Toko Ritel',
   description: 'Kelola database member, broadcast promo via WhatsApp, dan klaim garansi toko ritel Anda dalam satu sistem. Coba gratis, tanpa komitmen di awal.',
   alternates: {
     canonical: PAGE_URL,

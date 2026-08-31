@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/tour-travel';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Tour & Travel', category: 'Solusi Tour & Travel' });
 
 export const metadata: Metadata = {
-    title: 'Solusi CRM Tour & Travel - SmartSales',
+    title: 'Solusi CRM Tour & Travel',
     description: 'Kelola pemesanan paket wisata, dokumen visa, DP pelanggan, dan reschedule tiket dalam satu sistem CRM WhatsApp untuk agen tour & travel. Coba gratis sekarang.',
     alternates: {
         canonical: PAGE_URL,

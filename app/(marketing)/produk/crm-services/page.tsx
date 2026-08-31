@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/produk/crm-services';
 const OG_IMAGE = ogImageUrl({ title: 'CRM Services: Ticketing & SLA Pelanggan', category: 'Produk' });
 
 export const metadata: Metadata = {
-    title: 'CRM Services: Ticketing & SLA Pelanggan | SmartSales',
+    title: 'CRM Services: Ticketing & SLA Pelanggan',
     description:
         'Kelola komplain WhatsApp, Instagram, dan Email dalam satu sistem tiket. Atur SLA otomatis dan Quick Replies agar tim CS merespons pelanggan lebih cepat.',
     alternates: {

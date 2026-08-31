@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/marketing';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Tim Marketing', category: 'Solusi Marketing' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Tim Marketing - SmartSales',
+  title: 'Solusi CRM untuk Tim Marketing',
   description: 'Kirim campaign WhatsApp & Email blast, kelola balasan pelanggan dalam satu inbox, dan lacak ROI marketing hingga transaksi tim Sales dengan SmartSales.',
   alternates: {
     canonical: PAGE_URL,

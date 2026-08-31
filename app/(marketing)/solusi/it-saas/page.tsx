@@ -7,7 +7,7 @@ const PAGE_URL = 'https://smartsales.id/solusi/it-saas';
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM & Helpdesk untuk Perusahaan IT', category: 'Solusi IT & SaaS' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM & Helpdesk untuk Perusahaan IT - SmartSales',
+  title: 'Solusi CRM & Helpdesk untuk Perusahaan IT',
   description: 'Kelola pipeline sales B2B, helpdesk WhatsApp, dan penugasan bug dalam satu sistem untuk perusahaan IT & SaaS. Coba gratis, tanpa komitmen di awal.',
   alternates: {
     canonical: PAGE_URL,

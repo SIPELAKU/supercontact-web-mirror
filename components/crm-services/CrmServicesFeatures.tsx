@@ -15,8 +15,8 @@ export default function CrmServicesFeatures() {
 
     const features = [
         {
-            icon: <ConfirmationNumberOutlinedIcon sx={{ fontSize: 32, color: '#3854D6' }} />, // Blue
-            iconBg: '#EEF2FF',
+            icon: <ConfirmationNumberOutlinedIcon sx={{ fontSize: 32, color: 'var(--brand-deep)' }} />, // Blue
+            iconBg: 'var(--surface-tint)',
             title: strings.crm_services_feat_1_title,
             desc: strings.crm_services_feat_1_desc
         },
@@ -48,7 +48,7 @@ export default function CrmServicesFeatures() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,

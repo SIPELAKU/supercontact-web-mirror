@@ -188,7 +188,7 @@ export default function ForgotPasswordVerifyOTPPage() {
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={(e) => handlePaste(index, e)}
-                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5479EE] focus:border-[#5479EE] outline-none transition-all"
+                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-[var(--brand)] outline-none transition-all"
                   />
                 ))}
               </div>

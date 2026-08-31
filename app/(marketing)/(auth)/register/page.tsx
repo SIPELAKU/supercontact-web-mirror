@@ -1,27 +1,25 @@
-// app/(auth)/register/page.tsx
+// app/(marketing)/(auth)/register/page.tsx
 "use client";
 
-import { RegisterData, registerUser } from "@/lib/api";
-import { handleError } from "@/lib/utils/errorHandler";
-import { trackSignUp } from "@/lib/analytics/events";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { AppInput } from "@/components/ui/app-input";
-import { AppButton } from "@/components/ui/app-button";
-import { MenuItem } from "@mui/material";
-import { Poppins } from "next/font/google";
-import { AppSelect } from "@/components/ui/app-select";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  display: "swap",
-});
+import AuthShell from "@/components/auth/AuthShell";
+import { AppButton } from "@/components/ui/app-button";
+import { AppInput } from "@/components/ui/app-input";
+import { AppSelect } from "@/components/ui/app-select";
+import { RegisterData, registerUser } from "@/lib/api";
+import { useLanguage } from "@/lib/context/LanguageContext";
+import { strings } from "@/lib/utils/strings";
+import { handleError } from "@/lib/utils/errorHandler";
+import { trackSignUp } from "@/lib/analytics/events";
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+const PHONE_REGEX = /^\+?[0-9][0-9\s-]{6,}$/;
 
 export default function RegisterPage() {
-  // ... (rest of the component state and logic remains the same)
+  useLanguage();
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -32,43 +30,37 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
+  // Realtime field states — only flagged once the field has content, so the
+  // form doesn't open covered in red.
+  const passwordInvalid = password !== "" && !PASSWORD_REGEX.test(password);
+  const confirmMismatch = confirmPassword !== "" && confirmPassword !== password;
+  const phoneInvalid = phoneNumber !== "" && !PHONE_REGEX.test(phoneNumber);
+
   const handleSubmit = async (e: React.FormEvent) => {
-    // ... (handleSubmit logic remains the same)
     e.preventDefault();
-    setIsLoading(true);
-    setIsSubmitting(true);
     setError("");
 
-    // Check if passwords match
+    // Submit-time backstop for the realtime checks above.
+    if (!PASSWORD_REGEX.test(password)) {
+      setError(strings.auth_password_rule_error);
+      return;
+    }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      setIsSubmitting(false);
+      setError(strings.auth_password_mismatch);
       return;
     }
-
-    // Check if terms are accepted
+    if (!PHONE_REGEX.test(phoneNumber)) {
+      setError(strings.auth_phone_invalid);
+      return;
+    }
     if (!acceptedTerms) {
-      setError("You must accept the Terms & Conditions to continue");
-      setIsLoading(false);
-      setIsSubmitting(false);
+      setError(strings.auth_terms_error);
       return;
     }
 
-    // Validate password requirements
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      setError(
-        "Password must be at least 8 characters with 1 uppercase letter, 1 lowercase letter, and 1 number",
-      );
-      setIsLoading(false);
-      setIsSubmitting(false);
-      return;
-    }
-
+    setIsLoading(true);
     try {
       const registerData: RegisterData = {
         fullname: name,
@@ -88,211 +80,190 @@ export default function RegisterPage() {
         router.push(`/email-verification?email=${encodeURIComponent(email)}`);
       } else {
         // Handle API error response structure: { success: false, error: { message: "..." } }
-        const errorMessage =
-          response.error?.message || "Registration failed. Please try again.";
-        setError(errorMessage);
+        setError(response.error?.message || strings.auth_register_failed);
       }
-    } catch (err: any) {
-      const errorMessage = handleError(
-        err,
-        "Registration error",
-        "Registration failed. Please try again.",
-      );
-      setError(errorMessage);
+    } catch (err: unknown) {
+      setError(handleError(err, "Registration error", strings.auth_register_failed));
     } finally {
       setIsLoading(false);
-      setIsSubmitting(false);
     }
   };
 
-  const toggleTerms = () => {
-    setAcceptedTerms(!acceptedTerms);
-  };
-
+  // Values stay in English — they're what the API stores; only labels translate.
   const positions = [
-    { value: "", label: "Select a position" },
-    { value: "Staff", label: "Staff" },
-    { value: "Business Owner", label: "Business Owner" },
-    { value: "C-Level", label: "C-Level (CEO/CFO/COO, etc)" },
-    { value: "Senior Manager", label: "Senior Manager (Head/VP, etc)" },
-    { value: "Other", label: "Other" },
+    { value: "", label: strings.auth_position_placeholder },
+    { value: "Staff", label: strings.auth_position_staff },
+    { value: "Business Owner", label: strings.auth_position_owner },
+    { value: "C-Level", label: strings.auth_position_clevel },
+    { value: "Senior Manager", label: strings.auth_position_senior },
+    { value: "Other", label: strings.auth_position_other },
   ];
 
   return (
-    <main className="min-h-screen grid grid-cols-1 md:grid-cols-3 bg-gray-50">
-      {/* Left Section */}
-      <section className="hidden md:flex md:col-span-2 items-center justify-center bg-gray-100">
-        <div className="p-10">
-          <Image
-            src="/assets/logo3d.png"
-            alt="SmartSales Logo"
-            width={400}
-            height={400}
-          />
-        </div>
-      </section>
-
-      {/* Right Section */}
-      <section className="flex flex-col md:col-span-1 justify-center px-8 md:px-15 py-10 bg-white">
-        <h1
-          className={`text-3xl font-bold text-gray-900 leading-tight text-center ${poppins.className}`}
-        >
-          Make New Account
+    <AuthShell wide>
+      <div className="text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+          {strings.auth_register_title}
         </h1>
+        <p className="mt-2 text-sm text-gray-500">{strings.auth_register_subtitle}</p>
+      </div>
 
-        <h2
-          className={`text-3xl font-bold mt-0 text-center ${poppins.className}`}
-        >
-          <span className="text-blue-600">Smart</span>
-          <span className="text-green-600">Sales</span>
-        </h2>
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        {error && (
+          <div
+            role="alert"
+            className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm"
+          >
+            {error}
+          </div>
+        )}
 
-        <p className="mt-2 text-sm text-gray-500 text-center">
-          Start managing your CRM in minutes.
-        </p>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Full Name <span className="text-red-500">*</span>
+            <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
+              {strings.auth_fullname_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="fullname"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
+              placeholder={strings.auth_fullname_placeholder}
               required
+              autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Work Email <span className="text-red-500">*</span>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              {strings.auth_work_email_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your work email"
+              placeholder={strings.auth_work_email_placeholder}
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Phone Number <span className="text-red-500">*</span>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              {strings.auth_phone_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="phone"
               type="tel"
+              inputProps={{ inputMode: "tel" }}
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Enter your phone number"
+              placeholder={strings.auth_phone_placeholder}
               required
+              error={phoneInvalid}
+              helperText={phoneInvalid ? strings.auth_phone_invalid : undefined}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Company Name <span className="text-red-500">*</span>
+            <label htmlFor="company" className="block text-sm font-medium text-gray-700">
+              {strings.auth_company_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="company"
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter your company name"
+              placeholder={strings.auth_company_placeholder}
               required
             />
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Position <span className="text-red-500">*</span>
-            </label>
-            <AppSelect
-              id="position"
-              name="position"
-              placeholder="Select a position"
-              value={position}
-              onChange={(e) => setPosition(e.target.value as string)}
-              required
-              options={positions}
-            />
-          </div>
+        <div>
+          <label htmlFor="position" className="block text-sm font-medium text-gray-700">
+            {strings.auth_position_label} <span className="text-red-500">*</span>
+          </label>
+          <AppSelect
+            id="position"
+            name="position"
+            placeholder={strings.auth_position_placeholder}
+            value={position}
+            onChange={(e) => setPosition(e.target.value as string)}
+            required
+            options={positions}
+          />
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password <span className="text-red-500">*</span>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              {strings.auth_password_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder={strings.auth_password_placeholder}
               required
-              helperText="(Minimal 8 karakter, 1 angka, 1 huruf besar)"
+              error={passwordInvalid}
+              helperText={
+                passwordInvalid ? strings.auth_password_rule_error : strings.auth_password_helper
+              }
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Confirm Password <span className="text-red-500">*</span>
+            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+              {strings.auth_confirm_password_label} <span className="text-red-500">*</span>
             </label>
             <AppInput
+              id="confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Enter your confirm password"
+              placeholder={strings.auth_confirm_password_placeholder}
               required
+              error={confirmMismatch}
+              helperText={confirmMismatch ? strings.auth_password_mismatch : undefined}
             />
           </div>
+        </div>
 
-          <div className="flex justify-start items-center mt-6 text-sm text-gray-600 text-start">
-            <AppInput
-              type="checkbox"
-              id="terms"
-              name="terms"
-              onChange={toggleTerms}
-              required
-            />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
-              I agree with{" "}
-              <Link
-                href="/terms-conditions"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 font-medium hover:underline"
-              >
-                Terms & Conditions
-              </Link>
-            </label>
-          </div>
+        <div className="flex justify-start items-center mt-6 text-sm text-gray-600 text-start">
+          <AppInput
+            type="checkbox"
+            id="terms"
+            name="terms"
+            checked={acceptedTerms}
+            onChange={() => setAcceptedTerms((prev) => !prev)}
+            required
+          />
+          <label htmlFor="terms" className="ml-2 block text-sm text-gray-600">
+            {strings.auth_terms_agree}{" "}
+            <Link
+              href="/terms-conditions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand font-medium hover:underline"
+            >
+              {strings.auth_terms_link}
+            </Link>
+          </label>
+        </div>
 
-          <AppButton
-            type="submit"
-            disabled={isLoading || isSubmitting}
-            fullWidth
-            variantStyle="primary"
-          >
-            {isLoading ? "Creating Account..." : "Create Account"}
-          </AppButton>
-        </form>
+        <AppButton type="submit" disabled={isLoading} fullWidth variantStyle="primary">
+          {isLoading ? strings.auth_creating_account : strings.auth_create_account}
+        </AppButton>
+      </form>
 
-        <p className="mt-6 text-sm text-gray-600 text-start">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-blue-600 font-medium hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
-      </section>
-    </main>
+      <p className="mt-6 text-sm text-gray-600 text-center">
+        {strings.auth_have_account}{" "}
+        <Link href="/login" className="text-brand font-medium hover:underline">
+          {strings.auth_signin}
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

@@ -22,7 +22,7 @@ export default function FmcgSolutions() {
                 {lists.map((item, index) => (
                     <ListItem key={index} sx={{ px: 0, py: 1.5, alignItems: 'flex-start' }}>
                         <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
-                            <CheckCircleOutlineIcon sx={{ color: '#3854D6' }} />
+                            <CheckCircleOutlineIcon sx={{ color: 'var(--brand-deep)' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary={item}
@@ -35,10 +35,10 @@ export default function FmcgSolutions() {
     );
 
     return (
-        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 16 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 }, maxWidth: '800px', mx: 'auto' }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block', textTransform: 'uppercase' }}>
                         {strings.fmcg_sol_badge}
                     </Typography>
                     <Typography variant="h3" component="h2" sx={{ fontWeight: 800, color: '#111827', fontSize: { xs: '2rem', md: '2.75rem' } }}>
@@ -72,7 +72,7 @@ export default function FmcgSolutions() {
                                     JADWAL VISIT
                                 </Box>
                             </Box>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                                 <Typography sx={{ fontSize: '0.85rem', color: '#475569', lineHeight: 1.6 }}>
                                     <span style={{ fontWeight: 700, color: '#1E293B' }}>Instruksi Sales:</span> Jadwal visit hari ini pukul 11:00. Tawarkan promo produk susu kemasan baru.
                                 </Typography>
@@ -140,7 +140,7 @@ export default function FmcgSolutions() {
                             <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', mb: 1.5, textTransform: 'uppercase' }}>
                                 LAPORAN TOKO:
                             </Typography>
-                            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
+                            <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #E2E8F0', mb: 3 }}>
                                 <Typography sx={{ fontSize: '0.9rem', color: '#475569', fontStyle: 'italic', lineHeight: 1.5 }}>
                                     "Ada 2 karton susu kaleng penyok dari pengiriman kemarin. Tolong diproses retur untuk diganti baru."
                                 </Typography>

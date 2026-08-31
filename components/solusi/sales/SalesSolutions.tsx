@@ -13,10 +13,10 @@ export default function SalesSolutions() {
     useLanguage();
 
     return (
-        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 10 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_sales_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -56,7 +56,7 @@ export default function SalesSolutions() {
                                 </Box>
                                 <Grid container spacing={2}>
                                     <Grid item xs={6}>
-                                        <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', height: '100%', borderTop: '4px solid #F59E0B' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', height: '100%', borderTop: '4px solid #F59E0B' }}>
                                             <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 2 }}>{strings.sol_sales_sol1_mock_col1}</Typography>
                                             <Paper sx={{ p: 2, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                                                 <Typography sx={{ fontWeight: 700, fontSize: '0.875rem' }}>PT. Sejahtera Abadi</Typography>
@@ -69,7 +69,7 @@ export default function SalesSolutions() {
                                         </Box>
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', height: '100%', borderTop: '4px solid #3B82F6' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', height: '100%', borderTop: '4px solid #3B82F6' }}>
                                             <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 2 }}>{strings.sol_sales_sol1_mock_col2}</Typography>
                                             <Paper sx={{ p: 2, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                                                 <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#DBEAFE' }}>Toko Sentral Retail</Typography>
@@ -166,7 +166,7 @@ export default function SalesSolutions() {
                                         <Typography variant="caption" sx={{ color: '#64748B' }}>WhatsApp: +62 812-3456-7890</Typography>
                                     </Box>
                                 </Stack>
-                                <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
+                                <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '12px', border: '1px solid #F1F5F9' }}>
                                     <Stack spacing={2}>
                                         <Box sx={{ p: 1.5, bgcolor: 'white', borderRadius: '8px 8px 8px 0', border: '1px solid #E2E8F0', alignSelf: 'flex-start', maxWidth: '85%' }}>
                                             <Typography sx={{ fontSize: '0.8rem', color: '#334155' }}>Pak, untuk brosur harga alat berat terbaru apakah sudah di-update?</Typography>

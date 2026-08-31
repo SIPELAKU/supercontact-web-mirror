@@ -10,16 +10,16 @@ export default function FinanceImpactCta() {
     useLanguage();
 
     const metrics = [
-        { val: strings.fin_impact1_val, desc: strings.fin_impact1_desc, color: '#3854D6' },
-        { val: strings.fin_impact2_val, desc: strings.fin_impact2_desc, color: '#3854D6' },
-        { val: strings.fin_impact3_val, desc: strings.fin_impact3_desc, color: '#3854D6' },
-        { val: strings.fin_impact4_val, desc: strings.fin_impact4_desc, color: '#3854D6' }
+        { val: strings.fin_impact1_val, desc: strings.fin_impact1_desc, color: 'var(--brand-deep)' },
+        { val: strings.fin_impact2_val, desc: strings.fin_impact2_desc, color: 'var(--brand-deep)' },
+        { val: strings.fin_impact3_val, desc: strings.fin_impact3_desc, color: 'var(--brand-deep)' },
+        { val: strings.fin_impact4_val, desc: strings.fin_impact4_desc, color: 'var(--brand-deep)' }
     ];
 
     return (
         <Box>
             {/* Impact Section - Light Base */}
-            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F0F4FF' }}>
+            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-tint)' }}>
                 <Container maxWidth="lg">
                     <Typography
                         variant="h3"
@@ -50,7 +50,7 @@ export default function FinanceImpactCta() {
             </Box>
 
             {/* CTA Section - Solid Blue Banner */}
-            <Box sx={{ bgcolor: '#3854D6', py: { xs: 10, md: 14 } }}>
+            <Box sx={{ bgcolor: 'var(--brand-deep)', py: { xs: 10, md: 14 } }}>
                 <Container maxWidth="md">
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography
@@ -73,7 +73,7 @@ export default function FinanceImpactCta() {
                             onClick={() => trackCtaClick('solusi/keuangan', 'impact_cta')}
                             sx={{
                                 bgcolor: 'white',
-                                color: '#3854D6',
+                                color: 'var(--brand-deep)',
                                 fontWeight: 800,
                                 px: { xs: 4, md: 6 },
                                 py: { xs: 1.5, md: 2 },

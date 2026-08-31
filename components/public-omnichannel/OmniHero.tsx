@@ -51,7 +51,7 @@ export function OmniHeroVisual() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.25)',
-                    bgcolor: '#F8FAFC',
+                    bgcolor: 'var(--surface-alt)',
                     border: '1px solid rgba(255,255,255,0.4)',
                 }}
             >
@@ -158,7 +158,7 @@ export function OmniHeroVisual() {
                         </Box>
 
                         {/* Chat Messages */}
-                        <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', bgcolor: '#F8FAFC' }}>
+                        <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', bgcolor: 'var(--surface-alt)' }}>
                             <Typography sx={{ textAlign: 'center', color: '#94A3B8', fontSize: '0.7rem', my: 1 }}>Hari ini, 10:24 AM</Typography>
 
                             {/* Customer Message */}
@@ -193,7 +193,7 @@ export function OmniHeroVisual() {
                         <Box sx={{ p: 2, borderTop: '1px solid #F1F5F9' }}>
                             <Paper elevation={0} sx={{
                                 display: 'flex', alignItems: 'center', px: 2, py: 1,
-                                border: '1px solid #E2E8F0', borderRadius: '24px', bgcolor: '#F8FAFC'
+                                border: '1px solid #E2E8F0', borderRadius: '24px', bgcolor: 'var(--surface-alt)'
                             }}>
                                 <AttachmentIcon sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />
                                 <InputBase placeholder="Ketik balasan..." sx={{ flex: 1, fontSize: '0.85rem' }} />

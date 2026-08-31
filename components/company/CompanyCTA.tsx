@@ -13,7 +13,7 @@ export default function CompanyCTA() {
         <Box
             sx={{
                 py: { xs: 8, md: 15 },
-                background: 'linear-gradient(135deg, #4264D0 0%, #2A408E 100%)',
+                background: 'var(--gradient-deep)',
                 textAlign: 'center',
                 color: 'white',
             }}

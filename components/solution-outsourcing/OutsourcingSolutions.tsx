@@ -12,10 +12,10 @@ export default function OutsourcingSolutions() {
     useLanguage();
 
     return (
-        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 10 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.out_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -39,7 +39,7 @@ export default function OutsourcingSolutions() {
                             <Stack spacing={2}>
                                 {[strings.out_sol1_li1, strings.out_sol1_li2, strings.out_sol1_li3].map((item, i) => (
                                     <Stack direction="row" spacing={2} key={i}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', fontSize: 20, mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', fontSize: 20, mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
                                             {item}
                                         </Typography>
@@ -51,7 +51,7 @@ export default function OutsourcingSolutions() {
                             <Paper elevation={0} sx={{ p: 4, borderRadius: '24px', bgcolor: 'white', border: '1px solid #E2E8F0', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)' }}>
                                 <Typography sx={{ fontWeight: 700, mb: 2, color: '#64748B', fontSize: '0.875rem' }}>Profil Kandidat / Pekerja</Typography>
                                 <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                                    <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#3854D6' }}>AS</Box>
+                                    <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--brand-deep)' }}>AS</Box>
                                     <Box>
                                         <Typography sx={{ fontWeight: 800, fontSize: '1rem' }}>Andi Saputra</Typography>
                                         <Typography variant="caption" sx={{ color: '#94A3B8' }}>Divisi: Security Guard (Sertifikat Gada Pratama)</Typography>
@@ -59,7 +59,7 @@ export default function OutsourcingSolutions() {
                                     <Box sx={{ flexGrow: 1 }} />
                                     <Typography variant="caption" sx={{ bgcolor: '#DCFCE7', color: '#166534', px: 1, py: 0.5, borderRadius: '4px', fontWeight: 700 }}>SIAP PENEMPATAN</Typography>
                                 </Stack>
-                                <Typography variant="caption" sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', display: 'block', color: '#475569', lineHeight: 1.6 }}>
+                                <Typography variant="caption" sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '8px', display: 'block', color: '#475569', lineHeight: 1.6 }}>
                                     <strong>Status Saat Ini:</strong> Lulus *interview* dan *medical check-up*. Siap ditempatkan untuk proyek Bank ABC.
                                 </Typography>
                             </Paper>
@@ -100,7 +100,7 @@ export default function OutsourcingSolutions() {
                             <Stack spacing={2}>
                                 {[strings.out_sol2_li1, strings.out_sol2_li2].map((item, i) => (
                                     <Stack direction="row" spacing={2} key={i}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', fontSize: 20, mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', fontSize: 20, mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
                                             {item}
                                         </Typography>
@@ -125,7 +125,7 @@ export default function OutsourcingSolutions() {
                             <Stack spacing={2}>
                                 {[strings.out_sol3_li1, strings.out_sol3_li2].map((item, i) => (
                                     <Stack direction="row" spacing={2} key={i}>
-                                        <CheckCircleIcon sx={{ color: '#3854D6', fontSize: 20, mt: 0.3 }} />
+                                        <CheckCircleIcon sx={{ color: 'var(--brand-deep)', fontSize: 20, mt: 0.3 }} />
                                         <Typography variant="body2" sx={{ color: '#334155', fontWeight: 500 }}>
                                             {item}
                                         </Typography>
@@ -145,7 +145,7 @@ export default function OutsourcingSolutions() {
                                 </Stack>
                                 <Box sx={{ mb: 3 }}>
                                     <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, display: 'block', mb: 1 }}>LAPORAN PT MAJU JAYA (KLIEN):</Typography>
-                                    <Typography sx={{ fontSize: '0.875rem', color: '#1E293B', bgcolor: '#F8FAFC', p: 2, borderRadius: '8px', borderLeft: '4px solid #F1F5F9' }}>
+                                    <Typography sx={{ fontSize: '0.875rem', color: '#1E293B', bgcolor: 'var(--surface-alt)', p: 2, borderRadius: '8px', borderLeft: '4px solid #F1F5F9' }}>
                                         "Admin, staf *cleaning service* a/n Riko hari ini tidak datang tanpa keterangan. Tolong segera dikirimkan staf *back-up* pengganti."
                                     </Typography>
                                 </Box>

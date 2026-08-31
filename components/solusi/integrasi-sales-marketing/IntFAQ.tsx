@@ -30,7 +30,7 @@ export default function IntFAQ() {
     ];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A', textAlign: 'center', mb: 6 }}>
                     {strings.sol_int_faq_title}

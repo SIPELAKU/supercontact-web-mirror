@@ -51,7 +51,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
         <Box sx={{ bgcolor: 'white' }}>
             <Navbar />
 
-            <Box sx={{ pt: { xs: 12, md: 16 }, pb: { xs: 6, md: 8 }, bgcolor: '#F8FAFC' }}>
+            <Box sx={{ pt: { xs: 12, md: 16 }, pb: { xs: 6, md: 8 }, bgcolor: 'var(--surface-alt)' }}>
                 <Container maxWidth="md">
                     <Breadcrumbs
                         separator={<NavigateNextIcon fontSize="small" sx={{ color: '#94A3B8' }} />}
@@ -67,7 +67,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                     <Chip
                         label={article.category[language]}
                         size="small"
-                        sx={{ bgcolor: '#EEF2FF', color: '#3854D6', fontWeight: 700, mb: 3 }}
+                        sx={{ bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', fontWeight: 700, mb: 3 }}
                     />
 
                     <Typography
@@ -128,7 +128,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                                 <Paper
                                     key={index}
                                     elevation={0}
-                                    sx={{ p: 3, borderRadius: '16px', bgcolor: '#EEF2FF', borderLeft: '4px solid #597CFF' }}
+                                    sx={{ p: 3, borderRadius: '16px', bgcolor: 'var(--surface-tint)', borderLeft: '4px solid #597CFF' }}
                                 >
                                     <Typography variant="body1" sx={{ color: '#334155', lineHeight: 1.7, fontWeight: 600 }}>
                                         {block.text[language]}
@@ -161,7 +161,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                         mt: 8,
                         p: { xs: 4, md: 5 },
                         borderRadius: '24px',
-                        background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)',
+                        background: 'var(--gradient-brand)',
                         textAlign: 'center',
                     }}
                 >
@@ -172,7 +172,7 @@ export default function BlogArticleTemplate({ article }: { article: BlogArticle 
                         endIcon={<ArrowForwardIcon />}
                         sx={{
                             bgcolor: 'white',
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             px: 4,
                             py: 1.5,

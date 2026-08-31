@@ -21,10 +21,10 @@ export default function IntTrust() {
 
     return (
         <>
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_trust_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -42,7 +42,7 @@ export default function IntTrust() {
                                         borderRadius: '14px',
                                         bgcolor: 'white',
                                         border: '1px solid #E2E8F0',
-                                        color: '#3854D6',
+                                        color: 'var(--brand-deep)',
                                         display: 'flex',
                                         flexShrink: 0,
                                     }}

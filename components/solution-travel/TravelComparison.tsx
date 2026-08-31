@@ -103,7 +103,7 @@ export default function TravelComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -141,7 +141,7 @@ export default function TravelComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#3854D6' }}>
+                            <TableRow sx={{ bgcolor: 'var(--brand-deep)' }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', border: 'none' }}>
                                     {t.colAspect}
                                 </TableCell>
@@ -164,7 +164,7 @@ export default function TravelComparison() {
                                 <TableRow
                                     key={index}
                                     sx={{
-                                        bgcolor: index % 2 === 0 ? 'white' : '#F8FAFC',
+                                        bgcolor: index % 2 === 0 ? 'white' : 'var(--surface-alt)',
                                         '&:last-child td': { border: 0 }
                                     }}
                                 >

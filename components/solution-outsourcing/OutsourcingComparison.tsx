@@ -133,7 +133,7 @@ export default function OutsourcingComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -170,14 +170,14 @@ export default function OutsourcingComparison() {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                            <TableRow sx={{ bgcolor: 'var(--surface-alt)' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A', fontSize: '0.9rem', py: 2.5 }}>
                                     {copy.colAspect}
                                 </TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: '#94A3B8', fontSize: '0.9rem', py: 2.5 }}>
                                     {copy.colManual}
                                 </TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#3854D6', fontSize: '0.9rem', py: 2.5 }}>
+                                <TableCell sx={{ fontWeight: 800, color: 'var(--brand-deep)', fontSize: '0.9rem', py: 2.5 }}>
                                     {copy.colSmart}
                                 </TableCell>
                             </TableRow>
@@ -188,7 +188,7 @@ export default function OutsourcingComparison() {
                                     key={index}
                                     sx={{
                                         '&:last-child td': { borderBottom: 0 },
-                                        '&:hover': { bgcolor: '#F8FAFC' },
+                                        '&:hover': { bgcolor: 'var(--surface-alt)' },
                                     }}
                                 >
                                     <TableCell sx={{ fontWeight: 700, color: '#0F172A', verticalAlign: 'top', py: 2.5 }}>

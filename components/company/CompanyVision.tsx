@@ -9,7 +9,7 @@ const VisionCard = ({ icon, title, text }: { icon: React.ReactNode, title: strin
         <Box sx={{
             width: 80,
             height: 80,
-            bgcolor: '#EEF2FF',
+            bgcolor: 'var(--surface-tint)',
             borderRadius: '50%',
             display: 'flex',
             justifyContent: 'center',
@@ -31,7 +31,7 @@ const VisionCard = ({ icon, title, text }: { icon: React.ReactNode, title: strin
 
 const CompanyVision = () => {
     return (
-        <Box sx={{ py: 10, bgcolor: '#FFFFFF' }}>
+        <Box sx={{ py: 10, bgcolor: 'background.default' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography variant="h4" fontWeight={700} gutterBottom>

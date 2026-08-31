@@ -21,7 +21,7 @@ export default function IntComparison() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'white' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_int_comp_badge}
                     </Typography>
                     <Typography variant="h2" component="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -32,10 +32,10 @@ export default function IntComparison() {
                 <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: '20px', overflowX: 'auto', mb: 6 }}>
                     <Table sx={{ minWidth: 560 }}>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#F8FAFC' }}>
+                            <TableRow sx={{ bgcolor: 'var(--surface-alt)' }}>
                                 <TableCell sx={{ fontWeight: 800, color: '#0F172A' }}></TableCell>
                                 <TableCell sx={{ fontWeight: 800, color: '#64748B' }}>{strings.sol_int_comp_col1}</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#3854D6' }}>{strings.sol_int_comp_col2}</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: 'var(--brand-deep)' }}>{strings.sol_int_comp_col2}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -68,7 +68,7 @@ export default function IntComparison() {
                         </Paper>
                     </Grid>
                     <Grid item xs={12} md={6}>
-                        <Paper elevation={0} sx={{ p: 3.5, borderRadius: '18px', bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', height: '100%' }}>
+                        <Paper elevation={0} sx={{ p: 3.5, borderRadius: '18px', bgcolor: 'var(--surface-alt)', border: '1px solid #E2E8F0', height: '100%' }}>
                             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                                 <InfoIcon sx={{ color: '#64748B' }} />
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#334155' }}>

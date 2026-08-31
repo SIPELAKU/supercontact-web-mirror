@@ -104,7 +104,7 @@ export const ClientLogos = () => {
   const row3 = [...logosRow3, ...logosRow3];
 
   return (
-    <Box sx={{ bgcolor: "#F7F7F9", py: { xs: 6, md: 10 } }} overflow="hidden">
+    <Box sx={{ bgcolor: "var(--surface-alt)", py: { xs: 6, md: 10 } }} overflow="hidden">
       <Container maxWidth="lg">
         {/* Header Section */}
         <Box sx={{ textAlign: 'center', mb: { xs: 2, md: 4 } }}>

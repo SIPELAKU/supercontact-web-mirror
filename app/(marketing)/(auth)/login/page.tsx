@@ -1,174 +1,137 @@
-// app/(auth)/login/page.tsx
+// app/(marketing)/(auth)/login/page.tsx
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CircularProgress } from "@mui/material";
+
+import AuthShell from "@/components/auth/AuthShell";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
 import { useAuth } from "@/lib/context/AuthContext";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { FcGoogle } from "react-icons/fc";
-import { Poppins } from "next/font/google";
-import { CircularProgress } from "@mui/material";
-import { ArrowLeft } from "lucide-react";
-
+import { useLanguage } from "@/lib/context/LanguageContext";
+import { strings } from "@/lib/utils/strings";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
+// useSearchParams lives in its own Suspense island so the rest of the page
+// stays in the prerendered HTML — without the boundary the whole route
+// bails out to client-only rendering (blank first paint).
+function VerifiedNotice() {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      notify.success(strings.auth_verified_success);
+    }
+  }, [searchParams]);
+  return null;
+}
 
 export default function LoginPage() {
+  useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    // Check if user came from email verification
-    const verified = searchParams.get("verified");
-    if (verified === "true") {
-      notify.success("Email verified successfully! You can now log in.");
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
     try {
       await login(email, password);
-      // Redirect to home page after successful login
-      router.push("/");
-    } catch (err: any) {
-      console.error("Login error:", err);
-      const message = handleError(err, "Login")
-      notify.error("Error", {
-        description: message,
-        duration: 5000,
-      });
+      // Straight to the dashboard — going via "/" only flashes the homepage
+      // before HomeClient redirects here anyway.
+      router.push("/analytics/dashboard");
+    } catch (err: unknown) {
+      setError(handleError(err, "Login"));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen grid grid-cols-1 md:grid-cols-5 bg-gray-50">
-      {/* Left Section */}
-      <section className="hidden md:flex md:col-span-3 items-center justify-center bg-gray-100">
-        <div className="p-10">
-          <Image
-            src="/assets/logo3d.png"
-            alt="SmartSales Logo"
-            width={400}
-            height={400}
+    <AuthShell>
+      <Suspense fallback={null}>
+        <VerifiedNotice />
+      </Suspense>
+
+      <div className="text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+          {strings.auth_login_title}
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">{strings.auth_login_subtitle}</p>
+      </div>
+
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        {error && (
+          <div
+            role="alert"
+            className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm"
+          >
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            {strings.auth_email_label}
+          </label>
+          <AppInput
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={strings.auth_email_placeholder}
+            required
+            autoFocus
           />
         </div>
-      </section>
 
-      {/* Right Section */}
-      <section className="flex flex-col md:col-span-2 justify-center px-6 md:px-10 lg:px-20 py-8 md:py-10 bg-white relative">
-        <div className="absolute top-8 left-6 md:left-10 lg:left-20">
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            {strings.auth_password_label}
+          </label>
+          <AppInput
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={strings.auth_password_placeholder}
+            required
+          />
+        </div>
+
+        <div className="flex justify-start">
           <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors group"
+            href="/forgot-password"
+            className="text-sm font-medium text-brand hover:underline"
           >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            Back to Home
+            {strings.auth_forgot_password}
           </Link>
         </div>
 
-        <div className="flex flex-col items-center md:items-center text-center md:text-center mt-8 md:mt-0">
-          <div className="md:hidden mb-6">
-            <Image
-              src="/assets/logo3d.png"
-              alt="SmartSales Logo"
-              width={80}
-              height={80}
-              className="mx-auto"
-            />
-          </div>
+        <AppButton
+          variantStyle="primary"
+          color="primary"
+          disabled={isLoading}
+          fullWidth
+          type="submit"
+        >
+          {isLoading ? <CircularProgress size={20} /> : strings.auth_login_btn}
+        </AppButton>
+      </form>
 
-          <h1
-            className={`text-2xl md:text-[32px] font-bold text-gray-900 leading-tight ${poppins.className}`}
-          >
-            Welcome back!
-          </h1>
-
-          <h2
-            className={`text-2xl md:text-[32px] font-bold mt-1 ${poppins.className}`}
-          >
-            <span className="text-[#5479EE]">Smart</span>
-            <span className="text-[#5BC557]">Sales</span>
-          </h2>
-
-          <p className="mt-2 text-sm text-gray-500">Login to your account</p>
-        </div>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <AppInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <AppInput
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-            />
-          </div>
-
-          <div className="flex justify-start">
-            <Link
-              href="/forgot-password"
-              className="text-sm font-medium text-blue-600 hover:underline"
-            >
-              Forgot Password?
-            </Link>
-          </div>
-          <AppButton
-            variantStyle="primary"
-            color="primary"
-            disabled={isLoading}
-            onClick={handleSubmit}
-            fullWidth
-            type="submit"
-          >
-            {isLoading ? <CircularProgress size={20} /> : "Login"}
-          </AppButton>
-        </form>
-
-        <p className="mt-6 text-sm text-gray-600 text-start">
-          Don't have account?{" "}
-          <Link
-            href="/register"
-            className="text-blue-600 font-medium hover:underline"
-          >
-            Register here
-          </Link>
-        </p>
-      </section>
-    </main>
+      <p className="mt-6 text-sm text-gray-600 text-center">
+        {strings.auth_no_account}{" "}
+        <Link href="/register" className="text-brand font-medium hover:underline">
+          {strings.auth_register_here}
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

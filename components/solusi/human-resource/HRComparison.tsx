@@ -97,7 +97,7 @@ export default function HRComparison() {
 
     return (
         <>
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'background.default' }}>
             <Container maxWidth="lg">
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
                     <Typography
@@ -147,7 +147,7 @@ export default function HRComparison() {
                                         fontWeight: 800,
                                         fontSize: '0.9rem',
                                         py: 2.5,
-                                        background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)'
+                                        background: 'var(--gradient-brand)'
                                     }}
                                 >
                                     {t.colSmart}
@@ -160,7 +160,7 @@ export default function HRComparison() {
                                     key={index}
                                     sx={{
                                         '&:last-child td': { borderBottom: 0 },
-                                        '&:hover': { bgcolor: '#F8FAFC' }
+                                        '&:hover': { bgcolor: 'var(--surface-alt)' }
                                     }}
                                 >
                                     <TableCell sx={{ fontWeight: 700, color: '#1E293B', fontSize: '0.9rem', verticalAlign: 'top' }}>

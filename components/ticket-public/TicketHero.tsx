@@ -117,7 +117,7 @@ export function TicketHeroVisual() {
                         <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8', mb: 0.5 }}>
                             JUDUL TIKET
                         </Typography>
-                        <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', p: 1, bgcolor: '#F8FAFC' }}>
+                        <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', p: 1, bgcolor: 'var(--surface-alt)' }}>
                             <Typography sx={{ fontSize: '0.8rem', color: '#334155' }}>Komplain Resi #12345 Batal</Typography>
                         </Box>
                     </Box>
@@ -126,7 +126,7 @@ export function TicketHeroVisual() {
                         <Typography sx={{ fontSize: '0.65rem', fontWeight: 700, color: '#94A3B8', mb: 0.5 }}>
                             TUGASKAN KE (ASSIGNEE)
                         </Typography>
-                        <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', p: 1, bgcolor: '#F8FAFC' }}>
+                        <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '6px', p: 1, bgcolor: 'var(--surface-alt)' }}>
                             <Typography sx={{ fontSize: '0.8rem', color: '#334155' }}>Rina (Tim Resolusi)</Typography>
                         </Box>
                     </Box>

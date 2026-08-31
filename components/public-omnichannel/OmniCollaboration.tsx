@@ -49,7 +49,7 @@ export default function OmniCollaboration() {
     ];
 
     return (
-        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'background.paper' }}>
+        <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Grid container spacing={8} alignItems="center">
 
@@ -90,11 +90,11 @@ export default function OmniCollaboration() {
                                             width: 32,
                                             height: 32,
                                             borderRadius: '50%',
-                                            bgcolor: '#EEF2FF',
+                                            bgcolor: 'var(--surface-tint)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: '#3854D6'
+                                            color: 'var(--brand-deep)'
                                         }}>
                                             {item.icon}
                                         </Box>

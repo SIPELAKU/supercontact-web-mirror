@@ -13,7 +13,7 @@ export default function IntCTA() {
         <Box
             sx={{
                 py: { xs: 8, md: 15 },
-                background: 'linear-gradient(135deg, #597CFF 0%, #7692FF 100%)',
+                background: 'var(--gradient-brand)',
                 textAlign: 'center',
                 color: 'white',
             }}
@@ -33,7 +33,7 @@ export default function IntCTA() {
                         onClick={() => trackCtaClick('solusi/integrasi-sales-marketing', 'final_cta')}
                         sx={{
                             bgcolor: 'white',
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

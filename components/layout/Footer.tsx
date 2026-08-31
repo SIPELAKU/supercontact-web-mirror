@@ -27,7 +27,7 @@ const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <Box component="footer" sx={{ bgcolor: '#062141', color: 'white' }}>
+        <Box component="footer" sx={{ bgcolor: 'var(--surface-inverse)', color: 'white' }}>
             {/* Main Footer Content */}
             <Box sx={{ py: { xs: 6, md: 10 } }}>
                 <Container maxWidth="lg">
@@ -67,7 +67,7 @@ const Footer = () => {
                                     variant="contained"
                                     sx={{
                                         bgcolor: 'white',
-                                        color: '#062141',
+                                        color: 'var(--surface-inverse)',
                                         fontWeight: 600,
                                         px: 3,
                                         py: 1.1,
@@ -91,7 +91,7 @@ const Footer = () => {
                                 <Link href="/produk/crm-sales" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_crm}</Link>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Link href="/produk/omnichannel" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.product_menu_omnichannel}</Link>
-                                    <Box sx={{ bgcolor: 'white', color: '#062141', px: 1, py: 0.2, borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>{strings.footer_new_badge}</Box>
+                                    <Box sx={{ bgcolor: 'white', color: 'var(--surface-inverse)', px: 1, py: 0.2, borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}>{strings.footer_new_badge}</Box>
                                 </Box>
                                 <Link href="/solusi/keuangan" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>{strings.solution}</Link>
                                 <Link href="/" underline="none" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>SmartSales Web</Link>
@@ -117,8 +117,8 @@ const Footer = () => {
                                 {strings.footer_col_download}
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <StoreButton store="apple" sx={{ bgcolor: '#04162d', '&:hover': { bgcolor: '#0a2a51' } }} />
-                                <StoreButton store="google" sx={{ bgcolor: '#04162d', '&:hover': { bgcolor: '#0a2a51' } }} />
+                                <StoreButton store="apple" sx={{ bgcolor: 'var(--surface-inverse-deep)', '&:hover': { bgcolor: '#0a2a51' } }} />
+                                <StoreButton store="google" sx={{ bgcolor: 'var(--surface-inverse-deep)', '&:hover': { bgcolor: '#0a2a51' } }} />
                             </Box>
                         </Grid> */}
                     </Grid>
@@ -126,7 +126,7 @@ const Footer = () => {
             </Box>
 
             {/* Bottom Bar Container */}
-            <Box sx={{ bgcolor: '#04162d', py: 4 }}>
+            <Box sx={{ bgcolor: 'var(--surface-inverse-deep)', py: 4 }}>
                 <Container maxWidth="lg">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>

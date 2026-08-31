@@ -113,7 +113,7 @@ const FmcgComparison = () => {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -151,7 +151,7 @@ const FmcgComparison = () => {
                 >
                     <Table sx={{ minWidth: 640 }}>
                         <TableHead>
-                            <TableRow sx={{ background: 'linear-gradient(90deg, #597CFF 0%, #7692FF 100%)' }}>
+                            <TableRow sx={{ background: 'var(--gradient-brand-h)' }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, fontSize: '0.95rem', width: { md: '22%' } }}>
                                     {t.colAspect}
                                 </TableCell>
@@ -168,7 +168,7 @@ const FmcgComparison = () => {
                                 <TableRow
                                     key={index}
                                     sx={{
-                                        '&:nth-of-type(odd)': { bgcolor: '#F8FAFC' },
+                                        '&:nth-of-type(odd)': { bgcolor: 'var(--surface-alt)' },
                                         '&:last-child td': { borderBottom: 0 },
                                     }}
                                 >

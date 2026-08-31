@@ -31,7 +31,7 @@ export default function ITSaaSImpactCta() {
     return (
         <Box>
             {/* Impact Section */}
-            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F1F5F9' }}>
+            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-tint)' }}>
                 <Container maxWidth="lg">
                     <Typography 
                         variant="h3" 
@@ -52,7 +52,7 @@ export default function ITSaaSImpactCta() {
                                         variant="h2" 
                                         sx={{ 
                                             fontWeight: 800, 
-                                            color: '#3854D6',
+                                            color: 'var(--brand-deep)',
                                             fontSize: { xs: '2.5rem', md: '3.5rem' }
                                         }}
                                     >
@@ -79,7 +79,7 @@ export default function ITSaaSImpactCta() {
             <Box 
                 sx={{ 
                     py: { xs: 8, md: 15 }, 
-                    background: 'linear-gradient(135deg, #597CFF 0%, #7B99FF 100%)',
+                    background: 'var(--gradient-brand)',
                     textAlign: 'center',
                     color: 'white'
                 }}
@@ -115,7 +115,7 @@ export default function ITSaaSImpactCta() {
                         onClick={() => trackCtaClick('solusi/it-saas', 'impact_cta')}
                         sx={{
                             bgcolor: 'white',
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             px: 6,
                             py: 2,

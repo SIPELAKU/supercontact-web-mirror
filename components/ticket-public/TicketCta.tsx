@@ -12,7 +12,7 @@ export default function TicketCta() {
     return (
         <Box
             sx={{
-                bgcolor: '#3854D6', // Standard blue
+                bgcolor: 'var(--brand-deep)', // Standard blue
                 py: { xs: 8, md: 12 },
                 position: 'relative',
                 overflow: 'hidden'
@@ -53,7 +53,7 @@ export default function TicketCta() {
                     onClick={() => trackCtaClick('produk/ticket', 'impact_cta')}
                     sx={{
                         bgcolor: 'white',
-                        color: '#3854D6',
+                        color: 'var(--brand-deep)',
                         fontWeight: 700,
                         px: 4,
                         py: 1.5,

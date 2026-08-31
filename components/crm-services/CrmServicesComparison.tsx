@@ -110,7 +110,7 @@ export default function CrmServicesComparison() {
                     <Typography
                         variant="overline"
                         sx={{
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             letterSpacing: 1.5,
                             mb: 2,
@@ -188,14 +188,14 @@ export default function CrmServicesComparison() {
                                     sx={{
                                         fontWeight: 800,
                                         fontSize: '0.95rem',
-                                        color: '#3854D6',
-                                        bgcolor: '#EEF2FF',
+                                        color: 'var(--brand-deep)',
+                                        bgcolor: 'var(--surface-tint)',
                                         borderBottom: '1px solid',
                                         borderColor: 'divider'
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <CheckCircleRoundedIcon sx={{ fontSize: 18, color: '#3854D6' }} />
+                                        <CheckCircleRoundedIcon sx={{ fontSize: 18, color: 'var(--brand-deep)' }} />
                                         {t.colSmartSales}
                                     </Box>
                                 </TableCell>

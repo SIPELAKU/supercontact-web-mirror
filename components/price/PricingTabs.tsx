@@ -33,7 +33,7 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     fontWeight: 600,
     fontSize: '0.95rem',
     borderRadius: '10px',
-    color: '#5570F1',
+    color: 'var(--brand)',
     minHeight: '40px',
     padding: '8px 24px',
     whiteSpace: 'nowrap',
@@ -45,12 +45,12 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     transition: 'all 0.2s ease-in-out',
     '&.Mui-selected': {
         color: '#FFFFFF',
-        backgroundColor: '#5570F1',
+        backgroundColor: 'var(--brand)',
     },
     '&:hover': {
         backgroundColor: 'rgba(85, 112, 241, 0.05)',
         '&.Mui-selected': {
-            backgroundColor: '#445ed9', // Slightly darker blue on hover when selected
+            backgroundColor: 'var(--brand-hover)', // Slightly darker blue on hover when selected
         },
     },
 }));

@@ -267,7 +267,7 @@ const SolutionMenu = ({ isMobile }: SolutionMenuProps) => {
                 </Tabs>
             </Box>
 
-            <Box sx={{ flexGrow: 1, bgcolor: '#EEF2FF', m: 1.5, borderRadius: '16px', p: 0.5 }}>
+            <Box sx={{ flexGrow: 1, bgcolor: 'var(--surface-tint)', m: 1.5, borderRadius: '16px', p: 0.5 }}>
                 <TabPanel value={value} index={0}>
                     <Grid container spacing={2} alignItems="center" sx={{ height: '100%', px: 2 }}>
                         {/* <Grid item xs={4}>

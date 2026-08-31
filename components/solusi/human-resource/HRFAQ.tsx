@@ -122,7 +122,7 @@ export default function HRFAQ() {
     const t = COPY[language];
 
     return (
-        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'white' }}>
+        <Box sx={{ py: { xs: 10, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="md">
                 <Stack spacing={2} sx={{ mb: 8, textAlign: 'center' }}>
                     <Typography
@@ -164,7 +164,7 @@ export default function HRFAQ() {
                             <AccordionSummary
                                 id={`faq-summary-${index}`}
                                 aria-controls={`faq-panel-${index}`}
-                                expandIcon={<ExpandMoreIcon sx={{ color: '#3854D6' }} />}
+                                expandIcon={<ExpandMoreIcon sx={{ color: 'var(--brand-deep)' }} />}
                                 sx={{ px: 3, py: 1 }}
                             >
                                 <Typography sx={{ fontWeight: 700, color: '#1E293B', fontSize: '1rem' }}>

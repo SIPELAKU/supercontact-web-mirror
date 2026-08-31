@@ -19,7 +19,7 @@ export default function FmcgImpactCta() {
     return (
         <Box sx={{ width: '100%' }}>
             {/* Impact Metrics Section */}
-            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F0F4FF' }}>
+            <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: 'var(--surface-tint)' }}>
                 <Container maxWidth="lg">
                     <Typography
                         variant="h4"
@@ -42,7 +42,7 @@ export default function FmcgImpactCta() {
                                         variant="h2"
                                         sx={{
                                             fontWeight: 800,
-                                            color: '#3854D6',
+                                            color: 'var(--brand-deep)',
                                             mb: 1.5,
                                             fontSize: { xs: '2rem', md: '3.5rem' }
                                         }}
@@ -71,7 +71,7 @@ export default function FmcgImpactCta() {
             {/* Final CTA Section - Full Width Blue Banner */}
             <Box
                 sx={{
-                    bgcolor: '#3854D6',
+                    bgcolor: 'var(--brand-deep)',
                     py: { xs: 8, md: 12 },
                     textAlign: 'center',
                     color: 'white',
@@ -110,7 +110,7 @@ export default function FmcgImpactCta() {
                         onClick={() => trackCtaClick('solusi/fmcg', 'impact_cta')}
                         sx={{
                             bgcolor: 'white',
-                            color: '#3854D6',
+                            color: 'var(--brand-deep)',
                             fontWeight: 700,
                             px: 5,
                             py: 1.8,

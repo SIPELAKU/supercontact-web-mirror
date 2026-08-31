@@ -8,9 +8,9 @@ import Navbar from "@/components/layout/Navbar";
 import { Box, Typography } from "@mui/material";
 import FadeIn from "../animations/FadeIn";
 import HeroSlider from "./HeroSlider";
+import ShortsShowcase from "./ShortsShowcase";
 import Footer from "../layout/Footer";
 import Productivity from "./Productivity";
-import TrustedBy from "../layout/TrustedBy";
 import FAQ from "../layout/FAQ";
 import CTA from "../layout/CTA";
 import { ClientLogos } from "../ui/ClientLogos";
@@ -52,11 +52,13 @@ export default function HomeClient() {
         <FadeIn direction="up" delay={0.1} fullWidth>
           <HeroSlider />
         </FadeIn>
+        <FadeIn direction="up" delay={0.15} fullWidth>
+          <ShortsShowcase />
+        </FadeIn>
         <FadeIn direction="up" delay={0.2} fullWidth>
           <Productivity />
         </FadeIn>
         <FadeIn direction="up" delay={0.3} fullWidth>
-          {/* <TrustedBy /> */}
           <ClientLogos />
         </FadeIn>
         <FadeIn direction="up" delay={0.35} fullWidth>

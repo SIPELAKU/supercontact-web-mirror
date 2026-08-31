@@ -12,10 +12,10 @@ export default function CSSolutions() {
     useLanguage();
 
     return (
-        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: '#F8FAFC' }}>
+        <Box sx={{ py: { xs: 8, md: 15 }, bgcolor: 'var(--surface-alt)' }}>
             <Container maxWidth="lg">
                 <Box sx={{ textAlign: 'center', mb: 10 }}>
-                    <Typography variant="overline" sx={{ color: '#3854D6', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
+                    <Typography variant="overline" sx={{ color: 'var(--brand-deep)', fontWeight: 700, letterSpacing: 1.5, mb: 2, display: 'block' }}>
                         {strings.sol_cs_sol_badge}
                     </Typography>
                     <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.5rem' }, color: '#0F172A' }}>
@@ -50,7 +50,7 @@ export default function CSSolutions() {
                         <Grid item xs={12} md={6}>
                             <Paper elevation={0} sx={{ p: 0, borderRadius: '24px', bgcolor: 'white', border: '1px solid #E2E8F0', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                                 {/* Mockup Header */}
-                                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#F8FAFC' }}>
+                                <Box sx={{ p: 2, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'var(--surface-alt)' }}>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                         <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#FFE4E6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E11D48', fontWeight: 800, fontSize: '0.875rem' }}>
                                             S
@@ -106,7 +106,7 @@ export default function CSSolutions() {
                                 <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, mb: 0.5, display: 'block' }}>TOPIK:</Typography>
                                 <Typography sx={{ fontWeight: 700, mb: 2, fontSize: '0.95rem' }}>Paket Diklaim Delivered Tapi Belum Diterima</Typography>
 
-                                <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', borderLeft: '4px solid #CBD5E1', mb: 3 }}>
+                                <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '8px', borderLeft: '4px solid #CBD5E1', mb: 3 }}>
                                     <Typography variant="body2" sx={{ color: '#475569' }}>
                                         Pelanggan a/n Sinta komplain pesanan JD8812 tidak diterima. Ekspedisi mengklaim sudah terkirim ke satpam komplek.
                                     </Typography>
@@ -175,14 +175,14 @@ export default function CSSolutions() {
                                     <Box sx={{ position: 'relative', bgcolor: 'white', borderRadius: '16px', border: '1px solid #E2E8F0', p: 2, mb: 2, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)' }}>
                                         <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 700, mb: 1, display: 'block' }}>PILIH TEMPLAT BALASAN</Typography>
 
-                                        <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', borderLeft: '3px solid #6366F1', mb: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#F1F5F9' } }}>
+                                        <Box sx={{ p: 2, bgcolor: 'var(--surface-alt)', borderRadius: '8px', borderLeft: '3px solid #6366F1', mb: 1.5, cursor: 'pointer', '&:hover': { bgcolor: '#F1F5F9' } }}>
                                             <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', mb: 0.5 }}>/SOP_Refund</Typography>
                                             <Typography variant="caption" sx={{ color: '#64748B', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                 Halo Kak, untuk proses refund dana memakan waktu 3-5 hari kerja...
                                             </Typography>
                                         </Box>
 
-                                        <Box sx={{ p: 2, bgcolor: '#EEF2FF', borderRadius: '8px', borderLeft: '3px solid #4F46E5', cursor: 'pointer' }}>
+                                        <Box sx={{ p: 2, bgcolor: 'var(--surface-tint)', borderRadius: '8px', borderLeft: '3px solid #4F46E5', cursor: 'pointer' }}>
                                             <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', color: '#4F46E5', mb: 0.5 }}>/Katalog_Harga</Typography>
                                             <Typography variant="caption" sx={{ color: '#6366F1', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                 Berikut adalah link katalog harga terbaru kami...
@@ -190,7 +190,7 @@ export default function CSSolutions() {
                                         </Box>
                                     </Box>
 
-                                    <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '24px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center' }}>
+                                    <Box sx={{ p: 1.5, bgcolor: 'var(--surface-alt)', borderRadius: '24px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center' }}>
                                         <Typography sx={{ ml: 2, color: '#3B82F6', fontWeight: 600, fontSize: '0.875rem', flexGrow: 1 }}>
                                             / Katalog_Harga
                                         </Typography>

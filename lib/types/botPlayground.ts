@@ -67,7 +67,7 @@ export interface PlaygroundEffectiveConfig {
   is_widget_enabled: boolean;
 }
 
-export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting";
+export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting" | "contact_ack";
 
 export interface BotPlaygroundAskResponse {
   reply_text: string;

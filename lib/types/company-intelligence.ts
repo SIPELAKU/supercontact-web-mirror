@@ -42,6 +42,11 @@ export interface CompanyIntelligenceItem {
     raw_data: any | null;
     organization_id: string | null;
     created_at: string;
+    email_verification_status?: string | null;
+    email_verified_at?: string | null;
+    phone_verification_status?: string | null;
+    phone_line_type?: string | null;
+    phone_verified_at?: string | null;
 }
 
 export interface CompanyIntelligenceSearchResult {
@@ -70,6 +75,11 @@ export interface CompanyIntelligenceProfileResponse {
     raw_data: any | null;
     organization_id: string | null;
     created_at: string;
+    email_verification_status?: string | null;
+    email_verified_at?: string | null;
+    phone_verification_status?: string | null;
+    phone_line_type?: string | null;
+    phone_verified_at?: string | null;
 }
 
 export interface SaveToCrmResponse {
@@ -116,6 +126,9 @@ export interface TargetCompanyDetailResponse {
     key_people: any[];
     subsidiaries: any[];
     social: CompanySocialInfo | null;
+    // CrmCompany carries no phone, so only the email verification pair exists here.
+    email_verification_status?: string | null;
+    email_verified_at?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -152,6 +165,11 @@ export interface CompanyProfile360 {
     keyPeople: Array<{ id?: string; name: string; role?: string }>;
     subsidiaries: any[];
     social: CompanySocialInfo | null;
+    emailVerificationStatus: string | null;
+    emailVerifiedAt: string | null;
+    phoneVerificationStatus: string | null;
+    phoneLineType: string | null;
+    phoneVerifiedAt: string | null;
     createdAt: string;
 }
 

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import OmniPublicClient from '@/components/public-omnichannel/OmniPublicClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/produk/omnichannel';
+const PAGE_URL = 'https://smartsales.id/produk/omnichannel';
 const PAGE_TITLE = 'Omnichannel WhatsApp, Instagram & Email | SmartSales';
 const PAGE_DESC =
     'Kelola pesan WhatsApp Business API, Instagram DM, dan Email dalam satu inbox. Routing otomatis ke agen, ubah chat jadi tiket atau pipeline sales sekali klik.';
@@ -10,7 +10,7 @@ const PAGE_DESC =
 const OG_IMAGE = ogImageUrl({ title: 'Omnichannel WhatsApp, Instagram & Email', category: 'Produk' });
 
 export const metadata: Metadata = {
-    title: PAGE_TITLE,
+    title: 'Omnichannel WhatsApp, Instagram & Email',
     description: PAGE_DESC,
     alternates: {
         canonical: PAGE_URL,
@@ -45,11 +45,11 @@ const softwareAppSchema = {
     publisher: {
         '@type': 'Organization',
         name: 'SmartSales',
-        url: 'https://www.smartsales.id',
+        url: 'https://smartsales.id',
     },
     offers: {
         '@type': 'Offer',
-        url: 'https://www.smartsales.id/price',
+        url: 'https://smartsales.id/price',
         priceCurrency: 'IDR',
         price: '0',
         description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
@@ -64,7 +64,7 @@ const breadcrumbSchema = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id/',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

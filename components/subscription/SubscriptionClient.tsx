@@ -9,7 +9,8 @@ import { CreditCard, CheckCircle2, Zap, LayoutDashboard } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { fetchBillingPlans, fetchCurrentBilling, checkoutBillingPlan, BillingPlan, CurrentBilling } from "@/lib/api";
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import { NO_WA } from "@/lib/constants/constants";
+import { waHref } from "@/lib/utils/wa-link";
+import { trackWhatsAppClick } from "@/lib/analytics/events";
 
 export default function SubscriptionClient() {
     const { token, userProfile, userPlanName } = useAuth();
@@ -188,7 +189,10 @@ export default function SubscriptionClient() {
                                                 size="large"
                                                 fullWidth
                                                 disabled={currentPlan === "Free Trial"}
-                                                onClick={() => window.open(`https://wa.me/${NO_WA}?text=${encodeURIComponent("Hi, I'm interested in the free plan")}`, '_blank')}
+                                                onClick={() => {
+                                                    trackWhatsAppClick('billing', 'free_plan');
+                                                    window.open(waHref("Hi, I'm interested in the free plan"), '_blank');
+                                                }}
                                                 sx={{
                                                     borderRadius: '12px',
                                                     textTransform: 'none',
@@ -266,7 +270,11 @@ export default function SubscriptionClient() {
                                         <div className="mt-auto w-full">
                                             <AppButton
                                                 className={`w-full ${currentPlan === "Exclusive" ? "bg-white/10 text-white/60 border border-white/20 cursor-default" : "bg-[#25D366] hover:bg-[#128C7E] text-white"} rounded-xl py-2.5 font-semibold transition-colors`}
-                                                onClick={() => currentPlan !== "Exclusive" && window.open('https://wa.me/628212345678', '_blank')}
+                                                onClick={() => {
+                                                    if (currentPlan === "Exclusive") return;
+                                                    trackWhatsAppClick('billing', 'exclusive_upgrade');
+                                                    window.open(waHref("Halo, saya ingin upgrade ke paket Exclusive di Smartsales."), '_blank');
+                                                }}
                                             >
                                                 {currentPlan === "Exclusive" ? (
                                                     <div className="flex items-center justify-center gap-2">

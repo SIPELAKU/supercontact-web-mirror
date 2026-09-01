@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import SalesClient from '@/components/solusi/sales/SalesClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/sales';
+const PAGE_URL = 'https://smartsales.id/solusi/sales';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Tim Sales', category: 'Solusi Sales' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM Tim Sales - SmartSales',
+  title: 'Solusi CRM Tim Sales',
   description: 'Pantau pipeline penjualan dan otomatiskan follow-up dalam satu sistem. SmartSales membantu tim sales berhenti kehilangan prospek karena catatan tercecer.',
   alternates: {
     canonical: PAGE_URL,
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
       '@type': 'ListItem',
       position: 1,
       name: 'Beranda',
-      item: 'https://www.smartsales.id',
+      item: 'https://smartsales.id',
     },
     {
       '@type': 'ListItem',

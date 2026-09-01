@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import TicketPublicClient from '@/components/ticket-public/TicketPublicClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/produk/ticket';
+const PAGE_URL = 'https://smartsales.id/produk/ticket';
 
 const OG_IMAGE = ogImageUrl({ title: 'Ticket Creation dari Chat', category: 'Produk' });
 
 export const metadata: Metadata = {
-    title: 'Ticket Creation dari Chat - SmartSales',
+    title: 'Ticket Creation dari Chat',
     description: 'Ubah chat pelanggan jadi tiket tugas terlacak lengkap dengan status, eskalasi antar tim, dan SLA. Tidak ada lagi keluhan yang tenggelam di kolom chat.',
     alternates: {
         canonical: PAGE_URL,
@@ -42,11 +42,11 @@ const softwareAppJsonLd = {
     publisher: {
         '@type': 'Organization',
         name: 'SmartSales',
-        url: 'https://www.smartsales.id',
+        url: 'https://smartsales.id',
     },
     offers: {
         '@type': 'Offer',
-        url: 'https://www.smartsales.id/price',
+        url: 'https://smartsales.id/price',
         priceCurrency: 'IDR',
         price: '0',
         description: 'Uji coba gratis; paket berbayar tersedia di halaman harga.',
@@ -61,7 +61,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

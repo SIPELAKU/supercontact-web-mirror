@@ -11,6 +11,11 @@ export interface KeyPerson {
     email?: string | null;
     phone?: string | null;
     linkedin_url?: string | null;
+    email_verification_status?: string | null;
+    email_verified_at?: string | null;
+    phone_verification_status?: string | null;
+    phone_line_type?: string | null;
+    phone_verified_at?: string | null;
 }
 
 export interface IndividualIntelligenceItem {

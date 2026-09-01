@@ -129,9 +129,17 @@ const Footer = () => {
             <Box sx={{ bgcolor: 'var(--surface-inverse-deep)', py: 4 }}>
                 <Container maxWidth="lg">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                            {strings.formatString(strings.footer_copyright, { year: currentYear.toString() })}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 2, md: 3 } }}>
+                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                                {strings.formatString(strings.footer_copyright, { year: currentYear.toString() })}
+                            </Typography>
+                            <Link href="/privacy-policy" underline="none" variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}>
+                                {strings.footer_privacy}
+                            </Link>
+                            <Link href="/terms-conditions" underline="none" variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: 'white' } }}>
+                                {strings.footer_terms}
+                            </Link>
+                        </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             {/* <IconButton size="small" sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: 'white' } }}>
                                 <GitHubIcon fontSize="small" />

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { CompanyClient } from "@/components/company/CompanyClient";
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = "https://www.smartsales.id/company";
+const PAGE_URL = "https://smartsales.id/company";
 
 const OG_IMAGE = ogImageUrl({ title: 'Tentang Kami', category: 'Tentang Kami' });
 
@@ -36,8 +36,8 @@ const aboutPageSchema = {
     mainEntity: {
         "@type": "Organization",
         name: "SmartSales",
-        url: "https://www.smartsales.id",
-        logo: "https://www.smartsales.id/assets/sc-icon-512.png",
+        url: "https://smartsales.id",
+        logo: "https://smartsales.id/assets/sc-icon-512.png",
         description:
             "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia, dibangun oleh Solvera Indonesia.",
         areaServed: "ID",
@@ -56,7 +56,7 @@ const breadcrumbJsonLd = {
             "@type": "ListItem",
             position: 1,
             name: "Beranda",
-            item: "https://www.smartsales.id/",
+            item: "https://smartsales.id",
         },
         {
             "@type": "ListItem",

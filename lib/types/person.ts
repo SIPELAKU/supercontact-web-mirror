@@ -9,6 +9,11 @@ export interface PersonItem {
     linkedin_url: string | null;
     source: string | null;
     created_at: string;
+    email_verification_status?: string | null;
+    email_verified_at?: string | null;
+    phone_verification_status?: string | null;
+    phone_line_type?: string | null;
+    phone_verified_at?: string | null;
 }
 
 export interface PersonListResponse {

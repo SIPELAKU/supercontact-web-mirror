@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import FmcgClient from '@/components/solution-fmcg/FmcgClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/fmcg';
+const PAGE_URL = 'https://smartsales.id/solusi/fmcg';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Distribusi FMCG', category: 'Solusi FMCG' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM Distribusi FMCG - SmartSales',
+  title: 'Solusi CRM Distribusi FMCG',
   description: 'Kelola order via WhatsApp, canvassing sales lapangan, dan retur barang FMCG dalam satu sistem. Coba gratis, tanpa komitmen di awal.',
   alternates: {
     canonical: PAGE_URL,
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
       '@type': 'ListItem',
       position: 1,
       name: 'Beranda',
-      item: 'https://www.smartsales.id/',
+      item: 'https://smartsales.id',
     },
     {
       '@type': 'ListItem',

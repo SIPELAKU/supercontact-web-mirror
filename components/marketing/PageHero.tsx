@@ -5,7 +5,7 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import Link from 'next/link';
 import { strings } from '@/lib/utils/strings';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import { trackCtaClick } from '@/lib/analytics/events';
+import { trackCtaClick, trackWhatsAppClick } from '@/lib/analytics/events';
 
 // Optional secondary CTA rendered next to the standard "Coba Gratis" button,
 // styled exactly like the homepage slider's outlined secondary button.
@@ -180,7 +180,10 @@ export default function PageHero({
                                     startIcon={secondaryCta.icon}
                                     onClick={
                                         secondaryCta.trackLabel
-                                            ? () => trackCtaClick(trackSource, secondaryCta.trackLabel as string)
+                                            ? () =>
+                                                  (secondaryCta.href.includes('wa.me')
+                                                      ? trackWhatsAppClick
+                                                      : trackCtaClick)(trackSource, secondaryCta.trackLabel as string)
                                             : undefined
                                     }
                                     sx={{

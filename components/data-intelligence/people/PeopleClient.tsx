@@ -3,16 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Chip } from "@mui/material";
-import { Save as SaveIcon, Users, Mail, Phone, Linkedin } from "lucide-react";
+import { Save as SaveIcon, ShieldCheck, Users, Mail, Phone, Linkedin } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppAutocomplete } from "@/components/ui/app-autocomplete";
 import { AppInput } from "@/components/ui/app-input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
+import { VerificationBadge } from "@/components/data-intelligence/VerificationBadge";
 import { INDUSTRY_OPTIONS } from "@/lib/data/company-intelligence-options";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getIndividualIntelligence, saveContactsToCrm } from "@/lib/api/company-intelligence";
+import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
@@ -33,6 +35,11 @@ interface PersonRow {
     email: string | null;
     phone: string | null;
     linkedinUrl: string | null;
+    emailVerificationStatus: string | null;
+    emailVerifiedAt: string | null;
+    phoneVerificationStatus: string | null;
+    phoneLineType: string | null;
+    phoneVerifiedAt: string | null;
 }
 
 const SENIORITY_LABELS: Record<string, string> = {
@@ -61,6 +68,11 @@ export default function PeopleClient() {
     const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [savingRowId, setSavingRowId] = useState<string | null>(null);
+    // A Set, not a single id: verifications on different rows can be in
+    // flight at once, and each row's loading lock must survive until ITS
+    // request settles (a shared id gets clobbered by the next click and
+    // re-enables rows that are still verifying - double-paid provider calls).
+    const [verifyingRowIds, setVerifyingRowIds] = useState<Set<string>>(new Set());
 
     const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
     const [tableState, setTableState] = useState({
@@ -92,6 +104,11 @@ export default function PeopleClient() {
                     email: person.email || null,
                     phone: person.phone || null,
                     linkedinUrl: person.linkedin_url || null,
+                    emailVerificationStatus: person.email_verification_status || null,
+                    emailVerifiedAt: person.email_verified_at || null,
+                    phoneVerificationStatus: person.phone_verification_status || null,
+                    phoneLineType: person.phone_line_type || null,
+                    phoneVerifiedAt: person.phone_verified_at || null,
                 }))
             );
             setRows(flattened);
@@ -130,6 +147,76 @@ export default function PeopleClient() {
             notify.error("Error", { description: handleError(err, "Save Contact") });
         } finally {
             setSavingRowId(null);
+        }
+    };
+
+    const handleVerifyOne = async (row: PersonRow) => {
+        if (verifyingRowIds.has(row.rowId)) return;
+        if (!row.personId) {
+            notify.warning("Cannot Verify", {
+                description: "This entry is not backed by a person record yet.",
+            });
+            return;
+        }
+        if (!row.email && !row.phone) {
+            notify.warning("Cannot Verify", {
+                description: "This person has no email address or phone number to verify.",
+            });
+            return;
+        }
+        setVerifyingRowIds((prev) => new Set(prev).add(row.rowId));
+        try {
+            const token = await getToken();
+            const { results } = await verifyContact(token, {
+                target_type: "person",
+                target_id: row.personId,
+            });
+            // Email "unknown & !cached" means no delivery evidence exists yet -
+            // keep the record Unverified (don't write "unknown") and inform, not
+            // congratulate. Real statuses (incl. cached email) still apply.
+            const isEmailNoEvidence = (result: VerificationResultItem) =>
+                result.kind === "email" && result.status === "unknown" && !result.cached;
+            const realResults = results.filter((result) => !isEmailNoEvidence(result));
+            setRows((prev) =>
+                prev.map((r) => {
+                    if (r.rowId !== row.rowId) return r;
+                    const updated = { ...r };
+                    for (const result of realResults) {
+                        if (result.kind === "email") {
+                            updated.emailVerificationStatus = result.status;
+                            updated.emailVerifiedAt = result.checked_at;
+                        } else if (result.kind === "phone") {
+                            updated.phoneVerificationStatus = result.status;
+                            updated.phoneLineType = result.line_type;
+                            updated.phoneVerifiedAt = result.checked_at;
+                        }
+                    }
+                    return updated;
+                })
+            );
+            if (realResults.length > 0) {
+                notify.success("Contact Verified", {
+                    description: realResults
+                        .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
+                        .join(" · "),
+                });
+            }
+            if (results.some(isEmailNoEvidence)) {
+                notify.info("No delivery evidence yet", {
+                    description:
+                        "This email will be marked automatically once a campaign or omnichannel email reaches it.",
+                });
+            }
+        } catch (err: any) {
+            notify.error("Error", { description: handleError(err, "Verify Contact") });
+        } finally {
+            // Functional update deleting only THIS row's id - never clear the
+            // whole set, other rows' requests may still be in flight.
+            setVerifyingRowIds((prev) => {
+                const next = new Set(prev);
+                next.delete(row.rowId);
+                return next;
+            });
         }
     };
 
@@ -199,24 +286,39 @@ export default function PeopleClient() {
                     return (
                         <div className="flex flex-col gap-0.5 text-xs">
                             {email && (
-                                <a
-                                    href={`mailto:${email}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
-                                >
-                                    <Mail size={12} className="shrink-0 text-gray-400" />
-                                    <span className="truncate">{email}</span>
-                                </a>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <a
+                                        href={`mailto:${email}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex min-w-0 items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
+                                    >
+                                        <Mail size={12} className="shrink-0 text-gray-400" />
+                                        <span className="truncate">{email}</span>
+                                    </a>
+                                    <VerificationBadge
+                                        status={row.original.emailVerificationStatus}
+                                        checkedAt={row.original.emailVerifiedAt}
+                                        className="shrink-0"
+                                    />
+                                </div>
                             )}
                             {phone && (
-                                <a
-                                    href={`tel:${phone}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
-                                >
-                                    <Phone size={12} className="shrink-0 text-gray-400" />
-                                    <span className="truncate">{phone}</span>
-                                </a>
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                    <a
+                                        href={`tel:${phone}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex min-w-0 items-center gap-1.5 text-gray-600 hover:text-[#5479EE] hover:underline"
+                                    >
+                                        <Phone size={12} className="shrink-0 text-gray-400" />
+                                        <span className="truncate">{phone}</span>
+                                    </a>
+                                    <VerificationBadge
+                                        status={row.original.phoneVerificationStatus}
+                                        checkedAt={row.original.phoneVerifiedAt}
+                                        lineType={row.original.phoneLineType}
+                                        className="shrink-0"
+                                    />
+                                </div>
                             )}
                             {linkedinUrl && (
                                 <a
@@ -324,6 +426,13 @@ export default function PeopleClient() {
                             icon: <SaveIcon size={16} />,
                             isLoading: (row) => savingRowId === row.rowId,
                             onClick: (row) => handleSaveOne(row),
+                        },
+                        {
+                            id: "verify-contact",
+                            label: "Verify contact",
+                            icon: <ShieldCheck size={16} />,
+                            isLoading: (row) => verifyingRowIds.has(row.rowId),
+                            onClick: (row) => handleVerifyOne(row),
                         },
                     ]}
                     renderBulkActions={({ selectedRows, clearSelection }) => (

@@ -13,7 +13,7 @@ const DEFAULT_OG_IMAGE = ogImageUrl({ title: "Platform CRM, Sales, Marketing & C
 
 // SEO Metadata
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.smartsales.id"),
+  metadataBase: new URL("https://smartsales.id"),
   title: {
     template: "%s | SmartSales",
     default: "SmartSales - Platform CRM, Sales, Marketing & Customer Support Terintegrasi",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: "SmartSales - Platform CRM, Sales, Marketing & Customer Support Terintegrasi",
     description:
       "Platform CRM, sales, marketing, dan customer support terintegrasi untuk bisnis di Indonesia. Multi-tenant, custom build, satu sistem untuk seluruh tim Anda.",
-    url: "https://www.smartsales.id",
+    url: "https://smartsales.id",
     siteName: "SmartSales",
     locale: "id_ID",
     type: "website",

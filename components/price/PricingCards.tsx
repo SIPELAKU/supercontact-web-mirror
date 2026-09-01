@@ -3,8 +3,8 @@ import { Box, Typography, Button, Paper, Grid, Chip, List, ListItem, ListItemIco
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { strings } from '@/lib/utils/strings';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import { NO_WA } from '@/lib/constants/constants';
-import { trackCtaClick } from '@/lib/analytics/events';
+import { waHref } from '@/lib/utils/wa-link';
+import { trackWhatsAppClick } from '@/lib/analytics/events';
 
 const PlanCard = ({
     title,
@@ -173,9 +173,9 @@ const PlanCard = ({
                     size="large"
                     fullWidth
                     onClick={() => {
-                        trackCtaClick('price', `plan_${title}`);
-                        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, title));
-                        window.open(`https://wa.me/${NO_WA}?text=${message}`, '_blank');
+                        trackWhatsAppClick('price', `plan_${title}`);
+                        const message = strings.formatString(strings.wa_interest_msg, title) as string;
+                        window.open(waHref(message), '_blank');
                     }}
                     startIcon={<WhatsAppIcon />}
                     sx={{

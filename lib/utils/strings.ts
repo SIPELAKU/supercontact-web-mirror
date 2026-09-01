@@ -1475,6 +1475,8 @@ export const strings = createLocalizedStrings({
         footer_guides: "Setup Guides",
         footer_templates: "Templates",
         footer_integrations: "Integrations",
+        footer_privacy: "Privacy Policy",
+        footer_terms: "Terms & Conditions",
         footer_copyright: "© 2026, SmartSales",
     },
     id: {
@@ -2894,6 +2896,8 @@ export const strings = createLocalizedStrings({
         footer_guides: "Panduan Pengaturan",
         footer_templates: "Templat",
         footer_integrations: "Integrasi",
+        footer_privacy: "Kebijakan Privasi",
+        footer_terms: "Syarat & Ketentuan",
         footer_copyright: "© 2026, SmartSales",
     }
 });

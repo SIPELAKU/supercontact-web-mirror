@@ -1,12 +1,35 @@
 import type { MetadataRoute } from 'next';
+import { headers } from 'next/headers';
 
-const BASE_URL = 'https://www.smartsales.id';
+const BASE_URL = 'https://smartsales.id';
+
+// Hosts allowed to serve the real (crawlable) robots policy. Everything else
+// — dev/staging subdomains, *.vercel.app aliases — gets a blanket Disallow
+// so non-prod deployments never enter the index. The middleware additionally
+// stamps X-Robots-Tag: noindex on every non-prod response as belt-and-braces.
+// (Reading headers() makes this route dynamic; robots.txt is tiny, so the
+// per-request cost is irrelevant.)
+const INDEXABLE_HOSTS = ['smartsales.id', 'www.smartsales.id'];
 
 // /register is deliberately allowed and indexable: it is the site's main
 // conversion target and is listed in the sitemap with its own metadata.
-// /help is the public Help Center portal (app/(help)/) - unlike /m/ (per-lead
-// campaign pages, disallowed below) it is meant to be indexable/SEO content.
-const ALLOW = ['/', '/company', '/price', '/produk/', '/solusi/', '/blog', '/register', '/help', '/api/og'];
+// /help stays ALLOWED but its pages carry noindex meta (crawl-allowed so the
+// noindex is actually read — never combine Disallow with noindex): the Help
+// Center is force-dynamic client-fetch, so crawlers get contentless spinner
+// HTML. Flip the per-page robots back to index:true when it gets real SSR.
+const ALLOW = [
+    '/',
+    '/company',
+    '/price',
+    '/produk/',
+    '/solusi/',
+    '/blog',
+    '/register',
+    '/help',
+    '/api/og',
+    '/privacy-policy',
+    '/terms-conditions',
+];
 
 const DISALLOW = [
     '/dashboard',
@@ -58,6 +81,13 @@ const AI_USER_AGENTS = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+    const host = (headers().get('host') ?? '').split(':')[0];
+    if (!INDEXABLE_HOSTS.includes(host)) {
+        return {
+            rules: [{ userAgent: '*', disallow: '/' }],
+        };
+    }
+
     return {
         rules: [
             {

@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import OutsourcingClient from '@/components/solution-outsourcing/OutsourcingClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/outsourcing';
+const PAGE_URL = 'https://smartsales.id/solusi/outsourcing';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Perusahaan Outsourcing', category: 'Solusi Outsourcing' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Perusahaan Outsourcing - SmartSales',
+  title: 'Solusi CRM untuk Perusahaan Outsourcing',
   description: 'Kelola ribuan kandidat, pekerja, dan klien B2B dalam satu platform. Otomatiskan rekrutmen, broadcast WhatsApp, dan komplain klien dengan SmartSales.',
   alternates: {
     canonical: PAGE_URL,
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
       '@type': 'ListItem',
       position: 1,
       name: 'Beranda',
-      item: 'https://www.smartsales.id/',
+      item: 'https://smartsales.id',
     },
     {
       '@type': 'ListItem',

@@ -2,12 +2,12 @@ import HotelClient from "@/components/solution-hotel/HotelClient";
 import { Metadata } from "next";
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = "https://www.smartsales.id/solusi/perhotelan";
+const PAGE_URL = "https://smartsales.id/solusi/perhotelan";
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Reservasi & Layanan Tamu Hotel', category: 'Solusi Perhotelan' });
 
 export const metadata: Metadata = {
-  title: "Solusi CRM Reservasi & Layanan Tamu Hotel - SmartSales",
+  title: "Solusi CRM Reservasi & Layanan Tamu Hotel",
   description:
     "Kelola reservasi kamar, chat tamu via WhatsApp, dan komplain layanan hotel dalam satu sistem. Tingkatkan okupansi dan kepuasan tamu. Coba gratis.",
   alternates: {
@@ -40,7 +40,7 @@ const breadcrumbJsonLd = {
       "@type": "ListItem",
       position: 1,
       name: "Beranda",
-      item: "https://www.smartsales.id/",
+      item: "https://smartsales.id",
     },
     {
       "@type": "ListItem",

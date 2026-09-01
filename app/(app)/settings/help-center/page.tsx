@@ -88,7 +88,7 @@ export default function SettingsHelpCenterPage() {
   const publicUrl = useMemo(() => {
     const slug = form.public_slug.trim();
     if (!slug) return "";
-    return `${origin || "https://www.smartsales.id"}/help/${slug}`;
+    return `${origin || "https://smartsales.id"}/help/${slug}`;
   }, [form.public_slug, origin]);
 
   const handleSave = async () => {

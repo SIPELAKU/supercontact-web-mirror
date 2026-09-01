@@ -2,12 +2,12 @@ import TravelClient from '@/components/solution-travel/TravelClient';
 import { Metadata } from 'next';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/tour-travel';
+const PAGE_URL = 'https://smartsales.id/solusi/tour-travel';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM Tour & Travel', category: 'Solusi Tour & Travel' });
 
 export const metadata: Metadata = {
-    title: 'Solusi CRM Tour & Travel - SmartSales',
+    title: 'Solusi CRM Tour & Travel',
     description: 'Kelola pemesanan paket wisata, dokumen visa, DP pelanggan, dan reschedule tiket dalam satu sistem CRM WhatsApp untuk agen tour & travel. Coba gratis sekarang.',
     alternates: {
         canonical: PAGE_URL,
@@ -37,7 +37,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id/',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

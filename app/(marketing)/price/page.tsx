@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { PriceClient } from "@/components/price/PriceClient";
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = "https://www.smartsales.id/price";
+const PAGE_URL = "https://smartsales.id/price";
 
 const OG_IMAGE = ogImageUrl({ title: 'Paket Harga CRM, Sales & Omnichannel', category: 'Harga' });
 
@@ -40,7 +40,7 @@ const breadcrumbJsonLd = {
             "@type": "ListItem",
             position: 1,
             name: "Beranda",
-            item: "https://www.smartsales.id/",
+            item: "https://smartsales.id",
         },
         {
             "@type": "ListItem",

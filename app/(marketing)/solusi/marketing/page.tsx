@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import MarketingClient from '@/components/solusi/marketing/MarketingClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/marketing';
+const PAGE_URL = 'https://smartsales.id/solusi/marketing';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi CRM untuk Tim Marketing', category: 'Solusi Marketing' });
 
 export const metadata: Metadata = {
-  title: 'Solusi CRM untuk Tim Marketing - SmartSales',
+  title: 'Solusi CRM untuk Tim Marketing',
   description: 'Kirim campaign WhatsApp & Email blast, kelola balasan pelanggan dalam satu inbox, dan lacak ROI marketing hingga transaksi tim Sales dengan SmartSales.',
   alternates: {
     canonical: PAGE_URL,
@@ -37,7 +37,7 @@ const breadcrumbSchema = {
       '@type': 'ListItem',
       position: 1,
       name: 'Beranda',
-      item: 'https://www.smartsales.id',
+      item: 'https://smartsales.id',
     },
     {
       '@type': 'ListItem',

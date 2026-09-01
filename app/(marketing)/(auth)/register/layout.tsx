@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { ogImageUrl } from "@/lib/utils/og-image";
 
-const PAGE_URL = "https://www.smartsales.id/register";
+const PAGE_URL = "https://smartsales.id/register";
 
 const OG_IMAGE = ogImageUrl({
   title: "Daftar Gratis - Coba CRM & Omnichannel",

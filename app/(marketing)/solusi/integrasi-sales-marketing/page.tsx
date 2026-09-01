@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import IntClient from '@/components/solusi/integrasi-sales-marketing/IntClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/integrasi-sales-marketing';
+const PAGE_URL = 'https://smartsales.id/solusi/integrasi-sales-marketing';
 
 const OG_IMAGE = ogImageUrl({
     title: 'Integrasi Sales & Marketing: Solusi Agar Leads Tidak Hilang',
@@ -43,7 +43,7 @@ const breadcrumbSchema = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id/',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

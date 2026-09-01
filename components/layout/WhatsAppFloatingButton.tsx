@@ -1,16 +1,19 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { strings } from '@/lib/utils/strings';
-import { trackCtaClick } from '@/lib/analytics/events';
+import { trackWhatsAppClick } from '@/lib/analytics/events';
+import { getWhatsAppLink } from '@/lib/utils/wa-link';
 
 const WhatsAppFloatingButton = () => {
+    const pathname = usePathname();
+
     const handleWhatsAppClick = () => {
-        trackCtaClick('floating_button', 'whatsapp_widget');
-        const message = encodeURIComponent(strings.formatString(strings.wa_interest_msg, "SmartSales"));
-        window.open(`https://wa.me/?text=${message}`, '_blank');
+        trackWhatsAppClick('floating_button', 'whatsapp_widget');
+        window.open(getWhatsAppLink(pathname ?? '/'), '_blank');
     };
 
     return (

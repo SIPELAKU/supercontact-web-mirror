@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 import LogisticsClient from '@/components/solution-logistics/LogisticsClient';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
-const PAGE_URL = 'https://www.smartsales.id/solusi/logistik';
+const PAGE_URL = 'https://smartsales.id/solusi/logistik';
 
 const OG_IMAGE = ogImageUrl({ title: 'Solusi Logistik: Pickup, Resi & CS B2B', category: 'Solusi Logistik' });
 
 export const metadata: Metadata = {
-    title: 'Solusi Logistik: Pickup, Resi & CS B2B | SmartSales',
+    title: 'Solusi Logistik: Pickup, Resi & CS B2B',
     description:
         'Kelola jadwal pickup B2B, notifikasi status paket, dan cek resi otomatis via WhatsApp Business API. Ubah komplain pelanggan jadi tiket kerja dengan SmartSales.',
     alternates: {
@@ -40,7 +40,7 @@ const breadcrumbJsonLd = {
             '@type': 'ListItem',
             position: 1,
             name: 'Beranda',
-            item: 'https://www.smartsales.id',
+            item: 'https://smartsales.id',
         },
         {
             '@type': 'ListItem',

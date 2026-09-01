@@ -43,12 +43,23 @@ function filterCriteriaToPayload(
     criteria: FilterCriteria,
     extra?: Partial<CompanyIntelligenceSearchPayload>
 ): CompanyIntelligenceSearchPayload {
+    // Backend rejects a candidate outright when employee_count is unset and
+    // EITHER bound is present (Google Maps/SerpAPI never fill headcount) -
+    // sending the slider's default range on every search silently zeroed
+    // out every freshly-discovered result, including the ones a kabupaten-
+    // targeted Maps search exists specifically to surface. Only send the
+    // bounds once the user has actually moved the slider off its default.
+    const defaultRange = DEFAULT_FILTER_CRITERIA.employeeRange;
+    const employeeRangeTouched =
+        criteria.employeeRange.min !== defaultRange.min ||
+        criteria.employeeRange.max !== defaultRange.max;
+
     return {
         industries: criteria.industries,
         locations: criteria.locations,
         kabupaten: criteria.kabupaten.length ? criteria.kabupaten : undefined,
-        employee_min: criteria.employeeRange.min,
-        employee_max: criteria.employeeRange.max,
+        employee_min: employeeRangeTouched ? criteria.employeeRange.min : undefined,
+        employee_max: employeeRangeTouched ? criteria.employeeRange.max : undefined,
         financial_status: criteria.financialStatuses,
         has_phone: criteria.hasPhone || undefined,
         has_domain: criteria.hasDomain || undefined,

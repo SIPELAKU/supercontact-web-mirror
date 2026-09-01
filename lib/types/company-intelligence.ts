@@ -14,8 +14,13 @@ export interface CompanyIntelligenceSearchPayload {
     // place instead of just the province - this is what makes "search per
     // kabupaten, one at a time" actually reach new companies via Maps.
     kabupaten?: string[];
-    employee_min: number;
-    employee_max: number;
+    // Omitted (not just absent bounds) unless the user has moved the range
+    // slider off its default - the backend excludes any candidate with no
+    // employee_count when either bound is present, which would otherwise
+    // silently zero out every freshly-discovered result (Maps/SerpAPI never
+    // fill headcount) on a plain, untouched Discover search.
+    employee_min?: number;
+    employee_max?: number;
     financial_status: string[];
     has_phone?: boolean;
     has_domain?: boolean;

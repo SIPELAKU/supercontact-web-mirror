@@ -14,7 +14,7 @@ import { VerificationBadge } from "@/components/data-intelligence/VerificationBa
 import { INDUSTRY_OPTIONS } from "@/lib/data/company-intelligence-options";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getIndividualIntelligence, saveContactsToCrm } from "@/lib/api/company-intelligence";
-import { verifyContact } from "@/lib/api/verification";
+import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 
@@ -171,11 +171,17 @@ export default function PeopleClient() {
                 target_type: "person",
                 target_id: row.personId,
             });
+            // Email "unknown & !cached" means no delivery evidence exists yet -
+            // keep the record Unverified (don't write "unknown") and inform, not
+            // congratulate. Real statuses (incl. cached email) still apply.
+            const isEmailNoEvidence = (result: VerificationResultItem) =>
+                result.kind === "email" && result.status === "unknown" && !result.cached;
+            const realResults = results.filter((result) => !isEmailNoEvidence(result));
             setRows((prev) =>
                 prev.map((r) => {
                     if (r.rowId !== row.rowId) return r;
                     const updated = { ...r };
-                    for (const result of results) {
+                    for (const result of realResults) {
                         if (result.kind === "email") {
                             updated.emailVerificationStatus = result.status;
                             updated.emailVerifiedAt = result.checked_at;
@@ -188,11 +194,19 @@ export default function PeopleClient() {
                     return updated;
                 })
             );
-            notify.success("Contact Verified", {
-                description: results
-                    .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
-                    .join(" · "),
-            });
+            if (realResults.length > 0) {
+                notify.success("Contact Verified", {
+                    description: realResults
+                        .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
+                        .join(" · "),
+                });
+            }
+            if (results.some(isEmailNoEvidence)) {
+                notify.info("No delivery evidence yet", {
+                    description:
+                        "This email will be marked automatically once a campaign or omnichannel email reaches it.",
+                });
+            }
         } catch (err: any) {
             notify.error("Error", { description: handleError(err, "Verify Contact") });
         } finally {

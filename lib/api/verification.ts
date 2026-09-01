@@ -23,7 +23,7 @@ export interface VerificationResultItem {
     kind: VerificationKind;
     status: string;
     line_type: string | null;
-    checked_at: string;
+    checked_at: string | null;
     cached: boolean;
 }
 

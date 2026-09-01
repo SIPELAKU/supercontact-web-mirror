@@ -16,7 +16,7 @@ import OrgChartSection from "./OrgChartSection";
 import SocialLookupModal from "./SocialLookupModal";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
-import { verifyContact } from "@/lib/api/verification";
+import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { fetchNotifications } from "@/lib/api/notifications";
 import { CompanyProfile360 } from "@/lib/types/company-intelligence";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -163,10 +163,16 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
         try {
             const token = await getToken();
             const { results } = await verifyContact(token, target);
+            // Email "unknown & !cached" means no delivery evidence exists yet -
+            // keep the record Unverified (don't write "unknown") and inform, not
+            // congratulate. Real statuses (incl. cached email) still apply.
+            const isEmailNoEvidence = (result: VerificationResultItem) =>
+                result.kind === "email" && result.status === "unknown" && !result.cached;
+            const realResults = results.filter((result) => !isEmailNoEvidence(result));
             setProfile((prev) => {
                 if (!prev) return prev;
                 const updated = { ...prev };
-                for (const result of results) {
+                for (const result of realResults) {
                     if (result.kind === "email") {
                         updated.emailVerificationStatus = result.status;
                         updated.emailVerifiedAt = result.checked_at;
@@ -178,11 +184,19 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                 }
                 return updated;
             });
-            notify.success("Contacts Verified", {
-                description: results
-                    .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
-                    .join(" · "),
-            });
+            if (realResults.length > 0) {
+                notify.success("Contacts Verified", {
+                    description: realResults
+                        .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
+                        .join(" · "),
+                });
+            }
+            if (results.some(isEmailNoEvidence)) {
+                notify.info("No delivery evidence yet", {
+                    description:
+                        "This email will be marked automatically once a campaign or omnichannel email reaches it.",
+                });
+            }
         } catch (err: any) {
             console.error("Failed to verify contacts:", err);
             notify.error(err?.message || "Failed to verify contacts");

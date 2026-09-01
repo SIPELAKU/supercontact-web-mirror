@@ -6,6 +6,9 @@ import {
     CompanyIntelligenceProfileResponse,
     CompanySocialInfo,
     SaveToCrmResponse,
+    CompanyBulkImportPayload,
+    CompanyBulkImportResponse,
+    CompanyImportJobResponse,
 } from "@/lib/types/company-intelligence";
 
 export async function searchCompanyIntelligence(
@@ -151,6 +154,68 @@ export async function bulkSaveCompaniesToCrm(
     if (!res.ok || json?.success === false) {
         const message =
             json?.error?.message || json?.message || "Failed to bulk save companies to CRM";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function importCompanies(
+    token: string,
+    payload: CompanyBulkImportPayload
+): Promise<CompanyBulkImportResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+        // Enqueue validates + dedups up to 5,000 rows synchronously before
+        // returning 201 — give it more room than the 45s default.
+        timeout: 120000,
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to import companies";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function getImportJob(
+    token: string,
+    jobId: string
+): Promise<CompanyImportJobResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk/${jobId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to get import job status";
         throw new Error(message);
     }
 

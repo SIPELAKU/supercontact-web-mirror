@@ -35,6 +35,19 @@ export interface CompanyIntelligenceItem {
     employee_count: number;
     revenue: number | null;
     financial_status: string;
+    // Fase 1 widened cache columns (all nullable server-side).
+    address_line?: string | null;
+    kabupaten?: string | null;
+    kecamatan?: string | null;
+    postal_code?: string | null;
+    nib?: string | null;
+    npwp?: string | null;
+    kbli_codes?: string[] | null;
+    legal_form?: string | null;
+    founded_year?: number | null;
+    instagram_url?: string | null;
+    facebook_url?: string | null;
+    whatsapp_number?: string | null;
     status?: string;
     source: string;
     confidence_tier?: string | null;
@@ -111,6 +124,16 @@ export interface TargetCompanyDetailResponse {
     website: string | null;
     industry: string | null;
     location: string | null;
+    // Fase 1 widened CrmCompany subset (copied from the cache row on save).
+    address_line?: string | null;
+    kabupaten?: string | null;
+    kecamatan?: string | null;
+    postal_code?: string | null;
+    nib?: string | null;
+    npwp?: string | null;
+    kbli_codes?: string[] | null;
+    legal_form?: string | null;
+    founded_year?: number | null;
     employee_range: string | null;
     employee_count: number | null;
     revenue: number | null;
@@ -188,5 +211,83 @@ export interface MyTargetCompaniesResponse {
     };
     summary: MyTargetCompaniesSummary;
     data: CompanyIntelligenceItem[];
+}
+
+// ===== Bulk import (CSV parsed client-side, POSTed as JSON) =====
+
+// One parsed spreadsheet row for POST /company-intelligence/bulk.
+// Only `name` is required; the API silently drops values that fail its
+// lenient validation (nib/npwp format, kbli code shape) instead of 400ing.
+export interface CompanyImportRow {
+    name: string;
+    domain?: string;
+    website?: string;
+    email?: string;
+    phone?: string;
+    industry?: string;
+    location?: string;
+    kabupaten?: string;
+    kecamatan?: string;
+    postal_code?: string;
+    address_line?: string;
+    nib?: string;
+    npwp?: string;
+    // Accepts a list or a delimited string like "4663;4752".
+    kbli_codes?: string | string[];
+    legal_form?: string;
+    founded_year?: number;
+    employee_count?: number;
+    financial_status?: string;
+    description?: string;
+}
+
+export interface CompanyBulkImportPayload {
+    file_name?: string;
+    rows: CompanyImportRow[];
+}
+
+// 201 response of POST /company-intelligence/bulk. queued_rows = rows that
+// survived enqueue-time dedup and became the job's payload; skipped_rows =
+// dropped as duplicates (within the request or vs existing tenant-visible
+// cache rows) before any background processing started.
+export interface CompanyBulkImportResponse {
+    total_rows: number;
+    queued_rows: number;
+    skipped_rows: number;
+    // Null when every row deduped against existing data and no job was created.
+    job_id: string | null;
+}
+
+// Job statuses are human-readable strings shared with the subscriber import
+// machinery (contact_import_jobs table).
+export type CompanyImportJobStatus =
+    | "Queued for Processing"
+    | "Processing"
+    | "Queued for Rollback"
+    | "Rollback Processing"
+    | "Completed"
+    | "Failed"
+    | "Stopped"
+    | "Rolled Back";
+
+// GET /company-intelligence/bulk/{job_id} — same shape as the subscriber
+// import job detail the UI polls (no websocket for import progress).
+export interface CompanyImportJobResponse {
+    id: string;
+    target: string;
+    status: CompanyImportJobStatus | string;
+    file_name: string | null;
+    current_batch: number;
+    total_batches: number;
+    total_rows: number;
+    processed_rows: number;
+    created_rows: number;
+    skipped_rows: number;
+    failed_rows: number;
+    messages: string[];
+    started_at: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
 }
 

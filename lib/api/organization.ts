@@ -51,6 +51,11 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         keyPeople: normalizeKeyPeople(rawData.key_people),
         subsidiaries: Array.isArray(rawData.subsidiaries) ? rawData.subsidiaries : [],
         social: rawData.social && typeof rawData.social === "object" ? rawData.social : null,
+        emailVerificationStatus: data.email_verification_status ?? null,
+        emailVerifiedAt: data.email_verified_at ?? null,
+        phoneVerificationStatus: data.phone_verification_status ?? null,
+        phoneLineType: data.phone_line_type ?? null,
+        phoneVerifiedAt: data.phone_verified_at ?? null,
         createdAt: data.created_at,
     };
 }
@@ -83,6 +88,13 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         keyPeople: normalizeKeyPeople(data.key_people),
         subsidiaries: Array.isArray(data.subsidiaries) ? data.subsidiaries : [],
         social: data.social ?? null,
+        emailVerificationStatus: data.email_verification_status ?? null,
+        emailVerifiedAt: data.email_verified_at ?? null,
+        // CrmCompany has no phone column, so no phone verification state exists
+        // on the saved path (phone above is null for the same reason).
+        phoneVerificationStatus: null,
+        phoneLineType: null,
+        phoneVerifiedAt: null,
         createdAt: data.created_at,
     };
 }

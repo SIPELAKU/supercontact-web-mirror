@@ -10,11 +10,13 @@ import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard } from "@/compon
 import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge";
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
+import ContactCard from "./ContactCard";
 import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
 import SocialLookupModal from "./SocialLookupModal";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
+import { verifyContact } from "@/lib/api/verification";
 import { fetchNotifications } from "@/lib/api/notifications";
 import { CompanyProfile360 } from "@/lib/types/company-intelligence";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -46,6 +48,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
     // silently vanish with no lasting confirmation (which used to make an
     // accidental double-save possible).
     const [isSaved, setIsSaved] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
     const [signals, setSignals] = useState<AutomatedSignal[]>([]);
     const [isLoadingSignals, setIsLoadingSignals] = useState(false);
     const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
@@ -130,6 +133,61 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
             notify.error(err?.message || "Failed to save company to CRM");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleVerifyContacts = async () => {
+        if (!profile) return;
+        // Verify the record this page actually displays and reloads from.
+        // Saved profiles render the CrmCompany row (fromSaved reads
+        // crm_companies.email/email_verification_status and hard-nulls the
+        // phone trio), so the verify must write to that same row - targeting
+        // the linked cache instead would (a) lose the badge on reload,
+        // (b) attest the cache's email which can differ from the displayed
+        // CRM email, and (c) invisibly bill a phone verification the card
+        // never shows. Explicit kinds:["email"] matches the rendered rows.
+        // Search profiles display the cache row itself, so the cache target
+        // (default kinds = its non-empty email+phone) stays correct there.
+        const target =
+            profile.source === "saved" && profile.crmCompanyId
+                ? {
+                      target_type: "crm_company" as const,
+                      target_id: profile.crmCompanyId,
+                      kinds: ["email" as const],
+                  }
+                : profile.cacheId
+                  ? { target_type: "cache" as const, target_id: profile.cacheId }
+                  : null;
+        if (!target) return;
+        setIsVerifying(true);
+        try {
+            const token = await getToken();
+            const { results } = await verifyContact(token, target);
+            setProfile((prev) => {
+                if (!prev) return prev;
+                const updated = { ...prev };
+                for (const result of results) {
+                    if (result.kind === "email") {
+                        updated.emailVerificationStatus = result.status;
+                        updated.emailVerifiedAt = result.checked_at;
+                    } else if (result.kind === "phone") {
+                        updated.phoneVerificationStatus = result.status;
+                        updated.phoneLineType = result.line_type;
+                        updated.phoneVerifiedAt = result.checked_at;
+                    }
+                }
+                return updated;
+            });
+            notify.success("Contacts Verified", {
+                description: results
+                    .map((result) => `${result.kind === "email" ? "Email" : "Phone"}: ${result.status}`)
+                    .join(" · "),
+            });
+        } catch (err: any) {
+            console.error("Failed to verify contacts:", err);
+            notify.error(err?.message || "Failed to verify contacts");
+        } finally {
+            setIsVerifying(false);
         }
     };
 
@@ -250,6 +308,13 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <CompanyDetailStats stats={stats} />
                     </div>
+
+                    <ContactCard
+                        profile={profile}
+                        canVerify={Boolean(profile.cacheId || profile.crmCompanyId)}
+                        isVerifying={isVerifying}
+                        onVerify={handleVerifyContacts}
+                    />
 
                     {profile.social && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">

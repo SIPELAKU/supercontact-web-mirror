@@ -9,6 +9,11 @@ export interface CompanySocialInfo {
 export interface CompanyIntelligenceSearchPayload {
     industries: string[];
     locations: string[];
+    // Free-text kabupaten/kota (no fixed list, unlike `locations`). Filters
+    // already-stored rows AND narrows the live Google Maps query to that
+    // place instead of just the province - this is what makes "search per
+    // kabupaten, one at a time" actually reach new companies via Maps.
+    kabupaten?: string[];
     employee_min: number;
     employee_max: number;
     financial_status: string[];

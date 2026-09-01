@@ -20,6 +20,10 @@ export type FinancialStatus = "IPO" | "Profitable" | "Series A" | "Series B" | "
 export type FilterCriteria = {
     industries: string[];
     locations: string[];
+    // Free-text kabupaten/kota - narrows Discover's live Google Maps search
+    // to a specific place within the province (one search at a time, run by
+    // hand), not just a filter over what's already stored.
+    kabupaten: string[];
     employeeRange: {
         min: number;
         max: number;
@@ -41,6 +45,7 @@ export type LocationOption = {
 export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
     industries: [],
     locations: [],
+    kabupaten: [],
     employeeRange: {
         min: 200,
         max: 1000,

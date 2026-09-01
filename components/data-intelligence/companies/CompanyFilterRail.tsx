@@ -2,6 +2,7 @@
 
 import IndustryFilterSection from "@/components/data-intelligence/IndustryFilterSection";
 import LocationFilterSection from "@/components/data-intelligence/LocationFilterSection";
+import KabupatenFilterSection from "@/components/data-intelligence/KabupatenFilterSection";
 import EmployeeRangeFilter from "@/components/data-intelligence/EmployeeRangeFilter";
 import FinancialStatusFilter from "@/components/data-intelligence/FinancialStatusFilter";
 import ReachabilityFilter from "@/components/data-intelligence/ReachabilityFilter";
@@ -43,6 +44,14 @@ export default function CompanyFilterRail({ mode, filterCriteria, onChange }: Co
 
             {mode === "discover" && (
                 <>
+                    <div className="space-y-2 border-t border-gray-100 pt-4">
+                        <span className="text-xs font-semibold text-gray-500">Kabupaten/Kota</span>
+                        <KabupatenFilterSection
+                            selectedKabupaten={filterCriteria.kabupaten}
+                            onChange={(kabupaten) => onChange({ ...filterCriteria, kabupaten })}
+                        />
+                    </div>
+
                     <div className="border-t border-gray-100 pt-4">
                         <EmployeeRangeFilter
                             min={filterCriteria.employeeRange.min}

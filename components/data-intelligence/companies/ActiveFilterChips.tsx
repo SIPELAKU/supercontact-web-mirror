@@ -35,6 +35,14 @@ function buildChips(
     );
 
     if (mode === "discover") {
+        criteria.kabupaten.forEach((kabupaten) =>
+            chips.push({
+                key: `kabupaten-${kabupaten}`,
+                label: kabupaten,
+                onRemove: () =>
+                    onChange({ ...criteria, kabupaten: criteria.kabupaten.filter((k) => k !== kabupaten) }),
+            })
+        );
         const defaultRange = DEFAULT_FILTER_CRITERIA.employeeRange;
         if (
             criteria.employeeRange.min !== defaultRange.min ||

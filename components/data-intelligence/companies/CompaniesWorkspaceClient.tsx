@@ -46,6 +46,7 @@ function filterCriteriaToPayload(
     return {
         industries: criteria.industries,
         locations: criteria.locations,
+        kabupaten: criteria.kabupaten.length ? criteria.kabupaten : undefined,
         employee_min: criteria.employeeRange.min,
         employee_max: criteria.employeeRange.max,
         financial_status: criteria.financialStatuses,

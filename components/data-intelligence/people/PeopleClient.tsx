@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { VerificationBadge } from "@/components/data-intelligence/VerificationBadge";
 import { INDUSTRY_OPTIONS } from "@/lib/data/company-intelligence-options";
+import { buildLinkedInPeopleSearchUrl } from "@/lib/data/social-search-links";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getIndividualIntelligence, saveContactsToCrm } from "@/lib/api/company-intelligence";
 import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
@@ -433,6 +434,22 @@ export default function PeopleClient() {
                             icon: <ShieldCheck size={16} />,
                             isLoading: (row) => verifyingRowIds.has(row.rowId),
                             onClick: (row) => handleVerifyOne(row),
+                        },
+                        {
+                            // Search-assist only: opens LinkedIn's own people
+                            // search (name + company keywords) in a new tab for
+                            // the user's logged-in account. Deliberately no
+                            // paste-back/save flow - individual profile URLs
+                            // are personal data (UU PDP) and are never stored.
+                            id: "search-linkedin",
+                            label: "Search on LinkedIn",
+                            icon: <Linkedin size={16} />,
+                            onClick: (row) =>
+                                window.open(
+                                    buildLinkedInPeopleSearchUrl(row.personName, row.companyName),
+                                    "_blank",
+                                    "noopener"
+                                ),
                         },
                     ]}
                     renderBulkActions={({ selectedRows, clearSelection }) => (

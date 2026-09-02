@@ -13,6 +13,8 @@ import {
     CompanyImportJobListResponse,
     CompanyImportJobResponse,
     SocialProfilesEnrichResponse,
+    SocialLinksUpdatePayload,
+    SocialLinksValues,
     SourcesStatusResponse,
 } from "@/lib/types/company-intelligence";
 
@@ -165,6 +167,40 @@ export async function enrichSocialProfiles(
     if (!res.ok || json?.success === false) {
         const message =
             json?.error?.message || json?.message || "Failed to refresh social data";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+// Search Assist paste-back: PATCH one or more social profile links onto a
+// cache row. The API canonicalizes what it stores and refuses individual
+// LinkedIn /in/ URLs with an explanatory message - surface that message
+// verbatim, it tells the user exactly what to paste instead.
+export async function updateSocialLinks(
+    token: string,
+    cacheId: string,
+    updates: SocialLinksUpdatePayload
+): Promise<SocialLinksValues> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/${cacheId}/social-links`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message = json?.error?.message || json?.message || "Failed to save social link";
         throw new Error(message);
     }
 

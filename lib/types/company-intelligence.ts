@@ -456,3 +456,26 @@ export interface SourcesStatusResponse {
     loader_last_runs: SourcesStatusLoaderRun[];
 }
 
+
+// Search Assist paste-back - PATCH /company-intelligence/{cacheId}/social-links.
+// Payload carries only the fields being changed (null clears a link); the
+// response echoes all six stored values, already canonicalized by the API
+// (twitter.com -> x.com, threads.net -> threads.com, share/query junk
+// stripped, LinkedIn company pages only).
+export interface SocialLinksUpdatePayload {
+    instagram_url?: string | null;
+    facebook_url?: string | null;
+    linkedin_url?: string | null;
+    tiktok_url?: string | null;
+    x_url?: string | null;
+    threads_url?: string | null;
+}
+
+export interface SocialLinksValues {
+    instagram_url: string | null;
+    facebook_url: string | null;
+    linkedin_url: string | null;
+    tiktok_url: string | null;
+    x_url: string | null;
+    threads_url: string | null;
+}

@@ -20,7 +20,7 @@ import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import { enrichSocialProfiles, saveCompanyToCrm } from "@/lib/api/company-intelligence";
 import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { fetchNotifications } from "@/lib/api/notifications";
-import { CompanyProfile360 } from "@/lib/types/company-intelligence";
+import { CompanyProfile360, SocialLinksValues } from "@/lib/types/company-intelligence";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 
@@ -277,6 +277,25 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
         }
     };
 
+    // Search Assist paste-back succeeded - the PATCH response carries all six
+    // canonical stored links, so sync them wholesale into profile state (no
+    // refetch: the saved-path reload would blank in-state social metrics).
+    const handleSocialLinksSaved = (values: SocialLinksValues) => {
+        setProfile((prev) =>
+            prev
+                ? {
+                      ...prev,
+                      instagramUrl: values.instagram_url,
+                      facebookUrl: values.facebook_url,
+                      linkedinUrl: values.linkedin_url,
+                      tiktokUrl: values.tiktok_url,
+                      xUrl: values.x_url,
+                      threadsUrl: values.threads_url,
+                  }
+                : prev
+        );
+    };
+
     const handleTabChange = (tab: ProfileTab) => {
         setActiveTab(tab);
         router.replace(`/data-intelligence/company/${id}?source=${source}&tab=${tab}`, { scroll: false });
@@ -407,6 +426,8 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                         canRefresh={Boolean(profile.cacheId)}
                         isRefreshing={isRefreshingSocial}
                         onRefresh={handleRefreshSocial}
+                        cacheId={profile.cacheId ?? null}
+                        onLinksSaved={handleSocialLinksSaved}
                     />
 
                     {profile.social && (

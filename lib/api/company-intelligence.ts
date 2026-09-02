@@ -6,6 +6,16 @@ import {
     CompanyIntelligenceProfileResponse,
     CompanySocialInfo,
     SaveToCrmResponse,
+    CompanyBulkImportPayload,
+    CompanyBulkImportResponse,
+    CompanyImportJobAction,
+    CompanyImportJobCompaniesResponse,
+    CompanyImportJobListResponse,
+    CompanyImportJobResponse,
+    SocialProfilesEnrichResponse,
+    SocialLinksUpdatePayload,
+    SocialLinksValues,
+    SourcesStatusResponse,
 } from "@/lib/types/company-intelligence";
 
 export async function searchCompanyIntelligence(
@@ -127,6 +137,76 @@ export async function enrichCompanySocial(
     return json?.data;
 }
 
+// Fase E manual trigger: refresh follower/verified metrics for every social
+// handle already stored on the cache row (no request body - the API reads
+// the handles from its own columns and persists results under
+// raw_data.social_profiles).
+export async function enrichSocialProfiles(
+    token: string,
+    cacheId: string
+): Promise<SocialProfilesEnrichResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/${cacheId}/enrich-social-profiles`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to refresh social data";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+// Search Assist paste-back: PATCH one or more social profile links onto a
+// cache row. The API canonicalizes what it stores and refuses individual
+// LinkedIn /in/ URLs with an explanatory message - surface that message
+// verbatim, it tells the user exactly what to paste instead.
+export async function updateSocialLinks(
+    token: string,
+    cacheId: string,
+    updates: SocialLinksUpdatePayload
+): Promise<SocialLinksValues> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/${cacheId}/social-links`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message = json?.error?.message || json?.message || "Failed to save social link";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
 export async function bulkSaveCompaniesToCrm(
     token: string,
     cacheIds: string[]
@@ -157,12 +237,217 @@ export async function bulkSaveCompaniesToCrm(
     return json?.data;
 }
 
+export async function importCompanies(
+    token: string,
+    payload: CompanyBulkImportPayload
+): Promise<CompanyBulkImportResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+        // Enqueue validates + dedups up to 5,000 rows synchronously before
+        // returning 201 — give it more room than the 45s default.
+        timeout: 120000,
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to import companies";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function getImportJob(
+    token: string,
+    jobId: string
+): Promise<CompanyImportJobResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk/${jobId}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to get import job status";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function getImportJobs(
+    token: string,
+    params: {
+        page?: number;
+        limit?: number;
+        search?: string;
+    }
+): Promise<CompanyImportJobListResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const query = new URLSearchParams();
+
+    if (params.page) query.append("page", params.page.toString());
+    if (params.limit) query.append("limit", params.limit.toString());
+    if (params.search) query.append("search", params.search);
+
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/bulk?${query.toString()}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to get import jobs";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function getImportJobCompanies(
+    token: string,
+    jobId: string,
+    params: {
+        page?: number;
+        limit?: number;
+    }
+): Promise<CompanyImportJobCompaniesResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const query = new URLSearchParams();
+
+    if (params.page) query.append("page", params.page.toString());
+    if (params.limit) query.append("limit", params.limit.toString());
+
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/bulk/${jobId}/companies?${query.toString()}`,
+        {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to get import job companies";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function updateImportJobAction(
+    token: string,
+    jobId: string,
+    action: CompanyImportJobAction
+): Promise<CompanyImportJobResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/bulk/${jobId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action }),
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || `Failed to ${action} import job`;
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
+export async function getSourcesStatus(
+    token: string
+): Promise<SourcesStatusResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/sources-status`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message =
+            json?.error?.message || json?.message || "Failed to get data sources status";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
 export async function getMyTargetCompanies(
     token: string,
     params: {
         industry?: string[];
         location?: string[];
         search?: string;
+        // EXACT source values (google_maps, serpapi, ...) - the Saved tab's
+        // Source filter expands each picked display group into these.
+        sources?: string[];
         page?: number;
         limit?: number;
     }
@@ -175,6 +460,9 @@ export async function getMyTargetCompanies(
     }
     if (params.location && params.location.length > 0) {
         params.location.forEach((loc) => query.append("location", loc));
+    }
+    if (params.sources && params.sources.length > 0) {
+        params.sources.forEach((source) => query.append("sources", source));
     }
     if (params.search) query.append("search", params.search);
     if (params.page) query.append("page", params.page.toString());

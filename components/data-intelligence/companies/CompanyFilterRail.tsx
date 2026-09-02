@@ -2,6 +2,8 @@
 
 import IndustryFilterSection from "@/components/data-intelligence/IndustryFilterSection";
 import LocationFilterSection from "@/components/data-intelligence/LocationFilterSection";
+import KabupatenFilterSection from "@/components/data-intelligence/KabupatenFilterSection";
+import SourceFilterSection from "@/components/data-intelligence/SourceFilterSection";
 import EmployeeRangeFilter from "@/components/data-intelligence/EmployeeRangeFilter";
 import FinancialStatusFilter from "@/components/data-intelligence/FinancialStatusFilter";
 import ReachabilityFilter from "@/components/data-intelligence/ReachabilityFilter";
@@ -41,8 +43,29 @@ export default function CompanyFilterRail({ mode, filterCriteria, onChange }: Co
                 />
             </div>
 
+            {mode === "saved" && (
+                // Saved-only: GET /my-target-companies filters by exact
+                // `sources` values; Discover's search payload has no source
+                // facet, so showing this there would silently do nothing.
+                <div className="space-y-2 border-t border-gray-100 pt-4">
+                    <span className="text-xs font-semibold text-gray-500">Source</span>
+                    <SourceFilterSection
+                        selectedSources={filterCriteria.sourcesSaved}
+                        onChange={(sourcesSaved) => onChange({ ...filterCriteria, sourcesSaved })}
+                    />
+                </div>
+            )}
+
             {mode === "discover" && (
                 <>
+                    <div className="space-y-2 border-t border-gray-100 pt-4">
+                        <span className="text-xs font-semibold text-gray-500">Kabupaten/Kota</span>
+                        <KabupatenFilterSection
+                            selectedKabupaten={filterCriteria.kabupaten}
+                            onChange={(kabupaten) => onChange({ ...filterCriteria, kabupaten })}
+                        />
+                    </div>
+
                     <div className="border-t border-gray-100 pt-4">
                         <EmployeeRangeFilter
                             min={filterCriteria.employeeRange.min}

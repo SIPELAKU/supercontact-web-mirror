@@ -12,6 +12,7 @@ import { getCompanyIntelligenceProfile, getMyTargetCompany } from "./company-int
 import {
     CompanyIntelligenceProfileResponse,
     CompanyProfile360,
+    SocialProfilesMap,
     TargetCompanyDetailResponse,
 } from "@/lib/types/company-intelligence";
 
@@ -45,12 +46,32 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         revenue: data.revenue,
         financialStatus: data.financial_status ?? null,
         description: data.description ?? null,
+        addressLine: data.address_line ?? null,
+        kabupaten: data.kabupaten ?? null,
+        kecamatan: data.kecamatan ?? null,
+        postalCode: data.postal_code ?? null,
+        nib: data.nib ?? null,
+        npwp: data.npwp ?? null,
+        kbliCodes: data.kbli_codes ?? null,
+        legalForm: data.legal_form ?? null,
+        foundedYear: data.founded_year ?? null,
         providerSource: data.source ?? null,
         confidenceTier: data.confidence_tier ?? null,
         fieldProvenance: (data as any).field_provenance ?? null,
         keyPeople: normalizeKeyPeople(rawData.key_people),
         subsidiaries: Array.isArray(rawData.subsidiaries) ? rawData.subsidiaries : [],
         social: rawData.social && typeof rawData.social === "object" ? rawData.social : null,
+        instagramUrl: data.instagram_url ?? null,
+        facebookUrl: data.facebook_url ?? null,
+        whatsappNumber: data.whatsapp_number ?? null,
+        linkedinUrl: data.linkedin_url ?? null,
+        tiktokUrl: data.tiktok_url ?? null,
+        xUrl: data.x_url ?? null,
+        threadsUrl: data.threads_url ?? null,
+        socialProfiles:
+            rawData.social_profiles && typeof rawData.social_profiles === "object"
+                ? (rawData.social_profiles as SocialProfilesMap)
+                : null,
         emailVerificationStatus: data.email_verification_status ?? null,
         emailVerifiedAt: data.email_verified_at ?? null,
         phoneVerificationStatus: data.phone_verification_status ?? null,
@@ -82,12 +103,35 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         revenue: data.revenue,
         financialStatus: data.financial_status,
         description: data.description,
+        addressLine: data.address_line ?? null,
+        kabupaten: data.kabupaten ?? null,
+        kecamatan: data.kecamatan ?? null,
+        postalCode: data.postal_code ?? null,
+        nib: data.nib ?? null,
+        npwp: data.npwp ?? null,
+        kbliCodes: data.kbli_codes ?? null,
+        legalForm: data.legal_form ?? null,
+        foundedYear: data.founded_year ?? null,
         providerSource: data.source ?? nameProvenance?.source ?? null,
         confidenceTier: nameProvenance?.confidence ?? null,
         fieldProvenance: data.field_provenance,
         keyPeople: normalizeKeyPeople(data.key_people),
         subsidiaries: Array.isArray(data.subsidiaries) ? data.subsidiaries : [],
         social: data.social ?? null,
+        // Cache-only URL columns, read through the linked cache row by the
+        // API while company_intelligence_id is intact (all null otherwise).
+        instagramUrl: data.instagram_url ?? null,
+        facebookUrl: data.facebook_url ?? null,
+        whatsappNumber: data.whatsapp_number ?? null,
+        linkedinUrl: data.linkedin_url ?? null,
+        tiktokUrl: data.tiktok_url ?? null,
+        xUrl: data.x_url ?? null,
+        threadsUrl: data.threads_url ?? null,
+        // The saved detail response carries no raw_data, so persisted
+        // social_profiles metrics aren't visible on this path - a refresh on
+        // SocialPresenceCard still fetches fresh ones via cacheId and merges
+        // them into profile state client-side.
+        socialProfiles: null,
         emailVerificationStatus: data.email_verification_status ?? null,
         emailVerifiedAt: data.email_verified_at ?? null,
         // CrmCompany has no phone column, so no phone verification state exists

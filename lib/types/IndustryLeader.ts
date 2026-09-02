@@ -20,6 +20,10 @@ export type FinancialStatus = "IPO" | "Profitable" | "Series A" | "Series B" | "
 export type FilterCriteria = {
     industries: string[];
     locations: string[];
+    // Free-text kabupaten/kota - narrows Discover's live Google Maps search
+    // to a specific place within the province (one search at a time, run by
+    // hand), not just a filter over what's already stored.
+    kabupaten: string[];
     employeeRange: {
         min: number;
         max: number;
@@ -31,6 +35,11 @@ export type FilterCriteria = {
     hasDomain: boolean;
     minConfidence: string | null;
     excludeSaved: boolean;
+    // Saved-tab-only Source filter: EXACT `source` values (google_maps,
+    // serpapi, ... - see lib/data/source-groups.ts) sent as the `sources`
+    // query param of GET /my-target-companies. The rail/chips UI picks whole
+    // display GROUPS; each pick expands to that group's exact values here.
+    sourcesSaved: string[];
 };
 
 export type LocationOption = {
@@ -41,6 +50,7 @@ export type LocationOption = {
 export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
     industries: [],
     locations: [],
+    kabupaten: [],
     employeeRange: {
         min: 200,
         max: 1000,
@@ -50,6 +60,7 @@ export const DEFAULT_FILTER_CRITERIA: FilterCriteria = {
     hasDomain: false,
     minConfidence: null,
     excludeSaved: false,
+    sourcesSaved: [],
 };
 
 export const FINANCIAL_STATUS_OPTIONS: FinancialStatus[] = [

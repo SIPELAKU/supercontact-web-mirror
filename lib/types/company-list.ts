@@ -29,6 +29,10 @@ export interface CompanyListMemberItem {
     employee_count: number | null;
     revenue: number | null;
     financial_status: string | null;
+    // Provenance label (google_maps / bulk_import / ...) so the Lists tab's
+    // CompanyTable Source column shows the member's real origin, not
+    // "Legacy" for everything.
+    source: string | null;
 }
 
 export interface CompanyListMembersResponse {

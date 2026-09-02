@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { FilterCriteria, DEFAULT_FILTER_CRITERIA } from "@/lib/types/IndustryLeader";
 import { TIER_LABELS } from "@/components/data-intelligence/ConfidenceBadge";
+import { SOURCE_GROUP_OPTIONS } from "@/lib/data/source-groups";
 
 interface Chip {
     key: string;
@@ -33,6 +34,26 @@ function buildChips(
                 onChange({ ...criteria, locations: criteria.locations.filter((l) => l !== location) }),
         })
     );
+
+    if (mode === "saved") {
+        // One chip per selected display GROUP, not per raw source value -
+        // mirroring how SourceFilterSection picks them; removing a chip
+        // drops every exact value that group expanded to.
+        SOURCE_GROUP_OPTIONS.forEach((option) => {
+            if (!option.values.some((value) => criteria.sourcesSaved.includes(value))) return;
+            chips.push({
+                key: `source-${option.label}`,
+                label: `Source: ${option.label}`,
+                onRemove: () =>
+                    onChange({
+                        ...criteria,
+                        sourcesSaved: criteria.sourcesSaved.filter(
+                            (s) => !option.values.includes(s)
+                        ),
+                    }),
+            });
+        });
+    }
 
     if (mode === "discover") {
         criteria.kabupaten.forEach((kabupaten) =>

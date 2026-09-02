@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
-import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Download } from "lucide-react";
+import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Download, CheckCircle2, XCircle } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
@@ -96,16 +96,48 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
     const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Column mapping state
-    const [step, setStep] = useState<"upload" | "mapping" | "preview">("upload");
+    // Column mapping state. "processing" and "results" are the post-submit
+    // steps: the modal stays open while jobs run and then shows a summary
+    // instead of the old auto-close + completion toast.
+    const [step, setStep] = useState<
+        "upload" | "mapping" | "preview" | "processing" | "results"
+    >("upload");
     const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
     const [rawData, setRawData] = useState<any[]>([]);
     const [previewData, setPreviewData] = useState<CompanyRowDraft[]>([]);
+
+    // Post-submit state for the processing/results steps.
+    const [queueSummary, setQueueSummary] = useState<{
+        queued: number;
+        skipped: number;
+        batches: number;
+    } | null>(null);
+    const [jobResults, setJobResults] = useState<CompanyImportJobResponse[]>([]);
 
     // Background job polling survives the modal being closed (the component
     // stays mounted with open=false); only unmount cancels it.
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pollCancelledRef = useRef(false);
+    // Completion is decided minutes after submit, inside a timer chain whose
+    // closures are stale by then - these refs carry the LIVE open/step so
+    // finishPolling can tell "still watching the processing step" (show the
+    // Results step) from "modal was dismissed" (fall back to the old toast).
+    // The run id guards against a finished OLD import clobbering the steps
+    // of a NEW one started after the first was sent to the background.
+    const openRef = useRef(open);
+    const stepRef = useRef(step);
+    const pollRunIdRef = useRef(0);
+    // Bumped by handleClose so a submit still posting chunks when the user
+    // discards the modal cannot later land setStep("processing") into a
+    // closed (or freshly reopened) wizard - the same stale-closure race
+    // finishPolling guards against, at the submit seam.
+    const submitRunIdRef = useRef(0);
+    useEffect(() => {
+        openRef.current = open;
+    }, [open]);
+    useEffect(() => {
+        stepRef.current = step;
+    }, [step]);
 
     // The poll chain runs minutes after import start; going through a ref
     // means completion always calls the LATEST onSuccess (fetchDiscover is
@@ -125,11 +157,14 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
     }, []);
 
     const handleClose = () => {
+        submitRunIdRef.current++;
         setFile(null);
         setStep("upload");
         setColumnMappings([]);
         setRawData([]);
         setPreviewData([]);
+        setQueueSummary(null);
+        setJobResults([]);
         onClose();
     };
 
@@ -375,18 +410,41 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
         return row;
     };
 
-    const finishPolling = (jobs: CompanyImportJobResponse[]) => {
+    const finishPolling = (jobs: CompanyImportJobResponse[], runId: number) => {
+        // The user is still looking at this import's processing step: show
+        // the Results step in place. onSuccess is deliberately NOT called
+        // here - the "View in Discover" button owns the refresh.
+        if (
+            runId === pollRunIdRef.current &&
+            openRef.current &&
+            stepRef.current === "processing"
+        ) {
+            setJobResults(jobs);
+            setStep("results");
+            return;
+        }
+
+        // Modal dismissed (sent to the background) - keep the old behavior:
+        // completion toast + refresh.
         const created = jobs.reduce((sum, j) => sum + (j.created_rows || 0), 0);
         const skipped = jobs.reduce((sum, j) => sum + (j.skipped_rows || 0), 0);
         const failed = jobs.reduce((sum, j) => sum + (j.failed_rows || 0), 0);
-        const failedJob = jobs.find((j) => j.status === "Failed");
+        // Any non-Completed terminal state (Failed, but also Stopped /
+        // Rolled Back via the Import Center in another tab) is NOT a
+        // success - "Import completed" for a stopped job would lie.
+        const failedJob = jobs.find((j) => j.status !== "Completed");
         const summary = `${created} imported, ${skipped} skipped, ${failed} failed.`;
 
         if (failedJob) {
-            notify.error("Company import failed", {
-                description: failedJob.messages?.[0] || summary,
-                duration: 10000,
-            });
+            notify.error(
+                failedJob.status === "Failed"
+                    ? "Company import failed"
+                    : `Company import did not complete (${failedJob.status.toLowerCase()})`,
+                {
+                    description: failedJob.messages?.[0] || summary,
+                    duration: 10000,
+                }
+            );
         } else {
             notify.success("Company import completed", {
                 description: summary,
@@ -401,6 +459,7 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
         // the ref stuck at true from the first cleanup, which would silently
         // cancel every future poll (no completion toast, no refresh).
         pollCancelledRef.current = false;
+        const runId = ++pollRunIdRef.current;
         const done = new Map<string, CompanyImportJobResponse>();
         let consecutiveErrors = 0;
 
@@ -415,7 +474,7 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                     if (TERMINAL_STATUSES.has(job.status)) done.set(job.id, job);
                 }
                 if (done.size === jobIds.length) {
-                    finishPolling(Array.from(done.values()));
+                    finishPolling(Array.from(done.values()), runId);
                     return;
                 }
             } catch {
@@ -424,6 +483,15 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                     notify.error(
                         "Lost track of the company import job. Check back later — the import keeps running in the background."
                     );
+                    // The Results step can never arrive now - don't leave the
+                    // modal stranded on the processing spinner.
+                    if (
+                        runId === pollRunIdRef.current &&
+                        openRef.current &&
+                        stepRef.current === "processing"
+                    ) {
+                        handleClose();
+                    }
                     return;
                 }
             }
@@ -451,10 +519,20 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
         }
 
         setIsLoading(true);
+        // If the modal is discarded while the chunk loop below is still
+        // posting, this run is stale: the jobs keep running (and are still
+        // polled in the background), but the closed/reopened wizard must
+        // not be flipped onto the old import's processing step.
+        const submitRunId = submitRunIdRef.current;
+        const submitStillCurrent = () =>
+            submitRunId === submitRunIdRef.current && openRef.current;
         // Hoisted out of the try so the catch can tell a total failure from
-        // a partial one (earlier chunks already queued as jobs).
+        // a partial one (earlier chunks already queued as jobs) and still
+        // show what DID get queued on the processing step.
         const jobIds: string[] = [];
         let totalChunks = 0;
+        let totalQueued = 0;
+        let totalSkipped = 0;
 
         try {
             // getToken inside the try: an expired/unrefreshable session must
@@ -467,9 +545,6 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                 chunks.push(rows.slice(i, i + CHUNK_SIZE));
             }
             totalChunks = chunks.length;
-
-            let totalQueued = 0;
-            let totalSkipped = 0;
 
             // The API caps file_name at 255 chars - truncate the base name,
             // leaving room for the part suffix, so a long filename can't
@@ -510,19 +585,34 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                     description,
                     duration: 10000,
                 });
-                handleClose();
-                onSuccess();
+                if (submitStillCurrent()) {
+                    handleClose();
+                    onSuccess();
+                }
                 return;
             }
 
-            notify.success(
-                jobIds.length > 1
-                    ? `Company import started (${jobIds.length} batches)`
-                    : "Company import started",
-                { description, duration: 10000 }
-            );
+            if (!submitStillCurrent()) {
+                // Modal discarded mid-submit: fall back to the old
+                // background behavior - the queued jobs keep running and
+                // finishPolling's dismissed branch will toast the outcome.
+                notify.success("Company import started in the background", {
+                    description,
+                    duration: 10000,
+                });
+                startPolling(jobIds);
+                return;
+            }
 
-            handleClose();
+            // Stay open on the processing step instead of the old auto-close
+            // + "import started" toast: the queued/skipped figures render in
+            // the modal, and finishPolling lands on the Results step here.
+            setQueueSummary({
+                queued: totalQueued,
+                skipped: totalSkipped,
+                batches: jobIds.length,
+            });
+            setStep("processing");
             startPolling(jobIds);
         } catch (error: any) {
             const detail =
@@ -531,13 +621,21 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                     : error.message;
             if (jobIds.length > 0) {
                 // Partial failure: earlier chunks are already queued and keep
-                // running - poll them to completion, and close the modal so a
-                // naive retry can't re-post rows that were already imported.
+                // running - watch them on the processing step (which, like the
+                // old auto-close, keeps a naive retry from re-posting rows
+                // that were already imported) and report the unsent rest.
                 notify.error(
                     `Import partially failed - only ${jobIds.length} of ${totalChunks} batches could be queued; they keep running in the background. The remaining rows were not submitted.`,
                     { description: detail, duration: 10000 }
                 );
-                handleClose();
+                if (submitStillCurrent()) {
+                    setQueueSummary({
+                        queued: totalQueued,
+                        skipped: totalSkipped,
+                        batches: jobIds.length,
+                    });
+                    setStep("processing");
+                }
                 startPolling(jobIds);
             } else {
                 notify.error("Failed to import companies.", {
@@ -554,14 +652,26 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
         <>
             <AppDialog
                 open={open}
-                onClose={() => setShowCloseConfirmation(true)}
+                // Pre-submit steps guard against losing the prepared file with
+                // a confirmation; once jobs are queued (processing/results)
+                // closing abandons nothing - the import keeps running - so
+                // the "cancel your import" scare-copy would be wrong.
+                onClose={() =>
+                    step === "processing" || step === "results"
+                        ? handleClose()
+                        : setShowCloseConfirmation(true)
+                }
                 title="Import Companies"
                 description={
                     step === "upload"
                         ? "Upload an Excel or CSV file to import companies in bulk."
                         : step === "mapping"
                             ? "Map your file columns to company fields."
-                            : "Review the data before importing."
+                            : step === "preview"
+                                ? "Review the data before importing."
+                                : step === "processing"
+                                    ? "Your companies are being imported."
+                                    : "Import finished - here is what happened."
                 }
                 maxWidth="md"
             >
@@ -582,6 +692,11 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                             <div className={`flex items-center gap-1 text-sm ${step === "preview" ? "text-brand font-medium" : "text-gray-400"}`}>
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "preview" ? "bg-brand text-white" : "bg-gray-200"}`}>3</span>
                                 Preview
+                            </div>
+                            <div className="w-8 h-px bg-gray-300" />
+                            <div className={`flex items-center gap-1 text-sm ${step === "processing" || step === "results" ? "text-brand font-medium" : "text-gray-400"}`}>
+                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "processing" || step === "results" ? "bg-brand text-white" : "bg-gray-200"}`}>4</span>
+                                Results
                             </div>
                         </div>
 
@@ -840,6 +955,138 @@ const ImportCompaniesModal: React.FC<ImportCompaniesModalProps> = ({
                                 </div>
                             </>
                         )}
+
+                        {/* Step 4a: Processing — jobs queued, polling until terminal */}
+                        {step === "processing" && (
+                            <div className="flex flex-col items-center gap-4 py-10 text-center">
+                                <Loader2 className="w-10 h-10 animate-spin text-brand" />
+                                <div>
+                                    <h3 className="font-medium text-gray-900">
+                                        {queueSummary && queueSummary.batches > 1
+                                            ? `Importing companies (${queueSummary.batches} batches)…`
+                                            : "Importing companies…"}
+                                    </h3>
+                                    {queueSummary && (
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {queueSummary.queued.toLocaleString()} queued
+                                            {queueSummary.skipped > 0 &&
+                                                ` · ${queueSummary.skipped.toLocaleString()} skipped as duplicates`}
+                                        </p>
+                                    )}
+                                </div>
+                                <p className="max-w-sm text-xs text-gray-400">
+                                    You can close this dialog — the import keeps running in the
+                                    background and the result will arrive as a notification.
+                                </p>
+                                <AppButton onClick={handleClose} variantStyle="outline" color="primary">
+                                    Run in background
+                                </AppButton>
+                            </div>
+                        )}
+
+                        {/* Step 4b: Results — every job reached a terminal state */}
+                        {step === "results" && (() => {
+                            const created = jobResults.reduce((sum, j) => sum + (j.created_rows || 0), 0);
+                            const skipped = jobResults.reduce((sum, j) => sum + (j.skipped_rows || 0), 0);
+                            const failed = jobResults.reduce((sum, j) => sum + (j.failed_rows || 0), 0);
+                            // Any non-Completed terminal state is non-success:
+                            // a job Stopped / Rolled Back from the Import
+                            // Center must not render the green "completed".
+                            const failedJob = jobResults.find((j) => j.status !== "Completed");
+                            return (
+                                <>
+                                    <div className="flex flex-col items-center gap-2 pt-2 pb-4 text-center">
+                                        {failedJob ? (
+                                            <XCircle className="w-10 h-10 text-red-500" />
+                                        ) : (
+                                            <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                        )}
+                                        <h3 className="font-medium text-gray-900">
+                                            {!failedJob
+                                                ? "Import completed"
+                                                : failedJob.status === "Failed"
+                                                    ? "Import finished with errors"
+                                                    : `Import ${failedJob.status.toLowerCase()}`}
+                                        </h3>
+                                        {failedJob?.messages?.[0] && (
+                                            <p className="max-w-md text-sm text-red-600">{failedJob.messages[0]}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="rounded-lg bg-green-50 p-4 text-center">
+                                            <div className="text-2xl font-bold text-green-700">{created.toLocaleString()}</div>
+                                            <div className="text-xs font-medium uppercase tracking-wider text-green-700/80">Created</div>
+                                        </div>
+                                        <div className="rounded-lg bg-amber-50 p-4 text-center">
+                                            <div className="text-2xl font-bold text-amber-700">{skipped.toLocaleString()}</div>
+                                            <div className="text-xs font-medium uppercase tracking-wider text-amber-700/80">Skipped</div>
+                                        </div>
+                                        <div className="rounded-lg bg-red-50 p-4 text-center">
+                                            <div className="text-2xl font-bold text-red-700">{failed.toLocaleString()}</div>
+                                            <div className="text-xs font-medium uppercase tracking-wider text-red-700/80">Failed</div>
+                                        </div>
+                                    </div>
+
+                                    {jobResults.length > 1 && (
+                                        <div className="mt-4 max-h-48 overflow-auto rounded-lg border">
+                                            <table className="w-full text-sm">
+                                                <thead className="sticky top-0 bg-gray-50">
+                                                    <tr>
+                                                        <th className="p-3 text-left font-medium text-gray-700">Batch</th>
+                                                        <th className="p-3 text-left font-medium text-gray-700">Status</th>
+                                                        <th className="p-3 text-right font-medium text-gray-700">Created</th>
+                                                        <th className="p-3 text-right font-medium text-gray-700">Skipped</th>
+                                                        <th className="p-3 text-right font-medium text-gray-700">Failed</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {jobResults.map((job, idx) => (
+                                                        <tr key={job.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                                            <td className="max-w-[220px] truncate p-3 text-gray-900" title={job.file_name || undefined}>
+                                                                {job.file_name || `Batch ${idx + 1}`}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <span
+                                                                    className={`rounded px-2 py-1 text-xs ${
+                                                                        job.status === "Completed"
+                                                                            ? "bg-green-50 text-green-600"
+                                                                            : job.status === "Failed"
+                                                                                ? "bg-red-50 text-red-600"
+                                                                                : "bg-amber-50 text-amber-700"
+                                                                    }`}
+                                                                >
+                                                                    {job.status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 text-right text-gray-900">{job.created_rows.toLocaleString()}</td>
+                                                            <td className="p-3 text-right text-gray-900">{job.skipped_rows.toLocaleString()}</td>
+                                                            <td className="p-3 text-right text-gray-900">{job.failed_rows.toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end gap-3 mt-6 font-medium">
+                                        <AppButton onClick={handleClose} variantStyle="outline" color="primary">
+                                            Close
+                                        </AppButton>
+                                        <AppButton
+                                            onClick={() => {
+                                                handleClose();
+                                                onSuccess();
+                                            }}
+                                            variantStyle="primary"
+                                            color="primary"
+                                        >
+                                            View in Discover
+                                        </AppButton>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             </AppDialog>

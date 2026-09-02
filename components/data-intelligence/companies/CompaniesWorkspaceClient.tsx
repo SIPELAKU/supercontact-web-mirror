@@ -89,7 +89,7 @@ function memberToCompanyItem(member: CompanyListMemberItem): CompanyIntelligence
         employee_count: member.employee_count ?? 0,
         revenue: member.revenue,
         financial_status: member.financial_status || "",
-        source: "",
+        source: member.source || "",
         confidence_tier: null,
         match_score: 0,
         raw_data: null,
@@ -224,6 +224,7 @@ export default function CompaniesWorkspaceClient() {
             const data = await getMyTargetCompanies(token, {
                 industry: filterCriteria.industries,
                 location: filterCriteria.locations,
+                sources: filterCriteria.sourcesSaved,
                 search: savedTableState.globalFilter || "",
                 page: savedTableState.pagination.pageIndex + 1,
                 limit: savedTableState.pagination.pageSize,
@@ -236,7 +237,7 @@ export default function CompaniesWorkspaceClient() {
         } finally {
             setIsSavedLoading(false);
         }
-    }, [filterCriteria.industries, filterCriteria.locations, savedTableState, getToken]);
+    }, [filterCriteria.industries, filterCriteria.locations, filterCriteria.sourcesSaved, savedTableState, getToken]);
 
     useEffect(() => {
         if (activeTab === "saved") fetchSaved();
@@ -299,6 +300,7 @@ export default function CompaniesWorkspaceClient() {
                 const data = await getMyTargetCompanies(token, {
                     industry: filterCriteria.industries,
                     location: filterCriteria.locations,
+                    sources: filterCriteria.sourcesSaved,
                     search: savedTableState.globalFilter || "",
                     page: currentPage,
                     limit: 50,
@@ -544,6 +546,15 @@ export default function CompaniesWorkspaceClient() {
                             onStateChange={(s) =>
                                 setSavedTableState({ pagination: s.pagination, globalFilter: s.globalFilter || "" })
                             }
+                            // The facet rail's filters live outside the table -
+                            // when any of them changes, snap back to page 0 or a
+                            // stale pageIndex requests a page the narrowed set no
+                            // longer has and shows a bogus "No saved companies".
+                            resetPageKey={JSON.stringify([
+                                filterCriteria.industries,
+                                filterCriteria.locations,
+                                filterCriteria.sourcesSaved,
+                            ])}
                             onExportRequest={handleExportRequest}
                             onRowClick={(row) => handleRowClick(row, "saved")}
                             renderTopLeftToolbar={() => (

@@ -11,14 +11,16 @@ import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge"
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
 import ContactCard from "./ContactCard";
+import LegalRegistryCard from "./LegalRegistryCard";
 import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
 import SocialLookupModal from "./SocialLookupModal";
+import SocialPresenceCard, { SOCIAL_PLATFORM_LABELS } from "./SocialPresenceCard";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
-import { saveCompanyToCrm } from "@/lib/api/company-intelligence";
+import { enrichSocialProfiles, saveCompanyToCrm } from "@/lib/api/company-intelligence";
 import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { fetchNotifications } from "@/lib/api/notifications";
-import { CompanyProfile360 } from "@/lib/types/company-intelligence";
+import { CompanyProfile360, SocialLinksValues } from "@/lib/types/company-intelligence";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 
@@ -49,6 +51,7 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
     // accidental double-save possible).
     const [isSaved, setIsSaved] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isRefreshingSocial, setIsRefreshingSocial] = useState(false);
     const [signals, setSignals] = useState<AutomatedSignal[]>([]);
     const [isLoadingSignals, setIsLoadingSignals] = useState(false);
     const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
@@ -205,6 +208,94 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
         }
     };
 
+    const handleRefreshSocial = async () => {
+        // The enricher only works against a cache row - saved companies whose
+        // cache link is severed never render the button (canRefresh=false).
+        if (!profile?.cacheId) return;
+        setIsRefreshingSocial(true);
+        try {
+            const token = await getToken();
+            const { results } = await enrichSocialProfiles(token, profile.cacheId);
+            const checkedAt = new Date().toISOString();
+            const okResults = results.filter((result) => result.status === "ok");
+            const failedResults = results.filter((result) => result.status === "failed");
+            const notConfigured = results.filter((result) => result.status === "not_configured");
+            const label = (platform: string) => SOCIAL_PLATFORM_LABELS[platform] ?? platform;
+            // Merge fresh metrics into profile state rather than refetching:
+            // the API persisted the same numbers under raw_data.social_profiles,
+            // but the saved-path detail response carries no raw_data, so a
+            // reload there would blank the metrics we just fetched. (A Threads
+            // URL confirmed server-side from the IG handle surfaces on the
+            // next full profile load - its metrics row shows immediately.)
+            if (okResults.length > 0) {
+                setProfile((prev) => {
+                    if (!prev) return prev;
+                    const merged = { ...(prev.socialProfiles ?? {}) };
+                    for (const result of okResults) {
+                        merged[result.platform] = {
+                            ...merged[result.platform],
+                            followers: result.followers ?? undefined,
+                            verified: result.verified,
+                            checked_at: checkedAt,
+                        };
+                    }
+                    return { ...prev, socialProfiles: merged };
+                });
+                notify.success("Social data refreshed", {
+                    description: [
+                        ...okResults.map((result) =>
+                            result.followers != null
+                                ? `${label(result.platform)}: ${result.followers.toLocaleString("id-ID")} followers`
+                                : `${label(result.platform)}: updated`
+                        ),
+                        ...failedResults.map((result) => `${label(result.platform)}: failed`),
+                    ].join(" · "),
+                });
+            } else if (failedResults.length > 0) {
+                notify.error("Social refresh failed", {
+                    description: `${failedResults
+                        .map((result) => label(result.platform))
+                        .join(", ")} could not be refreshed.`,
+                });
+            } else if (notConfigured.length === 0) {
+                notify.info("Nothing to refresh", {
+                    description: "No social handles are stored for this company yet.",
+                });
+            }
+            if (notConfigured.length > 0) {
+                notify.info("Provider not configured", {
+                    description: `${notConfigured
+                        .map((result) => label(result.platform))
+                        .join(", ")}: provider not configured on this environment.`,
+                });
+            }
+        } catch (err: any) {
+            console.error("Failed to refresh social data:", err);
+            notify.error(err?.message || "Failed to refresh social data");
+        } finally {
+            setIsRefreshingSocial(false);
+        }
+    };
+
+    // Search Assist paste-back succeeded - the PATCH response carries all six
+    // canonical stored links, so sync them wholesale into profile state (no
+    // refetch: the saved-path reload would blank in-state social metrics).
+    const handleSocialLinksSaved = (values: SocialLinksValues) => {
+        setProfile((prev) =>
+            prev
+                ? {
+                      ...prev,
+                      instagramUrl: values.instagram_url,
+                      facebookUrl: values.facebook_url,
+                      linkedinUrl: values.linkedin_url,
+                      tiktokUrl: values.tiktok_url,
+                      xUrl: values.x_url,
+                      threadsUrl: values.threads_url,
+                  }
+                : prev
+        );
+    };
+
     const handleTabChange = (tab: ProfileTab) => {
         setActiveTab(tab);
         router.replace(`/data-intelligence/company/${id}?source=${source}&tab=${tab}`, { scroll: false });
@@ -330,6 +421,15 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                         onVerify={handleVerifyContacts}
                     />
 
+                    <SocialPresenceCard
+                        profile={profile}
+                        canRefresh={Boolean(profile.cacheId)}
+                        isRefreshing={isRefreshingSocial}
+                        onRefresh={handleRefreshSocial}
+                        cacheId={profile.cacheId ?? null}
+                        onLinksSaved={handleSocialLinksSaved}
+                    />
+
                     {profile.social && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
                             <h4 className="mb-4 text-xs font-bold uppercase text-gray-400">
@@ -367,6 +467,8 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                             </ul>
                         </div>
                     )}
+
+                    <LegalRegistryCard profile={profile} />
                 </div>
             )}
 

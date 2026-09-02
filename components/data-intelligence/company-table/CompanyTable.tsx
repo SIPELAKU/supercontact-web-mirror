@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/super-table";
 import { CompanyIntelligenceItem } from "@/lib/types/company-intelligence";
 import { INDUSTRY_OPTIONS, LOCATION_OPTIONS } from "@/lib/data/company-intelligence-options";
+import { sourceGroup } from "@/lib/data/source-groups";
 import { EmptyState } from "@/components/ui/empty-state";
 
 // ── Chip Styling ──────────────────────────────────────────
@@ -122,6 +123,12 @@ interface CompanyTableProps {
   /** 'none' hides the selection checkboxes/bulk-actions bar entirely -
    * used on the Lists tab, which has no bulk action to select rows for. */
   rowSelection?: "none" | "single" | "multi";
+  /** Passed straight through to SuperTable: when this key changes, the
+   * page index resets to 0. Callers whose filters live OUTSIDE the table
+   * (the workspace facet rail) must pass their filter state here, or
+   * narrowing a filter while sitting on page >= 2 requests a page the
+   * filtered set no longer has and renders a bogus empty state. */
+  resetPageKey?: string | number;
 }
 
 // ── Component ─────────────────────────────────────────────
@@ -146,6 +153,7 @@ export default function CompanyTable({
   renderBulkActions,
   enableColumnFilters = true,
   rowSelection = "multi",
+  resetPageKey,
 }: CompanyTableProps) {
   const columns = useMemo<MRT_ColumnDef<CompanyIntelligenceItem>[]>(
     () => [
@@ -230,6 +238,29 @@ export default function CompanyTable({
           return <Chip label={label} sx={getDynamicChipStyle(label)} />;
         },
       },
+      {
+        id: "source",
+        accessorFn: (row) => row.source || "",
+        header: "Source",
+        enableColumnFilter: false,
+        size: 110,
+        // Icon + short group label; the raw provider identifier (which can be
+        // "" on Lists rows or a legacy value) only appears in the tooltip.
+        Cell: ({ row }) => {
+          const raw = row.original.source || "";
+          const group = sourceGroup(raw);
+          const Icon = group.icon;
+          return (
+            <span
+              className="inline-flex items-center gap-1.5 whitespace-nowrap text-gray-600"
+              title={raw || group.label}
+            >
+              <Icon size={14} className="shrink-0 text-gray-400" />
+              {group.label}
+            </span>
+          );
+        },
+      },
     ],
     [enableColumnFilters]
   );
@@ -265,6 +296,7 @@ export default function CompanyTable({
         }
         renderTopLeftToolbar={renderTopLeftToolbar}
         renderBulkActions={renderBulkActions}
+        resetPageKey={resetPageKey}
         initialState={{
           columnFilters: [],
         }}

@@ -124,6 +124,13 @@ const menuData: MenuSection[] = [
           // "Companies" workspace (Discover/Saved/Lists tabs) - was 3
           // separate destinations for what's conceptually one task.
           { name: "Companies", path: "/data-intelligence/companies", permission: "companies:read" },
+          // Import Center: bulk import jobs promoted out of the modal-only
+          // flow - job history, per-job companies, and stop/continue/
+          // rollback/replay live here.
+          { name: "Imports", path: "/data-intelligence/imports", permission: "companies:read" },
+          // Read-only status of every data provider/loader feeding the
+          // intelligence cache (GET /sources-status).
+          { name: "Data Sources", path: "/data-intelligence/sources", permission: "companies:read" },
           // D4: renamed from "Individual" - reworked from a flat card grid
           // (company info repeated on every card, zero links back to the
           // company) into a table with company backlinks and a seniority

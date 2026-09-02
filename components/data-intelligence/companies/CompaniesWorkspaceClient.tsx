@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, Tab, CircularProgress } from "@mui/material";
-import { Plus, ListPlus, Save as SaveIcon, Printer, Radar, ListChecks, Trash2 } from "lucide-react";
+import { Plus, ListPlus, Save as SaveIcon, Printer, Radar, ListChecks, Trash2, Upload } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,6 +15,7 @@ import CompanyTable from "@/components/data-intelligence/company-table/CompanyTa
 import CompanyFilterRail from "./CompanyFilterRail";
 import ActiveFilterChips from "./ActiveFilterChips";
 import CreateListModal from "@/components/data-intelligence/lists/CreateListModal";
+import ImportCompaniesModal from "./ImportCompaniesModal";
 import AddToListModal from "@/components/data-intelligence/lists/AddToListModal";
 import AddSelectedToListModal from "@/components/data-intelligence/lists/AddSelectedToListModal";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -42,11 +43,23 @@ function filterCriteriaToPayload(
     criteria: FilterCriteria,
     extra?: Partial<CompanyIntelligenceSearchPayload>
 ): CompanyIntelligenceSearchPayload {
+    // Backend rejects a candidate outright when employee_count is unset and
+    // EITHER bound is present (Google Maps/SerpAPI never fill headcount) -
+    // sending the slider's default range on every search silently zeroed
+    // out every freshly-discovered result, including the ones a kabupaten-
+    // targeted Maps search exists specifically to surface. Only send the
+    // bounds once the user has actually moved the slider off its default.
+    const defaultRange = DEFAULT_FILTER_CRITERIA.employeeRange;
+    const employeeRangeTouched =
+        criteria.employeeRange.min !== defaultRange.min ||
+        criteria.employeeRange.max !== defaultRange.max;
+
     return {
         industries: criteria.industries,
         locations: criteria.locations,
-        employee_min: criteria.employeeRange.min,
-        employee_max: criteria.employeeRange.max,
+        kabupaten: criteria.kabupaten.length ? criteria.kabupaten : undefined,
+        employee_min: employeeRangeTouched ? criteria.employeeRange.min : undefined,
+        employee_max: employeeRangeTouched ? criteria.employeeRange.max : undefined,
         financial_status: criteria.financialStatuses,
         has_phone: criteria.hasPhone || undefined,
         has_domain: criteria.hasDomain || undefined,
@@ -76,7 +89,7 @@ function memberToCompanyItem(member: CompanyListMemberItem): CompanyIntelligence
         employee_count: member.employee_count ?? 0,
         revenue: member.revenue,
         financial_status: member.financial_status || "",
-        source: "",
+        source: member.source || "",
         confidence_tier: null,
         match_score: 0,
         raw_data: null,
@@ -211,6 +224,7 @@ export default function CompaniesWorkspaceClient() {
             const data = await getMyTargetCompanies(token, {
                 industry: filterCriteria.industries,
                 location: filterCriteria.locations,
+                sources: filterCriteria.sourcesSaved,
                 search: savedTableState.globalFilter || "",
                 page: savedTableState.pagination.pageIndex + 1,
                 limit: savedTableState.pagination.pageSize,
@@ -223,7 +237,7 @@ export default function CompaniesWorkspaceClient() {
         } finally {
             setIsSavedLoading(false);
         }
-    }, [filterCriteria.industries, filterCriteria.locations, savedTableState, getToken]);
+    }, [filterCriteria.industries, filterCriteria.locations, filterCriteria.sourcesSaved, savedTableState, getToken]);
 
     useEffect(() => {
         if (activeTab === "saved") fetchSaved();
@@ -286,6 +300,7 @@ export default function CompaniesWorkspaceClient() {
                 const data = await getMyTargetCompanies(token, {
                     industry: filterCriteria.industries,
                     location: filterCriteria.locations,
+                    sources: filterCriteria.sourcesSaved,
                     search: savedTableState.globalFilter || "",
                     page: currentPage,
                     limit: 50,
@@ -359,6 +374,7 @@ export default function CompaniesWorkspaceClient() {
     };
 
     // ===== Modals =====
+    const [showImportCompanies, setShowImportCompanies] = useState(false);
     const [showCreateList, setShowCreateList] = useState(false);
     const [createListDefaultType, setCreateListDefaultType] = useState<"static" | "dynamic">("static");
     const [showAddToSelectedList, setShowAddToSelectedList] = useState(false);
@@ -445,14 +461,22 @@ export default function CompaniesWorkspaceClient() {
                     <div className="space-y-4 lg:col-span-3">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <ActiveFilterChips mode="discover" filterCriteria={filterCriteria} onChange={setFilterCriteria} />
-                            <AppButton
-                                variantStyle="outline"
-                                onClick={() => openCreateList("dynamic")}
-                                startIcon={<ListPlus size={16} />}
-                                className="ml-auto"
-                            >
-                                Save as List
-                            </AppButton>
+                            <div className="ml-auto flex items-center gap-3">
+                                <AppButton
+                                    variantStyle="outline"
+                                    onClick={() => setShowImportCompanies(true)}
+                                    startIcon={<Upload size={16} />}
+                                >
+                                    Import CSV
+                                </AppButton>
+                                <AppButton
+                                    variantStyle="outline"
+                                    onClick={() => openCreateList("dynamic")}
+                                    startIcon={<ListPlus size={16} />}
+                                >
+                                    Save as List
+                                </AppButton>
+                            </div>
                         </div>
                         <p className="text-sm text-gray-500">
                             {isDiscoverLoading ? "Searching..." : `${discoverTotal} companies found`}
@@ -522,6 +546,15 @@ export default function CompaniesWorkspaceClient() {
                             onStateChange={(s) =>
                                 setSavedTableState({ pagination: s.pagination, globalFilter: s.globalFilter || "" })
                             }
+                            // The facet rail's filters live outside the table -
+                            // when any of them changes, snap back to page 0 or a
+                            // stale pageIndex requests a page the narrowed set no
+                            // longer has and shows a bogus "No saved companies".
+                            resetPageKey={JSON.stringify([
+                                filterCriteria.industries,
+                                filterCriteria.locations,
+                                filterCriteria.sourcesSaved,
+                            ])}
                             onExportRequest={handleExportRequest}
                             onRowClick={(row) => handleRowClick(row, "saved")}
                             renderTopLeftToolbar={() => (
@@ -682,6 +715,13 @@ export default function CompaniesWorkspaceClient() {
                 <PrintableTable ref={printableRef} title="Saved Companies" columns={printableColumns} data={savedCompanies} />
             </div>
 
+            <ImportCompaniesModal
+                open={showImportCompanies}
+                onClose={() => setShowImportCompanies(false)}
+                // Imported rows land in the tenant-private intelligence cache,
+                // which is what the Discover search surfaces.
+                onSuccess={fetchDiscover}
+            />
             <CreateListModal
                 open={showCreateList}
                 onClose={() => setShowCreateList(false)}

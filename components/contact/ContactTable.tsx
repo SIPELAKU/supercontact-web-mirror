@@ -98,7 +98,10 @@ export const ContactTable = ({
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
         entityLabel="kontak"
-        searchPlaceholder="Cari nama, email, telepon, atau perusahaan"
+        // The API splits this into words and requires each to match somewhere
+        // in the record, so "budi jakarta" finds Budi in Jakarta. Naming the
+        // fields here is what tells someone that is worth trying.
+        searchPlaceholder="Cari nama, email, telepon, perusahaan, atau alamat"
         // No `filters` and no `columnFilters`. GET /contacts takes exactly
         // page, limit, search, include_all, sort_by and sort_order - there is
         // no filter parameter to send. It used to render a text filter under

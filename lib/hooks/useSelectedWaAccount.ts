@@ -10,6 +10,24 @@ export const WA_ACCOUNT_PARAM = 'account';
 const STORAGE_KEY = 'wa-templates:selected-account';
 
 /**
+ * The resolution order, as a pure function so it can be tested without a
+ * router: URL first, then what was remembered, then the first account. An id
+ * that no longer matches a loaded account is ignored rather than trusted - the
+ * account may have been deactivated since it was written down.
+ */
+export function resolveWaAccountId(
+  accounts: Pick<Account, 'id'>[],
+  fromUrl: string,
+  remembered: string
+): string {
+  if (accounts.length === 0) return '';
+  const known = (id: string) => !!id && accounts.some((a) => a.id === id);
+  if (known(fromUrl)) return fromUrl;
+  if (known(remembered)) return remembered;
+  return accounts[0].id;
+}
+
+/**
  * Which WhatsApp sender a page is scoped to - remembered, never blank.
  *
  * WHY THIS EXISTS
@@ -49,11 +67,6 @@ export function useSelectedWaAccount(accounts: Account[] | undefined) {
   const fromUrl = searchParams.get(WA_ACCOUNT_PARAM) || '';
 
   const accountId = useMemo(() => {
-    if (list.length === 0) return '';
-    const known = (id: string) => list.some((a) => a.id === id);
-
-    if (fromUrl && known(fromUrl)) return fromUrl;
-
     let remembered = '';
     try {
       remembered = window.localStorage.getItem(STORAGE_KEY) || '';
@@ -61,9 +74,7 @@ export function useSelectedWaAccount(accounts: Account[] | undefined) {
       // Storage can be unavailable (private mode, blocked site data). The
       // selection still resolves - it just does not survive a fresh visit.
     }
-    if (remembered && known(remembered)) return remembered;
-
-    return list[0].id;
+    return resolveWaAccountId(list, fromUrl, remembered);
     // `list` is derived from `accounts`; comparing the array identity is enough.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accounts, fromUrl]);

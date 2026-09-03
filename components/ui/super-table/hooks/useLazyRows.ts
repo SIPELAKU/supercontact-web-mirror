@@ -78,6 +78,17 @@ export interface LazyRowsResult<TData> {
   /** Every row loaded so far, in order, deduped. */
   rows: TData[];
   loadedCount: number;
+  /**
+   * The last total the server reported for THIS query, remembered.
+   *
+   * The total cannot change between batches of one query, so an endpoint is
+   * free to send it only with the first batch and skip the `COUNT(*)` on the
+   * rest - lazy loading turned one page view into ~10 requests, and the count
+   * was being recomputed on every one of them. Remembering it here is what
+   * makes that safe: without it, a batch that omits the total would blank the
+   * footer and fall back to guessing `hasMore` from the page being full.
+   */
+  knownTotal?: number;
   hasMore: boolean;
   /** True while a page AFTER the first is in flight. */
   isLoadingMore: boolean;
@@ -97,6 +108,7 @@ export function useLazyRows<TData extends object>({
   resetToken,
 }: UseLazyRowsParams<TData>): LazyRowsResult<TData> {
   const pagesRef = useRef(new Map<number, { rows: TData[]; fp: string }>());
+  const knownTotalRef = useRef<number | undefined>(undefined);
   // Bumped on every commit so the flatten below re-runs. A ref, not state:
   // committing happens DURING render, so a setState would be both illegal
   // and unnecessary - this render already sees the new rows.
@@ -107,6 +119,9 @@ export function useLazyRows<TData extends object>({
   if (prevToken.current !== resetToken) {
     prevToken.current = resetToken;
     pagesRef.current = new Map();
+    // The remembered total belongs to the OLD query; keeping it would show
+    // the previous result's count beside the new query's rows.
+    knownTotalRef.current = undefined;
     versionRef.current += 1;
   }
 
@@ -174,12 +189,19 @@ export function useLazyRows<TData extends object>({
   const loadedCount = rows.length;
   const batchesLoaded = pagesRef.current.size;
 
-  // With a known total, "more" is arithmetic. Without one, fall back to the
-  // classic signal: a page that came back full probably has a successor.
+  if (typeof rowCount === 'number') {
+    knownTotalRef.current = rowCount;
+  }
+  const knownTotal = knownTotalRef.current;
+
+  // With a known total, "more" is arithmetic. Without one - a first batch that
+  // has not landed yet, or an endpoint that reports no total at all - fall
+  // back to the classic signal: a page that came back full probably has a
+  // successor.
   const lastPage = pagesRef.current.get(pageIndex);
   const hasMore =
-    typeof rowCount === 'number'
-      ? loadedCount < rowCount
+    typeof knownTotal === 'number'
+      ? loadedCount < knownTotal
       : (lastPage?.rows.length ?? 0) >= pageSize;
 
   const isLoadingMore = Boolean((isFetching || isLoading) && pageIndex > 0);
@@ -187,6 +209,7 @@ export function useLazyRows<TData extends object>({
   return {
     rows,
     loadedCount,
+    knownTotal,
     hasMore,
     isLoadingMore,
     batchesLoaded,

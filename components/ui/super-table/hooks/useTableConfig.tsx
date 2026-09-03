@@ -34,6 +34,8 @@ export interface TableLazyConfig<TData extends object> {
   /** True when the parent is fetching pages from an API. */
   isServer: boolean;
   loadedCount: number;
+  /** Server total for the current query, remembered across batches. */
+  knownTotal?: number;
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
@@ -523,7 +525,12 @@ export function useTableConfig<TData extends object>(
         ? undefined
         : table.getFilteredRowModel().rows.length;
 
-      const totalCount = lazy.isServer ? props.rowCount : clientTotal;
+      // `knownTotal` first: on a server table the parent's `rowCount` comes
+      // from whichever batch is in hand, and an endpoint may send the count
+      // only with the first one.
+      const totalCount = lazy.isServer
+        ? (lazy.knownTotal ?? props.rowCount)
+        : clientTotal;
       const loadedCount = lazy.isServer
         ? lazy.loadedCount
         : Math.min(lazy.clientVisibleCount, clientTotal ?? 0);

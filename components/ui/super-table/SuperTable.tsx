@@ -400,6 +400,7 @@ export function SuperTable<TData extends object>(
     rows: isServerLazy ? lazyRows.rows : props.data || [],
     isServer: isServerLazy,
     loadedCount: isServerLazy ? lazyRows.loadedCount : clientVisibleCount,
+    knownTotal: isServerLazy ? lazyRows.knownTotal : undefined,
     hasMore,
     isLoadingMore,
     onLoadMore: handleLoadMore,
@@ -497,7 +498,7 @@ export function SuperTable<TData extends object>(
           pageScopeLabel={isLazy ? 'Baris yang sudah dimuat' : undefined}
           totalCount={
             props.manualPagination
-              ? (props.rowCount ?? props.data?.length ?? 0)
+              ? (lazyRows.knownTotal ?? props.rowCount ?? props.data?.length ?? 0)
               : table.getFilteredRowModel().rows.length
           }
           selectedCount={table.getSelectedRowModel().rows.length}

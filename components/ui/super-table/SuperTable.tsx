@@ -14,8 +14,10 @@ import { useTableExport } from './hooks/useTableExport';
 import { useSavedFilters } from './hooks/useSavedFilters';
 import { useUrlSync } from './hooks/useUrlSync';
 import { useListCursor } from './hooks/useListCursor';
+import { useListPosition, type ListPosition } from './hooks/useListPosition';
 import { useTableConfig, TableLazyConfig } from './hooks/useTableConfig';
 import { useLazyRows, useNearEndOfScroll } from './hooks/useLazyRows';
+import { usePathname } from 'next/navigation';
 
 // Components
 import { ExportDialog } from './components/ExportDialog';
@@ -113,6 +115,7 @@ export function SuperTable<TData extends object>(
   useListCursor({ enabled: !!(props.features?.urlSync && props.tableId) });
 
   // ─── 5. LAZY LOADING ─────────────────────────────────────────────────
+  const pathname = usePathname();
   const isLazy = mode === 'lazy';
   // Only a table whose parent fetches page-by-page needs rows accumulated.
   // A client-side table already holds every row; for it, "load more" simply
@@ -220,6 +223,14 @@ export function SuperTable<TData extends object>(
       return;
     }
     if (!lazyRows.hasMore) return;
+    // Every page asked for so far must have LANDED first. `isLoadingMore`
+    // above only knows about a request when the parent reports `isFetching` or
+    // `isLoading`, and plenty of them report neither - so on those tables a
+    // fast scroll (or a restore walking batches) could bump pageIndex twice
+    // before the first response arrived, and the batch in between was never
+    // requested at all. The result is rows 1-50 followed by 76-100, with
+    // nothing on screen to suggest 51-75 exist.
+    if (batchesLoaded !== tableState.pagination.pageIndex + 1) return;
     tableState.loadNextPage();
   }, [
     isLoadingMore,
@@ -227,11 +238,139 @@ export function SuperTable<TData extends object>(
     clientVisibleCount,
     batchSize,
     lazyRows.hasMore,
+    batchesLoaded,
+    tableState.pagination.pageIndex,
     props.data,
     tableState.loadNextPage,
   ]);
 
-  const handleContainerScroll = useNearEndOfScroll({
+  // ─── Coming back to where you were ───────────────────────────────────
+  // At most this many batches are re-fetched on a return. Restoring is
+  // sequential - one request per batch, because a parent fetches one page at a
+  // time - so an unbounded restore would fire twenty requests to put someone
+  // back at row 500. Six covers the way these lists are actually worked
+  // through; deeper than that, landing near the top is the kinder failure.
+  const RESTORE_MAX_BATCHES = 6;
+
+  const position = useListPosition({
+    enabled: isLazy && !!props.tableId,
+    pathname: pathname ?? '',
+    tableId: props.tableId ?? '',
+  });
+
+  // `null` = not restoring. A number = keep loading until that many batches
+  // are in, then put the scroll back.
+  const [restoreTarget, setRestoreTarget] = React.useState<number | null>(null);
+  const restoreScrollTop = React.useRef(0);
+  // The query a restore was started for. `useUrlSync` applies `?q=`/`?f=` in
+  // an effect, so the token can still move under a restore that began on the
+  // pre-restore one - and finishing it would put six batches of the WRONG
+  // list on screen.
+  const restoreToken = React.useRef('');
+  // A given stored position is consumed once. Without this, finishing a
+  // restore and then scrolling would re-arm it on the next token match.
+  const restoreConsumed = React.useRef(false);
+
+  // The stored position belongs to a QUERY, and on mount the query is not
+  // settled yet: useUrlSync applies `?q=`/`?sort=`/`?f=` in an effect, so
+  // `resetToken` changes once shortly after mount. Watching the token rather
+  // than firing on mount is what makes a restore wait for the URL to land -
+  // and what makes a later filter change (a different token) correctly NOT
+  // restore anything.
+  // Read ONCE, on mount, into a snapshot. Calling `recall()` from the effect
+  // body meant it could hand back a position THIS session had just written:
+  // loading a third batch saved {batches:3}, the next render re-read it, and
+  // the table armed a "restore" to a depth it was already at - on the first
+  // visit, with nothing to restore.
+  const storedOnMount = React.useRef<ListPosition | null>(null);
+  const storedRead = React.useRef(false);
+  React.useEffect(() => {
+    if (storedRead.current) return;
+    storedRead.current = true;
+    storedOnMount.current = position.recall();
+  }, [position]);
+
+  React.useEffect(() => {
+    if (!isLazy || restoreConsumed.current) return;
+    if (!storedRead.current) return;
+    const stored = storedOnMount.current;
+    if (!stored || stored.token !== resetToken) return;
+    restoreConsumed.current = true;
+    if (stored.batches <= 1) return;
+    restoreScrollTop.current = stored.scrollTop;
+    restoreToken.current = resetToken;
+    setRestoreTarget(Math.min(stored.batches, RESTORE_MAX_BATCHES));
+  }, [isLazy, resetToken, position]);
+
+  // Drive the restore one batch at a time, waiting for each to settle. This
+  // deliberately bypasses the auto-load brake: the brake exists to stop idle
+  // scrolling from hoarding rows, not to stop someone returning to rows they
+  // had already loaded a moment ago.
+  React.useEffect(() => {
+    if (restoreTarget === null) return;
+    // The query moved out from under us; whatever is loading now belongs to a
+    // different list than the position described.
+    if (restoreToken.current !== resetToken) {
+      setRestoreTarget(null);
+      return;
+    }
+    if (isLoadingMore || props.isLoading || props.isFetching) return;
+    // Every page requested so far must have LANDED before asking for the next.
+    // Plenty of parents report neither `isLoading` nor `isFetching`, so there
+    // is no other signal that a request is in flight - and without this the
+    // effect re-fires while waiting and walks pageIndex past a batch nobody
+    // ever asked the server for. Measured: 75 rows on screen reading
+    // 1-50 then 76-100, with 51-75 silently missing.
+    if (isServerLazy && batchesLoaded !== tableState.pagination.pageIndex + 1) return;
+
+    if (batchesLoaded >= restoreTarget || !hasMore) {
+      setRestoreTarget(null);
+      // After the last batch commits the rows exist but are not laid out yet,
+      // so the container has no such offset to scroll to and the assignment is
+      // clamped to whatever height it happens to have. How many frames that
+      // takes depends on row height and how much the browser has to do, so
+      // rather than guess at one, re-apply until it sticks (or give up, so a
+      // genuinely unreachable offset cannot spin).
+      const top = restoreScrollTop.current;
+      let attempts = 0;
+      const apply = () => {
+        const el = instanceRef.current?.refs?.tableContainerRef?.current;
+        if (el) {
+          el.scrollTop = top;
+          if (Math.abs(el.scrollTop - top) < 1) return;
+        }
+        if (++attempts < 8) requestAnimationFrame(apply);
+      };
+      requestAnimationFrame(apply);
+      return;
+    }
+    handleLoadMore();
+  }, [
+    restoreTarget,
+    resetToken,
+    batchesLoaded,
+    isServerLazy,
+    tableState.pagination.pageIndex,
+    hasMore,
+    isLoadingMore,
+    props.isLoading,
+    props.isFetching,
+    handleLoadMore,
+  ]);
+
+  // Loading via the button fires no scroll event, so depth would go unrecorded
+  // for anyone who reaches row 200 by clicking rather than scrolling.
+  React.useEffect(() => {
+    if (!isLazy || restoreTarget !== null || batchesLoaded <= 1) return;
+    const el = instanceRef.current?.refs?.tableContainerRef?.current;
+    position.remember({
+      batches: batchesLoaded,
+      scrollTop: el?.scrollTop ?? 0,
+      token: resetToken,
+    });
+  }, [isLazy, batchesLoaded, resetToken, restoreTarget, position]);
+
+  const handleNearEnd = useNearEndOfScroll({
     enabled:
       isLazy &&
       hasMore &&
@@ -240,6 +379,21 @@ export function SuperTable<TData extends object>(
       !props.isLoading,
     onNearEnd: handleLoadMore,
   });
+
+  // One scroll listener does both jobs: decide whether to load more, and
+  // record where the reader is. Recording is throttled inside useListPosition,
+  // and is skipped while restoring so the restore cannot overwrite the very
+  // position it is on its way to.
+  const handleContainerScroll = React.useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const scrollTop = event.currentTarget.scrollTop;
+      handleNearEnd(event);
+      if (restoreTarget === null) {
+        position.remember({ batches: batchesLoaded, scrollTop, token: resetToken });
+      }
+    },
+    [handleNearEnd, position, batchesLoaded, resetToken, restoreTarget]
+  );
 
   const lazyConfig: TableLazyConfig<TData> = {
     mode,

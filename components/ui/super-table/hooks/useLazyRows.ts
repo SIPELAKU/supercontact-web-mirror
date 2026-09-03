@@ -23,13 +23,37 @@ import type React from 'react';
  *   · ids are deduped on the way out, because two adjacent offset pages can
  *     legitimately overlap when a row is inserted between two fetches.
  *
- * THE ONE SUBTLE PART - `isFetching`
+ * THE ONE SUBTLE PART - RECOGNISING A PAGE THAT HAS NOT ARRIVED YET
  * When "load more" bumps the index to 3, `data` still holds page 2's rows
- * until the new request resolves. Committing then would file page 2's rows
- * under slot 3. So a commit only happens once the fetch has settled, and a
- * reference-identical array that is already stored elsewhere is ignored - the
- * guard that covers callers who never pass `isFetching` at all.
+ * until the parent's request resolves. Filing those under slot 3 puts the same
+ * rows in two places; dedupe hides it in the output, but the slot count - which
+ * the auto-load brake and the "restore my position" walk both read - silently
+ * over-counts, and each step lands one batch short.
+ *
+ * Reference identity cannot catch this. Most parents build a fresh array on
+ * every render (`resp?.rows || []`, `.slice(...)`, `.map(...)`), so page 2's
+ * rows arrive as a NEW array each time and look like new data. So each slot
+ * carries a cheap fingerprint of its contents instead, and a page whose
+ * fingerprint already exists in another slot is refused.
  */
+
+/**
+ * Cheap stand-in for "these are the same rows": length plus the first and last
+ * id. Two different pages of the same query can only collide here by having the
+ * same length AND the same first and last row - which means the same page.
+ * An empty batch fingerprints as `0:` and so matches any other empty batch,
+ * which is what stops `resp?.rows || []` re-filing on every render.
+ */
+function fingerprint<TData>(
+  rows: TData[],
+  getRowId: (row: TData, index: number) => string
+): string {
+  if (rows.length === 0) return '0:';
+  return `${rows.length}:${getRowId(rows[0], 0)}:${getRowId(
+    rows[rows.length - 1],
+    rows.length - 1
+  )}`;
+}
 
 interface UseLazyRowsParams<TData> {
   enabled: boolean;
@@ -72,7 +96,7 @@ export function useLazyRows<TData extends object>({
   getRowId,
   resetToken,
 }: UseLazyRowsParams<TData>): LazyRowsResult<TData> {
-  const pagesRef = useRef(new Map<number, TData[]>());
+  const pagesRef = useRef(new Map<number, { rows: TData[]; fp: string }>());
   // Bumped on every commit so the flatten below re-runs. A ref, not state:
   // committing happens DURING render, so a setState would be both illegal
   // and unnecessary - this render already sees the new rows.
@@ -99,24 +123,29 @@ export function useLazyRows<TData extends object>({
   // double render files the same array under the same index and the second
   // pass exits at the identity check below without bumping the version.
   if (enabled && !isFetching && !isLoading && Array.isArray(data)) {
+    // Pages arrive in order or not at all. Changing a filter clears the map
+    // and resets pagination, but those are two separate state updates: in the
+    // render between them the parent is still holding batch 3's rows while the
+    // map is empty, and that batch would be filed under slot 2 - leaving the
+    // list showing rows 1-25 and 51-75 with the middle missing, under a filter
+    // that was supposed to start it over. A page whose predecessor is absent
+    // is stale by definition.
+    const outOfSequence = pageIndex > 0 && !pagesRef.current.has(pageIndex - 1);
+    const fp = fingerprint(data, getRowId);
     const existing = pagesRef.current.get(pageIndex);
-    // `data={resp?.rows || []}` builds a fresh empty array on every render
-    // while a request is in flight, which would re-file and re-flatten on each
-    // one for no change at all. Two empties are the same empty.
-    const bothEmpty = existing?.length === 0 && data.length === 0;
-    if (existing !== data && !bothEmpty) {
-      // The array we were handed is byte-for-byte the one sitting in a
-      // DIFFERENT slot: the parent has not refetched yet and we would be
-      // filing the previous page's rows under the new index.
+    if (!outOfSequence && existing?.fp !== fp) {
+      // This exact run of rows is already filed under a DIFFERENT index: the
+      // parent has not caught up with the new page yet, and committing would
+      // file the previous batch under this one.
       let alreadyFiledElsewhere = false;
-      for (const [index, rows] of pagesRef.current) {
-        if (index !== pageIndex && rows === data) {
+      for (const [index, page] of pagesRef.current) {
+        if (index !== pageIndex && page.fp === fp) {
           alreadyFiledElsewhere = true;
           break;
         }
       }
       if (!alreadyFiledElsewhere) {
-        pagesRef.current.set(pageIndex, data);
+        pagesRef.current.set(pageIndex, { rows: data, fp });
         versionRef.current += 1;
       }
     }
@@ -130,7 +159,7 @@ export function useLazyRows<TData extends object>({
     const seen = new Set<string>();
     const out: TData[] = [];
     for (const index of [...pagesRef.current.keys()].sort((a, b) => a - b)) {
-      for (const row of pagesRef.current.get(index) ?? []) {
+      for (const row of pagesRef.current.get(index)?.rows ?? []) {
         const id = getRowId(row, out.length);
         if (seen.has(id)) continue;
         seen.add(id);
@@ -151,7 +180,7 @@ export function useLazyRows<TData extends object>({
   const hasMore =
     typeof rowCount === 'number'
       ? loadedCount < rowCount
-      : (lastPage?.length ?? 0) >= pageSize;
+      : (lastPage?.rows.length ?? 0) >= pageSize;
 
   const isLoadingMore = Boolean((isFetching || isLoading) && pageIndex > 0);
 

@@ -20,7 +20,9 @@ import MessagePreview from '../create/MessagePreview';
 import AddVariableSamplesModal from '../create/AddVariableSamplesModal';
 import { AppSelect } from '@/components/ui/app-select';
 import { BroadcastTemplateType, BroadcastTemplateCategory } from '@/lib/types/whatsapp-marketing';
+import { templatesListHref } from '@/lib/hooks/useSelectedWaAccount';
 import { ArrowLeft, Send } from 'lucide-react';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 const APPROVAL_CATEGORY_OPTIONS: { value: BroadcastTemplateCategory; label: string }[] = [
   { value: 'Marketing', label: 'Marketing' },
@@ -46,7 +48,7 @@ export default function TemplateDetailClient() {
   const [editCategory, setEditCategory] = useState<BroadcastTemplateCategory | ''>('');
 
   const template = data?.data;
-  const activeType = template ? (Object.keys(template.types)[0] as BroadcastTemplateType) : undefined;
+  const activeType = primaryContentType(template?.types);
 
   const activeFormData = useMemo(() => {
     if (!activeType) return {};
@@ -153,7 +155,7 @@ export default function TemplateDetailClient() {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography variant="h6" color="error">Failed to load template details.</Typography>
-        <AppButton onClick={() => router.push('/whatsapp-marketing/template-broadcasting')} sx={{ mt: 2 }}>Back to Templates</AppButton>
+        <AppButton onClick={() => router.push(templatesListHref(template?.account_id))} sx={{ mt: 2 }}>Back to Templates</AppButton>
       </Box>
     );
   }
@@ -164,12 +166,12 @@ export default function TemplateDetailClient() {
         title={isEditing ? 'Edit Template' : 'Template Details'}
         breadcrumbs={[
           { label: 'Whatsapp Marketing' },
-          { label: 'Template Broadcasting', href: '/whatsapp-marketing/template-broadcasting' },
+          { label: 'Template Broadcasting', href: templatesListHref(template.account_id) },
           { label: template.friendly_name },
         ]}
       />
 
-      <AppButton onClick={() => router.push('/whatsapp-marketing/template-broadcasting')} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back to Templates</AppButton>
+      <AppButton onClick={() => router.push(templatesListHref(template?.account_id))} sx={{ my: 2 }} variantStyle='text' startIcon={<ArrowLeft />}>Back to Templates</AppButton>
       <Grid container spacing={3}>
         <Grid item xs={12} md={7} lg={8}>
           <Stack spacing={3}>

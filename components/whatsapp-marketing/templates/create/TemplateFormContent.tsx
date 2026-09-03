@@ -1,13 +1,37 @@
 // components/whatsapp-marketing/templates/create/TemplateFormContent.tsx
 "use client";
 
-import { Card, CardContent, Typography, Box, Stack, IconButton, Divider, Tooltip } from '@mui/material';
-import { Plus, Trash2, Info } from 'lucide-react';
+import { Card, CardContent, Typography, Box, Stack, IconButton, Divider, Tooltip, Switch, FormControlLabel } from '@mui/material';
+import { Plus, Trash2, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { AppInput } from '@/components/ui/app-input';
 import { AppTextarea } from '@/components/ui/app-textarea';
 import { AppSelect } from '@/components/ui/app-select';
 import { AppButton } from '@/components/ui/app-button';
 import { BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
+import MediaUploadField from './MediaUploadField';
+import {
+  ACTION_ID_MAX,
+  CARD_MAX_ACTIONS,
+  CARD_TITLE_MAX,
+  CARD_SUBTITLE_MAX,
+  CAROUSEL_CARD_TITLE_BODY_COMBINED_MAX,
+  CAROUSEL_MAX_CARDS,
+  CAROUSEL_MAX_CARD_ACTIONS,
+  CAROUSEL_MIN_CARDS,
+  CTA_BODY_MAX,
+  LIST_PICKER_BODY_MAX,
+  LIST_PICKER_DESCRIPTION_MAX,
+  LIST_PICKER_ITEM_MAX,
+  LIST_PICKER_MAX_ITEMS,
+  FLOWS_COMPONENT_SHAPE,
+  FLOWS_COMPONENT_TYPES,
+  FLOWS_INPUT_TYPES,
+  FLOWS_MAX_PAGES,
+  FLOWS_PAGE_ID_MAX,
+  QUICK_REPLY_BODY_MAX,
+  QUICK_REPLY_MAX_ACTIONS,
+  buttonTextMax,
+} from '@/lib/constants/whatsapp-limits';
 
 interface TemplateFormContentProps {
   type: BroadcastTemplateType;
@@ -107,6 +131,189 @@ const RenderVariableSamples = ({ text, variables, onVariablesChange, isReadOnly 
   );
 };
 
+
+type ActionKind = 'URL' | 'PHONE_NUMBER' | 'QUICK_REPLY';
+
+interface ActionsEditorProps {
+  actions: any[];
+  onChange: (actions: any[]) => void;
+  allowedTypes: ActionKind[];
+  max: number;
+  isReadOnly?: boolean;
+  label?: string;
+  /** Shown under the header - used to explain the carousel's uniformity rule. */
+  hint?: string;
+}
+
+const ACTION_TYPE_LABEL: Record<ActionKind, string> = {
+  URL: 'URL',
+  PHONE_NUMBER: 'Phone Number',
+  QUICK_REPLY: 'Quick Reply',
+};
+
+/**
+ * One repeater for every type that carries buttons: call-to-action, card,
+ * quick reply, and each card of a carousel.
+ *
+ * Built once because the character budget for a button title depends on the
+ * button's TYPE - 25 for URL and phone, 20 for a quick reply - and a counter
+ * per card rather than per row would be wrong in one direction or the other.
+ */
+const ActionsEditor = ({
+  actions,
+  onChange,
+  allowedTypes,
+  max,
+  isReadOnly,
+  label = 'Actions',
+  hint,
+}: ActionsEditorProps) => {
+  const list = actions || [];
+  const atMax = list.length >= max;
+
+  const update = (index: number, patch: any) => {
+    const next = [...list];
+    next[index] = { ...next[index], ...patch };
+    onChange(next);
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box>
+        <Stack direction="row" alignItems="baseline" spacing={1}>
+          <Typography variant="subtitle2" fontWeight="bold">{label}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {list.length}/{max}
+          </Typography>
+        </Stack>
+        {hint ? (
+          <Typography variant="caption" color="text.secondary" display="block">
+            {hint}
+          </Typography>
+        ) : null}
+      </Box>
+
+      {list.map((action: any, index: number) => {
+        const titleMax = buttonTextMax(action.type);
+        const overTitle = (action.title || '').length > titleMax;
+        return (
+          <Card key={index} variant="outlined" sx={{ p: 2, bgcolor: isReadOnly ? 'transparent' : 'action.hover' }}>
+            <Stack spacing={2}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" fontWeight="bold">
+                  {label.replace(/s$/, '')} {index + 1}
+                </Typography>
+                {!isReadOnly && (
+                  <IconButton
+                    size="small"
+                    color="error"
+                    aria-label={`Hapus ${label} ${index + 1}`}
+                    onClick={() => onChange(list.filter((_: any, i: number) => i !== index))}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
+              </Stack>
+
+              {allowedTypes.length > 1 && (
+                <Box>
+                  {isReadOnly && (
+                    <Typography variant="caption" fontWeight="medium" mb={0.5} display="block" color="text.secondary">Type</Typography>
+                  )}
+                  <AppSelect
+                    label={isReadOnly ? undefined : 'Type'}
+                    size="small"
+                    isBgWhite
+                    options={allowedTypes.map((t) => ({ label: ACTION_TYPE_LABEL[t], value: t }))}
+                    value={action.type || allowedTypes[0]}
+                    onChange={(e) => update(index, { type: e.target.value })}
+                    disabled={isReadOnly}
+                  />
+                </Box>
+              )}
+
+              <Box>
+                {isReadOnly && (
+                  <Typography variant="caption" fontWeight="medium" mb={0.5} display="block" color="text.secondary">Title</Typography>
+                )}
+                <AppInput
+                  label={isReadOnly ? undefined : 'Title'}
+                  size="small"
+                  isBgWhite
+                  value={action.title || ''}
+                  onChange={(e) => update(index, { title: e.target.value })}
+                  disabled={isReadOnly}
+                />
+                <Typography
+                  variant="caption"
+                  color={overTitle ? 'error' : 'text.secondary'}
+                  display="block"
+                  textAlign="right"
+                >
+                  {(action.title || '').length}/{titleMax}
+                </Typography>
+              </Box>
+
+              {(action.type || allowedTypes[0]) === 'URL' && (
+                <AppInput
+                  label={isReadOnly ? undefined : 'URL'}
+                  size="small"
+                  isBgWhite
+                  placeholder="https://example.com/{{1}}"
+                  value={action.url || ''}
+                  onChange={(e) => update(index, { url: e.target.value })}
+                  disabled={isReadOnly}
+                />
+              )}
+              {(action.type || allowedTypes[0]) === 'PHONE_NUMBER' && (
+                <AppInput
+                  label={isReadOnly ? undefined : 'Phone Number'}
+                  size="small"
+                  isBgWhite
+                  value={action.phone || ''}
+                  onChange={(e) => update(index, { phone: e.target.value })}
+                  disabled={isReadOnly}
+                />
+              )}
+              {(action.type || allowedTypes[0]) === 'QUICK_REPLY' && (
+                <AppInput
+                  label={isReadOnly ? undefined : 'ID (dikirim balik saat ditekan)'}
+                  size="small"
+                  isBgWhite
+                  value={action.id || ''}
+                  onChange={(e) => update(index, { id: e.target.value.slice(0, ACTION_ID_MAX) })}
+                  disabled={isReadOnly}
+                />
+              )}
+            </Stack>
+          </Card>
+        );
+      })}
+
+      {!isReadOnly && (
+        <Box>
+          <AppButton
+            variantStyle="outline"
+            size="small"
+            startIcon={<Plus size={16} />}
+            disabled={atMax}
+            onClick={() =>
+              onChange([...list, { type: allowedTypes[0], title: '' }])
+            }
+          >
+            Add {label.replace(/s$/, '')}
+          </AppButton>
+          {atMax && (
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              Batas WhatsApp {max} tercapai.
+            </Typography>
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 export default function TemplateFormContent({
   type,
   formData,
@@ -174,14 +381,11 @@ export default function TemplateFormContent({
         {isReadOnly && (
           <Typography variant="body2" fontWeight="medium" mb={0.5}>Media URL</Typography>
         )}
-        <AppInput
-          isBgWhite
-          label={isReadOnly ? undefined : "Media URL"}
-          placeholder="https://example.com/image.png"
-          required
+        <MediaUploadField
+          label="Media"
           value={formData.media?.[0] || ''}
-          onChange={(e) => updateField('media', [e.target.value])}
-          disabled={isReadOnly}
+          onChange={(url) => updateField('media', [url])}
+          isReadOnly={isReadOnly}
         />
         <AddVariableButton onAdd={() => handleAddVariable(formData.media?.[0], 'media', (val) => updateField('media', [val]))} isReadOnly={isReadOnly} />
         <RenderVariableSamples text={formData.media?.[0]} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
@@ -386,6 +590,881 @@ export default function TemplateFormContent({
     </Box>
   );
 
+
+  // A body field with the variable controls the other forms already use.
+  const bodyField = (
+    placeholder: string,
+    max: number,
+    field: string = 'body'
+  ) => (
+    <Box>
+      {isReadOnly && (
+        <Typography variant="body2" fontWeight="medium" mb={0.5}>Body</Typography>
+      )}
+      <AppTextarea
+        isBgWhite
+        label={isReadOnly ? undefined : 'Body'}
+        placeholder={placeholder}
+        required
+        minRows={4}
+        value={formData[field] || ''}
+        onChange={(e) => updateField(field, e.target.value)}
+        disabled={isReadOnly}
+      />
+      <Typography
+        variant="caption"
+        display="block"
+        textAlign="right"
+        color={(formData[field] || '').length > max ? 'error' : 'text.secondary'}
+      >
+        {(formData[field] || '').length}/{max}
+      </Typography>
+      <AddVariableButton onAdd={() => handleAddVariable(formData[field], field)} isReadOnly={isReadOnly} />
+      <RenderVariableSamples text={formData[field]} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
+    </Box>
+  );
+
+  const renderQuickReplyForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {bodyField('Halo {{1}}, apakah pesanan Anda sudah diterima?', QUICK_REPLY_BODY_MAX)}
+      <ActionsEditor
+        actions={formData.actions || []}
+        onChange={(a) => updateField('actions', a)}
+        allowedTypes={['QUICK_REPLY']}
+        max={QUICK_REPLY_MAX_ACTIONS}
+        isReadOnly={isReadOnly}
+        label="Reply Buttons"
+        hint={`Sampai ${QUICK_REPLY_MAX_ACTIONS} tombol pada template. (Batas 3 hanya berlaku untuk pesan dalam sesi tanpa approval.)`}
+      />
+    </Box>
+  );
+
+  const renderListPickerForm = () => {
+    const items = formData.items || [];
+    const atMax = items.length >= LIST_PICKER_MAX_ITEMS;
+    const updateItem = (index: number, patch: any) => {
+      const next = [...items];
+      next[index] = { ...next[index], ...patch };
+      updateField('items', next);
+    };
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {bodyField('Pilih layanan yang Anda butuhkan', LIST_PICKER_BODY_MAX)}
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Button Text'}
+          placeholder="Lihat pilihan"
+          value={formData.button || ''}
+          onChange={(e) => updateField('button', e.target.value)}
+          disabled={isReadOnly}
+        />
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Items</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {items.length}/{LIST_PICKER_MAX_ITEMS}
+            </Typography>
+          </Stack>
+          <Stack spacing={2}>
+            {items.map((item: any, index: number) => (
+              <Card key={index} variant="outlined" sx={{ p: 2, bgcolor: isReadOnly ? 'transparent' : 'action.hover' }}>
+                <Stack spacing={2}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" fontWeight="bold">Item {index + 1}</Typography>
+                    {!isReadOnly && (
+                      <IconButton size="small" color="error" aria-label={`Hapus item ${index + 1}`}
+                        onClick={() => updateField('items', items.filter((_: any, i: number) => i !== index))}>
+                        <Trash2 size={16} />
+                      </IconButton>
+                    )}
+                  </Stack>
+                  <Box>
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Item'}
+                      size="small"
+                      isBgWhite
+                      value={item.item || ''}
+                      onChange={(e) => updateItem(index, { item: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      textAlign="right"
+                      color={(item.item || '').length > LIST_PICKER_ITEM_MAX ? 'error' : 'text.secondary'}
+                    >
+                      {(item.item || '').length}/{LIST_PICKER_ITEM_MAX}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Description'}
+                      size="small"
+                      isBgWhite
+                      value={item.description || ''}
+                      onChange={(e) => updateItem(index, { description: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      textAlign="right"
+                      color={(item.description || '').length > LIST_PICKER_DESCRIPTION_MAX ? 'error' : 'text.secondary'}
+                    >
+                      {(item.description || '').length}/{LIST_PICKER_DESCRIPTION_MAX}
+                    </Typography>
+                  </Box>
+                  <AppInput
+                    label={isReadOnly ? undefined : 'ID (dikirim balik saat dipilih)'}
+                    size="small"
+                    isBgWhite
+                    value={item.id || ''}
+                    onChange={(e) => updateItem(index, { id: e.target.value.slice(0, ACTION_ID_MAX) })}
+                    disabled={isReadOnly}
+                  />
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+          {!isReadOnly && (
+            <Box mt={2}>
+              <AppButton
+                variantStyle="outline"
+                size="small"
+                startIcon={<Plus size={16} />}
+                disabled={atMax}
+                onClick={() => updateField('items', [...items, { item: '', description: '', id: '' }])}
+              >
+                Add Item
+              </AppButton>
+              {atMax && (
+                <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                  Batas WhatsApp {LIST_PICKER_MAX_ITEMS} tercapai.
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderCardForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <AppInput
+        isBgWhite
+        label={isReadOnly ? undefined : 'Title'}
+        placeholder="Promo akhir bulan"
+        value={formData.title || ''}
+        onChange={(e) => updateField('title', e.target.value)}
+        disabled={isReadOnly}
+      />
+      <Box>
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Subtitle'}
+          value={formData.subtitle || ''}
+          onChange={(e) => updateField('subtitle', e.target.value)}
+          disabled={isReadOnly}
+        />
+        <Typography
+          variant="caption"
+          display="block"
+          textAlign="right"
+          color={(formData.subtitle || '').length > CARD_SUBTITLE_MAX ? 'error' : 'text.secondary'}
+        >
+          {(formData.subtitle || '').length}/{CARD_SUBTITLE_MAX}
+        </Typography>
+      </Box>
+      <MediaUploadField
+        label="Media"
+        value={formData.media?.[0] || ''}
+        onChange={(url) => updateField('media', url ? [url] : [])}
+        isReadOnly={isReadOnly}
+      />
+      {bodyField('Rincian penawaran {{1}}', CARD_TITLE_MAX)}
+      <ActionsEditor
+        actions={formData.actions || []}
+        onChange={(a) => updateField('actions', a)}
+        allowedTypes={['URL', 'PHONE_NUMBER', 'QUICK_REPLY']}
+        max={CARD_MAX_ACTIONS}
+        isReadOnly={isReadOnly}
+      />
+    </Box>
+  );
+
+  const renderCarouselForm = () => {
+    const cards = formData.cards || [];
+    // The button LAYOUT is edited once for the whole carousel, and every card
+    // inherits it. WhatsApp requires the button types to appear in the same
+    // order on every card, so making the layout a carousel-level property
+    // makes a mismatch impossible to build rather than something we detect
+    // afterwards - by which time it is a rejection days later, naming no card.
+    const layout: string[] = formData.__buttonLayout || ['URL'];
+
+    const setLayout = (next: string[]) => {
+      const trimmed = next.slice(0, CAROUSEL_MAX_CARD_ACTIONS);
+      updateField('__buttonLayout', trimmed);
+      onChange({
+        ...formData,
+        __buttonLayout: trimmed,
+        cards: cards.map((c: any) => ({
+          ...c,
+          actions: trimmed.map((t, i) => ({ ...(c.actions?.[i] || {}), type: t })),
+        })),
+      });
+    };
+
+    const updateCard = (index: number, patch: any) => {
+      const next = [...cards];
+      next[index] = { ...next[index], ...patch };
+      updateField('cards', next);
+    };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {bodyField('Lihat pilihan kami minggu ini', QUICK_REPLY_BODY_MAX)}
+
+        <Card variant="outlined" sx={{ p: 2, bgcolor: isReadOnly ? 'transparent' : 'action.hover' }}>
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Button layout
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
+            Berlaku untuk SEMUA kartu. WhatsApp menolak carousel yang kartunya
+            punya tipe tombol berbeda atau urutannya tidak sama, jadi tata
+            letaknya diatur sekali di sini.
+          </Typography>
+          <Stack spacing={1.5}>
+            {layout.map((t, i) => (
+              <Stack key={i} direction="row" spacing={1} alignItems="center">
+                <Box sx={{ flexGrow: 1 }}>
+                  <AppSelect
+                    size="small"
+                    isBgWhite
+                    options={[
+                      { label: 'URL', value: 'URL' },
+                      { label: 'Phone Number', value: 'PHONE_NUMBER' },
+                      { label: 'Quick Reply', value: 'QUICK_REPLY' },
+                    ]}
+                    value={t}
+                    onChange={(e) => setLayout(layout.map((x, j) => (j === i ? String(e.target.value) : x)))}
+                    disabled={isReadOnly}
+                  />
+                </Box>
+                {!isReadOnly && layout.length > 1 && (
+                  <IconButton size="small" color="error" aria-label={`Hapus tombol ${i + 1}`}
+                    onClick={() => setLayout(layout.filter((_, j) => j !== i))}>
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
+              </Stack>
+            ))}
+          </Stack>
+          {!isReadOnly && layout.length < CAROUSEL_MAX_CARD_ACTIONS && (
+            <Box mt={1.5}>
+              <AppButton variantStyle="outline" size="small" startIcon={<Plus size={16} />}
+                onClick={() => setLayout([...layout, 'URL'])}>
+                Add Button
+              </AppButton>
+            </Box>
+          )}
+        </Card>
+
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Cards</Typography>
+            <Typography variant="caption" color={cards.length < CAROUSEL_MIN_CARDS ? 'error' : 'text.secondary'}>
+              {cards.length}/{CAROUSEL_MAX_CARDS}
+              {cards.length < CAROUSEL_MIN_CARDS ? ` — minimal ${CAROUSEL_MIN_CARDS}` : ''}
+            </Typography>
+          </Stack>
+          <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
+            Jumlah kartu dikunci saat approval: template yang disetujui akan
+            selalu mengirim sebanyak kartu yang diajukan.
+          </Typography>
+
+          <Stack spacing={2}>
+            {cards.map((card: any, index: number) => {
+              const combined = (card.title || '').length + (card.body || '').length;
+              return (
+                <Card key={index} variant="outlined" sx={{ p: 2 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" fontWeight="bold">Card {index + 1}</Typography>
+                      {!isReadOnly && (
+                        <Stack direction="row" spacing={0.5}>
+                          <IconButton size="small" disabled={index === 0} aria-label="Naikkan kartu"
+                            onClick={() => {
+                              const next = [...cards];
+                              [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                              updateField('cards', next);
+                            }}>
+                            <ArrowUp size={16} />
+                          </IconButton>
+                          <IconButton size="small" disabled={index === cards.length - 1} aria-label="Turunkan kartu"
+                            onClick={() => {
+                              const next = [...cards];
+                              [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                              updateField('cards', next);
+                            }}>
+                            <ArrowDown size={16} />
+                          </IconButton>
+                          <IconButton size="small" color="error" aria-label={`Hapus kartu ${index + 1}`}
+                            onClick={() => updateField('cards', cards.filter((_: any, i: number) => i !== index))}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </Stack>
+                      )}
+                    </Stack>
+
+                    {/* A carousel card's media is a STRING, not an array -
+                        unlike twilio/media. Twilio rejects the array form with
+                        a generic 400 that names nothing. */}
+                    <MediaUploadField
+                      label="Card media (wajib)"
+                      value={typeof card.media === 'string' ? card.media : (card.media?.[0] || '')}
+                      onChange={(url) => updateCard(index, { media: url })}
+                      isReadOnly={isReadOnly}
+                    />
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Card title'}
+                      size="small"
+                      isBgWhite
+                      value={card.title || ''}
+                      onChange={(e) => updateCard(index, { title: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+                    <Box>
+                      <AppTextarea
+                        label={isReadOnly ? undefined : 'Card body'}
+                        isBgWhite
+                        minRows={2}
+                        value={card.body || ''}
+                        onChange={(e) => updateCard(index, { body: e.target.value })}
+                        disabled={isReadOnly}
+                      />
+                      <Typography
+                        variant="caption"
+                        display="block"
+                        textAlign="right"
+                        color={combined > CAROUSEL_CARD_TITLE_BODY_COMBINED_MAX ? 'error' : 'text.secondary'}
+                      >
+                        title + body {combined}/{CAROUSEL_CARD_TITLE_BODY_COMBINED_MAX}
+                      </Typography>
+                    </Box>
+
+                    <Stack spacing={1.5}>
+                      <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                        Buttons (tipe mengikuti layout di atas)
+                      </Typography>
+                      {layout.map((t, i) => (
+                        <Stack key={i} spacing={1}>
+                          <AppInput
+                            label={isReadOnly ? undefined : `${t} — title`}
+                            size="small"
+                            isBgWhite
+                            value={card.actions?.[i]?.title || ''}
+                            onChange={(e) => {
+                              const actions = layout.map((tt, j) => ({
+                                ...(card.actions?.[j] || {}),
+                                type: tt,
+                              }));
+                              actions[i] = { ...actions[i], title: e.target.value };
+                              updateCard(index, { actions });
+                            }}
+                            disabled={isReadOnly}
+                          />
+                          {t === 'URL' && (
+                            <AppInput
+                              label={isReadOnly ? undefined : 'URL'}
+                              size="small"
+                              isBgWhite
+                              value={card.actions?.[i]?.url || ''}
+                              onChange={(e) => {
+                                const actions = layout.map((tt, j) => ({
+                                  ...(card.actions?.[j] || {}),
+                                  type: tt,
+                                }));
+                                actions[i] = { ...actions[i], url: e.target.value };
+                                updateCard(index, { actions });
+                              }}
+                              disabled={isReadOnly}
+                            />
+                          )}
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Card>
+              );
+            })}
+          </Stack>
+
+          {!isReadOnly && (
+            <Box mt={2}>
+              <AppButton
+                variantStyle="outline"
+                size="small"
+                startIcon={<Plus size={16} />}
+                disabled={cards.length >= CAROUSEL_MAX_CARDS}
+                onClick={() =>
+                  updateField('cards', [
+                    ...cards,
+                    { media: '', title: '', body: '', actions: layout.map((t) => ({ type: t, title: '' })) },
+                  ])
+                }
+              >
+                Add Card
+              </AppButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderWhatsAppCardForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box>
+        {isReadOnly && (
+          <Typography variant="body2" fontWeight="medium" mb={0.5}>Header text</Typography>
+        )}
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Header text'}
+          placeholder="Kode promo Anda"
+          value={formData.header_text || ''}
+          onChange={(e) => updateField('header_text', e.target.value)}
+          disabled={isReadOnly}
+        />
+        <AddVariableButton onAdd={() => handleAddVariable(formData.header_text, 'header_text')} isReadOnly={isReadOnly} />
+        <RenderVariableSamples text={formData.header_text} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
+      </Box>
+      {bodyField('Gunakan {{1}} sebelum akhir bulan', CARD_TITLE_MAX)}
+    </Box>
+  );
+
+  const renderAuthForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+        <Typography variant="caption" color="text.secondary">
+          WhatsApp menulis sendiri isi pesan untuk template autentikasi — tidak
+          ada kolom Body di sini, dan menambahkannya akan ditolak saat review.
+          Yang bisa diatur hanya masa berlaku kode, catatan keamanan, dan label
+          tombol salin.
+        </Typography>
+      </Box>
+
+      <AppInput
+        isBgWhite
+        type="number"
+        label={isReadOnly ? undefined : 'Kode berlaku (menit)'}
+        value={formData.code_expiration_minutes || ''}
+        onChange={(e) => updateField('code_expiration_minutes', e.target.value)}
+        disabled={isReadOnly}
+      />
+
+      <FormControlLabel
+        control={
+          <Switch
+            checked={!!formData.add_security_recommendation}
+            onChange={(e) => updateField('add_security_recommendation', e.target.checked)}
+            disabled={isReadOnly}
+          />
+        }
+        label={
+          <Typography variant="body2">
+            Tampilkan anjuran keamanan (&ldquo;jangan bagikan kode ini&rdquo;)
+          </Typography>
+        }
+      />
+
+      <AppInput
+        isBgWhite
+        label={isReadOnly ? undefined : 'Label tombol salin'}
+        placeholder="Salin kode verifikasi"
+        value={formData.actions?.[0]?.copy_code_text || ''}
+        onChange={(e) =>
+          updateField('actions', [{ type: 'COPY_CODE', copy_code_text: e.target.value }])
+        }
+        disabled={isReadOnly}
+      />
+    </Box>
+  );
+
+  const renderWhatsAppFlowsForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {bodyField('Isi survei singkat kami', QUICK_REPLY_BODY_MAX)}
+      <AppInput
+        isBgWhite
+        label={isReadOnly ? undefined : 'Button text'}
+        placeholder="Mulai"
+        value={formData.button_text || ''}
+        onChange={(e) => updateField('button_text', e.target.value)}
+        disabled={isReadOnly}
+      />
+      <Box>
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Flow ID'}
+          placeholder="1232445823264765"
+          required
+          value={formData.flow_id || ''}
+          onChange={(e) => updateField('flow_id', e.target.value)}
+          disabled={isReadOnly}
+        />
+        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+          ID Flow yang sudah dipublikasikan di Meta Business Manager. Tipe ini
+          merujuk Flow yang sudah ada — bukan membuatnya di sini.
+        </Typography>
+      </Box>
+      <Box>
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Flow token'}
+          placeholder="{{1}}"
+          value={formData.flow_token || ''}
+          onChange={(e) => updateField('flow_token', e.target.value)}
+          disabled={isReadOnly}
+        />
+        <AddVariableButton onAdd={() => handleAddVariable(formData.flow_token, 'flow_token')} isReadOnly={isReadOnly} />
+        <RenderVariableSamples text={formData.flow_token} variables={variables} onVariablesChange={onVariablesChange} isReadOnly={isReadOnly} />
+      </Box>
+    </Box>
+  );
+
+
+  const renderFlowsForm = () => {
+    const pages = formData.pages || [];
+
+    const updatePage = (pi: number, patch: any) => {
+      const next = [...pages];
+      next[pi] = { ...next[pi], ...patch };
+      updateField('pages', next);
+    };
+    const updateComponent = (pi: number, ci: number, patch: any) => {
+      const layout = [...(pages[pi]?.layout || [])];
+      layout[ci] = { ...layout[ci], ...patch };
+      updatePage(pi, { layout });
+    };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {bodyField('Bantu kami mengenal kebutuhan Anda', QUICK_REPLY_BODY_MAX)}
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Button text'}
+          placeholder="Mulai"
+          value={formData.button_text || ''}
+          onChange={(e) => updateField('button_text', e.target.value)}
+          disabled={isReadOnly}
+        />
+
+        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Tipe ini membawa layarnya sendiri di dalam template — berbeda dari
+            <strong> whatsapp/flows</strong>, yang hanya merujuk Flow yang sudah
+            dipublikasikan di Meta. Ini juga bukan Flow Studio, yang mengatur
+            otomasi untuk pesan MASUK.
+          </Typography>
+        </Box>
+
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Pages</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {pages.length}/{FLOWS_MAX_PAGES}
+            </Typography>
+          </Stack>
+
+          <Stack spacing={2}>
+            {pages.map((page: any, pi: number) => {
+              const layout = page.layout || [];
+              return (
+                <Card key={pi} variant="outlined" sx={{ p: 2 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" fontWeight="bold">Page {pi + 1}</Typography>
+                      {!isReadOnly && (
+                        <Stack direction="row" spacing={0.5}>
+                          <IconButton size="small" disabled={pi === 0} aria-label="Naikkan halaman"
+                            onClick={() => {
+                              const next = [...pages];
+                              [next[pi - 1], next[pi]] = [next[pi], next[pi - 1]];
+                              updateField('pages', next);
+                            }}>
+                            <ArrowUp size={16} />
+                          </IconButton>
+                          <IconButton size="small" disabled={pi === pages.length - 1} aria-label="Turunkan halaman"
+                            onClick={() => {
+                              const next = [...pages];
+                              [next[pi + 1], next[pi]] = [next[pi], next[pi + 1]];
+                              updateField('pages', next);
+                            }}>
+                            <ArrowDown size={16} />
+                          </IconButton>
+                          <IconButton size="small" color="error" aria-label={`Hapus halaman ${pi + 1}`}
+                            onClick={() => updateField('pages', pages.filter((_: any, i: number) => i !== pi))}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </Stack>
+                      )}
+                    </Stack>
+
+                    <Box>
+                      <AppInput
+                        label={isReadOnly ? undefined : 'Page ID'}
+                        size="small"
+                        isBgWhite
+                        placeholder="page1"
+                        value={page.id || ''}
+                        onChange={(e) => updatePage(pi, { id: e.target.value.slice(0, FLOWS_PAGE_ID_MAX) })}
+                        disabled={isReadOnly}
+                      />
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Dikembalikan di webhook. Maks {FLOWS_PAGE_ID_MAX} karakter.
+                      </Typography>
+                    </Box>
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Title'}
+                      size="small"
+                      isBgWhite
+                      value={page.title || ''}
+                      onChange={(e) => updatePage(pi, { title: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Subtitle'}
+                      size="small"
+                      isBgWhite
+                      value={page.subtitle || ''}
+                      onChange={(e) => updatePage(pi, { subtitle: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+
+                    <Divider />
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                      Components
+                    </Typography>
+
+                    <Stack spacing={1.5}>
+                      {layout.map((component: any, ci: number) => {
+                        const kind = component.type || 'TEXT_BODY';
+                        const shape = (FLOWS_COMPONENT_SHAPE as any)[kind] || {};
+                        return (
+                          <Card key={ci} variant="outlined" sx={{ p: 1.5, bgcolor: isReadOnly ? 'transparent' : 'action.hover' }}>
+                            <Stack spacing={1.5}>
+                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Box sx={{ flexGrow: 1, mr: 1 }}>
+                                  <AppSelect
+                                    size="small"
+                                    isBgWhite
+                                    options={FLOWS_COMPONENT_TYPES.map((t) => ({ label: t, value: t }))}
+                                    value={kind}
+                                    onChange={(e) => updateComponent(pi, ci, { type: String(e.target.value) })}
+                                    disabled={isReadOnly}
+                                  />
+                                </Box>
+                                {!isReadOnly && (
+                                  <IconButton size="small" color="error" aria-label={`Hapus komponen ${ci + 1}`}
+                                    onClick={() => updatePage(pi, { layout: layout.filter((_: any, i: number) => i !== ci) })}>
+                                    <Trash2 size={16} />
+                                  </IconButton>
+                                )}
+                              </Stack>
+
+                              {shape.text && (
+                                <AppInput
+                                  label={isReadOnly ? undefined : 'Text'}
+                                  size="small"
+                                  isBgWhite
+                                  value={component.text || ''}
+                                  onChange={(e) => updateComponent(pi, ci, { text: e.target.value })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.label && (
+                                <AppInput
+                                  label={isReadOnly ? undefined : 'Label'}
+                                  size="small"
+                                  isBgWhite
+                                  value={component.label || ''}
+                                  onChange={(e) => updateComponent(pi, ci, { label: e.target.value })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.inputType && (
+                                <AppSelect
+                                  label={isReadOnly ? undefined : 'Input type'}
+                                  size="small"
+                                  isBgWhite
+                                  options={FLOWS_INPUT_TYPES.map((t) => ({ label: t, value: t }))}
+                                  value={component.input_type || 'TEXT'}
+                                  onChange={(e) => updateComponent(pi, ci, { input_type: String(e.target.value) })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.options && (
+                                <Box>
+                                  <AppTextarea
+                                    label={isReadOnly ? undefined : 'Options (satu per baris: id|judul)'}
+                                    isBgWhite
+                                    minRows={2}
+                                    placeholder={'a|Pilihan A\nb|Pilihan B'}
+                                    value={component.__optionsText ?? ''}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const parsed = raw
+                                        .split('\n')
+                                        .map((line) => line.trim())
+                                        .filter(Boolean)
+                                        .map((line) => {
+                                          const [id, ...rest] = line.split('|');
+                                          return { id: (id || '').trim(), title: rest.join('|').trim() || (id || '').trim() };
+                                        });
+                                      // Twilio wants `options` as a STRINGIFIED
+                                      // array, so the parsed form is serialised
+                                      // here and the raw text kept for editing.
+                                      updateComponent(pi, ci, {
+                                        __optionsText: raw,
+                                        options: JSON.stringify(parsed),
+                                      });
+                                    }}
+                                    disabled={isReadOnly}
+                                  />
+                                </Box>
+                              )}
+                            </Stack>
+                          </Card>
+                        );
+                      })}
+                    </Stack>
+
+                    {!isReadOnly && (
+                      <Box>
+                        <AppButton
+                          variantStyle="outline"
+                          size="small"
+                          startIcon={<Plus size={16} />}
+                          onClick={() => updatePage(pi, { layout: [...layout, { type: 'TEXT_BODY', text: '' }] })}
+                        >
+                          Add Component
+                        </AppButton>
+                      </Box>
+                    )}
+                  </Stack>
+                </Card>
+              );
+            })}
+          </Stack>
+
+          {!isReadOnly && (
+            <Box mt={2}>
+              <AppButton
+                variantStyle="outline"
+                size="small"
+                startIcon={<Plus size={16} />}
+                disabled={pages.length >= FLOWS_MAX_PAGES}
+                onClick={() =>
+                  updateField('pages', [
+                    ...pages,
+                    { id: `page${pages.length + 1}`, title: '', layout: [] },
+                  ])
+                }
+              >
+                Add Page
+              </AppButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+
+  const renderCatalogForm = () => {
+    const items = formData.items || [];
+    const updateItem = (i: number, patch: any) => {
+      const next = [...items];
+      next[i] = { ...next[i], ...patch };
+      updateField('items', next);
+    };
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Tipe ini menunjuk katalog commerce di Meta, bukan konten yang kita
+            simpan. Harga dan stok tetap milik katalog, jadi tidak ikut basi
+            seperti kalau ditulis di dalam template.
+          </Typography>
+        </Box>
+        <Box>
+          <AppInput
+            isBgWhite
+            label={isReadOnly ? undefined : 'Catalog ID (Meta)'}
+            placeholder="1017234312776586"
+            required
+            value={formData.id || ''}
+            onChange={(e) => updateField('id', e.target.value)}
+            disabled={isReadOnly}
+          />
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            Disiapkan oleh SmartSales saat onboarding. Kalau kosong, hubungi tim
+            kami — katalog harus terhubung ke akun WhatsApp Anda lebih dulu.
+          </Typography>
+        </Box>
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Title'}
+          placeholder="Menu {{1}}"
+          value={formData.title || ''}
+          onChange={(e) => updateField('title', e.target.value)}
+          disabled={isReadOnly}
+        />
+        {bodyField('Lihat katalog kami {{1}}', CARD_TITLE_MAX)}
+
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Items</Typography>
+            <Typography variant="caption" color={items.length ? 'text.secondary' : 'error'}>
+              {items.length} dipilih{items.length ? '' : ' — minimal 1'}
+            </Typography>
+          </Stack>
+          <Stack spacing={1.5}>
+            {items.map((item: any, i: number) => (
+              <Stack key={i} direction="row" spacing={1} alignItems="center">
+                <Box sx={{ flexGrow: 1 }}>
+                  <AppInput
+                    label={isReadOnly ? undefined : `Retailer ID ${i + 1}`}
+                    size="small"
+                    isBgWhite
+                    value={item.id || ''}
+                    onChange={(e) => updateItem(i, { id: e.target.value })}
+                    disabled={isReadOnly}
+                  />
+                </Box>
+                {!isReadOnly && (
+                  <IconButton size="small" color="error" aria-label={`Hapus item ${i + 1}`}
+                    onClick={() => updateField('items', items.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
+              </Stack>
+            ))}
+          </Stack>
+          {!isReadOnly && (
+            <Box mt={1.5}>
+              <AppButton variantStyle="outline" size="small" startIcon={<Plus size={16} />}
+                onClick={() => updateField('items', [...items, { id: '' }])}>
+                Add Item
+              </AppButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
   const renderContentForm = () => {
     switch (type) {
       case 'twilio/text':
@@ -394,11 +1473,31 @@ export default function TemplateFormContent({
         return renderMediaForm();
       case 'twilio/call-to-action':
         return renderCTAForm();
-      // Add more types as needed...
+      case 'twilio/quick-reply':
+        return renderQuickReplyForm();
+      case 'twilio/list-picker':
+        return renderListPickerForm();
+      case 'twilio/card':
+        return renderCardForm();
+      case 'twilio/carousel':
+        return renderCarouselForm();
+      case 'whatsapp/card':
+        return renderWhatsAppCardForm();
+      case 'whatsapp/authentication':
+        return renderAuthForm();
+      case 'whatsapp/flows':
+        return renderWhatsAppFlowsForm();
+      case 'twilio/flows':
+        return renderFlowsForm();
+      case 'twilio/catalog':
+        return renderCatalogForm();
       default:
+        // Every type in the selector now has an editor; this branch is a
+        // guard for a type reached another way (a synced Twilio template of a
+        // kind we do not model yet).
         return (
           <Typography color="text.secondary">
-            Form for {type} is coming soon.
+            Editor untuk {type} belum tersedia.
           </Typography>
         );
     }

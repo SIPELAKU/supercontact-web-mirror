@@ -503,3 +503,39 @@ export async function saveAsRecipients(
   }
 }
 
+
+/**
+ * Upload a file for use in a template's media slot, returning its public URL.
+ *
+ * The media editors used to accept only a pasted URL, which meant the tenant
+ * had to host the file somewhere public first. The URL must STAY reachable:
+ * Twilio fetches it when the template is approved and again on every send, so
+ * an expiring link passes review and then fails quietly weeks later.
+ */
+export async function uploadTemplateMedia(
+  token: string,
+  file: File
+): Promise<{ url: string; name: string; content_type: string; size_bytes: number }> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${baseUrl}/broadcast-templates/media`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // No Content-Type: the browser sets it with the multipart boundary.
+    },
+    body: formData,
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json?.success === false) {
+    // The API reports whichever ceiling actually bites - WhatsApp's or our
+    // storage's - so pass its message through rather than inventing one.
+    throw new Error(
+      json?.error?.message || json?.message || 'Gagal mengunggah berkas'
+    );
+  }
+  return json?.data ?? json;
+}

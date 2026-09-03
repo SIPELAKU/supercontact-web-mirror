@@ -25,6 +25,7 @@ import { useBroadcastRecipients, useBroadcastDetail } from '@/lib/hooks/useBroad
 import { EditButton } from '@/components/ui/app-action-buttons-table';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
 import MessagePreview from '../../templates/create/MessagePreview';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 interface ViewBroadcastStatsModalProps {
   open: boolean;
@@ -115,7 +116,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   const activeBroadcast = detailData || broadcast;
   const stats = activeBroadcast?.stats || { sent: 0, delivered: 0, read: 0, failed: 0 };
 
-  const activeType = activeBroadcast?.template_content ? (Object.keys(activeBroadcast.template_content.types)[0] as BroadcastTemplateType) : null;
+  const activeType = primaryContentType(activeBroadcast?.template_content?.types) ?? null;
   const activeTemplateData = activeBroadcast?.template_content && activeType ? activeBroadcast.template_content.types[activeType] : null;
 
   const previewData = useMemo(() => {

@@ -28,6 +28,7 @@ import { notify } from '@/lib/notifications';
 import { BroadcastCampaign, WaRecipient, GroupBroadcast, BroadcastTemplateType, UpdateBroadcastData } from '@/lib/types/whatsapp-marketing';
 import MessagePreview from '../../templates/create/MessagePreview';
 import AccountSelect from '@/components/omnichannel/AccountSelect';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 interface EditBroadcastModalProps {
   open: boolean;
@@ -179,7 +180,7 @@ export default function EditBroadcastModal({ open, onClose, broadcast }: EditBro
     }
   };
 
-  const activeType = selectedTemplate ? (Object.keys(selectedTemplate.types)[0] as BroadcastTemplateType) : null;
+  const activeType = primaryContentType(selectedTemplate?.types) ?? null;
   const activeTemplateData = selectedTemplate && activeType ? selectedTemplate.types[activeType] : null;
 
   const previewData = useMemo(() => {

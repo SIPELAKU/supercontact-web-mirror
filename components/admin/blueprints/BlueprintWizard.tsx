@@ -70,6 +70,19 @@ export default function BlueprintWizard({
         if (detail) setModules(new Set(moduleNames(detail.modules)));
     }, [detail]);
 
+    // Industry defaults prefill the fields they belong to - what a restaurant
+    // sells, say - so the WhatsApp templates do not ship with a raw
+    // {{offer_noun}} in the body. Identity fields carry no default and stay
+    // empty. Whatever the tenant has already typed is kept.
+    useEffect(() => {
+        if (!detail) return;
+        const defaults: Record<string, string> = {};
+        for (const v of detail.variables || []) {
+            if (v.default) defaults[v.key] = v.default;
+        }
+        setVariables((prev) => ({ ...defaults, ...prev }));
+    }, [detail]);
+
     const missingVariables = useMemo(() => {
         if (!detail) return [];
         return (detail.variables || [])

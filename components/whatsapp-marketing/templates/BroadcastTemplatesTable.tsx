@@ -10,6 +10,7 @@ import { SuperTable } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 import { Stack } from '@mui/material';
 import { Copy, Trash2, LayoutTemplate } from 'lucide-react';
 import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
@@ -67,10 +68,11 @@ const BroadcastTemplatesTable = ({
         accessorKey: 'types',
         header: 'Content Type',
         Cell: ({ row }) => {
-          // This logic can be refined based on actual data structure of 'types'
-          const types = row.original.types;
-          const typeKeys = Object.keys(types);
-          return typeKeys.length > 0 ? typeKeys[0].charAt(0).toUpperCase() + typeKeys[0].slice(1) : '-';
+          // The template's REAL type, not its text fallback. Every rich type
+          // ships a `twilio/text` beside it and JSONB sorts keys by length, so
+          // `Object.keys(types)[0]` was `twilio/text` for every rich template.
+          const primary = primaryContentType(row.original.types);
+          return primary ? primary.replace(/^(twilio|whatsapp)\//, '') : '-';
         },
       },
       {

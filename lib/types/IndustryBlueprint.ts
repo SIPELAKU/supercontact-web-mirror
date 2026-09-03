@@ -2,6 +2,8 @@ export interface BlueprintVariable {
     key: string;
     label?: string;
     example?: string;
+    /** Industry-level default the install uses when the field is left blank. Never set for identity fields. */
+    default?: string;
 }
 
 export interface BlueprintSummary {

@@ -28,6 +28,7 @@ import { notify } from '@/lib/notifications';
 import { BroadcastTemplate, WaRecipient, GroupBroadcast, BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
 import MessagePreview from '../../templates/create/MessagePreview';
 import AccountSelect from '@/components/omnichannel/AccountSelect';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 interface AddBroadcastModalProps {
   open: boolean;
@@ -167,7 +168,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
     }
   };
 
-  const activeType = selectedTemplate ? (Object.keys(selectedTemplate.types)[0] as BroadcastTemplateType) : null;
+  const activeType = primaryContentType(selectedTemplate?.types) ?? null;
   const activeTemplateData = selectedTemplate && activeType ? selectedTemplate.types[activeType] : null;
 
   const previewData = useMemo(() => {

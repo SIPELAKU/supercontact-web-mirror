@@ -440,6 +440,8 @@ export default function CustomFieldsSettingsTab() {
             </div>
 
             <SuperTable<TicketCustomFieldDefinition>
+                entityLabel="field"
+                searchPlaceholder="Cari nama field"
                 tableId="ticket-custom-fields-table"
                 urlKey="fields"
                 columns={columns}

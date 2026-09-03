@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Lead } from "@/lib/models/types";
 import LeadDetailModal from "../lead-detail-modal";
-import { leadColumns } from "./columns";
+import { leadColumns, LEAD_SOURCES, LEAD_STATUSES } from "./columns";
 import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -133,11 +133,25 @@ export function DataTable({
             description="Leads you add or capture will appear here."
           />
         )}
+        entityLabel="lead"
+        searchPlaceholder="Cari nama lead, sumber, atau penanggung jawab"
+        filters={[
+          {
+            id: "lead_status",
+            label: "Status",
+            type: "select",
+            options: LEAD_STATUSES.map((v) => ({ value: v, label: v })),
+          },
+          {
+            id: "lead_source",
+            label: "Sumber",
+            type: "select",
+            options: LEAD_SOURCES.map((v) => ({ value: v, label: v })),
+          },
+        ]}
         features={{
           urlSync: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: false,
-          columnFilters: true,
           facetedValues: true,
           sorting: true,
           pagination: true,

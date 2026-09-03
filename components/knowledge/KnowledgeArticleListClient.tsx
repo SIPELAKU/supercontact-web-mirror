@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Archive,
@@ -10,7 +10,6 @@ import {
   LayoutTemplate,
   Loader2,
   Plus,
-  Search,
   Send,
   Settings2,
   ThumbsDown,
@@ -22,7 +21,8 @@ import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { AppSelect } from "@/components/ui/app-select";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import { SuperTable } from "@/components/ui/super-table";
+import type { MRT_ColumnDef } from "@/components/ui/super-table";
 import { AppAlert } from "@/components/ui/app-alert";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { usePermission } from "@/lib/hooks/usePermission";
@@ -35,16 +35,20 @@ import {
 } from "@/lib/hooks/useKnowledge";
 import type {
   KbArticleStatus,
+  KbArticleSummary,
   KbBulkStatusReport,
   KbBulkStatusRequest,
 } from "@/lib/types/knowledge";
 import { KbStatusBadge } from "./KbStatusBadge";
 
-/** The API caps a list request at 200. Asking for the cap keeps "select all on
- *  this page" honest for all but the largest knowledge bases - and when it IS
- *  hit, the banner below says so and points at the publish-every-draft action,
- *  which runs server-side and is not bounded by what the page fetched. */
-const PAGE_LIMIT = 200;
+/** One lazy batch. The list used to fetch a flat 200 - the API's hard cap -
+ *  and tell the user "daftar dibatasi 200 artikel" when a knowledge base
+ *  outgrew it, which is the one thing a list should never have to say. Rows now
+ *  accumulate by `offset` as you scroll, so there is no ceiling to announce.
+ *  GET /knowledge/articles returns a bare array with no total, so "how many
+ *  altogether" is unknowable here - SuperTable falls back to "a full batch
+ *  implies another one". */
+const BATCH_SIZE = 50;
 
 const STATUS_TABS: { value: KbArticleStatus | ""; label: string }[] = [
   { value: "", label: "All" },
@@ -112,8 +116,10 @@ export default function KnowledgeArticleListClient() {
 
   const [status, setStatus] = useState<KbArticleStatus | "">("");
   const [sectionId, setSectionId] = useState<string>("");
+  // Search is SuperTable's now (permanent field, "/" shortcut, its own
+  // debounce), so the page only keeps the two filters it owns.
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 400);
+  const [offset, setOffset] = useState(0);
 
   // Honor a ?status= deep link (e.g. the Template Gallery's "Review articles"
   // CTA lands on /knowledge-base?status=draft). Read from window.location on
@@ -131,12 +137,21 @@ export default function KnowledgeArticleListClient() {
     return map;
   }, [sections]);
 
-  const { data: articles = [], isLoading, isError, refetch } = useKbArticles({
+  const {
+    data: batch = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useKbArticles({
     status: status || undefined,
     section_id: sectionId || undefined,
-    q: debouncedSearch.trim() || undefined,
-    limit: PAGE_LIMIT,
+    q: search.trim() || undefined,
+    limit: BATCH_SIZE,
+    offset,
   });
+
+  const articles = batch;
 
   // --- bulk status change ----------------------------------------------------
   // Selection spans EVERY status, because the actions differ per status rather
@@ -145,28 +160,34 @@ export default function KnowledgeArticleListClient() {
   // promise on the button and the number in the result banner always agree.
   const bulkStatus = useBulkSetKbArticleStatus();
   const { confirm, confirmationPopup } = useConfirmationPopup();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // The rows themselves, not a Set of ids: SuperTable owns the checkboxes and
+  // hands back what is ticked, so the page no longer maintains a parallel
+  // selection model that could disagree with the one on screen.
+  const [selectedRows, setSelectedRows] = useState<KbArticleSummary[]>([]);
+  const handleSelectionChange = useCallback(
+    (rows: KbArticleSummary[]) => setSelectedRows(rows),
+    []
+  );
+  // Bumping this makes SuperTable drop its selection - and only that. It must
+  // not reload the list: cancelling a selection is not a change of result.
+  const [selectionEpoch, setSelectionEpoch] = useState(0);
+  const clearTableSelection = useCallback(() => setSelectionEpoch((n) => n + 1), []);
   const [report, setReport] = useState<KbBulkStatusReport | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
 
-  const draftCount = useMemo(
-    () => articles.filter((a) => a.status === "draft").length,
-    [articles]
-  );
-  const listIsCapped = articles.length >= PAGE_LIMIT;
-
-  // Clear the selection whenever the visible set changes. Without this a row
-  // selected under one filter stays selected after the filter moves on, and the
-  // user changes something they can no longer see.
+  // Changing a page-owned filter sends the table back to the first batch AND
+  // clears its selection - SuperTable does both off this key, so the page no
+  // longer needs an effect that could fall out of step with the rows.
+  const filterKey = `${status}|${sectionId}`;
   useEffect(() => {
-    setSelected(new Set());
-  }, [status, sectionId, debouncedSearch]);
+    setOffset(0);
+  }, [filterKey, search]);
 
   /** Which selected articles may actually make each transition. Mirrors the
    *  server's eligibility rules: archived is a retraction, so it never goes
    *  straight back to published, though it may be restored to draft. */
   const eligible = useMemo(() => {
-    const chosen = articles.filter((a) => selected.has(a.id));
+    const chosen = selectedRows;
     return {
       publish: chosen.filter((a) => a.status === "draft").map((a) => a.id),
       draft: chosen
@@ -176,23 +197,7 @@ export default function KnowledgeArticleListClient() {
         .filter((a) => a.status === "draft" || a.status === "published")
         .map((a) => a.id),
     };
-  }, [articles, selected]);
-
-  const allVisibleSelected =
-    articles.length > 0 && articles.every((a) => selected.has(a.id));
-
-  function toggleOne(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleAllVisible() {
-    setSelected(allVisibleSelected ? new Set() : new Set(articles.map((a) => a.id)));
-  }
+  }, [selectedRows]);
 
   async function runBulk(payload: KbBulkStatusRequest) {
     setReport(null);
@@ -200,7 +205,7 @@ export default function KnowledgeArticleListClient() {
     try {
       const res = await bulkStatus.mutateAsync(payload);
       setReport(res);
-      setSelected(new Set());
+      clearTableSelection?.();
     } catch (err) {
       // The API layer throws the PARSED BODY for 4xx/5xx (not an Error), and a
       // bare Error("UNAUTHORIZED") for 401. An `instanceof Error` check drops
@@ -213,6 +218,79 @@ export default function KnowledgeArticleListClient() {
       );
     }
   }
+
+  const columns = useMemo<MRT_ColumnDef<KbArticleSummary>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Title",
+        Cell: ({ row }) => (
+          <div>
+            <div className="font-semibold">{row.original.title}</div>
+            {row.original.excerpt && (
+              <div className="mt-0.5 line-clamp-1 text-[12px] font-normal text-gray-400">
+                {row.original.excerpt}
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        Cell: ({ row }) => <KbStatusBadge status={row.original.status} />,
+      },
+      {
+        accessorKey: "section_id",
+        header: "Section",
+        Cell: ({ row }) =>
+          row.original.section_id
+            ? sectionName.get(row.original.section_id) || "—"
+            : "—",
+      },
+      {
+        accessorKey: "locale",
+        header: "Locale",
+        Cell: ({ cell }) => (
+          <span className="uppercase text-gray-500">{cell.getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: "view_count",
+        header: "Views",
+        Cell: ({ cell }) => (
+          <span className="inline-flex items-center gap-1 text-gray-600">
+            <Eye className="h-3.5 w-3.5 text-gray-400" />
+            {cell.getValue<number>()}
+          </span>
+        ),
+      },
+      {
+        id: "helpful",
+        header: "Helpful",
+        Cell: ({ row }) => (
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-0.5 text-emerald-600">
+              <ThumbsUp className="h-3.5 w-3.5" />
+              {row.original.helpful_count}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-gray-400">
+              <ThumbsDown className="h-3.5 w-3.5" />
+              {row.original.not_helpful_count}
+            </span>
+          </span>
+        ),
+      },
+      {
+        accessorKey: "updated_at",
+        header: "Updated",
+        Cell: ({ cell }) => (
+          <span className="text-gray-500">{formatDate(cell.getValue<string>())}</span>
+        ),
+      },
+    ],
+    [sectionName]
+  );
 
   const sectionOptions = useMemo(
     () => [
@@ -289,15 +367,6 @@ export default function KnowledgeArticleListClient() {
               isBgWhite
             />
           </div>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search articles…"
-              className="h-10 w-56 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-[#5479EE]"
-            />
-          </div>
         </div>
       </div>
 
@@ -337,30 +406,27 @@ export default function KnowledgeArticleListClient() {
         />
       )}
 
-      {canPublish && (selected.size > 0 || draftCount > 0) && (
+      {canPublish && (
         <div className="flex flex-col gap-3 rounded-xl border border-[#C7D5F8] bg-[#F5F8FF] px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="text-sm text-gray-700">
-            {selected.size > 0 ? (
+            {selectedRows.length > 0 ? (
               <>
-                <span className="font-semibold">{selected.size}</span> artikel
-                dipilih
+                <span className="font-semibold">{selectedRows.length}</span>{" "}
+                artikel dipilih
               </>
             ) : (
-              <>
-                <span className="font-semibold">{draftCount}</span> draft di
-                halaman ini belum terbit
-                {listIsCapped && (
-                  <span className="text-gray-500">
-                    {" "}
-                    (daftar dibatasi {PAGE_LIMIT} artikel)
-                  </span>
-                )}
-              </>
+              // This used to read "N draft di halaman ini belum terbit
+              // (daftar dibatasi 200 artikel)". Both halves were artefacts of
+              // fetching one capped page: the count described only what
+              // happened to be loaded, while the button beside it has always
+              // published EVERY draft server-side. With no page and no cap
+              // left, the honest line is what the button actually does.
+              <>Terbitkan setiap draft di knowledge base sekaligus.</>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {selected.size > 0 ? (
+            {selectedRows.length > 0 ? (
               <>
                 <BulkAction
                   label="Terbitkan"
@@ -403,7 +469,7 @@ export default function KnowledgeArticleListClient() {
                 <AppButton
                   variantStyle="outline"
                   startIcon={<X size={16} />}
-                  onClick={() => setSelected(new Set())}
+                  onClick={clearTableSelection}
                   disabled={bulkStatus.isPending}
                 >
                   Batal pilih
@@ -449,138 +515,72 @@ export default function KnowledgeArticleListClient() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading articles…
-          </div>
-        ) : isError ? (
-          <div className="py-12">
-            <EmptyState
-              icon={BookOpen}
-              title="Couldn't load articles"
-              description="Something went wrong while fetching the knowledge base."
-              action={{ label: "Retry", onClick: () => refetch() }}
-            />
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="py-12">
-            <EmptyState
-              icon={BookOpen}
-              title="No articles yet"
-              description={
-                debouncedSearch || status || sectionId
-                  ? "No articles match the current filters."
-                  : "Create your first help center article."
-              }
-              action={
-                canWrite
-                  ? {
-                      label: "New article",
-                      onClick: () => router.push("/knowledge-base/articles/new"),
-                      icon: <Plus size={16} />,
-                    }
-                  : undefined
-              }
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60 text-[12px] uppercase tracking-wide text-gray-500">
-                  {canPublish && (
-                    <th className="w-10 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        aria-label="Pilih semua artikel di halaman ini"
-                        className="h-4 w-4 cursor-pointer accent-[#3E63D8] disabled:cursor-not-allowed"
-                        disabled={articles.length === 0}
-                        checked={allVisibleSelected}
-                        ref={(el) => {
-                          // Partial selection reads as "some", not "none".
-                          if (el)
-                            el.indeterminate =
-                              selected.size > 0 && !allVisibleSelected;
-                        }}
-                        onChange={toggleAllVisible}
-                      />
-                    </th>
-                  )}
-                  <th className="px-4 py-3 font-semibold">Title</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Section</th>
-                  <th className="px-4 py-3 font-semibold">Locale</th>
-                  <th className="px-4 py-3 text-right font-semibold">Views</th>
-                  <th className="px-4 py-3 text-right font-semibold">Helpful</th>
-                  <th className="px-4 py-3 font-semibold">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {articles.map((a) => (
-                  <tr
-                    key={a.id}
-                    onClick={() => router.push(`/knowledge-base/articles/${a.id}`)}
-                    className={`cursor-pointer border-b border-gray-50 transition-colors last:border-0 hover:bg-gray-50/60 ${
-                      selected.has(a.id) ? "bg-[#F5F8FF]" : ""
-                    }`}
-                  >
-                    {canPublish && (
-                      <td
-                        className="px-4 py-3"
-                        // The row navigates; the checkbox must not.
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          aria-label={`Pilih ${a.title}`}
-                          className="h-4 w-4 cursor-pointer accent-[#3E63D8]"
-                          checked={selected.has(a.id)}
-                          onChange={() => toggleOne(a.id)}
-                        />
-                      </td>
-                    )}
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-800">{a.title}</div>
-                      {a.excerpt && (
-                        <div className="mt-0.5 line-clamp-1 text-[12px] text-gray-400">{a.excerpt}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <KbStatusBadge status={a.status} />
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {a.section_id ? sectionName.get(a.section_id) || "—" : "—"}
-                    </td>
-                    <td className="px-4 py-3 uppercase text-gray-500">{a.locale}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">
-                      <span className="inline-flex items-center gap-1">
-                        <Eye className="h-3.5 w-3.5 text-gray-400" />
-                        {a.view_count}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="inline-flex items-center gap-0.5 text-emerald-600">
-                          <ThumbsUp className="h-3.5 w-3.5" />
-                          {a.helpful_count}
-                        </span>
-                        <span className="inline-flex items-center gap-0.5 text-gray-400">
-                          <ThumbsDown className="h-3.5 w-3.5" />
-                          {a.not_helpful_count}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(a.updated_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <SuperTable<KbArticleSummary>
+        tableId="kb-articles-table"
+        urlKey=""
+        data={articles}
+        columns={columns}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        isError={isError}
+        errorMessage="Something went wrong while fetching the knowledge base."
+        onRetry={() => refetch()}
+        getRowId={(row) => row.id}
+        entityLabel="artikel"
+        searchPlaceholder="Cari judul atau isi artikel"
+        // No `rowCount`: GET /knowledge/articles returns a bare array with no
+        // total, so SuperTable falls back to "a full batch implies another".
+        manualPagination
+        manualSorting
+        manualFiltering
+        // Status and section are page-owned (the tab strip and the select
+        // above), so this tells SuperTable to go back to the first batch and
+        // drop its selection when either moves.
+        resetPageKey={filterKey}
+        clearSelectionKey={selectionEpoch}
+        onStateChange={(state) => {
+          setSearch(state.globalFilter);
+          setOffset(state.pagination.pageIndex * state.pagination.pageSize);
+        }}
+        onSelectionChange={handleSelectionChange}
+        // Class B in the row-interaction rules: a real `[id]` page exists, and
+        // the title column is the accessible way into it.
+        primaryColumn={{
+          accessorKey: "title",
+          href: (row) => `/knowledge-base/articles/${row.id}`,
+        }}
+        onRowClick={(row) => router.push(`/knowledge-base/articles/${row.id}`)}
+        renderEmptyState={({ hasActiveFilters, hasSearch }) => (
+          <EmptyState
+            icon={BookOpen}
+            title={hasSearch || hasActiveFilters || status || sectionId
+              ? "No matching articles"
+              : "No articles yet"}
+            description={
+              hasSearch || hasActiveFilters || status || sectionId
+                ? "No articles match the current filters."
+                : "Create your first help center article."
+            }
+            action={
+              canWrite
+                ? {
+                    label: "New article",
+                    onClick: () => router.push("/knowledge-base/articles/new"),
+                    icon: <Plus size={16} />,
+                  }
+                : undefined
+            }
+          />
         )}
-      </div>
+        features={{
+          globalFilter: true,
+          sorting: false, // the endpoint ranks by relevance when `q` is set
+          rowSelection: canPublish ? "multi" : "none",
+          urlSync: true,
+          pageSizeOptions: [BATCH_SIZE, 100, 200],
+        }}
+      />
+
       {confirmationPopup}
     </div>
   );

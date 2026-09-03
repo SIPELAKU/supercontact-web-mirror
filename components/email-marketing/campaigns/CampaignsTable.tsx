@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CircleStop, Copy, Mail, Pencil, Plus, RotateCw, Trash2 } from "lucide-react";
 import {
+  CAMPAIGN_STATUS_OPTIONS,
   campaignDeleteBlockedReason,
   campaignEditBlockedReason,
   campaignStatusChipColor,
@@ -229,16 +230,16 @@ export default function CampaignsTable({
       // nothing until the answer is in. Second, the search box filters this
       // list too, so clearing the status filter while a search is still active
       // must not fall through to "you have no campaigns".
-      renderEmptyState={() =>
+      renderEmptyState={({ clearFilters, hasActiveFilters, hasSearch }) =>
         isFetching ? (
           <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
             Loading campaigns…
           </Box>
-        ) : activeFilterSummary || activeSearch ? (
+        ) : hasActiveFilters || hasSearch ? (
           <EmptyState
             icon={Mail}
             title={
-              activeFilterSummary && !activeSearch
+              activeFilterSummary && !hasSearch
                 ? `No ${activeFilterSummary} campaigns`
                 : "No matching campaigns"
             }
@@ -249,9 +250,17 @@ export default function CampaignsTable({
                   ? `No campaign matches "${activeSearch}".`
                   : "No campaign matches the filter you have applied."
             }
+            // Clears SuperTable's own filter state, which is where the value
+            // now lives - so the chip in the toolbar disappears with it.
             action={
-              activeFilterSummary && onClearFilters
-                ? { label: "Clear filter", onClick: onClearFilters }
+              hasActiveFilters
+                ? {
+                    label: "Clear filter",
+                    onClick: () => {
+                      clearFilters();
+                      onClearFilters?.();
+                    },
+                  }
                 : undefined
             }
           />
@@ -269,8 +278,22 @@ export default function CampaignsTable({
       onStateChange={onStateChange}
       onExportRequest={onExportRequest}
       resetPageKey={resetPageKey}
-      renderFilters={renderFilters}
-      initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+      entityLabel="kampanye"
+      searchPlaceholder="Cari nama kampanye atau subjek"
+      // Declared here rather than passed in from the page: the options come
+      // straight from the API's CampaignStatus enum, so they belong to the
+      // table, and the value now rides SuperTable's own filter state instead
+      // of a hand-managed `?status=` param the page had to keep in sync with
+      // `?p=` by itself.
+      filters={[
+        {
+          id: "status",
+          label: "Status",
+          type: "select",
+          anyLabel: "Semua status",
+          options: CAMPAIGN_STATUS_OPTIONS.map((v) => ({ value: v, label: v })),
+        },
+      ]}
       renderBulkActions={({ selectedRows, clearSelection }) => (
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
           <AppButton
@@ -344,7 +367,6 @@ export default function CampaignsTable({
       features={{
         pagination: true,
         globalFilter: true,
-        globalFilterAlwaysVisible: true,
         columnFilters: false,
         sorting: true,
         urlSync: true,

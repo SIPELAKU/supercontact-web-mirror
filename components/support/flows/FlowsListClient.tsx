@@ -248,6 +248,8 @@ export default function FlowsListClient() {
             />
 
             <SuperTable<FlowSummary>
+                entityLabel="flow"
+                searchPlaceholder="Cari nama flow"
                 tableId="support-flows-table"
                 urlKey=""
                 columns={columns}

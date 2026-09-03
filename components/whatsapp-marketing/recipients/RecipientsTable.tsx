@@ -56,7 +56,6 @@ const RecipientsTable = ({
       {
         accessorKey: 'phone_number',
         header: 'Phone Number',
-        filterVariant: 'text',
         Cell: ({ cell }) => (
           <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
         ),
@@ -64,19 +63,16 @@ const RecipientsTable = ({
       {
         accessorKey: 'name',
         header: 'Name',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'company',
         header: 'Company',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'position',
         header: 'Position',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || 'N/A',
       },
     ],
@@ -113,17 +109,14 @@ const RecipientsTable = ({
             sorting: state.sorting || [],
           });
         }}
-        initialState={{
-          pagination: {
-            pageIndex: 0,
-            pageSize: 10,
-          },
-        }}
+        entityLabel="penerima"
+        searchPlaceholder="Cari nomor, nama, atau perusahaan"
+        // The four `filterVariant: 'text'` boxes that used to sit under the
+        // header are gone. GET /recipients takes page, limit, search, sort_by
+        // and sort_order and nothing else, so with `manualFiltering` on they
+        // were never able to filter anything - they just looked like they did.
         features={{
-          pagination: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: true,
-          columnFilters: true,
           sorting: true,
           rowSelection: 'multi',
           columnVisibility: true,

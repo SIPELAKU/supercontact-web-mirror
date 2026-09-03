@@ -67,8 +67,6 @@ export default function TableListUsers({
     {
       accessorKey: "position",
       header: "Position",
-      filterVariant: "select",
-      filterSelectOptions: positionOptions,
       Cell: ({ cell }) => (
         <span className="capitalize">{cell.getValue<string>()}</span>
       )
@@ -81,8 +79,6 @@ export default function TableListUsers({
     {
       accessorKey: "status",
       header: "Status",
-      filterVariant: "select",
-      filterSelectOptions: ["Active", "Pending"],
       Cell: ({ cell }) => {
         const val = cell.getValue<string>();
         return (
@@ -162,10 +158,33 @@ export default function TableListUsers({
               : `Delete (${selectedRows.length})`}
           </AppButton>
         )}
+        entityLabel="pengguna"
+        searchPlaceholder="Cari nama, email, atau kode pegawai"
+        // Same two ids UsersClient already reads out of `columnFilters`
+        // (`position`, `status`), so no page wiring changed - only where the
+        // control lives. `positionOptions` is still derived from the live data.
+        filters={[
+          {
+            id: "position",
+            label: "Posisi",
+            type: "select",
+            options: positionOptions.map((v: string) => ({ value: v, label: v })),
+            anyLabel: "Semua posisi",
+          },
+          {
+            id: "status",
+            label: "Status",
+            type: "select",
+            options: [
+              { value: "Active", label: "Active" },
+              { value: "Pending", label: "Pending" },
+            ],
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          // (filters moved to the declarative `filters` prop)
           sorting: true,
           urlSync: true,
           rowSelection: "multi",

@@ -27,7 +27,7 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
   // Server-side pagination (gained in Phase 1) driven by SuperTable state
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
 
   const { data, isLoading, isError, error, refetch } = useGroupBroadcasts({
@@ -88,6 +88,8 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
 
   return (
     <SuperTable<GroupBroadcast>
+      entityLabel="grup broadcast"
+      searchPlaceholder="Cari nama grup"
       tableId="group-broadcasting-table"
       urlKey=""
       columns={columns}
@@ -179,7 +181,6 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
           action={{ label: 'Add Group', onClick: onAdd, icon: <Plus size={16} /> }}
         />
       )}
-      initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
       features={{
           urlSync: true,
         // API has no sort/search params yet - keep both off rather than

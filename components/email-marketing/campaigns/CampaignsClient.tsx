@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { notify } from '@/lib/notifications';
 import { handleError } from '@/lib/utils/errorHandler';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -12,13 +12,11 @@ import { AppButton } from '@/components/ui/app-button';
 import CampaignsTable from '@/components/email-marketing/campaigns/CampaignsTable';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import PageHeader from '@/components/ui/page-header';
-import { TableFilterBar, TableFilterValues } from '@/components/ui/table-filter-bar';
 import { useDeleteCampaign, useCampaigns, useDuplicateCampaigns, useUpdateCampaign } from '@/lib/hooks/useCampaigns';
 import { fetchCampaigns } from '@/lib/api';
 import { Campaign } from '@/lib/types/email-marketing';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import {
-  CAMPAIGN_STATUS_OPTIONS,
   canDeleteCampaign,
   deletingLosesHistory,
 } from '@/lib/constants/campaign-status';
@@ -41,54 +39,36 @@ export default function CampaignsClient() {
   const [resendingCampaignId, setResendingCampaignId] = useState<string | null>(null);
   const [stoppingCampaignId, setStoppingCampaignId] = useState<string | null>(null);
 
-  // SuperTable state + the filter bar's values, which the API now honours.
+  // Everything the campaigns query is keyed on, in one object that SuperTable
+  // fills in. There is no page-owned diffing left: SuperTable already resets
+  // to the first batch when the search, sort or filter changes.
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
     globalFilter: "",
     sorting: [] as { id: string; desc: boolean }[],
+    status: undefined as string | undefined,
   });
-  // The status filter lives in the URL alongside SuperTable's own ?p/?q/?sort,
-  // so a filtered view survives a refresh and can be pasted to a colleague.
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const filters: TableFilterValues = useMemo(
-    () => ({ status: searchParams.get('status') || undefined }),
-    [searchParams]
-  );
-
+  // Status is declared on the table (`filters`), so SuperTable owns both the
+  // control and the `?f=status:Draft` in the URL. This page used to keep its
+  // own `?status=` param, its own popover, and its own "also delete ?p= so we
+  // land on page 1" rule - three things that had to agree with SuperTable and
+  // silently would not if either side changed.
   const handleTableStateChange = (state: SuperTableState) => {
-    setTableState((prev) => {
-      const searchChanged = state.globalFilter !== prev.globalFilter;
-      const sizeChanged = state.pagination.pageSize !== prev.pageSize;
-      return {
-        // With manualPagination, TanStack sets autoResetPageIndex to false, so
-        // nothing resets the page for us. Searching from page 5 used to ask the
-        // server for page 5 of the filtered result and render an empty table.
-        pageIndex: searchChanged || sizeChanged ? 0 : state.pagination.pageIndex,
-        pageSize: state.pagination.pageSize,
-        globalFilter: state.globalFilter,
-        sorting: state.sorting || [],
-      };
+    setTableState({
+      pageIndex: state.pagination.pageIndex,
+      pageSize: state.pagination.pageSize,
+      globalFilter: state.globalFilter,
+      sorting: state.sorting || [],
+      // The API takes one CampaignStatus, not a list.
+      status: (state.filters.status as string) || undefined,
     });
-  };
-
-  const handleFiltersChange = (next: TableFilterValues) => {
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
-    if (next.status) params.set('status', next.status);
-    else params.delete('status');
-    // Filtering changes the result set, so page 1 is the only sane landing
-    // spot — and SuperTable's own ?p key has to go with it.
-    params.delete('p');
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    setTableState((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
   const pageParam = tableState.pageIndex + 1; // Backend 1-indexed
   const limitParam = tableState.pageSize;
   const searchParam = tableState.globalFilter || "";
-  const statusParam = filters.status || undefined;
+  const statusParam = tableState.status;
 
   // Server-side sorting (sort_by/sort_order contract)
   const sortParam = tableState.sorting[0];
@@ -109,20 +89,6 @@ export default function CampaignsClient() {
   const campaigns = campaignsResponse?.data?.campaigns || [];
   const totalCount = campaignsResponse?.data?.total || 0;
 
-  const statusFilters = useMemo(
-    () => [
-      {
-        id: 'status',
-        label: 'Status',
-        anyLabel: 'Any status',
-        // Straight from the API's CampaignStatus enum. The old hard-coded list
-        // offered "Sending" and "Canceled" (which don't exist) and hid
-        // Processing, Failed and Stopped (which do).
-        options: CAMPAIGN_STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
-      },
-    ],
-    []
-  );
 
   const handleExportRequest = useCallback(
     async ({ onProgress }: { onProgress?: (fetched: number, total: number) => void }): Promise<Campaign[]> => {
@@ -297,31 +263,9 @@ export default function CampaignsClient() {
       />
 
       <CampaignsTable
-        // The status filter renders INSIDE the table toolbar. It uses the
-        // renderFilters slot rather than renderTopLeftToolbar because the
-        // left slot is replaced wholesale by the bulk-actions bar the moment
-        // a row is ticked — which would hide the active filter exactly when
-        // someone is about to bulk-delete a filtered set.
-        //
-        // The `.length` guard matters: TableFilterBar returns null when it
-        // has no filters, and SuperTable needs this prop to RETURN null so
-        // MRT keeps its <span/> spacer and the search/Export/View cluster
-        // stays pinned right.
-        renderFilters={
-        statusFilters.length > 0
-          ? () => (
-              <TableFilterBar
-                layout="toolbar"
-                filters={statusFilters}
-                values={filters}
-                onChange={handleFiltersChange}
-              />
-              )
-            : undefined
-        }
         activeFilterSummary={statusParam}
         activeSearch={searchParam}
-        onClearFilters={() => handleFiltersChange({})}
+        onClearFilters={() => setTableState((prev) => ({ ...prev, status: undefined, pageIndex: 0 }))}
         campaigns={campaigns}
         isLoading={isLoading}
         isFetching={isFetching}

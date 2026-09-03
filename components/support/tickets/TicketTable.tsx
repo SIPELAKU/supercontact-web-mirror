@@ -45,6 +45,14 @@ interface TicketTableProps {
     isBulkChangingStatus?: boolean;
 }
 
+// The values the tickets endpoint accepts. They used to live inline in the
+// column defs as `filterSelectOptions`; hoisting them keeps the filter
+// declaration readable and makes it obvious that these are an API contract,
+// not display strings.
+const TICKET_STATUSES = ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"];
+const TICKET_PRIORITIES = ["Urgent", "High", "Medium", "Low"];
+const TICKET_TYPES = ["Question", "Incident", "Problem", "Task"];
+
 export function TicketTable({
     tickets,
     isLoading,
@@ -89,7 +97,6 @@ export function TicketTable({
             {
                 accessorKey: "ticket_code",
                 header: "Ticket ID",
-                enableColumnFilter: false,
                 Cell: ({ row }) => (
                     <Link
                         href={`/support/tickets/${row.original.id}`}
@@ -102,7 +109,6 @@ export function TicketTable({
             {
                 accessorKey: "subject",
                 header: "Subject",
-                enableColumnFilter: false,
                 Cell: ({ cell }) => (
                     <div className="max-w-50 truncate" title={cell.getValue<string>()}>
                         {cell.getValue<string>()}
@@ -112,8 +118,6 @@ export function TicketTable({
             {
                 accessorKey: "priority",
                 header: "Priority",
-                filterVariant: "select",
-                filterSelectOptions: ["Urgent", "High", "Medium", "Low"],
                 Cell: ({ cell }) => (
                     <TicketPriorityBadge priority={cell.getValue<any>()} />
                 ),
@@ -121,8 +125,6 @@ export function TicketTable({
             {
                 accessorKey: "status",
                 header: "Status",
-                filterVariant: "select",
-                filterSelectOptions: ["Open", "Pending", "On-hold", "In Progress", "Solved", "Closed"],
                 Cell: ({ cell }) => (
                     <TicketStatusBadge status={cell.getValue<any>()} />
                 ),
@@ -130,8 +132,6 @@ export function TicketTable({
             {
                 accessorKey: "type",
                 header: "Type",
-                filterVariant: "select",
-                filterSelectOptions: ["Question", "Incident", "Problem", "Task"],
                 // Nullable — the badge renders nothing when the value is unset.
                 Cell: ({ cell }) => (
                     <TicketTypeBadge type={cell.getValue<any>()} />
@@ -144,8 +144,6 @@ export function TicketTable({
                 enableSorting: false,
                 accessorFn: (row: Ticket) => row.assigned_agent?.fullname || "Unassigned",
                 header: "Assigned Agent",
-                filterVariant: "select",
-                filterSelectOptions: agentOptions,
                 Cell: ({ row }) => {
                     const fullName = row.original.assigned_agent?.fullname;
                     return <span className="text-gray-600">{fullName || "Unassigned"}</span>;
@@ -154,14 +152,12 @@ export function TicketTable({
             {
                 id: "sla",
                 header: "SLA",
-                enableColumnFilter: false,
                 enableSorting: false,
                 Cell: ({ row }) => <TicketSlaBadge sla={row.original.sla} />,
             },
             {
                 accessorKey: "updated_at",
                 header: "Updated",
-                enableColumnFilter: false,
                 Cell: ({ cell }) => {
                     const dateVal = cell.getValue<string>();
                     return (
@@ -295,12 +291,43 @@ export function TicketTable({
             manualPagination={true}
             manualFiltering={true}
             manualSorting={true}
+            entityLabel="tiket"
+            searchPlaceholder="Cari ID, subjek, atau pelanggan"
+            // Same four ids the page already pulls out of `columnFilters`, so
+            // the API wiring is untouched - only the control changed, from a
+            // permanent band of four dropdowns under the header to one Filters
+            // button plus a chip per active filter.
+            filters={[
+                {
+                    id: "status",
+                    label: "Status",
+                    type: "select",
+                    options: TICKET_STATUSES.map((v) => ({ value: v, label: v })),
+                },
+                {
+                    id: "priority",
+                    label: "Prioritas",
+                    type: "select",
+                    options: TICKET_PRIORITIES.map((v) => ({ value: v, label: v })),
+                },
+                {
+                    id: "type",
+                    label: "Tipe",
+                    type: "select",
+                    options: TICKET_TYPES.map((v) => ({ value: v, label: v })),
+                },
+                {
+                    id: "assigned_agent",
+                    label: "Agen",
+                    type: "select",
+                    options: agentOptions,
+                    anyLabel: "Semua agen",
+                },
+            ]}
             initialState={{ sorting: [{ id: "updated_at", desc: true }] }}
             features={{
                 sorting: true,
                 globalFilter: true,
-                columnFilters: true,
-                pagination: true,
                 rowSelection: 'multi',
                 export: { excel: true, csv: true },
                 densityToggle: true,

@@ -71,8 +71,6 @@ export default function BroadcastingWATable({
       id: "status",
       accessorKey: "status",
       header: "Status",
-      filterVariant: "select",
-      filterSelectOptions: ['Draft', 'Sending', 'Sent', 'Failed'],
       Cell: ({ row }) => getStatusChip(row.original.status),
     },
     {
@@ -183,10 +181,23 @@ export default function BroadcastingWATable({
             onClick: (row) => onDelete(row),
           },
         ]}
+        entityLabel="broadcast"
+        searchPlaceholder="Cari nama broadcast"
+        filters={[
+          {
+            id: "status",
+            label: "Status",
+            type: "select",
+            options: ["Draft", "Sending", "Sent", "Failed"].map((v) => ({
+              value: v,
+              label: v,
+            })),
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          // (filters moved to the declarative `filters` prop)
           sorting: true,
           urlSync: true,
           rowSelection: 'multi',

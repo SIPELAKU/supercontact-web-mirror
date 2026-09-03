@@ -445,6 +445,8 @@ export default function AutomationRulesSettingsTab() {
             </div>
 
             <SuperTable<TicketAutomationRule>
+                entityLabel="aturan"
+                searchPlaceholder="Cari nama aturan"
                 tableId="ticket-automation-rules-table"
                 urlKey="rules"
                 columns={columns}

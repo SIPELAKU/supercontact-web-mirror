@@ -193,6 +193,8 @@ export default function RolesTable({
   return (
     <div className="mb-6">
       <SuperTable
+        entityLabel="role"
+        searchPlaceholder="Cari nama role"
         tableId="roles-table"
         columns={columns}
         data={roles || []}

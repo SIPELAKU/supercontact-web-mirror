@@ -239,6 +239,8 @@ export default function SlaPolicySettingsTab() {
             </div>
 
             <SuperTable<TicketSlaPolicy>
+                entityLabel="kebijakan"
+                searchPlaceholder="Cari nama kebijakan"
                 tableId="ticket-sla-policies-table"
                 urlKey="sla"
                 columns={columns}

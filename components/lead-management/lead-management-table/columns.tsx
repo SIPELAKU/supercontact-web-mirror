@@ -27,20 +27,20 @@ export const sourceIcon: Record<LeadSource, React.ReactNode> = {
 import { MRT_ColumnDef } from "@/components/ui/super-table";
 
 // Column definitions for MUI Table using SuperTable formatting
+/** The values the lead list filters by; declared on the table via `filters`. */
+export const LEAD_STATUSES: LeadStatus[] = ['New', 'Contacted', 'Qualified', 'Unqualified'];
+export const LEAD_SOURCES: LeadSource[] = ['Web Form', 'WhatsApp', 'Manual Entry'];
+
 export const leadColumns: MRT_ColumnDef<Lead>[] = [
   {
     accessorFn: (row) => row.contact?.name ?? "",
     id: "lead_name",
     header: "Lead Name",
-    enableColumnFilter: false,
     Cell: ({ row }) => <span className="text-black font-medium">{row.original.contact?.name ?? "—"}</span>,
   },
   {
     accessorKey: "lead_status",
     header: "Status",
-    filterVariant: 'select',
-    filterSelectOptions: ['New', 'Contacted', 'Qualified', 'Unqualified'],
-    enableColumnFilter: true,
     Cell: ({ cell }) => (
       <span
         className={cn(
@@ -55,9 +55,6 @@ export const leadColumns: MRT_ColumnDef<Lead>[] = [
   {
     accessorKey: "lead_source",
     header: "Source",
-    filterVariant: 'select',
-    filterSelectOptions: ['Web Form', 'WhatsApp', 'Manual Entry'],
-    enableColumnFilter: true,
     Cell: ({ cell }) => (
       <div className="flex items-center gap-2 text-black whitespace-nowrap">
         {sourceIcon[cell.getValue<LeadSource>()]}
@@ -69,8 +66,6 @@ export const leadColumns: MRT_ColumnDef<Lead>[] = [
     accessorFn: (row) => row.user?.fullname ?? "",
     id: "user",
     header: "Assigned To",
-    filterVariant: 'select',
-    enableColumnFilter: true,
     Cell: ({ row }) => (
       <span className="text-[#6B7280]">{row.original.user?.fullname ?? "Unassigned"}</span>
     ),

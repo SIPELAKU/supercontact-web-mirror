@@ -62,6 +62,7 @@ const SubscribersTable = ({
       {
         accessorKey: 'email',
         header: 'Email',
+        size: 280,
         Cell: ({ cell }) => (
           <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
         ),
@@ -69,16 +70,19 @@ const SubscribersTable = ({
       {
         accessorKey: 'name',
         header: 'Name',
+        size: 220,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'company',
         header: 'Company',
+        size: 220,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'position',
         header: 'Position',
+        size: 180,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
     ],
@@ -88,6 +92,8 @@ const SubscribersTable = ({
   return (
     <>
       <SuperTable<Subscriber>
+        entityLabel="subscriber"
+        searchPlaceholder="Cari email, nama, atau perusahaan"
         tableId="subscribers-table"
         urlKey=""
         exportFileName="Subscribers"
@@ -123,16 +129,13 @@ const SubscribersTable = ({
         // own, so the row opens the edit modal rather than navigating.
         onRowClick={(row) => onEdit(row)}
         onExportRequest={onExportRequest}
-        initialState={{
-          pagination: {
-            pageIndex: 0,
-            pageSize: 10,
-          },
-        }}
         features={{
+          // Every column here carries an explicit `size`, which virtualization
+          // requires: it forces MRT into `layoutMode: 'grid'`, where widths come
+          // from the column def instead of the browser's natural table layout.
+          virtualize: true,
           pagination: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: true,
           columnFilters: false,
           sorting: true,
           rowSelection: 'multi',

@@ -226,6 +226,8 @@ const LeadMagnetsTable = ({
   return (
     <>
       <SuperTable<SmartCapture>
+        entityLabel="lead magnet"
+        searchPlaceholder="Cari nama lead magnet"
         tableId="lead-magnets-table"
         urlKey=""
         data={data}
@@ -252,17 +254,11 @@ const LeadMagnetsTable = ({
         manualSorting={true}
         manualFiltering={true}
         onStateChange={onStateChange}
-        initialState={initialState || {
-          pagination: {
-            pageIndex: 0,
-            pageSize: 10,
-          },
-        }}
+        initialState={initialState}
         features={{
           urlSync: true,
           pagination: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: true,
           columnFilters: false,
           sorting: true,
           rowSelection: 'multi',

@@ -197,6 +197,8 @@ export default function MacrosSettingsTab() {
             </div>
 
             <SuperTable<TicketMacro>
+                entityLabel="makro"
+                searchPlaceholder="Cari nama makro"
                 tableId="ticket-macros-table"
                 urlKey="macros"
                 columns={columns}

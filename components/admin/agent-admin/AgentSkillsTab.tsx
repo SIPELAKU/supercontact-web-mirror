@@ -127,6 +127,8 @@ export default function AgentSkillsTab({ canManage }: AgentSkillsTabProps) {
       </div>
 
       <SuperTable<AgentSkill>
+        entityLabel="skill"
+        searchPlaceholder="Cari nama skill"
         tableId="agent-skills-table"
         urlKey="skills"
         columns={columns}

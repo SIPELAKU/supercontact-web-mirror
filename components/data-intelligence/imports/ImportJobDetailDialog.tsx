@@ -245,6 +245,8 @@ export default function ImportJobDetailDialog({
                         Companies created by this job
                     </h4>
                     <SuperTable<CompanyIntelligenceItem>
+                        entityLabel="baris"
+                        searchPlaceholder="Cari baris"
                         tableId="company-import-job-companies"
                         columns={columns}
                         data={companies}
@@ -273,7 +275,6 @@ export default function ImportJobDetailDialog({
                                 description="Rows appear here as the job creates them; a rolled-back job leaves nothing behind."
                             />
                         )}
-                        initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                         features={{
                             pagination: true,
                             globalFilter: false,

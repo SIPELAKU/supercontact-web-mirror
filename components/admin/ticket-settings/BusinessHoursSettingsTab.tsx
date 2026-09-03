@@ -233,6 +233,8 @@ export default function BusinessHoursSettingsTab() {
             )}
 
             <SuperTable<BusinessHoursCalendar>
+                entityLabel="jadwal"
+                searchPlaceholder="Cari nama jadwal"
                 tableId="business-hours-table"
                 urlKey="hours"
                 columns={columns}

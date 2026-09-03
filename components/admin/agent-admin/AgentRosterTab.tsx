@@ -198,6 +198,8 @@ export default function AgentRosterTab({ canManage }: AgentRosterTabProps) {
       </p>
 
       <SuperTable<AgentRosterItem>
+        entityLabel="agen"
+        searchPlaceholder="Cari nama atau email agen"
         tableId="agent-roster-table"
         urlKey="roster"
         columns={columns}

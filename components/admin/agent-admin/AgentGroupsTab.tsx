@@ -140,6 +140,8 @@ export default function AgentGroupsTab({ canManage }: AgentGroupsTabProps) {
       </div>
 
       <SuperTable<AgentGroup>
+        entityLabel="grup"
+        searchPlaceholder="Cari nama grup"
         tableId="agent-groups-table"
         urlKey="groups"
         columns={columns}

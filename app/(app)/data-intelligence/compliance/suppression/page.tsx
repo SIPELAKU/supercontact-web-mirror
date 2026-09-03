@@ -54,8 +54,6 @@ export default function SuppressionListPage() {
             {
                 accessorKey: "entry_type",
                 header: "Type",
-                filterVariant: "select",
-                filterSelectOptions: TYPE_OPTIONS,
                 filterFn: "equals",
                 Cell: ({ cell }) => (
                     <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
@@ -140,10 +138,20 @@ export default function SuppressionListPage() {
                             />
                         )}
                         initialState={{ sorting: [{ id: "created_at", desc: true }] }}
+                        entityLabel="entri"
+                        searchPlaceholder="Cari alamat atau domain"
+                        filters={[
+                            {
+                                id: "entry_type",
+                                label: "Tipe",
+                                type: "select",
+                                options: TYPE_OPTIONS,
+                            },
+                        ]}
                         features={{
           urlSync: true,
                             globalFilter: true,
-                            columnFilters: true,
+                            // (filters moved to the declarative `filters` prop)
                             pagination: true,
                         }}
                     />

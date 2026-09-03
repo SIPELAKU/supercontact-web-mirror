@@ -266,6 +266,8 @@ export default function ConversationSlaSettingsTab() {
       </div>
 
       <SuperTable<ConversationSlaPolicy>
+        entityLabel="SLA"
+        searchPlaceholder="Cari nama SLA"
         tableId="conversation-sla-policies-table"
         urlKey="convsla"
         columns={columns}

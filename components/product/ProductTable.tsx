@@ -102,6 +102,8 @@ export default function ProductTable({
             {confirmationPopup}
             <AddProductModal open={isModalOpen} onOpenChange={setIsModalOpen} />
             <SuperTable
+                entityLabel="produk"
+                searchPlaceholder="Cari nama atau kode produk"
                 tableId="products-table"
                 columns={columns}
                 data={products || []}

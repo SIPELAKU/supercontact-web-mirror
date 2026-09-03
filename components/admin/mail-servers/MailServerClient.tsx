@@ -49,7 +49,7 @@ export const MailServerClient = () => {
     // Table state driven by SuperTable (search debounced 500ms internally)
     const [tableState, setTableState] = useState({
         pageIndex: 0,
-        pageSize: 10,
+        pageSize: 25,
         globalFilter: "",
         columnFilters: [] as { id: string; value: unknown }[],
     });
@@ -249,8 +249,6 @@ export const MailServerClient = () => {
             {
                 accessorKey: "status",
                 header: "Status",
-                filterVariant: "select",
-                filterSelectOptions: STATUS_FILTER_OPTIONS,
                 Cell: ({ row }) => (
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.original.status === 'Active'
                         ? 'bg-emerald-100 text-emerald-600'
@@ -386,13 +384,22 @@ export const MailServerClient = () => {
                         action={{ label: "Add Server", onClick: () => setOpenAdd(true), icon: <Plus size={16} /> }}
                     />
                 )}
-                initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+                entityLabel="mail server"
+                searchPlaceholder="Cari nama, host, atau region"
+                filters={[
+                    {
+                        id: "status",
+                        label: "Status",
+                        type: "select",
+                        options: STATUS_FILTER_OPTIONS.map((v) => ({ value: v, label: v })),
+                    },
+                ]}
                 features={{
           urlSync: true,
                     // API has no sort params - avoid a misleading page-only sort
                     sorting: false,
                     globalFilter: true,
-                    columnFilters: true,
+                    // (filters moved to the declarative `filters` prop)
                     rowSelection: 'multi',
                     pagination: true,
                     pageSizeOptions: [5, 10, 25, 50],

@@ -9,6 +9,7 @@ import { notify } from '@/lib/notifications';
 import { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 import { useSyncTemplateApprovalStatus } from '@/lib/hooks/useBroadcastTemplates';
 import { TemplateApprovalStatusBadge, TemplateCategoryBadge } from '../TemplateApprovalBadge';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 interface GeneralInfoDetailProps {
   template: BroadcastTemplate;
@@ -37,7 +38,7 @@ export default function GeneralInfoDetail({
     { label: 'Template name', value: template.friendly_name },
     { label: 'Content template SID', value: template.provider_content_sid },
     { label: 'Template language', value: template.language === 'en' ? 'English' : template.language },
-    { label: 'Content type', value: Object.keys(template.types)[0] || '-' },
+    { label: 'Content type', value: primaryContentType(template.types) || '-' },
     {
       label: 'Last Updated at',
       value: template.updated_at ? format(new Date(template.updated_at), 'MMMM d, yyyy HH:mm') : '-'

@@ -21,6 +21,7 @@ import AddVariableSamplesModal from '../create/AddVariableSamplesModal';
 import { AppSelect } from '@/components/ui/app-select';
 import { BroadcastTemplateType, BroadcastTemplateCategory } from '@/lib/types/whatsapp-marketing';
 import { ArrowLeft, Send } from 'lucide-react';
+import { primaryContentType } from '@/lib/utils/whatsapp-template';
 
 const APPROVAL_CATEGORY_OPTIONS: { value: BroadcastTemplateCategory; label: string }[] = [
   { value: 'Marketing', label: 'Marketing' },
@@ -46,7 +47,7 @@ export default function TemplateDetailClient() {
   const [editCategory, setEditCategory] = useState<BroadcastTemplateCategory | ''>('');
 
   const template = data?.data;
-  const activeType = template ? (Object.keys(template.types)[0] as BroadcastTemplateType) : undefined;
+  const activeType = primaryContentType(template?.types);
 
   const activeFormData = useMemo(() => {
     if (!activeType) return {};

@@ -40,11 +40,11 @@ const OPTIONS: ContentTypeOption[] = [
   { id: 'twilio/call-to-action', label: 'Call to Action', icon: <MousePointer2 size={20} /> },
   { id: 'twilio/quick-reply', label: 'Quick Reply', icon: <Reply size={20} /> },
   { id: 'twilio/card', label: 'Card', icon: <Square size={20} /> },
-  { id: 'twilio/catalog', label: 'Catalog', icon: <ShoppingBag size={20} />, unavailable: true },
+  { id: 'twilio/catalog', label: 'Catalog', icon: <ShoppingBag size={20} /> },
   { id: 'twilio/carousel', label: 'Carousel', icon: <Layers size={20} /> },
   { id: 'whatsapp/card', label: 'Whatsapp Card', icon: <Square size={20} /> },
   { id: 'whatsapp/authentication', label: 'Authentication', icon: <ShieldCheck size={20} /> },
-  { id: 'twilio/flows', label: 'Flows (Twilio)', icon: <Zap size={20} />, unavailable: true },
+  { id: 'twilio/flows', label: 'Flows (Twilio)', icon: <Zap size={20} /> },
   { id: 'whatsapp/flows', label: 'Flows (WhatsApp)', icon: <Zap size={20} /> },
 ];
 

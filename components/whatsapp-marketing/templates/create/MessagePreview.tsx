@@ -2,7 +2,7 @@
 "use client";
 
 import { Box, Typography, Stack } from '@mui/material';
-import { List as ListIcon, ExternalLink, Phone, Reply, Copy } from 'lucide-react';
+import { List as ListIcon, ExternalLink, Phone, Reply, Copy, ShoppingBag } from 'lucide-react';
 import { BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
 
 interface MessagePreviewProps {
@@ -310,6 +310,39 @@ export default function MessagePreview({ type, formData }: MessagePreviewProps) 
         );
       }
 
+      case 'twilio/catalog':
+        return (
+          <Bubble padded={false}>
+            <Box sx={{ p: 1 }}>
+              {formData.title ? (
+                <Typography sx={{ fontSize: '14px', fontWeight: 700 }}>
+                  {formatMessage(formData.title)}
+                </Typography>
+              ) : null}
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>
+                {formatMessage(body || 'Lihat katalog kami')}
+              </Typography>
+              <Timestamp />
+            </Box>
+            <Hairline />
+            {/* The items are rendered by WhatsApp from Meta's catalog, not from
+                this payload - so the preview shows the count, not invented rows. */}
+            <Stack
+              direction="row"
+              spacing={0.75}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ py: 0.9, color: ACTION_BLUE }}
+            >
+              <ShoppingBag size={13} />
+              <Typography sx={{ fontSize: '13.5px', fontWeight: 500, color: ACTION_BLUE }}>
+                Lihat katalog
+                {formData.items?.length ? ` (${formData.items.length} item)` : ''}
+              </Typography>
+            </Stack>
+          </Bubble>
+        );
+
       case 'whatsapp/card':
         return (
           <Bubble>
@@ -365,6 +398,7 @@ export default function MessagePreview({ type, formData }: MessagePreviewProps) 
         );
       }
 
+      case 'twilio/flows':
       case 'whatsapp/flows':
         return (
           <Bubble padded={false}>
@@ -387,6 +421,15 @@ export default function MessagePreview({ type, formData }: MessagePreviewProps) 
                 {formData.button_text || 'Mulai'}
               </Typography>
             </Stack>
+            {/* The screens open OUTSIDE the chat, so previewing them in the
+                bubble would be a lie. The count is the useful signal. */}
+            {formData.pages?.length ? (
+              <Box sx={{ bgcolor: 'rgba(0,0,0,0.03)', px: 1, py: 0.6 }}>
+                <Typography sx={{ fontSize: '10px', color: 'text.secondary' }}>
+                  MEMBUKA {formData.pages.length} LAYAR
+                </Typography>
+              </Box>
+            ) : null}
           </Bubble>
         );
 

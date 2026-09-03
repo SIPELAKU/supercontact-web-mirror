@@ -49,6 +49,47 @@ export const CAROUSEL_CARD_TITLE_BODY_COMBINED_MAX = 160;
 
 export const CTA_BODY_MAX = 1024;
 
+// --- twilio/flows ---------------------------------------------------------
+// Unlike whatsapp/flows, which references a Flow published in Meta by id, this
+// type carries its screens INLINE - so it needs a builder rather than an id
+// field. Page ids are short because they come back in the webhook.
+export const FLOWS_MAX_PAGES = 10;
+export const FLOWS_PAGE_ID_MAX = 20;
+
+export const FLOWS_COMPONENT_TYPES = [
+  'TEXT_HEADING',
+  'TEXT_SUBHEADING',
+  'TEXT_BODY',
+  'TEXT_CAPTION',
+  'SHORT_TEXT',
+  'LONG_TEXT',
+  'SINGLE_SELECT',
+  'MULTI_SELECT',
+  'DATE_PICKER',
+  'FOOTER',
+] as const;
+
+export type FlowsComponentType = (typeof FLOWS_COMPONENT_TYPES)[number];
+
+/** Which extra fields each component needs, so the editor asks for those only. */
+export const FLOWS_COMPONENT_SHAPE: Record<
+  FlowsComponentType,
+  { text?: boolean; label?: boolean; options?: boolean; inputType?: boolean }
+> = {
+  TEXT_HEADING: { text: true },
+  TEXT_SUBHEADING: { text: true },
+  TEXT_BODY: { text: true },
+  TEXT_CAPTION: { text: true },
+  SHORT_TEXT: { text: true, label: true, inputType: true },
+  LONG_TEXT: { text: true, label: true },
+  SINGLE_SELECT: { text: true, label: true, options: true },
+  MULTI_SELECT: { text: true, label: true, options: true },
+  DATE_PICKER: { label: true },
+  FOOTER: { label: true },
+};
+
+export const FLOWS_INPUT_TYPES = ['TEXT', 'NUMBER', 'EMAIL', 'PASSWORD', 'PASSCODE', 'PHONE'];
+
 // WhatsApp's own ceilings...
 export const MEDIA_MAX_BYTES_IMAGE = 5 * 1024 * 1024;
 export const MEDIA_MAX_BYTES_OTHER = 20 * 1024 * 1024;

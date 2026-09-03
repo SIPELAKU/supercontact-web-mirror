@@ -23,6 +23,11 @@ import {
   LIST_PICKER_DESCRIPTION_MAX,
   LIST_PICKER_ITEM_MAX,
   LIST_PICKER_MAX_ITEMS,
+  FLOWS_COMPONENT_SHAPE,
+  FLOWS_COMPONENT_TYPES,
+  FLOWS_INPUT_TYPES,
+  FLOWS_MAX_PAGES,
+  FLOWS_PAGE_ID_MAX,
   QUICK_REPLY_BODY_MAX,
   QUICK_REPLY_MAX_ACTIONS,
   buttonTextMax,
@@ -1125,6 +1130,338 @@ export default function TemplateFormContent({
     </Box>
   );
 
+
+  const renderFlowsForm = () => {
+    const pages = formData.pages || [];
+
+    const updatePage = (pi: number, patch: any) => {
+      const next = [...pages];
+      next[pi] = { ...next[pi], ...patch };
+      updateField('pages', next);
+    };
+    const updateComponent = (pi: number, ci: number, patch: any) => {
+      const layout = [...(pages[pi]?.layout || [])];
+      layout[ci] = { ...layout[ci], ...patch };
+      updatePage(pi, { layout });
+    };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {bodyField('Bantu kami mengenal kebutuhan Anda', QUICK_REPLY_BODY_MAX)}
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Button text'}
+          placeholder="Mulai"
+          value={formData.button_text || ''}
+          onChange={(e) => updateField('button_text', e.target.value)}
+          disabled={isReadOnly}
+        />
+
+        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Tipe ini membawa layarnya sendiri di dalam template — berbeda dari
+            <strong> whatsapp/flows</strong>, yang hanya merujuk Flow yang sudah
+            dipublikasikan di Meta. Ini juga bukan Flow Studio, yang mengatur
+            otomasi untuk pesan MASUK.
+          </Typography>
+        </Box>
+
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Pages</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {pages.length}/{FLOWS_MAX_PAGES}
+            </Typography>
+          </Stack>
+
+          <Stack spacing={2}>
+            {pages.map((page: any, pi: number) => {
+              const layout = page.layout || [];
+              return (
+                <Card key={pi} variant="outlined" sx={{ p: 2 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Typography variant="body2" fontWeight="bold">Page {pi + 1}</Typography>
+                      {!isReadOnly && (
+                        <Stack direction="row" spacing={0.5}>
+                          <IconButton size="small" disabled={pi === 0} aria-label="Naikkan halaman"
+                            onClick={() => {
+                              const next = [...pages];
+                              [next[pi - 1], next[pi]] = [next[pi], next[pi - 1]];
+                              updateField('pages', next);
+                            }}>
+                            <ArrowUp size={16} />
+                          </IconButton>
+                          <IconButton size="small" disabled={pi === pages.length - 1} aria-label="Turunkan halaman"
+                            onClick={() => {
+                              const next = [...pages];
+                              [next[pi + 1], next[pi]] = [next[pi], next[pi + 1]];
+                              updateField('pages', next);
+                            }}>
+                            <ArrowDown size={16} />
+                          </IconButton>
+                          <IconButton size="small" color="error" aria-label={`Hapus halaman ${pi + 1}`}
+                            onClick={() => updateField('pages', pages.filter((_: any, i: number) => i !== pi))}>
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </Stack>
+                      )}
+                    </Stack>
+
+                    <Box>
+                      <AppInput
+                        label={isReadOnly ? undefined : 'Page ID'}
+                        size="small"
+                        isBgWhite
+                        placeholder="page1"
+                        value={page.id || ''}
+                        onChange={(e) => updatePage(pi, { id: e.target.value.slice(0, FLOWS_PAGE_ID_MAX) })}
+                        disabled={isReadOnly}
+                      />
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Dikembalikan di webhook. Maks {FLOWS_PAGE_ID_MAX} karakter.
+                      </Typography>
+                    </Box>
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Title'}
+                      size="small"
+                      isBgWhite
+                      value={page.title || ''}
+                      onChange={(e) => updatePage(pi, { title: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+                    <AppInput
+                      label={isReadOnly ? undefined : 'Subtitle'}
+                      size="small"
+                      isBgWhite
+                      value={page.subtitle || ''}
+                      onChange={(e) => updatePage(pi, { subtitle: e.target.value })}
+                      disabled={isReadOnly}
+                    />
+
+                    <Divider />
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary">
+                      Components
+                    </Typography>
+
+                    <Stack spacing={1.5}>
+                      {layout.map((component: any, ci: number) => {
+                        const kind = component.type || 'TEXT_BODY';
+                        const shape = (FLOWS_COMPONENT_SHAPE as any)[kind] || {};
+                        return (
+                          <Card key={ci} variant="outlined" sx={{ p: 1.5, bgcolor: isReadOnly ? 'transparent' : 'action.hover' }}>
+                            <Stack spacing={1.5}>
+                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Box sx={{ flexGrow: 1, mr: 1 }}>
+                                  <AppSelect
+                                    size="small"
+                                    isBgWhite
+                                    options={FLOWS_COMPONENT_TYPES.map((t) => ({ label: t, value: t }))}
+                                    value={kind}
+                                    onChange={(e) => updateComponent(pi, ci, { type: String(e.target.value) })}
+                                    disabled={isReadOnly}
+                                  />
+                                </Box>
+                                {!isReadOnly && (
+                                  <IconButton size="small" color="error" aria-label={`Hapus komponen ${ci + 1}`}
+                                    onClick={() => updatePage(pi, { layout: layout.filter((_: any, i: number) => i !== ci) })}>
+                                    <Trash2 size={16} />
+                                  </IconButton>
+                                )}
+                              </Stack>
+
+                              {shape.text && (
+                                <AppInput
+                                  label={isReadOnly ? undefined : 'Text'}
+                                  size="small"
+                                  isBgWhite
+                                  value={component.text || ''}
+                                  onChange={(e) => updateComponent(pi, ci, { text: e.target.value })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.label && (
+                                <AppInput
+                                  label={isReadOnly ? undefined : 'Label'}
+                                  size="small"
+                                  isBgWhite
+                                  value={component.label || ''}
+                                  onChange={(e) => updateComponent(pi, ci, { label: e.target.value })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.inputType && (
+                                <AppSelect
+                                  label={isReadOnly ? undefined : 'Input type'}
+                                  size="small"
+                                  isBgWhite
+                                  options={FLOWS_INPUT_TYPES.map((t) => ({ label: t, value: t }))}
+                                  value={component.input_type || 'TEXT'}
+                                  onChange={(e) => updateComponent(pi, ci, { input_type: String(e.target.value) })}
+                                  disabled={isReadOnly}
+                                />
+                              )}
+                              {shape.options && (
+                                <Box>
+                                  <AppTextarea
+                                    label={isReadOnly ? undefined : 'Options (satu per baris: id|judul)'}
+                                    isBgWhite
+                                    minRows={2}
+                                    placeholder={'a|Pilihan A\nb|Pilihan B'}
+                                    value={component.__optionsText ?? ''}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const parsed = raw
+                                        .split('\n')
+                                        .map((line) => line.trim())
+                                        .filter(Boolean)
+                                        .map((line) => {
+                                          const [id, ...rest] = line.split('|');
+                                          return { id: (id || '').trim(), title: rest.join('|').trim() || (id || '').trim() };
+                                        });
+                                      // Twilio wants `options` as a STRINGIFIED
+                                      // array, so the parsed form is serialised
+                                      // here and the raw text kept for editing.
+                                      updateComponent(pi, ci, {
+                                        __optionsText: raw,
+                                        options: JSON.stringify(parsed),
+                                      });
+                                    }}
+                                    disabled={isReadOnly}
+                                  />
+                                </Box>
+                              )}
+                            </Stack>
+                          </Card>
+                        );
+                      })}
+                    </Stack>
+
+                    {!isReadOnly && (
+                      <Box>
+                        <AppButton
+                          variantStyle="outline"
+                          size="small"
+                          startIcon={<Plus size={16} />}
+                          onClick={() => updatePage(pi, { layout: [...layout, { type: 'TEXT_BODY', text: '' }] })}
+                        >
+                          Add Component
+                        </AppButton>
+                      </Box>
+                    )}
+                  </Stack>
+                </Card>
+              );
+            })}
+          </Stack>
+
+          {!isReadOnly && (
+            <Box mt={2}>
+              <AppButton
+                variantStyle="outline"
+                size="small"
+                startIcon={<Plus size={16} />}
+                disabled={pages.length >= FLOWS_MAX_PAGES}
+                onClick={() =>
+                  updateField('pages', [
+                    ...pages,
+                    { id: `page${pages.length + 1}`, title: '', layout: [] },
+                  ])
+                }
+              >
+                Add Page
+              </AppButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+
+  const renderCatalogForm = () => {
+    const items = formData.items || [];
+    const updateItem = (i: number, patch: any) => {
+      const next = [...items];
+      next[i] = { ...next[i], ...patch };
+      updateField('items', next);
+    };
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Tipe ini menunjuk katalog commerce di Meta, bukan konten yang kita
+            simpan. Harga dan stok tetap milik katalog, jadi tidak ikut basi
+            seperti kalau ditulis di dalam template.
+          </Typography>
+        </Box>
+        <Box>
+          <AppInput
+            isBgWhite
+            label={isReadOnly ? undefined : 'Catalog ID (Meta)'}
+            placeholder="1017234312776586"
+            required
+            value={formData.id || ''}
+            onChange={(e) => updateField('id', e.target.value)}
+            disabled={isReadOnly}
+          />
+          <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+            Disiapkan oleh SmartSales saat onboarding. Kalau kosong, hubungi tim
+            kami — katalog harus terhubung ke akun WhatsApp Anda lebih dulu.
+          </Typography>
+        </Box>
+        <AppInput
+          isBgWhite
+          label={isReadOnly ? undefined : 'Title'}
+          placeholder="Menu {{1}}"
+          value={formData.title || ''}
+          onChange={(e) => updateField('title', e.target.value)}
+          disabled={isReadOnly}
+        />
+        {bodyField('Lihat katalog kami {{1}}', CARD_TITLE_MAX)}
+
+        <Box>
+          <Stack direction="row" alignItems="baseline" spacing={1} mb={1}>
+            <Typography variant="subtitle2" fontWeight="bold">Items</Typography>
+            <Typography variant="caption" color={items.length ? 'text.secondary' : 'error'}>
+              {items.length} dipilih{items.length ? '' : ' — minimal 1'}
+            </Typography>
+          </Stack>
+          <Stack spacing={1.5}>
+            {items.map((item: any, i: number) => (
+              <Stack key={i} direction="row" spacing={1} alignItems="center">
+                <Box sx={{ flexGrow: 1 }}>
+                  <AppInput
+                    label={isReadOnly ? undefined : `Retailer ID ${i + 1}`}
+                    size="small"
+                    isBgWhite
+                    value={item.id || ''}
+                    onChange={(e) => updateItem(i, { id: e.target.value })}
+                    disabled={isReadOnly}
+                  />
+                </Box>
+                {!isReadOnly && (
+                  <IconButton size="small" color="error" aria-label={`Hapus item ${i + 1}`}
+                    onClick={() => updateField('items', items.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 size={16} />
+                  </IconButton>
+                )}
+              </Stack>
+            ))}
+          </Stack>
+          {!isReadOnly && (
+            <Box mt={1.5}>
+              <AppButton variantStyle="outline" size="small" startIcon={<Plus size={16} />}
+                onClick={() => updateField('items', [...items, { id: '' }])}>
+                Add Item
+              </AppButton>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
   const renderContentForm = () => {
     switch (type) {
       case 'twilio/text':
@@ -1147,9 +1484,14 @@ export default function TemplateFormContent({
         return renderAuthForm();
       case 'whatsapp/flows':
         return renderWhatsAppFlowsForm();
+      case 'twilio/flows':
+        return renderFlowsForm();
+      case 'twilio/catalog':
+        return renderCatalogForm();
       default:
-        // twilio/catalog and twilio/flows are not built yet and are disabled in
-        // the selector; this branch only shows if one is reached another way.
+        // Every type in the selector now has an editor; this branch is a
+        // guard for a type reached another way (a synced Twilio template of a
+        // kind we do not model yet).
         return (
           <Typography color="text.secondary">
             Editor untuk {type} belum tersedia.

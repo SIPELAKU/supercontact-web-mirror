@@ -111,6 +111,10 @@ export const ContactTable = ({
         // than no control; the searchable fields are named in the placeholder
         // instead, which is what those boxes were being used to guess at.
         features={{
+          // Every column here carries an explicit `size`, which virtualization
+          // requires: it forces MRT into `layoutMode: 'grid'`, where widths come
+          // from the column def instead of the browser's natural table layout.
+          virtualize: true,
           urlSync: true,
           globalFilter: true,
           facetedValues: true,

@@ -62,6 +62,7 @@ const SubscribersTable = ({
       {
         accessorKey: 'email',
         header: 'Email',
+        size: 280,
         Cell: ({ cell }) => (
           <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
         ),
@@ -69,16 +70,19 @@ const SubscribersTable = ({
       {
         accessorKey: 'name',
         header: 'Name',
+        size: 220,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'company',
         header: 'Company',
+        size: 220,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
         accessorKey: 'position',
         header: 'Position',
+        size: 180,
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
     ],
@@ -126,6 +130,10 @@ const SubscribersTable = ({
         onRowClick={(row) => onEdit(row)}
         onExportRequest={onExportRequest}
         features={{
+          // Every column here carries an explicit `size`, which virtualization
+          // requires: it forces MRT into `layoutMode: 'grid'`, where widths come
+          // from the column def instead of the browser's natural table layout.
+          virtualize: true,
           pagination: true,
           globalFilter: true,
           columnFilters: false,

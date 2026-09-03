@@ -7,6 +7,7 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
     accessorKey: "name",
     header: "Name",
+    size: 240,
     enableColumnFilter: true,
     filterVariant: "text",
     Cell: ({ row }) => (
@@ -21,6 +22,7 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
     accessorKey: "email",
     header: "Email",
+    size: 240,
     enableColumnFilter: true,
     filterVariant: "text",
     Cell: ({ cell }) => (
@@ -30,6 +32,7 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
     accessorKey: "phone_number",
     header: "Phone",
+    size: 160,
     enableColumnFilter: true,
     filterVariant: "text",
     Cell: ({ cell }) => (
@@ -39,6 +42,7 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
     accessorKey: "position",
     header: "Position",
+    size: 170,
     filterVariant: "select",
     enableColumnFilter: true,
     Cell: ({ cell }) => (
@@ -48,6 +52,7 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
     accessorKey: "company",
     header: "Company",
+    size: 200,
     filterVariant: "select",
     enableColumnFilter: true,
     Cell: ({ cell }) => (

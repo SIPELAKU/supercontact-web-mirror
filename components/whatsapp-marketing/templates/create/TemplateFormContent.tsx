@@ -917,10 +917,13 @@ export default function TemplateFormContent({
                       )}
                     </Stack>
 
+                    {/* A carousel card's media is a STRING, not an array -
+                        unlike twilio/media. Twilio rejects the array form with
+                        a generic 400 that names nothing. */}
                     <MediaUploadField
-                      label="Card media"
-                      value={card.media?.[0] || ''}
-                      onChange={(url) => updateCard(index, { media: url ? [url] : [] })}
+                      label="Card media (wajib)"
+                      value={typeof card.media === 'string' ? card.media : (card.media?.[0] || '')}
+                      onChange={(url) => updateCard(index, { media: url })}
                       isReadOnly={isReadOnly}
                     />
                     <AppInput
@@ -1007,7 +1010,7 @@ export default function TemplateFormContent({
                 onClick={() =>
                   updateField('cards', [
                     ...cards,
-                    { media: [], title: '', body: '', actions: layout.map((t) => ({ type: t, title: '' })) },
+                    { media: '', title: '', body: '', actions: layout.map((t) => ({ type: t, title: '' })) },
                   ])
                 }
               >

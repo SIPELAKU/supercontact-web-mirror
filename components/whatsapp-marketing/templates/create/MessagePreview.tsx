@@ -235,7 +235,7 @@ export default function MessagePreview({ type, formData }: MessagePreviewProps) 
                     overflow: 'hidden',
                   }}
                 >
-                  <MediaBlock url={card.media?.[0]} />
+                  <MediaBlock url={typeof card.media === 'string' ? card.media : card.media?.[0]} />
                   <Box sx={{ p: 1 }}>
                     {card.title ? (
                       <Typography sx={{ fontSize: '13.5px', fontWeight: 700 }}>

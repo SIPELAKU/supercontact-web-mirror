@@ -160,6 +160,7 @@ export default function CompanyTable({
       {
         accessorKey: "name",
         header: "Company Name",
+        size: 260,
         enableColumnFilter: false,
         Cell: ({ row }) => (
           <div className="flex items-center gap-3">
@@ -178,6 +179,7 @@ export default function CompanyTable({
       {
         accessorKey: "industry",
         header: "Industry",
+        size: 170,
         enableColumnFilter: enableColumnFilters,
         filterVariant: "multi-select",
         filterSelectOptions: INDUSTRY_OPTIONS,
@@ -191,6 +193,7 @@ export default function CompanyTable({
       {
         accessorKey: "location",
         header: "Location",
+        size: 160,
         enableColumnFilter: enableColumnFilters,
         filterVariant: "multi-select",
         filterSelectOptions: LOCATION_OPTIONS,
@@ -199,6 +202,7 @@ export default function CompanyTable({
       {
         accessorKey: "employee_count",
         header: "Employees",
+        size: 120,
         enableColumnFilter: false,
         Cell: ({ row }) => {
           const val = row.original.employee_count;
@@ -215,6 +219,7 @@ export default function CompanyTable({
         id: "status",
         accessorFn: (row) => row.status || row.financial_status || "N/A",
         header: "Status",
+        size: 140,
         filterVariant: "select",
         filterSelectOptions: [
           { value: "success", label: "Success" },
@@ -230,6 +235,7 @@ export default function CompanyTable({
         id: "confidence_tier",
         accessorFn: (row) => row.confidence_tier || "",
         header: "Confidence",
+        size: 130,
         enableColumnFilter: false,
         Cell: ({ row }) => {
           const tier = row.original.confidence_tier;
@@ -268,6 +274,8 @@ export default function CompanyTable({
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
       <SuperTable<CompanyIntelligenceItem>
+        entityLabel="perusahaan"
+        searchPlaceholder="Cari nama, domain, atau industri"
         tableId={tableId}
         data={companies}
         columns={columns}
@@ -301,6 +309,10 @@ export default function CompanyTable({
           columnFilters: [],
         }}
         features={{
+          // Every column here carries an explicit `size`, which virtualization
+          // requires: it forces MRT into `layoutMode: 'grid'`, where widths come
+          // from the column def instead of the browser's natural table layout.
+          virtualize: true,
           pagination: true,
           globalFilter: true,
           columnFilters: enableColumnFilters,

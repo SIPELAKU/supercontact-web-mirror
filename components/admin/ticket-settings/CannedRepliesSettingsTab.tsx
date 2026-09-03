@@ -180,6 +180,8 @@ export default function CannedRepliesSettingsTab() {
       </div>
 
       <SuperTable<CannedReply>
+        entityLabel="balasan"
+        searchPlaceholder="Cari judul atau isi balasan"
         tableId="canned-replies-table"
         urlKey="canned"
         columns={columns}

@@ -7,8 +7,10 @@
 // It used to be six loose icon buttons in a row — Excel, CSV, search toggle,
 // filter toggle, columns, density, fullscreen — two of them drawn from
 // @mui/icons-material while the rest of the app uses lucide. This collapses
-// them into two labelled controls (Export, View) plus the filter toggle, all
-// on one icon set.
+// them into two labelled controls (Export, View), all on one icon set.
+//
+// Search and sort now sit beside this group as controls of their own
+// (SearchField, SortControl) rather than as icons that reveal something.
 
 import React from "react";
 import {
@@ -23,11 +25,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import {
-  MRT_TableInstance,
-  MRT_ToggleFiltersButton,
-  MRT_ToggleGlobalFilterButton,
-} from "material-react-table";
+import { MRT_TableInstance, MRT_ToggleFiltersButton } from "material-react-table";
 import {
   Check,
   Download,
@@ -38,7 +36,6 @@ import {
 
 interface TableToolbarActionsProps<TData extends object> {
   table: MRT_TableInstance<TData>;
-  showSearchToggle: boolean;
   showColumnFilterToggle: boolean;
   showColumnVisibility: boolean;
   showDensity: boolean;
@@ -58,7 +55,6 @@ const DENSITIES: { value: "compact" | "comfortable" | "spacious"; label: string 
 
 export function TableToolbarActions<TData extends object>({
   table,
-  showSearchToggle,
   showColumnFilterToggle,
   showColumnVisibility,
   showDensity,
@@ -81,11 +77,19 @@ export function TableToolbarActions<TData extends object>({
 
   return (
     <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-      {showSearchToggle && <MRT_ToggleGlobalFilterButton table={table} />}
+      {/* Search is no longer a toggle: it is a permanent field rendered by
+          SuperTable's own SearchField, one control to the left of this group.
+          A search box you have to reveal first is a search box people stop
+          using. */}
       {showColumnFilterToggle && <MRT_ToggleFiltersButton table={table} />}
 
       {exportEnabled && (
-        <Tooltip arrow title="Export data">
+        // `describeChild`: without it MUI puts `aria-label="Export data"` on
+        // the wrapping span AS WELL as the button's own, so the control shows
+        // up twice under one name in the accessibility tree. The span itself
+        // has to stay - a disabled button fires no pointer events, so the
+        // tooltip would never appear while an export is running.
+        <Tooltip arrow title="Export data" describeChild>
           <span>
             <IconButton
               onClick={onExportClick}

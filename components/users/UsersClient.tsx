@@ -76,7 +76,7 @@ export default function UsersClient() {
   // SuperTable State Hook
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
     sorting: [] as { id: string; desc: boolean }[]

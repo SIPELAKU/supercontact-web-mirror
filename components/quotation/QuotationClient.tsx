@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
-import { format } from "date-fns";
 import QuotationHeader from "@/components/quotation/QuotationHeader";
 import QuotationTable from "@/components/quotation/QuotationTable";
 import { useGetQuotationstore, Quotation } from "@/lib/store/quotation";
@@ -42,16 +41,18 @@ export default function QuotationClient() {
   }, []);
 
   const handleTableStateChange = useCallback((newState: SuperTableState) => {
-    // Date extract untuk dipass ke API (fetchQuotations)
-    const dateFilterValue = newState.columnFilters.find((f: any) => f.id === "expire_date")?.value as [Date | null, Date | null] | undefined;
+    // The date-range filter hands over two `YYYY-MM-DD` strings - the format
+    // the API wants - so nothing is parsed or reformatted here.
+    //
+    // It used to arrive as `[Date, Date]` from MRT's own date-range input and
+    // be run through date-fns `format()`. That also meant a shared or
+    // bookmarked `?f=expire_date:...` URL threw on restore, because everything
+    // that comes back out of a query string is a string and `format()` will
+    // not take one.
+    const dateFilterValue = newState.columnFilters.find((f: any) => f.id === "expire_date")?.value as [string | undefined, string | undefined] | undefined;
 
-    let date_from: string | undefined = undefined;
-    let date_to: string | undefined = undefined;
-
-    if (dateFilterValue) {
-      if (dateFilterValue[0]) date_from = format(dateFilterValue[0], 'yyyy-MM-dd');
-      if (dateFilterValue[1]) date_to = format(dateFilterValue[1], 'yyyy-MM-dd');
-    }
+    const date_from = dateFilterValue?.[0] || undefined;
+    const date_to = dateFilterValue?.[1] || undefined;
 
     // Status filter (server-side; backend accepts status/quotation_status)
     const statusFilterValue = newState.columnFilters.find((f) => f.id === "quotation_status")?.value as string | undefined;

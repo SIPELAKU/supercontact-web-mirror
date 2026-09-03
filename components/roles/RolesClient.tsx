@@ -15,7 +15,7 @@ export default function RolesClient() {
   // ===== TABLE STATE (Driven by SuperTable) ===== //
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
     globalFilter: "",
   });
 

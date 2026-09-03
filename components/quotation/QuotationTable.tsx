@@ -81,8 +81,6 @@ export default function QuotationTable({
       id: "quotation_status",
       accessorKey: "quotation_status",
       header: "Status",
-      filterVariant: "select",
-      filterSelectOptions: ['Accepted', 'Pending', 'Rejected'],
       columnFilterModeOptions: undefined, // Mencegah reduksi MRT options
       Cell: ({ row }) => getStatusChip(row.original.quotation_status),
     },
@@ -158,10 +156,30 @@ export default function QuotationTable({
             onClick: (row) => onDelete?.(row),
           },
         ]}
+        entityLabel="quotation"
+        searchPlaceholder="Cari nomor quotation atau klien"
+        // QuotationClient reads both of these ids out of `columnFilters`; the
+        // date range keeps its `[from, to]` shape.
+        filters={[
+          {
+            id: "quotation_status",
+            label: "Status",
+            type: "select",
+            options: ["Accepted", "Pending", "Rejected"].map((v) => ({
+              value: v,
+              label: v,
+            })),
+          },
+          {
+            id: "expire_date",
+            label: "Kedaluwarsa",
+            type: "date-range",
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          // (filters moved to the declarative `filters` prop)
           sorting: true,
           urlSync: true,
           export: { excel: true, csv: true },

@@ -194,6 +194,8 @@ export const IntegrationsClient = () => {
 
                 <div className="mx-6 mb-6">
                     <SuperTable<Integration>
+                        entityLabel="integrasi"
+                        searchPlaceholder="Cari nama integrasi"
                         tableId="integrations-table"
                         urlKey=""
                         columns={columns}

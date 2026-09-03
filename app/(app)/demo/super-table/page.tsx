@@ -93,7 +93,7 @@ const checklistData: TableIntegrationStatus[] = [
   { no: 12, tableName: 'Lead DataTable', filePath: 'components/lead-management/lead-management-table/data-table.tsx', module: 'Lead Management', complexity: 'High', migrationStatus: 'Selesai', currentFeatures: ['Pagination', 'Complex Filter', 'Pipeline View'], superTableFeatures: [
       'client-side filter Status, Source, Assigned To (select via columnFilters)',
       'client-side filter Last Contacted (date-range, accessorFn return Date)',
-      'globalFilter search (toggle show/hide, globalFilterAlwaysVisible: false)',
+      'globalFilter search (kotak pencarian permanen + pintasan "/")',
       'autoResetPageIndex: false (fix infinite loop)',
       'Kanban View sync via onStateChange shared state + useRef deep comparison',
       'onRowClick → buka LeadDetailModal',
@@ -514,8 +514,8 @@ const ServerSideDemo = () => {
   // Initial fetch mount
   useEffect(() => {
     handleStateChange({
-      pagination: { pageIndex: 0, pageSize: 10 },
-      sorting: [], globalFilter: '', columnFilters: [],
+      pagination: { pageIndex: 0, pageSize: 25 },
+      sorting: [], globalFilter: '', columnFilters: [], filters: {},
       columnVisibility: {}, columnOrder: [], grouping: [], rowSelection: {},
     });
   }, []);
@@ -540,7 +540,6 @@ const ServerSideDemo = () => {
           isLoading={isLoading}
           onStateChange={handleStateChange}
           features={{
-            globalFilterAlwaysVisible: true,
           }}
         />
       </CardContent>
@@ -622,6 +621,13 @@ function RowActionsDemo() {
 }
 
 
+const DEMO_DEPARTMENTS = Array.from(
+  new Set(mockEmployees200.map((e: DemoEmployee) => e.department).filter(Boolean))
+).sort() as string[];
+const DEMO_CITIES = Array.from(
+  new Set(mockEmployees200.map((e: DemoEmployee) => e.city).filter(Boolean))
+).sort() as string[];
+
 export default function SuperTableDemoPage() {
   // Dev-only page: hidden in production builds
   if (process.env.NODE_ENV === "production") notFound();
@@ -643,7 +649,7 @@ export default function SuperTableDemoPage() {
       {/* Quick Nav anchor */}
       <Stack direction="row" gap={1} sx={{ my: 3, flexWrap: 'wrap' }}>
         <Chip label="📋 Checklist Integrasi" onClick={() => scrollTo('section-0')} clickable color="primary" variant="outlined" />
-        <Chip label="🔍 Filter Variants" onClick={() => scrollTo('section-1')} clickable color="primary" variant="outlined" />
+        <Chip label="🔍 Filter Deklaratif" onClick={() => scrollTo('section-1')} clickable color="primary" variant="outlined" />
         <Chip label="💲 AccessorFn Format" onClick={() => scrollTo('section-formatting')} clickable color="primary" variant="outlined" />
         <Chip label="🗑️ Bulk Delete" onClick={() => scrollTo('section-bulk-delete')} clickable color="primary" variant="outlined" />
         <Chip label="🌐 Server-Side Logics" onClick={() => scrollTo('section-3')} clickable color="primary" variant="outlined" />
@@ -656,19 +662,39 @@ export default function SuperTableDemoPage() {
       <Card variant="outlined" sx={{ mb: 4 }} id="section-1">
         <CardContent>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
-            Advanced Filtering — Semua Tipe Filter Kolom Otomatis
+            Filter Deklaratif — satu tombol, satu chip per filter aktif
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Setiap kolom mengenali filter `filterVariant` yang presisi. Tersertifikasi tipe (Range Slider untuk Gaji umur, Date Range untuk Tanggal, Dropdown enum untuk kota & dept).
+            Filter dideklarasikan sebagai DATA lewat prop <code>filters</code>, bukan
+            sebagai <code>filterVariant</code> per kolom. Hasilnya: satu tombol
+            <b> Filters</b> dengan jumlah aktif, popover berisi kontrolnya (drawer
+            bawah di layar sempit), dan satu chip per filter yang menyala — chip itu
+            yang memberi tahu filter MANA yang aktif, dan bisa dilepas satu per satu.
+            Nilainya tetap mendarat di <code>state.columnFilters</code>, jadi halaman
+            lama tidak perlu diubah.
           </Typography>
           <SuperTable
             data={mockEmployees200}
             columns={filterColumns}
+            entityLabel="karyawan"
+            searchPlaceholder="Cari nama, kota, atau departemen"
+            filters={[
+              {
+                id: 'department',
+                label: 'Departemen',
+                type: 'select',
+                options: DEMO_DEPARTMENTS.map((v) => ({ value: v, label: v })),
+              },
+              {
+                id: 'city',
+                label: 'Kota',
+                type: 'multiselect',
+                options: DEMO_CITIES.map((v) => ({ value: v, label: v })),
+              },
+              { id: 'name', label: 'Nama', type: 'text' },
+            ]}
             features={{
-              columnFilters: true,
               facetedValues: true,
-              filterSwitching: true,
-              globalFilterAlwaysVisible: true,
               rowSelection: 'multi',
               export: { excel: true, csv: true },
               densityToggle: true,

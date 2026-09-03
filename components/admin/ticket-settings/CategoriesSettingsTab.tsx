@@ -106,6 +106,8 @@ export default function CategoriesSettingsTab() {
             </div>
 
             <SuperTable<TicketCategory>
+                entityLabel="kategori"
+                searchPlaceholder="Cari nama kategori"
                 tableId="ticket-categories-table"
                 urlKey="cats"
                 columns={columns}

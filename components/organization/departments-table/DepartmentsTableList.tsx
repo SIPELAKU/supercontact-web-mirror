@@ -51,8 +51,6 @@ export default function DepartmentsTableList({
     {
       accessorKey: "department",
       header: "Department",
-      filterVariant: "select",
-      filterSelectOptions: ["Marketing", "Sales", "Customer Support", "Human Resources"],
       columnFilterModeOptions: undefined,
       Cell: ({ row }) => (
         <Link href={`/settings/organization/${row.original.id}`}>
@@ -65,8 +63,6 @@ export default function DepartmentsTableList({
     {
       accessorKey: "branch",
       header: "Branch",
-      filterVariant: "select",
-      filterSelectOptions: branchOptions,
       columnFilterModeOptions: undefined,
       Cell: ({ row }) => (
         <span className="text-gray-500">{row.original.branch}</span>
@@ -174,10 +170,32 @@ export default function DepartmentsTableList({
               : `Delete (${selectedRows.length})`}
           </AppButton>
         ) : undefined}
+        entityLabel="departemen"
+        searchPlaceholder="Cari departemen, cabang, atau manajer"
+        filters={[
+          {
+            id: "department",
+            label: "Departemen",
+            type: "select",
+            options: [
+              "Marketing",
+              "Sales",
+              "Customer Support",
+              "Human Resources",
+            ].map((v) => ({ value: v, label: v })),
+          },
+          {
+            id: "branch",
+            label: "Cabang",
+            type: "select",
+            options: branchOptions.map((v: string) => ({ value: v, label: v })),
+            anyLabel: "Semua cabang",
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          // (filters moved to the declarative `filters` prop)
           sorting: true,
           urlSync: true,
           rowSelection: "multi",

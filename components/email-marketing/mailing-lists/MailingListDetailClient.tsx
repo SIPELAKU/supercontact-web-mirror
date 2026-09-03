@@ -279,6 +279,8 @@ export default function MailingListDetailClient() {
 
       {activeTab === 'subscribers' && (
         <SuperTable<Subscriber>
+          entityLabel="subscriber"
+          searchPlaceholder="Cari email atau nama"
           tableId="mailing-list-subscribers-table"
           urlKey="subs"
           exportFileName={`${mailingList.name} Subscribers`}
@@ -318,10 +320,8 @@ export default function MailingListDetailClient() {
             }
           }}
           onExportRequest={handleExportSubscribers as any}
-          initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
           features={{
             globalFilter: true,
-            globalFilterAlwaysVisible: true,
             // The detail endpoint takes page/limit/search only, so a sort arrow
             // here could reorder no more than the ten visible rows.
             sorting: false,
@@ -417,10 +417,8 @@ export default function MailingListDetailClient() {
               setCampaignRowsPerPage(state.pagination.pageSize);
             }
           }}
-          initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
           features={{
             globalFilter: true,
-            globalFilterAlwaysVisible: true,
             // Same reason as the subscribers tab: this endpoint has no sort
             // params, so an arrow would only sort the current page.
             sorting: false,

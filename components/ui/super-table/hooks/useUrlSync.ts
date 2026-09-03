@@ -15,6 +15,16 @@ interface UseUrlSyncParams {
   urlKey?: string;
   /** Page size that is considered the default and therefore omitted from the URL. */
   defaultPageSize?: number;
+  /**
+   * Whether `?p=`/`?ps=` belong in the URL at all.
+   *
+   * False for a lazy list. "Page 7" there does not describe a position anyone
+   * can return to - following such a link would fetch the seventh batch on its
+   * own, with the six batches above it missing, and the reader would be
+   * dropped into the middle of a list that starts at row 151. Search, sort and
+   * filters still round-trip, because those DO reproduce the same view.
+   */
+  trackPagination?: boolean;
   state: SuperTableState;
   onRestoreState: (state: Partial<SuperTableState>) => void;
 }
@@ -24,6 +34,7 @@ export function useUrlSync({
   tableId,
   urlKey,
   defaultPageSize = 10,
+  trackPagination = true,
   state,
   onRestoreState,
 }: UseUrlSyncParams) {
@@ -47,8 +58,8 @@ export function useUrlSync({
     const restoredState: Partial<SuperTableState> = {};
 
     // p: pageIndex, ps: pageSize
-    const p = searchParams.get(key('p'));
-    const ps = searchParams.get(key('ps'));
+    const p = trackPagination ? searchParams.get(key('p')) : null;
+    const ps = trackPagination ? searchParams.get(key('ps')) : null;
     if (p || ps) {
       restoredState.pagination = {
         pageIndex: p ? parseInt(p, 10) - 1 : 0, // di URL page 1 berarti index 0
@@ -104,7 +115,7 @@ export function useUrlSync({
 
     isRestored.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, tableId, ns, searchParams, onRestoreState]);
+  }, [enabled, tableId, ns, trackPagination, searchParams, onRestoreState]);
 
   // 2. MENULIS STATE KEDALAM URL BROWSER HISTORY
   useEffect(() => {
@@ -115,15 +126,22 @@ export function useUrlSync({
       const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
 
       // Pagination
-      if (state.pagination.pageIndex > 0) {
+      if (!trackPagination) {
+        // Also strips a `?p=` left in the address bar by a link created while
+        // this table still had page numbers.
+        currentParams.delete(key('p'));
+        currentParams.delete(key('ps'));
+      } else if (state.pagination.pageIndex > 0) {
         currentParams.set(key('p'), (state.pagination.pageIndex + 1).toString());
       } else {
         currentParams.delete(key('p'));
       }
-      if (state.pagination.pageSize !== defaultPageSize) {
-         currentParams.set(key('ps'), state.pagination.pageSize.toString());
-      } else {
-         currentParams.delete(key('ps'));
+      if (trackPagination) {
+        if (state.pagination.pageSize !== defaultPageSize) {
+          currentParams.set(key('ps'), state.pagination.pageSize.toString());
+        } else {
+          currentParams.delete(key('ps'));
+        }
       }
 
       // Sort
@@ -177,5 +195,5 @@ export function useUrlSync({
 
     return () => clearTimeout(serializeToUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, tableId, ns, defaultPageSize, state, searchParams, pathname, router, lastSavedUrl]);
+  }, [enabled, tableId, ns, defaultPageSize, trackPagination, state, searchParams, pathname, router, lastSavedUrl]);
 }

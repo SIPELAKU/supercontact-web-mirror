@@ -225,6 +225,8 @@ export const CapturedLeadsTable = () => {
         </div>
         <div className="p-1">
           <SuperTable<SmartCaptureSubmission>
+            entityLabel="lead"
+            searchPlaceholder="Cari nama atau email lead"
             tableId="captured-leads-table"
             urlKey="leads"
             data={submissions}
@@ -257,7 +259,6 @@ export const CapturedLeadsTable = () => {
           urlSync: true,
               pagination: true,
               globalFilter: true,
-              globalFilterAlwaysVisible: true,
               columnFilters: false,
               sorting: true,
               rowSelection: 'multi',

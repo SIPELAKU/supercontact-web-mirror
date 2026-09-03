@@ -55,7 +55,7 @@ export const ContactClient = () => {
 
     // --- Current table state from SuperTable ---
     const currentPageRef = useRef(0);
-    const currentPageSizeRef = useRef(10);
+    const currentPageSizeRef = useRef(25); // matches SuperTable's lazy batch
     const currentSearchRef = useRef("");
     const currentSortByRef = useRef<string | undefined>(undefined);
     const currentSortOrderRef = useRef<"asc" | "desc" | undefined>(undefined);
@@ -77,6 +77,11 @@ export const ContactClient = () => {
                 page: String(page + 1),
                 limit: String(pageSize),
             });
+            // The total cannot change between batches of one query, and the
+            // COUNT(*) that produces it re-runs the whole predicate over every
+            // matching row. Lazy loading turned one page view into ~10
+            // requests, so only the first of them needs to pay for it.
+            if (page > 0) params.set("include_total", "false");
             if (search) params.set("search", search);
             if (sortBy) {
                 params.set("sort_by", sortBy);
@@ -98,9 +103,11 @@ export const ContactClient = () => {
                 : Array.isArray(json.data?.contacts)
                     ? json.data.contacts
                     : [];
-            const total = json.data?.total || json.total || 0;
-
-            setTotalCount(total);
+            // `null` when we asked the API to skip the count: keep the total
+            // the first batch reported rather than resetting it to 0, which
+            // would tell the table there is nothing more to load.
+            const total = json.data?.total ?? json.total;
+            if (typeof total === "number") setTotalCount(total);
             setDataContact(contacts);
         } catch (err: any) {
             setError(err.message || "Failed to load contacts");
@@ -112,7 +119,7 @@ export const ContactClient = () => {
 
     // Initial load
     useEffect(() => {
-        loadData(0, 10);
+        loadData(0, 25);
     }, [loadData]);
 
     // --- SuperTable State Change Handler (server-side pagination + search + sorting) ---

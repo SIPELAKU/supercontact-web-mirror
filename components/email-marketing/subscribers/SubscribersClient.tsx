@@ -42,7 +42,7 @@ export default function SubscribersClient() {
   // Server-side pagination, search & sorting state
   // (search is already debounced by SuperTable — no extra debounce layer here)
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(25); // matches SuperTable's lazy batch
   const [searchQuery, setSearchQuery] = useState('');
   const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
 

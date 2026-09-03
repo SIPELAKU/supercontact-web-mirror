@@ -7,6 +7,15 @@ import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Users, Plus, Trash2 } from "lucide-react";
 
+// Hoisted out of the column def, where it lived as `filterSelectOptions`.
+// These are the positions the member list can be filtered by.
+const MEMBER_POSITIONS = [
+  "Brand Manager", "Content Writer", "Customer Service", "Data Analyst",
+  "Finance Manager", "HR Manager", "IT Support", "Marketing Manager",
+  "Operations Manager", "Product Manager", "Sales Manager",
+  "Software Engineer", "UI/UX Designer", "Business Development",
+];
+
 interface FormattedMember {
   id: string;
   fullName: string;
@@ -80,17 +89,6 @@ export default function DepartmentsTableMember({
     {
       accessorKey: "position",
       header: "Position",
-      filterVariant: "select",
-      filterSelectOptions: [
-        "Brand Manager", "Content Writer",
-        "Customer Service", "Data Analyst",
-        "Finance Manager", "HR Manager",
-        "IT Support", "Marketing Manager",
-        "Operations Manager", "Product Manager",
-        "Sales Manager", "Software Engineer",
-        "UI/UX Designer", "Business Development",
-      ],
-      columnFilterModeOptions: undefined,
       Cell: ({ row }) => (
         <span className="capitalize">{row.original.position}</span>
       ),
@@ -103,9 +101,6 @@ export default function DepartmentsTableMember({
     {
       accessorKey: "status",
       header: "Status",
-      filterVariant: "select",
-      filterSelectOptions: ["Active", "Pending", "Inactive"],
-      columnFilterModeOptions: undefined,
       Cell: ({ row }) => getStatusBadge(row.original.status),
     },
   ], []);
@@ -164,10 +159,29 @@ export default function DepartmentsTableMember({
               : `Delete (${selectedRows.length})`}
           </AppButton>
         ) : undefined}
+        entityLabel="anggota"
+        searchPlaceholder="Cari nama, ID, atau posisi"
+        filters={[
+          {
+            id: "position",
+            label: "Posisi",
+            type: "select",
+            options: MEMBER_POSITIONS.map((v) => ({ value: v, label: v })),
+          },
+          {
+            id: "status",
+            label: "Status",
+            type: "select",
+            options: ["Active", "Pending", "Inactive"].map((v) => ({
+              value: v,
+              label: v,
+            })),
+          },
+        ]}
         features={{
           pagination: true,
           globalFilter: true,
-          columnFilters: true,
+          // (filters moved to the declarative `filters` prop)
           sorting: true,
           urlSync: true,
           rowSelection: "multi",

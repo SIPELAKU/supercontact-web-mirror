@@ -42,6 +42,12 @@ export interface ExportDialogProps {
   columns: ExportColumnOption[];
   /** Rows on the current page. */
   pageCount: number;
+  /**
+   * What the "this page" scope is called. A lazy table has no pages, so the
+   * same radio has to mean "the rows I have scrolled into view so far" - and
+   * say so, or someone exports 240 rows believing they got all 12,431.
+   */
+  pageScopeLabel?: string;
   /** Rows matching the active search/filters across every page. */
   totalCount: number;
   selectedCount: number;
@@ -57,6 +63,7 @@ export function ExportDialog({
   onConfirm,
   columns,
   pageCount,
+  pageScopeLabel,
   totalCount,
   selectedCount,
   allowedFormats,
@@ -125,7 +132,7 @@ export function ExportDialog({
             <FormControlLabel
               value="page"
               control={<Radio size="small" />}
-              label={`This page only (${pageCount.toLocaleString()})`}
+              label={`${pageScopeLabel ?? "This page only"} (${pageCount.toLocaleString()})`}
             />
             <FormControlLabel
               value="selected"

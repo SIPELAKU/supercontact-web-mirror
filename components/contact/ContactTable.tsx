@@ -97,14 +97,21 @@ export const ContactTable = ({
         autoResetPageIndex={false}
         onStateChange={onStateChange}
         onExportRequest={onExportRequest}
+        entityLabel="kontak"
+        searchPlaceholder="Cari nama, email, telepon, atau perusahaan"
+        // No `filters` and no `columnFilters`. GET /contacts takes exactly
+        // page, limit, search, include_all, sort_by and sort_order - there is
+        // no filter parameter to send. It used to render a text filter under
+        // every column anyway, with `manualFiltering` on and the page
+        // forwarding only page/limit/search/sorting, so typing in any of them
+        // did nothing at all. A control that silently does nothing is worse
+        // than no control; the searchable fields are named in the placeholder
+        // instead, which is what those boxes were being used to guess at.
         features={{
           urlSync: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: false,
-          columnFilters: true,
           facetedValues: true,
           sorting: true,
-          pagination: true,
           rowSelection: "multi",
           densityToggle: true,
           fullScreenToggle: true,

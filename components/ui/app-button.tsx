@@ -196,7 +196,11 @@ const StyledButton = styled(Button, {
 
 // --- Component Definition ---
 
-export const AppButton: React.FC<AppButtonProps> = ({
+// forwardRef, because MUI's Tooltip/Popper attach to their child by ref. As a
+// plain function component this silently swallowed every tooltip wrapped
+// around an AppButton - React logged "Function components cannot be given
+// refs" and the tooltip simply never appeared. It is wrapped in ~6 places.
+export const AppButton = React.forwardRef<HTMLButtonElement, AppButtonProps>(({
   children,
   variantStyle = "primary",
   color = "primary",
@@ -207,9 +211,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
   className,
   isLoading = false,
   ...props
-}) => {
+}, ref) => {
   return (
     <StyledButton
+      ref={ref}
       variantStyle={variantStyle}
       customColor={color}
       fullWidth={fullWidth}
@@ -226,4 +231,6 @@ export const AppButton: React.FC<AppButtonProps> = ({
       {isLoading ? <CircularProgress size={20} color="inherit" /> : children}
     </StyledButton>
   );
-};
+});
+
+AppButton.displayName = "AppButton";

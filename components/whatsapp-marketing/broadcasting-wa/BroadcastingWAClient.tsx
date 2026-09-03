@@ -41,7 +41,7 @@ export default function BroadcastingWAClient() {
   // SuperTable State Hook
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
     globalFilter: "",
     columnFilters: [] as { id: string; value: unknown }[],
     sorting: [{ id: "created_at", desc: true }] as { id: string; desc: boolean }[],

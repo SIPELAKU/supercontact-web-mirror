@@ -393,6 +393,8 @@ export default function PeopleClient() {
                 />
             ) : (
                 <SuperTable<PersonRow>
+                    entityLabel="orang"
+                    searchPlaceholder="Cari nama, jabatan, atau perusahaan"
                     tableId="people-table"
                     data={rows}
                     columns={columns}

@@ -106,8 +106,6 @@ export default function DsrRequestsPage() {
             {
                 accessorKey: "request_type",
                 header: "Type",
-                filterVariant: "select",
-                filterSelectOptions: TYPE_OPTIONS,
                 filterFn: "equals",
                 Cell: ({ cell }) => (
                     <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
@@ -128,8 +126,6 @@ export default function DsrRequestsPage() {
             {
                 accessorKey: "status",
                 header: "Status",
-                filterVariant: "select",
-                filterSelectOptions: STATUS_OPTIONS,
                 filterFn: "equals",
                 size: 200,
                 Cell: ({ row }) => (
@@ -211,10 +207,26 @@ export default function DsrRequestsPage() {
                             />
                         )}
                         initialState={{ sorting: [{ id: "created_at", desc: true }] }}
+                        entityLabel="permintaan"
+                        searchPlaceholder="Cari email pemohon"
+                        filters={[
+                            {
+                                id: "request_type",
+                                label: "Tipe",
+                                type: "select",
+                                options: TYPE_OPTIONS,
+                            },
+                            {
+                                id: "status",
+                                label: "Status",
+                                type: "select",
+                                options: STATUS_OPTIONS,
+                            },
+                        ]}
                         features={{
           urlSync: true,
                             globalFilter: true,
-                            columnFilters: true,
+                            // (filters moved to the declarative `filters` prop)
                             pagination: true,
                         }}
                     />

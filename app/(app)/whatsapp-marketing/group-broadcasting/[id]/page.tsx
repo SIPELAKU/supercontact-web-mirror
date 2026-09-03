@@ -232,6 +232,8 @@ const GroupBroadcastDetailPage = () => {
                     // stays off). Switch to a server `search` param once the backend
                     // supports it.
                     <SuperTable<WaRecipient>
+                        entityLabel="penerima"
+                        searchPlaceholder="Cari nomor atau nama"
                         tableId="group-broadcast-recipients-table"
                         urlKey=""
                         columns={recipientColumns}
@@ -270,7 +272,6 @@ const GroupBroadcastDetailPage = () => {
                                 action={{ label: "Add Recipient", onClick: () => setAddRecipientModalOpen(true), icon: <Plus size={16} /> }}
                             />
                         )}
-                        initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                         features={{
           urlSync: true,
                             // API has no sort params - avoid a misleading page-only sort
@@ -320,7 +321,6 @@ const GroupBroadcastDetailPage = () => {
                                 description="Broadcast campaigns sent to this group will appear here."
                             />
                         )}
-                        initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                         features={{
                             // API has no sort params - avoid a misleading page-only sort
                             sorting: false,

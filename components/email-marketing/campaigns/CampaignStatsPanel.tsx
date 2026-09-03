@@ -82,7 +82,7 @@ export function CampaignStatsPanel({
     const [currentCampaign, setCurrentCampaign] = useState<Campaign | null>(campaign);
     const [tableState, setTableState] = useState({
         pageIndex: 0,
-        pageSize: 10,
+        pageSize: 25,
         globalFilter: "",
     });
 
@@ -403,6 +403,8 @@ export function CampaignStatsPanel({
                 </Typography>
                 <Box className="super-table-container-mini">
                     <SuperTable<CampaignSubscriber>
+                        entityLabel="penerima"
+                        searchPlaceholder="Cari email penerima"
                         tableId="campaign-subscribers-table"
                         data={subscribersData?.data?.contacts || []}
                         columns={columns}

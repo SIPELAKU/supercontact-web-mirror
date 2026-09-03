@@ -55,7 +55,7 @@ export const ContactClient = () => {
 
     // --- Current table state from SuperTable ---
     const currentPageRef = useRef(0);
-    const currentPageSizeRef = useRef(10);
+    const currentPageSizeRef = useRef(25); // matches SuperTable's lazy batch
     const currentSearchRef = useRef("");
     const currentSortByRef = useRef<string | undefined>(undefined);
     const currentSortOrderRef = useRef<"asc" | "desc" | undefined>(undefined);
@@ -112,7 +112,7 @@ export const ContactClient = () => {
 
     // Initial load
     useEffect(() => {
-        loadData(0, 10);
+        loadData(0, 25);
     }, [loadData]);
 
     // --- SuperTable State Change Handler (server-side pagination + search + sorting) ---

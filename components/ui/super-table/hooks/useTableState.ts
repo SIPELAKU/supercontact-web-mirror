@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   MRT_SortingState,
   MRT_ColumnFiltersState,
   MRT_VisibilityState,
   MRT_RowSelectionState,
 } from 'material-react-table';
-import { SuperTableProps, SuperTableState } from '../types';
+import { SuperTableFilterValues, SuperTableProps, SuperTableState } from '../types';
 
 export function useTableState<TData extends object>(
   props: Pick<
@@ -18,7 +18,14 @@ export function useTableState<TData extends object>(
     | 'features'
     | 'tableId'
     | 'resetPageKey'
-  >
+    | 'clearSelectionKey'
+  > & {
+    /**
+     * Lazy mode needs the parent's batch size to match the table's, or rows
+     * are skipped outright - see `announceInitialState` below.
+     */
+    announceInitialState?: boolean;
+  }
 ) {
   // ─── INIT STATES DENGAN FALLBACK INTERFACES ───────────────────────
   const [pagination, setPagination] = useState({
@@ -109,13 +116,40 @@ export function useTableState<TData extends object>(
     setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
   }, [columnFilters]);
 
+  // Re-sorting invalidates position just as thoroughly as filtering does, and
+  // under lazy loading it is worse than a cosmetic wrong-page: the accumulated
+  // rows are dropped because the query changed, but a pageIndex left at 3 then
+  // asks for the FOURTH batch of the new order - so the list would render rows
+  // 76-100 with rows 1-75 simply missing. Page-numbered tables get the
+  // conventional "sorting takes you back to page 1" out of the same fix.
+  const prevSorting = useRef(sorting);
+  const suppressNextSortingReset = useRef(false);
+  useEffect(() => {
+    if (prevSorting.current === sorting) return;
+    prevSorting.current = sorting;
+    if (suppressNextSortingReset.current) {
+      suppressNextSortingReset.current = false;
+      return;
+    }
+    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
+  }, [sorting]);
+
   /**
-   * Called by SuperTable right before useUrlSync applies a restored
-   * columnFilters value, so restoring `?f=` does not throw away the `?p=3`
-   * restored on the same navigation.
+   * Called by SuperTable once, before useUrlSync applies ANY restored state.
+   *
+   * Restoring `?sort=` or `?f=` is not a user changing the sort or the filter -
+   * it is the page being rebuilt as it was left. Without this, the two effects
+   * above would each read the restore as a fresh change and send the table back
+   * to page 1, throwing away the `?p=3` restored microseconds earlier on the
+   * same navigation.
+   *
+   * Both flags are set together because a restore can carry a sort without a
+   * filter, or the reverse, and a single shared flag would be consumed by
+   * whichever effect happened to run first.
    */
   const suppressNextFilterReset = useCallback(() => {
     suppressNextColumnFilterReset.current = true;
+    suppressNextSortingReset.current = true;
   }, []);
 
   // Filters the PAGE owns, outside the table (`resetPageKey`). Besides going
@@ -133,6 +167,56 @@ export function useTableState<TData extends object>(
     setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
   }, [props.resetPageKey]);
 
+  // Selection only - no page reset, no accumulated rows discarded. This is
+  // what a page-owned "Batal pilih" button needs; `resetPageKey` would also
+  // throw away everything scrolled into view.
+  const prevClearSelectionKey = useRef(props.clearSelectionKey);
+  useEffect(() => {
+    if (prevClearSelectionKey.current === props.clearSelectionKey) return;
+    prevClearSelectionKey.current = props.clearSelectionKey;
+    setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+  }, [props.clearSelectionKey]);
+
+  // ─── DECLARATIVE FILTERS (`filters` prop) ─────────────────────────
+  // The new filter UI and MRT's old column-filter subheader write to the SAME
+  // place: `columnFilters`. That is deliberate, and it is what makes the
+  // migration free - the eight pages that already read
+  // `state.columnFilters.find(f => f.id === 'status')` keep working untouched
+  // while their UI changes underneath them, and client-side tables get their
+  // filtering driven by MRT's own engine with no extra wiring.
+  const filterValues: SuperTableFilterValues = useMemo(
+    () => Object.fromEntries(columnFilters.map((f) => [f.id, f.value])),
+    [columnFilters]
+  );
+
+  const setFilterValues = useCallback((values: SuperTableFilterValues) => {
+    setColumnFilters(
+      Object.entries(values)
+        .filter(([, value]) => {
+          if (value === undefined || value === null || value === '') return false;
+          if (Array.isArray(value) && value.length === 0) return false;
+          return true;
+        })
+        .map(([id, value]) => ({ id, value }))
+    );
+  }, []);
+
+  // ─── LAZY LOADING ────────────────────────────────────────────────────
+  // "Load more" is just the next page index. Everything downstream - the
+  // request the parent fires, the slot the rows land in - already keys off
+  // pagination, so lazy loading needs no second notion of position.
+  const loadNextPage = useCallback(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }));
+  }, []);
+
+  // Changing the batch size mid-list would leave already-loaded rows sized by
+  // the old batch and make offsets disagree with what has been accumulated,
+  // so it restarts from the top - the same thing a page-size change has
+  // always done.
+  const setPageSize = useCallback((pageSize: number) => {
+    setPagination({ pageIndex: 0, pageSize });
+  }, []);
+
   // ─── ON STATE CHANGE (SERVER-SIDE BRIDGE) ─────────────────────────
   const isMounted = useRef(false);
 
@@ -146,16 +230,28 @@ export function useTableState<TData extends object>(
     columnOrder,
     grouping,
     rowSelection,
+    filters: filterValues,
   };
 
   const handleStateChange = useCallback(() => {
     // Hanya trigger event server-side jika salah satu mode manual dinyalakan
     if (!props.manualPagination && !props.manualSorting && !props.manualFiltering) return;
     
-    // Jangan fire event stateChange pada initial mount jika tak ada perubahan (cukup dipass initial prop)
+    // Normally the first render is skipped: the parent fetched with its own
+    // defaults and nothing has changed yet.
+    //
+    // Lazy loading breaks that assumption, because now the two sides have to
+    // agree on the BATCH SIZE. A page whose own default is `limit: 10` while
+    // the table batches by 25 would fetch rows 1-10, then ask for "page 2 of
+    // 25" on the first load-more and render rows 26-50 - rows 11 to 25 gone,
+    // with nothing on screen to suggest anything is missing. Announcing the
+    // state once on mount makes the table the single source of truth for it.
+    //
+    // Pages that already agree see an identical state and their own guard
+    // returns early, so this costs a request only where it prevents a hole.
     if (!isMounted.current) {
         isMounted.current = true;
-        return;
+        if (!props.announceInitialState) return;
     }
 
     props.onStateChange?.(currentState);
@@ -208,6 +304,12 @@ export function useTableState<TData extends object>(
     setGrouping,
     rowSelection,
     setRowSelection,
+    // Declarative filters (same storage as columnFilters)
+    filterValues,
+    setFilterValues,
+    // Lazy loading
+    loadNextPage,
+    setPageSize,
     // Utilities
     clearSelection,
     suppressNextFilterReset,

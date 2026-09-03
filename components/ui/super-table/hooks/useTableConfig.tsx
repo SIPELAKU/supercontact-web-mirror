@@ -17,13 +17,44 @@ import { BulkActionsBar } from '../components/BulkActionsBar';
 import { ErrorState } from '../components/ErrorState';
 import { TableToolbarActions } from '../components/TableToolbarActions';
 import { RowActionsCell } from '../components/RowActionsCell';
+import { FilterPanel } from '../components/FilterPanel';
+import { SearchField } from '../components/SearchField';
+import { SortControl } from '../components/SortControl';
+import { TableFooter } from '../components/TableFooter';
+
+/**
+ * Everything the lazy-loading footer needs, computed by SuperTable and handed
+ * down. Kept as one object so the config signature does not grow a dozen
+ * positional arguments.
+ */
+export interface TableLazyConfig<TData extends object> {
+  mode: 'lazy' | 'pages' | 'none';
+  /** Rows to hand MRT: accumulated pages on a server table, raw data otherwise. */
+  rows: TData[];
+  /** True when the parent is fetching pages from an API. */
+  isServer: boolean;
+  loadedCount: number;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+  autoLoadPaused: boolean;
+  /** Attached to the scrolling table container; drives auto-load. */
+  onContainerScroll: (event: React.UIEvent<HTMLDivElement>) => void;
+  pageSizeOptions: number[];
+  onPageSizeChange: (size: number) => void;
+  entityLabel: string;
+  virtualize: boolean;
+  /** Rows shown so far on a client-side table (`pageSize` for MRT's engine). */
+  clientVisibleCount: number;
+}
 
 export function useTableConfig<TData extends object>(
   props: SuperTableProps<TData>,
   tableState: ReturnType<typeof useTableState>,
   exportUtils: UseTableExportReturn<TData>,
   savedFilters: ReturnType<typeof useSavedFilters>,
-  onExportClick: (table: MRT_TableInstance<TData>) => void
+  onExportClick: (table: MRT_TableInstance<TData>) => void,
+  lazy: TableLazyConfig<TData>
 ): Partial<MRT_TableOptions<TData>> {
   const exportEnabled = !!(
     props.features?.export?.excel || props.features?.export?.csv
@@ -44,8 +75,6 @@ export function useTableConfig<TData extends object>(
     grouping = false,
     densityToggle = false,
     fullScreenToggle = false,
-    pagination = true,
-    pageSizeOptions = [10, 25, 50, 100],
     rowSelection = 'none',
     inlineEditing = false,
     maxHeight = '70vh',
@@ -55,18 +84,33 @@ export function useTableConfig<TData extends object>(
     facetedValues = true,
     filterSwitching = true,
     popoverFilters = false,
-    globalFilterAlwaysVisible = true,
   } = props.features || {};
 
-  // Two filter affordances on one table is always a mistake: the page-owned
-  // control plus MRT's built-in funnel toggle, each filtering by different
-  // rules. Dev-only, so it costs nothing in production.
-  if (process.env.NODE_ENV !== 'production' && props.renderFilters && columnFilters) {
-    console.warn(
-      `[SuperTable${props.tableId ? ` ${props.tableId}` : ''}] renderFilters is set together with ` +
-        'features.columnFilters: true. Pick one - two filter UIs on the same table ' +
-        'give the user two ways to filter that do not agree.'
-    );
+  const isLazy = lazy.mode === 'lazy';
+  const isPaged = lazy.mode === 'pages';
+
+  // The declarative `filters` prop and MRT's column-filter subheader write to
+  // the same state, so showing both would give the user two controls for one
+  // value - and they would disagree the moment either is used. The declarative
+  // one wins because it is the only one that can say WHICH filters are on.
+  const useDeclarativeFilters = (props.filters?.length ?? 0) > 0;
+  const mrtColumnFilters = columnFilters && !useDeclarativeFilters;
+
+  if (process.env.NODE_ENV !== 'production') {
+    const id = props.tableId ? ` ${props.tableId}` : '';
+    if (props.renderFilters && (columnFilters || useDeclarativeFilters)) {
+      console.warn(
+        `[SuperTable${id}] renderFilters is set together with declarative filters. ` +
+          'Pick one - two filter UIs on the same table give the user two ways ' +
+          'to filter that do not agree. Prefer the `filters` prop.'
+      );
+    }
+    if (columnFilters && useDeclarativeFilters) {
+      console.warn(
+        `[SuperTable${id}] features.columnFilters is ignored because \`filters\` ` +
+          'is set. Remove the flag - the declarative filters replace it.'
+      );
+    }
   }
 
   // The accessible entry point into a record: ONE real <a> per row, whose
@@ -93,17 +137,34 @@ export function useTableConfig<TData extends object>(
       })
     : props.columns || [];
 
+  // ─── PAGINATION MODE ──────────────────────────────────────────────────
+  // Server lazy: MRT's paging engine is switched OFF entirely and it renders
+  //   every accumulated row we hand it. Slicing is nobody's job any more.
+  // Client lazy: the engine stays ON, because it is what filters and sorts the
+  //   full set before anything is shown - but the "page" is the whole visible
+  //   run (rows 1..N), so growing the list is just growing pageSize.
+  const enginePagination = isPaged || (isLazy && !lazy.isServer);
+
+  const paginationState =
+    isLazy && !lazy.isServer
+      ? { pageIndex: 0, pageSize: lazy.clientVisibleCount }
+      : tableState.pagination;
+
   // 2. BUILD CORE OPTIONS
   const mrtConfig: Partial<MRT_TableOptions<TData>> = {
     // ─── Data & State Pointers ────────
-    data: props.data || [],
+    data: lazy.rows,
     columns,
     layoutMode: 'semantic',
     state: {
-      isLoading: props.isLoading,
-      showProgressBars: props.isFetching,
+      // Skeletons are for an EMPTY table waiting on its first rows. Once rows
+      // are on screen, `isLoading` would blank all of them - so loading batch
+      // four would wipe batches one to three and jump the scroll position to
+      // the top. From then on the linear progress bar is the whole story.
+      isLoading: props.isLoading && lazy.loadedCount === 0,
+      showProgressBars: props.isFetching || props.isLoading,
 
-      pagination: tableState.pagination,
+      pagination: paginationState,
       sorting: tableState.sorting,
       globalFilter: tableState.globalFilter, // Biarkan ui input tetap snappy
       columnFilters: tableState.columnFilters.map((f) => {
@@ -123,8 +184,11 @@ export function useTableConfig<TData extends object>(
     },
 
     initialState: {
-      showGlobalFilter: globalFilterAlwaysVisible,
-      showColumnFilters: columnFilters,
+      // Search is rendered by SuperTable's own SearchField now, so MRT's
+      // built-in field must never mount. It is `mountOnEnter`/`unmountOnExit`
+      // inside a Collapse, so `false` costs one zero-width div and nothing else.
+      showGlobalFilter: false,
+      showColumnFilters: mrtColumnFilters,
       ...props.initialState,
     },
 
@@ -152,6 +216,8 @@ export function useTableConfig<TData extends object>(
 
     // ─── Server-Side Handling ────────
     manualPagination: props.manualPagination,
+    // With lazy loading the table holds many pages at once, so the count MRT
+    // needs is no longer "rows in this response" - it is the whole result set.
     rowCount: props.rowCount,
     manualSorting: props.manualSorting,
     manualFiltering: props.manualFiltering,
@@ -165,21 +231,27 @@ export function useTableConfig<TData extends object>(
     enableSorting: sorting,
     enableMultiSort: multiSort,
     enableGlobalFilter: globalFilter,
-    enableColumnFilters: columnFilters,
+    enableColumnFilters: mrtColumnFilters,
     enableGrouping: grouping,
     enableDensityToggle: densityToggle,
     enableFullScreenToggle: fullScreenToggle,
-    enablePagination: pagination,
+    enablePagination: enginePagination,
     enableStickyHeader: stickyHeader,
     enableRowSelection: rowSelection !== 'none',
     enableSelectAll: rowSelection === 'multi',
 
+    // Opt-in, and read once at mount - MRT memoises it with an empty dep
+    // array, so it cannot be flipped later based on how many rows piled up.
+    enableRowVirtualization: lazy.virtualize,
+    rowVirtualizerOptions: lazy.virtualize ? { overscan: 8 } : undefined,
+
     // ─── Pagination UI ───────────────
-    // 'pages' replaces MUI's bare prev/next pair with numbered pages; without
-    // first/last, reaching page 60 of a subscriber list meant 59 clicks.
-    paginationDisplayMode: 'pages',
+    // In lazy mode the numbered paginator is replaced wholesale by the footer
+    // in renderBottomToolbarCustomActions; the engine may still be running
+    // (client-side tables need it to filter and sort), it just has no UI.
+    positionPagination: isPaged ? 'bottom' : 'none',
     muiPaginationProps: {
-      rowsPerPageOptions: pageSizeOptions,
+      rowsPerPageOptions: lazy.pageSizeOptions,
       showFirstButton: true,
       showLastButton: true,
       shape: 'rounded',
@@ -196,7 +268,12 @@ export function useTableConfig<TData extends object>(
     positionToolbarAlertBanner: 'none', // Di handle UI custom (BulkActionsBar)
 
     // ─── Event Listeners (Setters) ───
-    onPaginationChange: tableState.setPagination,
+    // On a client-side lazy table the pagination state is derived (page 0,
+    // pageSize = rows revealed so far) and nothing in the UI changes it, so
+    // letting MRT echo it back would only fight the reveal - see the note on
+    // `clientVisibleCount` in SuperTable.
+    onPaginationChange:
+      isLazy && !lazy.isServer ? undefined : tableState.setPagination,
     onSortingChange: tableState.setSorting,
     onGlobalFilterChange: tableState.setGlobalFilter,
     onColumnFiltersChange: tableState.setColumnFilters,
@@ -320,17 +397,16 @@ export function useTableConfig<TData extends object>(
   // ─── 4. CUSTOM SLOTS, BULK ACTIONS, & EMPTY STATES ────────────────
   // MRT hands us ONE node for the entire left half of the toolbar
   // (renderTopToolbarCustomActions = the first child of MRT_TopToolbar).
-  // Three things compete for it:
-  //   1. renderFilters        - filter controls; always shown, always first
-  //   2. renderTopLeftToolbar - Add / Import / Print buttons
-  //   3. BulkActionsBar       - takes over (2) ONLY, while rows are selected
+  // Four things compete for it:
+  //   1. filters (declarative)  - the Filters button and its active chips
+  //   2. renderFilters          - the legacy page-owned filter slot
+  //   3. renderTopLeftToolbar   - Add / Import / Print buttons
+  //   4. BulkActionsBar         - takes over (3) ONLY, while rows are selected
   //
-  // Pinning filters at index 0 is the whole point of the separate slot: put
-  // them in renderTopLeftToolbar instead and ticking a single checkbox
-  // unmounts them, hiding both the control and which filter is active exactly
-  // when someone is about to run a bulk delete. Keeping the element type at
-  // index 0 stable across renders also means an OPEN filter popover survives
-  // a checkbox click.
+  // Pinning filters ahead of the action buttons is the whole point: put them
+  // in renderTopLeftToolbar instead and ticking a single checkbox unmounts
+  // them, hiding both the control and which filter is active exactly when
+  // someone is about to run a bulk delete.
   //
   // DO NOT make the assignment below conditional. MRT computes
   // `stackAlertBanner = isMobile || !!renderTopToolbarCustomActions || ...`
@@ -340,6 +416,14 @@ export function useTableConfig<TData extends object>(
   mrtConfig.renderTopToolbarCustomActions = ({ table }) => {
     const selectedRows = table.getSelectedRowModel().rows.map(r => r.original);
     const hasSelection = selectedRows.length > 0;
+
+    const declarativeFilters = useDeclarativeFilters ? (
+      <FilterPanel
+        filters={props.filters!}
+        values={tableState.filterValues}
+        onChange={tableState.setFilterValues}
+      />
+    ) : null;
 
     const filtersNode = props.renderFilters?.(table) ?? null;
 
@@ -354,12 +438,12 @@ export function useTableConfig<TData extends object>(
         props.renderTopLeftToolbar?.(table) ?? null
       );
 
-    // No filter slot -> emit exactly what this returned before the slot
-    // existed, raw `null` included, so MRT's `?? <span/>` spacer stays alive
-    // and `justify-content: space-between` keeps the search/Export/View
-    // cluster pinned right. This early return is the zero-regression story
-    // for every SuperTable screen that does not opt in.
-    if (!filtersNode) return actionsNode;
+    // No filter slot of any kind -> emit exactly what this returned before the
+    // slots existed, raw `null` included, so MRT's `?? <span/>` spacer stays
+    // alive and `justify-content: space-between` keeps the right-hand cluster
+    // pinned right. This early return is the zero-regression story for every
+    // SuperTable screen that does not opt in.
+    if (!declarativeFilters && !filtersNode) return actionsNode;
 
     return (
       <Box
@@ -382,28 +466,87 @@ export function useTableConfig<TData extends object>(
           flexShrink: 1,
         }}
       >
+        {declarativeFilters}
         {filtersNode}
         {actionsNode}
       </Box>
     );
   };
 
-  // Top Right Toolbar: search toggle (only when the field is hidden by
-  // default), column-filter toggle, one Export button, one View menu.
+  // Top Right Toolbar: search, sort, column-filter toggle, Export, View.
   mrtConfig.renderToolbarInternalActions = ({ table }) => (
-    <TableToolbarActions
-      table={table}
-      showSearchToggle={globalFilter && !globalFilterAlwaysVisible}
-      showColumnFilterToggle={columnFilters}
-      showColumnVisibility={columnVisibility}
-      showDensity={densityToggle}
-      showFullScreen={fullScreenToggle}
-      exportEnabled={exportEnabled}
-      isExporting={exportUtils.isExporting}
-      onExportClick={() => onExportClick(table)}
-      extra={props.renderTopRightToolbar?.(table)}
-    />
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+      {globalFilter && (
+        <SearchField
+          value={tableState.globalFilter}
+          onChange={tableState.setGlobalFilter}
+          placeholder={props.searchPlaceholder}
+          resultLabel={
+            tableState.debouncedGlobalFilter
+              ? `${lazy.loadedCount} ${lazy.entityLabel} cocok`
+              : undefined
+          }
+        />
+      )}
+      {sorting && (
+        <SortControl
+          table={table}
+          sorting={tableState.sorting}
+          onChange={tableState.setSorting}
+        />
+      )}
+      <TableToolbarActions
+        table={table}
+        showColumnFilterToggle={mrtColumnFilters}
+        showColumnVisibility={columnVisibility}
+        showDensity={densityToggle}
+        showFullScreen={fullScreenToggle}
+        exportEnabled={exportEnabled}
+        isExporting={exportUtils.isExporting}
+        onExportClick={() => onExportClick(table)}
+        extra={props.renderTopRightToolbar?.(table)}
+      />
+    </Box>
   );
+
+  // ─── LAZY FOOTER ──────────────────────────────────────────────────
+  // Replaces the numbered paginator. Rendered through MRT's bottom-toolbar
+  // slot, which renders regardless of `enablePagination`, so a server table
+  // with the paging engine switched off still gets a footer.
+  if (isLazy) {
+    mrtConfig.renderBottomToolbarCustomActions = ({ table }) => {
+      // A client-side table only knows its true total after MRT has filtered:
+      // "240 of 12,431" must count what matches the search, not what was
+      // fetched. That number exists on the instance, so it is read here rather
+      // than threaded down as a prop.
+      const clientTotal = lazy.isServer
+        ? undefined
+        : table.getFilteredRowModel().rows.length;
+
+      const totalCount = lazy.isServer ? props.rowCount : clientTotal;
+      const loadedCount = lazy.isServer
+        ? lazy.loadedCount
+        : Math.min(lazy.clientVisibleCount, clientTotal ?? 0);
+      const hasMore = lazy.isServer
+        ? lazy.hasMore
+        : lazy.clientVisibleCount < (clientTotal ?? 0);
+
+      return (
+        <TableFooter
+          loadedCount={loadedCount}
+          totalCount={totalCount}
+          hasMore={hasMore}
+          isLoadingMore={lazy.isLoadingMore}
+          onLoadMore={lazy.onLoadMore}
+          pageSize={tableState.pagination.pageSize}
+          pageSizeOptions={lazy.pageSizeOptions}
+          onPageSizeChange={lazy.onPageSizeChange}
+          entityLabel={lazy.entityLabel}
+          autoLoadPaused={lazy.autoLoadPaused}
+        />
+      );
+    };
+  }
 
   // Error States / Custom No-Record component
   mrtConfig.renderEmptyRowsFallback = () => {
@@ -416,7 +559,15 @@ export function useTableConfig<TData extends object>(
       );
     }
     if (props.renderEmptyState) {
-      return <>{props.renderEmptyState()}</>;
+      return (
+        <>
+          {props.renderEmptyState({
+            clearFilters: () => tableState.setFilterValues({}),
+            hasActiveFilters: tableState.columnFilters.length > 0,
+            hasSearch: Boolean(tableState.debouncedGlobalFilter),
+          })}
+        </>
+      );
     }
     // Jika tidak didefine renderEmptyState, MRT akan secara otomatis meren-der fallback loc default (noRecordsToDisplay)
     return undefined;
@@ -441,6 +592,10 @@ export function useTableConfig<TData extends object>(
   };
 
   mrtConfig.muiTableContainerProps = {
+    // Auto-loading hangs off THIS element's scroll position rather than a
+    // sentinel in the footer: the footer never scrolls, so a sentinel there is
+    // permanently on screen and fires the moment the table mounts.
+    onScroll: isLazy ? lazy.onContainerScroll : undefined,
     sx: {
       maxHeight: maxHeight,  // Sticky header need bounded box size
       width: '100%',

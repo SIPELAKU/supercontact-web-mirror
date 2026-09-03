@@ -477,6 +477,8 @@ export default function RoutingQueuesSettingsTab() {
         </div>
 
         <SuperTable<ConversationQueue>
+          entityLabel="antrean"
+          searchPlaceholder="Cari nama antrean"
           tableId="conversation-queues-table"
           urlKey="queues"
           columns={columns}

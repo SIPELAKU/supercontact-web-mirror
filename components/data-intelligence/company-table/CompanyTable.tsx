@@ -268,6 +268,8 @@ export default function CompanyTable({
   return (
     <Box sx={{ width: "100%", overflowX: "auto" }} className="super-table-container">
       <SuperTable<CompanyIntelligenceItem>
+        entityLabel="perusahaan"
+        searchPlaceholder="Cari nama, domain, atau industri"
         tableId={tableId}
         data={companies}
         columns={columns}

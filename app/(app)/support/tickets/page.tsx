@@ -37,7 +37,7 @@ export default function TicketManagementPage() {
     // ===== TABLE STATE (Driven by SuperTable) ===== //
     const [tableState, setTableState] = useState({
         pageIndex: 0,
-        pageSize: 10,
+        pageSize: 25,
         globalFilter: "",
         columnFilters: [] as { id: string; value: unknown }[],
         sorting: [{ id: "updated_at", desc: true }] as { id: string; desc: boolean }[],

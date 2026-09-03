@@ -67,7 +67,16 @@ export interface SuperTableFeatures {
    */
   globalFilter?: boolean;
   /**
-   * Munculkan filter input khusus untuk tiap-tiap kolom di bawah row header.
+   * Munculkan baris input filter MRT di bawah header kolom.
+   *
+   * @deprecated Pakai prop `filters` (deklaratif) sebagai gantinya. Baris
+   * subheader ini memakan satu pita tinggi permanen, hanya muncul di lebar
+   * desktop, dan tak punya cara menampilkan filter mana yang sedang aktif
+   * selain membaca ulang tiap kotaknya. `filters` merender kontrol yang sama
+   * sebagai satu tombol + chip yang bisa dibaca sekilas dan dilepas satu-satu.
+   *
+   * Keduanya menulis ke state yang SAMA (`columnFilters`), jadi halaman yang
+   * membaca `state.columnFilters` tetap jalan saat berpindah.
    * @default false
    */
   columnFilters?: boolean;
@@ -97,11 +106,6 @@ export interface SuperTableFeatures {
    * @default false
    */
   popoverFilters?: boolean;
-  /**
-   * Tampilkan search bar selalu visible (bukan di-toggle dengan icon).
-   * @default true
-   */
-  globalFilterAlwaysVisible?: boolean;
 
   // ─── Grouping ───────────────────────────────────────────────────────
   /** 
@@ -139,16 +143,51 @@ export interface SuperTableFeatures {
   inlineEditing?: 'row' | 'cell' | 'table' | false;
 
   // ─── Pagination ─────────────────────────────────────────────────────
-  /** 
-   * Menampilkan panel paginasi di bawah tabel.
-   * @default true 
+  /**
+   * Bagaimana baris berikutnya didapat.
+   *
+   * `'lazy'`  → **default**. Tak ada nomor halaman. Baris menumpuk saat
+   *             di-scroll (sentinel IntersectionObserver) dan footer
+   *             menampilkan "Menampilkan 240 dari 12.431" plus tombol
+   *             *Load more* untuk keyboard/pembaca layar. Berlaku untuk
+   *             tabel server (`manualPagination`) maupun client-side.
+   * `'pages'` → paginator bernomor yang lama. Pakai untuk tabel setelan
+   *             yang isinya belasan baris dan untuk layar yang butuh
+   *             deep-link `?p=3`.
+   * `false`   → tak ada paginasi sama sekali (tabel sudah pasti pendek).
+   *
+   * `true`/`undefined` dipetakan ke `'lazy'` supaya ~44 tabel lama ikut
+   * berubah tanpa menyentuh satu per satu; `false` tetap `false`.
+   * @default 'lazy'
    */
-  pagination?: boolean;
-  /** 
-   * Konfigurasi opsi menu per-halaman.
-   * @default [10, 25, 50, 100]
+  pagination?: 'lazy' | 'pages' | boolean;
+  /**
+   * Berapa baris ditarik sekali angkut. Di mode `'lazy'` angka pertama jadi
+   * ukuran batch; opsi lain muncul di menu "Rows" pada footer.
+   * @default [25, 50, 100] untuk 'lazy', [10, 25, 50, 100] untuk 'pages'
    */
   pageSizeOptions?: number[];
+  /**
+   * Berhenti auto-load setelah sekian batch dan mewajibkan klik *Load more*.
+   *
+   * Ini rem pengaman, bukan preferensi: scroll tanpa henti pada 12.000 baris
+   * akan menaruh 12.000 `<tr>` di DOM. Setelah batas ini tercapai sentinel
+   * dimatikan dan hanya tombol yang menambah baris.
+   * @default 10
+   */
+  autoLoadLimit?: number;
+  /**
+   * Virtualisasi baris (hanya baris yang terlihat yang dirender).
+   *
+   * OPT-IN, dan **dibaca sekali saat mount** - MRT menyimpannya di
+   * `useMemo(..., [])`, jadi tak bisa dinyalakan belakangan berdasar jumlah
+   * baris. Menyalakannya memaksa `layoutMode: 'grid'`, yang berarti lebar
+   * kolom mengikuti `size` di column def, bukan lagi lebar alami tabel -
+   * karena itu ia tidak default. Nyalakan untuk daftar yang memang panjang
+   * (Contacts, Subscribers, Companies) setelah kolomnya diberi `size`.
+   * @default false
+   */
+  virtualize?: boolean;
 
   // ─── Export ─────────────────────────────────────────────────────────
   /**
@@ -221,6 +260,15 @@ export interface SuperTableState {
   columnOrder: string[];
   grouping: string[];
   rowSelection: MRT_RowSelectionState;
+  /**
+   * Filter deklaratif (`filters`) sebagai objek datar - bentuk yang biasanya
+   * langsung dioper ke query string API.
+   *
+   * Ini pandangan KEDUA atas data yang sama: setiap nilai di sini juga ada di
+   * `columnFilters`. Halaman lama membaca `columnFilters`; halaman baru cukup
+   * membaca `filters`. Tak ada yang perlu diubah untuk tetap jalan.
+   */
+  filters: SuperTableFilterValues;
 }
 
 /**
@@ -363,6 +411,51 @@ export interface SuperTableRowAction<TData extends object> {
 }
 
 /**
+ * Satu filter, dideklarasikan sebagai DATA.
+ *
+ * Sama alasannya dengan `SuperTableRowAction`: begitu filter jadi data,
+ * SuperTable yang memiliki renderer-nya - jadi chip "filter aktif", tombol
+ * hapus per-filter, "Clear all", serialisasi URL dan varian layar sempit
+ * cukup ditulis SEKALI, bukan 44 kali. Sebelum ini ada tiga idiom filter yang
+ * hidup berdampingan (subheader MRT, `TableFilterBar`, dan `<Select>` buatan
+ * tangan di atas tabel), dan tak satu pun bisa memberi tahu "filter apa yang
+ * sedang menyala" tanpa dibaca satu-satu.
+ *
+ * Nilainya mendarat di `state.columnFilters` dalam bentuk `{ id, value }` -
+ * bentuk yang sudah dibaca 8 halaman - sehingga migrasi tidak memutus
+ * kontrak API mana pun.
+ */
+export interface SuperTableFilterDef {
+  /** Dikirim ke API (dan ditulis ke URL) dengan kunci ini. */
+  id: string;
+  /** Label yang dibaca manusia; dipakai di popover DAN di chip. */
+  label: string;
+  /**
+   * `'select'`      → satu pilihan dari daftar
+   * `'multiselect'` → banyak pilihan; nilainya array
+   * `'text'`        → cocokkan teks bebas
+   * `'date-range'`  → dua tanggal; nilainya `[from, to]`
+   * `'boolean'`     → ya/tidak
+   */
+  type: 'select' | 'multiselect' | 'text' | 'date-range' | 'boolean';
+  /** Wajib untuk `select` dan `multiselect`. */
+  options?: { value: string; label: string }[];
+  /** Teks untuk "tanpa filter" pada `select`. @default `Semua ${label}` */
+  anyLabel?: string;
+  /** Placeholder untuk `text`. */
+  placeholder?: string;
+  /**
+   * Tampilkan langsung di toolbar sebagai kontrol tersendiri, bukan di dalam
+   * popover. Hemat-hemat: satu, kalau memang dipakai sepanjang hari di layar
+   * itu. Sisanya biarkan di dalam popover.
+   */
+  pinned?: boolean;
+}
+
+/** Nilai filter aktif, dipetakan dari `SuperTableFilterDef['id']`. */
+export type SuperTableFilterValues = Record<string, unknown>;
+
+/**
  * SuperTableSlots mengatur inject/insert Element UI React bebas (children slots).
  */
 export interface SuperTableSlots<TData extends object> {
@@ -376,6 +469,24 @@ export interface SuperTableSlots<TData extends object> {
    * Disuntikkan di toolbar kanan di deretan icon toggle MRT. 
    */
   renderTopRightToolbar?: (table: MRT_TableInstance<TData>) => React.ReactNode;
+
+  /**
+   * Filter sebagai DATA - cara yang dianjurkan untuk memfilter tabel apa pun.
+   *
+   * SuperTable merendernya menjadi satu tombol **Filters** (dengan jumlah
+   * filter aktif), popover berisi kontrolnya, dan satu chip per filter aktif
+   * yang bisa dilepas sendiri-sendiri. Di layar sempit popover berubah jadi
+   * drawer bawah dengan target sentuh 48px.
+   *
+   * Nilainya masuk ke `state.columnFilters` DAN `state.filters`. Untuk tabel
+   * client-side ia langsung menggerakkan mesin filter MRT tanpa kode tambahan;
+   * untuk tabel server, halaman meneruskan `state.filters` ke API-nya.
+   *
+   * Deklarasikan hanya filter yang benar-benar didukung server. Kotak filter
+   * yang tidak tersambung ke apa pun adalah cacat yang paling mahal di tabel:
+   * kelihatan berfungsi, dan diam-diam tidak.
+   */
+  filters?: SuperTableFilterDef[];
 
   /**
    * Kontrol filter yang dirender DI DALAM toolbar tabel, paling kiri, sebelum
@@ -438,10 +549,23 @@ export interface SuperTableSlots<TData extends object> {
    */
   renderDetailPanel?: (params: { row: MRT_Row<TData> }) => React.ReactNode;
 
-  /** 
+  /**
    * Menggantikan teks basic 'Data Tidak Ditemukan' dengan full component JSX.
+   *
+   * Menerima konteks supaya keadaan "kosong karena filter" bisa menawarkan
+   * satu-satunya aksi yang memperbaikinya. Tanpa ini tiap halaman harus
+   * menyalin sendiri state filternya untuk tahu apakah tabelnya kosong karena
+   * memang tak ada data, atau karena filter yang menyaring habis - dua hal
+   * yang butuh kalimat dan tombol berbeda.
    */
-  renderEmptyState?: () => React.ReactNode;
+  renderEmptyState?: (ctx: {
+    /** Kosongkan semua filter deklaratif sekaligus. */
+    clearFilters: () => void;
+    /** Ada filter yang sedang menyala. */
+    hasActiveFilters: boolean;
+    /** Ada teks di kotak pencarian. */
+    hasSearch: boolean;
+  }) => React.ReactNode;
 }
 
 /**
@@ -536,6 +660,18 @@ export interface SuperTableProps<TData extends object>
     /** Tujuan tautannya untuk baris ini. */
     href: (row: TData) => string;
   };
+  /**
+   * Placeholder kotak pencarian. Isi dengan APA yang bisa dicari, bukan kata
+   * "Search" saja - "Cari nama, email, atau perusahaan" memberi tahu pengguna
+   * kolom mana yang ikut dicari tanpa harus mencoba-coba.
+   */
+  searchPlaceholder?: string;
+  /**
+   * Kata benda jamak untuk baris tabel ini ("kontak", "tiket", "kampanye").
+   * Dipakai footer ("Menampilkan 240 dari 12.431 kontak") dan status
+   * pencarian. @default 'baris'
+   */
+  entityLabel?: string;
   /** 
    * Overwrite default start table state, ex: `{ sorting: [ {id: 'date', desc: true} ] }`. 
    */
@@ -552,4 +688,14 @@ export interface SuperTableProps<TData extends object>
    * that `renderFilters` puts the filter control right next to that bar.
    */
   resetPageKey?: string | number;
+  /**
+   * Ubah nilainya untuk MENGOSONGKAN seleksi baris saja - tanpa memulangkan
+   * tabel ke batch pertama.
+   *
+   * Bedanya dengan `resetPageKey`: itu untuk filter yang mengubah HASIL, jadi
+   * memuat ulang dari atas memang benar. Ini untuk tombol "Batal pilih" yang
+   * dimiliki halaman (bar bulk action di luar tabel): membatalkan centang tidak
+   * boleh membuang baris yang sudah di-scroll dan memaksa memuat ulang.
+   */
+  clearSelectionKey?: string | number;
 }

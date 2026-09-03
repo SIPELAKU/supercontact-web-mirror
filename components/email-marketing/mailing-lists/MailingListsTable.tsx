@@ -54,7 +54,7 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
 
   const [tableState, setTableState] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
     globalFilter: '',
     sorting: [] as { id: string; desc: boolean }[],
   });
@@ -108,6 +108,8 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
 
   return (
     <SuperTable<MailingList>
+      entityLabel="mailing list"
+      searchPlaceholder="Cari nama mailing list"
       tableId="mailing-lists-table"
       urlKey=""
       exportFileName="Mailing Lists"
@@ -169,13 +171,11 @@ const MailingListsTable = ({ onAdd, onEdit, onDeleteRequest }: MailingListsTable
           action={{ label: 'Add Mailing List', onClick: onAdd, icon: <Plus size={16} /> }}
         />
       )}
-      initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
       features={{
         // The API grew sort_by/sort_order (name, subscriber_count, created_at),
         // so this list is no longer stuck on newest-first.
         sorting: true,
         globalFilter: true,
-        globalFilterAlwaysVisible: true,
         columnFilters: false,
         pagination: true,
         columnVisibility: true,

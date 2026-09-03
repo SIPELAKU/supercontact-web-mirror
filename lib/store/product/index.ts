@@ -94,7 +94,9 @@ export const useGetProductStore = create<GetState>((set, get) => ({
   searchQuery: "",
   pagination: {
     page: 1,
-    limit: 10,
+    // Matches SuperTable's lazy batch size, so the first fetch and the first
+    // "load more" ask for consecutive rows rather than overlapping ones.
+    limit: 25,
     total: 0,
     totalPages: 1,
   },

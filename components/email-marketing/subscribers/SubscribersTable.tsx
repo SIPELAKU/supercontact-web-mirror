@@ -88,6 +88,8 @@ const SubscribersTable = ({
   return (
     <>
       <SuperTable<Subscriber>
+        entityLabel="subscriber"
+        searchPlaceholder="Cari email, nama, atau perusahaan"
         tableId="subscribers-table"
         urlKey=""
         exportFileName="Subscribers"
@@ -123,16 +125,9 @@ const SubscribersTable = ({
         // own, so the row opens the edit modal rather than navigating.
         onRowClick={(row) => onEdit(row)}
         onExportRequest={onExportRequest}
-        initialState={{
-          pagination: {
-            pageIndex: 0,
-            pageSize: 10,
-          },
-        }}
         features={{
           pagination: true,
           globalFilter: true,
-          globalFilterAlwaysVisible: true,
           columnFilters: false,
           sorting: true,
           rowSelection: 'multi',

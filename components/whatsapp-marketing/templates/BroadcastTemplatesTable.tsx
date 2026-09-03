@@ -15,16 +15,6 @@ import { Copy, Trash2, LayoutTemplate } from 'lucide-react';
 import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
 import { EmptyState } from '@/components/ui/empty-state';
 
-const APPROVAL_STATUS_OPTIONS: BroadcastTemplate['whatsapp_approval_status'][] = [
-  'Not submitted',
-  'Received',
-  'Pending',
-  'Approved',
-  'Rejected',
-  'Paused',
-  'Disabled',
-];
-
 interface BroadcastTemplatesTableProps {
   templates: BroadcastTemplate[];
   isLoading: boolean;
@@ -57,7 +47,6 @@ const BroadcastTemplatesTable = ({
       {
         accessorKey: 'friendly_name',
         header: 'Campaign Name',
-        filterVariant: 'text',
         Cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-semibold text-[#5479EE] group-hover:underline">
@@ -72,7 +61,6 @@ const BroadcastTemplatesTable = ({
       {
         accessorKey: 'language',
         header: 'Language',
-        filterVariant: 'text',
         Cell: ({ cell }) => cell.getValue<string>() || '-',
       },
       {
@@ -88,8 +76,6 @@ const BroadcastTemplatesTable = ({
       {
         accessorKey: 'whatsapp_approval_status',
         header: 'Approval Status',
-        filterVariant: 'select',
-        filterSelectOptions: APPROVAL_STATUS_OPTIONS,
         Cell: ({ row }) => (
           <TemplateApprovalStatusBadge status={row.original.whatsapp_approval_status} />
         ),
@@ -133,17 +119,15 @@ const BroadcastTemplatesTable = ({
           search: state.globalFilter || '',
         });
       }}
-      initialState={{
-        pagination: {
-          pageIndex: 0,
-          pageSize: 10,
-        },
-      }}
+      entityLabel="template"
+      searchPlaceholder="Cari nama template atau SID"
+      // The name/language text boxes and the approval-status dropdown are
+      // gone: GET /broadcast-templates accepts page, limit, search and
+      // account_id, so with `manualFiltering` on none of the three ever
+      // reached the server. Approval status is worth having back as a real
+      // filter once the endpoint can honour it.
       features={{
-        pagination: true,
         globalFilter: true,
-        globalFilterAlwaysVisible: true,
-        columnFilters: true,
         sorting: true,
         rowSelection: 'multi',
         columnVisibility: true,

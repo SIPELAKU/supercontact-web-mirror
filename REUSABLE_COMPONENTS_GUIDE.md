@@ -125,16 +125,56 @@ The standard data table (wraps Material React Table). Golden rules:
    - search: `state.globalFilter` → `search`
    - sort: `state.sorting[0]` → `sort_by` (column id) + `sort_order`
      (`"asc" | "desc"`)
-   - pagination: `state.pagination.pageIndex/pageSize` → `page` / `page_size`
-   Reset to page 1 whenever search or filters change.
-6. Loading: `isLoading` for first load (skeleton), `isFetching` for background refetch.
-7. Slots, and which of them survive a row selection:
-   - `renderFilters` — filter controls, far left **inside** the table toolbar. **Not**
-     replaced when rows are selected, so an active filter stays visible (and
-     changeable) while a bulk action is being set up. For server-driven filter
-     params only, and never together with `features.columnFilters: true` — two
-     filter affordances on one table is always a bug. Must **return** `null` when
-     there is nothing to show.
+   - pagination: `state.pagination.pageIndex/pageSize` → `page` / `limit`
+   - filters: `state.filters` (flat object) — or `state.columnFilters` if the
+     page already reads that shape
+   Do **not** hand-roll "reset to page 1 when the search changed". SuperTable
+   already does it for search, sort, filters and page size; a second copy of the
+   rule in the page is how the two drift apart.
+6. **Pagination is lazy by default.** No page numbers: rows accumulate as you
+   scroll and the footer reads "Menampilkan 240 dari 12.431 kontak" with a
+   *Muat lebih banyak* button beside it. What this asks of a caller:
+   - Set `entityLabel` (the plural noun) and `searchPlaceholder` (what is
+     actually searched) — the footer and search box are generic without them.
+   - Keep `rowCount` accurate; it is the "dari 12.431".
+   - **Never override the batch size on one side only.** SuperTable announces
+     its state on mount so the page adopts its `limit`; if a page forces a
+     different one, "load more" fetches the next batch at the wrong offset and
+     silently skips rows.
+   - `features.pagination: 'pages'` brings back the numbered paginator. Use it
+     for small settings tables and anywhere a `?p=3` deep link matters — a lazy
+     list deliberately keeps search/sort/filters in the URL but not a page
+     number, because "page 7" alone does not reproduce the view.
+   - `features.virtualize` is opt-in and read once at mount; it forces
+     `layoutMode: 'grid'`, so give the columns a `size` first.
+7. Loading: `isLoading` for first load (skeleton), `isFetching` for background
+   refetch. In lazy mode the skeleton only replaces an *empty* table — once rows
+   are on screen, loading the next batch must never blank them.
+8. **Filters are declared as data.** Use the `filters` prop:
+
+   ```tsx
+   filters={[{ id: "status", label: "Status", type: "select", options }]}
+   ```
+
+   SuperTable renders one **Filters** button carrying the active count, a
+   popover (bottom drawer under 720px), and one removable chip per active
+   filter. Values land in both `state.filters` and `state.columnFilters`, so a
+   page already reading the latter needs no change.
+   - **Declare only filters the server can honour.** Three tables used to render
+     filter boxes with `manualFiltering` on while the page never forwarded
+     `columnFilters` — typing in them did nothing. A control that silently does
+     nothing is worse than no control; check the endpoint first.
+   - `features.columnFilters` (MRT's subheader row) is deprecated and ignored
+     when `filters` is set.
+   - Search and sort are permanent labelled toolbar controls, not icons that
+     reveal something. Sort shows the column currently in use, which is the only
+     way to know it once the header has scrolled away or on a phone.
+
+9. Slots, and which of them survive a row selection:
+   - `renderFilters` — legacy escape hatch for a page-owned filter control. Prefer
+     `filters`. Never together with it, or with `features.columnFilters: true` —
+     two filter affordances on one table is always a bug. Must **return** `null`
+     when there is nothing to show.
    - `renderTopLeftToolbar` — Add/Import buttons. **Replaced wholesale** by the bulk
      bar while rows are selected, so never put a filter here.
    - `renderBulkActions` — shown while rows are selected.
@@ -145,7 +185,7 @@ The standard data table (wraps Material React Table). Golden rules:
    page 1 **and** clears the row selection, so the bulk bar can't keep counting rows
    the server no longer returns.
 
-8. **Row actions**: prefer `rowActions` (an array of `SuperTableRowAction`, or a
+10. **Row actions**: prefer `rowActions` (an array of `SuperTableRowAction`, or a
    function of the row) over `renderRowActions`. Declaring them as data is what
    lets SuperTable render one kebab on desktop and a labelled 48px bottom sheet
    on a phone — written once, instead of per screen. `renderRowActions` stays
@@ -164,7 +204,7 @@ The standard data table (wraps Material React Table). Golden rules:
      Subscribers, Contacts and WA Recipients qualifies; Delete elsewhere does not).
    - `destructive: true` colours it and moves it below a divider.
 
-9. **The row opens the record — do not also ship a View icon.** Give the table a
+11. **The row opens the record — do not also ship a View icon.** Give the table a
    `primaryColumn` and the named column becomes a real `<a href>`: one tab stop
    per row, accessible name = the record's own title, and middle-click and
    open-in-new-tab work for free. Add `onRowClick` on top as a mouse

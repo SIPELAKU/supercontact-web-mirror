@@ -287,6 +287,8 @@ export default function ImportCenterClient() {
 
                 <div className="mx-6 my-6">
                     <SuperTable<CompanyImportJobResponse>
+                        entityLabel="impor"
+                        searchPlaceholder="Cari nama berkas"
                         tableId="company-import-jobs"
                         columns={columns}
                         data={jobs}
@@ -360,11 +362,9 @@ export default function ImportCenterClient() {
                                 description="Bulk imports you run from the Companies workspace will appear here with their progress and results."
                             />
                         )}
-                        initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
                         features={{
                             pagination: true,
                             globalFilter: true,
-                            globalFilterAlwaysVisible: true,
                             columnFilters: false,
                             sorting: false,
                             rowSelection: "none",

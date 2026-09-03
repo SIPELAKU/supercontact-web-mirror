@@ -222,6 +222,8 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>Recipients Status</Typography>
           <Box className="super-table-container-mini">
             <SuperTable<BroadcastRecipient>
+              entityLabel="penerima"
+              searchPlaceholder="Cari nomor penerima"
               tableId="broadcast-recipients-table"
               data={recipients}
               columns={columns}

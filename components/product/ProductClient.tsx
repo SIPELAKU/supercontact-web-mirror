@@ -28,7 +28,7 @@ export default function ProductClient() {
     sortOrder?: "asc" | "desc";
   }>({
     page: 1,
-    limit: 10,
+    limit: 25, // matches SuperTable's lazy batch
     search: ""
   });
 

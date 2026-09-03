@@ -299,6 +299,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
 
       <DialogContent sx={{ p: 3, pt: 0 }}>
         <SuperTable<BulkJob>
+          entityLabel="impor"
+          searchPlaceholder="Cari nama berkas"
           tableId="import-history-table"
           data={bulkJobs}
           columns={columns}
@@ -328,16 +330,9 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
               setPage(1);
             }
           }}
-          initialState={{
-            pagination: {
-              pageIndex: 0,
-              pageSize: 10,
-            },
-          }}
           features={{
             pagination: true,
             globalFilter: true,
-            globalFilterAlwaysVisible: true,
             columnFilters: false,
             sorting: false,
             rowSelection: "none",

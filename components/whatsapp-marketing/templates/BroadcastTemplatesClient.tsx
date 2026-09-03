@@ -1,7 +1,7 @@
 // components/whatsapp-marketing/templates/BroadcastTemplatesClient.tsx
 "use client";
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
 
@@ -17,21 +17,17 @@ import {
 import { useAccounts } from '@/lib/hooks/useOmnichannel';
 import BroadcastTemplatesTable from './BroadcastTemplatesTable';
 import AccountSelect from '@/components/omnichannel/AccountSelect';
+import { useSelectedWaAccount } from '@/lib/hooks/useSelectedWaAccount';
 import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
 
 export default function BroadcastTemplatesClient() {
   const router = useRouter();
 
   const { data: waAccounts } = useAccounts('whatsapp');
-  const accounts = waAccounts || [];
-  const [accountId, setAccountId] = useState('');
-
-  // Auto-pick when there's exactly one WhatsApp account.
-  useEffect(() => {
-    if (accounts.length === 1 && !accountId) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
+  // Remembered sender scope: URL, then last-used, then the first account -
+  // never blank. Replaces a `useState('')` that reset on every Back
+  // navigation and left the table empty behind an unselected dropdown.
+  const { accountId, setAccountId, accounts } = useSelectedWaAccount(waAccounts);
 
   // Pagination & search state
   // (search is already debounced by SuperTable — no extra debounce layer here)

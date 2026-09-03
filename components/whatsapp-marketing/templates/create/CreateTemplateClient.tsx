@@ -16,25 +16,20 @@ import MessagePreview from './MessagePreview';
 import AddVariableSamplesModal from './AddVariableSamplesModal';
 import AccountSelect from '@/components/omnichannel/AccountSelect';
 import { BroadcastTemplateType, CreateBroadcastTemplateData } from '@/lib/types/whatsapp-marketing';
+import { useSelectedWaAccount, templatesListHref } from '@/lib/hooks/useSelectedWaAccount';
 
 export default function CreateTemplateClient() {
   const router = useRouter();
   const mutation = useCreateBroadcastTemplate();
   const { data: waAccounts } = useAccounts('whatsapp');
-  const accounts = waAccounts || [];
+  // Same remembered scope as the list: arriving from a sender's list pre-selects
+  // that sender, and saving returns to it.
+  const { accountId, setAccountId, accounts } = useSelectedWaAccount(waAccounts);
 
   // Basic info state
   const [name, setName] = useState('');
   const [language, setLanguage] = useState('en');
-  const [accountId, setAccountId] = useState('');
   const [selectedType, setSelectedType] = useState<BroadcastTemplateType>('twilio/text');
-
-  // Auto-pick when there's exactly one WhatsApp account.
-  useEffect(() => {
-    if (accounts.length === 1 && !accountId) {
-      setAccountId(accounts[0].id);
-    }
-  }, [accounts, accountId]);
 
   // Dynamic form state
   const [typeData, setTypeData] = useState<Record<BroadcastTemplateType, any>>({
@@ -96,7 +91,8 @@ export default function CreateTemplateClient() {
     try {
       await mutation.mutateAsync(payload);
       notify.success('Template created successfully');
-      router.push('/whatsapp-marketing/template-broadcasting');
+      // Back to the list scoped to the sender this template was created for.
+      router.push(templatesListHref(accountId));
     } catch (err: any) {
       notify.error(err.message || 'Failed to create template');
     }

@@ -104,8 +104,34 @@ const ButtonRows = ({ actions }: { actions: any[] }) => {
   );
 };
 
-const MediaBlock = ({ url }: { url?: string }) =>
-  url ? (
+const MediaSlot = ({ label }: { label: string }) => (
+  <Box
+    sx={{
+      width: '100%',
+      height: 90,
+      bgcolor: 'rgba(0,0,0,0.06)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      px: 1,
+    }}
+  >
+    <Typography variant="caption" color="text.secondary" textAlign="center">
+      {label}
+    </Typography>
+  </Box>
+);
+
+const MediaBlock = ({ url }: { url?: string }) => {
+  // A media slot holding a VARIABLE has no image to draw - the value arrives
+  // per recipient at send time. Rendering `<img src="{{4}}">` and hiding it
+  // onError left an unexplained gap, which reads as "the media is missing"
+  // rather than "the media is a variable".
+  const isVariable = /^\s*\{\{\s*\w+\s*\}\}\s*$/.test(url || '');
+  if (isVariable) {
+    return <MediaSlot label={`Gambar dari ${(url || '').trim()}`} />;
+  }
+  return url ? (
     <Box
       component="img"
       src={url}
@@ -131,6 +157,7 @@ const MediaBlock = ({ url }: { url?: string }) =>
       </Typography>
     </Box>
   );
+};
 
 export default function MessagePreview({ type, formData }: MessagePreviewProps) {
   const body = formData.body;

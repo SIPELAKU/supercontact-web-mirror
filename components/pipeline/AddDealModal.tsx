@@ -39,7 +39,9 @@ export const dealStages = [
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
   const { listContact, fetchContact, loading: loadingContacts, clearContact } = useGetContactStore();
-  const { listProduct, fetchProduct } = useGetProductStore();
+  // The picker slice (page 1, limit 100, active) - never the product page's
+  // list, whose page/search/status/sort would otherwise leak in here (S3-1).
+  const { catalogue: listProduct, fetchCatalogue } = useGetProductStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -130,9 +132,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   useEffect(() => {
     if (open) {
       fetchContact({ query: "" });
-      fetchProduct();
+      fetchCatalogue();
     }
-  }, [open, fetchContact, fetchProduct]);
+  }, [open, fetchContact, fetchCatalogue]);
 
 
   const selectedContactOption = useMemo(() => {
@@ -418,10 +420,10 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                   onInputChange={(_, inputValue) => {
                     const keyword = inputValue.trim();
                     if (keyword.length < 1) {
-                      fetchProduct({ search: "" });
+                      fetchCatalogue();
                       return;
                     }
-                    fetchProduct({ search: inputValue });
+                    fetchCatalogue({ search: keyword });
                   }}
                   isOptionEqualToValue={(option, value) => {
                     if (!value) return false;

@@ -11,6 +11,7 @@ import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge"
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
 import ContactCard from "./ContactCard";
+import CrmCompanyCustomFieldsCard from "./CrmCompanyCustomFieldsCard";
 import LegalRegistryCard from "./LegalRegistryCard";
 import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
@@ -469,6 +470,18 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     )}
 
                     <LegalRegistryCard profile={profile} />
+
+                    {/* Tenant-defined company attributes live on the CrmCompany
+                        row, so only a SAVED profile has them (Phase 1). */}
+                    {profile.source === "saved" && profile.crmCompanyId && (
+                        <CrmCompanyCustomFieldsCard
+                            crmCompanyId={profile.crmCompanyId}
+                            values={profile.customFields}
+                            onSaved={(customFields) =>
+                                setProfile((prev) => (prev ? { ...prev, customFields } : prev))
+                            }
+                        />
+                    )}
                 </div>
             )}
 

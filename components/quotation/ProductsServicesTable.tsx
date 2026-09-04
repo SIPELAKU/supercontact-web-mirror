@@ -1,6 +1,9 @@
 "use client";
 
+import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
 import { formatRupiah } from "@/lib/helper/currency";
+import { stepForPrecision } from "@/lib/helper/quantity";
+import type { CustomFieldDefinitionLike } from "@/lib/types/CustomFieldDefinition";
 import type { DiscountType, ItemRow, QuotationLineTotals, QuotationTotals } from "@/lib/types/Quotation";
 import { Plus, Trash2 } from "lucide-react";
 import { useMemo } from "react";
@@ -14,6 +17,9 @@ export interface PickerProduct {
   product_name: string;
   sku: string;
   price: string | number;
+  /** Phase 1: the unit (precision = Qty step hint, name = suffix) and live attributes. */
+  unit?: { id: string; code: string; name: string; precision: number } | null;
+  custom_fields?: Record<string, unknown>;
 }
 
 const DISCOUNT_TYPE_OPTIONS: { value: DiscountType; label: string }[] = [
@@ -40,6 +46,7 @@ export default function ProductsServicesCard({
   rowErrors = {},
   rowMessages = {},
   readOnly = false,
+  productDefinitions,
 }: {
   items: ItemRow[];
   updateQty: (i: number, qty: number) => void;
@@ -56,6 +63,8 @@ export default function ProductsServicesCard({
   /** Row-level messages (mapQuotationError().byRow). */
   rowMessages?: Record<number, string>;
   readOnly?: boolean;
+  /** The tenant's active `product` definitions, so line attributes print their labels. */
+  productDefinitions?: CustomFieldDefinitionLike[];
 }) {
   const linesByIndex = useMemo(() => {
     const map = new Map<number, QuotationLineTotals>();
@@ -73,6 +82,11 @@ export default function ProductsServicesCard({
     // stored (the form seeds unitPrice from item.unit_price, never product.price).
     updateItemField(index, "unitPrice", Number(selected.price));
     updateItemField(index, "listPrice", Number(selected.price));
+    // The unit is a display/step hint; the server re-checks the quantity
+    // against the unit's CURRENT precision at save time (spec A5/A12).
+    updateItemField(index, "unitLabel", selected.unit?.name ?? null);
+    updateItemField(index, "unitPrecision", selected.unit?.precision ?? 2);
+    updateItemField(index, "attributes", selected.custom_fields ?? {});
   };
 
   const baseOptions = useMemo(
@@ -129,6 +143,10 @@ export default function ProductsServicesCard({
 
         const line = linesByIndex.get(i);
         const fallbackTotal = round2(item.qty * Number(item.unitPrice));
+        // The preview's snapshot wins once available; until then the catalogue unit.
+        const unitLabel = line?.unit_label_snapshot ?? item.unitLabel ?? null;
+        const precision = line?.unit_precision ?? item.unitPrecision ?? 2;
+        const step = stepForPrecision(precision);
 
         return (
           <div key={i} className="border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
@@ -148,9 +166,18 @@ export default function ProductsServicesCard({
                   error={!!productError}
                   helperText={productError}
                 />
+                {/* Product attributes: read-only under the name, never editable
+                    per line and never price-bearing (spec A8). */}
+                <CustomFieldsReadOnly
+                  entityType="product"
+                  values={item.attributes}
+                  definitions={productDefinitions}
+                />
               </div>
 
-              {/* Quantity - two decimals, sent rounded so 0.1+0.2 never 422s */}
+              {/* Quantity - what the user typed, rounded to 2 dp as the float
+                  guard. `min`/`step` follow the unit precision as a HINT only;
+                  the server's precision refusal lands under this field. */}
               <div className="sm:col-span-2">
                 <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Qty</span>
                 <AppInput
@@ -161,7 +188,12 @@ export default function ProductsServicesCard({
                     const parsed = parseFloat(e.target.value);
                     updateQty(i, Number.isNaN(parsed) ? 0 : round2(parsed));
                   }}
-                  inputProps={{ min: 0.01, step: 0.01 }}
+                  inputProps={{ min: step, step }}
+                  endIcon={
+                    unitLabel ? (
+                      <span className="text-xs font-medium text-gray-500 whitespace-nowrap">{unitLabel}</span>
+                    ) : undefined
+                  }
                   isBgWhite
                   height="48px"
                   rounded="8px"

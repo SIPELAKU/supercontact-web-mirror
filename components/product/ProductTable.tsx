@@ -1,19 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Chip } from "@mui/material";
 import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
-import {
-    PRODUCT_STATUS_LABELS,
-    PRODUCT_TYPE_LABELS,
-    Product,
-    useGetProductStore,
-} from "@/lib/store/product";
+import { PRODUCT_STATUS_LABELS, PRODUCT_TYPE_LABELS, Product } from "@/lib/store/product";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/product-type";
 import { formatRupiah } from "@/lib/helper/currency";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
-import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Archive, Copy, Package, Pencil, Plus } from "lucide-react";
@@ -25,15 +20,23 @@ export interface ProductTableProps {
     errorMessage?: string;
     onRetry?: () => void;
     onAdd?: () => void;
+    /** Only when the total is known - never 0 as a stand-in for "unknown". */
     rowCount?: number;
     onStateChange?: (state: SuperTableState) => void;
     onExportRequest?: (params: any) => Promise<Product[]>;
     renderTopLeftToolbar?: () => React.ReactNode;
+    /** Class A row interaction: the row opens the edit modal with THIS row object. */
+    onEdit: (product: Product) => void;
     /** DELETE /products/{id} archives; nothing is physically deleted any more. */
+    onArchive: (product: Product) => Promise<{ success: boolean; error?: string }>;
     onBulkArchive?: (products: Product[], clearSelection: () => void) => Promise<void>;
     isBulkArchiving?: boolean;
     onDuplicate?: (products: Product[], clearSelection?: () => void) => void;
     isDuplicating?: boolean;
+    /** flattenTree(tree) labels - the "Kategori" filter's options. */
+    categoryOptions?: { value: string; label: string }[];
+    /** Bumped by the page after every mutation so the lazy list restarts at batch 1. */
+    resetPageKey?: string | number;
 }
 
 /** GET /products `status` values as the user reads them. "Aktif" is the server default. */
@@ -42,6 +45,19 @@ export const PRODUCT_STATUS_FILTER_OPTIONS = [
     { value: "archived", label: "Diarsipkan" },
     { value: "all", label: "Semua" },
 ];
+
+function ProductThumb({ url, name }: { url: string | null; name: string }) {
+    if (!url) {
+        return (
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gray-100 text-gray-400">
+                <Package size={16} />
+            </span>
+        );
+    }
+    // Plain <img>: the storage host is not in next.config `remotePatterns`.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt={name} className="h-8 w-8 rounded-md object-cover" loading="lazy" />;
+}
 
 export default function ProductTable({
     products,
@@ -54,23 +70,37 @@ export default function ProductTable({
     onStateChange,
     onExportRequest,
     renderTopLeftToolbar,
+    onEdit,
+    onArchive,
     onBulkArchive,
     isBulkArchiving,
     onDuplicate,
-    isDuplicating
+    isDuplicating,
+    categoryOptions = [],
+    resetPageKey,
 }: ProductTableProps) {
-    const { setEditId, archiveProduct } = useGetProductStore();
     const { confirm, confirmationPopup } = useConfirmationPopup();
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+    // Every column carries a `size` so `features.virtualize` can be switched on
+    // later without columns collapsing to MRT's default width.
     const columns = useMemo<MRT_ColumnDef<Product>[]>(
         () => [
             {
+                id: "image",
+                header: "Gambar",
+                size: 56,
+                enableSorting: false,
+                enableColumnFilter: false,
+                accessorFn: (row) => row.image_url ?? "",
+                Cell: ({ row }) => <ProductThumb url={row.original.image_url} name={row.original.product_name} />,
+            },
+            {
                 accessorKey: "product_name",
                 header: "Product Name",
+                size: 260,
                 enableColumnFilter: false,
                 Cell: ({ cell }) => (
-                    <div className="max-w-50 truncate" title={cell.getValue<string>()}>
+                    <div className="max-w-65 truncate" title={cell.getValue<string>()}>
                         {cell.getValue<string>()}
                     </div>
                 ),
@@ -78,18 +108,37 @@ export default function ProductTable({
             {
                 accessorKey: "sku",
                 header: "SKU",
+                size: 140,
                 enableColumnFilter: false,
             },
             {
                 id: "product_type",
                 accessorFn: (row) => PRODUCT_TYPE_LABELS[row.product_type] ?? row.product_type,
-                header: "Type",
+                header: "Tipe",
+                size: 120,
+                enableColumnFilter: false,
+            },
+            {
+                id: "category",
+                accessorFn: (row) => row.category?.name ?? "-",
+                header: "Kategori",
+                size: 160,
+                enableSorting: false,
+                enableColumnFilter: false,
+            },
+            {
+                id: "unit",
+                accessorFn: (row) => row.unit?.name ?? "-",
+                header: "Satuan",
+                size: 90,
+                enableSorting: false,
                 enableColumnFilter: false,
             },
             {
                 id: "price",
                 accessorFn: (row) => formatRupiah(row.price),
-                header: "Price",
+                header: "Harga",
+                size: 140,
                 enableColumnFilter: false,
                 Cell: ({ cell }) => (
                     <span className="font-medium text-gray-900 whitespace-nowrap">
@@ -102,6 +151,7 @@ export default function ProductTable({
                 // The export gets the label, the cell gets the chip.
                 accessorFn: (row) => PRODUCT_STATUS_LABELS[row.status] ?? row.status,
                 header: "Status",
+                size: 110,
                 enableColumnFilter: false,
                 Cell: ({ row }) => (
                     <Chip
@@ -115,26 +165,22 @@ export default function ProductTable({
         []
     );
 
-    const openEditModal = (product: Product) => {
-        setIsModalOpen(true);
-        setEditId(product.id);
-    };
-
     return (
         <>
             {confirmationPopup}
-            <AddProductModal open={isModalOpen} onOpenChange={setIsModalOpen} />
             <SuperTable
                 entityLabel="produk"
                 searchPlaceholder="Cari nama atau kode produk"
                 tableId="products-table"
                 columns={columns}
                 data={products || []}
+                getRowId={(row) => row.id}
                 isLoading={isLoading}
                 isError={isError}
                 errorMessage={errorMessage}
                 onRetry={onRetry}
                 rowCount={rowCount}
+                resetPageKey={resetPageKey}
                 renderEmptyState={() => (
                     <EmptyState
                         icon={Package}
@@ -150,9 +196,11 @@ export default function ProductTable({
                 onStateChange={onStateChange}
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}
-                onRowClick={(row) => openEditModal(row)}
-                // ProductClient reads `state.filters.status` and sends it as the
-                // GET /products `status` query. No filter = the server default.
+                // The ROW OBJECT goes to the modal - not an id looked up in the
+                // last batch, which broke editing anything past batch 1.
+                onRowClick={(row) => onEdit(row)}
+                // ProductClient forwards `state.filters.{status,product_type,category_id}`
+                // as GET /products params. No status filter = the server default.
                 filters={[
                     {
                         id: "status",
@@ -161,13 +209,30 @@ export default function ProductTable({
                         options: PRODUCT_STATUS_FILTER_OPTIONS,
                         anyLabel: "Aktif (bawaan)",
                     },
+                    {
+                        // The sanctioned "type chips": pinned in the toolbar, the
+                        // active value renders as a removable chip.
+                        id: "product_type",
+                        label: "Tipe",
+                        type: "select",
+                        pinned: true,
+                        options: PRODUCT_TYPE_OPTIONS,
+                    },
+                    {
+                        // The server includes descendants of the chosen category.
+                        id: "category_id",
+                        label: "Kategori",
+                        type: "select",
+                        options: categoryOptions,
+                        anyLabel: "Semua kategori",
+                    },
                 ]}
                 rowActions={[
                     {
                         id: "edit",
                         label: "Edit",
                         icon: <Pencil size={16} />,
-                        onClick: (row) => openEditModal(row),
+                        onClick: (row) => onEdit(row),
                     },
                     {
                         id: "duplicate",
@@ -178,7 +243,7 @@ export default function ProductTable({
                     },
                     {
                         id: "archive",
-                        label: "Archive",
+                        label: "Arsipkan",
                         icon: <Archive size={16} />,
                         destructive: true,
                         // Archiving is idempotent server-side, but offering it on
@@ -192,7 +257,7 @@ export default function ProductTable({
                                 confirmText: "Arsipkan",
                                 cancelText: "Batal",
                                 onConfirm: async () => {
-                                    const res = await archiveProduct(row.id);
+                                    const res = await onArchive(row);
                                     if (res.success) {
                                         notify.success("Produk diarsipkan", { description: `"${row.product_name}" tidak lagi ditawarkan di quotation baru.` });
                                     } else {

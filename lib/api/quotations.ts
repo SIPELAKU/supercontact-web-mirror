@@ -41,6 +41,10 @@ export interface QuotationLeadItem {
     quantity: number;
     total: string;
     notes: string;
+    /** Phase 1: ProductItem inherits the catalogue briefs (spec D5 / S3-12). */
+    unit?: { id: string; code: string; name: string; precision: number } | null;
+    category?: { id: string; code: string; name: string } | null;
+    custom_fields?: Record<string, unknown>;
 }
 
 export interface QuotationLead {

@@ -67,6 +67,28 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/sales/assistant",
         permission: "omnichannel:setup",
       },
+      // The three catalogue managers (Phase 1) share one grant,
+      // `sales:config:manage` - seeded to Admin and Manager, not Staff, like
+      // `tickets:config:manage`. Reads of categories/units stay on the entity
+      // permissions, so a Staff user still sees them on the product page.
+      {
+        id: "product-categories",
+        title: "Kategori Produk",
+        path: "/settings/sales/product-categories",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "units",
+        title: "Satuan",
+        path: "/settings/sales/units",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "sales-custom-fields",
+        title: "Custom Fields",
+        path: "/settings/sales/custom-fields",
+        permission: "sales:config:manage",
+      },
     ],
   },
   {

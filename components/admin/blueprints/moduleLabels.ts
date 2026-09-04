@@ -11,6 +11,10 @@ export const MODULE_LABELS: Record<string, string> = {
     canned_replies: "Balasan siap pakai",
     knowledge_base: "Artikel Knowledge Base",
     pipeline_stages: "Tahapan penjualan",
+    // Catalogue taxonomy (Phase 1): inert, installed before the sample
+    // products, and auto-included by the server whenever `products` is.
+    product_categories: "Kategori produk",
+    units: "Satuan produk",
     products: "Produk contoh",
     business_hours: "Jam operasional",
     conversation_queues: "Antrean percakapan",

@@ -24,6 +24,10 @@ export interface QuotationLineProduct {
   product_name: string;
   sku: string;
   price: string;
+  /** Phase 1: the product's unit (precision drives the Qty step), category and LIVE attributes. */
+  unit?: { id: string; code: string; name: string; precision: number } | null;
+  category?: { id: string; code: string; name: string } | null;
+  custom_fields?: Record<string, unknown>;
 }
 
 export interface QuotationItem {
@@ -94,6 +98,8 @@ export interface Quotation {
   grand_total: string;
   terms: string | null;
   payment_terms: string | null;
+  /** Header-level custom fields (Phase 1); strict against the tenant's `quotation` definitions. */
+  custom_fields?: Record<string, unknown>;
   revision_of_id: string | null;
   revision_no: number;
   sent_at: string | null;
@@ -129,6 +135,9 @@ export interface QuotationLineTotals {
   product_name_snapshot: string;
   sku_snapshot: string;
   effective_discount_percent: string;
+  /** Phase 1: the unit the line is counted in, and how many decimals it allows (2 when no unit). */
+  unit_label_snapshot?: string | null;
+  unit_precision?: number;
 }
 
 /** POST /quotations/preview response: every number the summary shows. */
@@ -192,4 +201,10 @@ export interface ItemRow {
   listPrice: number;
   discountType: DiscountType;
   discountValue: number;
+  /** Unit name shown beside Qty; the stored snapshot on edit, the catalogue unit on a pick. */
+  unitLabel: string | null;
+  /** Decimals the unit allows - a HINT for the input step (default 2, the no-unit rule). */
+  unitPrecision: number;
+  /** The product's live attributes, shown read-only under its name; never priced. */
+  attributes: Record<string, unknown>;
 }

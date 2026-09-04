@@ -13,8 +13,11 @@ export const PERMISSIONS = [
   "mailing_lists",
   "manage_users",
   "pipelines",
+  "products",
   "quotations",
   "reports",
+  // Catalogue configuration (Phase 1): categories, units, custom fields.
+  "sales:config:manage",
   "role_permissions",
   "subscribers",
   "tasks:read:my",
@@ -67,6 +70,7 @@ const PREFIX_GROUP_LABELS: Record<string, string> = {
   copilot: "AI Copilot",
   tasks: "Tasks",
   contacts: "Contacts",
+  sales: "Sales",
 };
 
 // Un-prefixed permission -> section label.
@@ -74,6 +78,7 @@ const UNPREFIXED_GROUP: Record<string, string> = {
   contacts: "Contacts",
   leads: "Sales",
   pipelines: "Sales",
+  products: "Sales",
   quotations: "Sales",
   campaigns: "Marketing",
   mailing_lists: "Marketing",

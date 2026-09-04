@@ -84,6 +84,9 @@ export function useInstallBlueprint() {
                 "business-hours",
                 "flows",
                 "products",
+                "product-categories",
+                "units",
+                "custom-field-definitions",
             ].forEach((key) =>
                 queryClient.invalidateQueries({ queryKey: [key] })
             );

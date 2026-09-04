@@ -127,6 +127,7 @@ describe('mapQuotationError', () => {
     expect(mapQuotationError(undefined, 'Only draft quotations can be updated')).toEqual({
       byRow: {},
       fieldsByRow: {},
+      fieldsHeader: {},
       message: 'Only draft quotations can be updated',
     });
     expect(mapQuotationError(null, '').message).toBe('Quotation tidak dapat diproses');
@@ -148,5 +149,75 @@ describe('mapQuotationException', () => {
   it('survives a non-Error throw', () => {
     expect(mapQuotationException(undefined).message).toBe('Quotation tidak dapat diproses');
     expect(mapQuotationException('boom').byRow).toEqual({});
+  });
+});
+
+/**
+ * Phase 1: header-level custom fields are refused with `details.errors[]`
+ * ({ field, message }), the `_as_validation_error` shape - a different key
+ * from the per-row `details.items[]`. These pin the `fieldsHeader` mapping.
+ */
+describe('mapQuotationError - header custom fields (details.errors[])', () => {
+  it('maps each entry under its field_key', () => {
+    const result = mapQuotationError(
+      {
+        entity_type: 'quotation',
+        errors: [
+          { field: 'po_number', message: "Custom field 'PO Number' is required" },
+          { field: 'priority', message: "Invalid value for 'Priority' - must be one of [low, high]" },
+        ],
+      },
+      "Custom field 'PO Number' is required",
+      'VALIDATION_ERROR'
+    );
+    expect(result.fieldsHeader).toEqual({
+      po_number: "Custom field 'PO Number' is required",
+      priority: "Invalid value for 'Priority' - must be one of [low, high]",
+    });
+    expect(result.byRow).toEqual({});
+    expect(result.header).toBeUndefined();
+    expect(result.message).toBe("Custom field 'PO Number' is required");
+  });
+
+  it('puts the unknown-keys error under custom_fields and field-less entries under "_"', () => {
+    const result = mapQuotationError({
+      errors: [
+        { field: 'custom_fields', message: 'Unknown custom field(s): foo' },
+        { message: 'custom_fields must be a JSON object' },
+        { field: '  ', message: 'blank field' },
+      ],
+    });
+    expect(result.fieldsHeader.custom_fields).toBe('Unknown custom field(s): foo');
+    expect(result.fieldsHeader._).toBe('custom_fields must be a JSON object; blank field');
+  });
+
+  it('joins several messages on one field', () => {
+    const result = mapQuotationError({
+      errors: [
+        { field: 'po_number', message: 'a' },
+        { field: 'po_number', message: 'b' },
+      ],
+    });
+    expect(result.fieldsHeader.po_number).toBe('a; b');
+  });
+
+  it('is empty when there are no header errors and leaves row mapping untouched', () => {
+    const result = mapQuotationError({
+      items: [{ index: 0, errors: [{ field: 'quantity', message: 'q' }] }],
+    });
+    expect(result.fieldsHeader).toEqual({});
+    expect(result.fieldsByRow[0].quantity).toBe('q');
+    expect(mapQuotationError(undefined).fieldsHeader).toEqual({});
+    expect(mapQuotationError({ errors: 'garbage' }).fieldsHeader).toEqual({});
+  });
+
+  it('keeps `header` semantics: only details.header sets it', () => {
+    const result = mapQuotationError(
+      { errors: [{ field: 'discount_value', message: 'too much' }] },
+      'too much',
+      'VALIDATION_ERROR'
+    );
+    expect(result.header).toBeUndefined();
+    expect(result.fieldsHeader.discount_value).toBe('too much');
   });
 });

@@ -77,6 +77,7 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         phoneVerificationStatus: data.phone_verification_status ?? null,
         phoneLineType: data.phone_line_type ?? null,
         phoneVerifiedAt: data.phone_verified_at ?? null,
+        customFields: {},
         createdAt: data.created_at,
     };
 }
@@ -139,6 +140,10 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         phoneVerificationStatus: null,
         phoneLineType: null,
         phoneVerifiedAt: null,
+        customFields:
+            data.custom_fields && typeof data.custom_fields === "object" && !Array.isArray(data.custom_fields)
+                ? data.custom_fields
+                : {},
         createdAt: data.created_at,
     };
 }

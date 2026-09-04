@@ -27,7 +27,10 @@ export interface Contact {
   address: string,
   is_subscriber: boolean,
   is_recipient: boolean,
-  custom_fields?: Record<string, string>,
+  // The API types the column as Any: legacy rows hold strings, but also
+  // numbers, booleans and nested objects (dev has 2 object-valued and 1
+  // number-valued row), and Phase 1 definitions store typed values.
+  custom_fields?: Record<string, unknown>,
   created_at: string,
   updated_at: string,
   last_contacted?: {
@@ -133,7 +136,7 @@ export interface ContactReq {
   company: string | null;
   position: string;
   address: string | null;
-  custom_fields?: Record<string, string>;
+  custom_fields?: Record<string, unknown>;
 }
 
 export interface MailServer {

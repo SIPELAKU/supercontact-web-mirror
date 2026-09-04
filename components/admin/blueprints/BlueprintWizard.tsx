@@ -40,6 +40,11 @@ function moduleNames(modules: unknown): string[] {
     return [];
 }
 
+/** Installed with `products` whenever the manifest declares them - the server
+ *  auto-includes them (`_resolve_modules`), so the boxes mirror that rather
+ *  than letting a tenant untick them and watch every sample product fail. */
+const TAXONOMY_MODULES = ["product_categories", "units"];
+
 const STEPS: Array<{ id: Step; label: string }> = [
     { id: "industry", label: "Pilih industri" },
     { id: "details", label: "Isi data & modul" },
@@ -90,9 +95,22 @@ export default function BlueprintWizard({
             .map((v) => v.key);
     }, [detail, variables]);
 
+    const declaredModules = useMemo(() => moduleNames(detail?.modules), [detail]);
+
+    /** Ticked and disabled while `products` is ticked: it comes along regardless. */
+    const lockedByProducts = (key: string) =>
+        TAXONOMY_MODULES.includes(key) && modules.has("products") && declaredModules.includes(key);
+
     const toggleModule = (key: string) => {
+        if (lockedByProducts(key)) return;
         const next = new Set(modules);
-        next.has(key) ? next.delete(key) : next.add(key);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        if (next.has("products")) {
+            for (const taxonomy of TAXONOMY_MODULES) {
+                if (declaredModules.includes(taxonomy)) next.add(taxonomy);
+            }
+        }
         setModules(next);
     };
 
@@ -244,6 +262,7 @@ export default function BlueprintWizard({
                                     <input
                                         type="checkbox"
                                         checked={modules.has(key)}
+                                        disabled={lockedByProducts(key)}
                                         onChange={() => toggleModule(key)}
                                     />
                                     <span className="flex-1">
@@ -251,6 +270,11 @@ export default function BlueprintWizard({
                                         {typeof detail.counts?.[key] === "number" && (
                                             <span className="ml-1.5 text-xs text-muted-foreground">
                                                 ({detail.counts[key]})
+                                            </span>
+                                        )}
+                                        {lockedByProducts(key) && (
+                                            <span className="block text-xs text-muted-foreground">
+                                                Dipasang bersama Produk contoh
                                             </span>
                                         )}
                                     </span>

@@ -25,10 +25,15 @@ import {
   quotationStatusMeta,
 } from "@/lib/constants/quotation-status";
 import { useAuth } from "@/lib/context/AuthContext";
-import { formatPercent, formatQuantity, formatRupiah } from "@/lib/helper/currency";
+import { formatPercent, formatRupiah } from "@/lib/helper/currency";
+import { formatQuantityWithUnit } from "@/lib/helper/quantity";
+import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
 import { notify } from "@/lib/notifications";
-import { useGetProductStore } from "@/lib/store/product";
+import { CATALOGUE_LIMIT, useGetProductStore } from "@/lib/store/product";
+import { customFieldErrorsByKey, validateCustomFieldValues } from "@/lib/utils/customFieldValues";
+import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
+import QuotationCustomFieldsCard from "@/components/quotation/QuotationCustomFieldsCard";
 import type {
   DiscountType,
   ItemRow,
@@ -56,8 +61,6 @@ interface QuotationFormClientProps {
 type Decision = "accepted" | "rejected";
 
 const PREVIEW_DEBOUNCE_MS = 300;
-/** Catalogue page size for the product picker (one request, status=active). */
-const PRODUCT_PICKER_LIMIT = 100;
 
 const newRow = (): ItemRow => ({
   product_id: "",
@@ -69,6 +72,9 @@ const newRow = (): ItemRow => ({
   listPrice: 0,
   discountType: "percent",
   discountValue: 0,
+  unitLabel: null,
+  unitPrecision: 2,
+  attributes: {},
 });
 
 function toDateInput(value?: string | null, fallback?: Date): string {
@@ -99,6 +105,11 @@ function rowsFromQuotation(row: Quotation): ItemRow[] {
     listPrice: Number(item.list_price ?? item.unit_price) || 0,
     discountType: item.discount_type ?? "percent",
     discountValue: Number(item.discount_value ?? item.discount ?? 0) || 0,
+    // The stored snapshot is the label the line was written with; the
+    // precision is only a step hint and comes from the live unit (2 if none).
+    unitLabel: item.unit_label_snapshot ?? item.product?.unit?.name ?? null,
+    unitPrecision: item.product?.unit?.precision ?? 2,
+    attributes: item.product?.custom_fields ?? {},
   }));
 }
 
@@ -140,6 +151,8 @@ function totalsFromQuotation(row: Quotation): QuotationTotals {
         product_name_snapshot: item.product_name_snapshot ?? item.product?.product_name ?? "",
         sku_snapshot: item.sku_snapshot ?? item.product?.sku ?? "",
         effective_discount_percent: gross > 0 ? round2((discounted / gross) * 100).toFixed(2) : "0.00",
+        unit_label_snapshot: item.unit_label_snapshot ?? null,
+        unit_precision: item.product?.unit?.precision ?? 2,
       };
     }),
   };
@@ -185,14 +198,24 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   );
   const leads = useMemo(() => leadsResponse?.data?.leads || [], [leadsResponse]);
 
-  const { listProduct, fetchProduct } = useGetProductStore();
+  // The picker reads the store's `catalogue` slice, never the product page's
+  // list: that list carries whatever page/search/status/sort the user left
+  // it at, and a picker fed from it once offered batch 3 of an archived-only
+  // filter as "the catalogue" (S3-1). `fetchCatalogue` is always page 1,
+  // limit 100, status=active.
+  const { catalogue, fetchCatalogue } = useGetProductStore();
 
   // Only active products can go on a new line; the server refuses archived
   // ones anyway, so the picker does not offer them.
   useEffect(() => {
     if (readOnly) return;
-    fetchProduct({ limit: PRODUCT_PICKER_LIMIT, status: "active" });
-  }, [fetchProduct, readOnly]);
+    fetchCatalogue();
+  }, [fetchCatalogue, readOnly]);
+
+  // The tenant's definitions: quotation fields drive the header card and the
+  // multipart `custom_fields`; product fields label the read-only line attributes.
+  const { definitions: quotationDefinitions } = useCustomFieldDefinitionsFor("quotation");
+  const { definitions: productDefinitions } = useCustomFieldDefinitionsFor("product");
 
   const [clientData, setClientData] = useState<Record<string, any>>({
     lead_id: "",
@@ -213,6 +236,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const [headerDiscountValue, setHeaderDiscountValue] = useState(0);
   const [terms, setTerms] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
+  // Header-level custom fields (strict against the `quotation` definitions).
+  const [customFields, setCustomFields] = useState<Record<string, unknown>>({});
+  const [customFieldErrors, setCustomFieldErrors] = useState<Record<string, string>>({});
 
   const [totals, setTotals] = useState<QuotationTotals | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -282,6 +308,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     setHeaderDiscountValue(Number(initialData.discount_value) || 0);
     setTerms(initialData.terms ?? "");
     setPaymentTerms(initialData.payment_terms ?? "");
+    setCustomFields({ ...(initialData.custom_fields ?? {}) });
     setTotals(totalsFromQuotation(initialData));
   }, [initialData]);
 
@@ -299,14 +326,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // Lead items carry no status (GET /quotations/lead), so they are checked
   // against the active catalogue: an archived product would only earn a 400
   // from the preview and the save. When the catalogue fetch came back full
-  // (PRODUCT_PICKER_LIMIT rows) it may be truncated, so absence from it is
-  // not proof of archival and the lead item is kept - the server filters
+  // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
+  // proof of archival and the lead item is kept - the server filters
   // archived products out of the lead payload as well.
   const availableProducts = useMemo<PickerProduct[]>(() => {
     const selectedLead = leadsWithCurrent.find((l) => l.id === clientData.lead_id);
-    const active = listProduct.filter((p) => p.status !== "archived");
+    const active = catalogue.filter((p) => p.status !== "archived");
     const activeIds = new Set(active.map((p) => p.id));
-    const catalogueMayBeTruncated = listProduct.length >= PRODUCT_PICKER_LIMIT;
+    const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
     const leadItems: PickerProduct[] = (selectedLead?.items ?? [])
       .filter((item) => activeIds.has(item.id) || catalogueMayBeTruncated)
       .map((item) => ({
@@ -314,13 +341,22 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         product_name: item.product_name,
         sku: item.sku,
         price: item.price,
+        unit: item.unit ?? null,
+        custom_fields: item.custom_fields ?? {},
       }));
     const seen = new Set(leadItems.map((p) => p.id));
-    const catalogue: PickerProduct[] = active
+    const rest: PickerProduct[] = active
       .filter((p) => !seen.has(p.id))
-      .map((p) => ({ id: p.id, product_name: p.product_name, sku: p.sku, price: p.price }));
-    return [...leadItems, ...catalogue];
-  }, [listProduct, leadsWithCurrent, clientData.lead_id]);
+      .map((p) => ({
+        id: p.id,
+        product_name: p.product_name,
+        sku: p.sku,
+        price: p.price,
+        unit: p.unit,
+        custom_fields: p.custom_fields,
+      }));
+    return [...leadItems, ...rest];
+  }, [catalogue, leadsWithCurrent, clientData.lead_id]);
 
   // ── Server-side preview (debounced) ──────────────────────────────────────
   const previewSeq = useRef(0);
@@ -403,7 +439,41 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     payload.append("discount_value", String(round2(headerDiscountValue || 0)));
     payload.append("terms", terms);
     payload.append("payment_terms", paymentTerms);
+    // Header custom fields travel as one JSON object string (spec A8/D5),
+    // and only when the tenant has quotation definitions - a tenant without
+    // them sends the Phase 0 form unchanged.
+    if (quotationDefinitions.length > 0) {
+      payload.append("custom_fields", JSON.stringify(prepareCustomFields().values));
+    }
     return payload;
+  };
+
+  /**
+   * Header custom fields as the API wants them: defined keys only, blanks as
+   * null, numbers normalised. The save always writes a draft first, so the
+   * visibility built-in at validation time is `draft`; the server validates
+   * again and its refusal lands under the same control via `fieldsHeader`.
+   */
+  const prepareCustomFields = () => {
+    const result = validateCustomFieldValues(quotationDefinitions, customFields, {
+      entityType: "quotation",
+      mode: "strict",
+      enforceRequired: true,
+      builtIns: { quotation_status: "draft" },
+      // The draft's stored values: a key left by a DEACTIVATED definition is
+      // seeded into the form with no control to clear it and must not block
+      // save/send (the server keeps it too).
+      storedValues: quotation?.custom_fields ?? null,
+    });
+    const values: Record<string, unknown> = {};
+    for (const def of quotationDefinitions) {
+      if (def.is_active === false) continue;
+      const value = result.values[def.field_key];
+      if (Object.prototype.hasOwnProperty.call(customFields, def.field_key) || value !== undefined) {
+        values[def.field_key] = value === undefined || value === "" ? null : value;
+      }
+    }
+    return { values, errors: customFieldErrorsByKey(result.errors) };
   };
 
   const validateBeforeSave = (): string | null => {
@@ -412,6 +482,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     if (items.length === 0) return "Tambahkan minimal satu baris produk";
     if (items.some((row) => !row.product_id)) return "Pilih produk untuk setiap baris";
     if (items.some((row) => !(row.qty > 0))) return "Qty setiap baris harus lebih dari 0";
+    if (quotationDefinitions.length > 0) {
+      const { errors: cfErrors } = prepareCustomFields();
+      setCustomFieldErrors(cfErrors);
+      if (Object.keys(cfErrors).length > 0) return "Periksa field tambahan quotation";
+    }
     return null;
   };
 
@@ -437,6 +512,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       setQuotation(savedRow);
       setTotals(totalsFromQuotation(savedRow));
       setItems(rowsFromQuotation(savedRow));
+      setCustomFields({ ...(savedRow.custom_fields ?? {}) });
+      setCustomFieldErrors({});
 
       if (action === "draft") {
         notify.success("Draft tersimpan", {
@@ -696,6 +773,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             rowErrors={errors?.fieldsByRow ?? {}}
             rowMessages={errors?.byRow ?? {}}
             readOnly={readOnly}
+            productDefinitions={productDefinitions}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between px-6">
@@ -721,7 +799,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               headerDiscountType={headerDiscountType}
               headerDiscountValue={headerDiscountValue}
               onHeaderDiscountChange={handleHeaderDiscountChange}
-              headerError={errors?.header}
+              // The policy refusal (details.header) or a header-field refusal
+              // on the discount value itself (details.errors[]).
+              headerError={errors?.header ?? errors?.fieldsHeader?.discount_value}
               maxDiscountPercent={defaults?.max_discount_percent ?? null}
               readOnly={readOnly}
               previewing={previewing}
@@ -733,6 +813,19 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             paymentTerms={paymentTerms}
             onTermsChange={setTerms}
             onPaymentTermsChange={setPaymentTerms}
+            readOnly={readOnly}
+          />
+          <QuotationCustomFieldsCard
+            values={customFields}
+            onChange={(fieldKey, value) => {
+              setCustomFields((prev) => ({ ...prev, [fieldKey]: value }));
+              if (customFieldErrors[fieldKey]) {
+                setCustomFieldErrors((prev) => ({ ...prev, [fieldKey]: "" }));
+              }
+            }}
+            definitions={quotationDefinitions}
+            status={status}
+            errors={{ ...customFieldErrors, ...(errors?.fieldsHeader ?? {}) }}
             readOnly={readOnly}
           />
           <div className="flex justify-end items-center mb-8 px-6">
@@ -859,12 +952,24 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                       <p className="text-xs" style={{ color: "#6b7280" }}>
                         {item.sku_snapshot ?? item.product?.sku ?? ""}
                       </p>
+                      {/* "Brand: X" under the product - the LIVE attributes, read-only. */}
+                      <CustomFieldsReadOnly
+                        entityType="product"
+                        values={item.product?.custom_fields}
+                        definitions={productDefinitions}
+                        className="mt-0.5 text-xs"
+                        style={{ color: "#6b7280" }}
+                      />
                       {item.notes && (
                         <p className="text-sm" style={{ color: "#6b7280" }}>{item.notes}</p>
                       )}
                     </td>
-                    <td className="text-right py-2" style={{ color: "#000000" }}>
-                      {formatQuantity(item.quantity)}
+                    <td className="text-right py-2 whitespace-nowrap" style={{ color: "#000000" }}>
+                      {formatQuantityWithUnit(
+                        item.quantity,
+                        item.unit_label_snapshot,
+                        item.product?.unit?.precision ?? 2
+                      )}
                     </td>
                     <td className="text-right py-2" style={{ color: "#000000" }}>
                       {formatRupiah(item.unit_price)}

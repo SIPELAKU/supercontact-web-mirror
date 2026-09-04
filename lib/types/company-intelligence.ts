@@ -227,6 +227,8 @@ export interface TargetCompanyDetailResponse {
     // CrmCompany carries no phone, so only the email verification pair exists here.
     email_verification_status?: string | null;
     email_verified_at?: string | null;
+    // Phase 1: tenant-defined attributes (entity_type `crm_company`), strict.
+    custom_fields?: Record<string, unknown>;
     created_at: string;
     updated_at: string;
 }
@@ -294,6 +296,9 @@ export interface CompanyProfile360 {
     phoneVerificationStatus: string | null;
     phoneLineType: string | null;
     phoneVerifiedAt: string | null;
+    // Phase 1 custom fields - stored on the CrmCompany row only, so a
+    // still-only-cached search result carries an empty map.
+    customFields: Record<string, unknown>;
     createdAt: string;
 }
 

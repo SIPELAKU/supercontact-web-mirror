@@ -36,6 +36,13 @@ export interface QuotationErrorDetails {
   items?: QuotationItemErrorEntry[];
   header?: Record<string, unknown>;
   policy?: Record<string, unknown>;
+  /**
+   * Header-level field errors (Phase 1): custom-field values refused by the
+   * `_as_validation_error` shape, `{ field, message }` each. `field` is a
+   * custom field_key, `custom_fields` for the unknown-keys error, or absent.
+   */
+  errors?: Array<{ field?: string | null; message: string }>;
+  entity_type?: string;
 }
 
 export interface MappedQuotationError {
@@ -43,6 +50,11 @@ export interface MappedQuotationError {
   byRow: Record<number, string>;
   /** The same errors keyed by row and then by field ("_" when field-less). */
   fieldsByRow: Record<number, Record<string, string>>;
+  /**
+   * Header-level messages keyed by field (`details.errors[]`): a custom
+   * field_key, `custom_fields`, `discount_value`, ... Field-less under "_".
+   */
+  fieldsHeader: Record<string, string>;
   /** Set when the header discount itself is what the API refused. */
   header?: string;
   /** The sentence for the toast. */
@@ -91,7 +103,17 @@ export function mapQuotationError(
     fieldsByRow[index] = fields;
   });
 
-  const result: MappedQuotationError = { byRow, fieldsByRow, message: text };
+  // Header-level field errors travel under `details.errors[]`, not `items[]`
+  // (S3-2): the same `{ field, message }` entries, keyed here by field.
+  const fieldsHeader: Record<string, string> = {};
+  const headerErrors = Array.isArray(parsed.errors) ? parsed.errors : [];
+  for (const err of headerErrors) {
+    if (!err || typeof err !== 'object' || typeof err.message !== 'string') continue;
+    const key = typeof err.field === 'string' && err.field.trim() ? err.field : '_';
+    fieldsHeader[key] = fieldsHeader[key] ? `${fieldsHeader[key]}; ${err.message}` : err.message;
+  }
+
+  const result: MappedQuotationError = { byRow, fieldsByRow, fieldsHeader, message: text };
   if (code) result.code = code;
 
   // The policy check reports a header that exceeds on its own under

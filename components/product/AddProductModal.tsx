@@ -5,14 +5,27 @@ import { fetchProfile } from "@/lib/api/users";
 import {
     BILLING_PERIOD_LABELS,
     PRODUCT_STATUS_LABELS,
-    PRODUCT_TYPE_LABELS,
     useGetProductStore,
     type BillingPeriod,
     type ProductPayload,
     type ProductStatus,
     type ProductType,
 } from "@/lib/store/product";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/constants/product-type";
 import type { AddProductModalProps } from "@/lib/types/Products";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useProductCategoryTree } from "@/lib/hooks/useProductCategories";
+import { useActiveUnits } from "@/lib/hooks/useUnits";
+import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
+import { flattenTree } from "@/lib/utils/categoryTree";
+import { extractFieldErrors } from "@/lib/api/catalog-http";
+import {
+    customFieldErrorsByKey,
+    isBlankCustomValue,
+    validateCustomFieldValues,
+} from "@/lib/utils/customFieldValues";
+import CustomFieldsPanel from "@/components/custom-fields/CustomFieldsPanel";
+import ProductImageUploadField from "@/components/product/ProductImageUploadField";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
@@ -37,6 +50,9 @@ export type ProductForm = {
     billingPeriod: BillingPeriod | "";
     imageUrl: string;
     status: ProductStatus;
+    categoryId: string;
+    unitId: string;
+    customFields: Record<string, unknown>;
 };
 
 const EMPTY_FORM: ProductForm = {
@@ -49,12 +65,26 @@ const EMPTY_FORM: ProductForm = {
     billingPeriod: "",
     imageUrl: "",
     status: "active",
+    categoryId: "",
+    unitId: "",
+    customFields: {},
 };
 
-const PRODUCT_TYPE_OPTIONS = (Object.keys(PRODUCT_TYPE_LABELS) as ProductType[]).map((value) => ({
-    value,
-    label: PRODUCT_TYPE_LABELS[value],
-}));
+/** API field names -> the form control that owns them (spec I4 error routing). */
+const API_FIELD_TO_FORM: Record<string, keyof ProductForm> = {
+    sku: "sku",
+    product_name: "productName",
+    price: "price",
+    cost: "cost",
+    description: "description",
+    product_type: "productType",
+    billing_period: "billingPeriod",
+    image_url: "imageUrl",
+    file: "imageUrl",
+    category_id: "categoryId",
+    unit_id: "unitId",
+    status: "status",
+};
 
 const BILLING_PERIOD_OPTIONS = (Object.keys(BILLING_PERIOD_LABELS) as BillingPeriod[]).map((value) => ({
     value,
@@ -98,10 +128,21 @@ const getSmartAbbreviation = (text: string) => {
     }
 };
 
-export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
-    const { postFormProduct, id, listProduct, updateFormProduct, setEditId } = useGetProductStore();
+export function AddProductModal({ open, onOpenChange, product = null, onSaved }: AddProductModalProps) {
+    const { postFormProduct, listProduct, updateFormProduct } = useGetProductStore();
+    const { getToken } = useAuth();
     const [errors, setErrors] = useState<FormErrors>({});
+    const [customFieldErrors, setCustomFieldErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
+
+    // The row handed in IS the edit source of truth; no id lookup in the
+    // last batch (which could only find rows of the batch last fetched).
+    const isEdit = Boolean(product);
+    const editId = product?.id ?? "";
+
+    const { data: tree } = useProductCategoryTree({ enabled: open });
+    const { data: unitsPage } = useActiveUnits({ enabled: open });
+    const { definitions: productDefinitions } = useCustomFieldDefinitionsFor("product", { enabled: open });
 
     // State untuk menyimpan nama company dari API
     const [companyAcronym, setCompanyAcronym] = useState<string>(() => {
@@ -118,12 +159,9 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     useEffect(() => {
         const loadUserProfile = async () => {
             try {
-                const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
-
-                if (!token) {
-                    console.warn("No access token found, skipping profile fetch.");
-                    return;
-                }
+                // The auth context is the one place the token comes from.
+                const token = await getToken().catch(() => null);
+                if (!token) return;
 
                 // Check localStorage again just in case it was updated
                 const storedCompany = localStorage.getItem('userCompany');
@@ -152,14 +190,15 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         if (open) {
             loadUserProfile();
         }
-    }, [open]);
+    }, [open, getToken]);
 
     // LOGIC GENERATE SKU: {PRODUK}-{COMPANY}-{NOMOR}
+    // The suggestion reads the CURRENT batch only (SuperTable keeps the rest
+    // to itself); the server's 400/409 on a duplicate SKU is the real guard.
     const nextSku = (productName: string) => {
         const prodPrefix = productName ? getSmartAbbreviation(productName) : "HWG";
         const baseSKU = `${prodPrefix}-${companyAcronym}`;
 
-        // Auto increment: cari semua produk yang SKU-nya dimulai dengan "AC-PSGT-"
         const existingNumbers = listProduct
             .filter((p) => p.sku && p.sku.startsWith(`${baseSKU}-`))
             .map((p) => parseInt(p.sku.split("-").pop() || "0", 10))
@@ -177,30 +216,68 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const reset = () => {
         setFormData(EMPTY_FORM);
         setErrors({});
+        setCustomFieldErrors({});
     };
 
-    const product = useMemo(() => {
-        if (!id) return null;
-        return listProduct.find(item => item.id === id) ?? null;
-    }, [id, listProduct]);
-
+    // Seed from the row on open; a create starts empty.
     useEffect(() => {
-        if (!product) return;
-        setFormData({
-            productName: product.product_name ?? "",
-            price: formatPrice(Math.floor(Number(product.price ?? 0))),
-            sku: product.sku ?? "",
-            description: product.description ?? "",
-            productType: product.product_type ?? "goods",
-            cost: product.cost !== null && product.cost !== undefined
-                ? formatPrice(Math.floor(Number(product.cost)))
-                : "",
-            billingPeriod: product.billing_period ?? "",
-            imageUrl: product.image_url ?? "",
-            status: product.status ?? "active",
-        });
+        if (!open) return;
+        if (!product) {
+            setFormData(EMPTY_FORM);
+        } else {
+            setFormData({
+                productName: product.product_name ?? "",
+                price: formatPrice(Math.floor(Number(product.price ?? 0))),
+                sku: product.sku ?? "",
+                description: product.description ?? "",
+                productType: product.product_type ?? "goods",
+                cost: product.cost !== null && product.cost !== undefined
+                    ? formatPrice(Math.floor(Number(product.cost)))
+                    : "",
+                billingPeriod: product.billing_period ?? "",
+                imageUrl: product.image_url ?? "",
+                status: product.status ?? "active",
+                categoryId: product.category_id ?? "",
+                unitId: product.unit_id ?? "",
+                customFields: { ...(product.custom_fields ?? {}) },
+            });
+        }
         setErrors({});
-    }, [product]);
+        setCustomFieldErrors({});
+    }, [open, product]);
+
+    // Kategori: the active tree, indented. An archived category still assigned
+    // to the row being edited stays selectable-as-is (disabled) so the form
+    // shows what is stored instead of silently clearing it.
+    const categoryOptions = useMemo(() => {
+        const flat = flattenTree(tree ?? []);
+        const options: { value: string; label: string; disabled?: boolean }[] = [
+            { value: "", label: "Tanpa kategori" },
+            ...flat.map((node) => ({ value: node.id, label: node.label })),
+        ];
+        if (product?.category_id && !flat.some((node) => node.id === product.category_id)) {
+            options.push({
+                value: product.category_id,
+                label: `${product.category?.name ?? "Kategori"} (tidak aktif)`,
+                disabled: true,
+            });
+        }
+        return options;
+    }, [tree, product]);
+
+    // Satuan: every active unit with its precision; an archived unit still
+    // assigned to the row being edited stays visible-as-is (disabled).
+    const unitOptions = useMemo(() => {
+        const units = unitsPage?.units ?? [];
+        const options: { value: string; label: string; disabled?: boolean }[] = [
+            { value: "", label: "Tanpa satuan" },
+            ...units.map((u) => ({ value: u.id, label: `${u.name} (${u.precision} desimal)` })),
+        ];
+        if (product?.unit_id && !units.some((u) => u.id === product.unit_id)) {
+            options.push({ value: product.unit_id, label: "Satuan tidak aktif", disabled: true });
+        }
+        return options;
+    }, [unitsPage, product]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -212,6 +289,13 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         }
         if (errors[name as keyof ProductForm]) {
             setErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+    };
+
+    const handleCustomFieldChange = (fieldKey: string, value: unknown) => {
+        setFormData((p) => ({ ...p, customFields: { ...p.customFields, [fieldKey]: value } }));
+        if (customFieldErrors[fieldKey]) {
+            setCustomFieldErrors((prev) => ({ ...prev, [fieldKey]: "" }));
         }
     };
 
@@ -230,10 +314,68 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         return next;
     };
 
+    /**
+     * The product attributes as the API wants them: only DEFINED keys, blanks
+     * as null (an explicit clear on the merge-update), numbers normalised.
+     * The server re-validates strictly; this pre-check shows the same message
+     * under the same control without the round trip.
+     */
+    const prepareCustomFields = () => {
+        const result = validateCustomFieldValues(productDefinitions, formData.customFields, {
+            entityType: "product",
+            mode: "strict",
+            enforceRequired: true,
+            builtIns: { product_type: formData.productType, status: formData.status },
+            // The row's stored values: a key left by a DEACTIVATED definition
+            // is seeded into the form with no control to clear it and must
+            // not block the save (the server keeps it too).
+            storedValues: product?.custom_fields ?? null,
+        });
+        const payload: Record<string, unknown> = {};
+        for (const def of productDefinitions) {
+            if (def.is_active === false) continue;
+            const value = result.values[def.field_key];
+            if (Object.prototype.hasOwnProperty.call(formData.customFields, def.field_key) || !isBlankCustomValue(value)) {
+                payload[def.field_key] = isBlankCustomValue(value) ? null : value;
+            }
+        }
+        return { payload, errors: customFieldErrorsByKey(result.errors) };
+    };
+
+    const routeServerErrors = (message: string, details: unknown) => {
+        const fieldErrors = extractFieldErrors({ message, details });
+        const nextErrors: FormErrors = {};
+        const nextCustom: Record<string, string> = {};
+        let unrouted: string | null = null;
+        const definedKeys = new Set(productDefinitions.map((d) => d.field_key));
+
+        for (const [field, text] of Object.entries(fieldErrors)) {
+            const formField = API_FIELD_TO_FORM[field];
+            if (formField) nextErrors[formField] = text;
+            else if (definedKeys.has(field) || field === "custom_fields") nextCustom[field] = text;
+            else unrouted = unrouted ? `${unrouted}; ${text}` : text;
+        }
+        // "Product already exists with this SKU" belongs under the SKU field,
+        // not only in a toast that disappears (kept from Phase 0).
+        if (Object.keys(fieldErrors).length === 0 && /sku/i.test(message)) {
+            nextErrors.sku = message;
+        } else if (Object.keys(fieldErrors).length === 0) {
+            unrouted = message;
+        }
+
+        if (Object.keys(nextErrors).length > 0) setErrors((prev) => ({ ...prev, ...nextErrors }));
+        if (Object.keys(nextCustom).length > 0) setCustomFieldErrors((prev) => ({ ...prev, ...nextCustom }));
+        if (unrouted) {
+            notify.error(isEdit ? "Failed to Update" : "Failed to Save", { description: unrouted });
+        }
+    };
+
     const handleSave = async () => {
         const problems = validate();
-        if (Object.keys(problems).length > 0) {
+        const custom = prepareCustomFields();
+        if (Object.keys(problems).length > 0 || Object.keys(custom.errors).length > 0) {
             setErrors(problems);
+            setCustomFieldErrors(custom.errors);
             return;
         }
 
@@ -257,39 +399,40 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 formData.productType === "subscription" && formData.billingPeriod
                     ? formData.billingPeriod
                     : null,
+            // Explicit null clears on update; on create null and absent are the same.
+            category_id: formData.categoryId || null,
+            unit_id: formData.unitId || null,
         };
+        // Sent only when the tenant has product definitions or something is set,
+        // so a tenant without custom fields sends the Phase 0 body unchanged.
+        if (productDefinitions.length > 0 || Object.keys(custom.payload).length > 0) {
+            body.custom_fields = custom.payload;
+        }
         // `status` is update-only: a new product is always active (D3.3),
         // and sending it on create would be an unknown field.
-        if (id) {
+        if (isEdit) {
             body.status = formData.status;
         }
 
-        const response = id
-            ? await updateFormProduct(body, id)
+        const response = isEdit
+            ? await updateFormProduct(body, editId)
             : await postFormProduct(body);
 
         setLoading(false);
 
         if (response.success) {
-            notify.success(id ? "Product Updated" : "Product Saved", {
-                description: id
+            notify.success(isEdit ? "Product Updated" : "Product Saved", {
+                description: isEdit
                     ? "Product details have been successfully updated."
                     : "New product has been successfully created.",
             });
+            onSaved?.();
             onOpenChange(false);
             reset();
-            if (id) setEditId("");
             return;
         }
 
-        const message = response.error || "An error occurred while saving the product.";
-        // "Product already exists with this SKU" belongs under the SKU field,
-        // not only in a toast that disappears.
-        if (/sku/i.test(message)) {
-            setErrors((prev) => ({ ...prev, sku: message }));
-        } else {
-            notify.error(id ? "Failed to Update" : "Failed to Save", { description: message });
-        }
+        routeServerErrors(response.error || "An error occurred while saving the product.", response.details);
     };
 
     const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
@@ -306,7 +449,6 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         setShowCloseConfirmation(false);
         onOpenChange(false);
         reset();
-        setEditId("");
     };
 
     const isSubscription = formData.productType === "subscription";
@@ -325,7 +467,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                 ">
                     <div className="mt-2">
                         <h2 className="text-2xl font-semibold text-[#5479EE]">
-                            {id ? "Update Product" : "Add Product"}
+                            {isEdit ? "Update Product" : "Add Product"}
                         </h2>
                     </div>
 
@@ -413,6 +555,45 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">Kategori</label>
+                                <AppSelect
+                                    value={formData.categoryId}
+                                    placeholder="Tanpa kategori"
+                                    onChange={(e) => {
+                                        setFormData((p) => ({ ...p, categoryId: e.target.value as string }));
+                                        setErrors((prev) => ({ ...prev, categoryId: undefined }));
+                                    }}
+                                    options={categoryOptions}
+                                    isBgWhite
+                                    rounded="6px"
+                                    error={!!errors.categoryId}
+                                    helperText={errors.categoryId}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">
+                                    Satuan
+                                    <span className="text-gray-400 font-normal ml-2 text-xs">(menentukan desimal Qty di quotation)</span>
+                                </label>
+                                <AppSelect
+                                    value={formData.unitId}
+                                    placeholder="Tanpa satuan"
+                                    onChange={(e) => {
+                                        setFormData((p) => ({ ...p, unitId: e.target.value as string }));
+                                        setErrors((prev) => ({ ...prev, unitId: undefined }));
+                                    }}
+                                    options={unitOptions}
+                                    isBgWhite
+                                    rounded="6px"
+                                    error={!!errors.unitId}
+                                    helperText={errors.unitId}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-900">
                                     Cost (IDR)
                                     <span className="text-gray-400 font-normal ml-2 text-xs">(optional, internal)</span>
@@ -445,7 +626,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                         helperText={errors.billingPeriod}
                                     />
                                 </div>
-                            ) : id ? (
+                            ) : isEdit ? (
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-gray-900">Status</label>
                                     <AppSelect
@@ -461,7 +642,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             ) : null}
                         </div>
 
-                        {isSubscription && id && (
+                        {isSubscription && isEdit && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-gray-900">Status</label>
@@ -478,22 +659,15 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             </div>
                         )}
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-900">
-                                Image URL
-                                <span className="text-gray-400 font-normal ml-2 text-xs">(optional)</span>
-                            </label>
-                            <AppInput
-                                name="imageUrl"
-                                placeholder="https://..."
-                                value={formData.imageUrl}
-                                onChange={handleChange}
-                                isBgWhite
-                                inputProps={{ maxLength: 1024 }}
-                                error={!!errors.imageUrl}
-                                helperText={errors.imageUrl}
-                            />
-                        </div>
+                        <ProductImageUploadField
+                            value={formData.imageUrl}
+                            onChange={(url) => {
+                                setFormData((p) => ({ ...p, imageUrl: url }));
+                                setErrors((prev) => ({ ...prev, imageUrl: undefined }));
+                            }}
+                            disabled={loading}
+                            error={errors.imageUrl}
+                        />
 
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-900">Description</label>
@@ -506,6 +680,18 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                 isBgWhite
                             />
                         </div>
+
+                        {/* Product attributes: tenant-defined, never price-bearing (spec A8). */}
+                        <CustomFieldsPanel
+                            entityType="product"
+                            definitions={productDefinitions}
+                            values={formData.customFields}
+                            onChange={handleCustomFieldChange}
+                            builtInValues={{ product_type: formData.productType, status: formData.status }}
+                            showRequiredMarkers
+                            errors={customFieldErrors}
+                            title="Atribut produk"
+                        />
                     </div>
 
                     <div className="flex justify-end gap-3 mt-10 border-t pt-4">
@@ -514,7 +700,6 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             color="primary"
                             onClick={() => {
                                 reset();
-                                setEditId("");
                                 onOpenChange(false);
                             }}
                         >
@@ -527,7 +712,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             disabled={loading}
                             isLoading={loading}
                         >
-                            {id ? "Update Product" : "Save Product"}
+                            {isEdit ? "Update Product" : "Save Product"}
                         </AppButton>
                     </div>
                 </DialogContent>

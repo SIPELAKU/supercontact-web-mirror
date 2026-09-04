@@ -1,9 +1,19 @@
 "use client";
 
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProductHeader from "@/components/product/ProductHeader";
 import ProductTable from "@/components/product/ProductTable";
-import { useGetProductStore, Product, ProductStatusFilter } from "@/lib/store/product";
+import {
+  useGetProductStore,
+  type FetchProductParams,
+  type Product,
+  type ProductStatusFilter,
+  type ProductType,
+} from "@/lib/store/product";
+import { readProductType } from "@/lib/constants/product-type";
+import { fetchProductsPage } from "@/lib/api/products";
+import { useProductCategoryTree } from "@/lib/hooks/useProductCategories";
+import { flattenTree } from "@/lib/utils/categoryTree";
 import { useAuth } from "@/lib/context/AuthContext";
 import { SuperTableState } from "@/components/ui/super-table";
 import { AppButton } from "@/components/ui/app-button";
@@ -20,102 +30,142 @@ function readStatusFilter(value: unknown): ProductStatusFilter {
     : "active";
 }
 
-export default function ProductClient() {
-  const {
-    listProduct, loading, error, pagination,
-    setPage, setLimit, setSearchQuery, setStatusFilter, setSort, setEditId,
-    archiveProduct, duplicateProducts, fetchProduct,
-  } = useGetProductStore();
-  const { token } = useAuth();
+/** Everything that defines the list the user is looking at. */
+interface ListState {
+  page: number;
+  limit: number;
+  search: string;
+  status: ProductStatusFilter;
+  categoryId?: string;
+  productType?: ProductType;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+const INITIAL_LIST: ListState = {
+  page: 1,
+  limit: 25, // matches SuperTable's lazy batch
+  search: "",
+  status: "active",
+};
+
+function toFetchParams(state: ListState): Partial<FetchProductParams> {
+  return {
+    page: state.page,
+    limit: state.limit,
+    search: state.search,
+    status: state.status,
+    category_id: state.categoryId,
+    product_type: state.productType,
+    sort_by: state.sortBy,
+    sort_order: state.sortOrder,
+  };
+}
+
+function sameQuery(a: ListState, b: ListState): boolean {
+  return (
+    a.limit === b.limit &&
+    a.search === b.search &&
+    a.status === b.status &&
+    a.categoryId === b.categoryId &&
+    a.productType === b.productType &&
+    a.sortBy === b.sortBy &&
+    a.sortOrder === b.sortOrder
+  );
+}
+
+export default function ProductClient() {
+  const { listProduct, loading, error, pagination, archiveProduct, duplicateProducts, fetchProduct } =
+    useGetProductStore();
+  const { getToken } = useAuth();
+  const { data: tree } = useProductCategoryTree();
+
+  const categoryOptions = useMemo(
+    () => flattenTree(tree ?? []).map((node) => ({ value: node.id, label: node.label })),
+    [tree]
+  );
+
+  // Class A row interaction: the modal edits the ROW OBJECT handed to it.
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkArchiving, setIsBulkArchiving] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  // Bumped after every successful mutation: the store refetched page 1 of
+  // the current query, and this sends SuperTable back to batch 1 so the
+  // accumulated rows cannot go stale (S3-4).
+  const [mutationSeq, setMutationSeq] = useState(0);
 
-  const prevStateRef = useRef<{
-    page: number;
-    limit: number;
-    search: string;
-    status: ProductStatusFilter;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-  }>({
-    page: 1,
-    limit: 25, // matches SuperTable's lazy batch
-    search: "",
-    status: "active",
-  });
+  const prevStateRef = useRef<ListState>(INITIAL_LIST);
 
   useEffect(() => {
-    fetchProduct({
-      page: pagination.page,
-      limit: pagination.limit,
-      search: "",
-      status: "active",
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchProduct(toFetchParams(INITIAL_LIST));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTableStateChange = useCallback((state: SuperTableState) => {
-    const newPage = state.pagination.pageIndex + 1;
-    const newLimit = state.pagination.pageSize;
-    const newSearch = state.globalFilter || "";
-    // Declarative `filters` land here as a flat object; no filter means the
-    // server default (active).
-    const newStatus = readStatusFilter(state.filters?.status);
+  const handleTableStateChange = useCallback(
+    (state: SuperTableState) => {
+      const sort = state.sorting?.[0];
+      const categoryId = state.filters?.category_id;
+      // Declarative `filters` land here as a flat object; category and type
+      // are forwarded as fetch params (page 1 on change), never stored.
+      const next: ListState = {
+        page: state.pagination.pageIndex + 1,
+        limit: state.pagination.pageSize,
+        search: state.globalFilter || "",
+        status: readStatusFilter(state.filters?.status),
+        categoryId: typeof categoryId === "string" && categoryId ? categoryId : undefined,
+        productType: readProductType(state.filters?.product_type),
+        sortBy: sort?.id,
+        sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+      };
+      const prev = prevStateRef.current;
 
-    const prev = prevStateRef.current;
+      if (!sameQuery(prev, next)) {
+        // A new query starts from the first batch whatever page the table
+        // reports mid-transition; SuperTable resets to page 1 itself and the
+        // echo of that reset then matches `prev` and is ignored.
+        const first = { ...next, page: 1 };
+        prevStateRef.current = first;
+        fetchProduct(toFetchParams(first));
+        return;
+      }
+      if (prev.page !== next.page) {
+        prevStateRef.current = next;
+        fetchProduct(toFetchParams(next));
+      }
+    },
+    [fetchProduct]
+  );
 
-    if (prev.limit !== newLimit) {
-      prevStateRef.current = { ...prev, limit: newLimit, page: 1 };
-      setLimit(newLimit); // setLimit sudah auto-fetch dengan page=1
-      return;
-    }
+  // The store already refetched page 1 of the current query; align the
+  // tracked page so the table's reset echo does not fetch it a second time.
+  const afterMutation = useCallback(() => {
+    prevStateRef.current = { ...prevStateRef.current, page: 1 };
+    setMutationSeq((seq) => seq + 1);
+  }, []);
 
-    if (prev.status !== newStatus) {
-      prevStateRef.current = { ...prev, status: newStatus, page: 1 };
-      setStatusFilter(newStatus);
-      fetchProduct({ status: newStatus, page: 1 });
-      return;
-    }
+  const openCreate = () => {
+    setEditProduct(null);
+    setIsModalOpen(true);
+  };
 
-    if (prev.page !== newPage) {
-      prevStateRef.current = { ...prev, page: newPage };
-      setPage(newPage); // setPage sudah auto-fetch
-      return;
-    }
+  const openEdit = (product: Product) => {
+    setEditProduct(product);
+    setIsModalOpen(true);
+  };
 
-    if (prev.search !== newSearch) {
-      prevStateRef.current = { ...prev, search: newSearch, page: 1 };
-      setSearchQuery(newSearch);
-      // store.setSearchQuery tidak melakukan fetching di index.ts, maka kita tembak manual
-      fetchProduct({ search: newSearch, page: 1 });
-      return;
-    }
-
-    // Server-side sorting (sort_by/sort_order contract)
-    const sort = state.sorting?.[0];
-    const newSortBy = sort?.id;
-    const newSortOrder: "asc" | "desc" | undefined = sort
-      ? (sort.desc ? "desc" : "asc")
-      : undefined;
-    if (prev.sortBy !== newSortBy || prev.sortOrder !== newSortOrder) {
-      prevStateRef.current = { ...prev, sortBy: newSortBy, sortOrder: newSortOrder };
-      setSort(newSortBy, newSortOrder);
-      fetchProduct({ sort_by: newSortBy, sort_order: newSortOrder });
-      return;
-    }
-  }, [setLimit, setPage, setSearchQuery, setStatusFilter, setSort, fetchProduct]);
+  const handleArchive = async (product: Product) => {
+    const result = await archiveProduct(product.id);
+    if (result.success) afterMutation();
+    return result;
+  };
 
   const [bulkArchiveTarget, setBulkArchiveTarget] = useState<{
     products: Product[];
     clearSelection: () => void;
   } | null>(null);
 
-  const handleBulkArchive = async (
-    selectedProducts: Product[],
-    clearSelection: () => void
-  ) => {
+  const handleBulkArchive = async (selectedProducts: Product[], clearSelection: () => void) => {
     setBulkArchiveTarget({ products: selectedProducts, clearSelection });
   };
 
@@ -136,7 +186,7 @@ export default function ProductClient() {
           failCount++;
           failedNames.push(product.product_name);
         }
-      } catch (error: any) {
+      } catch {
         failCount++;
         failedNames.push(product.product_name);
       }
@@ -145,6 +195,7 @@ export default function ProductClient() {
     setIsBulkArchiving(false);
     setBulkArchiveTarget(null);
     clearSelection();
+    if (successCount > 0) afterMutation();
 
     if (successCount > 0) {
       notify.success(`${successCount} produk diarsipkan`, {
@@ -152,10 +203,7 @@ export default function ProductClient() {
       });
     }
     if (failCount > 0) {
-      notify.error(
-        `${failCount} produk gagal diarsipkan`,
-        { description: `Produk: ${failedNames.join(', ')}` }
-      );
+      notify.error(`${failCount} produk gagal diarsipkan`, { description: `Produk: ${failedNames.join(", ")}` });
     }
   };
 
@@ -164,11 +212,12 @@ export default function ProductClient() {
   const handleDuplicate = async (products: Product[], clearSelection?: () => void) => {
     setIsDuplicating(true);
     try {
-      const ids = products.map(p => p.id);
+      const ids = products.map((p) => p.id);
       const result = await duplicateProducts(ids);
       if (result.success) {
         notify.success(`${products.length} product(s) duplicated successfully.`);
         clearSelection?.();
+        afterMutation();
       } else {
         notify.error(result.error || "Failed to duplicate product(s).");
       }
@@ -179,33 +228,39 @@ export default function ProductClient() {
     }
   };
 
-  const handleExportRequest = async (params: { format: "csv" | "excel", currentState: SuperTableState }) => {
+  // An export is the whole catalogue matching the current search, type and
+  // category, archived rows included - fetched page by page straight from
+  // the API with the token already in hand (no /api/proxy).
+  const handleExportRequest = async (params: {
+    format: "csv" | "excel";
+    currentState: SuperTableState;
+    onProgress?: (fetched: number, total: number) => void;
+  }) => {
     try {
-      const search = params.currentState.globalFilter;
+      const token = await getToken();
+      const current = prevStateRef.current;
+      const search = params.currentState.globalFilter || current.search;
       const LIMIT_PER_PAGE = 100;
       let allProducts: Product[] = [];
       let currentPage = 1;
       let totalPages = 1;
 
       do {
-        const urlParams = new URLSearchParams();
-        urlParams.set("page", String(currentPage));
-        urlParams.set("limit", String(LIMIT_PER_PAGE));
-        // An export is the whole catalogue, archived rows included.
-        urlParams.set("status", "all");
-        if (search) urlParams.set("search", search);
-
-        const response = await fetch(
-          `/api/proxy/products?${urlParams.toString()}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const data = await response.json();
-
-        const products = data?.data?.products || [];
-        totalPages = data?.data?.total_pages || 1;
-        allProducts = [...allProducts, ...products];
+        const page = await fetchProductsPage(token, {
+          page: currentPage,
+          limit: LIMIT_PER_PAGE,
+          status: "all",
+          search: search || undefined,
+          category_id: current.categoryId,
+          product_type: current.productType,
+          sort_by: current.sortBy,
+          sort_order: current.sortOrder,
+          include_total: currentPage === 1,
+        });
+        if (currentPage === 1) totalPages = page.total_pages ?? 1;
+        allProducts = [...allProducts, ...page.products];
+        params.onProgress?.(allProducts.length, (page.total ?? totalPages * LIMIT_PER_PAGE) || allProducts.length);
         currentPage++;
-
       } while (currentPage <= totalPages);
 
       return allProducts;
@@ -219,13 +274,7 @@ export default function ProductClient() {
     <>
       {/* Desktop */}
       <div className="hidden md:flex gap-2">
-        <AppButton
-          onClick={() => {
-            setEditId("");
-            setIsAddModalOpen(true);
-          }}
-          startIcon={<Plus size={16} />}
-        >
+        <AppButton onClick={openCreate} startIcon={<Plus size={16} />}>
           Add Product
         </AppButton>
       </div>
@@ -233,10 +282,8 @@ export default function ProductClient() {
       {/* Mobile — icon only, ukuran w-9 h-9 */}
       <div className="flex md:hidden gap-2">
         <button
-          onClick={() => {
-            setEditId("");
-            setIsAddModalOpen(true);
-          }}
+          onClick={openCreate}
+          aria-label="Add Product"
           className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
         >
           <Plus size={16} />
@@ -248,22 +295,35 @@ export default function ProductClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <ProductHeader />
-      <AddProductModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
+      <AddProductModal
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) setEditProduct(null);
+        }}
+        product={editProduct}
+        onSaved={afterMutation}
+      />
       <ProductTable
-         products={listProduct}
-         isLoading={loading}
-         isError={!!error}
-         errorMessage={error || undefined}
-         onRetry={() => fetchProduct()}
-         onAdd={() => setIsAddModalOpen(true)}
-         rowCount={pagination.total}
-         onStateChange={handleTableStateChange}
-         onExportRequest={handleExportRequest}
-         renderTopLeftToolbar={renderTopLeftToolbar}
-         onBulkArchive={handleBulkArchive}
-         isBulkArchiving={isBulkArchiving}
-         onDuplicate={handleDuplicate}
-         isDuplicating={isDuplicating}
+        products={listProduct}
+        isLoading={loading}
+        isError={!!error}
+        errorMessage={error || undefined}
+        onRetry={() => fetchProduct(toFetchParams(prevStateRef.current))}
+        onAdd={openCreate}
+        // Only a real number: a batch without a total must not read as 0 rows.
+        rowCount={typeof pagination.total === "number" ? pagination.total : undefined}
+        resetPageKey={mutationSeq}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        onEdit={openEdit}
+        onArchive={handleArchive}
+        onBulkArchive={handleBulkArchive}
+        isBulkArchiving={isBulkArchiving}
+        onDuplicate={handleDuplicate}
+        isDuplicating={isDuplicating}
+        categoryOptions={categoryOptions}
       />
       <ConfirmationPopup
         isOpen={!!bulkArchiveTarget}

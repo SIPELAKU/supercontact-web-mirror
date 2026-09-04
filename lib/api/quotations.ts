@@ -1,12 +1,37 @@
 // lib/api/quotations.ts
-// Quotations API functions: CRUD operations for quotations
+// Quotations API functions: CRUD, defaults, preview and status transitions.
 
 import api from "../utils/axiosClient";
 import { logger } from "../utils/logger";
+import type {
+    Quotation,
+    QuotationDefaults,
+    QuotationDetail,
+    QuotationPreviewRequest,
+    QuotationStatusTransition,
+    QuotationTotals,
+} from "../types/Quotation";
 
 // ============================================
 // Types
 // ============================================
+
+export interface ApiEnvelope<T> {
+    success: boolean;
+    data: T;
+    error: unknown;
+}
+
+/**
+ * Every thrown error carries the API's `error.code` and `error.details`
+ * alongside its message, so a form can tell a discount-policy refusal
+ * (DISCOUNT_POLICY_VIOLATION, per-row details) from a plain validation error.
+ */
+export interface QuotationApiError extends Error {
+    code?: string;
+    details?: unknown;
+    status?: number;
+}
 
 export interface QuotationLeadItem {
     id: string;
@@ -50,19 +75,23 @@ export interface QuotationLeadsResponse {
     error: any;
 }
 
-export interface QuotationItemData {
-    product_id: string;
-    quantity: number;
-    notes: string;
-    discount: number;
-}
+// ============================================
+// Helpers
+// ============================================
 
-export interface CreateQuotationData {
-    action: "draft" | "publish";
-    lead_id: string;
-    quotation_title: string;
-    expire_date: string; // ISO format
-    items: QuotationItemData[];
+function toApiError(error: any, fallback: string): QuotationApiError {
+    const payload = error?.response?.data;
+    if (payload && typeof payload === "object") {
+        const message =
+            payload.error?.message || payload.message || payload.detail || fallback;
+        const err: QuotationApiError = new Error(message);
+        err.code = payload.error?.code;
+        err.details = payload.error?.details;
+        err.status = error.response?.status;
+        return err;
+    }
+    if (error instanceof Error) return error;
+    return new Error(fallback);
 }
 
 // ============================================
@@ -72,55 +101,41 @@ export interface CreateQuotationData {
 /**
  * Create a new quotation using FormData (multipart/form-data).
  */
-export async function createQuotation(token: string, formData: FormData): Promise<any> {
+export async function createQuotation(
+    token: string,
+    formData: FormData
+): Promise<ApiEnvelope<Quotation>> {
     try {
         logger.info("Making POST request to create quotation", {
-            action: formData.get("action")
+            action: formData.get("action"),
         });
-
-        // Using axiosClient instead of fetch for better body parsing compatibility
+        // axiosClient handles the multipart boundary itself.
         const res = await api.post("/quotations", formData);
-
         return res.data;
     } catch (error: any) {
         logger.error("createQuotation error:", error);
-
-        // Handle axios error format
-        if (error.response?.data) {
-            const message = error.response.data.message || error.response.data.error?.message || "Failed to create quotation";
-            const err: any = new Error(message);
-            err.details = error.response.data.error?.details;
-            throw err;
-        }
-        throw error;
+        throw toApiError(error, "Failed to create quotation");
     }
 }
 
 /**
- * Update an existing quotation (PUT) using FormData.
+ * Update an existing quotation (PUT) using FormData. Draft only.
  */
-export async function updateQuotation(token: string, quotationId: string, formData: FormData): Promise<any> {
+export async function updateQuotation(
+    token: string,
+    quotationId: string,
+    formData: FormData
+): Promise<ApiEnvelope<Quotation>> {
     try {
         logger.info("Making PUT request to update quotation", {
             id: quotationId,
-            action: formData.get("action")
+            action: formData.get("action"),
         });
-
-        // Using axiosClient instead of fetch for better body parsing compatibility
         const res = await api.put(`/quotations/${quotationId}`, formData);
-
         return res.data;
     } catch (error: any) {
         logger.error("updateQuotation error:", error);
-
-        // Handle axios error format
-        if (error.response?.data) {
-            const message = error.response.data.message || error.response.data.error?.message || "Failed to update quotation";
-            const err: any = new Error(message);
-            err.details = error.response.data.error?.details;
-            throw err;
-        }
-        throw error;
+        throw toApiError(error, "Failed to update quotation");
     }
 }
 
@@ -130,78 +145,94 @@ export async function updateQuotation(token: string, quotationId: string, formDa
 export async function deleteQuotation(quotationId: string): Promise<any> {
     try {
         logger.info("Making DELETE request to delete quotation", { id: quotationId });
-
         const res = await api.delete(`/quotations/${quotationId}`);
-
         return res.data;
     } catch (error: any) {
         logger.error("deleteQuotation error:", error);
-
-        // Handle axios error format
-        if (error.response?.data) {
-            const message = error.response.data.message || error.response.data.error?.message || "Failed to delete quotation";
-            const err: any = new Error(message);
-            err.details = error.response.data.error?.details;
-            throw err;
-        }
-        throw error;
-    }
-}
-
-/**
- * Send quotation email with PDF attachment.
- */
-export async function sendQuotationEmail(
-    token: string,
-    emailData: { to_email: string; subject: string; file: File | Blob }
-): Promise<any> {
-    try {
-        logger.info("Making POST request to send quotation email", {
-            to: emailData.to_email
-        });
-
-        const formData = new FormData();
-        formData.append("to_email", emailData.to_email);
-        formData.append("subject", emailData.subject);
-        formData.append("file", emailData.file);
-
-        // Axios handles FormData correctly with proper boundaries
-        const res = await api.post("/send-email", formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
-
-        return res.data;
-    } catch (error: any) {
-        logger.error("sendQuotationEmail error:", error);
-        if (error.response?.data) {
-            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to send email");
-        }
-        throw error;
+        throw toApiError(error, "Failed to delete quotation");
     }
 }
 
 /**
  * Fetch a single quotation by ID.
  */
-export async function fetchQuotationById(token: string, quotationId: string): Promise<any> {
+export async function fetchQuotationById(
+    token: string,
+    quotationId: string
+): Promise<ApiEnvelope<QuotationDetail>> {
     try {
         const res = await api.get(`/quotations/${quotationId}`);
         return res.data;
     } catch (error: any) {
         logger.error("fetchQuotationById error:", error);
-        if (error.response?.data) {
-            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to fetch quotation");
-        }
-        throw error;
+        throw toApiError(error, "Failed to fetch quotation");
+    }
+}
+
+/**
+ * The company's quotation defaults (currency, tax basis, terms, discount cap).
+ * Sellers never call GET /companies - this route is gated on `quotations`.
+ */
+export async function fetchQuotationDefaults(token: string): Promise<QuotationDefaults> {
+    try {
+        const res = await api.get<ApiEnvelope<QuotationDefaults>>("/quotations/defaults");
+        return res.data.data;
+    } catch (error: any) {
+        logger.error("fetchQuotationDefaults error:", error);
+        throw toApiError(error, "Failed to fetch quotation defaults");
+    }
+}
+
+/**
+ * Server-computed totals for a payload, without saving. Errors are the same
+ * as create (policy 400, archived product 400, unknown product 404).
+ */
+export async function previewQuotationTotals(
+    token: string,
+    body: QuotationPreviewRequest
+): Promise<QuotationTotals> {
+    try {
+        const res = await api.post<ApiEnvelope<QuotationTotals>>("/quotations/preview", body);
+        return res.data.data;
+    } catch (error: any) {
+        logger.error("previewQuotationTotals error:", error);
+        throw toApiError(error, "Failed to preview quotation totals");
+    }
+}
+
+/**
+ * `sent -> accepted | rejected`. Anything else is a 400 INVALID_STATUS_TRANSITION.
+ */
+export async function transitionQuotationStatus(
+    token: string,
+    quotationId: string,
+    body: QuotationStatusTransition
+): Promise<Quotation> {
+    try {
+        logger.info("Making POST request to transition quotation status", {
+            id: quotationId,
+            status: body.status,
+        });
+        const res = await api.post<ApiEnvelope<Quotation>>(
+            `/quotations/${quotationId}/status`,
+            body
+        );
+        return res.data.data;
+    } catch (error: any) {
+        logger.error("transitionQuotationStatus error:", error);
+        throw toApiError(error, "Failed to update quotation status");
     }
 }
 
 /**
  * Fetch leads for quotation (combined data).
  */
-export async function fetchQuotationLeads(token: string, page: number = 1, limit: number = 100, search?: string): Promise<QuotationLeadsResponse> {
+export async function fetchQuotationLeads(
+    token: string,
+    page: number = 1,
+    limit: number = 100,
+    search?: string
+): Promise<QuotationLeadsResponse> {
     try {
         const params: any = { page, limit };
         if (search && search.trim() !== "") {
@@ -211,15 +242,12 @@ export async function fetchQuotationLeads(token: string, page: number = 1, limit
         const res = await api.get("/quotations/lead", {
             params,
             headers: {
-                Authorization: `Bearer ${token}`
-            }
+                Authorization: `Bearer ${token}`,
+            },
         });
         return res.data;
     } catch (error: any) {
         logger.error("fetchQuotationLeads error:", error);
-        if (error.response?.data) {
-            throw new Error(error.response.data.message || error.response.data.error?.message || "Failed to fetch quotation leads");
-        }
-        throw error;
+        throw toApiError(error, "Failed to fetch quotation leads");
     }
 }

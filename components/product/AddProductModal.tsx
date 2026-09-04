@@ -1,34 +1,74 @@
 "use client";
 
-import CustomSelectStage from "@/components/pipeline/SelectDealStage";
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { fetchProfile } from "@/lib/api/users";
-import { Product, useGetProductStore } from "@/lib/store/product";
+import {
+    BILLING_PERIOD_LABELS,
+    PRODUCT_STATUS_LABELS,
+    PRODUCT_TYPE_LABELS,
+    useGetProductStore,
+    type BillingPeriod,
+    type ProductPayload,
+    type ProductStatus,
+    type ProductType,
+} from "@/lib/store/product";
 import type { AddProductModalProps } from "@/lib/types/Products";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
+import { AppSelect } from "../ui/app-select";
 import { AppTextarea } from "../ui/app-textarea";
 import { AppButton } from "../ui/app-button";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 
+// products.sku is String(64) at the DB level (migration quot01widen).
+export const PRODUCT_SKU_MAX_LENGTH = 64;
+
 type FormErrors = Partial<Record<keyof ProductForm, string>>;
-export type ProductPayload = Omit<Product, "id">;
 
 export type ProductForm = {
     productName: string;
     sku: string;
     price: string;
     description: string;
-    taxRate?: string;
+    productType: ProductType;
+    cost: string;
+    billingPeriod: BillingPeriod | "";
+    imageUrl: string;
+    status: ProductStatus;
 };
+
+const EMPTY_FORM: ProductForm = {
+    productName: "",
+    price: "",
+    sku: "",
+    description: "",
+    productType: "goods",
+    cost: "",
+    billingPeriod: "",
+    imageUrl: "",
+    status: "active",
+};
+
+const PRODUCT_TYPE_OPTIONS = (Object.keys(PRODUCT_TYPE_LABELS) as ProductType[]).map((value) => ({
+    value,
+    label: PRODUCT_TYPE_LABELS[value],
+}));
+
+const BILLING_PERIOD_OPTIONS = (Object.keys(BILLING_PERIOD_LABELS) as BillingPeriod[]).map((value) => ({
+    value,
+    label: BILLING_PERIOD_LABELS[value],
+}));
+
+const PRODUCT_STATUS_OPTIONS = (Object.keys(PRODUCT_STATUS_LABELS) as ProductStatus[]).map((value) => ({
+    value,
+    label: PRODUCT_STATUS_LABELS[value],
+}));
 
 // --- HELPER FUNCTIONS ---
 
-// Format Rupiah
+// Format Rupiah digits with thousand separators ("10000" -> "10.000").
 const formatPrice = (value: string | number) => {
     if (!value) return "";
     const onlyDigits = String(value).replace(/\D/g, "");
@@ -37,6 +77,8 @@ const formatPrice = (value: string | number) => {
         maximumFractionDigits: 0,
     }).format(Number(onlyDigits));
 };
+
+const digitsOnly = (value: string) => value.replace(/\./g, "");
 
 // Helper untuk singkatan Cerdas (Smart Abbreviation)
 // 1 kata -> 3 huruf pertama (e.g., "Solvera" -> "SOL")
@@ -58,7 +100,7 @@ const getSmartAbbreviation = (text: string) => {
 
 export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     const { postFormProduct, id, listProduct, updateFormProduct, setEditId } = useGetProductStore();
-    const [, setErrors] = useState<FormErrors>({});
+    const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
 
     // State untuk menyimpan nama company dari API
@@ -70,13 +112,7 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         return "";
     });
 
-    const [formData, setFormData] = useState<ProductForm>({
-        productName: "",
-        price: "",
-        sku: "",
-        taxRate: "standard",
-        description: "",
-    });
+    const [formData, setFormData] = useState<ProductForm>(EMPTY_FORM);
 
     // --- FETCH USER PROFILE UNTUK DAPAT NAMA COMPANY ---
     useEffect(() => {
@@ -119,138 +155,140 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
     }, [open]);
 
     // LOGIC GENERATE SKU: {PRODUK}-{COMPANY}-{NOMOR}
-    const generateSKU = () => {
-        const productName = formData.productName;
-
-        // Generate Acronym Produk
-        // Jika kosong, gunakan "ITEM"
+    const nextSku = (productName: string) => {
         const prodPrefix = productName ? getSmartAbbreviation(productName) : "HWG";
+        const baseSKU = `${prodPrefix}-${companyAcronym}`;
 
-        // Generate Acronym Company (dari state yang sudah di-fetch)
-        const compPrefix = companyAcronym;
-
-        // Gabungkan Prefix Sementara: Contoh "AC-PSGT"
-        const baseSKU = `${prodPrefix}-${compPrefix}`;
-
-        // Logic Auto Increment (+1 Sequence)
-        // Cari semua produk di list yang SKU-nya dimulai dengan "AC-PSGT-"
+        // Auto increment: cari semua produk yang SKU-nya dimulai dengan "AC-PSGT-"
         const existingNumbers = listProduct
             .filter((p) => p.sku && p.sku.startsWith(`${baseSKU}-`))
-            .map((p) => {
-                // Ambil bagian nomor di belakang (AC-PSGT-001 -> 001)
-                const parts = p.sku.split("-");
-                const lastPart = parts[parts.length - 1];
-                return parseInt(lastPart, 10);
-            })
-            .filter((num) => !isNaN(num)); // Pastikan valid number
+            .map((p) => parseInt(p.sku.split("-").pop() || "0", 10))
+            .filter((num) => !isNaN(num));
 
-        // Cari angka terbesar, jika tidak ada mulai dari 0
-        const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
-
-        // Tambah 1
-        const nextNumber = maxNumber + 1;
-
-        // Format jadi 3 digit (misal: 1 -> 001, 12 -> 012)
-        const formattedNumber = String(nextNumber).padStart(3, "0");
-
-        // Set Final SKU
-        const finalSKU = `${baseSKU}-${formattedNumber}`;
-
-        setFormData((p) => ({ ...p, sku: finalSKU }));
+        const nextNumber = (existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0) + 1;
+        return `${baseSKU}-${String(nextNumber).padStart(3, "0")}`.slice(0, PRODUCT_SKU_MAX_LENGTH);
     };
 
-    const reset = () =>
-        setFormData({
-            productName: "",
-            price: "",
-            sku: "",
-            taxRate: "standard",
-            description: "",
-        });
+    const generateSKU = () => {
+        setFormData((p) => ({ ...p, sku: nextSku(p.productName) }));
+        setErrors((e) => ({ ...e, sku: undefined }));
+    };
+
+    const reset = () => {
+        setFormData(EMPTY_FORM);
+        setErrors({});
+    };
 
     const product = useMemo(() => {
         if (!id) return null;
-        return listProduct.filter(item => item.id === id) ?? null;
+        return listProduct.find(item => item.id === id) ?? null;
     }, [id, listProduct]);
 
     useEffect(() => {
-        if (!product || product.length === 0) return;
+        if (!product) return;
         setFormData({
-            productName: product[0]?.product_name ?? "",
-            price: formatPrice(Math.floor(Number(product[0]?.price ?? 0))),
-            sku: product[0]?.sku ?? "",
-            taxRate: product[0]?.tax_rate ?? '11%',
-            description: product[0]?.description ?? "",
-        })
+            productName: product.product_name ?? "",
+            price: formatPrice(Math.floor(Number(product.price ?? 0))),
+            sku: product.sku ?? "",
+            description: product.description ?? "",
+            productType: product.product_type ?? "goods",
+            cost: product.cost !== null && product.cost !== undefined
+                ? formatPrice(Math.floor(Number(product.cost)))
+                : "",
+            billingPeriod: product.billing_period ?? "",
+            imageUrl: product.image_url ?? "",
+            status: product.status ?? "active",
+        });
+        setErrors({});
     }, [product]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        if (name === "price") {
+        if (name === "price" || name === "cost") {
             const formatted = formatPrice(value);
             setFormData((p) => ({ ...p, [name]: formatted }));
         } else {
             setFormData((p) => ({ ...p, [name]: value }));
         }
+        if (errors[name as keyof ProductForm]) {
+            setErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+    };
+
+    const validate = (): FormErrors => {
+        const next: FormErrors = {};
+        if (!formData.productName.trim()) next.productName = "Nama produk wajib diisi";
+        const price = Number(digitsOnly(formData.price));
+        if (!formData.price || !(price >= 1)) next.price = "Harga minimal Rp 1";
+        if (formData.sku.length > PRODUCT_SKU_MAX_LENGTH) {
+            next.sku = `SKU maksimal ${PRODUCT_SKU_MAX_LENGTH} karakter`;
+        }
+        if (formData.productType !== "subscription" && formData.billingPeriod) {
+            next.billingPeriod = "Periode tagihan hanya untuk produk langganan";
+        }
+        if (formData.imageUrl.length > 1024) next.imageUrl = "URL gambar maksimal 1024 karakter";
+        return next;
     };
 
     const handleSave = async () => {
+        const problems = validate();
+        if (Object.keys(problems).length > 0) {
+            setErrors(problems);
+            return;
+        }
+
         setLoading(true);
-        const cleanPrice = formData.price.replace(/\./g, "");
 
         // Auto generate SKU jika user lupa klik tombol generate tapi nama produk ada
         let finalSku = formData.sku;
         if (!finalSku && formData.productName) {
-            const prodPrefix = getSmartAbbreviation(formData.productName);
-            const baseSKU = `${prodPrefix}-${companyAcronym}`;
-
-            const existingNumbers = listProduct
-                .filter((p) => p.sku && p.sku.startsWith(`${baseSKU}-`))
-                .map((p) => parseInt(p.sku.split("-").pop() || "0", 10))
-                .filter((num) => !isNaN(num));
-
-            const nextNumber = (existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0) + 1;
-            finalSku = `${baseSKU}-${String(nextNumber).padStart(3, "0")}`;
+            finalSku = nextSku(formData.productName);
         }
 
         const body: ProductPayload = {
-            "product_name": formData.productName,
-            "price": Number(cleanPrice),
-            "sku": finalSku || `HWG-${Date.now()}`, // Fallback terakhir banget
-            "description": formData.description,
+            product_name: formData.productName,
+            price: Number(digitsOnly(formData.price)),
+            sku: finalSku || `HWG-${Date.now()}`, // Fallback terakhir banget
+            description: formData.description,
+            product_type: formData.productType,
+            cost: formData.cost ? Number(digitsOnly(formData.cost)) : null,
+            image_url: formData.imageUrl.trim() ? formData.imageUrl.trim() : null,
+            billing_period:
+                formData.productType === "subscription" && formData.billingPeriod
+                    ? formData.billingPeriod
+                    : null,
         };
-
-        if (formData.taxRate) {
-            body.tax_rate = formData.taxRate;
+        // `status` is update-only: a new product is always active (D3.3),
+        // and sending it on create would be an unknown field.
+        if (id) {
+            body.status = formData.status;
         }
 
-        if (!id) {
-            setLoading(true);
-            const response = await postFormProduct(body)
-            if (response.success) {
-                notify.success("Product Saved", { description: "New product has been successfully created." });
-                setLoading(false);
-                onOpenChange(false);
-                reset();
-                setErrors({})
-            } else {
-                notify.error("Failed to Save", { description: response.error || "An error occurred while saving the product." });
-                setLoading(false);
-            }
+        const response = id
+            ? await updateFormProduct(body, id)
+            : await postFormProduct(body);
+
+        setLoading(false);
+
+        if (response.success) {
+            notify.success(id ? "Product Updated" : "Product Saved", {
+                description: id
+                    ? "Product details have been successfully updated."
+                    : "New product has been successfully created.",
+            });
+            onOpenChange(false);
+            reset();
+            if (id) setEditId("");
+            return;
+        }
+
+        const message = response.error || "An error occurred while saving the product.";
+        // "Product already exists with this SKU" belongs under the SKU field,
+        // not only in a toast that disappears.
+        if (/sku/i.test(message)) {
+            setErrors((prev) => ({ ...prev, sku: message }));
         } else {
-            setLoading(true);
-            const response = await updateFormProduct(body, id)
-            if (response.success) {
-                notify.success("Product Updated", { description: "Product details have been successfully updated." });
-                setLoading(false);
-                onOpenChange(false);
-                reset();
-                setEditId("");
-                setErrors({})
-            } else {
-                notify.error("Failed to Update", { description: response.error || "An error occurred while updating the product." });
-                setLoading(false);
-            }
+            notify.error(id ? "Failed to Update" : "Failed to Save", { description: message });
         }
     };
 
@@ -271,15 +309,17 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
         setEditId("");
     };
 
+    const isSubscription = formData.productType === "subscription";
+
     return (
         <>
             <Dialog open={open} onOpenChange={handleOpenChange} maxWidth="md">
                 <DialogContent
                     className="
-                max-w-205 
-                w-full 
-                px-10 py-8 
-                rounded-3xl 
+                max-w-205
+                w-full
+                px-10 py-8
+                rounded-3xl
                 bg-white
                 border border-gray-200
                 ">
@@ -299,6 +339,8 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                     value={formData.productName}
                                     onChange={handleChange}
                                     isBgWhite
+                                    error={!!errors.productName}
+                                    helperText={errors.productName}
                                 />
                             </div>
 
@@ -311,6 +353,8 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                     value={formData.price}
                                     onChange={handleChange}
                                     isBgWhite
+                                    error={!!errors.price}
+                                    helperText={errors.price}
                                 />
                             </div>
                         </div>
@@ -331,11 +375,14 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                                         value={formData.sku}
                                         onChange={handleChange}
                                         isBgWhite
+                                        inputProps={{ maxLength: PRODUCT_SKU_MAX_LENGTH }}
+                                        error={!!errors.sku}
+                                        helperText={errors.sku}
                                     />
                                     <button
                                         type="button"
                                         onClick={generateSKU}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5479EE] transition-colors"
+                                        className="absolute right-3 top-3 text-gray-400 hover:text-[#5479EE] transition-colors"
                                         title="Generate Smart SKU"
                                     >
                                         <RefreshCcw size={18} />
@@ -344,16 +391,108 @@ export function AddProductModal({ open, onOpenChange }: AddProductModalProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-900">Tax Rate</label>
-                                <CustomSelectStage
-                                    value={formData.taxRate ?? ""}
-                                    disabled={true}
-                                    onChange={() => null}
-                                    placeholder="Standard (11%)"
-                                    data={[{ label: "PNN", value: "he" }]}
-                                    className="bg-white rounded-md"
+                                <label className="text-sm font-semibold text-gray-900">Type</label>
+                                <AppSelect
+                                    value={formData.productType}
+                                    onChange={(e) => {
+                                        const nextType = e.target.value as ProductType;
+                                        setFormData((p) => ({
+                                            ...p,
+                                            productType: nextType,
+                                            // Billing period only means something on a subscription.
+                                            billingPeriod: nextType === "subscription" ? p.billingPeriod : "",
+                                        }));
+                                        setErrors((prev) => ({ ...prev, billingPeriod: undefined }));
+                                    }}
+                                    options={PRODUCT_TYPE_OPTIONS}
+                                    isBgWhite
+                                    rounded="6px"
                                 />
                             </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-900">
+                                    Cost (IDR)
+                                    <span className="text-gray-400 font-normal ml-2 text-xs">(optional, internal)</span>
+                                </label>
+                                <AppInput
+                                    name="cost"
+                                    type="text"
+                                    placeholder="e.g., 7.500"
+                                    value={formData.cost}
+                                    onChange={handleChange}
+                                    isBgWhite
+                                    error={!!errors.cost}
+                                    helperText={errors.cost}
+                                />
+                            </div>
+
+                            {isSubscription ? (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-900">Billing Period</label>
+                                    <AppSelect
+                                        value={formData.billingPeriod}
+                                        placeholder="Pilih periode tagihan"
+                                        onChange={(e) =>
+                                            setFormData((p) => ({ ...p, billingPeriod: e.target.value as BillingPeriod }))
+                                        }
+                                        options={BILLING_PERIOD_OPTIONS}
+                                        isBgWhite
+                                        rounded="6px"
+                                        error={!!errors.billingPeriod}
+                                        helperText={errors.billingPeriod}
+                                    />
+                                </div>
+                            ) : id ? (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-900">Status</label>
+                                    <AppSelect
+                                        value={formData.status}
+                                        onChange={(e) =>
+                                            setFormData((p) => ({ ...p, status: e.target.value as ProductStatus }))
+                                        }
+                                        options={PRODUCT_STATUS_OPTIONS}
+                                        isBgWhite
+                                        rounded="6px"
+                                    />
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {isSubscription && id && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-900">Status</label>
+                                    <AppSelect
+                                        value={formData.status}
+                                        onChange={(e) =>
+                                            setFormData((p) => ({ ...p, status: e.target.value as ProductStatus }))
+                                        }
+                                        options={PRODUCT_STATUS_OPTIONS}
+                                        isBgWhite
+                                        rounded="6px"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-900">
+                                Image URL
+                                <span className="text-gray-400 font-normal ml-2 text-xs">(optional)</span>
+                            </label>
+                            <AppInput
+                                name="imageUrl"
+                                placeholder="https://..."
+                                value={formData.imageUrl}
+                                onChange={handleChange}
+                                isBgWhite
+                                inputProps={{ maxLength: 1024 }}
+                                error={!!errors.imageUrl}
+                                helperText={errors.imageUrl}
+                            />
                         </div>
 
                         <div className="space-y-2">

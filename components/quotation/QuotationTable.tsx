@@ -5,9 +5,15 @@ import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Quotation } from "@/lib/store/quotation";
 import { formatRupiah } from "@/lib/helper/currency";
+import {
+  QUOTATION_STATUS_OPTIONS,
+  canDecideQuotation,
+  displayQuotationStatus,
+  quotationEditBlockedReason,
+} from "@/lib/constants/quotation-status";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Eye, FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, FileText, Pencil, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
 
 interface QuotationTableProps {
   quotations: Quotation[];
@@ -22,18 +28,26 @@ interface QuotationTableProps {
   onView: (quotation: Quotation) => void;
   onEdit: (quotation: Quotation) => void;
   onDelete?: (quotation: Quotation) => void;
+  /** `sent -> accepted` / `sent -> rejected`; hidden on every other status. */
+  onAccept?: (quotation: Quotation) => void;
+  onReject?: (quotation: Quotation) => void;
   renderTopLeftToolbar?: () => React.ReactNode;
 }
 
-const getStatusChip = (status: string) => {
-  const statusLower = status.toLowerCase();
-  switch (statusLower) {
-    case 'accepted': return <Chip label="Accepted" color="success" size="small" />;
-    case 'pending': return <Chip label="Pending" color="warning" size="small" />;
-    case 'rejected': return <Chip label="Rejected" color="error" size="small" />;
-    default: return <Chip label={status} size="small" />;
-  }
-};
+/**
+ * One chip for the list, the detail header and the read-only banner. A sent
+ * quotation past its expiry reads "Kedaluwarsa" (display-only hint).
+ */
+export function QuotationStatusChip({
+  status,
+  expireDate,
+}: {
+  status: string | null | undefined;
+  expireDate?: string | null;
+}) {
+  const meta = displayQuotationStatus(status, expireDate);
+  return <Chip label={meta.label} color={meta.color} size="small" />;
+}
 
 export default function QuotationTable({
   quotations,
@@ -48,6 +62,8 @@ export default function QuotationTable({
   onView,
   onEdit,
   onDelete,
+  onAccept,
+  onReject,
   renderTopLeftToolbar,
 }: QuotationTableProps) {
   const columns = useMemo<MRT_ColumnDef<Quotation>[]>(() => [
@@ -71,18 +87,24 @@ export default function QuotationTable({
       filterVariant: "date-range",
       Cell: ({ row }) => (
         <span>
-          {row.original.expire_date 
-            ? format(new Date(row.original.expire_date), "dd MMM yyyy") 
+          {row.original.expire_date
+            ? format(new Date(row.original.expire_date), "dd MMM yyyy")
             : "-"}
         </span>
       ),
     },
     {
       id: "quotation_status",
-      accessorKey: "quotation_status",
+      // The export gets the readable label, the cell gets the chip.
+      accessorFn: (row) => displayQuotationStatus(row.quotation_status, row.expire_date).label,
       header: "Status",
       columnFilterModeOptions: undefined, // Mencegah reduksi MRT options
-      Cell: ({ row }) => getStatusChip(row.original.quotation_status),
+      Cell: ({ row }) => (
+        <QuotationStatusChip
+          status={row.original.quotation_status}
+          expireDate={row.original.expire_date}
+        />
+      ),
     },
     {
       id: "grand_total",
@@ -145,7 +167,23 @@ export default function QuotationTable({
             id: "edit",
             label: "Edit",
             icon: <Pencil size={16} />,
+            // A string here is the readable reason (only drafts are editable).
+            disabled: (row) => quotationEditBlockedReason(row.quotation_status) ?? false,
             onClick: (row) => onEdit(row),
+          },
+          {
+            id: "accept",
+            label: "Tandai diterima",
+            icon: <ThumbsUp size={16} />,
+            hidden: (row) => !onAccept || !canDecideQuotation(row.quotation_status),
+            onClick: (row) => onAccept?.(row),
+          },
+          {
+            id: "reject",
+            label: "Tandai ditolak",
+            icon: <ThumbsDown size={16} />,
+            hidden: (row) => !onReject || !canDecideQuotation(row.quotation_status),
+            onClick: (row) => onReject?.(row),
           },
           {
             id: "delete",
@@ -165,9 +203,12 @@ export default function QuotationTable({
             id: "quotation_status",
             label: "Status",
             type: "select",
-            options: ["Accepted", "Pending", "Rejected"].map((v) => ({
-              value: v,
-              label: v,
+            // The six canonical API values. The old "Rejected" option was a
+            // spelling the server never knew and 422'd on; a bookmarked
+            // legacy `Pending`/`Accepted` is normalised in QuotationClient.
+            options: QUOTATION_STATUS_OPTIONS.map((s) => ({
+              value: s.value,
+              label: s.label,
             })),
           },
           {

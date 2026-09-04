@@ -1,7 +1,6 @@
 "use client";
 import type { AxiosError } from "axios";
 import { create } from "zustand";
-import { ProductPayload } from "@/components/product/AddProductModal";
 import api from "@/lib/utils/axiosClient";
 
 export interface ValidationItem {
@@ -16,14 +15,39 @@ export interface ProductValidationResponse {
   details: ValidationItem[];
 }
 
+// Exact API vocabularies (app/models/product_model.py).
+export type ProductType = "goods" | "service" | "subscription" | "bundle" | "digital";
+export type ProductStatus = "active" | "archived";
+export type BillingPeriod = "monthly" | "yearly";
+/** GET /products `status` query: the server defaults to `active`. */
+export type ProductStatusFilter = ProductStatus | "all";
+
+export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
+  goods: "Barang",
+  service: "Jasa",
+  subscription: "Langganan",
+  bundle: "Paket",
+  digital: "Digital",
+};
+
+export const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
+  active: "Aktif",
+  archived: "Diarsipkan",
+};
+
+export const BILLING_PERIOD_LABELS: Record<BillingPeriod, string> = {
+  monthly: "Bulanan",
+  yearly: "Tahunan",
+};
+
 type FetchProductParams = {
   page: number;
   limit: number;
   search?: string;
+  status?: ProductStatusFilter;
   sort_by?: string;
   sort_order?: "asc" | "desc";
 };
-
 
 interface Pagination {
   page: number;
@@ -32,14 +56,42 @@ interface Pagination {
   totalPages: number;
 }
 
+/** ProductResponse (spec D3.2). Money is a Decimal string, never a float. */
 export interface Product {
   id: string;
   product_name: string;
   sku: string;
-  price: number;
-  description: string;
-  tax_rate?: string;
+  price: string;
+  description: string | null;
+  product_type: ProductType;
+  status: ProductStatus;
+  cost: string | null;
+  image_url: string | null;
+  capabilities: string[];
+  billing_period: BillingPeriod | null;
+  created_at?: string;
+  updated_at?: string;
 }
+
+/** ProductCreateRequest / ProductUpdateRequest. `status` is update-only. */
+export interface ProductPayload {
+  product_name: string;
+  price: number;
+  sku: string;
+  description?: string | null;
+  product_type?: ProductType;
+  status?: ProductStatus;
+  cost?: number | null;
+  image_url?: string | null;
+  capabilities?: string[];
+  billing_period?: BillingPeriod | null;
+}
+
+type MutationResult = {
+  success: boolean;
+  error?: string;
+  validation?: ValidationItem[];
+};
 
 interface GetState {
   listProduct: Product[];
@@ -48,42 +100,45 @@ interface GetState {
   id: string;
   pagination: Pagination;
   searchQuery: string;
+  statusFilter: ProductStatusFilter;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 
   setSearchQuery: (val?: string) => void;
+  setStatusFilter: (val: ProductStatusFilter) => void;
   setSort: (sortBy?: string, sortOrder?: "asc" | "desc") => void;
 
   fetchProduct: (params?: Partial<FetchProductParams>) => Promise<void>;
 
-  postFormProduct: (param?: ProductPayload) => Promise<{
-    success: boolean;
-    error?: string;
-    validation?: ValidationItem[];
-  }>;
+  postFormProduct: (param?: ProductPayload) => Promise<MutationResult>;
 
   setEditId: (val: string) => void;
 
-  updateFormProduct: (param?: ProductPayload, id?: string) => Promise<{
-    success: boolean;
-    error?: string;
-    validation?: ValidationItem[];
-  }>;
+  updateFormProduct: (param?: ProductPayload, id?: string) => Promise<MutationResult>;
 
-  deleteProduct: (id: string) => Promise<{
-    success: boolean;
-    error?: string;
-    validation?: ValidationItem[];
-  }>;
+  /** DELETE /products/{id} archives (idempotent); nothing is ever physically deleted. */
+  archiveProduct: (id: string) => Promise<MutationResult & { status?: ProductStatus }>;
 
-  duplicateProducts: (ids: string[]) => Promise<{
-    success: boolean;
-    error?: string;
-    validation?: ValidationItem[];
-  }>;
+  duplicateProducts: (ids: string[]) => Promise<MutationResult>;
 
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
+}
+
+function readMutationError(error: unknown, fallback: string): MutationResult {
+  const axiosErr = error as AxiosError<any>;
+  if (axiosErr.response?.data?.error) {
+    const errorData = axiosErr.response.data.error;
+    return {
+      success: false,
+      error: typeof errorData === "object" ? errorData.message : errorData,
+      validation: typeof errorData === "object" ? errorData.details : undefined,
+    };
+  }
+  return {
+    success: false,
+    error: axiosErr.message ?? fallback,
+  };
 }
 
 export const useGetProductStore = create<GetState>((set, get) => ({
@@ -92,6 +147,7 @@ export const useGetProductStore = create<GetState>((set, get) => ({
   error: null,
   id: "",
   searchQuery: "",
+  statusFilter: "active",
   pagination: {
     page: 1,
     // Matches SuperTable's lazy batch size, so the first fetch and the first
@@ -104,6 +160,8 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
   setSearchQuery: (v) => set({ searchQuery: v }),
 
+  setStatusFilter: (v) => set({ statusFilter: v }),
+
   setSort: (sortBy, sortOrder) => set({ sortBy, sortOrder }),
 
   fetchProduct: async (params) => {
@@ -115,6 +173,9 @@ export const useGetProductStore = create<GetState>((set, get) => ({
       const query: FetchProductParams = {
         page: params?.page ?? pagination.page,
         limit: params?.limit ?? pagination.limit,
+        // Passed explicitly even though the server defaults to `active`, so
+        // the request says what it means and the filter is visible in logs.
+        status: params?.status ?? get().statusFilter,
       };
 
       const search = params?.search ?? get().searchQuery;
@@ -134,24 +195,27 @@ export const useGetProductStore = create<GetState>((set, get) => ({
 
       const data = res.data.data;
 
-      let temp: Product[] = []
-      data.products.map((p: Product) => {
-        const product = {
-          id: p.id,
-          product_name: p.product_name,
-          sku: p.sku,
-          price: p.price,
-          tax_rate: `11%`,
-          description: p.description
-        }
-        temp.push(product)
-      })
+      const products: Product[] = (data.products as Product[]).map((p) => ({
+        id: p.id,
+        product_name: p.product_name,
+        sku: p.sku,
+        price: p.price,
+        description: p.description ?? null,
+        product_type: p.product_type ?? "goods",
+        status: p.status ?? "active",
+        cost: p.cost ?? null,
+        image_url: p.image_url ?? null,
+        capabilities: Array.isArray(p.capabilities) ? p.capabilities : [],
+        billing_period: p.billing_period ?? null,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+      }));
 
       set({
-        listProduct: [...temp],
+        listProduct: products,
         pagination: {
           page: data.page,
-          limit: pagination.limit,
+          limit: query.limit,
           total: data.total,
           totalPages: data.total_pages,
         },
@@ -165,40 +229,26 @@ export const useGetProductStore = create<GetState>((set, get) => ({
     }
   },
 
-  postFormProduct: async (body?: ProductPayload): Promise<{ success: boolean; error?: string; validation?: ValidationItem[]; }> => {
+  postFormProduct: async (body?: ProductPayload): Promise<MutationResult> => {
     try {
       set({ loading: true, error: null });
 
       const res = await api.post("/products", body);
 
-      if (res.status === 200) {
+      if (res.status === 200 || res.status === 201) {
         await get().fetchProduct();
         return { success: true };
       }
 
       return { success: false, error: "Unexpected response" };
     } catch (error) {
-      const axiosErr = error as AxiosError<any>;
-      if (axiosErr.response?.data?.error) {
-        const errorData = axiosErr.response.data.error;
-        return {
-          success: false,
-          error: typeof errorData === 'object' ? errorData.message : errorData,
-          validation: errorData.details,
-        };
-      }
-      return {
-        success: false,
-        error:
-          axiosErr.message ??
-          "Failed to post product",
-      };
+      return readMutationError(error, "Failed to post product");
     } finally {
       set({ loading: false });
     }
   },
 
-  updateFormProduct: async (body?: ProductPayload, id?: string): Promise<{ success: boolean; error?: string; validation?: ValidationItem[]; }> => {
+  updateFormProduct: async (body?: ProductPayload, id?: string): Promise<MutationResult> => {
     try {
       set({ loading: true, error: null });
 
@@ -215,28 +265,13 @@ export const useGetProductStore = create<GetState>((set, get) => ({
       return { success: false, error: "Unexpected response" };
 
     } catch (error) {
-
-      const axiosErr = error as AxiosError<any>;
-      if (axiosErr.response?.data?.error) {
-        const errorData = axiosErr.response.data.error;
-        return {
-          success: false,
-          error: typeof errorData === 'object' ? errorData.message : errorData,
-          validation: errorData.details,
-        };
-      }
-      return {
-        success: false,
-        error:
-          axiosErr.message ??
-          "Failed to update product",
-      };
+      return readMutationError(error, "Failed to update product");
     } finally {
       set({ loading: false });
     }
   },
 
-  deleteProduct: async (id: string) => {
+  archiveProduct: async (id: string) => {
     try {
       set({ loading: true, error: null });
 
@@ -247,28 +282,13 @@ export const useGetProductStore = create<GetState>((set, get) => ({
           page: get().pagination.page,
           limit: get().pagination.limit
         });
-        return { success: true };
+        return { success: true, status: res.data?.data?.status as ProductStatus | undefined };
       }
 
       return { success: false, error: "Unexpected response" };
 
     } catch (error) {
-
-      const axiosErr = error as AxiosError<any>;
-      if (axiosErr.response?.data?.error) {
-        const errorData = axiosErr.response.data.error;
-        return {
-          success: false,
-          error: typeof errorData === 'object' ? errorData.message : errorData,
-          validation: errorData.details,
-        };
-      }
-      return {
-        success: false,
-        error:
-          axiosErr.message ??
-          "Failed to delete product",
-      };
+      return readMutationError(error, "Failed to archive product");
     } finally {
       set({ loading: false });
     }
@@ -292,22 +312,7 @@ export const useGetProductStore = create<GetState>((set, get) => ({
       return { success: false, error: "Unexpected response" };
 
     } catch (error) {
-
-      const axiosErr = error as AxiosError<any>;
-      if (axiosErr.response?.data?.error) {
-        const errorData = axiosErr.response.data.error;
-        return {
-          success: false,
-          error: typeof errorData === 'object' ? errorData.message : errorData,
-          validation: errorData.details,
-        };
-      }
-      return {
-        success: false,
-        error:
-          axiosErr.message ??
-          "Failed to duplicate products",
-      };
+      return readMutationError(error, "Failed to duplicate products");
     } finally {
       set({ loading: false });
     }

@@ -1,16 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Chip } from "@mui/material";
 import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { SuperTable, SuperTableState } from "@/components/ui/super-table";
-import { Product, useGetProductStore } from "@/lib/store/product";
+import {
+    PRODUCT_STATUS_LABELS,
+    PRODUCT_TYPE_LABELS,
+    Product,
+    useGetProductStore,
+} from "@/lib/store/product";
 import { formatRupiah } from "@/lib/helper/currency";
 import { useConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import { AddProductModal } from "@/components/product/AddProductModal";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Copy, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, Copy, Package, Pencil, Plus } from "lucide-react";
 
 export interface ProductTableProps {
     products: Product[];
@@ -23,11 +29,19 @@ export interface ProductTableProps {
     onStateChange?: (state: SuperTableState) => void;
     onExportRequest?: (params: any) => Promise<Product[]>;
     renderTopLeftToolbar?: () => React.ReactNode;
-    onBulkDelete?: (products: Product[], clearSelection: () => void) => Promise<void>;
-    isBulkDeleting?: boolean;
+    /** DELETE /products/{id} archives; nothing is physically deleted any more. */
+    onBulkArchive?: (products: Product[], clearSelection: () => void) => Promise<void>;
+    isBulkArchiving?: boolean;
     onDuplicate?: (products: Product[], clearSelection?: () => void) => void;
     isDuplicating?: boolean;
 }
+
+/** GET /products `status` values as the user reads them. "Aktif" is the server default. */
+export const PRODUCT_STATUS_FILTER_OPTIONS = [
+    { value: "active", label: "Aktif" },
+    { value: "archived", label: "Diarsipkan" },
+    { value: "all", label: "Semua" },
+];
 
 export default function ProductTable({
     products,
@@ -40,12 +54,12 @@ export default function ProductTable({
     onStateChange,
     onExportRequest,
     renderTopLeftToolbar,
-    onBulkDelete,
-    isBulkDeleting,
+    onBulkArchive,
+    isBulkArchiving,
     onDuplicate,
     isDuplicating
 }: ProductTableProps) {
-    const { setEditId, deleteProduct } = useGetProductStore();
+    const { setEditId, archiveProduct } = useGetProductStore();
     const { confirm, confirmationPopup } = useConfirmationPopup();
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -67,6 +81,12 @@ export default function ProductTable({
                 enableColumnFilter: false,
             },
             {
+                id: "product_type",
+                accessorFn: (row) => PRODUCT_TYPE_LABELS[row.product_type] ?? row.product_type,
+                header: "Type",
+                enableColumnFilter: false,
+            },
+            {
                 id: "price",
                 accessorFn: (row) => formatRupiah(row.price),
                 header: "Price",
@@ -78,14 +98,17 @@ export default function ProductTable({
                 ),
             },
             {
-                id: "tax_rate",
-                accessorFn: (row) => row.tax_rate ? `${row.tax_rate}%` : "-",
-                header: "Tax Rate",
+                id: "status",
+                // The export gets the label, the cell gets the chip.
+                accessorFn: (row) => PRODUCT_STATUS_LABELS[row.status] ?? row.status,
+                header: "Status",
                 enableColumnFilter: false,
-                Cell: ({ cell }) => (
-                    <span className="font-medium text-gray-900">
-                        {cell.getValue<string>()}
-                    </span>
+                Cell: ({ row }) => (
+                    <Chip
+                        label={PRODUCT_STATUS_LABELS[row.original.status] ?? row.original.status}
+                        color={row.original.status === "active" ? "success" : "default"}
+                        size="small"
+                    />
                 ),
             },
         ],
@@ -128,6 +151,17 @@ export default function ProductTable({
                 onExportRequest={onExportRequest as any}
                 renderTopLeftToolbar={renderTopLeftToolbar}
                 onRowClick={(row) => openEditModal(row)}
+                // ProductClient reads `state.filters.status` and sends it as the
+                // GET /products `status` query. No filter = the server default.
+                filters={[
+                    {
+                        id: "status",
+                        label: "Status",
+                        type: "select",
+                        options: PRODUCT_STATUS_FILTER_OPTIONS,
+                        anyLabel: "Aktif (bawaan)",
+                    },
+                ]}
                 rowActions={[
                     {
                         id: "edit",
@@ -143,24 +177,26 @@ export default function ProductTable({
                         onClick: (row) => onDuplicate?.([row]),
                     },
                     {
-                        id: "delete",
-                        label: "Delete",
-                        icon: <Trash2 size={16} />,
+                        id: "archive",
+                        label: "Archive",
+                        icon: <Archive size={16} />,
                         destructive: true,
+                        // Archiving is idempotent server-side, but offering it on
+                        // an archived row is noise. Un-archive is via Edit.
+                        hidden: (row) => row.status === "archived",
                         onClick: (row) => {
                             confirm({
-                                variant: "danger",
-                                title: "Delete Product",
-                                description: `Are you sure you want to delete "${row.product_name}"? This action cannot be undone.`,
-                                confirmText: "Delete",
-                                cancelText: "Cancel",
+                                variant: "warning",
+                                title: "Arsipkan produk",
+                                description: `Arsipkan produk "${row.product_name}"? Produk tidak akan muncul di quotation baru. Quotation yang sudah ada tidak berubah, dan produk bisa diaktifkan kembali lewat Edit.`,
+                                confirmText: "Arsipkan",
+                                cancelText: "Batal",
                                 onConfirm: async () => {
-                                    await new Promise((resolve) => setTimeout(resolve, 1000));
-                                    const res = await deleteProduct(row.id);
+                                    const res = await archiveProduct(row.id);
                                     if (res.success) {
-                                        notify.success("Product Deleted", { description: `Product "${row.product_name}" has been successfully deleted.` });
+                                        notify.success("Produk diarsipkan", { description: `"${row.product_name}" tidak lagi ditawarkan di quotation baru.` });
                                     } else {
-                                        notify.error("Failed to Delete", { description: res.error || "An error occurred while deleting the product." });
+                                        notify.error("Gagal mengarsipkan", { description: res.error || "Terjadi kesalahan saat mengarsipkan produk." });
                                     }
                                 },
                             });
@@ -178,20 +214,15 @@ export default function ProductTable({
                                 {isDuplicating ? "Duplicating..." : `Duplicate (${selectedRows.length})`}
                             </AppButton>
                         )}
-                        <AppButton
-                            variantStyle="danger"
-                            disabled={isBulkDeleting}
-                            onClick={() => {
-                                if (onBulkDelete) {
-                                    onBulkDelete(
-                                        selectedRows as Product[],
-                                        clearSelection
-                                    );
-                                }
-                            }}
-                        >
-                            {isBulkDeleting ? "Deleting..." : `Delete (${selectedRows.length})`}
-                        </AppButton>
+                        {onBulkArchive && (
+                            <AppButton
+                                variantStyle="danger"
+                                disabled={isBulkArchiving}
+                                onClick={() => onBulkArchive(selectedRows as Product[], clearSelection)}
+                            >
+                                {isBulkArchiving ? "Mengarsipkan..." : `Archive (${selectedRows.length})`}
+                            </AppButton>
+                        )}
                     </div>
                 )}
                 manualPagination={true}

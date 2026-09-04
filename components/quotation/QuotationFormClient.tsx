@@ -1,46 +1,198 @@
 "use client";
 
 import ClientDetailsCard from "@/components/quotation/ClientDetailForm";
-import NotesCard from "@/components/quotation/NotesSection";
-import ProductsServicesCard from "@/components/quotation/ProductsServicesTable";
+import TermsCard from "@/components/quotation/NotesSection";
+import ProductsServicesCard, {
+  round2,
+  type PickerProduct,
+} from "@/components/quotation/ProductsServicesTable";
 import SummaryCard from "@/components/quotation/QuotationSummary";
+import { QuotationStatusChip } from "@/components/quotation/QuotationTable";
 import PageHeader from "@/components/ui/page-header";
-import { createQuotation, updateQuotation } from "@/lib/api";
+import {
+  createQuotation,
+  fetchQuotationDefaults,
+  previewQuotationTotals,
+  transitionQuotationStatus,
+  updateQuotation,
+} from "@/lib/api/quotations";
 import type { QuotationLead } from "@/lib/api/quotations";
+import {
+  QUOTATION_STATUS,
+  canDecideQuotation,
+  canEditQuotation,
+  normalizeQuotationStatus,
+  quotationStatusMeta,
+} from "@/lib/constants/quotation-status";
 import { useAuth } from "@/lib/context/AuthContext";
+import { formatPercent, formatQuantity, formatRupiah } from "@/lib/helper/currency";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
-import { useGetProductStore } from "@/lib/store/product";
-import type { ItemRow } from "@/lib/types/Quotation";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-
 import { notify } from "@/lib/notifications";
+import { useGetProductStore } from "@/lib/store/product";
+import type {
+  DiscountType,
+  ItemRow,
+  Quotation,
+  QuotationDefaults,
+  QuotationDetail,
+  QuotationItemPayload,
+  QuotationTotals,
+} from "@/lib/types/Quotation";
+import { mapQuotationException, type MappedQuotationError } from "@/lib/utils/quotation-errors";
+import { format } from "date-fns";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
-import { Spinner } from "../ui/spinner";
+import { ConfirmationPopup } from "../ui/confirmation-popup";
 import QuotationSuccessModal from "./QuotationSuccessModal";
 
-
 interface QuotationFormClientProps {
-  initialData?: any;
+  initialData?: QuotationDetail | Quotation;
+}
+
+type Decision = "accepted" | "rejected";
+
+const PREVIEW_DEBOUNCE_MS = 300;
+/** Catalogue page size for the product picker (one request, status=active). */
+const PRODUCT_PICKER_LIMIT = 100;
+
+const newRow = (): ItemRow => ({
+  product_id: "",
+  title: "",
+  sku: "",
+  desc: "",
+  qty: 1,
+  unitPrice: 0,
+  listPrice: 0,
+  discountType: "percent",
+  discountValue: 0,
+});
+
+function toDateInput(value?: string | null, fallback?: Date): string {
+  const date = value ? new Date(value) : fallback;
+  if (!date || Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+}
+
+function safeDate(value?: string | null, pattern = "dd MMM yyyy"): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : format(date, pattern);
+}
+
+/**
+ * Form rows from a stored quotation. Everything comes from the line itself -
+ * `unit_price`, `list_price` and the name/SKU snapshots - never from the live
+ * `product` row, which may have been renamed or re-priced since.
+ */
+function rowsFromQuotation(row: Quotation): ItemRow[] {
+  return (row.items ?? []).map((item) => ({
+    product_id: item.product_id,
+    title: item.product_name_snapshot ?? item.product?.product_name ?? "",
+    sku: item.sku_snapshot ?? item.product?.sku ?? "",
+    desc: item.notes ?? "",
+    qty: Number(item.quantity) || 1,
+    unitPrice: Number(item.unit_price) || 0,
+    listPrice: Number(item.list_price ?? item.unit_price) || 0,
+    discountType: item.discount_type ?? "percent",
+    discountValue: Number(item.discount_value ?? item.discount ?? 0) || 0,
+  }));
+}
+
+/** The stored header + lines in the preview shape, so one summary serves both. */
+function totalsFromQuotation(row: Quotation): QuotationTotals {
+  return {
+    currency: row.currency,
+    tax_rate: row.tax_rate,
+    prices_include_tax: row.prices_include_tax,
+    subtotal: row.subtotal,
+    line_discount_total: row.line_discount_total,
+    discount_type: row.discount_type,
+    discount_value: row.discount_value,
+    discount_amount: row.discount_amount,
+    discount_total: row.discount_total,
+    taxable_amount: row.taxable_amount,
+    tax_total: row.tax_total,
+    grand_total: row.grand_total,
+    lines: (row.items ?? []).map((item, index) => {
+      const gross = round2(Number(item.unit_price) * Number(item.quantity));
+      const discounted = Number(item.discount_amount) + Number(item.header_discount_share ?? 0);
+      return {
+        index,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        list_price: item.list_price,
+        unit_price: item.unit_price,
+        gross: gross.toFixed(2),
+        discount_type: item.discount_type,
+        discount_value: item.discount_value,
+        discount_amount: item.discount_amount,
+        header_discount_share: item.header_discount_share ?? "0.00",
+        // Both tax modes satisfy taxable = line_total - tax (spec E1 step 6).
+        taxable_amount: round2(Number(item.line_total) - Number(item.tax_amount)).toFixed(2),
+        tax_rate: item.tax_rate,
+        tax_amount: item.tax_amount,
+        line_total: item.line_total,
+        price_source: item.price_source,
+        product_name_snapshot: item.product_name_snapshot ?? item.product?.product_name ?? "",
+        sku_snapshot: item.sku_snapshot ?? item.product?.sku ?? "",
+        effective_discount_percent: gross > 0 ? round2((discounted / gross) * 100).toFixed(2) : "0.00",
+      };
+    }),
+  };
+}
+
+/** One line exactly as QuotationItemRequest accepts it - no `price` key. */
+function itemPayload(row: ItemRow): QuotationItemPayload {
+  const discountValue = round2(row.discountValue || 0);
+  return {
+    product_id: row.product_id,
+    quantity: round2(row.qty),
+    notes: row.desc || "",
+    discount: row.discountType === "percent" ? Math.round(discountValue) : 0,
+    discount_type: row.discountType,
+    discount_value: discountValue,
+  };
+}
+
+function discountLabel(type: DiscountType, value: string | number): string {
+  return type === "percent" ? `${formatPercent(value)}%` : formatRupiah(value);
 }
 
 export default function QuotationFormClient({ initialData }: QuotationFormClientProps) {
+  const router = useRouter();
   const { getToken } = useAuth();
+
+  // The saved row, if any. Updated after every create, update and status
+  // transition so the buttons, the chip and the PDF always describe what the
+  // server has - never what the form guesses.
+  const [quotation, setQuotation] = useState<Quotation | null>(initialData ?? null);
+  const status = normalizeQuotationStatus(quotation?.quotation_status);
+  const isNew = !quotation;
+  const readOnly = !isNew && !canEditQuotation(status);
+
+  const [defaults, setDefaults] = useState<QuotationDefaults | null>(null);
+
   const [clientSearchQuery, setClientSearchQuery] = useState("");
   const { data: leadsResponse, isLoading: isLoadingLeads } = useQuotationLeads(
     1,
     100,
     clientSearchQuery,
-    { enabled: !initialData || clientSearchQuery.length > 0 }
+    { enabled: isNew || clientSearchQuery.length > 0 }
   );
-  const leads = leadsResponse?.data?.leads || [];
+  const leads = useMemo(() => leadsResponse?.data?.leads || [], [leadsResponse]);
 
   const { listProduct, fetchProduct } = useGetProductStore();
 
+  // Only active products can go on a new line; the server refuses archived
+  // ones anyway, so the picker does not offer them.
   useEffect(() => {
-    fetchProduct({ limit: 100 });
-  }, [fetchProduct]);
+    if (readOnly) return;
+    fetchProduct({ limit: PRODUCT_PICKER_LIMIT, status: "active" });
+  }, [fetchProduct, readOnly]);
 
   const [clientData, setClientData] = useState<Record<string, any>>({
     lead_id: "",
@@ -51,128 +203,169 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     emailAddress: "",
     quotationTitle: "New Project Proposal",
     quotationId: "",
-    issueDate: new Date().toISOString().split('T')[0],
-    expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    issueDate: toDateInput(null, new Date()),
+    expiryDate: toDateInput(null, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     salesperson: "",
   });
 
+  const [items, setItems] = useState<ItemRow[]>([newRow()]);
+  const [headerDiscountType, setHeaderDiscountType] = useState<DiscountType>("percent");
+  const [headerDiscountValue, setHeaderDiscountValue] = useState(0);
+  const [terms, setTerms] = useState("");
+  const [paymentTerms, setPaymentTerms] = useState("");
+
+  const [totals, setTotals] = useState<QuotationTotals | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewError, setPreviewError] = useState<MappedQuotationError | null>(null);
+  const [saveError, setSaveError] = useState<MappedQuotationError | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "" });
 
-  // Ensure current lead is in the list for editing
+  // What the hidden PDF template renders: the STORED row after a draft save.
+  const [pdfQuotation, setPdfQuotation] = useState<Quotation | null>(null);
+
+  const [decision, setDecision] = useState<Decision | null>(null);
+  const [isDeciding, setIsDeciding] = useState(false);
+
+  // ── Company defaults (tax basis, terms, discount ceiling) ────────────────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const data = await fetchQuotationDefaults(token);
+        if (!cancelled) setDefaults(data);
+      } catch (err) {
+        console.error("Failed to load quotation defaults:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken]);
+
+  // A new quotation starts from the company's terms. Seeded once, and only
+  // into fields the user has not typed into.
+  const termsSeededRef = useRef(false);
+  useEffect(() => {
+    if (!defaults || !isNew || termsSeededRef.current) return;
+    termsSeededRef.current = true;
+    setTerms((current) => current || defaults.terms || "");
+    setPaymentTerms((current) => current || defaults.payment_terms || "");
+  }, [defaults, isNew]);
+
+  // ── Seed from the stored row ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!initialData) return;
+    setQuotation(initialData);
+    setClientData({
+      lead_id: initialData.lead?.id || initialData.lead_id || "",
+      clientName: initialData.lead?.contact?.name || "",
+      companyName: initialData.lead?.contact?.company || "",
+      officeLocation: initialData.lead?.office_location || "",
+      phoneNumber: initialData.lead?.contact?.phone_number || "",
+      emailAddress: initialData.lead?.contact?.email || "",
+      quotationTitle: initialData.quotation_title || "New Project Proposal",
+      quotationId: initialData.quotation_number || "",
+      issueDate: toDateInput(initialData.created_at, new Date()),
+      expiryDate: toDateInput(initialData.expire_date),
+      salesperson: initialData.lead?.user?.fullname || "",
+    });
+
+    // Only the quotation's own lines. `item_others` are Proposal-stage
+    // suggestions, not part of this quotation.
+    const rows = rowsFromQuotation(initialData);
+    setItems(rows.length > 0 ? rows : [newRow()]);
+    setHeaderDiscountType(initialData.discount_type ?? "percent");
+    setHeaderDiscountValue(Number(initialData.discount_value) || 0);
+    setTerms(initialData.terms ?? "");
+    setPaymentTerms(initialData.payment_terms ?? "");
+    setTotals(totalsFromQuotation(initialData));
+  }, [initialData]);
+
+  // Ensure the current lead is in the list when editing
   const leadsWithCurrent = useMemo(() => {
-    // Cast leads to any to avoid type mismatch during initialData check
     if (initialData?.lead && !leads.find((l) => l.id === initialData.lead.id)) {
-      // Create a compatible object if initialData.lead is different
-      return [initialData.lead as QuotationLead, ...leads];
+      return [initialData.lead as unknown as QuotationLead, ...leads];
     }
     return leads;
   }, [leads, initialData]);
 
-  // Derive available products from the selected lead's items and global products
-  const availableProducts = useMemo(() => {
-    const selectedLead = leadsWithCurrent.find(l => l.id === clientData.lead_id);
-    const leadItems = selectedLead?.items ? selectedLead.items.map(item => ({
-      id: item.id,
-      product_name: item.product_name,
-      sku: item.sku,
-      price: Number(item.price),
-      description: item.notes || ""
-    })) : [];
-
-    // Merge lead items with global products, ensuring no duplicates by SKU
-    const globalProducts = listProduct.map(p => ({
-      ...p,
-      price: Number(p.price)
-    }));
-
-    // Combine and deduplicate by SKU
-    const combined = [...leadItems];
-    globalProducts.forEach(gp => {
-      if (!combined.find(li => li.sku === gp.sku)) {
-        combined.push(gp as any);
-      }
-    });
-
-    return combined;
+  // Picker options: the lead's Proposal-stage products first, then the active
+  // catalogue, keyed by product id.
+  //
+  // Lead items carry no status (GET /quotations/lead), so they are checked
+  // against the active catalogue: an archived product would only earn a 400
+  // from the preview and the save. When the catalogue fetch came back full
+  // (PRODUCT_PICKER_LIMIT rows) it may be truncated, so absence from it is
+  // not proof of archival and the lead item is kept - the server filters
+  // archived products out of the lead payload as well.
+  const availableProducts = useMemo<PickerProduct[]>(() => {
+    const selectedLead = leadsWithCurrent.find((l) => l.id === clientData.lead_id);
+    const active = listProduct.filter((p) => p.status !== "archived");
+    const activeIds = new Set(active.map((p) => p.id));
+    const catalogueMayBeTruncated = listProduct.length >= PRODUCT_PICKER_LIMIT;
+    const leadItems: PickerProduct[] = (selectedLead?.items ?? [])
+      .filter((item) => activeIds.has(item.id) || catalogueMayBeTruncated)
+      .map((item) => ({
+        id: item.id,
+        product_name: item.product_name,
+        sku: item.sku,
+        price: item.price,
+      }));
+    const seen = new Set(leadItems.map((p) => p.id));
+    const catalogue: PickerProduct[] = active
+      .filter((p) => !seen.has(p.id))
+      .map((p) => ({ id: p.id, product_name: p.product_name, sku: p.sku, price: p.price }));
+    return [...leadItems, ...catalogue];
   }, [listProduct, leadsWithCurrent, clientData.lead_id]);
 
-  const [items, setItems] = useState<ItemRow[]>([
-    { product_id: "", title: "", sku: "", desc: "", qty: 1, discount: 0, unitPrice: 0 },
-  ]);
-
-  // Populate form if initialData is provided
+  // ── Server-side preview (debounced) ──────────────────────────────────────
+  const previewSeq = useRef(0);
   useEffect(() => {
-    if (initialData) {
-      // Map initial data to form state
-      setClientData({
-        lead_id: initialData.lead?.id || "",
-        clientName: initialData.lead?.contact?.name || "",
-        companyName: initialData.lead?.contact?.company || "",
-        officeLocation: initialData.lead?.office_location || "",
-        phoneNumber: initialData.lead?.contact?.phone_number || "",
-        emailAddress: initialData.lead?.contact?.email || "",
-        quotationTitle: initialData.quotation_title || "New Project Proposal",
-        quotationId: initialData.quotation_number || "", // Assuming number is the ID/Display ID
-        issueDate: initialData.created_at ? new Date(initialData.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        expiryDate: initialData.expire_date ? new Date(initialData.expire_date).toISOString().split('T')[0] : "",
-        salesperson: initialData.lead?.user?.fullname || "",
-      });
-
-      const rawItems = initialData.items || initialData.quotation_items || [];
-      const rawItemOthers = initialData.item_others || [];
-
-      // Merge both types of items
-      const allRawItems = [...rawItems, ...rawItemOthers];
-
-      if (allRawItems.length > 0) {
-        setItems(allRawItems.map((item: any) => ({
-          product_id: item.product_id,
-          title: item.product?.product_name || "Unknown Product",
-          sku: item.product?.sku || "",
-          desc: item.notes || "",
-          qty: item.quantity || 1,
-          discount: item.discount || 0,
-          unitPrice: item.product?.price || 0,
-        })));
-      }
-
-      if (initialData.notes) {
-        setNotes(initialData.notes);
-      }
+    if (readOnly) return;
+    const ready = items.length > 0 && items.every((row) => row.product_id && row.qty > 0);
+    if (!ready) {
+      setPreviewing(false);
+      return;
     }
-  }, [initialData]);
+    const seq = ++previewSeq.current;
+    setPreviewing(true);
+    // A change to the rows makes the last save's errors stale.
+    setSaveError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const token = await getToken();
+        const result = await previewQuotationTotals(token, {
+          items: items.map(itemPayload),
+          discount_type: headerDiscountType,
+          discount_value: round2(headerDiscountValue || 0),
+        });
+        if (seq !== previewSeq.current) return;
+        setTotals(result);
+        setPreviewError(null);
+      } catch (err) {
+        if (seq !== previewSeq.current) return;
+        setTotals(null);
+        setPreviewError(mapQuotationException(err));
+      } finally {
+        if (seq === previewSeq.current) setPreviewing(false);
+      }
+    }, PREVIEW_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [items, headerDiscountType, headerDiscountValue, readOnly, getToken]);
 
-  const [taxEnabled, setTaxEnabled] = useState(true);
-  const [notes, setNotes] = useState(
-    "It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!"
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.qty * Number(i.unitPrice), 0),
+  const fallbackSubtotal = useMemo(
+    () => items.reduce((sum, row) => sum + round2(row.qty * Number(row.unitPrice)), 0),
     [items]
   );
 
-  const discountAmount = useMemo(
-    () => items.reduce((sum, i) => {
-      const itemTotal = i.qty * Number(i.unitPrice);
-      const itemDiscount = (itemTotal * (i.discount || 0)) / 100;
-      return sum + itemDiscount;
-    }, 0),
-    [items]
-  );
+  // The save's errors win over the preview's: they are the most recent word.
+  const errors = saveError ?? previewError;
 
-  const taxAmount = useMemo(
-    () => (taxEnabled ? (subtotal - discountAmount) * 0.11 : 0),
-    [subtotal, discountAmount, taxEnabled]
-  );
-
-  const grandTotal = useMemo(
-    () => subtotal - discountAmount + taxAmount,
-    [subtotal, discountAmount, taxAmount]
-  );
-
+  // ── Row editing ──────────────────────────────────────────────────────────
   const updateQty = (index: number, qty: number) => {
     setItems((prev) => {
       const updated = [...prev];
@@ -189,133 +382,151 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     });
   };
 
-  const addItem = () =>
-    setItems((p) => [
-      ...p,
-      { product_id: "", title: "New Item", sku: "", desc: "", qty: 1, discount: 0, unitPrice: 0 },
-    ]);
+  const addItem = () => setItems((p) => [...p, newRow()]);
 
-  const removeItem = (index: number) =>
-    setItems((p) => p.filter((_, i) => i !== index));
+  const removeItem = (index: number) => setItems((p) => p.filter((_, i) => i !== index));
 
-  /* Validation Errors State */
-  const [validationErrors, setValidationErrors] = useState<any>(null);
+  const handleHeaderDiscountChange = (type: DiscountType, value: number) => {
+    setHeaderDiscountType(type);
+    setHeaderDiscountValue(value);
+  };
+
+  // ── Save / publish ───────────────────────────────────────────────────────
+  const buildDraftForm = (): FormData => {
+    const payload = new FormData();
+    payload.append("action", "draft");
+    payload.append("lead_id", clientData.lead_id);
+    payload.append("quotation_title", clientData.quotationTitle || "Untitled Quotation");
+    payload.append("expire_date", new Date(clientData.expiryDate).toISOString());
+    items.forEach((row) => payload.append("items", JSON.stringify(itemPayload(row))));
+    payload.append("discount_type", headerDiscountType);
+    payload.append("discount_value", String(round2(headerDiscountValue || 0)));
+    payload.append("terms", terms);
+    payload.append("payment_terms", paymentTerms);
+    return payload;
+  };
+
+  const validateBeforeSave = (): string | null => {
+    if (!clientData.lead_id) return "Pilih klien terlebih dahulu";
+    if (!clientData.expiryDate) return "Isi tanggal kedaluwarsa";
+    if (items.length === 0) return "Tambahkan minimal satu baris produk";
+    if (items.some((row) => !row.product_id)) return "Pilih produk untuk setiap baris";
+    if (items.some((row) => !(row.qty > 0))) return "Qty setiap baris harus lebih dari 0";
+    return null;
+  };
 
   const handleSave = async (action: "draft" | "publish") => {
-    // Reset errors on new submission
-    setValidationErrors(null);
-
-    if (!clientData.lead_id) {
-      notify.error("Validation Error", { description: "Please select a lead first" });
-      return;
-    }
-
-    const missingProduct = items.find(item => !item.product_id);
-    if (missingProduct) {
-      notify.error("Validation Error", { description: "Please select a product for all items" });
+    setSaveError(null);
+    const problem = validateBeforeSave();
+    if (problem) {
+      notify.error("Validasi", { description: problem });
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       const token = await getToken();
-      if (!token) throw new Error("No authentication token");
 
-      // Generate PDF first if publishing
-      let pdfBlob: Blob | null = null;
-      if (action === "publish") {
-        pdfBlob = await generatePDF();
-        if (!pdfBlob) {
-          setIsSubmitting(false);
-          return; // generatePDF already handles the user notification
-        }
+      // Step 1 - always a draft save. The number, the snapshots and every
+      // total are the server's; the PDF below is rendered from what came back.
+      const draftForm = buildDraftForm();
+      const saved = quotation?.id
+        ? await updateQuotation(token, quotation.id, draftForm)
+        : await createQuotation(token, draftForm);
+      const savedRow = saved.data;
+      setQuotation(savedRow);
+      setTotals(totalsFromQuotation(savedRow));
+      setItems(rowsFromQuotation(savedRow));
+
+      if (action === "draft") {
+        notify.success("Draft tersimpan", {
+          description: `Quotation ${savedRow.quotation_number} disimpan sebagai draft`,
+        });
+        if (isNew) router.replace(`/sales/quotation/${savedRow.id}`);
+        return;
       }
 
-      const payload = new FormData();
-      payload.append("action", action);
-      payload.append("lead_id", clientData.lead_id);
-      payload.append("quotation_title", clientData.quotationTitle || "Untitled Quotation");
-      payload.append("expire_date", clientData.expiryDate ? new Date(clientData.expiryDate).toISOString() : new Date().toISOString());
+      // Step 2 - the PDF, from the stored response.
+      const pdfBlob = await generatePDF(savedRow);
+      if (!pdfBlob) {
+        notify.warning("Draft tersimpan, PDF gagal dibuat", {
+          description: "Quotation tetap berstatus draft. Coba kirim lagi.",
+        });
+        if (isNew) router.replace(`/sales/quotation/${savedRow.id}`);
+        return;
+      }
 
-      // Append items as JSON strings
-      items.forEach((item) => {
-        const itemData = {
-          product_id: item.product_id,
-          quantity: item.qty, // Map qty to quantity
-          notes: item.desc || "", // Map desc to notes
-          discount: item.discount || 0,
-          price: item.unitPrice // Add price if needed by backend
-        };
-        payload.append("items", JSON.stringify(itemData));
+      // Step 3 - publish: status and attachment only, no items.
+      const publishForm = new FormData();
+      publishForm.append("action", "publish");
+      publishForm.append("attachments", pdfBlob, `quotation-${savedRow.quotation_number}.pdf`);
+      const published = await updateQuotation(token, savedRow.id, publishForm);
+      // The row is now `sent`: the stored totals are final. Retire any preview
+      // still in flight so it cannot land on top of them.
+      previewSeq.current += 1;
+      setPreviewing(false);
+      setQuotation(published.data);
+      setTotals(totalsFromQuotation(published.data));
+
+      if (!clientData.emailAddress) {
+        notify.warning("Kontak tanpa alamat email", {
+          description: "Quotation terkirim tanpa email; unduh PDF-nya untuk dibagikan.",
+        });
+      }
+      setSuccessData({
+        id: published.data.id,
+        number: published.data.quotation_number,
+        pdfUrl: URL.createObjectURL(pdfBlob),
       });
-
-      // Append PDF to payload if available
-      if (pdfBlob) {
-        payload.append("attachments", pdfBlob, "quotation.pdf");
-      }
-
-      // 1. Save or Update the quotation
-      let result;
-      if (initialData?.id || initialData?.quotation_number) {
-        // It's an update
-        const quotationId = initialData.id || initialData.quotation_number;
-        result = await updateQuotation(token, quotationId, payload);
-
-        if (action === "publish") {
-          notify.success("Success", { description: "Quotation updated and sent successfully!" });
-        } else {
-          notify.success("Success", { description: "Quotation updated successfully!" });
-        }
-      } else {
-        // It's a creation
-        result = await createQuotation(token, payload);
-
-        if (action === "publish") {
-          notify.success("Success", { description: "Quotation saved and sent successfully!" });
-        } else {
-          notify.success("Success", { description: "Quotation saved as draft successfully!" });
-        }
-      }
-
-      // 2. If action is "publish", we no longer need to manually call send-email API
-      // as the backend handles it when action is "publish" and attachment is present.
-      if (action === "publish" && pdfBlob) {
-        // Logic mainly to facilitate PDF generation for attachment; 
-        if (!clientData.emailAddress) {
-          throw new Error("Client email address is required to send the quotation");
-        }
-
-        const realQuotationUuid = result?.data?.id || initialData?.id || "";
-        const realQuotationNumber = result?.data?.quotation_number || initialData?.quotation_number || "NEW-QUOTATION";
-
-        if (pdfBlob) {
-          const pdfUrl = URL.createObjectURL(pdfBlob);
-          setSuccessData({
-            id: realQuotationUuid,
-            number: realQuotationNumber,
-            pdfUrl
-          });
-          setShowSuccessModal(true);
-        }
-      }
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Failed to process quotation:", error);
-      notify.error("Error", { description: error.message || "Failed to process quotation" });
-
-      // Set validations if details exist
-      if (error.details) {
-        setValidationErrors(error.details);
-      }
+      const mapped = mapQuotationException(error);
+      setSaveError(mapped);
+      notify.error("Gagal memproses quotation", { description: mapped.message });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const generatePDF = async () => {
+  const handleSuccessClose = () => {
+    setShowSuccessModal(false);
+    // The page was /add; the row now has an address of its own.
+    if (!initialData && quotation?.id) router.replace(`/sales/quotation/${quotation.id}`);
+  };
+
+  // ── sent -> accepted | rejected ──────────────────────────────────────────
+  const handleConfirmDecision = async () => {
+    if (!decision || !quotation) return;
+    setIsDeciding(true);
+    try {
+      const token = await getToken();
+      const updated = await transitionQuotationStatus(token, quotation.id, { status: decision });
+      setQuotation(updated);
+      setTotals(totalsFromQuotation(updated));
+      notify.success(
+        decision === "accepted" ? "Quotation ditandai diterima" : "Quotation ditandai ditolak"
+      );
+      setDecision(null);
+    } catch (error: any) {
+      notify.error("Gagal mengubah status", {
+        description: mapQuotationException(error).message,
+      });
+    } finally {
+      setIsDeciding(false);
+    }
+  };
+
+  // ── PDF ──────────────────────────────────────────────────────────────────
+  const generatePDF = async (row: Quotation): Promise<Blob | null> => {
+    // Commit the stored row to the hidden template synchronously, then let
+    // the browser paint it, so the clone below captures the server's numbers.
+    flushSync(() => setPdfQuotation(row));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
     const originalElement = document.getElementById("quotation-content");
     if (!originalElement) {
-      notify.error("Error", { description: "Quotation template not found" });
+      notify.error("Error", { description: "Template quotation tidak ditemukan" });
       return null;
     }
 
@@ -323,8 +534,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     const element = originalElement.cloneNode(true) as HTMLElement;
 
     // Style the clone to be visible to html2canvas but unobtrusive to user
-    // We use a high z-index but place it behind a white overlay or just rely on speed
-    // Actually, z-index -1 works best usually, as long as it's within the viewport
     element.style.position = "absolute";
     element.style.top = "0";
     element.style.left = "0";
@@ -337,9 +546,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
     try {
       // html2canvas-pro and jsPDF are loaded HERE, not at module scope: both
-      // are large and are only needed by this one download handler, so a
-      // static import made every visitor of this page pay for them whether or
-      // not they ever export a PDF.
+      // are large and are only needed by this one handler, so a static
+      // import made every visitor of this page pay for them whether or not
+      // they ever export a PDF.
       const [h2cMod, jspdfMod] = await Promise.all([
         import("html2canvas-pro"),
         import("jspdf"),
@@ -351,7 +560,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       const jsPDF = (jspdfMod as any).jsPDF ?? (jspdfMod as any).default;
 
       // Small timeout to ensure DOM render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(element, {
         scale: 1.5, // Reduced scale to optimize size (was 2)
@@ -366,7 +575,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         orientation: "portrait",
         unit: "mm",
         format: "a4",
-        compress: true // Enable PDF compression
+        compress: true, // Enable PDF compression
       });
 
       const imgWidth = 210;
@@ -379,7 +588,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       return blob;
     } catch (error: any) {
       console.error("PDF Generation Error:", error);
-      notify.error("PDF Error", { description: error.message || "Failed to generate PDF" });
+      notify.error("PDF Error", { description: error.message || "Gagal membuat PDF" });
 
       if (document.body.contains(element)) {
         document.body.removeChild(element);
@@ -388,27 +597,91 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     }
   };
 
+  // ── Read-only banner copy ────────────────────────────────────────────────
+  const bannerText = useMemo(() => {
+    if (!quotation || !readOnly) return "";
+    switch (status) {
+      case QUOTATION_STATUS.SENT:
+        return `Terkirim ke pelanggan pada ${safeDate(quotation.sent_at, "dd MMM yyyy HH:mm")}. Quotation yang sudah terkirim tidak bisa diedit.`;
+      case QUOTATION_STATUS.ACCEPTED:
+        return `Diterima pelanggan pada ${safeDate(quotation.accepted_at, "dd MMM yyyy HH:mm")}.`;
+      case QUOTATION_STATUS.REJECTED:
+        return "Ditolak pelanggan. Buat quotation baru untuk penawaran berikutnya.";
+      default:
+        return `Quotation berstatus ${quotationStatusMeta(status).label} dan tidak bisa diedit.`;
+    }
+  }, [quotation, readOnly, status]);
+
+  const pdfTaxNote = pdfQuotation
+    ? pdfQuotation.prices_include_tax
+      ? "Harga sudah termasuk PPN"
+      : "Harga belum termasuk PPN"
+    : "";
+
   return (
     <div className="p-6">
       <PageHeader
-        title="Quotation Builder"
+        title={isNew ? "Quotation Builder" : quotation.quotation_number}
         breadcrumbs={[
           { label: "Sales" },
-          { label: "Quotation Builder" },
-          { label: "Add Quotation" },
+          { label: "Quotation Builder", href: "/sales/quotation" },
+          { label: isNew ? "Add Quotation" : quotation.quotation_number },
         ]}
+        actions={
+          quotation ? (
+            <QuotationStatusChip
+              status={quotation.quotation_status}
+              expireDate={quotation.expire_date}
+            />
+          ) : undefined
+        }
       />
+
+      {readOnly && quotation && (
+        <div
+          className="mb-6 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          role="status"
+        >
+          <div className="flex items-center gap-3">
+            <QuotationStatusChip
+              status={quotation.quotation_status}
+              expireDate={quotation.expire_date}
+            />
+            <p className="text-sm text-gray-700">{bannerText}</p>
+          </div>
+          {canDecideQuotation(status) && (
+            <div className="flex gap-2">
+              <AppButton
+                variantStyle="primary"
+                color="success"
+                onClick={() => setDecision("accepted")}
+                disabled={isDeciding}
+              >
+                Tandai diterima
+              </AppButton>
+              <AppButton
+                variantStyle="outline"
+                color="danger"
+                onClick={() => setDecision("rejected")}
+                disabled={isDeciding}
+              >
+                Tandai ditolak
+              </AppButton>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col rounded-2xl border border-gray-300 p-2">
         <div className="lg:col-span-2 space-y-8">
-
           <ClientDetailsCard
             clientData={clientData}
             setClientData={setClientData}
             leads={leadsWithCurrent}
             isLoadingLeads={isLoadingLeads}
             onClientSearch={setClientSearchQuery}
-            isReadOnlyClient={!!initialData}
+            isReadOnlyClient={!isNew}
+            readOnly={readOnly}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
 
@@ -419,12 +692,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             addItem={addItem}
             removeItem={removeItem}
             listProduct={availableProducts}
-            clientData={clientData}
-            validationErrors={validationErrors}
-          // loading={isLoadingProducts} // Removed as we don't have this loading state anymore
+            totals={totals}
+            rowErrors={errors?.fieldsByRow ?? {}}
+            rowMessages={errors?.byRow ?? {}}
+            readOnly={readOnly}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between px-6">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between px-6">
             <section className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <label htmlFor="salesperson" className="text-foreground font-medium">
                 Salesperson:
@@ -440,129 +714,229 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
               />
             </section>
             <SummaryCard
-              subtotal={subtotal}
-              discountAmount={discountAmount}
-              taxEnabled={taxEnabled}
-              taxAmount={taxAmount}
-              grandTotal={grandTotal}
-              setTaxEnabled={setTaxEnabled}
+              totals={totals}
+              fallbackSubtotal={fallbackSubtotal}
+              defaultTaxRate={quotation?.tax_rate ?? defaults?.tax_rate ?? null}
+              defaultPricesIncludeTax={quotation?.prices_include_tax ?? defaults?.prices_include_tax ?? null}
+              headerDiscountType={headerDiscountType}
+              headerDiscountValue={headerDiscountValue}
+              onHeaderDiscountChange={handleHeaderDiscountChange}
+              headerError={errors?.header}
+              maxDiscountPercent={defaults?.max_discount_percent ?? null}
+              readOnly={readOnly}
+              previewing={previewing}
             />
           </div>
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
-          <NotesCard notes={notes} onChange={setNotes} />
+          <TermsCard
+            terms={terms}
+            paymentTerms={paymentTerms}
+            onTermsChange={setTerms}
+            onPaymentTermsChange={setPaymentTerms}
+            readOnly={readOnly}
+          />
           <div className="flex justify-end items-center mb-8 px-6">
             <div className="flex flex-wrap justify-end gap-3">
-              <Link href="/sales/quotation">
-                <AppButton variantStyle="danger" color="danger">
-                  Cancel
-                </AppButton>
-              </Link>
+              {readOnly ? (
+                <Link href="/sales/quotation">
+                  <AppButton variantStyle="outline" color="primary">
+                    Kembali ke daftar
+                  </AppButton>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/sales/quotation">
+                    <AppButton variantStyle="danger" color="danger">
+                      Cancel
+                    </AppButton>
+                  </Link>
 
-              <AppButton
-                variantStyle="outline"
-                color="primary"
-                onClick={() => handleSave("draft")}
-                isLoading={isSubmitting}
-              >
-                Save As Draft
-              </AppButton>
+                  <AppButton
+                    variantStyle="outline"
+                    color="primary"
+                    onClick={() => handleSave("draft")}
+                    isLoading={isSubmitting}
+                    disabled={isSubmitting}
+                  >
+                    Simpan sebagai Draft
+                  </AppButton>
 
-              <AppButton
-                variantStyle="primary"
-                color="primary"
-                onClick={() => handleSave("publish")}
-                isLoading={isSubmitting}
-              >
-                Publish
-              </AppButton>
+                  <AppButton
+                    variantStyle="primary"
+                    color="primary"
+                    onClick={() => handleSave("publish")}
+                    isLoading={isSubmitting}
+                    disabled={isSubmitting}
+                  >
+                    Kirim ke Pelanggan
+                  </AppButton>
+                </>
+              )}
             </div>
           </div>
 
           <QuotationSuccessModal
             open={showSuccessModal}
-            onClose={() => setShowSuccessModal(false)}
+            onClose={handleSuccessClose}
             quotationId={successData.id}
             quotationNumber={successData.number}
             pdfUrl={successData.pdfUrl}
           />
+
+          <ConfirmationPopup
+            isOpen={!!decision}
+            onClose={() => setDecision(null)}
+            onConfirm={handleConfirmDecision}
+            title={decision === "accepted" ? "Tandai diterima" : "Tandai ditolak"}
+            description={
+              decision === "accepted"
+                ? `Tandai quotation ${quotation?.quotation_number ?? ""} sebagai diterima pelanggan? Status tidak bisa diubah kembali.`
+                : `Tandai quotation ${quotation?.quotation_number ?? ""} sebagai ditolak pelanggan? Status tidak bisa diubah kembali.`
+            }
+            confirmText={decision === "accepted" ? "Tandai diterima" : "Tandai ditolak"}
+            cancelText="Batal"
+            variant={decision === "accepted" ? "info" : "warning"}
+            isLoading={isDeciding}
+          />
         </div>
       </div>
 
-
-      {/* Hidden printable area for PDF generation */}
-      <div id="quotation-content" className="absolute -top-2500 -left-2500 w-200 p-8 border"
-        style={{ backgroundColor: "#ffffff", borderColor: "#d1d5db" }}>
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>{clientData.quotationTitle}</h1>
-          <p style={{ color: "#6b7280" }}>{clientData.quotationId === "QT-2024-001" ? "DRAFT" : clientData.quotationId}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8 mb-8" style={{ color: "#000000" }}>
-          <div>
-            <h3 className="font-bold mb-2">Client Details</h3>
-            <p>Name: {clientData.clientName}</p>
-            <p>Company: {clientData.companyName}</p>
-            <p>Email: {clientData.emailAddress}</p>
-            <p>Phone: {clientData.phoneNumber}</p>
-          </div>
-          <div className="text-right">
-            <p>Issue Date: {clientData.issueDate}</p>
-            <p>Expiry Date: {clientData.expiryDate}</p>
-          </div>
-        </div>
-
-        <table className="w-full mb-8 border-collapse">
-          <thead>
-            <tr className="border-b-2" style={{ borderColor: "#1f2937" }}>
-              <th className="text-left py-2" style={{ color: "#000000" }}>Item</th>
-              <th className="text-right py-2" style={{ color: "#000000" }}>Qty</th>
-              <th className="text-right py-2" style={{ color: "#000000" }}>Price</th>
-              <th className="text-right py-2" style={{ color: "#000000" }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, idx) => (
-              <tr key={idx} className="border-b" style={{ borderColor: "#e5e7eb" }}>
-                <td className="py-2">
-                  <p className="font-bold" style={{ color: "#000000" }}>{item.title}</p>
-                  <p className="text-sm" style={{ color: "#6b7280" }}>{item.desc}</p>
-                </td>
-                <td className="text-right py-2" style={{ color: "#000000" }}>{item.qty}</td>
-                <td className="text-right py-2" style={{ color: "#000000" }}>${item.unitPrice.toLocaleString()}</td>
-                <td className="text-right py-2" style={{ color: "#000000" }}>${(item.qty * item.unitPrice).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end" style={{ color: "#000000" }}>
-          <div className="w-64">
-            <div className="flex justify-between mb-2">
-              <span>Subtotal:</span>
-              <span>${subtotal.toLocaleString()}</span>
+      {/* Hidden printable area for PDF generation - rendered from the STORED
+          row (`pdfQuotation`), set right after the draft save, never from the
+          form's own state. */}
+      <div
+        id="quotation-content"
+        className="absolute -top-2500 -left-2500 w-200 p-8 border"
+        style={{ backgroundColor: "#ffffff", borderColor: "#d1d5db" }}
+      >
+        {pdfQuotation && (
+          <>
+            <div className="mb-8 flex justify-between items-start gap-6">
+              <div>
+                <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>
+                  {pdfQuotation.quotation_title}
+                </h1>
+                <p style={{ color: "#6b7280" }}>{pdfQuotation.quotation_number}</p>
+              </div>
+              <div className="text-right text-sm" style={{ color: "#000000" }}>
+                <p>Tanggal: {safeDate(pdfQuotation.created_at)}</p>
+                <p>Berlaku hingga: {safeDate(pdfQuotation.expire_date)}</p>
+              </div>
             </div>
-            <div className="flex justify-between mb-2">
-              <span>Discount:</span>
-              <span>-${discountAmount.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span>Tax (21%):</span>
-              <span>${taxAmount.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between font-bold text-lg border-t pt-2" style={{ borderColor: "#1f2937" }}>
-              <span>Total:</span>
-              <span>${grandTotal.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
 
-        {notes && (
-          <div className="mt-8 pt-8 border-t" style={{ borderColor: "#e5e7eb" }}>
-            <h3 className="font-bold mb-2" style={{ color: "#000000" }}>Notes</h3>
-            <p className="text-sm whitespace-pre-wrap" style={{ color: "#4b5563" }}>{notes}</p>
-          </div>
+            <div className="grid grid-cols-2 gap-8 mb-8" style={{ color: "#000000" }}>
+              <div>
+                <h3 className="font-bold mb-2">Kepada</h3>
+                <p>{pdfQuotation.lead?.contact?.name || "-"}</p>
+                <p>{pdfQuotation.lead?.contact?.company || ""}</p>
+                <p>{pdfQuotation.lead?.contact?.email || ""}</p>
+                <p>{pdfQuotation.lead?.contact?.phone_number || ""}</p>
+              </div>
+              <div className="text-right">
+                <h3 className="font-bold mb-2">Sales</h3>
+                <p>{pdfQuotation.lead?.user?.fullname || "-"}</p>
+                <p>{pdfQuotation.lead?.user?.email || ""}</p>
+              </div>
+            </div>
+
+            <table className="w-full mb-8 border-collapse">
+              <thead>
+                <tr className="border-b-2" style={{ borderColor: "#1f2937" }}>
+                  <th className="text-left py-2" style={{ color: "#000000" }}>Item</th>
+                  <th className="text-right py-2" style={{ color: "#000000" }}>Qty</th>
+                  <th className="text-right py-2" style={{ color: "#000000" }}>Harga satuan</th>
+                  <th className="text-right py-2" style={{ color: "#000000" }}>Diskon</th>
+                  <th className="text-right py-2" style={{ color: "#000000" }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pdfQuotation.items.map((item, idx) => (
+                  <tr key={item.id ?? idx} className="border-b" style={{ borderColor: "#e5e7eb" }}>
+                    <td className="py-2">
+                      <p className="font-bold" style={{ color: "#000000" }}>
+                        {item.product_name_snapshot ?? item.product?.product_name ?? "-"}
+                      </p>
+                      <p className="text-xs" style={{ color: "#6b7280" }}>
+                        {item.sku_snapshot ?? item.product?.sku ?? ""}
+                      </p>
+                      {item.notes && (
+                        <p className="text-sm" style={{ color: "#6b7280" }}>{item.notes}</p>
+                      )}
+                    </td>
+                    <td className="text-right py-2" style={{ color: "#000000" }}>
+                      {formatQuantity(item.quantity)}
+                    </td>
+                    <td className="text-right py-2" style={{ color: "#000000" }}>
+                      {formatRupiah(item.unit_price)}
+                    </td>
+                    <td className="text-right py-2" style={{ color: "#000000" }}>
+                      {Number(item.discount_value) > 0
+                        ? discountLabel(item.discount_type, item.discount_value)
+                        : "-"}
+                    </td>
+                    <td className="text-right py-2" style={{ color: "#000000" }}>
+                      {formatRupiah(item.line_total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex justify-end" style={{ color: "#000000" }}>
+              <div className="w-72">
+                <div className="flex justify-between mb-2">
+                  <span>Subtotal</span>
+                  <span>{formatRupiah(pdfQuotation.subtotal)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>
+                    Diskon
+                    {Number(pdfQuotation.discount_value) > 0
+                      ? ` (header ${discountLabel(pdfQuotation.discount_type, pdfQuotation.discount_value)})`
+                      : ""}
+                  </span>
+                  <span>- {formatRupiah(pdfQuotation.discount_total)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>Jumlah kena pajak</span>
+                  <span>{formatRupiah(pdfQuotation.taxable_amount)}</span>
+                </div>
+                <div className="flex justify-between mb-2">
+                  <span>PPN {formatPercent(pdfQuotation.tax_rate)}%</span>
+                  <span>{formatRupiah(pdfQuotation.tax_total)}</span>
+                </div>
+                <div
+                  className="flex justify-between font-bold text-lg border-t pt-2"
+                  style={{ borderColor: "#1f2937" }}
+                >
+                  <span>Grand Total</span>
+                  <span>{formatRupiah(pdfQuotation.grand_total)}</span>
+                </div>
+                <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{pdfTaxNote}</p>
+              </div>
+            </div>
+
+            {(pdfQuotation.payment_terms || pdfQuotation.terms) && (
+              <div className="mt-8 pt-8 border-t" style={{ borderColor: "#e5e7eb" }}>
+                {pdfQuotation.payment_terms && (
+                  <div className="mb-4">
+                    <h3 className="font-bold mb-1" style={{ color: "#000000" }}>Termin pembayaran</h3>
+                    <p className="text-sm" style={{ color: "#4b5563" }}>{pdfQuotation.payment_terms}</p>
+                  </div>
+                )}
+                {pdfQuotation.terms && (
+                  <div>
+                    <h3 className="font-bold mb-1" style={{ color: "#000000" }}>Syarat &amp; ketentuan</h3>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: "#4b5563" }}>
+                      {pdfQuotation.terms}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
-    </div >
+    </div>
   );
 }

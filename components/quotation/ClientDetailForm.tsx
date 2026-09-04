@@ -14,7 +14,10 @@ interface ClientDetailsProps {
   leads?: QuotationLead[]
   isLoadingLeads?: boolean
   onClientSearch?: (query: string) => void
+  /** The client cannot be swapped on an existing quotation. */
   isReadOnlyClient?: boolean
+  /** Nothing is editable: the quotation is no longer a draft. */
+  readOnly?: boolean
 }
 
 interface ClientDetailsData {
@@ -37,6 +40,7 @@ export default function ClientDetailsSection({
   isLoadingLeads = false,
   onClientSearch = () => { },
   isReadOnlyClient = false,
+  readOnly = false,
 }: ClientDetailsProps) {
   const handleChange = (
     field: keyof ClientDetailsData,
@@ -229,16 +233,30 @@ export default function ClientDetailsSection({
               isBgWhite
               height="48px"
               rounded="8px"
+              disabled={readOnly}
             />
           </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700">Expiry Date</Label>
-            <AppDatePicker
-              isBgWhite
-              value={clientData.expiryDate ? new Date(clientData.expiryDate) : null}
-              onChange={(date: any) => handleChange("expiryDate", date ? format(date, "yyyy-MM-dd") : "")}
-            />
+            {/* AppDatePicker has no disabled prop, so a read-only quotation
+                shows its expiry as a disabled field: out of reach for mouse,
+                keyboard and screen reader alike, like every other field. */}
+            {readOnly ? (
+              <AppInput
+                value={clientData.expiryDate ? format(new Date(clientData.expiryDate), "dd MMM yyyy") : "-"}
+                disabled={true}
+                isBgWhite
+                height="48px"
+                rounded="8px"
+              />
+            ) : (
+              <AppDatePicker
+                isBgWhite
+                value={clientData.expiryDate ? new Date(clientData.expiryDate) : null}
+                onChange={(date: any) => handleChange("expiryDate", date ? format(date, "yyyy-MM-dd") : "")}
+              />
+            )}
           </div>
         </div>
       </div>

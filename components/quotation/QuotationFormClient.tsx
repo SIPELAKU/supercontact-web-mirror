@@ -32,6 +32,7 @@ import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
 import { notify } from "@/lib/notifications";
 import { CATALOGUE_LIMIT, useGetProductStore } from "@/lib/store/product";
 import { customFieldErrorsByKey, validateCustomFieldValues } from "@/lib/utils/customFieldValues";
+import { billingPeriodSuffix } from "@/lib/utils/priceSource";
 import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
 import QuotationCustomFieldsCard from "@/components/quotation/QuotationCustomFieldsCard";
 import type {
@@ -75,6 +76,11 @@ const newRow = (): ItemRow => ({
   unitLabel: null,
   unitPrecision: 2,
   attributes: {},
+  overridePrice: null,
+  overrideReason: "",
+  overrideAllowed: false,
+  priceList: null,
+  billingPeriod: null,
 });
 
 function toDateInput(value?: string | null, fallback?: Date): string {
@@ -110,6 +116,14 @@ function rowsFromQuotation(row: Quotation): ItemRow[] {
     unitLabel: item.unit_label_snapshot ?? item.product?.unit?.name ?? null,
     unitPrecision: item.product?.unit?.precision ?? 2,
     attributes: item.product?.custom_fields ?? {},
+    // A stored manual override is seeded back into the controls. Without this,
+    // reopening a draft and pressing Save would silently re-resolve the line
+    // and lose both the price the seller agreed and the reason for it.
+    overridePrice: item.price_source === "manual" ? Number(item.unit_price) || 0 : null,
+    overrideReason: item.price_source === "manual" ? item.override_reason ?? "" : "",
+    overrideAllowed: item.override_allowed ?? false,
+    priceList: item.price_list ?? null,
+    billingPeriod: item.billing_period ?? null,
   }));
 }
 
@@ -153,15 +167,27 @@ function totalsFromQuotation(row: Quotation): QuotationTotals {
         effective_discount_percent: gross > 0 ? round2((discounted / gross) * 100).toFixed(2) : "0.00",
         unit_label_snapshot: item.unit_label_snapshot ?? null,
         unit_precision: item.product?.unit?.precision ?? 2,
+        // Phase 2 (S3-6). Read-only mode returns early from the preview effect,
+        // so without these five a saved or sent quotation would render its
+        // price source from the CODE fallback instead of the list NAME - on the
+        // very view a customer-facing seller looks at most.
+        price_list: item.price_list ?? null,
+        resolved_unit_price: item.resolved_unit_price ?? null,
+        override_allowed: item.override_allowed ?? false,
+        override_reason: item.override_reason ?? null,
+        tier_min_quantity: item.tier_min_quantity ?? null,
+        billing_period: item.billing_period ?? null,
       };
     }),
+    // A stored quotation was always priced with its customer's context.
+    price_context: "lead",
   };
 }
 
 /** One line exactly as QuotationItemRequest accepts it - no `price` key. */
 function itemPayload(row: ItemRow): QuotationItemPayload {
   const discountValue = round2(row.discountValue || 0);
-  return {
+  const payload: QuotationItemPayload = {
     product_id: row.product_id,
     quantity: round2(row.qty),
     notes: row.desc || "",
@@ -169,6 +195,25 @@ function itemPayload(row: ItemRow): QuotationItemPayload {
     discount_type: row.discountType,
     discount_value: discountValue,
   };
+  // Only when the seller actually set one AND it is complete: the schema
+  // forbids unknown keys, and the server refuses a `unit_price` the winning
+  // price list does not permit, or one sent without a reason.
+  //
+  // An INCOMPLETE override (price cleared, reason still empty) is deliberately
+  // not sent: the preview runs on every keystroke, and sending it would turn
+  // the whole summary into an error for the seconds it takes to type a reason.
+  // `validateBeforeSave` refuses the save instead, so it can never be dropped
+  // silently.
+  if (isOverrideComplete(row)) {
+    payload.unit_price = round2(row.overridePrice as number);
+    payload.override_reason = row.overrideReason.trim();
+  }
+  return payload;
+}
+
+/** A row carries a manual price the server will accept the shape of. */
+function isOverrideComplete(row: ItemRow): boolean {
+  return row.overridePrice !== null && row.overridePrice > 0 && row.overrideReason.trim() !== "";
 }
 
 function discountLabel(type: DiscountType, value: string | number): string {
@@ -343,6 +388,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         price: item.price,
         unit: item.unit ?? null,
         custom_fields: item.custom_fields ?? {},
+        // Phase 2 (spec D6): the lead picker knows this customer's price.
+        resolvedPrice: item.resolved_unit_price ?? null,
       }));
     const seen = new Set(leadItems.map((p) => p.id));
     const rest: PickerProduct[] = active
@@ -354,6 +401,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         price: p.price,
         unit: p.unit,
         custom_fields: p.custom_fields,
+        billing_period: p.billing_period,
       }));
     return [...leadItems, ...rest];
   }, [catalogue, leadsWithCurrent, clientData.lead_id]);
@@ -378,6 +426,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           items: items.map(itemPayload),
           discount_type: headerDiscountType,
           discount_value: round2(headerDiscountValue || 0),
+          // The customer context prices the lines. Without it the server
+          // prices with the company default list only and answers
+          // `price_context: "none"` - and that same context is what an
+          // override is validated against (spec A12/A14).
+          lead_id: clientData.lead_id || null,
         });
         if (seq !== previewSeq.current) return;
         setTotals(result);
@@ -391,7 +444,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       }
     }, PREVIEW_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [items, headerDiscountType, headerDiscountValue, readOnly, getToken]);
+    // `clientData.lead_id` belongs in here: changing the client changes the
+    // price, and leaving it out left the previous customer's prices on screen.
+  }, [items, headerDiscountType, headerDiscountValue, readOnly, getToken, clientData.lead_id]);
 
   const fallbackSubtotal = useMemo(
     () => items.reduce((sum, row) => sum + round2(row.qty * Number(row.unitPrice)), 0),
@@ -482,6 +537,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     if (items.length === 0) return "Tambahkan minimal satu baris produk";
     if (items.some((row) => !row.product_id)) return "Pilih produk untuk setiap baris";
     if (items.some((row) => !(row.qty > 0))) return "Qty setiap baris harus lebih dari 0";
+    // An override that is set but incomplete is never sent (itemPayload), so it
+    // has to stop the save rather than vanish out of it.
+    const badPrice = items.findIndex((row) => row.overridePrice !== null && !(row.overridePrice > 0));
+    if (badPrice >= 0) return `Harga manual baris ${badPrice + 1} harus lebih dari 0`;
+    const noReason = items.findIndex(
+      (row) => row.overridePrice !== null && row.overrideReason.trim() === ""
+    );
+    if (noReason >= 0) return `Alasan harga manual baris ${noReason + 1} wajib diisi`;
     if (quotationDefinitions.length > 0) {
       const { errors: cfErrors } = prepareCustomFields();
       setCustomFieldErrors(cfErrors);
@@ -774,6 +837,12 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             rowMessages={errors?.byRow ?? {}}
             readOnly={readOnly}
             productDefinitions={productDefinitions}
+            // A row with no server line yet is showing the CATALOGUE price,
+            // which is provisional until the preview lands - and plain wrong to
+            // show at all once the preview has failed.
+            previewing={previewing}
+            previewFailed={!!previewError}
+            priceContext={totals?.price_context ?? "none"}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between px-6">
@@ -791,21 +860,34 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                 height="40px"
               />
             </section>
-            <SummaryCard
-              totals={totals}
-              fallbackSubtotal={fallbackSubtotal}
-              defaultTaxRate={quotation?.tax_rate ?? defaults?.tax_rate ?? null}
-              defaultPricesIncludeTax={quotation?.prices_include_tax ?? defaults?.prices_include_tax ?? null}
-              headerDiscountType={headerDiscountType}
-              headerDiscountValue={headerDiscountValue}
-              onHeaderDiscountChange={handleHeaderDiscountChange}
-              // The policy refusal (details.header) or a header-field refusal
-              // on the discount value itself (details.errors[]).
-              headerError={errors?.header ?? errors?.fieldsHeader?.discount_value}
-              maxDiscountPercent={defaults?.max_discount_percent ?? null}
-              readOnly={readOnly}
-              previewing={previewing}
-            />
+            <div className="flex flex-col items-stretch gap-2">
+              {!readOnly && totals?.price_context === "none" && (
+                <p
+                  className="self-end rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900"
+                  role="status"
+                >
+                  Harga sementara - pilih pelanggan untuk harga final
+                </p>
+              )}
+              <SummaryCard
+                totals={totals}
+                fallbackSubtotal={fallbackSubtotal}
+                defaultTaxRate={quotation?.tax_rate ?? defaults?.tax_rate ?? null}
+                defaultPricesIncludeTax={
+                  quotation?.prices_include_tax ?? defaults?.prices_include_tax ?? null
+                }
+                headerDiscountType={headerDiscountType}
+                headerDiscountValue={headerDiscountValue}
+                onHeaderDiscountChange={handleHeaderDiscountChange}
+                // The policy refusal (details.header) or a header-field refusal
+                // on the discount value itself (details.errors[]).
+                headerError={errors?.header ?? errors?.fieldsHeader?.discount_value}
+                maxDiscountPercent={defaults?.max_discount_percent ?? null}
+                readOnly={readOnly}
+                previewing={previewing}
+                previewFailed={!!previewError}
+              />
+            </div>
           </div>
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
           <TermsCard
@@ -973,6 +1055,16 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                     </td>
                     <td className="text-right py-2" style={{ color: "#000000" }}>
                       {formatRupiah(item.unit_price)}
+                      {/* A recurring line says so on the CUSTOMER's copy too:
+                          "Rp 500.000/bulan" against a 12-period total is not
+                          the same offer as "Rp 500.000" (spec A24 / I6.6).
+                          The snapshot travels on the stored row, so the PDF
+                          keeps saying it after the product is re-typed. */}
+                      {billingPeriodSuffix(item.billing_period) && (
+                        <span style={{ color: "#6b7280" }}>
+                          {billingPeriodSuffix(item.billing_period)}
+                        </span>
+                      )}
                     </td>
                     <td className="text-right py-2" style={{ color: "#000000" }}>
                       {Number(item.discount_value) > 0

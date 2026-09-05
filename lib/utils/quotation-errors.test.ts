@@ -221,3 +221,98 @@ describe('mapQuotationError - header custom fields (details.errors[])', () => {
     expect(result.fieldsHeader.discount_value).toBe('too much');
   });
 });
+
+/**
+ * Phase 2: a manual override is refused per ROW, in the same indexed
+ * `details.items[]` shape, under the field the seller actually used -
+ * `unit_price` for the price control and `override_reason` for its reason.
+ * Both names are in `ProductsServicesTable`'s FIELD_SLOTS, so the message lands
+ * beside the control instead of in the unlabelled red paragraph at the bottom
+ * of the row. No mapper change was needed; these pin that.
+ */
+describe('mapQuotationError - manual override refusals (Phase 2)', () => {
+  it('routes an override that the winning price list forbids under unit_price', () => {
+    const sentence = 'Daftar harga yang berlaku pada baris ini tidak mengizinkan harga manual';
+    const result = mapQuotationError(
+      {
+        items: [
+          { index: 1, product_id: 'p-2', errors: [{ field: 'unit_price', message: sentence }] },
+        ],
+      },
+      'Some items are invalid',
+      'VALIDATION_ERROR'
+    );
+    expect(result.fieldsByRow[1].unit_price).toBe(sentence);
+    expect(result.fieldsByRow[1].override_reason).toBeUndefined();
+    expect(result.byRow[1]).toBe(`unit_price: ${sentence}`);
+  });
+
+  it('distinguishes the "tenant has no price list at all" refusal, still under unit_price', () => {
+    const sentence =
+      'Harga manual belum tersedia: tenant ini belum punya daftar harga yang mengizinkannya';
+    const result = mapQuotationError(
+      { items: [{ index: 0, errors: [{ field: 'unit_price', message: sentence }] }] },
+      'Some items are invalid'
+    );
+    expect(result.fieldsByRow[0].unit_price).toBe(sentence);
+  });
+
+  it('routes a missing reason under override_reason', () => {
+    const result = mapQuotationError(
+      {
+        items: [
+          {
+            index: 2,
+            errors: [{ field: 'override_reason', message: 'Alasan override wajib diisi' }],
+          },
+        ],
+      },
+      'Some items are invalid'
+    );
+    expect(result.fieldsByRow[2].override_reason).toBe('Alasan override wajib diisi');
+    expect(result.fieldsByRow[2].unit_price).toBeUndefined();
+  });
+
+  it('keeps both override fields separate when one row breaks both rules', () => {
+    const result = mapQuotationError({
+      items: [
+        {
+          index: 0,
+          errors: [
+            { field: 'unit_price', message: 'harga tidak diizinkan' },
+            { field: 'override_reason', message: 'Alasan override wajib diisi' },
+          ],
+        },
+      ],
+    });
+    expect(result.fieldsByRow[0]).toEqual({
+      unit_price: 'harga tidak diizinkan',
+      override_reason: 'Alasan override wajib diisi',
+    });
+  });
+
+  it('lands a policy refusal measured against the resolved price under unit_price, not discount', () => {
+    // An override IS a seller discount for the policy: the server relabels the
+    // violation so the refusal appears under the control that caused it.
+    const sentence = 'Diskon 40% melebihi batas kebijakan diskon perusahaan (maks 25%)';
+    const result = mapQuotationError(
+      {
+        policy: { id: 'pol-1', applies_to: 'company', max_discount_percent: '25.00' },
+        items: [
+          {
+            index: 0,
+            product_id: 'p-1',
+            effective_discount_percent: '40.00',
+            errors: [{ field: 'unit_price', message: sentence }],
+          },
+        ],
+      },
+      sentence,
+      DISCOUNT_POLICY_VIOLATION
+    );
+    expect(result.code).toBe(DISCOUNT_POLICY_VIOLATION);
+    expect(result.fieldsByRow[0].unit_price).toBe(sentence);
+    expect(result.fieldsByRow[0].discount).toBeUndefined();
+    expect(result.header).toBeUndefined();
+  });
+});

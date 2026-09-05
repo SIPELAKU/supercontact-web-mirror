@@ -16,6 +16,12 @@ export const MODULE_LABELS: Record<string, string> = {
     product_categories: "Kategori produk",
     units: "Satuan produk",
     products: "Produk contoh",
+    // Phase 2. Deliberately NOT in BEHAVIOUR_MODULES below: the seeded lists
+    // arrive `status='active'`, merely unassigned and with no product prices on
+    // the default one, so the amber "mati" chip would tell the tenant something
+    // untrue. The server keeps `price_lists` in its own BEHAVIOR_MODULES for
+    // INSTALL ORDERING only - the two sets are not the same concept.
+    price_lists: "Daftar harga",
     business_hours: "Jam operasional",
     conversation_queues: "Antrean percakapan",
     ticket_sla_policies: "SLA tiket",

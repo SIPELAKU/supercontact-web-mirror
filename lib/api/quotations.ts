@@ -45,6 +45,14 @@ export interface QuotationLeadItem {
     unit?: { id: string; code: string; name: string; precision: number } | null;
     category?: { id: string; code: string; name: string } | null;
     custom_fields?: Record<string, unknown>;
+    /**
+     * Phase 2 (spec D6): what this customer would actually pay. `price` above
+     * stays the LIVE catalogue row - showing one price in the picker and
+     * another on the line is the defect this phase exists to remove.
+     */
+    resolved_unit_price?: string | null;
+    price_source?: string | null;
+    price_list?: { id: string; code: string; name: string } | null;
 }
 
 export interface QuotationLead {

@@ -15,6 +15,13 @@ interface SummaryCardProps {
   totals: QuotationTotals | null;
   /** Local `sum(qty x unit price)` shown until the first preview lands. */
   fallbackSubtotal: number;
+  /**
+   * The last preview FAILED, so there is no server subtotal. The local sum is
+   * derived from catalogue prices, which a resolved price legitimately differs
+   * from - printing it would state a number the customer will never see. It
+   * shows the same dash the other rows already use.
+   */
+  previewFailed?: boolean;
   /** Tax basis from the company defaults, so the PPN label reads right even before a preview. */
   defaultTaxRate?: string | null;
   defaultPricesIncludeTax?: boolean | null;
@@ -56,6 +63,7 @@ function Row({
 export default function SummaryCard({
   totals,
   fallbackSubtotal,
+  previewFailed = false,
   defaultTaxRate,
   defaultPricesIncludeTax,
   headerDiscountType,
@@ -75,7 +83,13 @@ export default function SummaryCard({
       <aside className="w-full md:w-[26rem] space-y-3 p-6">
         <Row
           label="Subtotal"
-          value={formatRupiah(totals ? totals.subtotal : fallbackSubtotal)}
+          value={
+            totals
+              ? formatRupiah(totals.subtotal)
+              : previewFailed
+                ? pending
+                : formatRupiah(fallbackSubtotal)
+          }
         />
         <Row label="Diskon baris" value={totals ? `- ${formatRupiah(totals.line_discount_total)}` : pending} />
 

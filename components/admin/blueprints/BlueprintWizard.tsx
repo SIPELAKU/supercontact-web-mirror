@@ -42,8 +42,12 @@ function moduleNames(modules: unknown): string[] {
 
 /** Installed with `products` whenever the manifest declares them - the server
  *  auto-includes them (`_resolve_modules`), so the boxes mirror that rather
- *  than letting a tenant untick them and watch every sample product fail. */
-const TAXONOMY_MODULES = ["product_categories", "units"];
+ *  than letting a tenant untick them and watch every sample product fail.
+ *
+ *  `price_lists` (Phase 2) joins them: its rows bind to products by SKU, so it
+ *  is meaningless without the sample products and the server auto-includes it
+ *  the same way. */
+const PRODUCT_COUPLED_MODULES = ["product_categories", "units", "price_lists"];
 
 const STEPS: Array<{ id: Step; label: string }> = [
     { id: "industry", label: "Pilih industri" },
@@ -99,7 +103,7 @@ export default function BlueprintWizard({
 
     /** Ticked and disabled while `products` is ticked: it comes along regardless. */
     const lockedByProducts = (key: string) =>
-        TAXONOMY_MODULES.includes(key) && modules.has("products") && declaredModules.includes(key);
+        PRODUCT_COUPLED_MODULES.includes(key) && modules.has("products") && declaredModules.includes(key);
 
     const toggleModule = (key: string) => {
         if (lockedByProducts(key)) return;
@@ -107,7 +111,7 @@ export default function BlueprintWizard({
         if (next.has(key)) next.delete(key);
         else next.add(key);
         if (next.has("products")) {
-            for (const taxonomy of TAXONOMY_MODULES) {
+            for (const taxonomy of PRODUCT_COUPLED_MODULES) {
                 if (declaredModules.includes(taxonomy)) next.add(taxonomy);
             }
         }

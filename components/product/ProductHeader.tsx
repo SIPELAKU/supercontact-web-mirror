@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FolderTree, Ruler } from "lucide-react";
+import { FolderTree, ListOrdered, Ruler } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
 import { AppButton } from "@/components/ui/app-button";
 import { usePermission } from "@/lib/hooks/usePermission";
@@ -15,7 +15,7 @@ export default function ProductHeader() {
   return (
     <PageHeader
       title="Products"
-      description="Katalog produk, kategori dan satuan"
+      description="Katalog produk, kategori, satuan dan daftar harga"
       breadcrumbs={[{ label: "Sales" }, { label: "Product Catalog" }]}
       actions={
         canManage ? (
@@ -28,6 +28,13 @@ export default function ProductHeader() {
             <Link href="/settings/sales/units">
               <AppButton variantStyle="outline" startIcon={<Ruler size={16} />}>
                 Satuan
+              </AppButton>
+            </Link>
+            {/* Phase 2: the path a manager actually walks - from the catalogue
+                to the per-customer prices for the products in it. */}
+            <Link href="/settings/sales/price-lists">
+              <AppButton variantStyle="outline" startIcon={<ListOrdered size={16} />}>
+                Daftar Harga
               </AppButton>
             </Link>
           </div>

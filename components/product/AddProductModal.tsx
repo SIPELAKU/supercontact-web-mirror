@@ -26,6 +26,7 @@ import {
 } from "@/lib/utils/customFieldValues";
 import CustomFieldsPanel from "@/components/custom-fields/CustomFieldsPanel";
 import ProductImageUploadField from "@/components/product/ProductImageUploadField";
+import ProductPriceListsPanel from "@/components/product/ProductPriceListsPanel";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
@@ -680,6 +681,12 @@ export function AddProductModal({ open, onOpenChange, product = null, onSaved }:
                                 isBgWhite
                             />
                         </div>
+
+                        {/* Phase 2: what this product costs on each price list.
+                            Read-only, collapsed, and fetched only when opened. */}
+                        {isEdit && product && (
+                            <ProductPriceListsPanel productId={product.id} basePrice={product.price} />
+                        )}
 
                         {/* Product attributes: tenant-defined, never price-bearing (spec A8). */}
                         <CustomFieldsPanel

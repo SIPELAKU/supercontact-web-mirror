@@ -5,7 +5,12 @@
 // ("1500000.00"); they are kept as strings here and formatted with
 // `formatRupiah`. Nothing in the web recomputes a total - the server does.
 
+import type { PriceListBrief } from './PriceList';
+
 export type DiscountType = 'percent' | 'amount';
+
+/** Snapshot of the product's billing period on a recurring line (spec A24). */
+export type QuotationBillingPeriod = 'monthly' | 'yearly';
 
 /** Canonical status vocabulary. Legacy `Pending`/`Accepted` never appear in a response. */
 export type QuotationStatus =
@@ -53,6 +58,18 @@ export interface QuotationItem {
   override_reason: string | null;
   notes: string | null;
   product: QuotationLineProduct;
+  /**
+   * Phase 2. All optional: a row written by an older leg carries none of them,
+   * and a tenant with no price list resolves every line to `base`.
+   */
+  /** Resolved at response time from the stored `price_source` code. */
+  price_list?: PriceListBrief | null;
+  /** What the customer would have paid without the manual override (spec A9). */
+  resolved_unit_price?: string | null;
+  /** The winning list's `allow_manual_override` - the ONLY gate for the control. */
+  override_allowed?: boolean;
+  tier_min_quantity?: string | null;
+  billing_period?: QuotationBillingPeriod | null;
 }
 
 export interface LeadContact {
@@ -138,6 +155,18 @@ export interface QuotationLineTotals {
   /** Phase 1: the unit the line is counted in, and how many decimals it allows (2 when no unit). */
   unit_label_snapshot?: string | null;
   unit_precision?: number;
+  /** Phase 2 (spec D4). Optional so an older API build still validates. */
+  price_list?: PriceListBrief | null;
+  resolved_unit_price?: string | null;
+  /**
+   * Whether the winning price list permits a manual price on THIS line.
+   * Server-supplied, so the form needs no second request and never re-derives
+   * which list won (spec S3-1).
+   */
+  override_allowed?: boolean;
+  override_reason?: string | null;
+  tier_min_quantity?: string | null;
+  billing_period?: QuotationBillingPeriod | null;
 }
 
 /** POST /quotations/preview response: every number the summary shows. */
@@ -155,6 +184,12 @@ export interface QuotationTotals {
   tax_total: string;
   grand_total: string;
   lines: QuotationLineTotals[];
+  /**
+   * `lead` = priced with the customer's assignments; `none` = priced as if the
+   * customer had none, which is what a preview without `lead_id` gets and is
+   * the same context the server validates an override against (spec A14).
+   */
+  price_context?: 'lead' | 'none';
 }
 
 /** GET /quotations/defaults: the company's snapshot basis for a new quotation. */
@@ -176,12 +211,26 @@ export interface QuotationItemPayload {
   discount: number;
   discount_type: DiscountType;
   discount_value: number;
+  /**
+   * Manual override (spec A11). Sent ONLY when the seller set one. The server
+   * always resolves the price itself and refuses this key with an indexed 400
+   * unless the winning list allows an override - it is not a return of the
+   * Phase 0 client-computed `price`, which is still an unknown key.
+   */
+  unit_price?: number | null;
+  /** Mandatory whenever `unit_price` is sent, and refused without it. */
+  override_reason?: string | null;
 }
 
 export interface QuotationPreviewRequest {
   items: QuotationItemPayload[];
   discount_type: DiscountType;
   discount_value: number;
+  /**
+   * The customer context to price against. Without it the server prices with
+   * the company default list only and answers `price_context: "none"`.
+   */
+  lead_id?: string | null;
 }
 
 export interface QuotationStatusTransition {
@@ -207,4 +256,19 @@ export interface ItemRow {
   unitPrecision: number;
   /** The product's live attributes, shown read-only under its name; never priced. */
   attributes: Record<string, unknown>;
+  /**
+   * Manual override, owned by the row because the seller types it. `null`
+   * means "no override" and nothing is sent for this line.
+   */
+  overridePrice: number | null;
+  overrideReason: string;
+  /**
+   * Seeded from a STORED line so a read-only view can render the source and
+   * the control state before any preview runs. While the form is editable the
+   * preview's own line wins - it is the fresher answer, and it is the one the
+   * server will validate the override against.
+   */
+  overrideAllowed: boolean;
+  priceList: PriceListBrief | null;
+  billingPeriod: QuotationBillingPeriod | null;
 }

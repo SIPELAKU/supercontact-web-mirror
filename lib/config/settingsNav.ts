@@ -89,6 +89,15 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/sales/custom-fields",
         permission: "sales:config:manage",
       },
+      {
+        // Phase 2. The detail route /settings/sales/price-lists/[id] is NOT
+        // listed: findActiveSettingsEntry resolves an unlisted route by
+        // longest-prefix match against this entry, so it inherits this grant.
+        id: "price-lists",
+        title: "Daftar Harga",
+        path: "/settings/sales/price-lists",
+        permission: "sales:config:manage",
+      },
     ],
   },
   {

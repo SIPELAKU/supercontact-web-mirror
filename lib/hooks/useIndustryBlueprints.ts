@@ -86,6 +86,7 @@ export function useInstallBlueprint() {
                 "products",
                 "product-categories",
                 "units",
+                "price-lists",
                 "custom-field-definitions",
             ].forEach((key) =>
                 queryClient.invalidateQueries({ queryKey: [key] })

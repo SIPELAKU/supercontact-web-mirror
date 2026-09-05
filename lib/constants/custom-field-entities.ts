@@ -41,8 +41,19 @@ export const BUILTIN_CONDITION_FIELDS_BY_ENTITY: Record<CustomFieldEntityType, B
       options: ["draft", "pending_approval", "sent", "accepted", "rejected", "expired"],
     },
   ],
-  contact: [],
-  crm_company: [],
+  // Phase 3: the two commercial reference columns. Mirrors the API's
+  // BUILTIN_CONDITION_FIELDS_BY_ENTITY (spec E10) - this is the list a tenant
+  // `field_key` may NOT shadow, so a custom "region_id" is refused rather than
+  // quietly shadowing the real column. The value sets are per-tenant uuids, so
+  // there is no closed option list to offer; a clause on them is free text.
+  contact: [
+    { value: "customer_type_id", label: "Tipe pelanggan", options: [] },
+    { value: "region_id", label: "Wilayah", options: [] },
+  ],
+  crm_company: [
+    { value: "customer_type_id", label: "Tipe pelanggan", options: [] },
+    { value: "region_id", label: "Wilayah", options: [] },
+  ],
 };
 
 /** Just the reserved names for an entity - what a field_key may NOT shadow. */

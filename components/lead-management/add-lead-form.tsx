@@ -25,6 +25,7 @@ import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import ContactPickerDialog from "./ContactPickerDialog";
+import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext";
 
 // MUI Theme for consistent styling
 const theme = createTheme({
@@ -72,6 +73,8 @@ interface LeadData {
   officeLocation: string;
   leadStatus: string;
   leadSource: string;
+  /** Phase 3 (spec I6). "" = let the server derive it from `lead_source`. */
+  salesChannelId: string;
   assignedTo: string;
   tag: string;
   notes: string;
@@ -95,6 +98,13 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const queryClient = useQueryClient();
   const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
   const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
+  // Four channels are seeded for EVERY company (spec A20), so this is never
+  // an empty select.
+  const { data: salesChannelPage } = useActiveSalesChannels();
+  const salesChannelOptions = (salesChannelPage?.items ?? []).map((channel) => ({
+    value: channel.id,
+    label: channel.name,
+  }));
 
 
   const [form, setForm] = useState<LeadData>({
@@ -107,6 +117,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
     officeLocation: "",
     leadStatus: "",
     leadSource: "Web Form",
+    salesChannelId: "",
     assignedTo: "",
     tag: "",
     notes: "",
@@ -212,6 +223,7 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
       officeLocation: "",
       leadStatus: "",
       leadSource: "Web Form",
+      salesChannelId: "",
       assignedTo: "",
       tag: "",
       notes: "",
@@ -286,6 +298,10 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
         office_location: form.officeLocation,
         lead_status: form.leadStatus,
         lead_source: form.leadSource,
+        // Only when the user picked one: LeadService derives it from
+        // `lead_source` on create otherwise, using the same map `comm02seed`
+        // exports (spec B7).
+        ...(form.salesChannelId ? { sales_channel_id: form.salesChannelId } : {}),
         assigned_to: selectedUserId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         tag: form.tag,
         notes: form.notes,
@@ -559,19 +575,41 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                     error={!!errors.leadSource}
                     height="48px"
                     rounded="8px"
+                    // The three REAL `LeadSource` members and nothing else.
+                    // This list used to offer "Website", "Referral" and
+                    // "Other", none of which the enum knows: picking any of
+                    // the three 422'd on save (spec 0.28).
                     options={[
                       { value: "", label: "Select Lead Source" },
-                      { value: "Website", label: "Website" },
-                      { value: "Referral", label: "Referral" },
-                      { value: "Other", label: "Other" },
-                      { value: "Manual Entry", label: "Manual Entry" },
                       { value: "Web Form", label: "Web Form" },
                       { value: "WhatsApp", label: "WhatsApp" },
+                      { value: "Manual Entry", label: "Manual Entry" },
                     ]}
                     placeholder="Select Lead Source"
                     isBgWhite
                   />
                   {errors.leadSource && <p className="text-red-500 text-xs mt-1">{errors.leadSource}</p>}
+                </div>
+
+                {/* Sales channel (Phase 3, spec I6). Beside Lead Source, not
+                    instead of it: `lead_source` stays a readable enum with its
+                    own icons and column filter, and the channel is the row a
+                    price list can be assigned to. Left empty, the server
+                    derives it from the source. */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Kanal Penjualan</Label>
+                  <AppSelect
+                    value={form.salesChannelId}
+                    onChange={(e) => updateField("salesChannelId", e.target.value as string)}
+                    height="48px"
+                    rounded="8px"
+                    options={[
+                      { value: "", label: "Ikuti Lead Source" },
+                      ...salesChannelOptions,
+                    ]}
+                    placeholder="Ikuti Lead Source"
+                    isBgWhite
+                  />
                 </div>
 
                 {/* Assigned To with Autocomplete */}

@@ -77,7 +77,47 @@ export interface LeadContact {
   name: string | null;
   email: string | null;
   phone_number: string | null;
+  /** The FREE-TEXT `contacts.company` string, not a CRM account. */
   company: string | null;
+  /**
+   * Phase 3 (spec D5 / 0.14). The quotation PDF's documented fallback prints
+   * this when the quotation has no linked CRM company, or that company's
+   * address is blank - and without this field the new address block would be
+   * empty for every real quotation on day one: `npwp` and `address_line` are
+   * NULL on 100% of the 206 `crm_companies` rows fleet-wide, while 1,052
+   * PRODUCTION CONTACTS DO carry a free-text address.
+   */
+  address?: string | null;
+}
+
+/**
+ * The linked CRM company as the quotation carries it (Phase 3, spec D5).
+ * Every field optional: the column is nullable, and a quotation written by an
+ * older leg has no `crm_company_id` at all.
+ */
+export interface QuotationCrmCompanyBrief {
+  id: string;
+  name: string | null;
+  npwp?: string | null;
+  address_line?: string | null;
+  kecamatan?: string | null;
+  kabupaten?: string | null;
+  postal_code?: string | null;
+  location?: string | null;
+}
+
+export interface QuotationSalesChannelBrief {
+  id: string;
+  code: string;
+  name: string;
+  channel_type: string;
+}
+
+export interface QuotationSegmentBrief {
+  id: string;
+  code: string;
+  name: string;
+  priority: number;
 }
 
 export interface LeadUser {
@@ -122,6 +162,24 @@ export interface Quotation {
   sent_at: string | null;
   accepted_at: string | null;
   public_code: string | null;
+  /**
+   * Phase 3 (spec D5). Snapshotted from the lead at create and re-snapshotted
+   * ONLY on an update that carries `items` (spec A15), so the header and the
+   * lines can never disagree about who the customer is. All optional and
+   * defaulted, so every existing client stays valid.
+   */
+  contact_id?: string | null;
+  crm_company_id?: string | null;
+  sales_channel_id?: string | null;
+  /**
+   * The highest-priority MATCHING segment - NOT necessarily the segment whose
+   * price list won a line (spec A11). The pricing segment is named separately
+   * by the resolution explainer.
+   */
+  segment_id?: string | null;
+  crm_company?: QuotationCrmCompanyBrief | null;
+  sales_channel?: QuotationSalesChannelBrief | null;
+  segment?: QuotationSegmentBrief | null;
   lead: Lead;
   items: QuotationItem[];
   created_at: string;
@@ -231,6 +289,12 @@ export interface QuotationPreviewRequest {
    * the company default list only and answers `price_context: "none"`.
    */
   lead_id?: string | null;
+  /**
+   * Phase 3 (spec D5). The sales channel is a RESOLUTION LEVEL, so it must be
+   * carried by the preview as well as the save - otherwise the previous
+   * channel's prices stay on screen after the picker changes.
+   */
+  sales_channel_id?: string | null;
 }
 
 export interface QuotationStatusTransition {

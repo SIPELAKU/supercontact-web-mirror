@@ -26,15 +26,17 @@ import {
 } from "@/lib/constants/quotation-status";
 import { useAuth } from "@/lib/context/AuthContext";
 import { formatPercent, formatRupiah } from "@/lib/helper/currency";
-import { formatQuantityWithUnit } from "@/lib/helper/quantity";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
 import { notify } from "@/lib/notifications";
 import { CATALOGUE_LIMIT, useGetProductStore } from "@/lib/store/product";
 import { customFieldErrorsByKey, validateCustomFieldValues } from "@/lib/utils/customFieldValues";
-import { billingPeriodSuffix } from "@/lib/utils/priceSource";
-import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
 import QuotationCustomFieldsCard from "@/components/quotation/QuotationCustomFieldsCard";
+import QuotationPriceListExplainer from "@/components/quotation/QuotationPriceListExplainer";
+import QuotationPdfDocument, {
+  QUOTATION_PDF_NODE_ID,
+} from "@/components/quotation/QuotationPdfDocument";
+import { generateQuotationPdf, quotationPdfFilename } from "@/lib/utils/quotationPdf";
 import type {
   DiscountType,
   ItemRow,
@@ -216,9 +218,6 @@ function isOverrideComplete(row: ItemRow): boolean {
   return row.overridePrice !== null && row.overridePrice > 0 && row.overrideReason.trim() !== "";
 }
 
-function discountLabel(type: DiscountType, value: string | number): string {
-  return type === "percent" ? `${formatPercent(value)}%` : formatRupiah(value);
-}
 
 export default function QuotationFormClient({ initialData }: QuotationFormClientProps) {
   const router = useRouter();
@@ -343,6 +342,20 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       issueDate: toDateInput(initialData.created_at, new Date()),
       expiryDate: toDateInput(initialData.expire_date),
       salesperson: initialData.lead?.user?.fullname || "",
+      // Phase 3: seed the STORED channel, not "none". The picker and the
+      // debounced preview both read this field, so leaving it out made an
+      // edit re-price against the LEAD's channel (the server falls back to
+      // `leads.sales_channel_id` when the preview sends null) while the save
+      // fell back to `quotation.sales_channel_id` - the totals on screen were
+      // then not the totals stored.
+      //
+      // Clearing the channel back to "Tanpa kanal" on an EXISTING quotation
+      // is not expressible today: the update path treats an absent /
+      // null `sales_channel_id` as "keep the stored one", so the picker can
+      // move the channel but not remove it. Making it removable needs an API
+      // change (a sentinel or `exclude_unset` handling) - recorded as a
+      // request to the CONTEXT-API slice, not worked around here.
+      sales_channel_id: initialData.sales_channel_id ?? "",
     });
 
     // Only the quotation's own lines. `item_others` are Proposal-stage
@@ -374,8 +387,15 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
   // proof of archival and the lead item is kept - the server filters
   // archived products out of the lead payload as well.
+  // The lead the form is currently bound to. Hoisted to component scope in
+  // Phase 3 because the price-list explainer needs its `contact_id` and its
+  // CRM-company brief too, not only its Proposal-stage items.
+  const selectedLead = useMemo(
+    () => leadsWithCurrent.find((l) => l.id === clientData.lead_id),
+    [leadsWithCurrent, clientData.lead_id]
+  );
+
   const availableProducts = useMemo<PickerProduct[]>(() => {
-    const selectedLead = leadsWithCurrent.find((l) => l.id === clientData.lead_id);
     const active = catalogue.filter((p) => p.status !== "archived");
     const activeIds = new Set(active.map((p) => p.id));
     const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
@@ -404,7 +424,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         billing_period: p.billing_period,
       }));
     return [...leadItems, ...rest];
-  }, [catalogue, leadsWithCurrent, clientData.lead_id]);
+  }, [catalogue, selectedLead]);
 
   // ── Server-side preview (debounced) ──────────────────────────────────────
   const previewSeq = useRef(0);
@@ -431,6 +451,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           // `price_context: "none"` - and that same context is what an
           // override is validated against (spec A12/A14).
           lead_id: clientData.lead_id || null,
+          // Phase 3: the channel is a resolution level too, so it has to be
+          // carried by the PREVIEW as well as the save - and it has to be in
+          // the dependency array below for the same reason `lead_id` is, or
+          // the previous channel's prices stay on screen.
+          sales_channel_id: clientData.sales_channel_id || null,
         });
         if (seq !== previewSeq.current) return;
         setTotals(result);
@@ -446,7 +471,15 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     return () => clearTimeout(timer);
     // `clientData.lead_id` belongs in here: changing the client changes the
     // price, and leaving it out left the previous customer's prices on screen.
-  }, [items, headerDiscountType, headerDiscountValue, readOnly, getToken, clientData.lead_id]);
+  }, [
+    items,
+    headerDiscountType,
+    headerDiscountValue,
+    readOnly,
+    getToken,
+    clientData.lead_id,
+    clientData.sales_channel_id,
+  ]);
 
   const fallbackSubtotal = useMemo(
     () => items.reduce((sum, row) => sum + round2(row.qty * Number(row.unitPrice)), 0),
@@ -494,6 +527,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     payload.append("discount_value", String(round2(headerDiscountValue || 0)));
     payload.append("terms", terms);
     payload.append("payment_terms", paymentTerms);
+    // Only when set: an empty string is not a uuid and would 422, and a
+    // tenant that never touches the picker keeps sending the Phase 0 form.
+    if (clientData.sales_channel_id) {
+      payload.append("sales_channel_id", clientData.sales_channel_id);
+    }
     // Header custom fields travel as one JSON object string (spec A8/D5),
     // and only when the tenant has quotation definitions - a tenant without
     // them sends the Phase 0 form unchanged.
@@ -660,79 +698,23 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // ── PDF ──────────────────────────────────────────────────────────────────
   const generatePDF = async (row: Quotation): Promise<Blob | null> => {
     // Commit the stored row to the hidden template synchronously, then let
-    // the browser paint it, so the clone below captures the server's numbers.
+    // the browser paint it, so the capture below sees the server's numbers.
     flushSync(() => setPdfQuotation(row));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-    const originalElement = document.getElementById("quotation-content");
-    if (!originalElement) {
+    const node = document.getElementById(QUOTATION_PDF_NODE_ID);
+    if (!node) {
       notify.error("Error", { description: "Template quotation tidak ditemukan" });
       return null;
     }
 
-    // Clone the element to ensure it's visible during capture
-    const element = originalElement.cloneNode(true) as HTMLElement;
-
-    // Style the clone to be visible to html2canvas but unobtrusive to user
-    element.style.position = "absolute";
-    element.style.top = "0";
-    element.style.left = "0";
-    element.style.zIndex = "-1000"; // Behind everything
-    element.style.width = "800px"; // Fixed A4-like width
-    element.style.backgroundColor = "#ffffff"; // Ensure background is white
-    element.style.display = "block";
-
-    document.body.appendChild(element);
-
     try {
-      // html2canvas-pro and jsPDF are loaded HERE, not at module scope: both
-      // are large and are only needed by this one handler, so a static
-      // import made every visitor of this page pay for them whether or not
-      // they ever export a PDF.
-      const [h2cMod, jspdfMod] = await Promise.all([
-        import("html2canvas-pro"),
-        import("jspdf"),
-      ]);
-      // Resolve defensively: the browser (ESM build) and Node (CJS build)
-      // expose these under different keys, so pin to whichever is a callable
-      // rather than assuming one bundler resolution.
-      const html2canvas = (h2cMod as any).default ?? (h2cMod as any);
-      const jsPDF = (jspdfMod as any).jsPDF ?? (jspdfMod as any).default;
-
-      // Small timeout to ensure DOM render
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const canvas = await html2canvas(element, {
-        scale: 1.5, // Reduced scale to optimize size (was 2)
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-      });
-
-      // Use JPEG with 0.75 quality instead of PNG to significantly reduce size
-      const imgData = canvas.toDataURL("image/jpeg", 0.75);
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true, // Enable PDF compression
-      });
-
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
-      const blob = pdf.output("blob");
-
-      document.body.removeChild(element);
-      return blob;
+      // The clone, the two dynamic imports and the A4 page live in
+      // lib/utils/quotationPdf.ts so the list screen can reuse them.
+      return await generateQuotationPdf(node, quotationPdfFilename(row.quotation_number));
     } catch (error: any) {
       console.error("PDF Generation Error:", error);
-      notify.error("PDF Error", { description: error.message || "Gagal membuat PDF" });
-
-      if (document.body.contains(element)) {
-        document.body.removeChild(element);
-      }
+      notify.error("PDF Error", { description: error?.message || "Gagal membuat PDF" });
       return null;
     }
   };
@@ -751,12 +733,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         return `Quotation berstatus ${quotationStatusMeta(status).label} dan tidak bisa diedit.`;
     }
   }, [quotation, readOnly, status]);
-
-  const pdfTaxNote = pdfQuotation
-    ? pdfQuotation.prices_include_tax
-      ? "Harga sudah termasuk PPN"
-      : "Harga belum termasuk PPN"
-    : "";
 
   return (
     <div className="p-6">
@@ -887,6 +863,17 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                 previewing={previewing}
                 previewFailed={!!previewError}
               />
+
+              {/* Why THIS price list won, once the chain is seven levels deep
+                  (Phase 3, spec I6). Read-only, server-derived, and gated on
+                  the config grant the endpoint itself requires. */}
+              <QuotationPriceListExplainer
+                contactId={selectedLead?.contact_id ?? quotation?.contact_id ?? null}
+                crmCompanyId={
+                  selectedLead?.crm_company?.id ?? quotation?.crm_company_id ?? null
+                }
+                salesChannelId={clientData.sales_channel_id || null}
+              />
             </div>
           </div>
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
@@ -976,164 +963,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         </div>
       </div>
 
-      {/* Hidden printable area for PDF generation - rendered from the STORED
-          row (`pdfQuotation`), set right after the draft save, never from the
-          form's own state. */}
-      <div
-        id="quotation-content"
-        className="absolute -top-2500 -left-2500 w-200 p-8 border"
-        style={{ backgroundColor: "#ffffff", borderColor: "#d1d5db" }}
-      >
-        {pdfQuotation && (
-          <>
-            <div className="mb-8 flex justify-between items-start gap-6">
-              <div>
-                <h1 className="text-2xl font-bold" style={{ color: "#000000" }}>
-                  {pdfQuotation.quotation_title}
-                </h1>
-                <p style={{ color: "#6b7280" }}>{pdfQuotation.quotation_number}</p>
-              </div>
-              <div className="text-right text-sm" style={{ color: "#000000" }}>
-                <p>Tanggal: {safeDate(pdfQuotation.created_at)}</p>
-                <p>Berlaku hingga: {safeDate(pdfQuotation.expire_date)}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 mb-8" style={{ color: "#000000" }}>
-              <div>
-                <h3 className="font-bold mb-2">Kepada</h3>
-                <p>{pdfQuotation.lead?.contact?.name || "-"}</p>
-                <p>{pdfQuotation.lead?.contact?.company || ""}</p>
-                <p>{pdfQuotation.lead?.contact?.email || ""}</p>
-                <p>{pdfQuotation.lead?.contact?.phone_number || ""}</p>
-              </div>
-              <div className="text-right">
-                <h3 className="font-bold mb-2">Sales</h3>
-                <p>{pdfQuotation.lead?.user?.fullname || "-"}</p>
-                <p>{pdfQuotation.lead?.user?.email || ""}</p>
-              </div>
-            </div>
-
-            <table className="w-full mb-8 border-collapse">
-              <thead>
-                <tr className="border-b-2" style={{ borderColor: "#1f2937" }}>
-                  <th className="text-left py-2" style={{ color: "#000000" }}>Item</th>
-                  <th className="text-right py-2" style={{ color: "#000000" }}>Qty</th>
-                  <th className="text-right py-2" style={{ color: "#000000" }}>Harga satuan</th>
-                  <th className="text-right py-2" style={{ color: "#000000" }}>Diskon</th>
-                  <th className="text-right py-2" style={{ color: "#000000" }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pdfQuotation.items.map((item, idx) => (
-                  <tr key={item.id ?? idx} className="border-b" style={{ borderColor: "#e5e7eb" }}>
-                    <td className="py-2">
-                      <p className="font-bold" style={{ color: "#000000" }}>
-                        {item.product_name_snapshot ?? item.product?.product_name ?? "-"}
-                      </p>
-                      <p className="text-xs" style={{ color: "#6b7280" }}>
-                        {item.sku_snapshot ?? item.product?.sku ?? ""}
-                      </p>
-                      {/* "Brand: X" under the product - the LIVE attributes, read-only. */}
-                      <CustomFieldsReadOnly
-                        entityType="product"
-                        values={item.product?.custom_fields}
-                        definitions={productDefinitions}
-                        className="mt-0.5 text-xs"
-                        style={{ color: "#6b7280" }}
-                      />
-                      {item.notes && (
-                        <p className="text-sm" style={{ color: "#6b7280" }}>{item.notes}</p>
-                      )}
-                    </td>
-                    <td className="text-right py-2 whitespace-nowrap" style={{ color: "#000000" }}>
-                      {formatQuantityWithUnit(
-                        item.quantity,
-                        item.unit_label_snapshot,
-                        item.product?.unit?.precision ?? 2
-                      )}
-                    </td>
-                    <td className="text-right py-2" style={{ color: "#000000" }}>
-                      {formatRupiah(item.unit_price)}
-                      {/* A recurring line says so on the CUSTOMER's copy too:
-                          "Rp 500.000/bulan" against a 12-period total is not
-                          the same offer as "Rp 500.000" (spec A24 / I6.6).
-                          The snapshot travels on the stored row, so the PDF
-                          keeps saying it after the product is re-typed. */}
-                      {billingPeriodSuffix(item.billing_period) && (
-                        <span style={{ color: "#6b7280" }}>
-                          {billingPeriodSuffix(item.billing_period)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-right py-2" style={{ color: "#000000" }}>
-                      {Number(item.discount_value) > 0
-                        ? discountLabel(item.discount_type, item.discount_value)
-                        : "-"}
-                    </td>
-                    <td className="text-right py-2" style={{ color: "#000000" }}>
-                      {formatRupiah(item.line_total)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex justify-end" style={{ color: "#000000" }}>
-              <div className="w-72">
-                <div className="flex justify-between mb-2">
-                  <span>Subtotal</span>
-                  <span>{formatRupiah(pdfQuotation.subtotal)}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span>
-                    Diskon
-                    {Number(pdfQuotation.discount_value) > 0
-                      ? ` (header ${discountLabel(pdfQuotation.discount_type, pdfQuotation.discount_value)})`
-                      : ""}
-                  </span>
-                  <span>- {formatRupiah(pdfQuotation.discount_total)}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span>Jumlah kena pajak</span>
-                  <span>{formatRupiah(pdfQuotation.taxable_amount)}</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span>PPN {formatPercent(pdfQuotation.tax_rate)}%</span>
-                  <span>{formatRupiah(pdfQuotation.tax_total)}</span>
-                </div>
-                <div
-                  className="flex justify-between font-bold text-lg border-t pt-2"
-                  style={{ borderColor: "#1f2937" }}
-                >
-                  <span>Grand Total</span>
-                  <span>{formatRupiah(pdfQuotation.grand_total)}</span>
-                </div>
-                <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{pdfTaxNote}</p>
-              </div>
-            </div>
-
-            {(pdfQuotation.payment_terms || pdfQuotation.terms) && (
-              <div className="mt-8 pt-8 border-t" style={{ borderColor: "#e5e7eb" }}>
-                {pdfQuotation.payment_terms && (
-                  <div className="mb-4">
-                    <h3 className="font-bold mb-1" style={{ color: "#000000" }}>Termin pembayaran</h3>
-                    <p className="text-sm" style={{ color: "#4b5563" }}>{pdfQuotation.payment_terms}</p>
-                  </div>
-                )}
-                {pdfQuotation.terms && (
-                  <div>
-                    <h3 className="font-bold mb-1" style={{ color: "#000000" }}>Syarat &amp; ketentuan</h3>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: "#4b5563" }}>
-                      {pdfQuotation.terms}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* The PDF template, extracted in Phase 3 (spec I7.1). It renders from
+          the STORED row (`pdfQuotation`), set right after the draft save,
+          never from the form's own state - and it is now a component, so the
+          quotation LIST can mount the same template for its "Unduh PDF"
+          action instead of the template being unreachable once a quotation is
+          published. */}
+      <QuotationPdfDocument quotation={pdfQuotation} productDefinitions={productDefinitions} />
     </div>
   );
 }

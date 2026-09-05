@@ -22,6 +22,10 @@ export const MODULE_LABELS: Record<string, string> = {
     // untrue. The server keeps `price_lists` in its own BEHAVIOR_MODULES for
     // INSTALL ORDERING only - the two sets are not the same concept.
     price_lists: "Daftar harga",
+    // Phase 3. Deliberately NOT in BEHAVIOUR_MODULES either: the seeded types
+    // arrive `status='active'` and no contact carries one on a fresh tenant, so
+    // the install is inert in substance without being switched off (spec A22).
+    customer_types: "Tipe pelanggan",
     business_hours: "Jam operasional",
     conversation_queues: "Antrean percakapan",
     ticket_sla_policies: "SLA tiket",

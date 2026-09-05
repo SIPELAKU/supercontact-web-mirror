@@ -13,6 +13,9 @@ import { handleError } from "@/lib/utils/errorHandler";
 import { Plus, Trash2 } from "lucide-react";
 import { IconButton } from "@mui/material";
 import CustomFieldsPanel from "@/components/custom-fields/CustomFieldsPanel";
+import ContactCommercialFields, {
+  type ContactCommercialValues,
+} from "@/components/contact/ContactCommercialFields";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { customFieldErrorsByKey, validateCustomFieldValues } from "@/lib/utils/customFieldValues";
 
@@ -89,6 +92,15 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
   const [customFieldErrors, setCustomFieldErrors] = useState<Record<string, string>>({});
   const [newFieldKey, setNewFieldKey] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Phase 3 reference columns. Held as strings ("" = not set) because that is
+  // what a <select> holds; converted to `null` on submit, which is how the API
+  // clears a reference (spec 0.23: a null reaches the column only when it is
+  // sent, and this form always sends every other field beside it).
+  const [commercial, setCommercial] = useState<ContactCommercialValues>({
+    customer_type_id: "",
+    region_id: "",
+    crm_company_id: "",
+  });
 
   // The tenant's defined contact fields get one typed control each; every
   // other stored key stays in the free-form editor below (permissive contract).
@@ -121,6 +133,11 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
         address: initialData.address ?? "",
       });
       setCustomFields({ ...(initialData.custom_fields ?? {}) });
+      setCommercial({
+        customer_type_id: initialData.customer_type_id ?? "",
+        region_id: initialData.region_id ?? "",
+        crm_company_id: initialData.crm_company_id ?? "",
+      });
       setCustomFieldErrors({});
       setErrors({});
     }
@@ -202,6 +219,14 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
       company: local.company?.trim() === "" ? null : local.company,
       address: local.address?.trim() === "" ? null : local.address,
       custom_fields: Object.keys(checked.values).length > 0 ? checked.values : undefined,
+      // Always sent, `null` when cleared: these three are read through
+      // `model_dump(exclude_unset=True)`, so an OMITTED key leaves the column
+      // alone while an explicit null clears it. The request is never all-null
+      // (name is required above), which is the condition
+      // `at_least_one_field_filled` enforces (spec 0.23).
+      customer_type_id: commercial.customer_type_id || null,
+      region_id: commercial.region_id || null,
+      crm_company_id: commercial.crm_company_id || null,
     };
 
     setIsSubmitting(true);
@@ -239,6 +264,19 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
             others.push(`• ${e.loc.join(".")}: ${e.msg}`);
           }
         }
+        // A refusal on one of the three reference columns belongs under ITS
+        // control, not in the custom-field panel: those keys are real columns
+        // as of Phase 3, not custom-field keys.
+        const REFERENCE_KEYS = ["customer_type_id", "region_id", "crm_company_id"];
+        const referenceMessages: Record<string, string> = {};
+        for (const key of REFERENCE_KEYS) {
+          if (fieldMessages[key]) {
+            referenceMessages[key] = fieldMessages[key];
+            delete fieldMessages[key];
+          }
+        }
+        if (Object.keys(referenceMessages).length > 0)
+          setErrors((prev) => ({ ...prev, ...referenceMessages }));
         if (Object.keys(fieldMessages).length > 0) setCustomFieldErrors(fieldMessages);
 
         notify.error("Error", {
@@ -353,6 +391,17 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
                 />
               </div>
             </div>
+
+            {/* Built-in typed controls ABOVE the tenant-defined fields - the
+                ordering CustomFieldsPanel already establishes (spec I6). */}
+            <ContactCommercialFields
+              values={commercial}
+              onChange={(patch) => setCommercial((prev) => ({ ...prev, ...patch }))}
+              errors={errors}
+              disabled={isSubmitting}
+              enabled={open}
+              initialCrmCompanyName={initialData?.company ?? null}
+            />
 
             {/* Defined contact fields: one typed control per definition
                 (Phase 1). Rendered above the free-form editor; the keys it

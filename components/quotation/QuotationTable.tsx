@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Quotation } from "@/lib/store/quotation";
@@ -13,7 +14,21 @@ import {
 } from "@/lib/constants/quotation-status";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Eye, FileText, Pencil, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Download, Eye, FileText, Pencil, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import QuotationPdfDocument from "@/components/quotation/QuotationPdfDocument";
+import { fetchQuotationById } from "@/lib/api/quotations";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
+import { notify } from "@/lib/notifications";
+import {
+  downloadPdfBlob,
+  generateQuotationPdf,
+  quotationPdfFilename,
+} from "@/lib/utils/quotationPdf";
+import type { Quotation as StoredQuotation } from "@/lib/types/Quotation";
+
+/** Distinct from the form's node id so both templates can coexist. */
+const PDF_NODE_ID = "quotation-content-list";
 
 interface QuotationTableProps {
   quotations: Quotation[];
@@ -66,6 +81,38 @@ export default function QuotationTable({
   onReject,
   renderTopLeftToolbar,
 }: QuotationTableProps) {
+  // "Unduh PDF" (spec I7.1). Without it the extracted template would be
+  // unreachable for the 12 dev / 1 prod quotations already published - the
+  // form only renders it on the publish path, for a quotation it just saved.
+  const { getToken } = useAuth();
+  const { definitions: productDefinitions } = useCustomFieldDefinitionsFor("product");
+  const [pdfRow, setPdfRow] = useState<StoredQuotation | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadPdf = async (row: Quotation) => {
+    if (!row?.id) return;
+    setDownloadingId(row.id);
+    try {
+      const token = await getToken();
+      // The list row is a summary; the template needs the LINES, the
+      // snapshots and the Phase 3 briefs, so the stored row is re-read.
+      const detail = await fetchQuotationById(token, row.id);
+      const stored = detail.data as StoredQuotation;
+      flushSync(() => setPdfRow(stored));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const node = document.getElementById(PDF_NODE_ID);
+      if (!node) throw new Error("Template quotation tidak ditemukan");
+      const filename = quotationPdfFilename(stored.quotation_number);
+      const blob = await generateQuotationPdf(node, filename);
+      downloadPdfBlob(blob, filename);
+    } catch (error: any) {
+      notify.error("Gagal membuat PDF", { description: error?.message });
+    } finally {
+      setDownloadingId(null);
+      setPdfRow(null);
+    }
+  };
+
   const columns = useMemo<MRT_ColumnDef<Quotation>[]>(() => [
     {
       id: "client",
@@ -186,6 +233,21 @@ export default function QuotationTable({
             onClick: (row) => onReject?.(row),
           },
           {
+            id: "download-pdf",
+            label: "Unduh PDF",
+            icon: <Download size={16} />,
+            // A draft has no published PDF, but it still has lines and totals
+            // to print, so the action is offered for every row and only
+            // blocked while one is being rendered.
+            disabled: (row) =>
+              downloadingId !== null && downloadingId !== row.id
+                ? "PDF lain sedang dibuat"
+                : false,
+            onClick: (row) => {
+              void handleDownloadPdf(row);
+            },
+          },
+          {
             id: "delete",
             label: "Delete",
             icon: <Trash2 size={16} />,
@@ -227,6 +289,15 @@ export default function QuotationTable({
           densityToggle: true,
           fullScreenToggle: true,
         }}
+      />
+
+      {/* The same template the quotation form mounts, under its own node id so
+          the two can never collide if both are on screen. It renders nothing
+          until a row is being downloaded. */}
+      <QuotationPdfDocument
+        quotation={pdfRow}
+        productDefinitions={productDefinitions}
+        nodeId={PDF_NODE_ID}
       />
     </Box>
   );

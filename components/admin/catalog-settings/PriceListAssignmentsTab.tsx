@@ -220,14 +220,20 @@ export default function PriceListAssignmentsTab({ priceList }: { priceList: Pric
             {
                 id: "target",
                 accessorFn: (row) => row.target?.label ?? row.target_id,
-                header: "Pelanggan",
-                size: 280,
+                header: "Target",
+                size: 300,
                 Cell: ({ row }) => (
                     <div className="flex flex-wrap items-center gap-1.5">
                         <span>{row.original.target?.label ?? "(tidak dikenal)"}</span>
                         <Chip label={TARGET_TYPE_LABELS[row.original.target_type]} size="small" />
+                        {/* Same field, same meaning, for all six kinds: the
+                            code of a type or segment, the channel type, the
+                            region level (spec 0.15). */}
+                        {row.original.target?.secondary && (
+                            <span className="text-[11px] text-gray-500">{row.original.target.secondary}</span>
+                        )}
                         {!row.original.target_exists && (
-                            <Chip label="Pelanggan sudah dihapus" color="warning" size="small" />
+                            <Chip label="Target sudah dihapus" color="warning" size="small" />
                         )}
                     </div>
                 ),
@@ -377,7 +383,7 @@ export default function PriceListAssignmentsTab({ priceList }: { priceList: Pric
                 // The server matches the TARGET (contact `search_text`, CRM
                 // company name/industry/domain) as well as `contract_ref`, so
                 // the box says both of the things it actually searches.
-                searchPlaceholder="Cari nama pelanggan atau no. kontrak"
+                searchPlaceholder="Cari nama target atau no. kontrak"
                 columns={columns}
                 data={rows}
                 getRowId={(row) => row.id}
@@ -393,8 +399,11 @@ export default function PriceListAssignmentsTab({ priceList }: { priceList: Pric
                 resetPageKey={mutationSeq}
                 filters={[
                     {
+                        // Six options since Phase 3, derived from
+                        // TARGET_TYPE_LABELS - the filter picks the new kinds
+                        // up with no edit here.
                         id: "target_type",
-                        label: "Jenis pelanggan",
+                        label: "Jenis target",
                         type: "select",
                         options: TARGET_TYPE_OPTIONS,
                     },
@@ -419,7 +428,7 @@ export default function PriceListAssignmentsTab({ priceList }: { priceList: Pric
                     <EmptyState
                         icon={Users}
                         title={hasActiveFilters || hasSearch ? "No assignments match" : "Not assigned yet"}
-                        description="Until this list is assigned to a customer - or made the company default - it prices nothing."
+                        description="Until this list is assigned to a contact, company, customer type, segment, sales channel or region - or made the company default - it prices nothing."
                     />
                 )}
                 features={{

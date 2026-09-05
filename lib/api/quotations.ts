@@ -66,6 +66,8 @@ export interface QuotationLead {
         email: string;
         phone_number: string;
         company: string;
+        /** Phase 3 (spec D5): the PDF's address fallback. */
+        address?: string | null;
     };
     user: {
         id: string;
@@ -73,6 +75,22 @@ export interface QuotationLead {
         email: string;
     };
     items: QuotationLeadItem[];
+    /**
+     * Phase 3 (spec D5): the picker's briefs, so the form can show the
+     * customer's commercial context before a quotation exists. All optional.
+     */
+    crm_company?: {
+        id: string;
+        name: string | null;
+        npwp?: string | null;
+        address_line?: string | null;
+        kecamatan?: string | null;
+        kabupaten?: string | null;
+        postal_code?: string | null;
+        location?: string | null;
+    } | null;
+    sales_channel?: { id: string; code: string; name: string; channel_type: string } | null;
+    segment?: { id: string; code: string; name: string; priority: number } | null;
 }
 
 export interface QuotationLeadsResponse {

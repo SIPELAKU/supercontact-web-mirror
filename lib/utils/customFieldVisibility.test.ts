@@ -15,10 +15,12 @@ describe('buildEntityVisibilityValues', () => {
     expect(values).not.toHaveProperty('type');
   });
 
-  it('gives a contact no built-ins at all', () => {
-    expect(buildEntityVisibilityValues('contact', { type: 'Incident' }, { gender: 'L' })).toEqual({
-      gender: 'L',
-    });
+  it('layers a contact\'s two Phase 3 built-ins and nothing from another entity', () => {
+    // `customer_type_id` / `region_id` are the only contact built-ins; a
+    // ticket's `type` must never leak in.
+    expect(
+      buildEntityVisibilityValues('contact', { type: 'Incident', customer_type_id: 'ct-1' }, { gender: 'L' })
+    ).toEqual({ gender: 'L', customer_type_id: 'ct-1', region_id: '' });
   });
 
   it('lets a built-in name win over a colliding custom key', () => {

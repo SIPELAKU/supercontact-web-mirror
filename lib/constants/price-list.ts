@@ -9,6 +9,7 @@
 
 import type {
   AssignmentTargetType,
+  PriceListCandidateLevel,
   PriceListRounding,
   PriceListStatus,
 } from "@/lib/types/PriceList";
@@ -34,12 +35,46 @@ export const PRICE_LIST_STATUS_OPTIONS: { value: PriceListStatus; label: string 
   Object.keys(PRICE_LIST_STATUS_LABELS) as PriceListStatus[]
 ).map((value) => ({ value, label: PRICE_LIST_STATUS_LABELS[value] }));
 
-/** Phase 2 targets only; Phase 3 widens the server enum. */
+/**
+ * All six kinds a price list can be assigned to (Phase 3). Exhaustive over
+ * `AssignmentTargetType`, so widening that union is a compile error until the
+ * label lands here - and `TARGET_TYPE_OPTIONS`, which drives both the editor's
+ * kind select and the assignment table's filter, picks the new kinds up with
+ * no further edit.
+ */
 export const TARGET_TYPE_LABELS: Record<AssignmentTargetType, string> = {
   contact: "Kontak",
   crm_company: "Perusahaan",
+  customer_type: "Tipe Pelanggan",
+  segment: "Segmen",
+  sales_channel: "Kanal Penjualan",
+  region: "Wilayah",
 };
 
 export const TARGET_TYPE_OPTIONS: { value: AssignmentTargetType; label: string }[] = (
   Object.keys(TARGET_TYPE_LABELS) as AssignmentTargetType[]
 ).map((value) => ({ value, label: TARGET_TYPE_LABELS[value] }));
+
+/**
+ * The seven levels of the resolution chain, in the order it walks them - what
+ * the "Daftar harga yang berlaku" explainer prints beside each candidate.
+ * `company_default` is the fall-through anchor and is not an assignment target.
+ */
+export const CANDIDATE_LEVEL_LABELS: Record<PriceListCandidateLevel, string> = {
+  contact: "Kontak",
+  crm_company: "Perusahaan",
+  segment: "Segmen",
+  customer_type: "Tipe pelanggan",
+  sales_channel: "Kanal penjualan",
+  region: "Wilayah",
+  company_default: "Daftar harga bawaan",
+};
+
+/** Why a candidate was dropped, as the explainer says it. */
+export const CANDIDATE_REASON_LABELS: Record<string, string> = {
+  archived: "Daftar harga diarsipkan",
+  currency_mismatch: "Mata uang tidak cocok",
+  list_window: "Di luar masa berlaku daftar harga",
+  assignment_window: "Di luar masa berlaku penetapan",
+  duplicate: "Sudah dipakai di tingkat yang lebih spesifik",
+};

@@ -229,6 +229,12 @@ export interface TargetCompanyDetailResponse {
     email_verified_at?: string | null;
     // Phase 1: tenant-defined attributes (entity_type `crm_company`), strict.
     custom_fields?: Record<string, unknown>;
+    // Phase 3 commercial reference columns (spec D7). Optional so a leg that
+    // has not been deployed yet still parses.
+    customer_type_id?: string | null;
+    region_id?: string | null;
+    customer_type?: { id: string; code: string; name: string } | null;
+    region?: { id: string; code: string; name: string; level: string } | null;
     created_at: string;
     updated_at: string;
 }
@@ -296,6 +302,13 @@ export interface CompanyProfile360 {
     phoneVerificationStatus: string | null;
     phoneLineType: string | null;
     phoneVerifiedAt: string | null;
+    // Phase 3 commercial reference columns (spec I5). Stored on the CrmCompany
+    // row only, so a still-only-cached search result carries nulls, and the
+    // editable card is mounted only for `source === "saved"`.
+    customerTypeId: string | null;
+    customerTypeName: string | null;
+    regionId: string | null;
+    regionName: string | null;
     // Phase 1 custom fields - stored on the CrmCompany row only, so a
     // still-only-cached search result carries an empty map.
     customFields: Record<string, unknown>;

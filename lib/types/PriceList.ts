@@ -24,8 +24,19 @@ export type PriceListStatus = "active" | "archived";
  */
 export type PriceListRounding = "none" | "unit" | "hundred" | "thousand";
 
-/** Phase 2 targets. Phase 3 widens the enum (segment, region, ...). */
-export type AssignmentTargetType = "contact" | "crm_company";
+/**
+ * The six kinds a price list can be assigned to. Phase 3 widened the server
+ * enum from two; `TARGET_TYPE_LABELS` in `lib/constants/price-list.ts` is a
+ * `Record<>` over this union, so adding a member is a compile error until its
+ * label lands (spec I3).
+ */
+export type AssignmentTargetType =
+  | "contact"
+  | "crm_company"
+  | "customer_type"
+  | "segment"
+  | "sales_channel"
+  | "region";
 
 export const PRICE_LIST_CODE_MAX_LENGTH = 32;
 export const PRICE_LIST_NAME_MAX_LENGTH = 100;
@@ -232,6 +243,14 @@ export interface PriceListAssignmentTargetBrief {
   id: string;
   label: string;
   target_type: AssignmentTargetType;
+  /**
+   * The same field name (and meaning) as `AssignmentTargetSearchItem.secondary`
+   * so the web has ONE concept: email/phone for a contact, industry/city for a
+   * CRM company, the code for a customer type or segment, the channel type for
+   * a sales channel, the level for a region (spec 0.15 - there is no
+   * `sublabel` anywhere).
+   */
+  secondary?: string | null;
 }
 
 export interface PriceListAssignment {
@@ -309,7 +328,11 @@ export interface AssignmentTargetSearchItem {
   id: string;
   target_type: AssignmentTargetType;
   label: string;
-  /** email / phone for a contact, industry / city for a CRM company. */
+  /**
+   * email / phone for a contact, industry / city for a CRM company, the code
+   * for a customer type or segment, the channel type for a sales channel, the
+   * level for a region. One field for all six kinds (spec 0.15).
+   */
   secondary: string | null;
 }
 
@@ -328,7 +351,21 @@ export interface AssignmentTargetSearchResponse {
 
 // ── "Which list applies to this customer" ─────────────────────────────────
 
-export type PriceListCandidateLevel = "contact" | "crm_company" | "company_default";
+/**
+ * The seven levels the resolution chain walks, in plan section 5 order. The
+ * three multi-valued ones (`segment`, `customer_type`, `region`) can each
+ * contribute several candidates - one sub-level per target id, in the order the
+ * server derived them, with the tie rule running unchanged inside each
+ * (spec A9). `company_default` is deliberately NOT an assignment target type.
+ */
+export type PriceListCandidateLevel =
+  | "contact"
+  | "crm_company"
+  | "segment"
+  | "customer_type"
+  | "sales_channel"
+  | "region"
+  | "company_default";
 
 /** Why a candidate was dropped, when `is_candidate` is false. */
 export type PriceListCandidateReason =
@@ -346,17 +383,35 @@ export interface PriceListCandidate {
   assignment_priority: number | null;
   list_priority: number;
   allow_manual_override: boolean;
+  /** Phase 3: WHICH target of that level produced this candidate. */
+  target_id?: string | null;
+  /** The named target, so the explainer reads "via segmen Korporat", not "segment". */
+  target?: PriceListAssignmentTargetBrief | null;
 }
 
 export interface PriceListResolutionParams {
   contact_id?: string;
   crm_company_id?: string;
+  /**
+   * Phase 3. The other three dimensions (customer type, segments, regions) are
+   * DERIVED server-side from the same loader a quote uses and are deliberately
+   * NOT accepted as parameters: a client-supplied dimension is the one shape
+   * that could make the explainer disagree with what a customer is charged
+   * (spec F1).
+   */
+  sales_channel_id?: string;
   on_date?: string;
 }
 
 export interface PriceListResolution {
   contact_id: string | null;
   crm_company_id: string | null;
+  /** Echoed back, so the panel can say which channel it resolved for. */
+  sales_channel_id?: string | null;
+  /** What the server DERIVED, so the screen can say where a level came from. */
+  segment_ids?: string[];
+  customer_type_ids?: string[];
+  region_ids?: string[];
   on_date: string;
   /** In resolution order. */
   candidates: PriceListCandidate[];

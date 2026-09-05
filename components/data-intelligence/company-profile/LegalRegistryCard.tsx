@@ -23,9 +23,13 @@ export default function LegalRegistryCard({ profile }: LegalRegistryCardProps) {
         .map((code) => String(code).trim())
         .filter(Boolean);
 
+    // The five address/NPWP rows belong to CrmCompanyCommercialCard whenever
+    // that card is mounted, i.e. for a SAVED company.
+    const ownedByCommercialCard = profile.source === "saved" && Boolean(profile.crmCompanyId);
+
     const entries: RegistryEntry[] = [];
     if (profile.nib) entries.push({ label: "NIB", content: profile.nib });
-    if (profile.npwp) entries.push({ label: "NPWP", content: profile.npwp });
+    if (profile.npwp && !ownedByCommercialCard) entries.push({ label: "NPWP", content: profile.npwp });
     if (kbliCodes.length > 0) {
         entries.push({
             label: "KBLI Codes",
@@ -46,10 +50,18 @@ export default function LegalRegistryCard({ profile }: LegalRegistryCardProps) {
     if (profile.legalForm) entries.push({ label: "Legal Form", content: profile.legalForm });
     if (profile.foundedYear != null)
         entries.push({ label: "Founded Year", content: String(profile.foundedYear) });
-    if (profile.addressLine) entries.push({ label: "Address", content: profile.addressLine });
-    if (profile.kecamatan) entries.push({ label: "Kecamatan", content: profile.kecamatan });
-    if (profile.kabupaten) entries.push({ label: "Kabupaten", content: profile.kabupaten });
-    if (profile.postalCode) entries.push({ label: "Postal Code", content: profile.postalCode });
+    // Address and NPWP move to the EDITABLE commercial card on a saved
+    // company (Phase 3, spec I5/0.20): before this phase they were rendered
+    // read-only here AND had no write path anywhere, so the same values would
+    // otherwise appear twice on one tab with only one of the pair editable.
+    // A still-only-cached search result has no CrmCompany row to edit, so it
+    // keeps them here.
+    if (!ownedByCommercialCard) {
+        if (profile.addressLine) entries.push({ label: "Address", content: profile.addressLine });
+        if (profile.kecamatan) entries.push({ label: "Kecamatan", content: profile.kecamatan });
+        if (profile.kabupaten) entries.push({ label: "Kabupaten", content: profile.kabupaten });
+        if (profile.postalCode) entries.push({ label: "Postal Code", content: profile.postalCode });
+    }
 
     if (entries.length === 0) return null;
 

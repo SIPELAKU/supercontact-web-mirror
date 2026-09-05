@@ -5,8 +5,10 @@ import { QuotationLead } from "@/lib/api/quotations"
 import { AppInput } from "../ui/app-input"
 import { AppDatePicker } from "../ui/app-datepicker"
 import { AppAutocomplete } from "../ui/app-autocomplete"
+import { AppSelect } from "../ui/app-select"
 import { format } from "date-fns"
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useMemo } from "react"
+import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>
@@ -30,6 +32,8 @@ interface ClientDetailsData {
   quotationTitle?: string;
   expiryDate?: string;
   salesperson?: string;
+  /** Phase 3 (spec I6): a RESOLUTION LEVEL, so changing it re-prices. */
+  sales_channel_id?: string;
 }
 
 
@@ -42,6 +46,29 @@ export default function ClientDetailsSection({
   isReadOnlyClient = false,
   readOnly = false,
 }: ClientDetailsProps) {
+  // `comm02seed` seeds four channels for EVERY company (spec A20), so this
+  // picker is non-empty on day one for every tenant - it never renders as an
+  // empty select that looks broken.
+  const { data: channelPage } = useActiveSalesChannels();
+  const channelOptions = useMemo(
+    () => [
+      { value: "", label: "Tanpa kanal" },
+      ...(channelPage?.items ?? []).map((channel) => ({
+        value: channel.id,
+        label: channel.name,
+      })),
+    ],
+    [channelPage]
+  );
+
+  // Did the USER pick the channel, or did `handleLeadChange` seed it a moment
+  // ago? Reading `clientData.sales_channel_id` alone cannot tell the two
+  // apart, and treating the seed as a deliberate pick meant a quotation
+  // written against client B was previewed and SAVED on client A's channel -
+  // a price list assigned to that channel then priced every line. Reset
+  // whenever the selected lead is dropped, so the next pick re-seeds.
+  const channelTouchedRef = useRef(false);
+
   const handleChange = (
     field: keyof ClientDetailsData,
     value: any
@@ -65,6 +92,14 @@ export default function ClientDetailsSection({
         emailAddress: selectedLead.contact.email,
         quotationTitle: `Quotation for ${selectedLead.contact.name}`,
         salesperson: selectedLead.user?.fullname || "",
+        // Seed the channel from the lead's own unless the user picked one
+        // by hand: `leads.sales_channel_id` is derived from `lead_source` on
+        // create (spec B7), so the lead already knows where it came from.
+        // Unconditional when untouched - otherwise a channel seeded from the
+        // PREVIOUS lead survives the swap.
+        sales_channel_id: channelTouchedRef.current
+          ? clientData.sales_channel_id || ""
+          : selectedLead.sales_channel?.id ?? "",
       });
     }
   };
@@ -74,6 +109,9 @@ export default function ClientDetailsSection({
   const handleSearchInputChange = useCallback((event: any, value: string, reason: string) => {
     // Clear selection if user is typing and it doesn't match the current selection
     if (reason === 'input' && clientData.lead_id && value !== clientData.clientName) {
+      // The channel goes with the client it came from: leaving it set here is
+      // how the previous customer's channel ended up pricing the next one.
+      channelTouchedRef.current = false;
       setClientData({
         ...clientData,
         lead_id: "",
@@ -84,6 +122,7 @@ export default function ClientDetailsSection({
         emailAddress: "",
         quotationTitle: "New Project Proposal",
         salesperson: "",
+        sales_channel_id: "",
       });
     }
 
@@ -257,6 +296,30 @@ export default function ClientDetailsSection({
                 onChange={(date: any) => handleChange("expiryDate", date ? format(date, "yyyy-MM-dd") : "")}
               />
             )}
+          </div>
+        </div>
+
+        {/* Row 4: Sales channel (Phase 3, spec I6). It sits beside the two
+            fields on this card the user actually edits, and it is a pricing
+            input: a price list can be assigned to a channel, so changing it
+            re-runs the preview. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Kanal Penjualan</Label>
+            <AppSelect
+              isBgWhite
+              fullWidth
+              height="48px"
+              rounded="8px"
+              value={clientData.sales_channel_id || ""}
+              options={channelOptions}
+              disabled={readOnly}
+              onChange={(e) => {
+                channelTouchedRef.current = true;
+                handleChange("sales_channel_id", String(e.target.value));
+              }}
+              helperText="Dari mana penjualan ini datang. Bisa memengaruhi daftar harga yang dipakai."
+            />
           </div>
         </div>
       </div>

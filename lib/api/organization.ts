@@ -77,6 +77,11 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         phoneVerificationStatus: data.phone_verification_status ?? null,
         phoneLineType: data.phone_line_type ?? null,
         phoneVerifiedAt: data.phone_verified_at ?? null,
+        // Reference columns live on the CrmCompany row, not on the cache row.
+        customerTypeId: null,
+        customerTypeName: null,
+        regionId: null,
+        regionName: null,
         customFields: {},
         createdAt: data.created_at,
     };
@@ -140,6 +145,10 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
         phoneVerificationStatus: null,
         phoneLineType: null,
         phoneVerifiedAt: null,
+        customerTypeId: data.customer_type_id ?? null,
+        customerTypeName: data.customer_type?.name ?? null,
+        regionId: data.region_id ?? null,
+        regionName: data.region?.name ?? null,
         customFields:
             data.custom_fields && typeof data.custom_fields === "object" && !Array.isArray(data.custom_fields)
                 ? data.custom_fields

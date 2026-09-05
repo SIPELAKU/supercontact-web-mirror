@@ -2,7 +2,8 @@
 
 // components/admin/catalog-settings/CustomerTargetPicker.tsx
 //
-// Picks the customer a price list is assigned to: a contact or a CRM company.
+// Picks what a price list is assigned to: a contact, a CRM company, a customer
+// type, a segment, a sales channel or a region (six kinds since Phase 3).
 //
 // It calls EXACTLY ONE endpoint - `GET /price-lists/targets/search`, which is
 // gated on the same `sales:config:manage` the rest of this screen needs.
@@ -18,6 +19,28 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useAssignmentTargetSearch } from "@/lib/hooks/usePriceLists";
 import { TARGET_TYPE_OPTIONS } from "@/lib/constants/price-list";
 import type { AssignmentTargetSearchItem, AssignmentTargetType } from "@/lib/types/PriceList";
+
+// Per-kind copy. These were two binary ternaries until Phase 3, which would
+// have labelled a region picker "Perusahaan" (spec 0.16). Both maps are
+// exhaustive over `AssignmentTargetType`, so a seventh kind is a compile error
+// until its copy lands.
+const TARGET_FIELD_LABELS: Record<AssignmentTargetType, string> = {
+    contact: "Kontak",
+    crm_company: "Perusahaan",
+    customer_type: "Tipe pelanggan",
+    segment: "Segmen",
+    sales_channel: "Kanal penjualan",
+    region: "Wilayah",
+};
+
+const TARGET_SEARCH_PLACEHOLDERS: Record<AssignmentTargetType, string> = {
+    contact: "Cari nama, email atau telepon",
+    crm_company: "Cari nama perusahaan",
+    customer_type: "Cari nama atau kode tipe pelanggan",
+    segment: "Cari nama atau kode segmen",
+    sales_channel: "Cari nama atau kode kanal",
+    region: "Cari nama atau kode wilayah",
+};
 
 export default function CustomerTargetPicker({
     targetType,
@@ -39,8 +62,8 @@ export default function CustomerTargetPicker({
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 350);
 
-    // Switching Kontak <-> Perusahaan invalidates the current pick: it is a
-    // row from the other table.
+    // Switching the kind invalidates the current pick: it is a row from
+    // another table entirely.
     useEffect(() => {
         setSearch("");
     }, [targetType]);
@@ -59,7 +82,7 @@ export default function CustomerTargetPicker({
     return (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-                <label className="mb-1 block text-xs font-medium">Jenis pelanggan</label>
+                <label className="mb-1 block text-xs font-medium">Jenis target</label>
                 <AppSelect
                     isBgWhite
                     fullWidth
@@ -74,13 +97,11 @@ export default function CustomerTargetPicker({
             </div>
             <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium">
-                    {targetType === "contact" ? "Kontak" : "Perusahaan"}
+                    {TARGET_FIELD_LABELS[targetType]}
                 </label>
                 <AppAutocomplete<AssignmentTargetSearchItem, false, false, false>
                     isBgWhite
-                    placeholder={
-                        targetType === "contact" ? "Cari nama, email atau telepon" : "Cari nama perusahaan"
-                    }
+                    placeholder={TARGET_SEARCH_PLACEHOLDERS[targetType]}
                     disabled={disabled}
                     error={error}
                     helperText={helperText}

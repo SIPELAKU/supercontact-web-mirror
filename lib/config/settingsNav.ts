@@ -98,6 +98,46 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/sales/price-lists",
         permission: "sales:config:manage",
       },
+      // Phase 3 - the commercial context. All five share the same
+      // `sales:config:manage` grant as the Phase 1/2 managers; READS of types,
+      // channels and regions are open to the entity grants server-side (spec
+      // A27) so a seller's pickers still work without seeing these screens.
+      {
+        id: "customer-types",
+        title: "Tipe Pelanggan",
+        path: "/settings/sales/customer-types",
+        permission: "sales:config:manage",
+      },
+      {
+        // The detail route /settings/sales/customer-segments/[id] is NOT
+        // listed, for the same longest-prefix reason as the price lists above.
+        id: "customer-segments",
+        title: "Segmen Pelanggan",
+        path: "/settings/sales/customer-segments",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "sales-channels",
+        title: "Kanal Penjualan",
+        path: "/settings/sales/sales-channels",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "regions",
+        title: "Wilayah",
+        path: "/settings/sales/regions",
+        permission: "sales:config:manage",
+      },
+      {
+        // Contact tags (spec A0.1). Managed here rather than under a contacts
+        // section because renaming a tag lands on every contact that carries
+        // it at once - a config act, not a per-record edit. ATTACHING a tag to
+        // a contact only needs `contacts`.
+        id: "contact-tags",
+        title: "Tag Kontak",
+        path: "/settings/sales/contact-tags",
+        permission: "sales:config:manage",
+      },
     ],
   },
   {

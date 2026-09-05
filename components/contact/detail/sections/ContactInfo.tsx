@@ -55,6 +55,24 @@ export const ContactInfo = ({ contact }: ContactInfoProps) => {
                     </span>
                 </div>
 
+                <Divider />
+                {/* Phase 3 reference columns, ABOVE the custom-field loop:
+                    built-in typed fields first, tenant-defined ones after -
+                    the ordering the edit modal establishes. */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <span className="text-gray-500 col-span-1">Tipe Pelanggan</span>
+                    <span className="col-span-1 md:col-span-3 font-medium text-start break-all">
+                        {contact.customer_type?.name || "-"}
+                    </span>
+                </div>
+                <Divider />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <span className="text-gray-500 col-span-1">Wilayah</span>
+                    <span className="col-span-1 md:col-span-3 font-medium text-start break-all">
+                        {contact.region?.name || "-"}
+                    </span>
+                </div>
+
                 {/* Custom Fields - the value can be a string, a number, a boolean,
                     a list or (legacy rows) a nested object; every shape formats
                     to text instead of being handed to React as a child. */}

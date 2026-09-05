@@ -36,8 +36,15 @@ describe('custom-field entity catalogue', () => {
   it('mirrors the API\'s built-in condition fields per entity', () => {
     expect(builtinNamesFor('product')).toEqual(['product_type', 'status']);
     expect(builtinNamesFor('quotation')).toEqual(['quotation_status']);
-    expect(builtinNamesFor('contact')).toEqual([]);
-    expect(builtinNamesFor('crm_company')).toEqual([]);
+    // Phase 3 added the two commercial reference columns to both customer
+    // entities (spec E10/I1). They are RESERVED names a tenant `field_key` may
+    // not shadow, so a custom "region_id" is refused instead of quietly
+    // shadowing the real column.
+    expect(builtinNamesFor('contact')).toEqual(['customer_type_id', 'region_id']);
+    expect(builtinNamesFor('crm_company')).toEqual(['customer_type_id', 'region_id']);
+    // Their value sets are per-tenant uuids, so there is no closed option list
+    // to offer and a clause on them is free text.
+    expect(BUILTIN_CONDITION_FIELDS_BY_ENTITY.contact[0].options).toEqual([]);
     expect(BUILTIN_CONDITION_FIELDS_BY_ENTITY.product[0].options).toEqual([
       'goods',
       'service',

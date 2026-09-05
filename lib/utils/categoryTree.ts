@@ -1,13 +1,27 @@
 // lib/utils/categoryTree.ts
 //
-// Pure helpers over GET /product-categories/tree. The server orders every
-// level by (sort_order, name) and only returns active nodes; these keep that
-// order and add the two things pickers need - a flat, indented option list
-// and "which ids are under this node".
+// Pure helpers over a server-ordered tree - GET /product-categories/tree
+// (Phase 1) and GET /regions/tree (Phase 3). The server orders every level and
+// only returns active nodes; these keep that order and add the two things
+// pickers need - a flat, indented option list and "which ids are under this
+// node".
+//
+// GENERIC over `TreeNodeLike` since Phase 3 (spec I4). They were typed to
+// `ProductCategoryTreeNode`, which requires `sort_order: number` and
+// `is_active: boolean` that a region node does not have, so a region tree
+// could not be passed without an `npx tsc --noEmit` error. `FlatCategoryOption`
+// is kept as an alias of `FlatTreeOption`, so every existing caller stays green
+// with no edit.
 
-import type { ProductCategoryTreeNode } from "@/lib/types/ProductCategory";
+/** The only shape these helpers read: an id, a code, a name and children. */
+export interface TreeNodeLike {
+  id: string;
+  code: string;
+  name: string;
+  children?: TreeNodeLike[];
+}
 
-export interface FlatCategoryOption {
+export interface FlatTreeOption {
   id: string;
   code: string;
   name: string;
@@ -17,10 +31,15 @@ export interface FlatCategoryOption {
   parentId: string | null;
 }
 
+/** Phase 1's name for the same thing; kept so no existing caller changes. */
+export type FlatCategoryOption = FlatTreeOption;
+
 /** DFS in the server's order; every node becomes one option with its depth prefix. */
-export function flattenTree(nodes: ProductCategoryTreeNode[] | null | undefined): FlatCategoryOption[] {
-  const out: FlatCategoryOption[] = [];
-  const walk = (list: ProductCategoryTreeNode[], depth: number, parentId: string | null) => {
+export function flattenTree<T extends TreeNodeLike>(
+  nodes: T[] | null | undefined
+): FlatTreeOption[] {
+  const out: FlatTreeOption[] = [];
+  const walk = (list: TreeNodeLike[], depth: number, parentId: string | null) => {
     for (const node of list ?? []) {
       out.push({
         id: node.id,
@@ -39,45 +58,46 @@ export function flattenTree(nodes: ProductCategoryTreeNode[] | null | undefined)
   return out;
 }
 
-export function findNode(
-  nodes: ProductCategoryTreeNode[] | null | undefined,
+/** The node itself, so a caller keeps ITS OWN node type back, not `TreeNodeLike`. */
+export function findNode<T extends TreeNodeLike>(
+  nodes: T[] | null | undefined,
   id: string | null | undefined
-): ProductCategoryTreeNode | null {
+): T | null {
   if (!id) return null;
   for (const node of nodes ?? []) {
     if (node.id === id) return node;
-    const inChildren = findNode(node.children, id);
+    const inChildren = findNode((node.children ?? []) as T[], id);
     if (inChildren) return inChildren;
   }
   return null;
 }
 
 /** Ids of every node UNDER `id` (children, grandchildren, ...), excluding `id` itself. */
-export function descendantIds(
-  nodes: ProductCategoryTreeNode[] | null | undefined,
+export function descendantIds<T extends TreeNodeLike>(
+  nodes: T[] | null | undefined,
   id: string | null | undefined
 ): string[] {
   const root = findNode(nodes, id);
   if (!root) return [];
   const out: string[] = [];
-  const walk = (list: ProductCategoryTreeNode[]) => {
+  const walk = (list: TreeNodeLike[]) => {
     for (const node of list ?? []) {
       out.push(node.id);
-      walk(node.children);
+      walk(node.children ?? []);
     }
   };
-  walk(root.children);
+  walk(root.children ?? []);
   return out;
 }
 
 /** Depth of the deepest node under `id` relative to it (0 when it has no children). */
-export function subtreeHeight(
-  nodes: ProductCategoryTreeNode[] | null | undefined,
+export function subtreeHeight<T extends TreeNodeLike>(
+  nodes: T[] | null | undefined,
   id: string | null | undefined
 ): number {
   const root = findNode(nodes, id);
   if (!root) return 0;
-  const height = (node: ProductCategoryTreeNode): number =>
+  const height = (node: TreeNodeLike): number =>
     !node.children || node.children.length === 0
       ? 0
       : 1 + Math.max(...node.children.map((child) => height(child)));

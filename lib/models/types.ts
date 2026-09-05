@@ -1,3 +1,10 @@
+import type { ContactTagBrief } from "@/lib/types/ContactTag";
+import type {
+  CustomerTypeBrief,
+  RegionBrief,
+  SalesChannelBrief,
+} from "@/lib/types/CommercialContext";
+
 export type LeadStatus = "New" | "Contacted" | "Qualified" | "Unqualified";
 
 export interface Lead {
@@ -16,6 +23,12 @@ export interface Lead {
   office_location: string;
   tag: string;
   notes: string;
+  // Phase 3 (spec D7). Optional: `leads.sales_channel_id` is nullable and a
+  // leg that has not been deployed yet answers without either key. The five
+  // lead enums above are UNTOUCHED - the channel sits BESIDE `lead_source`,
+  // it does not replace it.
+  sales_channel_id?: string | null;
+  sales_channel?: SalesChannelBrief | null;
 }
 export interface Contact {
   id: string,
@@ -64,6 +77,17 @@ export interface Contact {
   ],
   mailing_lists?: { id: string; name: string }[],
   broadcast_groups?: { id: string; name: string }[],
+  // Phase 3 commercial context. The two reference columns are real columns on
+  // `contacts` (spec B1.2) and the briefs come back beside them; `tags` is the
+  // contact's own `contact_tags` set (spec A0.1), returned on every list row so
+  // chips render with no N+1. Every one is optional: a leg that has not been
+  // deployed yet answers without them.
+  customer_type_id?: string | null,
+  region_id?: string | null,
+  crm_company_id?: string | null,
+  customer_type?: CustomerTypeBrief | null,
+  region?: RegionBrief | null,
+  tags?: ContactTagBrief[],
   conversations?: {
     id: string;
     channel_type: "whatsapp" | "sms" | "email" | "web_widget";
@@ -137,6 +161,17 @@ export interface ContactReq {
   position: string;
   address: string | null;
   custom_fields?: Record<string, unknown>;
+  // Phase 3 (spec D4). These three MUST be listed in the API's
+  // CONTACT_REQUEST_FIXED_FIELDS or `extra="allow"` + the collect_custom_fields
+  // before-validator divert them into `contacts.custom_fields` and the request
+  // still answers 200 with the real columns untouched.
+  //
+  // Clearing one is `null` sent TOGETHER WITH any other field: the request
+  // validator counts non-null fields, so a body of nothing but nulls is
+  // refused (spec 0.23).
+  customer_type_id?: string | null;
+  region_id?: string | null;
+  crm_company_id?: string | null;
 }
 
 export interface MailServer {

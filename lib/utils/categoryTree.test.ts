@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductCategoryTreeNode } from '@/lib/types/ProductCategory';
+import type { RegionLevel, RegionTreeNode } from '@/lib/types/CommercialContext';
 import { descendantIds, findNode, flattenTree, subtreeHeight } from './categoryTree';
 
 const node = (
@@ -75,5 +76,53 @@ describe('subtreeHeight', () => {
     expect(subtreeHeight(TREE, 'minuman-panas')).toBe(1);
     expect(subtreeHeight(TREE, 'espresso')).toBe(0);
     expect(subtreeHeight(TREE, 'missing')).toBe(0);
+  });
+});
+
+// ── Phase 3: the same helpers over a REGION tree ──────────────────────────
+//
+// A `RegionTreeNode` carries `level` and no `sort_order` / `is_active`, so
+// before the helpers were made generic (spec I4) passing one was an
+// `npx tsc --noEmit` error. These cases pin the behaviour for both shapes.
+
+const region = (
+  id: string,
+  name: string,
+  level: RegionLevel,
+  depth: number,
+  children: RegionTreeNode[] = []
+): RegionTreeNode => ({ id, code: id.toUpperCase(), name, level, depth, children });
+
+const REGION_TREE: RegionTreeNode[] = [
+  region('id', 'Indonesia', 'country', 0, [
+    region('id-jb', 'Jawa Barat', 'province', 1, [region('bandung', 'Bandung', 'kabupaten', 2)]),
+    region('id-jk', 'DKI Jakarta', 'province', 1),
+  ]),
+];
+
+describe('the helpers over a region tree', () => {
+  it('flattens and indents a region tree the same way', () => {
+    const flat = flattenTree(REGION_TREE);
+    expect(flat.map((o) => o.id)).toEqual(['id', 'id-jb', 'bandung', 'id-jk']);
+    expect(flat.map((o) => o.label)).toEqual([
+      'Indonesia',
+      '— Jawa Barat',
+      '— — Bandung',
+      '— DKI Jakarta',
+    ]);
+    expect(flat.map((o) => o.parentId)).toEqual([null, 'id', 'id-jb', 'id']);
+  });
+
+  it('finds a region node and gives its OWN type back, level included', () => {
+    const found = findNode(REGION_TREE, 'id-jb');
+    expect(found?.level).toBe('province');
+    expect(findNode(REGION_TREE, 'nope')).toBeNull();
+  });
+
+  it('answers descendants and subtree height for the depth cap', () => {
+    expect(descendantIds(REGION_TREE, 'id')).toEqual(['id-jb', 'bandung', 'id-jk']);
+    expect(descendantIds(REGION_TREE, 'bandung')).toEqual([]);
+    expect(subtreeHeight(REGION_TREE, 'id')).toBe(2);
+    expect(subtreeHeight(REGION_TREE, 'id-jk')).toBe(0);
   });
 });

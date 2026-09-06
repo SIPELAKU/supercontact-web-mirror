@@ -12,6 +12,9 @@ function PageviewTracker() {
     useEffect(() => {
         if (!pathname) return;
         const query = searchParams?.toString();
+        // `pageview` redacts credential-bearing paths itself (/q/[code],
+        // /csat/[token]) and pins `page_location` to the redacted URL, so the
+        // raw pathname is safe to hand it and no caller has to remember.
         pageview(query ? `${pathname}?${query}` : pathname);
     }, [pathname, searchParams]);
 

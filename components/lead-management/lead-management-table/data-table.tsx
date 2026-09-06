@@ -50,6 +50,11 @@ export function DataTable({
 
   const data = initialData || [];
 
+  // Distinct channel names across the loaded leads, in first-seen order.
+  const salesChannelOptions = Array.from(
+    new Set(data.map((lead) => lead.sales_channel?.name).filter((name): name is string => Boolean(name)))
+  ).map((name) => ({ value: name, label: name }));
+
   const openDetail = (lead: Lead) => {
     setSelectedLead(lead);
     setIsDetailModalOpen(true);
@@ -148,6 +153,19 @@ export function DataTable({
             type: "select",
             options: LEAD_SOURCES.map((v) => ({ value: v, label: v })),
           },
+          // Phase 3 (spec I6). The options come from the rows on screen, not
+          // from a constant: this table filters client-side, so an option the
+          // data does not contain would filter to nothing and read as broken.
+          ...(salesChannelOptions.length > 0
+            ? [
+                {
+                  id: "sales_channel",
+                  label: "Kanal",
+                  type: "select" as const,
+                  options: salesChannelOptions,
+                },
+              ]
+            : []),
         ]}
         features={{
           urlSync: true,

@@ -25,6 +25,11 @@ export interface CreateLeadData {
   office_location: string;
   lead_status: string;
   lead_source: string;
+  /**
+   * Phase 3 (spec D7). Optional: left out, `LeadService` derives it from
+   * `lead_source` using the same map `comm02seed` exports (spec B7).
+   */
+  sales_channel_id?: string | null;
   assigned_to: string;
   tag: string;
   notes: string;
@@ -41,6 +46,8 @@ export interface UpdateLeadData {
   office_location: string;
   lead_status: string;
   lead_source: string;
+  /** Phase 3 (spec D7). `null` clears the channel; omitted leaves it alone. */
+  sales_channel_id?: string | null;
   assigned_to: string;
   tag: string;
   notes: string;

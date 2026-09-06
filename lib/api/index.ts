@@ -66,8 +66,9 @@ export {
 
 // Quotations API
 export {
-    createQuotation, type CreateQuotationData, type QuotationItemData,
-    sendQuotationEmail, updateQuotation
+    createQuotation, updateQuotation, deleteQuotation, fetchQuotationById,
+    fetchQuotationDefaults, previewQuotationTotals, transitionQuotationStatus,
+    type QuotationApiError, type ApiEnvelope
 } from './quotations';
 
 // Notifications API

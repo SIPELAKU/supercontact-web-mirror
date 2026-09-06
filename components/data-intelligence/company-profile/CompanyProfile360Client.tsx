@@ -11,6 +11,8 @@ import { ConfidenceBadge } from "@/components/data-intelligence/ConfidenceBadge"
 import { GoogleAttributionTag } from "@/components/data-intelligence/GoogleAttributionTag";
 import AutomatedSignalsFeed, { AutomatedSignal } from "./AutomatedSignalsFeed";
 import ContactCard from "./ContactCard";
+import CrmCompanyCommercialCard from "@/components/data-intelligence/company-profile/CrmCompanyCommercialCard";
+import CrmCompanyCustomFieldsCard from "./CrmCompanyCustomFieldsCard";
 import LegalRegistryCard from "./LegalRegistryCard";
 import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
@@ -469,6 +471,57 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                     )}
 
                     <LegalRegistryCard profile={profile} />
+
+                    {/* The commercial card (Phase 3, spec I5): the only place
+                        in the product where a tenant can set NPWP and the
+                        address on a saved CRM company - the five values the
+                        quotation PDF prints - plus the two reference columns.
+                        Mounted under the same saved-profile guard as the
+                        custom-fields card below it. */}
+                    {profile.source === "saved" && profile.crmCompanyId && (
+                        <CrmCompanyCommercialCard
+                            crmCompanyId={profile.crmCompanyId}
+                            customerTypeName={profile.customerTypeName}
+                            regionName={profile.regionName}
+                            values={{
+                                customerTypeId: profile.customerTypeId,
+                                regionId: profile.regionId,
+                                npwp: profile.npwp,
+                                addressLine: profile.addressLine,
+                                kecamatan: profile.kecamatan,
+                                kabupaten: profile.kabupaten,
+                                postalCode: profile.postalCode,
+                            }}
+                            onSaved={(next) =>
+                                setProfile((prev) =>
+                                    prev
+                                        ? {
+                                              ...prev,
+                                              customerTypeId: next.customerTypeId,
+                                              regionId: next.regionId,
+                                              npwp: next.npwp,
+                                              addressLine: next.addressLine,
+                                              kecamatan: next.kecamatan,
+                                              kabupaten: next.kabupaten,
+                                              postalCode: next.postalCode,
+                                          }
+                                        : prev
+                                )
+                            }
+                        />
+                    )}
+
+                    {/* Tenant-defined company attributes live on the CrmCompany
+                        row, so only a SAVED profile has them (Phase 1). */}
+                    {profile.source === "saved" && profile.crmCompanyId && (
+                        <CrmCompanyCustomFieldsCard
+                            crmCompanyId={profile.crmCompanyId}
+                            values={profile.customFields}
+                            onSaved={(customFields) =>
+                                setProfile((prev) => (prev ? { ...prev, customFields } : prev))
+                            }
+                        />
+                    )}
                 </div>
             )}
 

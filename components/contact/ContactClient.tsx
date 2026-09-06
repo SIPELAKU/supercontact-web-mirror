@@ -17,6 +17,16 @@ import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import type { SuperTableState } from "@/components/ui/super-table";
 
+/**
+ * The three server-backed contact filters Phase 3 added (spec A0.1 / E8).
+ * `tag_ids` is a LIST because the filter is an AND across ids.
+ */
+interface ContactFilters {
+    customer_type_id?: string;
+    region_id?: string;
+    tag_ids?: string[];
+}
+
 // Printable columns for PDF print
 const printableColumns = [
     { header: "Name", accessorKey: "name" },
@@ -59,6 +69,17 @@ export const ContactClient = () => {
     const currentSearchRef = useRef("");
     const currentSortByRef = useRef<string | undefined>(undefined);
     const currentSortOrderRef = useRef<"asc" | "desc" | undefined>(undefined);
+    // Phase 3 (spec A0.1 / E8): the three server-backed filters the toolbar
+    // declares. Compared as a serialised string because two of them are ids
+    // and the third is a LIST of ids, and a ref-per-filter would not tell us
+    // "did anything change" in one comparison.
+    const currentFiltersRef = useRef<ContactFilters>({});
+    const filtersKey = (filters: ContactFilters) =>
+        [
+            filters.customer_type_id ?? "",
+            filters.region_id ?? "",
+            (filters.tag_ids ?? []).join(","),
+        ].join("|");
 
     const loadData = useCallback(async (
         page: number,
@@ -66,6 +87,7 @@ export const ContactClient = () => {
         search?: string,
         sortBy?: string,
         sortOrder?: "asc" | "desc",
+        filters?: ContactFilters,
     ) => {
         setLoading(true);
         setError(null);
@@ -87,6 +109,12 @@ export const ContactClient = () => {
                 params.set("sort_by", sortBy);
                 params.set("sort_order", sortOrder ?? "asc");
             }
+            // `tag_ids` is REPEATED, not comma-joined: the filter is an AND
+            // across ids (spec A0.1), and `append` is what the API's
+            // `List[UUID]` query parameter reads.
+            if (filters?.customer_type_id) params.set("customer_type_id", filters.customer_type_id);
+            if (filters?.region_id) params.set("region_id", filters.region_id);
+            for (const tagId of filters?.tag_ids ?? []) params.append("tag_ids", tagId);
 
             const res = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/contacts?${params.toString()}`,
@@ -132,15 +160,38 @@ export const ContactClient = () => {
             ? (sort.desc ? "desc" : "asc")
             : undefined;
 
+        const raw = (state.filters ?? {}) as Record<string, unknown>;
+        // `tag_ids` arrives in BOTH shapes and only one of them is an array.
+        // SuperTable's urlSync serialises a multiselect as `id:a|b`, so ONE
+        // selected tag has no `|` and comes back from the URL as a plain
+        // string (useUrlSync.ts:93-100). Reading only `Array.isArray` there
+        // dropped the filter on reload while the chip still claimed it was
+        // active - the "control that silently does nothing" this file's own
+        // rationale says it is free of. Normalise both shapes.
+        const rawTags = raw.tag_ids;
+        const tagIds = Array.isArray(rawTags)
+            ? (rawTags as string[]).filter(Boolean)
+            : typeof rawTags === "string" && rawTags
+                ? [rawTags]
+                : undefined;
+        const newFilters: ContactFilters = {
+            customer_type_id: (raw.customer_type_id as string) || undefined,
+            region_id: (raw.region_id as string) || undefined,
+            tag_ids: tagIds && tagIds.length > 0 ? tagIds : undefined,
+        };
+
         const searchChanged = newSearch !== currentSearchRef.current;
-        // Reset to first page when the search term changes
-        const newPage = searchChanged ? 0 : (state.pagination?.pageIndex ?? 0);
+        const filtersChanged = filtersKey(newFilters) !== filtersKey(currentFiltersRef.current);
+        // Reset to first page when the search term OR a filter changes: batch 7
+        // of the previous predicate is not batch 7 of the new one.
+        const newPage = searchChanged || filtersChanged ? 0 : (state.pagination?.pageIndex ?? 0);
 
         // Only refetch if server-side params actually changed
         if (
             newPage !== currentPageRef.current ||
             newPageSize !== currentPageSizeRef.current ||
             searchChanged ||
+            filtersChanged ||
             newSortBy !== currentSortByRef.current ||
             newSortOrder !== currentSortOrderRef.current
         ) {
@@ -149,7 +200,8 @@ export const ContactClient = () => {
             currentSearchRef.current = newSearch;
             currentSortByRef.current = newSortBy;
             currentSortOrderRef.current = newSortOrder;
-            loadData(newPage, newPageSize, newSearch, newSortBy, newSortOrder);
+            currentFiltersRef.current = newFilters;
+            loadData(newPage, newPageSize, newSearch, newSortBy, newSortOrder, newFilters);
         }
     }, [loadData]);
 
@@ -203,6 +255,7 @@ export const ContactClient = () => {
             currentSearchRef.current,
             currentSortByRef.current,
             currentSortOrderRef.current,
+            currentFiltersRef.current,
         );
     }, [loadData]);
 
@@ -332,6 +385,7 @@ export const ContactClient = () => {
                             currentSearchRef.current,
                             currentSortByRef.current,
                             currentSortOrderRef.current,
+                            currentFiltersRef.current,
                         )
                     }
                     rowCount={totalCount}
@@ -346,6 +400,12 @@ export const ContactClient = () => {
                     onOpenAdd={() => setOpenAdd(true)}
                     onOpenImport={() => setOpenImport(true)}
                     isDuplicating={duplicateMutation.isPending}
+                    // The bulk-tag dialog's only refresh hook. This list is a
+                    // raw fetch into useState, not React Query, so the
+                    // mutation's cache invalidation cannot reach it - without
+                    // this the tag chips and the tag filter stay stale until a
+                    // hard reload.
+                    onSuccess={reloadCurrentPage}
                 />
             </div>
 

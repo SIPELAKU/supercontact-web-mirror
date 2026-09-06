@@ -11,7 +11,21 @@ export const MODULE_LABELS: Record<string, string> = {
     canned_replies: "Balasan siap pakai",
     knowledge_base: "Artikel Knowledge Base",
     pipeline_stages: "Tahapan penjualan",
+    // Catalogue taxonomy (Phase 1): inert, installed before the sample
+    // products, and auto-included by the server whenever `products` is.
+    product_categories: "Kategori produk",
+    units: "Satuan produk",
     products: "Produk contoh",
+    // Phase 2. Deliberately NOT in BEHAVIOUR_MODULES below: the seeded lists
+    // arrive `status='active'`, merely unassigned and with no product prices on
+    // the default one, so the amber "mati" chip would tell the tenant something
+    // untrue. The server keeps `price_lists` in its own BEHAVIOR_MODULES for
+    // INSTALL ORDERING only - the two sets are not the same concept.
+    price_lists: "Daftar harga",
+    // Phase 3. Deliberately NOT in BEHAVIOUR_MODULES either: the seeded types
+    // arrive `status='active'` and no contact carries one on a fresh tenant, so
+    // the install is inert in substance without being switched off (spec A22).
+    customer_types: "Tipe pelanggan",
     business_hours: "Jam operasional",
     conversation_queues: "Antrean percakapan",
     ticket_sla_policies: "SLA tiket",

@@ -7,6 +7,8 @@ import {
   CompanyDocument,
   CompanySignal,
   CompanySignalPayload,
+  CompanyGeneral,
+  CompanyGeneralUpdatePayload,
 } from "@/lib/types/company-profile";
 
 function asObject(value: unknown): Record<string, any> {
@@ -321,6 +323,54 @@ export async function fetchRecentSignals(token: string): Promise<CompanySignal[]
     // Default dot color logic (green for now as per requirement)
     dotColor: "green"
   }));
+}
+
+/**
+ * The caller's own company row (GET /companies). Gated on the `companies`
+ * permission - Admin only. Sellers get their defaults from
+ * `fetchQuotationDefaults` instead and never call this.
+ */
+export async function fetchMyCompany(token: string): Promise<CompanyGeneral> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const payload = await authorizedGet(`${baseUrl}/companies`, token);
+  return payload as CompanyGeneral;
+}
+
+/**
+ * PATCH /internal/company-profile/general. `name` is required by the API;
+ * omitted optional fields are left unchanged server-side.
+ */
+export async function updateCompanyGeneral(
+  token: string,
+  payload: CompanyGeneralUpdatePayload
+): Promise<CompanyGeneral> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/general`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await res.json();
+
+  if (res.status === 401) {
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok || json?.success === false) {
+    const message = json?.error?.message || json?.message || 'Failed to update company defaults';
+    const err = new Error(message) as Error & { code?: string; details?: unknown };
+    err.code = json?.error?.code;
+    err.details = json?.error?.details;
+    throw err;
+  }
+
+  return (json?.data ?? json) as CompanyGeneral;
 }
 
 export async function addRecentSignal(token: string, data: CompanySignalPayload): Promise<void> {

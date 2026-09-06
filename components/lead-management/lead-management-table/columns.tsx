@@ -63,6 +63,20 @@ export const leadColumns: MRT_ColumnDef<Lead>[] = [
     ),
   },
   {
+    // Phase 3 (spec I6): a SECOND, optional column beside Source, not a
+    // replacement for it. `lead_source` keeps its enum, its icon map and its
+    // own filter - the channel is the row a price list can be assigned to.
+    // Blank for every lead written before the channel existed.
+    accessorFn: (row) => row.sales_channel?.name ?? "",
+    id: "sales_channel",
+    header: "Kanal",
+    Cell: ({ row }) => (
+      <span className="text-[#6B7280] whitespace-nowrap">
+        {row.original.sales_channel?.name ?? "—"}
+      </span>
+    ),
+  },
+  {
     accessorFn: (row) => row.user?.fullname ?? "",
     id: "user",
     header: "Assigned To",

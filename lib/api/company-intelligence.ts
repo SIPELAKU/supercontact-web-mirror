@@ -521,6 +521,49 @@ export async function deleteTargetCompany(
     }
 }
 
+/**
+ * PATCH /company-intelligence/my-target-companies/{id}/custom-fields (Phase 1).
+ * Merge semantics: the keys sent are laid over the stored map, then the whole
+ * map is validated strictly against the tenant's `crm_company` definitions.
+ * Gated on `companies` (the module's write grant), not the read pair.
+ *
+ * Errors carry `code`/`details`/`status` like the catalogue clients so the
+ * card can place `details.errors[].field` under the matching control.
+ */
+export async function updateCrmCompanyCustomFields(
+    token: string,
+    crmCompanyId: string,
+    customFields: Record<string, unknown>
+): Promise<{ id: string; custom_fields: Record<string, unknown> }> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const res = await fetchWithTimeout(
+        `${baseUrl}/company-intelligence/my-target-companies/${crmCompanyId}/custom-fields`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ custom_fields: customFields }),
+        }
+    );
+    if (res.status === 401) throw new Error("UNAUTHORIZED");
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json?.success === false) {
+        const err = new Error(
+            json?.error?.message || json?.message || "Failed to update company custom fields"
+        ) as Error & { code?: string; details?: unknown; status?: number };
+        if (json?.error && typeof json.error === "object") {
+            err.code = typeof json.error.code === "string" ? json.error.code : undefined;
+            err.details = json.error.details;
+        }
+        err.status = res.status;
+        throw err;
+    }
+    return json?.data;
+}
+
 export async function getMyTargetCompany(
     token: string,
     id: string

@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
+import CompanyQuotationDefaults from "@/components/admin/CompanyQuotationDefaults";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
+import { usePermission } from "@/lib/hooks/usePermission";
 
 import { Dialog, DialogTitle, DialogContent, DialogActions, Stack, Typography, Box, IconButton } from "@mui/material";
 import { AppButton } from "@/components/ui/app-button";
@@ -35,6 +37,7 @@ const DOT_COLOR_MAP: Record<string, string> = {
 
 export default function CompanyProfileClient() {
   const { getToken } = useAuth();
+  const { can } = usePermission();
   const [isLoading, setIsloading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [profile, setProfile] = useState<CompanyProfileData | null>(null);
@@ -310,6 +313,8 @@ export default function CompanyProfileClient() {
             departmentsCount={departmentsCount}
             viewAllHref="/settings/organization"
           />
+          {/* GET /companies and the PATCH are Admin-only (`companies`). */}
+          {can("companies") && <CompanyQuotationDefaults />}
           <CompanyKeyPeopleCard
             isLoading={isLoading}
             people={keyPeopleList}

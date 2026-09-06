@@ -67,6 +67,121 @@ export const settingsNav: SettingsRegistry = [
         path: "/settings/sales/assistant",
         permission: "omnichannel:setup",
       },
+      // The three catalogue managers (Phase 1) share one grant,
+      // `sales:config:manage` - seeded to Admin and Manager, not Staff, like
+      // `tickets:config:manage`. Reads of categories/units stay on the entity
+      // permissions, so a Staff user still sees them on the product page.
+      {
+        id: "product-categories",
+        title: "Kategori Produk",
+        path: "/settings/sales/product-categories",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "units",
+        title: "Satuan",
+        path: "/settings/sales/units",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "sales-custom-fields",
+        title: "Custom Fields",
+        path: "/settings/sales/custom-fields",
+        permission: "sales:config:manage",
+      },
+      {
+        // Phase 2. The detail route /settings/sales/price-lists/[id] is NOT
+        // listed: findActiveSettingsEntry resolves an unlisted route by
+        // longest-prefix match against this entry, so it inherits this grant.
+        id: "price-lists",
+        title: "Daftar Harga",
+        path: "/settings/sales/price-lists",
+        permission: "sales:config:manage",
+      },
+      // Phase 3 - the commercial context. All five share the same
+      // `sales:config:manage` grant as the Phase 1/2 managers; READS of types,
+      // channels and regions are open to the entity grants server-side (spec
+      // A27) so a seller's pickers still work without seeing these screens.
+      {
+        id: "customer-types",
+        title: "Tipe Pelanggan",
+        path: "/settings/sales/customer-types",
+        permission: "sales:config:manage",
+      },
+      {
+        // The detail route /settings/sales/customer-segments/[id] is NOT
+        // listed, for the same longest-prefix reason as the price lists above.
+        id: "customer-segments",
+        title: "Segmen Pelanggan",
+        path: "/settings/sales/customer-segments",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "sales-channels",
+        title: "Kanal Penjualan",
+        path: "/settings/sales/sales-channels",
+        permission: "sales:config:manage",
+      },
+      {
+        id: "regions",
+        title: "Wilayah",
+        path: "/settings/sales/regions",
+        permission: "sales:config:manage",
+      },
+      {
+        // Phase 4 (spec I9). The twelfth Sales entry, on the same
+        // `sales:config:manage` grant as the eleven before it - the same
+        // authority that already sets price lists and segments, because a
+        // discount ceiling decides what a quotation may cost the company.
+        // READS are open to `quotations` as well server-side, so a seller's
+        // own limit still resolves without this screen.
+        id: "discount-policies",
+        title: "Kebijakan Diskon",
+        path: "/settings/sales/discount-policies",
+        permission: "sales:config:manage",
+      },
+      {
+        // COMMERCIAL Phase 5 (spec I6). The THIRTEENTH Sales entry, on the same
+        // `sales:config:manage` grant as the twelve before it - a promotion
+        // changes what a quotation costs the COMPANY, which is exactly the
+        // authority price lists and discount policies already need.
+        //
+        // It sits directly after Kebijakan Diskon on purpose: the two are
+        // different things (a policy caps the SELLER, a promotion is the
+        // COMPANY's own price) and each screen carries one sentence naming the
+        // other, so a reader who lands on the wrong one is told so.
+        //
+        // An unlisted /settings/sales/promotions/[id] would inherit this guard
+        // by `findActiveSettingsEntry`'s longest-prefix match, like the price
+        // lists and customer segments above.
+        id: "promotions",
+        title: "Promosi",
+        path: "/settings/sales/promotions",
+        permission: "sales:config:manage",
+      },
+      {
+        // COMMERCIAL Phase 5 (spec I7). The FOURTEENTH Sales entry.
+        //
+        // NOTE the nav-density cost, recorded and accepted (I7 / 0.3): fourteen
+        // entries in a registry that is strictly two levels - `SettingsItem`
+        // has no `children` field - cannot be sub-grouped without changing
+        // `SettingsRegistry` and `SettingsSidebar`, which is out of Phase 5's
+        // scope.
+        id: "exchange-rates",
+        title: "Kurs Mata Uang",
+        path: "/settings/sales/exchange-rates",
+        permission: "sales:config:manage",
+      },
+      {
+        // Contact tags (spec A0.1). Managed here rather than under a contacts
+        // section because renaming a tag lands on every contact that carries
+        // it at once - a config act, not a per-record edit. ATTACHING a tag to
+        // a contact only needs `contacts`.
+        id: "contact-tags",
+        title: "Tag Kontak",
+        path: "/settings/sales/contact-tags",
+        permission: "sales:config:manage",
+      },
     ],
   },
   {

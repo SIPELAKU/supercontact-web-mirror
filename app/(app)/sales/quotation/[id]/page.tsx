@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { fetchQuotationById } from "@/lib/api/quotations";
+import type { QuotationDetail } from "@/lib/types/Quotation";
 import { AppButton } from "@/components/ui/app-button";
 import PageHeader from "@/components/ui/page-header";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -12,13 +13,17 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import QuotationFormClient from "@/components/quotation/QuotationFormClient";
 
+/**
+ * Renders the quotation form seeded with the stored row. The form decides
+ * from `quotation_status` whether it is editable (draft) or read-only
+ * (sent / accepted / rejected), and shows the status chip in its header.
+ */
 export default function QuotationDetailPage() {
     const params = useParams();
-    const router = useRouter();
     const { getToken } = useAuth();
     const quotationId = params.id as string;
 
-    const [quotation, setQuotation] = useState<any>(null);
+    const [quotation, setQuotation] = useState<QuotationDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +33,7 @@ export default function QuotationDetailPage() {
                 setLoading(true);
                 const token = await getToken();
                 const response = await fetchQuotationById(token, quotationId);
-                setQuotation(response.data || response);
+                setQuotation(response.data ?? null);
             } catch (err: any) {
                 console.error("Error fetching quotation:", err);
                 setError(err.message || "Failed to load quotation");
@@ -59,7 +64,7 @@ export default function QuotationDetailPage() {
                     title="Quotation Not Found"
                     breadcrumbs={[
                         { label: "Sales" },
-                        { label: "Quotation" },
+                        { label: "Quotation", href: "/sales/quotation" },
                         { label: "Detail" },
                     ]}
                 />

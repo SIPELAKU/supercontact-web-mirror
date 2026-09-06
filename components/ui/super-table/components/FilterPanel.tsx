@@ -336,7 +336,14 @@ function FilterControl({
   }
 
   if (def.type === "multiselect") {
-    const selected = (Array.isArray(value) ? value : []) as string[];
+    // A one-element multiselect round-trips through the URL as a bare string
+    // (`useUrlSync` only re-splits when the serialised value contains "|"), so
+    // discarding a non-array value here showed "Semua <x>" next to a chip that
+    // said the filter was on. Coercing it back means the control and the chip
+    // always agree, and the first interaction rewrites the state as an array.
+    const selected = (
+      Array.isArray(value) ? value : value === undefined || value === null || value === "" ? [] : [String(value)]
+    ) as string[];
     return (
       <Select
         id={id}

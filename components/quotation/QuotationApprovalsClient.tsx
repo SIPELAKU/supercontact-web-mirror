@@ -38,7 +38,7 @@ import { SuperTable, type MRT_ColumnDef, type SuperTableState } from "@/componen
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { decideQuotationApproval, fetchApprovalQueue } from "@/lib/api/quotations";
-import { formatPercent, formatRupiah } from "@/lib/helper/currency";
+import { formatMoney, formatPercent } from "@/lib/helper/currency";
 import { notify } from "@/lib/notifications";
 import { mapQuotationException } from "@/lib/utils/quotation-errors";
 import type {
@@ -217,7 +217,11 @@ export default function QuotationApprovalsClient() {
       },
       {
         id: "grand_total",
-        accessorFn: (row) => formatRupiah(row.grand_total),
+        // COMMERCIAL Phase 5 (spec I1). `QuotationApprovalQueueItem` has always
+        // carried `currency`; the approver now reads the amount in the money the
+        // quotation is actually written in - an approval decided against "Rp 3"
+        // for a USD 3.20 line is a decision made on a wrong number.
+        accessorFn: (row) => formatMoney(row.grand_total, row.currency),
         header: "Nilai",
         size: 140,
         muiTableBodyCellProps: { align: "right" },

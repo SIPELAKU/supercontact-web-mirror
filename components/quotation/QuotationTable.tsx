@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Quotation } from "@/lib/store/quotation";
-import { formatRupiah } from "@/lib/helper/currency";
+import { formatMoney } from "@/lib/helper/currency";
 import {
   QUOTATION_STATUS_OPTIONS,
   canDecideApproval,
@@ -244,7 +244,9 @@ export default function QuotationTable({
     },
     {
       id: "grand_total",
-      accessorFn: (row) => formatRupiah(row.grand_total),
+      // COMMERCIAL Phase 5 (spec I1): a quotation may be issued in another
+      // currency, so the list prints the ROW's money and not the company's.
+      accessorFn: (row) => formatMoney(row.grand_total, row.currency),
       header: "Amount",
       enableColumnFilter: false,
       Cell: ({ cell }) => (

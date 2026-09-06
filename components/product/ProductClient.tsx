@@ -40,6 +40,11 @@ interface ListState {
   productType?: ProductType;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  /**
+   * COMMERCIAL Phase 5 (spec I5 / E5.1). `GET /products` is top-level only by
+   * default; the "Tampilkan varian" chip flattens the children back in.
+   */
+  includeVariants?: boolean;
 }
 
 const INITIAL_LIST: ListState = {
@@ -59,6 +64,7 @@ function toFetchParams(state: ListState): Partial<FetchProductParams> {
     product_type: state.productType,
     sort_by: state.sortBy,
     sort_order: state.sortOrder,
+    include_variants: state.includeVariants,
   };
 }
 
@@ -70,7 +76,8 @@ function sameQuery(a: ListState, b: ListState): boolean {
     a.categoryId === b.categoryId &&
     a.productType === b.productType &&
     a.sortBy === b.sortBy &&
-    a.sortOrder === b.sortOrder
+    a.sortOrder === b.sortOrder &&
+    a.includeVariants === b.includeVariants
   );
 }
 
@@ -117,6 +124,7 @@ export default function ProductClient() {
         productType: readProductType(state.filters?.product_type),
         sortBy: sort?.id,
         sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+        includeVariants: state.filters?.include_variants ? true : undefined,
       };
       const prev = prevStateRef.current;
 
@@ -256,6 +264,10 @@ export default function ProductClient() {
           sort_by: current.sortBy,
           sort_order: current.sortOrder,
           include_total: currentPage === 1,
+          // COMMERCIAL Phase 5 (spec I5). An EXPORT is the whole catalogue, and
+          // `GET /products` is top-level only now - so without this the export
+          // would silently stop containing every variant the tenant sells.
+          include_variants: true,
         });
         if (currentPage === 1) totalPages = page.total_pages ?? 1;
         allProducts = [...allProducts, ...page.products];

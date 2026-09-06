@@ -141,6 +141,38 @@ export const settingsNav: SettingsRegistry = [
         permission: "sales:config:manage",
       },
       {
+        // COMMERCIAL Phase 5 (spec I6). The THIRTEENTH Sales entry, on the same
+        // `sales:config:manage` grant as the twelve before it - a promotion
+        // changes what a quotation costs the COMPANY, which is exactly the
+        // authority price lists and discount policies already need.
+        //
+        // It sits directly after Kebijakan Diskon on purpose: the two are
+        // different things (a policy caps the SELLER, a promotion is the
+        // COMPANY's own price) and each screen carries one sentence naming the
+        // other, so a reader who lands on the wrong one is told so.
+        //
+        // An unlisted /settings/sales/promotions/[id] would inherit this guard
+        // by `findActiveSettingsEntry`'s longest-prefix match, like the price
+        // lists and customer segments above.
+        id: "promotions",
+        title: "Promosi",
+        path: "/settings/sales/promotions",
+        permission: "sales:config:manage",
+      },
+      {
+        // COMMERCIAL Phase 5 (spec I7). The FOURTEENTH Sales entry.
+        //
+        // NOTE the nav-density cost, recorded and accepted (I7 / 0.3): fourteen
+        // entries in a registry that is strictly two levels - `SettingsItem`
+        // has no `children` field - cannot be sub-grouped without changing
+        // `SettingsRegistry` and `SettingsSidebar`, which is out of Phase 5's
+        // scope.
+        id: "exchange-rates",
+        title: "Kurs Mata Uang",
+        path: "/settings/sales/exchange-rates",
+        permission: "sales:config:manage",
+      },
+      {
         // Contact tags (spec A0.1). Managed here rather than under a contacts
         // section because renaming a tag lands on every contact that carries
         // it at once - a config act, not a per-record edit. ATTACHING a tag to

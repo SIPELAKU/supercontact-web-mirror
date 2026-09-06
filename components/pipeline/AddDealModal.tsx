@@ -132,7 +132,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   useEffect(() => {
     if (open) {
       fetchContact({ query: "" });
-      fetchCatalogue();
+      // Phase 5 (spec I9, M-e): variants are the sellable rows, and the list is
+      // top-level only without this.
+      fetchCatalogue({ includeVariants: true });
     }
   }, [open, fetchContact, fetchCatalogue]);
 
@@ -418,12 +420,17 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                     }
                   }}
                   onInputChange={(_, inputValue) => {
+                    // COMMERCIAL Phase 5 (spec I9, M-e). `GET /products` became
+                    // TOP-LEVEL ONLY by default (E5.1), so without
+                    // `includeVariants` every VARIANT would silently become
+                    // unpickable on the deal form - and a deal names the
+                    // sellable thing, which after A8 is the variant.
                     const keyword = inputValue.trim();
                     if (keyword.length < 1) {
-                      fetchCatalogue();
+                      fetchCatalogue({ includeVariants: true });
                       return;
                     }
-                    fetchCatalogue({ search: keyword });
+                    fetchCatalogue({ search: keyword, includeVariants: true });
                   }}
                   isOptionEqualToValue={(option, value) => {
                     if (!value) return false;

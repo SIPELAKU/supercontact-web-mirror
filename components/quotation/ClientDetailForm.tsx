@@ -32,6 +32,19 @@ interface ClientDetailsProps {
    * contact filter today, so the match happens here on `client_account`.
    */
   contactId?: string | null
+  /**
+   * COMMERCIAL Phase 5 (spec I8). The currency picker's options, fed by
+   * `GET /exchange-rates/currencies` plus the company default, so a currency
+   * with no rate is NEVER offered and the A25 refusal ("belum ada kurs yang
+   * berlaku pada tanggal itu") can never reach a seller as a save error on work
+   * they already typed.
+   *
+   * Owned by the form, not fetched here: the same list drives what the form
+   * sends, and two fetches would let the picker and the payload disagree.
+   */
+  currencyOptions?: { value: string; label: string }[]
+  /** The in-force rate sentence for the chosen currency, or "" for the base. */
+  exchangeRateNote?: string
 }
 
 interface ClientDetailsData {
@@ -48,6 +61,8 @@ interface ClientDetailsData {
   sales_channel_id?: string;
   /** Phase 4 (spec I10): the deal acceptance moves. Not a pricing input. */
   pipeline_id?: string;
+  /** Phase 5 (spec I8): a RESOLUTION INPUT - changing it re-prices every line. */
+  currency?: string;
 }
 
 
@@ -60,6 +75,8 @@ export default function ClientDetailsSection({
   isReadOnlyClient = false,
   readOnly = false,
   contactId = null,
+  currencyOptions = [],
+  exchangeRateNote = "",
 }: ClientDetailsProps) {
   // `comm02seed` seeds four channels for EVERY company (spec A20), so this
   // picker is non-empty on day one for every tenant - it never renders as an
@@ -445,7 +462,9 @@ export default function ClientDetailsSection({
             />
           </div>
 
-          {/* Row 5: the linked deal (Phase 4, spec I10). Rendered whenever the
+
+
+          {/* Row 4b: the linked deal (Phase 4, spec I10). Rendered whenever the
               user can read deals and there is something to show - a selected
               customer, or a link already stored. Under `readOnly` it is
               DISABLED like every other control on this card, never hidden:
@@ -472,6 +491,49 @@ export default function ClientDetailsSection({
             </div>
           )}
         </div>
+
+        {/* Row 5: the quotation currency and its in-force rate (COMMERCIAL
+            Phase 5, spec I8). A FIFTH 2-col row on this stack of grids - the
+            card is a 3-col grid then a run of 2-col rows, and the currency +
+            rate pair is exactly that shape.
+
+            Changing it re-prices every line through the existing debounced
+            preview; the Kanal Penjualan select above is the precedent for a
+            header field that does that.
+
+            The RATE is shown, not editable: it is resolved server-side from the
+            newest row valid on the quotation's date (A25), and a seller typing
+            their own rate is how a document ends up disagreeing with the books. */}
+        {currencyOptions.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Mata Uang</Label>
+              <AppSelect
+                isBgWhite
+                fullWidth
+                height="48px"
+                rounded="8px"
+                value={clientData.currency || ""}
+                options={currencyOptions}
+                disabled={readOnly}
+                onChange={(e) => handleChange("currency", String(e.target.value))}
+                helperText="Mata uang dokumen ini. Harga tetap dihitung dalam mata uang perusahaan lalu dikonversi dengan kurs yang berlaku."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Kurs yang dipakai</Label>
+              <AppInput
+                isBgWhite
+                height="48px"
+                rounded="8px"
+                value={exchangeRateNote || "Mata uang perusahaan - tanpa konversi"}
+                disabled
+                helperText="Kurs disimpan bersama quotation, jadi dokumen yang sudah keluar tidak berubah saat kurs diperbarui."
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

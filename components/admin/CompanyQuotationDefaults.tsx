@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -156,12 +157,38 @@ export default function CompanyQuotationDefaults() {
             </div>
           ) : (
             <>
+              {/* COMMERCIAL Phase 5 (spec I7).
+                  The control STAYS DISABLED: changing a live tenant's base
+                  currency would reinterpret every stored price, every price
+                  list and every discount policy, and that is explicitly out of
+                  Phase 5's scope.
+                  What changes is the COPY. "Hanya IDR yang didukung saat ini"
+                  became a visible contradiction the moment the quotation form
+                  grew a currency picker - an admin reading it would conclude
+                  the feature does not exist. It now says what is actually true:
+                  the company's own currency stays the basis for prices and
+                  policies, while a quotation may be ISSUED in another currency
+                  at a recorded rate. */}
               <AppInput
                 label="Mata uang default"
                 value={company?.default_currency || "IDR"}
                 disabled
                 isBgWhite
-                helperText="Hanya IDR yang didukung saat ini"
+                helperText={
+                  <>
+                    Mata uang perusahaan adalah dasar semua harga, daftar harga dan kebijakan
+                    diskon, dan belum bisa diubah untuk workspace yang sudah berjalan. Quotation
+                    tetap bisa <b>diterbitkan</b> dalam mata uang lain dengan kurs yang tercatat -
+                    atur di{" "}
+                    <Link
+                      href="/settings/sales/exchange-rates"
+                      className="font-medium text-[#5479EE] underline-offset-2 hover:underline"
+                    >
+                      Settings &rsaquo; Sales &rsaquo; Kurs Mata Uang
+                    </Link>
+                    .
+                  </>
+                }
               />
 
               <AppInput

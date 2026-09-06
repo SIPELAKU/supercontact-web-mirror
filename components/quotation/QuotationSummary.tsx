@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPercent, formatRupiah } from "@/lib/helper/currency";
+import { currencySymbol, formatMoney, formatPercent, normalizeCurrencyCode } from "@/lib/helper/currency";
 import type { DiscountType, QuotationTotals } from "@/lib/types/Quotation";
 import { AppInput } from "../ui/app-input";
 import { AppSelect } from "../ui/app-select";
@@ -34,12 +34,15 @@ interface SummaryCardProps {
   maxDiscountPercent?: string | null;
   readOnly?: boolean;
   previewing?: boolean;
+  /**
+   * COMMERCIAL Phase 5 (spec I8). The quotation's currency - every amount in
+   * this card prints in it. Defaults to the company currency, so a caller that
+   * has not been updated keeps printing rupiah exactly as before.
+   */
+  currency?: string;
+  /** "Kurs 1 USD = Rp 16.250 per 6 Sep 2026", or "" in the company currency. */
+  exchangeRateNote?: string;
 }
-
-const DISCOUNT_TYPE_OPTIONS: { value: DiscountType; label: string }[] = [
-  { value: "percent", label: "%" },
-  { value: "amount", label: "Rp" },
-];
 
 function Row({
   label,
@@ -73,10 +76,40 @@ export default function SummaryCard({
   maxDiscountPercent,
   readOnly = false,
   previewing = false,
+  currency,
+  exchangeRateNote = "",
 }: SummaryCardProps) {
   const pending = "-";
   const taxRate = totals?.tax_rate ?? defaultTaxRate ?? null;
   const includesTax = totals?.prices_include_tax ?? defaultPricesIncludeTax ?? null;
+
+  // The preview's answer wins - it is the freshest statement of what the server
+  // would save - then whatever the form passed down.
+  const code = normalizeCurrencyCode(totals?.currency || currency);
+  const money = (value: string | number | null | undefined) => formatMoney(value, code);
+
+  // The amount-discount option label used to be the literal 'Rp' (spec I8): on
+  // a USD quotation that read as "discount 100 rupiah" on a line the server
+  // discounts by 100 dollars.
+  const discountTypeOptions: { value: DiscountType; label: string }[] = [
+    { value: "percent", label: "%" },
+    { value: "amount", label: currencySymbol(code) },
+  ];
+
+  /**
+   * A26 - THE PROMO IS SHOWN, NOT DOUBLE-COUNTED.
+   *
+   * This card is an ADDITIVE ledger (Subtotal, - Diskon baris, - Diskon header,
+   * taxable, PPN, grand total) and the promotion is ALREADY INSIDE `subtotal`,
+   * because A7 folds it into `unit_price` and gross = unit_price x quantity.
+   * A third minus row would make the visible column stop adding up - on the
+   * screen AND on the PDF.
+   *
+   * So it is a muted caption directly under Subtotal, visually OUTSIDE the
+   * ledger, with no minus prefix.
+   */
+  const promoTotal = totals?.promo_discount_total ?? null;
+  const showPromo = promoTotal !== null && promoTotal !== undefined && Number(promoTotal) > 0;
 
   return (
     <section className="flex justify-end">
@@ -85,19 +118,27 @@ export default function SummaryCard({
           label="Subtotal"
           value={
             totals
-              ? formatRupiah(totals.subtotal)
+              ? money(totals.subtotal)
               : previewFailed
                 ? pending
-                : formatRupiah(fallbackSubtotal)
+                : money(fallbackSubtotal)
           }
         />
-        <Row label="Diskon baris" value={totals ? `- ${formatRupiah(totals.line_discount_total)}` : pending} />
+
+        {/* A26: informational, outside the ledger, NO minus prefix. */}
+        {showPromo && (
+          <p className="-mt-2 text-xs text-gray-500">
+            Termasuk promo {money(promoTotal)}
+          </p>
+        )}
+
+        <Row label="Diskon baris" value={totals ? `- ${money(totals.line_discount_total)}` : pending} />
 
         <div className="space-y-2">
           <div className="flex justify-between items-center gap-3">
             <span className="text-foreground font-medium">Diskon header</span>
             <span className="text-foreground font-semibold">
-              {totals ? `- ${formatRupiah(totals.discount_amount)}` : pending}
+              {totals ? `- ${money(totals.discount_amount)}` : pending}
             </span>
           </div>
           <div className="flex gap-2 items-start">
@@ -108,7 +149,7 @@ export default function SummaryCard({
                 onChange={(e) =>
                   onHeaderDiscountChange(e.target.value as DiscountType, headerDiscountValue)
                 }
-                options={DISCOUNT_TYPE_OPTIONS}
+                options={discountTypeOptions}
                 isBgWhite
                 height="40px"
                 rounded="8px"
@@ -129,7 +170,7 @@ export default function SummaryCard({
                 inputProps={{ min: 0, step: headerDiscountType === "percent" ? 0.01 : 1 }}
                 endIcon={
                   <span className="text-gray-500 font-medium">
-                    {headerDiscountType === "percent" ? "%" : "Rp"}
+                    {headerDiscountType === "percent" ? "%" : currencySymbol(code)}
                   </span>
                 }
                 isBgWhite
@@ -148,14 +189,19 @@ export default function SummaryCard({
           </div>
         </div>
 
-        <Row label="Jumlah kena pajak" value={totals ? formatRupiah(totals.taxable_amount) : pending} />
+        <Row label="Jumlah kena pajak" value={totals ? money(totals.taxable_amount) : pending} />
         <Row
           label={`PPN ${taxRate !== null ? `${formatPercent(taxRate)}%` : ""}`.trim()}
-          value={totals ? formatRupiah(totals.tax_total) : pending}
+          value={totals ? money(totals.tax_total) : pending}
         />
 
         <div className="border-t border-border pt-3">
-          <Row label="Grand Total" value={totals ? formatRupiah(totals.grand_total) : pending} bold />
+          <Row label="Grand Total" value={totals ? money(totals.grand_total) : pending} bold />
+          {/* The rate that PRICED this quotation, beside the totals it produced
+              (spec I8 / I10) - so a reader never has to ask which rate applied. */}
+          {exchangeRateNote && (
+            <p className="text-xs text-gray-500 mt-1">{exchangeRateNote}</p>
+          )}
           <p className="text-xs text-gray-500 mt-1">
             {includesTax === null
               ? ""

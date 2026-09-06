@@ -59,6 +59,12 @@ export type FetchProductParams = {
   product_type?: ProductType;
   /** Only the first batch asks for the COUNT(*); later batches send false. */
   include_total?: boolean;
+  /**
+   * COMMERCIAL Phase 5 (spec E5.1). `GET /products` defaults to TOP-LEVEL rows
+   * only; these two put the children back where they are wanted.
+   */
+  parent_product_id?: string;
+  include_variants?: boolean;
 };
 
 interface Pagination {
@@ -89,6 +95,22 @@ export interface Product {
   custom_fields: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
+  /**
+   * COMMERCIAL Phase 5 (spec D1 / I3). ALL OPTIONAL with defaults, so a leg
+   * that predates the phase answers without them and nothing here breaks.
+   *
+   * A VARIANT IS A FULL PRODUCT ROW (A2): `parent_product_id` set, its own SKU,
+   * price and cost, one level deep. A PARENT with `variant_count > 0` is not
+   * quotable and its variants are quoted instead (A8) - no capability was
+   * stripped, the refusal is an EXISTS check.
+   */
+  parent_product_id?: string | null;
+  parent?: { id: string; product_name: string; sku: string } | null;
+  /** REPLACED wholesale on update, never merged - a vanished axis must vanish. */
+  variant_values?: Record<string, unknown>;
+  variant_count?: number;
+  /** Reachable through no schema, service, endpoint or screen before Phase 5 (A33). */
+  meta_retailer_id?: string | null;
 }
 
 /** ProductCreateRequest / ProductUpdateRequest. `status` is update-only. No `image_file_id` (spec A10). */
@@ -108,6 +130,21 @@ export interface ProductPayload {
   unit_id?: string | null;
   /** Merged into the stored dict on update, validated strictly server-side. */
   custom_fields?: Record<string, unknown>;
+  /**
+   * COMMERCIAL Phase 5 (spec D1). The Meta catalogue field: the column has
+   * existed since Phase 0 and was reachable through NO schema, service,
+   * endpoint or screen until now (A33). No sync is built here - Phase 5 gives a
+   * product the FIELD and nothing more.
+   */
+  meta_retailer_id?: string | null;
+  /**
+   * REPLACED WHOLESALE on update, unlike `custom_fields` which is MERGED - a
+   * variant axis that disappears must actually disappear (D1). `parent_product_id`
+   * is deliberately absent from the update path: re-parenting would silently
+   * change which name-uniqueness bucket the row lives in and which quotations
+   * already snapshot it.
+   */
+  variant_values?: Record<string, unknown>;
 }
 
 export type MutationResult = {
@@ -134,7 +171,7 @@ interface GetState {
   catalogueLoading: boolean;
 
   fetchProduct: (params?: Partial<FetchProductParams>) => Promise<void>;
-  fetchCatalogue: (params?: { search?: string }) => Promise<void>;
+  fetchCatalogue: (params?: { search?: string; includeVariants?: boolean }) => Promise<void>;
 
   postFormProduct: (param?: ProductPayload) => Promise<MutationResult>;
   updateFormProduct: (param?: ProductPayload, id?: string) => Promise<MutationResult>;
@@ -188,6 +225,18 @@ export function mapProduct(p: any): Product {
         : {},
     created_at: p.created_at,
     updated_at: p.updated_at,
+    // COMMERCIAL Phase 5 (spec D1). Defaulted the same way `custom_fields` is,
+    // so a response from a leg that predates the phase maps to a top-level
+    // product with no variants rather than to `undefined` holes the screens
+    // would each have to guard.
+    parent_product_id: p.parent_product_id ?? p.parent?.id ?? null,
+    parent: p.parent ?? null,
+    variant_values:
+      p.variant_values && typeof p.variant_values === "object" && !Array.isArray(p.variant_values)
+        ? p.variant_values
+        : {},
+    variant_count: typeof p.variant_count === "number" ? p.variant_count : 0,
+    meta_retailer_id: p.meta_retailer_id ?? null,
   };
 }
 
@@ -245,6 +294,11 @@ export const useGetProductStore = create<GetState>((set, get) => {
         }
         if (params?.category_id) query.category_id = params.category_id;
         if (params?.product_type) query.product_type = params.product_type;
+        // Phase 5: only sent when asked for. `GET /products` is top-level only
+        // by default (E5.1), and sending `include_variants=false` explicitly
+        // would say the same thing at the cost of a key in every log line.
+        if (params?.parent_product_id) query.parent_product_id = params.parent_product_id;
+        if (params?.include_variants) query.include_variants = true;
         lastListQuery = query;
 
         const res = await api.get("/products", { params: query });
@@ -281,6 +335,11 @@ export const useGetProductStore = create<GetState>((set, get) => {
           include_total: false,
         };
         if (params?.search && params.search.trim() !== "") query.search = params.search.trim();
+        // Phase 5 (spec I9 / M-e). `GET /products` became TOP-LEVEL ONLY, so a
+        // picker that does not ask for variants can no longer offer them - and
+        // a variant is the thing that gets quoted (A8). The deal modal passes
+        // this for exactly that reason.
+        if (params?.includeVariants) query.include_variants = true;
         const res = await api.get("/products", { params: query });
         const rows = res.data?.data?.products;
         set({ catalogue: Array.isArray(rows) ? rows.map(mapProduct) : [] });

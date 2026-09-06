@@ -37,7 +37,14 @@ import {
 } from "@/lib/constants/quotation-status";
 import { useAuth } from "@/lib/context/AuthContext";
 import { usePermission } from "@/lib/hooks/usePermission";
-import { formatPercent, formatRupiah } from "@/lib/helper/currency";
+import { formatMoney, formatPercent, normalizeCurrencyCode } from "@/lib/helper/currency";
+import {
+  buildPublishFormData,
+  currencyToSend,
+  exchangeRateNote,
+  quotationCurrencyOptions,
+} from "@/lib/utils/quotationForm";
+import { fetchExchangeRateCurrencies } from "@/lib/api/exchange-rates";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
 import { notify } from "@/lib/notifications";
@@ -60,6 +67,9 @@ import type {
   QuotationTotals,
 } from "@/lib/types/Quotation";
 import { mapQuotationException, type MappedQuotationError } from "@/lib/utils/quotation-errors";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { listProductUnits } from "@/lib/api/products";
 import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -103,6 +113,17 @@ const newRow = (): ItemRow => ({
   // preview does not carry one. Null, never 0 - see ItemRow.
   costSnapshot: null,
   marginPercent: null,
+  // COMMERCIAL Phase 5 (spec I8). `unitId` null = the product's own unit,
+  // which is what every pre-Phase-5 line means; everything else is read-only
+  // context the server decides and the preview fills in.
+  unitId: null,
+  unitOptions: [],
+  variantValues: {},
+  parentName: null,
+  bundleComponents: null,
+  promoCode: null,
+  promoDiscountAmount: null,
+  prePromoUnitPrice: null,
 });
 
 function toDateInput(value?: string | null, fallback?: Date): string {
@@ -151,6 +172,20 @@ function rowsFromQuotation(row: Quotation): ItemRow[] {
     // is the whole gate - the column below hides itself when every row is null.
     costSnapshot: item.cost_snapshot ?? null,
     marginPercent: item.margin_percent ?? null,
+    // COMMERCIAL Phase 5 (spec I8). Seeded from the STORED line, never from the
+    // live catalogue: a read-only view has to render the variant chips, the
+    // bundle sub-block and the promo chip before any preview runs, and a saved
+    // quotation is a SNAPSHOT - the product may have been re-typed since.
+    unitId: item.unit_id ?? null,
+    // The conversions are loaded per product by the picker; a stored line seeds
+    // an empty list and shows its snapshot label until then.
+    unitOptions: [],
+    variantValues: item.product?.variant_values ?? {},
+    parentName: item.product?.parent?.product_name ?? null,
+    bundleComponents: item.bundle_components ?? null,
+    promoCode: item.promo_code_snapshot ?? null,
+    promoDiscountAmount: item.promo_discount_amount ?? null,
+    prePromoUnitPrice: item.pre_promo_unit_price ?? null,
   }));
 }
 
@@ -169,6 +204,11 @@ function totalsFromQuotation(row: Quotation): QuotationTotals {
     taxable_amount: row.taxable_amount,
     tax_total: row.tax_total,
     grand_total: row.grand_total,
+    // COMMERCIAL Phase 5 (spec D6 / A26). `promo_discount_total` is ALREADY
+    // inside `subtotal`; the summary prints it as a caption, never as a row.
+    exchange_rate_used: row.exchange_rate_used ?? null,
+    exchange_rate_date: row.exchange_rate_date ?? null,
+    promo_discount_total: row.promo_discount_total ?? null,
     lines: (row.items ?? []).map((item, index) => {
       const gross = round2(Number(item.unit_price) * Number(item.quantity));
       const discounted = Number(item.discount_amount) + Number(item.header_discount_share ?? 0);
@@ -204,6 +244,15 @@ function totalsFromQuotation(row: Quotation): QuotationTotals {
         override_reason: item.override_reason ?? null,
         tier_min_quantity: item.tier_min_quantity ?? null,
         billing_period: item.billing_period ?? null,
+        // Phase 5: the read-only view renders the same chips and sub-block the
+        // editable form does, from the stored snapshot.
+        promo_code: item.promo_code_snapshot ?? null,
+        promo_discount_amount: item.promo_discount_amount ?? null,
+        pre_promo_unit_price: item.pre_promo_unit_price ?? null,
+        unit_id: item.unit_id ?? null,
+        unit_label: item.unit_label_snapshot ?? null,
+        unit_factor_used: item.unit_factor_used ?? null,
+        bundle_components: item.bundle_components ?? null,
       };
     }),
     // A stored quotation was always priced with its customer's context.
@@ -235,6 +284,10 @@ function itemPayload(row: ItemRow): QuotationItemPayload {
     payload.unit_price = round2(row.overridePrice as number);
     payload.override_reason = row.overrideReason.trim();
   }
+  // COMMERCIAL Phase 5 (spec D6 / I8). Sent ONLY when the seller picked a unit
+  // other than the product's own: omitted means "the product's own unit", which
+  // is exactly what every pre-Phase-5 line means and what the server assumes.
+  if (row.unitId) payload.unit_id = row.unitId;
   return payload;
 }
 
@@ -279,12 +332,24 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // limit 100, status=active.
   const { catalogue, fetchCatalogue } = useGetProductStore();
 
-  // Only active products can go on a new line; the server refuses archived
-  // ones anyway, so the picker does not offer them.
+  // ── COMMERCIAL Phase 5: the picker searches the SERVER (spec I9 / A34) ────
+  //
+  // `fetchCatalogue()` was called ONCE with no arguments, for the first 100
+  // active products. Dev's largest tenant holds 193, so 93 were ALREADY
+  // unreachable with no error and no marker - the seller simply saw "that
+  // product does not exist". Variants make that structurally worse: 20 products
+  // with 6 variants each is 120 rows, and after A8 the VARIANT is the sellable
+  // thing, so "a variant quotes" could not be demonstrated on a real catalogue
+  // until this was fixed.
+  //
+  // `include_variants` is passed because `GET /products` became TOP-LEVEL ONLY
+  // (E5.1) - without it the children would be unpickable entirely.
+  const [productSearch, setProductSearch] = useState("");
+  const debouncedProductSearch = useDebounce(productSearch, 350);
   useEffect(() => {
     if (readOnly) return;
-    fetchCatalogue();
-  }, [fetchCatalogue, readOnly]);
+    fetchCatalogue({ search: debouncedProductSearch, includeVariants: true });
+  }, [fetchCatalogue, readOnly, debouncedProductSearch]);
 
   // The tenant's definitions: quotation fields drive the header card and the
   // multipart `custom_fields`; product fields label the read-only line attributes.
@@ -304,8 +369,48 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     expiryDate: toDateInput(null, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     salesperson: "",
     pipeline_id: "",
+    // COMMERCIAL Phase 5 (spec I8). The quotation's own currency. Empty until
+    // the defaults land, then the company currency - a quotation in the
+    // company currency behaves exactly as it did before this phase.
+    currency: "",
   });
 
+  // ── COMMERCIAL Phase 5: the quotation currency (spec I8 / A16 / A25) ─────
+  //
+  // The picker is fed by `GET /exchange-rates/currencies` PLUS the company
+  // default, so a currency with no rate is never offered and the A25 refusal -
+  // "belum ada kurs yang berlaku pada tanggal itu" - never reaches a seller as
+  // a save error on work they have already typed.
+  //
+  // Changing it re-prices EVERY line through the existing debounced preview.
+  // The Kanal Penjualan select is the precedent: a header field that is a
+  // pricing input has to be in the preview's dependency array, or the previous
+  // value's prices stay on screen.
+  const { data: currencyData } = useQuery({
+    queryKey: ["exchange-rate-currencies"],
+    queryFn: async () => fetchExchangeRateCurrencies(await getToken()),
+    // Read-only rows never re-price, so they never need the picker's options.
+    enabled: !readOnly,
+  });
+  // The stored row wins for a saved quotation - it is what the document says -
+  // then the defaults, then the rates response. Never a hard-coded "IDR".
+  const companyCurrency = normalizeCurrencyCode(
+    defaults?.currency ?? currencyData?.base_currency ?? quotation?.currency
+  );
+  const currencyOptions = useMemo(
+    () =>
+      quotationCurrencyOptions(companyCurrency, [
+        ...(currencyData?.currencies ?? []),
+        // THE STORED CURRENCY IS ALWAYS AN OPTION, even when the rates query is
+        // disabled (read-only) or the tenant has since DELETED that rate (A27
+        // makes a rate genuinely deletable). Without it the select would render
+        // BLANK on a saved USD quotation - on the very view an approver reads.
+        // `quotationCurrencyOptions` normalises and de-duplicates, so an absent
+        // one folds into the base entry rather than adding a phantom row.
+        quotation?.currency ?? "",
+      ]),
+    [companyCurrency, currencyData, quotation?.currency]
+  );
   const [items, setItems] = useState<ItemRow[]>([newRow()]);
   const [headerDiscountType, setHeaderDiscountType] = useState<DiscountType>("percent");
   const [headerDiscountValue, setHeaderDiscountValue] = useState(0);
@@ -319,6 +424,33 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const [previewing, setPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState<MappedQuotationError | null>(null);
   const [saveError, setSaveError] = useState<MappedQuotationError | null>(null);
+
+  /**
+   * The currency EVERY amount on this screen is printed in.
+   *
+   * Preference order matters: the preview's answer is the freshest statement of
+   * what the server would save, the stored row is what a read-only quotation
+   * actually says, and the picker is what the seller just chose. A stale
+   * fallback here prints the wrong symbol on real money.
+   */
+  const displayCurrency = normalizeCurrencyCode(
+    totals?.currency || clientData.currency || quotation?.currency || companyCurrency
+  );
+  /**
+   * "Kurs 1 USD = Rp 16.250 per 6 Sep 2026" (spec I8 / I10).
+   *
+   * The rate that PRICED the quotation, not today's - the preview answers it
+   * for a draft and the stored row carries it afterwards, so a published
+   * document and the form that made it always say the same number.
+   */
+  const rateNote = exchangeRateNote(
+    displayCurrency,
+    totals?.exchange_rate_used ?? quotation?.exchange_rate_used ?? null,
+    totals?.exchange_rate_date ?? quotation?.exchange_rate_date ?? null,
+    companyCurrency,
+    (value) => formatMoney(value, companyCurrency)
+  );
+
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -380,6 +512,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     termsSeededRef.current = true;
     setTerms((current) => current || defaults.terms || "");
     setPaymentTerms((current) => current || defaults.payment_terms || "");
+    // COMMERCIAL Phase 5 (spec I8): a new quotation starts in the COMPANY's
+    // currency, which is exactly today's behaviour. `currencyToSend` then keeps
+    // the key off the request entirely while it stays the default (A23).
+    setClientData((current: Record<string, any>) => ({
+      ...current,
+      currency: current.currency || normalizeCurrencyCode(defaults.currency),
+    }));
   }, [defaults, isNew]);
 
   // ── Seed from the stored row ─────────────────────────────────────────────
@@ -416,6 +555,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       // stored row for the same reason the channel is - the picker and the
       // save must agree about what is currently linked.
       pipeline_id: initialData.pipeline_id ?? "",
+      // COMMERCIAL Phase 5 (spec I8). Seeded from the STORED row: the document
+      // says what money it is in, and a picker that opened on the company
+      // default would re-price a USD draft into rupiah on the first edit.
+      currency: initialData.currency ?? "",
     });
 
     // Only the quotation's own lines. `item_others` are Proposal-stage
@@ -482,9 +625,67 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         unit: p.unit,
         custom_fields: p.custom_fields,
         billing_period: p.billing_period,
+        // COMMERCIAL Phase 5 (spec I8 / I9): a variant's axes, and the family
+        // it belongs to, so the option label can name both.
+        variant_values: p.variant_values ?? {},
+        parent_name: p.parent?.product_name ?? null,
       }));
     return [...leadItems, ...rest];
   }, [catalogue, selectedLead]);
+
+  // ── COMMERCIAL Phase 5: the per-line unit select's options (spec I8) ──────
+  //
+  // One request per DISTINCT product actually on a line - not per line, and not
+  // per catalogue row. A tenant with no conversions gets an empty list and the
+  // Qty cell keeps its plain unit label, which is exactly the pre-Phase-5 look.
+  const lineProductIds = useMemo(
+    () => Array.from(new Set(items.map((row) => row.product_id).filter(Boolean))),
+    [items]
+  );
+  const unitQueries = useQueries({
+    queries: lineProductIds.map((productId) => ({
+      queryKey: ["product-units", "quotation-line", productId],
+      queryFn: async () => listProductUnits(await getToken(), productId),
+      enabled: !readOnly,
+      // Conversions change about as often as the catalogue does, and the form
+      // re-runs this effect on every row edit.
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const unitOptionsByProduct = useMemo(() => {
+    const map = new Map<string, { id: string; label: string; precision: number }[]>();
+    lineProductIds.forEach((productId, index) => {
+      const rows = unitQueries[index]?.data?.items ?? [];
+      map.set(
+        productId,
+        rows
+          // Only ACTIVE conversions can price a new line; a deactivated one
+          // still explains a stored line but must not be offerable.
+          .filter((row) => row.is_active)
+          .map((row) => ({
+            id: row.unit_id,
+            label: row.unit?.name ?? row.unit_id,
+            precision: row.unit?.precision ?? 2,
+          }))
+      );
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineProductIds, unitQueries.map((query) => query.dataUpdatedAt).join("|")]);
+
+  // The rows the table renders: form state plus the conversions loaded above,
+  // so the select has options without the table owning a request.
+  const itemsWithUnits = useMemo(
+    () =>
+      items.map((row) => ({
+        ...row,
+        unitOptions:
+          row.unitOptions.length > 0
+            ? row.unitOptions
+            : unitOptionsByProduct.get(row.product_id) ?? [],
+      })),
+    [items, unitOptionsByProduct]
+  );
 
   // ── Server-side preview (debounced) ──────────────────────────────────────
   const previewSeq = useRef(0);
@@ -516,6 +717,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           // the dependency array below for the same reason `lead_id` is, or
           // the previous channel's prices stay on screen.
           sales_channel_id: clientData.sales_channel_id || null,
+          // COMMERCIAL Phase 5 (spec D6, M-a). The currency is a RESOLUTION
+          // INPUT, so the PREVIEW must carry it too - without it the form would
+          // show company-currency prices for a quote that saves in USD, and
+          // SQLModel's default `extra="ignore"` would drop it SILENTLY.
+          currency: clientData.currency || null,
         });
         if (seq !== previewSeq.current) return;
         setTotals(result);
@@ -539,6 +745,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     getToken,
     clientData.lead_id,
     clientData.sales_channel_id,
+    // Phase 5: the currency belongs here for the same reason `lead_id` and the
+    // channel do - changing it changes every price on the screen.
+    clientData.currency,
   ]);
 
   const fallbackSubtotal = useMemo(
@@ -658,6 +867,23 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     // tenant that never touches the picker keeps sending the Phase 0 form.
     if (clientData.sales_channel_id) {
       payload.append("sales_channel_id", clientData.sales_channel_id);
+    }
+    // COMMERCIAL Phase 5 (spec I8 / A23). Sent ONLY when it says something:
+    // the endpoint reads three states, and an empty string means "clear me back
+    // to the company default". `currencyToSend` owns that decision and is
+    // unit-tested, because getting it wrong relabels a USD quotation as IDR
+    // while leaving its USD amounts untouched.
+    //
+    // NOTE: FastAPI SILENTLY DROPS an undeclared multipart field - that is how
+    // the Phase 4 `pipeline_id` defect shipped inert - so this and the
+    // endpoint's `Form` declaration are one change, not two.
+    {
+      const currency = currencyToSend(
+        clientData.currency,
+        companyCurrency,
+        quotation?.currency
+      );
+      if (currency) payload.append("currency", currency);
     }
     // Unlike the channel above, the deal link IS removable. `POST /send`-side
     // the API distinguishes "not sent" (leave the stored link alone) from
@@ -798,9 +1024,11 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       // possible: the response carries `public_code` / `acceptance_url`, so
       // the PDF can print the acceptance link it could never carry before,
       // when the code was minted after the PDF had already been rasterised.
-      const publishForm = new FormData();
-      publishForm.append("action", "publish");
-      const published = await updateQuotation(token, savedRow.id, publishForm);
+      // EXACTLY {action: publish} and nothing else (A22 / A23). An empty
+      // `currency` here would be read as "clear me back to the company
+      // default", relabelling a USD draft as IDR - and the PDF is rasterised
+      // FROM this published row. The key set is pinned by a vitest case.
+      const published = await updateQuotation(token, savedRow.id, buildPublishFormData());
       // The row is now `sent` (or `pending_approval`): the stored totals are
       // final. Retire any preview still in flight so it cannot land on top.
       previewSeq.current += 1;
@@ -1299,17 +1527,28 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             isReadOnlyClient={!isNew}
             readOnly={readOnly}
             contactId={selectedLead?.contact_id ?? quotation?.contact_id ?? null}
+            // COMMERCIAL Phase 5 (spec I8). The picker offers only currencies
+            // the tenant actually holds a rate for, plus the company default.
+            currencyOptions={currencyOptions}
+            exchangeRateNote={rateNote}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
 
           <ProductsServicesCard
-            items={items}
+            items={itemsWithUnits}
             updateQty={updateQty}
             updateItemField={updateItemField}
             addItem={addItem}
             removeItem={removeItem}
             listProduct={availableProducts}
             totals={totals}
+            // Every amount in the line table prints in the QUOTATION's money,
+            // not the company's (spec I8).
+            currency={displayCurrency}
+            // Server-side search (spec I9): the picker no longer shows only the
+            // first 100 products, and variants are selectable.
+            onSearchProducts={setProductSearch}
+            searching={productSearch !== debouncedProductSearch}
             rowErrors={errors?.fieldsByRow ?? {}}
             rowMessages={errors?.byRow ?? {}}
             readOnly={readOnly}
@@ -1353,6 +1592,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                 defaultPricesIncludeTax={
                   quotation?.prices_include_tax ?? defaults?.prices_include_tax ?? null
                 }
+                currency={displayCurrency}
+                exchangeRateNote={rateNote}
                 headerDiscountType={headerDiscountType}
                 headerDiscountValue={headerDiscountValue}
                 onHeaderDiscountChange={handleHeaderDiscountChange}
@@ -1548,7 +1789,14 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           quotation LIST can mount the same template for its "Unduh PDF"
           action instead of the template being unreachable once a quotation is
           published. */}
-      <QuotationPdfDocument quotation={pdfQuotation} productDefinitions={productDefinitions} />
+      {/* The COMPANY's currency is passed so the PDF can print the rupiah
+          equivalent of the PPN and the grand total under the foreign totals
+          (spec I10) - an Indonesian tax document is read in rupiah. */}
+      <QuotationPdfDocument
+        quotation={pdfQuotation}
+        productDefinitions={productDefinitions}
+        companyCurrency={companyCurrency}
+      />
     </div>
   );
 }

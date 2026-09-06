@@ -27,6 +27,9 @@ import {
 import CustomFieldsPanel from "@/components/custom-fields/CustomFieldsPanel";
 import ProductImageUploadField from "@/components/product/ProductImageUploadField";
 import ProductPriceListsPanel from "@/components/product/ProductPriceListsPanel";
+import Link from "next/link";
+import { Chip } from "@mui/material";
+import { variantValueChips } from "@/lib/utils/variantMatrix";
 import { RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AppInput } from "../ui/app-input";
@@ -54,6 +57,15 @@ export type ProductForm = {
     categoryId: string;
     unitId: string;
     customFields: Record<string, unknown>;
+    /**
+     * COMMERCIAL Phase 5 (spec I5 / A33). The Meta catalogue retailer id. The
+     * COLUMN has existed since Phase 0 and was reachable through NO schema, no
+     * service, no endpoint and no screen until this phase - zero populated rows
+     * on all three tiers. Phase 5 gives a product the FIELD and nothing more:
+     * the catalogue SYNC is explicitly out of scope (K1), and there is no
+     * unique constraint on it.
+     */
+    metaRetailerId: string;
 };
 
 const EMPTY_FORM: ProductForm = {
@@ -69,6 +81,7 @@ const EMPTY_FORM: ProductForm = {
     categoryId: "",
     unitId: "",
     customFields: {},
+    metaRetailerId: "",
 };
 
 /** API field names -> the form control that owns them (spec I4 error routing). */
@@ -85,6 +98,12 @@ const API_FIELD_TO_FORM: Record<string, keyof ProductForm> = {
     category_id: "categoryId",
     unit_id: "unitId",
     status: "status",
+    // COMMERCIAL Phase 5 (spec I5): so the server's field errors keep landing
+    // under their own controls. `variant_values` has no control in THIS modal -
+    // the matrix editor owns it - but the mapping keeps a refusal off the
+    // unlabelled error line at the bottom of the form.
+    meta_retailer_id: "metaRetailerId",
+    variant_values: "metaRetailerId",
 };
 
 const BILLING_PERIOD_OPTIONS = (Object.keys(BILLING_PERIOD_LABELS) as BillingPeriod[]).map((value) => ({
@@ -241,6 +260,7 @@ export function AddProductModal({ open, onOpenChange, product = null, onSaved }:
                 categoryId: product.category_id ?? "",
                 unitId: product.unit_id ?? "",
                 customFields: { ...(product.custom_fields ?? {}) },
+                metaRetailerId: product.meta_retailer_id ?? "",
             });
         }
         setErrors({});
@@ -403,6 +423,8 @@ export function AddProductModal({ open, onOpenChange, product = null, onSaved }:
             // Explicit null clears on update; on create null and absent are the same.
             category_id: formData.categoryId || null,
             unit_id: formData.unitId || null,
+            // Phase 5 (A33): the field, and nothing more. Blank clears it.
+            meta_retailer_id: formData.metaRetailerId.trim() || null,
         };
         // Sent only when the tenant has product definitions or something is set,
         // so a tenant without custom fields sends the Phase 0 body unchanged.
@@ -658,6 +680,68 @@ export function AddProductModal({ open, onOpenChange, product = null, onSaved }:
                                     />
                                 </div>
                             </div>
+                        )}
+
+                        {/* COMMERCIAL Phase 5 (spec I5 / A33). The Meta catalogue id:
+                            a plain optional field with no sync behind it, and the
+                            helper text says exactly that so nobody expects one. */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-900">Meta retailer ID</label>
+                            <AppInput
+                                name="metaRetailerId"
+                                placeholder="ID produk di katalog Meta (opsional)"
+                                value={formData.metaRetailerId}
+                                onChange={(e) =>
+                                    setFormData((p) => ({ ...p, metaRetailerId: e.target.value }))
+                                }
+                                inputProps={{ maxLength: 128 }}
+                                isBgWhite
+                                rounded="6px"
+                                error={!!errors.metaRetailerId}
+                                helperText={
+                                    errors.metaRetailerId ??
+                                    "Disimpan untuk dipakai nanti. Belum ada sinkronisasi katalog Meta di aplikasi ini."
+                                }
+                            />
+                        </div>
+
+                        {/* A VARIANT shows its parent read-only (spec I5). The
+                            parent is not editable from here: re-parenting would
+                            silently change which name-uniqueness bucket the row
+                            lives in and which quotations already snapshot it, so
+                            `parent_product_id` is not on the update request at
+                            all (D1). */}
+                        {isEdit && product?.parent_product_id && (
+                            <div className="rounded-lg border bg-gray-50 p-3">
+                                <p className="text-xs font-medium text-gray-500">Varian dari</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                    <Link
+                                        href={`/sales/product/${product.parent_product_id}`}
+                                        className="text-sm font-medium text-[#5479EE] underline-offset-2 hover:underline"
+                                    >
+                                        {product.parent?.product_name ?? "Produk induk"}
+                                    </Link>
+                                    {variantValueChips(product.variant_values).map((chip) => (
+                                        <Chip key={chip.key} label={chip.label} size="small" variant="outlined" />
+                                    ))}
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Produk induk tidak bisa diganti dari sini. Nilai varian diubah lewat halaman
+                                    produk induk.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* The child collections need an existing id, so they live
+                            on the detail route and not in this single-save modal
+                            (spec I4). In edit mode the modal points at them. */}
+                        {isEdit && product && (
+                            <Link
+                                href={`/sales/product/${product.id}`}
+                                className="text-sm font-medium text-[#5479EE] underline-offset-2 hover:underline"
+                            >
+                                Buka halaman produk - varian, isi paket dan konversi satuan &rsaquo;
+                            </Link>
                         )}
 
                         <ProductImageUploadField

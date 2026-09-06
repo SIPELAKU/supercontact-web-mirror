@@ -309,6 +309,9 @@ export default function PriceListPricesTab({
                 <div className="lg:col-span-2">
                     <label className="mb-1 block text-xs font-medium">Produk</label>
                     <CatalogProductPicker
+                        // A variant is a full product row (A2) and carries its
+                        // own list price, so it must be selectable here.
+                        includeVariants
                         value={draft.productId || null}
                         selectedOption={draftProduct}
                         onChange={(option) => {
@@ -411,6 +414,9 @@ export default function PriceListPricesTab({
                 <div className="w-full sm:max-w-sm">
                     <CatalogProductPicker
                         label="Filter produk"
+                        // ...and the filter must be able to name the rows the
+                        // editor above can create.
+                        includeVariants
                         value={params.product_id ?? null}
                         selectedOption={productFilter}
                         onChange={applyProductFilter}

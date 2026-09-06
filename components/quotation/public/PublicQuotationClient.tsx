@@ -36,7 +36,13 @@ import { CheckCircle2, FileDown, Link2Off, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
-import { formatPercent, formatQuantity, formatRupiah } from "@/lib/helper/currency";
+import {
+  formatMoney,
+  formatPercent,
+  formatQuantity,
+  normalizeCurrencyCode,
+} from "@/lib/helper/currency";
+import { promoChipLabel } from "@/lib/constants/promotion";
 import { PUBLIC_ACCEPT_NAME_MAX, QuotationPublicApiError } from "@/lib/api/quotations-public";
 import {
   isTerminalPublicQuotationError,
@@ -218,6 +224,31 @@ export default function PublicQuotationClient() {
 
   const isDecided = decided || terminal === "decided";
 
+  // ── COMMERCIAL Phase 5 (spec I10 / D7) ───────────────────────────────────
+  //
+  // This page has ALWAYS received a `currency` and has ALWAYS ignored it. That
+  // is the defect: a quotation issued in USD printed rupiah symbols and
+  // whole-rupiah rounding on the CUSTOMER's own acceptance page - the document
+  // they click "Setujui" on.
+  const currency = normalizeCurrencyCode(data.currency);
+  const money = (value: string | number | null | undefined) => formatMoney(value, currency);
+  // The COMPANY's currency - what the rate converts INTO. The PDF has always
+  // named it; this page printed a BARE number ("Kurs 1 USD = 16.250"), which
+  // id-ID grouping lets a customer read as either 16.250 rupiah or 16,25
+  // dollars, and it printed no equivalents at all. Two documents for ONE
+  // quotation must not say different things - and this is the one the customer
+  // clicks "Setujui" on. Defaults to IDR, exactly like the PDF's own
+  // `companyCurrency` prop, so a leg that predates `base_currency` renders what
+  // every tenant is on today.
+  const base = normalizeCurrencyCode(data.base_currency);
+  const baseMoney = (value: string | number | null | undefined) => formatMoney(value, base);
+  const isForeign = currency !== base;
+  const rate = data.exchange_rate_used ?? null;
+  const rateNumber = Number(rate);
+  const hasRate = isForeign && !!rate && Number.isFinite(rateNumber) && rateNumber > 0;
+  const promoTotal = data.promo_discount_total ?? null;
+  const showPromo = promoTotal !== null && promoTotal !== undefined && Number(promoTotal) > 0;
+
   return (
     <div className="flex flex-col gap-4">
       <Card>
@@ -234,6 +265,8 @@ export default function PublicQuotationClient() {
           <div className="text-sm text-gray-600 sm:text-right">
             <p>Berlaku hingga</p>
             <p className="font-semibold text-gray-900">{safeDate(data.expire_date)}</p>
+            {/* The currency line, before the totals (spec I10). */}
+            <p className="mt-1 text-xs text-gray-500">Mata uang: {currency}</p>
           </div>
         </header>
 
@@ -249,13 +282,40 @@ export default function PublicQuotationClient() {
             <tbody>
               {data.lines.map((line, index) => (
                 <tr key={`${line.name_snapshot}-${index}`} className="border-b border-gray-100">
-                  <td className="px-2 py-3 text-gray-900">{line.name_snapshot}</td>
+                  <td className="px-2 py-3 text-gray-900">
+                    {line.name_snapshot}
+                    {/* BUNDLE COMPONENTS inside the Item cell, never as extra
+                        rows: the Total column would otherwise imply money per
+                        component, and a bundle is priced as ONE line (A5).
+                        The customer is entitled to know what is in the box. */}
+                    {line.bundle_components && line.bundle_components.length > 0 && (
+                      <ul className="mt-1 border-l-2 border-gray-200 pl-3">
+                        {line.bundle_components.map((component, componentIndex) => (
+                          <li
+                            key={`${component.product_name}-${componentIndex}`}
+                            className="text-xs text-gray-500"
+                          >
+                            {formatQuantity(component.quantity)}
+                            {component.unit_label ? ` ${component.unit_label}` : ""} &times;{" "}
+                            {component.product_name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {line.promo_code_snapshot && (
+                      <p className="mt-1 text-xs font-medium text-emerald-700">
+                        {promoChipLabel(line.promo_code_snapshot)}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-2 py-3 text-right text-gray-600">
                     {formatQuantity(line.quantity)}
-                    {line.unit_label_snapshot ? ` ${line.unit_label_snapshot}` : ""}
+                    {line.unit_label ?? line.unit_label_snapshot
+                      ? ` ${line.unit_label ?? line.unit_label_snapshot}`
+                      : ""}
                   </td>
                   <td className="px-2 py-3 text-right font-medium text-gray-900">
-                    {formatRupiah(line.line_total)}
+                    {money(line.line_total)}
                   </td>
                 </tr>
               ))}
@@ -266,24 +326,52 @@ export default function PublicQuotationClient() {
         <dl className="mt-6 ml-auto w-full max-w-xs space-y-2 text-sm">
           <div className="flex justify-between text-gray-600">
             <dt>Subtotal</dt>
-            <dd>{formatRupiah(data.subtotal)}</dd>
+            <dd>{money(data.subtotal)}</dd>
           </div>
+          {/* A26: already inside Subtotal, so a caption and never a third minus
+              row - the column the customer is adding up has to add up. */}
+          {showPromo && (
+            <p className="text-right text-xs text-gray-500">
+              Termasuk promo {money(promoTotal)}
+            </p>
+          )}
           <div className="flex justify-between text-gray-600">
             <dt>Diskon</dt>
-            <dd>- {formatRupiah(data.discount_total)}</dd>
+            <dd>- {money(data.discount_total)}</dd>
           </div>
           <div className="flex justify-between text-gray-600">
             <dt>Jumlah kena pajak</dt>
-            <dd>{formatRupiah(data.taxable_amount)}</dd>
+            <dd>{money(data.taxable_amount)}</dd>
           </div>
           <div className="flex justify-between text-gray-600">
             <dt>PPN {formatPercent(data.tax_rate)}%</dt>
-            <dd>{formatRupiah(data.tax_total)}</dd>
+            <dd>{money(data.tax_total)}</dd>
           </div>
           <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900">
             <dt>Total</dt>
-            <dd>{formatRupiah(data.grand_total)}</dd>
+            <dd>{money(data.grand_total)}</dd>
           </div>
+          {/* The rate that priced this document, its date, and the company-
+              currency equivalents of the PPN and the grand total - the SAME
+              three things `QuotationPdfDocument` prints (spec I10), because the
+              customer holds both documents for one quotation and an Indonesian
+              tax document is read in rupiah. */}
+          {hasRate && (
+            <>
+              <p className="text-right text-xs text-gray-500">
+                Kurs 1 {currency} = {baseMoney(rate)}
+                {data.exchange_rate_date ? ` per ${safeDate(data.exchange_rate_date)}` : ""}
+              </p>
+              <div className="flex justify-between text-xs text-gray-500">
+                <dt>PPN dalam {base}</dt>
+                <dd>{baseMoney(Number(data.tax_total) * rateNumber)}</dd>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500">
+                <dt>Total dalam {base}</dt>
+                <dd>{baseMoney(Number(data.grand_total) * rateNumber)}</dd>
+              </div>
+            </>
+          )}
           <p className="text-right text-xs text-gray-400">
             {data.prices_include_tax ? "Harga sudah termasuk PPN" : "Harga belum termasuk PPN"}
           </p>

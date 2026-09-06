@@ -38,9 +38,16 @@
 
 import { format } from "date-fns";
 import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
-import { formatPercent, formatRupiah } from "@/lib/helper/currency";
+import {
+  formatMoney,
+  formatPercent,
+  formatQuantity,
+  normalizeCurrencyCode,
+} from "@/lib/helper/currency";
 import { formatQuantityWithUnit } from "@/lib/helper/quantity";
 import { billingPeriodSuffix } from "@/lib/utils/priceSource";
+import { promoChipLabel } from "@/lib/constants/promotion";
+import { variantValueChips } from "@/lib/utils/variantMatrix";
 import { publicQuotationUrl } from "@/lib/api/quotations-public";
 import type { CustomFieldDefinition } from "@/lib/types/CustomFieldDefinition";
 import type { DiscountType, Quotation } from "@/lib/types/Quotation";
@@ -54,8 +61,12 @@ function safeDate(value?: string | null, pattern = "dd MMM yyyy"): string {
   return Number.isNaN(date.getTime()) ? "-" : format(date, pattern);
 }
 
-function discountLabel(type: DiscountType, value: string | number): string {
-  return type === "percent" ? `${formatPercent(value)}%` : formatRupiah(value);
+function discountLabel(
+  type: DiscountType,
+  value: string | number,
+  currency: string
+): string {
+  return type === "percent" ? `${formatPercent(value)}%` : formatMoney(value, currency);
 }
 
 /**
@@ -101,13 +112,43 @@ interface QuotationPdfDocumentProps {
   productDefinitions: CustomFieldDefinition[];
   /** Overridable so two mounts on one page cannot collide on the id. */
   nodeId?: string;
+  /**
+   * COMMERCIAL Phase 5 (spec I10). The COMPANY's currency, for the rupiah
+   * equivalents printed under the foreign totals. Defaults to IDR, which is
+   * every tenant today, so an un-updated caller prints exactly what it did.
+   */
+  companyCurrency?: string;
 }
 
 export default function QuotationPdfDocument({
   quotation,
   productDefinitions,
   nodeId = QUOTATION_PDF_NODE_ID,
+  companyCurrency = "IDR",
 }: QuotationPdfDocumentProps) {
+  // COMMERCIAL Phase 5 (spec I10). EVERY amount on this document prints in the
+  // QUOTATION's currency. Eight `formatRupiah` calls lived here, and a USD 3.20
+  // line printed "Rp 3" on the customer's own PDF: the wrong symbol AND the
+  // wrong number.
+  const currency = normalizeCurrencyCode(quotation?.currency);
+  const base = normalizeCurrencyCode(companyCurrency);
+  const money = (value: string | number | null | undefined) => formatMoney(value, currency);
+  const baseMoney = (value: string | number | null | undefined) => formatMoney(value, base);
+  const isForeign = currency !== base;
+
+  const rate = quotation?.exchange_rate_used ?? null;
+  const rateNumber = Number(rate);
+  const hasRate = isForeign && !!rate && Number.isFinite(rateNumber) && rateNumber > 0;
+  /** "Kurs 1 USD = Rp 16.250 per 6 Sep 2026" - printed WITH the totals. */
+  const rateNote = hasRate
+    ? `Kurs 1 ${currency} = ${baseMoney(rate)}${
+        quotation?.exchange_rate_date ? ` per ${safeDate(quotation.exchange_rate_date)}` : ""
+      }`
+    : "";
+
+  const promoTotal = quotation?.promo_discount_total ?? null;
+  const showPromo = promoTotal !== null && promoTotal !== undefined && Number(promoTotal) > 0;
+
   const taxNote = quotation
     ? quotation.prices_include_tax
       ? "Harga sudah termasuk PPN"
@@ -142,6 +183,10 @@ export default function QuotationPdfDocument({
             <div className="text-right text-sm" style={{ color: "#000000" }}>
               <p>Tanggal: {safeDate(quotation.created_at)}</p>
               <p>Berlaku hingga: {safeDate(quotation.expire_date)}</p>
+              {/* THE CURRENCY LINE (spec I10), beside Tanggal / Berlaku hingga,
+                  so the reader knows what money this is BEFORE reaching the
+                  totals - not after mentally adding up an unfamiliar symbol. */}
+              <p>Mata uang: {currency}</p>
             </div>
           </div>
 
@@ -187,6 +232,17 @@ export default function QuotationPdfDocument({
                     <p className="text-xs" style={{ color: "#6b7280" }}>
                       {item.sku_snapshot ?? item.product?.sku ?? ""}
                     </p>
+                    {/* VARIANT VALUES beside the name snapshot (spec I10 / D6).
+                        Read from the EMBEDDED product object - which is exactly
+                        why `class Product` had to gain `variant_values`: without
+                        it a saved quotation has no wire path for this at all. */}
+                    {variantValueChips(item.product?.variant_values).length > 0 && (
+                      <p className="text-xs" style={{ color: "#6b7280" }}>
+                        {variantValueChips(item.product?.variant_values)
+                          .map((chip) => chip.label)
+                          .join(" · ")}
+                      </p>
+                    )}
                     {/* "Brand: X" under the product - the LIVE attributes, read-only. */}
                     <CustomFieldsReadOnly
                       entityType="product"
@@ -195,6 +251,36 @@ export default function QuotationPdfDocument({
                       className="mt-0.5 text-xs"
                       style={{ color: "#6b7280" }}
                     />
+                    {/* BUNDLE COMPONENTS as an indented block INSIDE the Item
+                        cell (spec I10) - never as extra table rows, because the
+                        Total column would then imply per-component money that
+                        does not exist (A5). */}
+                    {item.bundle_components && item.bundle_components.length > 0 && (
+                      <div className="mt-1 pl-3" style={{ borderLeft: "2px solid #e5e7eb" }}>
+                        <p className="text-xs font-bold" style={{ color: "#4b5563" }}>
+                          Isi paket
+                        </p>
+                        {item.bundle_components.map((component, index) => (
+                          <p
+                            key={`${component.product_id}-${index}`}
+                            className="text-xs"
+                            style={{ color: "#6b7280" }}
+                          >
+                            {formatQuantity(component.quantity)}
+                            {component.unit_label ? ` ${component.unit_label}` : ""} &times;{" "}
+                            {component.product_name}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {/* The promotion the COMPANY gave, named on the customer's
+                        copy and captioned separately from the seller's discount
+                        column (spec I8 / A26). */}
+                    {item.promo_code_snapshot && (
+                      <p className="text-xs" style={{ color: "#047857" }}>
+                        {promoChipLabel(item.promo_code_snapshot)}
+                      </p>
+                    )}
                     {item.notes && (
                       <p className="text-sm" style={{ color: "#6b7280" }}>{item.notes}</p>
                     )}
@@ -207,7 +293,7 @@ export default function QuotationPdfDocument({
                     )}
                   </td>
                   <td className="text-right py-2" style={{ color: "#000000" }}>
-                    {formatRupiah(item.unit_price)}
+                    {money(item.unit_price)}
                     {/* A recurring line says so on the CUSTOMER's copy too:
                         "Rp 500.000/bulan" against a 12-period total is not
                         the same offer as "Rp 500.000". The snapshot travels
@@ -221,11 +307,11 @@ export default function QuotationPdfDocument({
                   </td>
                   <td className="text-right py-2" style={{ color: "#000000" }}>
                     {Number(item.discount_value) > 0
-                      ? discountLabel(item.discount_type, item.discount_value)
+                      ? discountLabel(item.discount_type, item.discount_value, currency)
                       : "-"}
                   </td>
                   <td className="text-right py-2" style={{ color: "#000000" }}>
-                    {formatRupiah(item.line_total)}
+                    {money(item.line_total)}
                   </td>
                 </tr>
               ))}
@@ -236,32 +322,58 @@ export default function QuotationPdfDocument({
             <div className="w-72">
               <div className="flex justify-between mb-2">
                 <span>Subtotal</span>
-                <span>{formatRupiah(quotation.subtotal)}</span>
+                <span>{money(quotation.subtotal)}</span>
               </div>
+              {/* A26: the promo is ALREADY inside Subtotal, so it is a caption
+                  and never a third minus row - a third row would make the
+                  column the customer is adding up stop adding up. */}
+              {showPromo && (
+                <p className="text-xs mb-2" style={{ color: "#6b7280" }}>
+                  Termasuk promo {money(promoTotal)}
+                </p>
+              )}
               <div className="flex justify-between mb-2">
                 <span>
                   Diskon
                   {Number(quotation.discount_value) > 0
-                    ? ` (header ${discountLabel(quotation.discount_type, quotation.discount_value)})`
+                    ? ` (header ${discountLabel(quotation.discount_type, quotation.discount_value, currency)})`
                     : ""}
                 </span>
-                <span>- {formatRupiah(quotation.discount_total)}</span>
+                <span>- {money(quotation.discount_total)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span>Jumlah kena pajak</span>
-                <span>{formatRupiah(quotation.taxable_amount)}</span>
+                <span>{money(quotation.taxable_amount)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span>PPN {formatPercent(quotation.tax_rate)}%</span>
-                <span>{formatRupiah(quotation.tax_total)}</span>
+                <span>{money(quotation.tax_total)}</span>
               </div>
               <div
                 className="flex justify-between font-bold text-lg border-t pt-2"
                 style={{ borderColor: "#1f2937" }}
               >
                 <span>Grand Total</span>
-                <span>{formatRupiah(quotation.grand_total)}</span>
+                <span>{money(quotation.grand_total)}</span>
               </div>
+              {/* THE RATE AND ITS DATE, printed with the totals (spec I10), and
+                  the RUPIAH EQUIVALENT of the PPN and the grand total under
+                  them - this block already asserts a PPN rate, and an
+                  Indonesian tax document is read in rupiah. */}
+              {hasRate && (
+                <>
+                  <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{rateNote}</p>
+                  <div className="flex justify-between text-xs mt-1" style={{ color: "#4b5563" }}>
+                    <span>PPN dalam {base}</span>
+                    <span>{baseMoney(Number(quotation.tax_total) * rateNumber)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs" style={{ color: "#4b5563" }}>
+                    <span>Grand Total dalam {base}</span>
+                    <span>{baseMoney(Number(quotation.grand_total) * rateNumber)}</span>
+                  </div>
+                </>
+              )}
+              {/* Kept VERBATIM (spec I10). */}
               <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{taxNote}</p>
             </div>
           </div>

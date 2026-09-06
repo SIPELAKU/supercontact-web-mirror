@@ -57,6 +57,16 @@ export default function CatalogProductPicker({
     helperText,
     /** Keeps a chosen product readable after a page change wipes the search. */
     selectedOption = null,
+    /**
+     * COMMERCIAL Phase 5: `GET /products` is TOP-LEVEL ONLY by default, so a
+     * VARIANT is not in the option list unless the caller asks for one. Every
+     * authoring surface that may legitimately name a variant - a bundle
+     * component, a product-scoped promotion, a price-list price row - passes
+     * this. `ProductBundleService._resolve_component` allows a variant
+     * explicitly ("a component MAY be a VARIANT - that is the point of
+     * variants"), so without it the picker cannot express what the API accepts.
+     */
+    includeVariants = false,
 }: {
     value: string | null;
     onChange: (option: ProductPickerOption | null) => void;
@@ -66,6 +76,7 @@ export default function CatalogProductPicker({
     error?: boolean;
     helperText?: React.ReactNode;
     selectedOption?: ProductPickerOption | null;
+    includeVariants?: boolean;
 }) {
     const { getToken } = useAuth();
     const [search, setSearch] = useState("");
@@ -77,13 +88,16 @@ export default function CatalogProductPicker({
     }, [selectedOption]);
 
     const { data, isFetching } = useQuery({
-        queryKey: ["products", "picker", debouncedSearch],
+        // `includeVariants` is part of the KEY: the two lists are different
+        // answers to the same search and must never share a cache entry.
+        queryKey: ["products", "picker", debouncedSearch, includeVariants],
         queryFn: async () =>
             fetchProductsPage(await getToken(), {
                 page: 1,
                 limit: 25,
                 status: "active",
                 search: debouncedSearch || undefined,
+                include_variants: includeVariants || undefined,
                 include_total: false,
                 sort_by: "product_name",
                 sort_order: "asc",

@@ -158,6 +158,13 @@ export interface ProductPrice {
   valid_until: string | null;
   /** Derived server-side: `valid_until is None`. */
   is_open: boolean;
+  /**
+   * COMMERCIAL Phase 5 (A15): TRUE for a GRANDFATHERED row whose `unit` is
+   * neither the product's own unit nor an ACTIVE conversion, so the quote path
+   * can never resolve it. Surfaced on the product's "Konversi satuan" tab with
+   * a one-click fix; never refused, never rewritten.
+   */
+  unit_conversion_missing?: boolean;
   created_at: string;
   updated_at: string;
 }

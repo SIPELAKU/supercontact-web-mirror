@@ -38,6 +38,27 @@ export interface PublicQuotationLine {
   /** Decimal-as-string, like every money and quantity value in this app. */
   quantity: string;
   line_total: string;
+  /**
+   * COMMERCIAL Phase 5 (spec D7). The acceptance page is a CUSTOMER-FACING
+   * DOCUMENT and must be able to say what it charged, in what money, and WHAT
+   * WAS IN THE BOX. All three optional, so a leg that predates the phase
+   * answers without them.
+   *
+   * `bundle_components` carries no money, mirroring the stored snapshot: a
+   * bundle is priced as one line (A5).
+   */
+  bundle_components?: PublicQuotationBundleComponent[] | null;
+  unit_label?: string | null;
+  promo_code_snapshot?: string | null;
+}
+
+/** Mirrors `QuotationBundleComponent` (D6): names, quantities, units, NO money. */
+export interface PublicQuotationBundleComponent {
+  product_id?: string | null;
+  product_name: string;
+  sku?: string | null;
+  quantity: string;
+  unit_label?: string | null;
 }
 
 export interface PublicQuotation {
@@ -46,6 +67,16 @@ export interface PublicQuotation {
   quotation_title?: string | null;
   expire_date?: string | null;
   currency: string;
+  /**
+   * COMMERCIAL Phase 5 (spec I10). The COMPANY's own currency - what the
+   * exchange rate converts INTO. The page needs it to name the money on the
+   * right of "Kurs 1 USD = Rp 16.250" and to print the same IDR equivalents
+   * the PDF prints; without it the two documents one customer holds for one
+   * quotation say different things. Optional so a leg that predates the field
+   * still renders (the page falls back to the quotation's own currency and
+   * simply prints no equivalents).
+   */
+  base_currency?: string | null;
   prices_include_tax: boolean;
   /** Canonical status value only - the label is decided on the client. */
   status: string;
@@ -59,6 +90,19 @@ export interface PublicQuotation {
   pdf_url?: string | null;
   accepted_at?: string | null;
   accepted_by_name?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D7 / A16 / A26), beside the `currency` this
+   * response has always carried and the page has always IGNORED - which is the
+   * defect: a USD quotation printed rupiah symbols on the customer's own
+   * acceptance page.
+   *
+   * `exchange_rate_used` is company-currency per ONE unit of `currency`;
+   * `promo_discount_total` is ALREADY inside `subtotal` and is printed as a
+   * caption, never as a third minus row (A26).
+   */
+  exchange_rate_used?: string | null;
+  exchange_rate_date?: string | null;
+  promo_discount_total?: string | null;
 }
 
 export interface PublicQuotationAcceptRequest {

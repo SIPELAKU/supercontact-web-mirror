@@ -33,6 +33,35 @@ export interface QuotationLineProduct {
   unit?: { id: string; code: string; name: string; precision: number } | null;
   category?: { id: string; code: string; name: string } | null;
   custom_fields?: Record<string, unknown>;
+  /**
+   * COMMERCIAL Phase 5 (spec D6). The embedded `class Product` is a NARROW
+   * local SQLModel, not the ORM row, so it inherits nothing and these two had
+   * to be declared on it explicitly.
+   *
+   * Without them the PDF's "variant values printed beside the name snapshot"
+   * (I10) and the form's variant chip row (I8) have NO WIRE PATH for a saved
+   * quotation: `QuotationPdfDocument` reads `item.product?.custom_fields` from
+   * exactly this object.
+   */
+  variant_values?: Record<string, unknown>;
+  parent?: { id: string; product_name: string; sku: string } | null;
+}
+
+/**
+ * One component of a bundle line, as the server snapshots it (D6).
+ *
+ * NO MONEY FIELD, deliberately. A bundle is priced AS ONE LINE (A5), so a
+ * per-component amount would imply a per-component price that does not exist -
+ * which is also why the PDF prints these INSIDE the Item cell and never as
+ * extra table rows (I10).
+ */
+export interface QuotationBundleComponent {
+  product_id: string;
+  product_name: string;
+  sku?: string | null;
+  /** Decimal-as-string, like every quantity in this app. */
+  quantity: string;
+  unit_label?: string | null;
 }
 
 export interface QuotationItem {
@@ -80,6 +109,31 @@ export interface QuotationItem {
    */
   cost_snapshot?: string | null;
   margin_percent?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6). All optional with `null` defaults, matching
+   * how the three existing snapshots are typed, so a row written by an older
+   * leg carries none of them and nothing here breaks under `tsc`.
+   */
+  /** The unit the seller quoted in; null = the product's own unit. */
+  unit_id?: string | null;
+  /** BASE UNITS PER LINE UNIT, frozen at build time (A6). 1 karton = 12 pcs -> "12.0000". */
+  unit_factor_used?: string | null;
+  /** The bundle's contents at build time. Never re-read from the live catalogue. */
+  bundle_components?: QuotationBundleComponent[] | null;
+  promo_rule_id?: string | null;
+  /**
+   * The promotion CODE as it was when the line was priced. The rule's `code` is
+   * immutable server-side precisely so this snapshot can never go stale.
+   */
+  promo_code_snapshot?: string | null;
+  /**
+   * Money the promotion took off for the WHOLE LINE (per-unit x quantity), in
+   * the QUOTATION's currency - `quotation_items.promo_discount_amount`, and
+   * what `promo_discount_total` on the header sums.
+   */
+  promo_discount_amount?: string | null;
+  /** What the unit price was before the promotion was folded in (A7). */
+  pre_promo_unit_price?: string | null;
 }
 
 export interface LeadContact {
@@ -215,6 +269,21 @@ export interface Quotation {
   deliveries_count?: number;
   /** Server-built `${CLIENT_BASE_URL}/q/{public_code}`; minted at `sent` (A6). */
   acceptance_url?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6 / A16 / A26), beside the `currency` this type
+   * has always declared and NOTHING has ever read.
+   *
+   * DIRECTION: `exchange_rate_used` is company-currency per ONE unit of
+   * `currency`. 1 USD = 16.250 IDR -> "16250.000000". Converting a company
+   * price INTO the quotation currency DIVIDES by it.
+   *
+   * `promo_discount_total` is the sum of the lines' promo amounts and is
+   * ALREADY INSIDE `subtotal` (A7/A26) - it is rendered as a muted caption, and
+   * never as a third minus row, or the visible ledger stops adding up.
+   */
+  exchange_rate_used?: string | null;
+  exchange_rate_date?: string | null;
+  promo_discount_total?: string | null;
 }
 
 // ── Phase 4: approvals ─────────────────────────────────────────────────────
@@ -368,6 +437,19 @@ export interface QuotationLineTotals {
   override_reason?: string | null;
   tier_min_quantity?: string | null;
   billing_period?: QuotationBillingPeriod | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6). These live on the PREVIEW line - not only on
+   * the stored item - so the promo caption, the chosen unit and the bundle
+   * sub-block render BEFORE anything is written. Without them a seller would
+   * only learn a line was promoted after saving it.
+   */
+  promo_code?: string | null;
+  promo_discount_amount?: string | null;
+  pre_promo_unit_price?: string | null;
+  unit_id?: string | null;
+  unit_label?: string | null;
+  unit_factor_used?: string | null;
+  bundle_components?: QuotationBundleComponent[] | null;
 }
 
 /** POST /quotations/preview response: every number the summary shows. */
@@ -401,6 +483,14 @@ export interface QuotationTotals {
   approval_reason?: string | null;
   approval_threshold_percent?: string | null;
   approval_min_margin_percent?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6 / A26). `promo_discount_total` is the sum of
+   * the lines' promo amounts and is ALREADY inside `subtotal`; the summary
+   * renders it as a muted "Termasuk promo" caption OUTSIDE the ledger.
+   */
+  exchange_rate_used?: string | null;
+  exchange_rate_date?: string | null;
+  promo_discount_total?: string | null;
 }
 
 /** GET /quotations/defaults: the company's snapshot basis for a new quotation. */
@@ -444,6 +534,14 @@ export interface QuotationItemPayload {
   unit_price?: number | null;
   /** Mandatory whenever `unit_price` is sent, and refused without it. */
   override_reason?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6). The unit the seller is quoting in; omitted
+   * means the product's own unit, which is exactly today's behaviour.
+   *
+   * ADDITIVE and safe: `QuotationItemRequest` keeps `extra="forbid"`, and
+   * `forbid` rejects UNDECLARED keys, not newly declared ones.
+   */
+  unit_id?: string | null;
 }
 
 export interface QuotationPreviewRequest {
@@ -461,6 +559,15 @@ export interface QuotationPreviewRequest {
    * channel's prices stay on screen after the picker changes.
    */
   sales_channel_id?: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec D6, M-a). The currency is a RESOLUTION INPUT, so
+   * the PREVIEW has to carry it as well as the save.
+   *
+   * Without it the field is dropped SILENTLY - SQLModel's default `extra` is
+   * *ignore*, unlike `QuotationItemRequest`'s explicit `forbid` - and the form
+   * would show company-currency prices for a quote that saves in USD.
+   */
+  currency?: string | null;
 }
 
 export interface QuotationStatusTransition {
@@ -515,4 +622,29 @@ export interface ItemRow {
    */
   costSnapshot: string | null;
   marginPercent: string | null;
+  /**
+   * COMMERCIAL Phase 5 (spec I8).
+   *
+   * `unitId` is the only one the SELLER owns: it is sent on the line and
+   * re-prices it. `null` means the product's own unit, which is what every
+   * pre-Phase-5 line means and what the server assumes when the key is absent.
+   *
+   * The rest are read-only context the server decided, seeded from a STORED
+   * line so a read-only view renders the chips and the bundle block before any
+   * preview runs; while the form is editable the preview's own line wins,
+   * because it is the fresher answer.
+   */
+  unitId: string | null;
+  /** The product's configured conversions, for the select inside the Qty cell. */
+  unitOptions: { id: string; label: string; precision: number }[];
+  /** Variant axes as a chip row under the picker ("Warna: Merah"). */
+  variantValues: Record<string, unknown>;
+  /** The parent's name, so a reader can tell which family a variant belongs to. */
+  parentName: string | null;
+  /** Read-only, indented, NO MONEY - a bundle is priced as one line (A5). */
+  bundleComponents: QuotationBundleComponent[] | null;
+  /** The promotion snapshot, for the chip beside the price-source chip. */
+  promoCode: string | null;
+  promoDiscountAmount: string | null;
+  prePromoUnitPrice: string | null;
 }

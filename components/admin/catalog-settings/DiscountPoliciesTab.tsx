@@ -60,6 +60,7 @@ import {
   getFullUrl,
   handleResponse,
 } from "@/lib/api/catalog-http";
+import { POLICY_VS_PROMOTION_HELP } from "@/lib/constants/promotion";
 import type { RoleResponse } from "@/lib/types/Role";
 
 // MUST equal the table's batch size or the lazy footer asks for page 2 of 25
@@ -652,6 +653,11 @@ export default function DiscountPoliciesTab() {
             Baris <b>Perusahaan</b> adalah dasar workspace: boleh diubah, tidak bisa dihapus dan
             tidak bisa dinonaktifkan.
           </li>
+          {/* COMMERCIAL Phase 5 (spec I6). The two screens now sit side by side
+              in the nav and are easy to confuse: a POLICY caps the SELLER, a
+              PROMOTION is the COMPANY's own price. Each screen names the other
+              in one sentence. */}
+          <li>{POLICY_VS_PROMOTION_HELP}</li>
         </ul>
       </div>
 

@@ -56,6 +56,11 @@ const DISALLOW = [
     '/new-password',
     '/email-verification',
     '/m/',
+    // Public quotation acceptance links (Phase 4). Every /q/<code> URL is a
+    // private commercial document addressed to one customer, and the code IS
+    // the credential - it must never enter an index. The page also carries
+    // robots noindex/nofollow of its own.
+    '/q/',
     '/test/',
     '/demo/',
     '/api/',

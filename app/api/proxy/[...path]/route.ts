@@ -59,10 +59,18 @@ async function proxyRequest(
     const headers: Record<string, string> = {};
     request.headers.forEach((value, key) => {
       // Forward important headers
+      // `x-forwarded-for` / `x-real-ip` were added in Phase 4 (spec A31 /
+      // I8). Without them every request that traverses this proxy reaches the
+      // API from ONE address - this server's - so a per-IP rate limit becomes
+      // a global cap and any recorded client IP is the proxy's, not the
+      // visitor's. The public acceptance client calls the API host directly
+      // and normally bypasses this route; this is for everything that does not.
       if (
         key.toLowerCase() === 'authorization' ||
         key.toLowerCase() === 'content-type' ||
-        key.toLowerCase() === 'accept'
+        key.toLowerCase() === 'accept' ||
+        key.toLowerCase() === 'x-forwarded-for' ||
+        key.toLowerCase() === 'x-real-ip'
       ) {
         headers[key] = value;
       }

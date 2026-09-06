@@ -10,6 +10,9 @@ import { notify } from "@/lib/notifications";
 
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { handleError } from "@/lib/utils/errorHandler";
+import ContactCommercialFields, {
+  type ContactCommercialValues,
+} from "@/components/contact/ContactCommercialFields";
 
 interface InputProps {
   label: string;
@@ -58,6 +61,12 @@ const fieldLabels: Record<string, string> = {
   address: "Address",
 };
 
+const EMPTY_COMMERCIAL: ContactCommercialValues = {
+  customer_type_id: "",
+  region_id: "",
+  crm_company_id: "",
+};
+
 const AddContactModal: React.FC<AddContactModalProps> = ({
   open,
   onClose,
@@ -74,6 +83,11 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     address: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Phase 3 reference columns (spec I6). This modal is a separate hand-rolled
+  // form with a raw fetch and no custom-field support, so the controls are
+  // added here independently of EditContactModal - both render the same shared
+  // component so the two cannot drift.
+  const [commercial, setCommercial] = useState<ContactCommercialValues>(EMPTY_COMMERCIAL);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
 
   // Prevent body scroll when modal is open
@@ -98,6 +112,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       position: "",
       address: "",
     });
+    setCommercial(EMPTY_COMMERCIAL);
     setErrors({});
   };
 
@@ -112,6 +127,7 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         position: "",
         address: "",
       });
+      setCommercial(EMPTY_COMMERCIAL);
       setErrors({});
     }
   }, [open]);
@@ -173,6 +189,13 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       ...local,
       company: local.company?.trim() === "" ? null : local.company,
       address: local.address?.trim() === "" ? null : local.address,
+      // Only sent when picked. On CREATE there is nothing to clear, so an
+      // omitted key is the honest representation of "not set" - and it keeps
+      // the body identical to today's for a tenant that configures none of
+      // this.
+      customer_type_id: commercial.customer_type_id || undefined,
+      region_id: commercial.region_id || undefined,
+      crm_company_id: commercial.crm_company_id || undefined,
     };
 
     try {
@@ -326,6 +349,14 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
                 />
               </div>
             </div>
+
+            <ContactCommercialFields
+              values={commercial}
+              onChange={(patch) => setCommercial((prev) => ({ ...prev, ...patch }))}
+              errors={errors}
+              disabled={isLoading}
+              enabled={open}
+            />
 
             <div className="flex justify-end gap-3 mt-8 font-medium">
               <AppButton onClick={handleClose} variantStyle="outline" color="primary">

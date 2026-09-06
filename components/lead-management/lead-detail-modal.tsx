@@ -22,6 +22,7 @@ import { logger } from "../../lib/utils/logger";
 import { notify } from "@/lib/notifications";
 import { useAuth } from "@/lib/context/AuthContext";
 import ContactPickerDialog from "./ContactPickerDialog";
+import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext";
 
 // MUI Theme for consistent styling
 const muiTheme = createTheme({
@@ -82,6 +83,8 @@ interface FormData {
   officeLocation: string;
   leadStatus: string;
   leadSource: string;
+  /** Phase 3 (spec I6). "" = leave it as it is / let the server derive it. */
+  salesChannelId: string;
   assignedTo: string;
   tag: string;
   notes: string;
@@ -99,6 +102,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   const [showContactPicker, setShowContactPicker] = useState(false);
   const queryClient = useQueryClient();
   const { data: usersResponse } = useUsers();
+  const { data: salesChannelPage } = useActiveSalesChannels({ enabled: open });
   const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -112,6 +116,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
     officeLocation: "",
     leadStatus: "",
     leadSource: "",
+    salesChannelId: "",
     assignedTo: "",
     tag: "",
     notes: "",
@@ -130,6 +135,7 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         officeLocation: lead.office_location || "",
         leadStatus: lead.lead_status,
         leadSource: lead.lead_source,
+        salesChannelId: lead.sales_channel_id ?? "",
         assignedTo: lead.user?.id || "",
         tag: lead.tag,
         notes: lead.notes,
@@ -276,6 +282,11 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
         office_location: form.officeLocation,
         lead_status: form.leadStatus,
         lead_source: form.leadSource,
+        // Sent as `null` when cleared so the column is actually emptied, and
+        // omitted entirely while the picker has not loaded a value.
+        ...(form.salesChannelId !== (lead.sales_channel_id ?? "")
+          ? { sales_channel_id: form.salesChannelId || null }
+          : {}),
         assigned_to: selectedUserId || "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         tag: form.tag,
         notes: form.notes,
@@ -551,6 +562,27 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                     { value: "WhatsApp", label: "WhatsApp" },
                   ]}
                   placeholder="Select Lead Source"
+                  isBgWhite
+                />
+              </div>
+
+              {/* Sales channel (Phase 3, spec I6) - beside Lead Source, which
+                  keeps its enum, its icons and its own column filter. */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Kanal Penjualan</Label>
+                <AppSelect
+                  value={form.salesChannelId}
+                  onChange={(e) => updateField("salesChannelId", e.target.value as string)}
+                  height="48px"
+                  rounded="8px"
+                  options={[
+                    { value: "", label: "Tanpa kanal" },
+                    ...(salesChannelPage?.items ?? []).map((channel) => ({
+                      value: channel.id,
+                      label: channel.name,
+                    })),
+                  ]}
+                  placeholder="Tanpa kanal"
                   isBgWhite
                 />
               </div>

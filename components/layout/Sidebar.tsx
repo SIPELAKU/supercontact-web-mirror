@@ -66,6 +66,16 @@ const menuData: MenuSection[] = [
           { name: "Leads", path: "/lead-management", permission: "leads" },
           { name: "Pipeline", path: "/sales/pipeline", permission: "pipelines" },
           { name: "Quotations", path: "/sales/quotation", permission: "quotations" },
+          // Phase 4 (spec I6 / 0.22). The entry lives inline here because
+          // `lib/config/sidebarNav.ts` does not exist and is not created: the
+          // Sales children have always been declared in this array.
+          // `quotations:approve` mirrors the gate on GET /quotations/approvals
+          // exactly, so a Staff seller never sees the queue exists.
+          {
+            name: "Persetujuan Quotation",
+            path: "/sales/quotation/approvals",
+            permission: "quotations:approve",
+          },
         ],
       },
       {

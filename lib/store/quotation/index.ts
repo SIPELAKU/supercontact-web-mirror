@@ -1,7 +1,14 @@
 "use client";
 import { getDateRange } from "@/lib/helper/getDateRange";
+import { normalizeQuotationStatus } from "@/lib/constants/quotation-status";
+import type { Lead, LeadContact, LeadUser, Quotation, QuotationItem } from "@/lib/types/Quotation";
 import api from "@/lib/utils/axiosClient";
 import { create } from "zustand";
+
+// The response shapes live in lib/types/Quotation.ts (one Quotation shape for
+// the list, the detail and the form). Re-exported so existing imports from
+// the store keep working.
+export type { Lead, LeadContact, LeadUser, Quotation, QuotationItem };
 
 export interface ValidationItem {
     type: string;
@@ -15,99 +22,40 @@ export interface ProductValidationResponse {
     details: ValidationItem[];
 }
 
-export interface LeadContact {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    company: string;
-}
-
-export interface LeadUser {
-    id: string;
-    fullname: string;
-    email: string;
-}
-
-
-export interface Lead {
-    id: string;
-    office_location: string;
-    contact: LeadContact;
-    user: LeadUser;
-}
-
-
-type FetchQuotationParams = {
+export type FetchQuotationParams = {
     page: number;
     limit: number;
     search?: string;
     dateRange?: string;
-    status?: string;
+    /** Canonical or legacy spelling; normalised before it is sent. */
+    quotation_status?: string;
     date_from?: string; // Client Side Injector prop
     date_to?: string;   // Client Side Injector prop
     sort_by?: string;
     sort_order?: "asc" | "desc";
 };
 
-type requestBody = {
+/**
+ * Exactly the query parameters GET /quotations declares (spec D2.4). The
+ * old aliases (`status`, `status_lower`, `filter`, `q`, `keyword`, ...) were
+ * never read by the server and are gone.
+ */
+type RequestBody = {
     page: number;
     limit: number;
     search?: string;
     date_from?: string;
     date_to?: string;
     quotation_status?: string;
-    status?: string;
     sort_by?: string;
     sort_order?: "asc" | "desc";
 };
-
-export interface QuotationItem {
-    id: string;
-    quotation_id: string;
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    discount: number;
-    notes: string;
-    product: QuotationProduct;
-}
-
-export interface QuotationProduct {
-    product_name: string;
-    sku: string;
-    price: number;
-}
-
 
 interface Pagination {
     page: number;
     limit: number;
     total: number;
     totalPages: number;
-}
-
-export interface Quotation {
-    id: string;
-    product_name: string;
-    sku: string;
-    price: number;
-    description: string;
-    tax_rate?: string;
-}
-
-export interface Quotation {
-    id: string;
-    lead_id: string;
-    quotation_number: string;
-    quotation_title: string;
-    expire_date: string;
-    grand_total: number;
-    quotation_status: "Pending" | "Approved" | "Rejected" | "Expired" | "Accepted";
-    lead: Lead;
-    items: QuotationItem[];
-    created_at: string;
-    updated_at: string;
 }
 
 interface GetState {
@@ -140,7 +88,9 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
     searchQuery: "",
     pagination: {
         page: 1,
-        limit: 5,
+        // Matches SuperTable's lazy batch size, so the first fetch and the
+        // first "load more" ask for consecutive rows rather than overlapping.
+        limit: 25,
         total: 0,
         totalPages: 1,
     },
@@ -170,14 +120,18 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
 
             const { pagination } = get();
 
-            const query: requestBody = {
+            const query: RequestBody = {
                 page: params?.page ?? pagination.page,
                 limit: params?.limit ?? pagination.limit,
             };
-            // Inject Explicit Client Property First
-            if (params?.date_from && params?.date_to) {
-                query.date_from = params.date_from;
-                query.date_to = params.date_to;
+            // Explicit client values win, each on its own: the date-range
+            // filter can hand over only `from` ("sejak") or only `to`
+            // ("sampai"), and the Kedaluwarsa translation
+            // (quotationListFilterQuery) sends `date_to` alone. Requiring
+            // both used to drop such a filter silently.
+            if (params?.date_from || params?.date_to) {
+                if (params.date_from) query.date_from = params.date_from;
+                if (params.date_to) query.date_to = params.date_to;
             } else {
                 const dateRange = params?.dateRange ?? get().dateRangeFilter;
                 if (dateRange && dateRange !== "all") {
@@ -189,14 +143,11 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 }
             }
 
-            const status = params?.status ?? get().statusFilter;
-            if (status && status.trim() !== "all") {
-                query.status = status;
-                query.quotation_status = status;
-                // Add lowercase versions as some APIs are case-sensitive
-                (query as any).status_lower = status.toLowerCase();
-                (query as any).filter = status;
-                (query as any).quotation_status_lower = status.toLowerCase();
+            const status = params?.quotation_status ?? get().statusFilter;
+            if (status && status.trim() !== "" && status.trim() !== "all") {
+                // Both vocabularies are accepted server-side; send the
+                // canonical one so a bookmarked `Pending` still finds `sent`.
+                query.quotation_status = normalizeQuotationStatus(status.trim());
             }
 
             if (params?.sort_by) {
@@ -207,11 +158,6 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
             const search = params?.search ?? get().searchQuery;
             if (search && search.trim() !== "") {
                 query.search = search;
-                // Add common aliases for search
-                (query as any).q = search;
-                (query as any).search_query = search;
-                (query as any).keyword = search;
-                (query as any).name = search;
             }
 
             const res = await api.get("/quotations", {
@@ -224,7 +170,7 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
                 listQuotations: data.quotations,
                 pagination: {
                     page: data.page,
-                    limit: pagination.limit,
+                    limit: query.limit,
                     total: data.total,
                     totalPages: data.total_pages,
                 },

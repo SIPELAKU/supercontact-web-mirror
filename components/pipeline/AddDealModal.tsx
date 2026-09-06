@@ -39,7 +39,9 @@ export const dealStages = [
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
   const { listContact, fetchContact, loading: loadingContacts, clearContact } = useGetContactStore();
-  const { listProduct, fetchProduct } = useGetProductStore();
+  // The picker slice (page 1, limit 100, active) - never the product page's
+  // list, whose page/search/status/sort would otherwise leak in here (S3-1).
+  const { catalogue: listProduct, fetchCatalogue } = useGetProductStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -130,9 +132,11 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   useEffect(() => {
     if (open) {
       fetchContact({ query: "" });
-      fetchProduct();
+      // Phase 5 (spec I9, M-e): variants are the sellable rows, and the list is
+      // top-level only without this.
+      fetchCatalogue({ includeVariants: true });
     }
-  }, [open, fetchContact, fetchProduct]);
+  }, [open, fetchContact, fetchCatalogue]);
 
 
   const selectedContactOption = useMemo(() => {
@@ -416,12 +420,17 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                     }
                   }}
                   onInputChange={(_, inputValue) => {
+                    // COMMERCIAL Phase 5 (spec I9, M-e). `GET /products` became
+                    // TOP-LEVEL ONLY by default (E5.1), so without
+                    // `includeVariants` every VARIANT would silently become
+                    // unpickable on the deal form - and a deal names the
+                    // sellable thing, which after A8 is the variant.
                     const keyword = inputValue.trim();
                     if (keyword.length < 1) {
-                      fetchProduct({ search: "" });
+                      fetchCatalogue({ includeVariants: true });
                       return;
                     }
-                    fetchProduct({ search: inputValue });
+                    fetchCatalogue({ search: keyword, includeVariants: true });
                   }}
                   isOptionEqualToValue={(option, value) => {
                     if (!value) return false;

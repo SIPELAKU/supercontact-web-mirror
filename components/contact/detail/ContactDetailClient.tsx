@@ -23,9 +23,6 @@ import { ContactEmailTab } from "./sections/ContactEmailTab";
 import { ContactWhatsAppTab } from "./sections/ContactWhatsAppTab";
 import { ContactConversationsTab } from "./sections/ContactConversationsTab";
 
-// Mock data for tags since API wasnt provided for it
-const MOCK_TAGS = ["Lead", "Active Customer", "High Priority"];
-
 type ProfileTab = "overview" | "activity" | "email" | "whatsapp" | "conversations";
 const VALID_TABS: ProfileTab[] = ["overview", "activity", "email", "whatsapp", "conversations"];
 
@@ -212,7 +209,15 @@ export const ContactDetailClient = () => {
                         <ContactInfo contact={contact} />
                     </div>
                     <div className="flex flex-col gap-6 md:col-span-2">
-                        <ContactTags tags={MOCK_TAGS} />
+                        {/* Real tags since Phase 3 (spec A0.1): rows in
+                            `contact_tags`, not three hard-coded strings. The
+                            card writes through PUT /contacts/{id}/tags and
+                            asks for a reload so the header and the list agree. */}
+                        <ContactTags
+                            contactId={contact.id}
+                            tags={contact.tags ?? []}
+                            onChanged={reloadData}
+                        />
                     </div>
                 </div>
             )}

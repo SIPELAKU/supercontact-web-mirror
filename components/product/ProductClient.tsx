@@ -1,9 +1,19 @@
 "use client";
 
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProductHeader from "@/components/product/ProductHeader";
 import ProductTable from "@/components/product/ProductTable";
-import { useGetProductStore, Product } from "@/lib/store/product";
+import {
+  useGetProductStore,
+  type FetchProductParams,
+  type Product,
+  type ProductStatusFilter,
+  type ProductType,
+} from "@/lib/store/product";
+import { readProductType } from "@/lib/constants/product-type";
+import { fetchProductsPage } from "@/lib/api/products";
+import { useProductCategoryTree } from "@/lib/hooks/useProductCategories";
+import { flattenTree } from "@/lib/utils/categoryTree";
 import { useAuth } from "@/lib/context/AuthContext";
 import { SuperTableState } from "@/components/ui/super-table";
 import { AppButton } from "@/components/ui/app-button";
@@ -12,124 +22,196 @@ import { AddProductModal } from "@/components/product/AddProductModal";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 
+const STATUS_FILTER_VALUES: ProductStatusFilter[] = ["active", "archived", "all"];
+
+function readStatusFilter(value: unknown): ProductStatusFilter {
+  return typeof value === "string" && (STATUS_FILTER_VALUES as string[]).includes(value)
+    ? (value as ProductStatusFilter)
+    : "active";
+}
+
+/** Everything that defines the list the user is looking at. */
+interface ListState {
+  page: number;
+  limit: number;
+  search: string;
+  status: ProductStatusFilter;
+  categoryId?: string;
+  productType?: ProductType;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  /**
+   * COMMERCIAL Phase 5 (spec I5 / E5.1). `GET /products` is top-level only by
+   * default; the "Tampilkan varian" chip flattens the children back in.
+   */
+  includeVariants?: boolean;
+}
+
+const INITIAL_LIST: ListState = {
+  page: 1,
+  limit: 25, // matches SuperTable's lazy batch
+  search: "",
+  status: "active",
+};
+
+function toFetchParams(state: ListState): Partial<FetchProductParams> {
+  return {
+    page: state.page,
+    limit: state.limit,
+    search: state.search,
+    status: state.status,
+    category_id: state.categoryId,
+    product_type: state.productType,
+    sort_by: state.sortBy,
+    sort_order: state.sortOrder,
+    include_variants: state.includeVariants,
+  };
+}
+
+function sameQuery(a: ListState, b: ListState): boolean {
+  return (
+    a.limit === b.limit &&
+    a.search === b.search &&
+    a.status === b.status &&
+    a.categoryId === b.categoryId &&
+    a.productType === b.productType &&
+    a.sortBy === b.sortBy &&
+    a.sortOrder === b.sortOrder &&
+    a.includeVariants === b.includeVariants
+  );
+}
+
 export default function ProductClient() {
-  const { listProduct, loading, error, pagination, setPage, setLimit, setSearchQuery, setSort, setEditId, deleteProduct, duplicateProducts, fetchProduct } = useGetProductStore();
-  const { token } = useAuth();
+  const { listProduct, loading, error, pagination, archiveProduct, duplicateProducts, fetchProduct } =
+    useGetProductStore();
+  const { getToken } = useAuth();
+  const { data: tree } = useProductCategoryTree();
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const categoryOptions = useMemo(
+    () => flattenTree(tree ?? []).map((node) => ({ value: node.id, label: node.label })),
+    [tree]
+  );
+
+  // Class A row interaction: the modal edits the ROW OBJECT handed to it.
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkArchiving, setIsBulkArchiving] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  // Bumped after every successful mutation: the store refetched page 1 of
+  // the current query, and this sends SuperTable back to batch 1 so the
+  // accumulated rows cannot go stale (S3-4).
+  const [mutationSeq, setMutationSeq] = useState(0);
 
-  const prevStateRef = useRef<{
-    page: number;
-    limit: number;
-    search: string;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-  }>({
-    page: 1,
-    limit: 25, // matches SuperTable's lazy batch
-    search: ""
-  });
+  const prevStateRef = useRef<ListState>(INITIAL_LIST);
 
   useEffect(() => {
-    fetchProduct({
-      page: pagination.page,
-      limit: pagination.limit,
-      search: ""
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchProduct(toFetchParams(INITIAL_LIST));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTableStateChange = useCallback((state: SuperTableState) => {
-    const newPage = state.pagination.pageIndex + 1;
-    const newLimit = state.pagination.pageSize;
-    const newSearch = state.globalFilter || "";
-    
-    const prev = prevStateRef.current;
-    
-    if (prev.limit !== newLimit) {
-      prevStateRef.current = { ...prev, limit: newLimit, page: 1 };
-      setLimit(newLimit); // setLimit sudah auto-fetch dengan page=1
-      return;
-    }
-    
-    if (prev.page !== newPage) {
-      prevStateRef.current = { ...prev, page: newPage };
-      setPage(newPage); // setPage sudah auto-fetch
-      return;
-    }
-    
-    if (prev.search !== newSearch) {
-      prevStateRef.current = { ...prev, search: newSearch, page: 1 };
-      setSearchQuery(newSearch);
-      // store.setSearchQuery tidak melakukan fetching di index.ts, maka kita tembak manual
-      fetchProduct({ search: newSearch, page: 1 });
-      return;
-    }
+  const handleTableStateChange = useCallback(
+    (state: SuperTableState) => {
+      const sort = state.sorting?.[0];
+      const categoryId = state.filters?.category_id;
+      // Declarative `filters` land here as a flat object; category and type
+      // are forwarded as fetch params (page 1 on change), never stored.
+      const next: ListState = {
+        page: state.pagination.pageIndex + 1,
+        limit: state.pagination.pageSize,
+        search: state.globalFilter || "",
+        status: readStatusFilter(state.filters?.status),
+        categoryId: typeof categoryId === "string" && categoryId ? categoryId : undefined,
+        productType: readProductType(state.filters?.product_type),
+        sortBy: sort?.id,
+        sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+        includeVariants: state.filters?.include_variants ? true : undefined,
+      };
+      const prev = prevStateRef.current;
 
-    // Server-side sorting (sort_by/sort_order contract)
-    const sort = state.sorting?.[0];
-    const newSortBy = sort?.id;
-    const newSortOrder: "asc" | "desc" | undefined = sort
-      ? (sort.desc ? "desc" : "asc")
-      : undefined;
-    if (prev.sortBy !== newSortBy || prev.sortOrder !== newSortOrder) {
-      prevStateRef.current = { ...prev, sortBy: newSortBy, sortOrder: newSortOrder };
-      setSort(newSortBy, newSortOrder);
-      fetchProduct({ sort_by: newSortBy, sort_order: newSortOrder });
-      return;
-    }
-  }, [setLimit, setPage, setSearchQuery, setSort, fetchProduct]);
+      if (!sameQuery(prev, next)) {
+        // A new query starts from the first batch whatever page the table
+        // reports mid-transition; SuperTable resets to page 1 itself and the
+        // echo of that reset then matches `prev` and is ignored.
+        const first = { ...next, page: 1 };
+        prevStateRef.current = first;
+        fetchProduct(toFetchParams(first));
+        return;
+      }
+      if (prev.page !== next.page) {
+        prevStateRef.current = next;
+        fetchProduct(toFetchParams(next));
+      }
+    },
+    [fetchProduct]
+  );
 
-  const [bulkDeleteTarget, setBulkDeleteTarget] = useState<{
+  // The store already refetched page 1 of the current query; align the
+  // tracked page so the table's reset echo does not fetch it a second time.
+  const afterMutation = useCallback(() => {
+    prevStateRef.current = { ...prevStateRef.current, page: 1 };
+    setMutationSeq((seq) => seq + 1);
+  }, []);
+
+  const openCreate = () => {
+    setEditProduct(null);
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (product: Product) => {
+    setEditProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleArchive = async (product: Product) => {
+    const result = await archiveProduct(product.id);
+    if (result.success) afterMutation();
+    return result;
+  };
+
+  const [bulkArchiveTarget, setBulkArchiveTarget] = useState<{
     products: Product[];
     clearSelection: () => void;
   } | null>(null);
 
-  const handleBulkDelete = async (
-    selectedProducts: Product[],
-    clearSelection: () => void
-  ) => {
-    setBulkDeleteTarget({ products: selectedProducts, clearSelection });
+  const handleBulkArchive = async (selectedProducts: Product[], clearSelection: () => void) => {
+    setBulkArchiveTarget({ products: selectedProducts, clearSelection });
   };
 
-  const performBulkDelete = async () => {
-    if (!bulkDeleteTarget) return;
-    const { products: selectedProducts, clearSelection } = bulkDeleteTarget;
-    setIsBulkDeleting(true);
+  const performBulkArchive = async () => {
+    if (!bulkArchiveTarget) return;
+    const { products: selectedProducts, clearSelection } = bulkArchiveTarget;
+    setIsBulkArchiving(true);
     let successCount = 0;
     let failCount = 0;
     const failedNames: string[] = [];
-    
+
     for (const product of selectedProducts) {
       try {
-        const result = await deleteProduct(product.id);
+        const result = await archiveProduct(product.id);
         if (result.success) {
           successCount++;
         } else {
           failCount++;
-          // Tampilkan nama produk yang gagal
           failedNames.push(product.product_name);
         }
-      } catch (error: any) {
+      } catch {
         failCount++;
         failedNames.push(product.product_name);
       }
     }
-    
-    setIsBulkDeleting(false);
-    setBulkDeleteTarget(null);
+
+    setIsBulkArchiving(false);
+    setBulkArchiveTarget(null);
     clearSelection();
+    if (successCount > 0) afterMutation();
 
     if (successCount > 0) {
-      notify.success(`${successCount} product(s) deleted successfully`);
+      notify.success(`${successCount} produk diarsipkan`, {
+        description: "Produk yang diarsipkan tidak muncul di quotation baru.",
+      });
     }
     if (failCount > 0) {
-      notify.error(
-        `${failCount} product(s) could not be deleted because they are still linked to other data`,
-        { description: `Produk: ${failedNames.join(', ')}` }
-      );
+      notify.error(`${failCount} produk gagal diarsipkan`, { description: `Produk: ${failedNames.join(", ")}` });
     }
   };
 
@@ -138,11 +220,12 @@ export default function ProductClient() {
   const handleDuplicate = async (products: Product[], clearSelection?: () => void) => {
     setIsDuplicating(true);
     try {
-      const ids = products.map(p => p.id);
+      const ids = products.map((p) => p.id);
       const result = await duplicateProducts(ids);
       if (result.success) {
         notify.success(`${products.length} product(s) duplicated successfully.`);
         clearSelection?.();
+        afterMutation();
       } else {
         notify.error(result.error || "Failed to duplicate product(s).");
       }
@@ -153,33 +236,45 @@ export default function ProductClient() {
     }
   };
 
-  const handleExportRequest = async (params: { format: "csv" | "excel", currentState: SuperTableState }) => {
+  // An export is the whole catalogue matching the current search, type and
+  // category, archived rows included - fetched page by page straight from
+  // the API with the token already in hand (no /api/proxy).
+  const handleExportRequest = async (params: {
+    format: "csv" | "excel";
+    currentState: SuperTableState;
+    onProgress?: (fetched: number, total: number) => void;
+  }) => {
     try {
-      const search = params.currentState.globalFilter;
+      const token = await getToken();
+      const current = prevStateRef.current;
+      const search = params.currentState.globalFilter || current.search;
       const LIMIT_PER_PAGE = 100;
       let allProducts: Product[] = [];
       let currentPage = 1;
       let totalPages = 1;
-      
+
       do {
-        const urlParams = new URLSearchParams();
-        urlParams.set("page", String(currentPage));
-        urlParams.set("limit", String(LIMIT_PER_PAGE));
-        if (search) urlParams.set("search", search);
-        
-        const response = await fetch(
-          `/api/proxy/products?${urlParams.toString()}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const data = await response.json();
-        
-        const products = data?.data?.products || [];
-        totalPages = data?.data?.total_pages || 1;
-        allProducts = [...allProducts, ...products];
+        const page = await fetchProductsPage(token, {
+          page: currentPage,
+          limit: LIMIT_PER_PAGE,
+          status: "all",
+          search: search || undefined,
+          category_id: current.categoryId,
+          product_type: current.productType,
+          sort_by: current.sortBy,
+          sort_order: current.sortOrder,
+          include_total: currentPage === 1,
+          // COMMERCIAL Phase 5 (spec I5). An EXPORT is the whole catalogue, and
+          // `GET /products` is top-level only now - so without this the export
+          // would silently stop containing every variant the tenant sells.
+          include_variants: true,
+        });
+        if (currentPage === 1) totalPages = page.total_pages ?? 1;
+        allProducts = [...allProducts, ...page.products];
+        params.onProgress?.(allProducts.length, (page.total ?? totalPages * LIMIT_PER_PAGE) || allProducts.length);
         currentPage++;
-        
       } while (currentPage <= totalPages);
-      
+
       return allProducts;
     } catch (err) {
       console.error("Export error:", err);
@@ -191,24 +286,16 @@ export default function ProductClient() {
     <>
       {/* Desktop */}
       <div className="hidden md:flex gap-2">
-        <AppButton 
-          onClick={() => {
-            setEditId("");
-            setIsAddModalOpen(true);
-          }}
-          startIcon={<Plus size={16} />}
-        >
+        <AppButton onClick={openCreate} startIcon={<Plus size={16} />}>
           Add Product
         </AppButton>
       </div>
 
       {/* Mobile — icon only, ukuran w-9 h-9 */}
       <div className="flex md:hidden gap-2">
-        <button 
-          onClick={() => {
-            setEditId("");
-            setIsAddModalOpen(true);
-          }}
+        <button
+          onClick={openCreate}
+          aria-label="Add Product"
           className="flex items-center justify-center w-9 h-9 rounded-md bg-[#5479EE] text-white hover:bg-[#3F66E0] transition-colors"
         >
           <Plus size={16} />
@@ -220,33 +307,46 @@ export default function ProductClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <ProductHeader />
-      <AddProductModal open={isAddModalOpen} onOpenChange={setIsAddModalOpen} />
-      <ProductTable 
-         products={listProduct}
-         isLoading={loading}
-         isError={!!error}
-         errorMessage={error || undefined}
-         onRetry={() => fetchProduct()}
-         onAdd={() => setIsAddModalOpen(true)}
-         rowCount={pagination.total}
-         onStateChange={handleTableStateChange}
-         onExportRequest={handleExportRequest}
-         renderTopLeftToolbar={renderTopLeftToolbar}
-         onBulkDelete={handleBulkDelete}
-         isBulkDeleting={isBulkDeleting}
-         onDuplicate={handleDuplicate}
-         isDuplicating={isDuplicating}
+      <AddProductModal
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) setEditProduct(null);
+        }}
+        product={editProduct}
+        onSaved={afterMutation}
+      />
+      <ProductTable
+        products={listProduct}
+        isLoading={loading}
+        isError={!!error}
+        errorMessage={error || undefined}
+        onRetry={() => fetchProduct(toFetchParams(prevStateRef.current))}
+        onAdd={openCreate}
+        // Only a real number: a batch without a total must not read as 0 rows.
+        rowCount={typeof pagination.total === "number" ? pagination.total : undefined}
+        resetPageKey={mutationSeq}
+        onStateChange={handleTableStateChange}
+        onExportRequest={handleExportRequest}
+        renderTopLeftToolbar={renderTopLeftToolbar}
+        onEdit={openEdit}
+        onArchive={handleArchive}
+        onBulkArchive={handleBulkArchive}
+        isBulkArchiving={isBulkArchiving}
+        onDuplicate={handleDuplicate}
+        isDuplicating={isDuplicating}
+        categoryOptions={categoryOptions}
       />
       <ConfirmationPopup
-        isOpen={!!bulkDeleteTarget}
-        onClose={() => setBulkDeleteTarget(null)}
-        onConfirm={performBulkDelete}
-        title={`Delete ${bulkDeleteTarget?.products.length ?? 0} product(s)?`}
-        description="The selected products will be permanently deleted. This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-        isLoading={isBulkDeleting}
+        isOpen={!!bulkArchiveTarget}
+        onClose={() => setBulkArchiveTarget(null)}
+        onConfirm={performBulkArchive}
+        title={`Arsipkan ${bulkArchiveTarget?.products.length ?? 0} produk?`}
+        description="Produk yang diarsipkan tidak akan muncul di quotation baru. Quotation yang sudah ada tidak berubah, dan produk bisa diaktifkan kembali lewat Edit."
+        confirmText="Arsipkan"
+        cancelText="Batal"
+        variant="warning"
+        isLoading={isBulkArchiving}
       />
     </div>
   );

@@ -3,13 +3,21 @@ import {
   QUOTATION_STATUS,
   QUOTATION_STATUSES,
   QUOTATION_STATUS_OPTIONS,
+  canDecideApproval,
   canDecideQuotation,
+  canDeleteQuotation,
   canEditQuotation,
+  canRecallQuotation,
+  canReviseQuotation,
+  canSendQuotation,
+  canSubmitForApproval,
   displayQuotationStatus,
   expiredQuotationUpperBound,
   normalizeQuotationStatus,
+  quotationDeleteBlockedReason,
   quotationEditBlockedReason,
   quotationListFilterQuery,
+  quotationReviseBlockedReason,
   quotationStatusMeta,
 } from './quotation-status';
 
@@ -199,5 +207,142 @@ describe('capabilities mirror the API guards', () => {
     for (const value of ['draft', 'accepted', 'rejected', 'expired', 'Accepted']) {
       expect(canDecideQuotation(value)).toBe(false);
     }
+  });
+});
+
+// ── Phase 4 governance capabilities ────────────────────────────────────────
+//
+// These mirror server guards one-for-one (spec E5/E6/E8). The point of the
+// suite is that the UI is neither STRICTER than the server (an action the user
+// is entitled to but cannot see) nor LOOSER (a button that can only 400).
+
+describe('canSubmitForApproval', () => {
+  it('is true only for a draft', () => {
+    expect(canSubmitForApproval('draft')).toBe(true);
+    for (const value of ['pending_approval', 'sent', 'accepted', 'rejected', 'expired']) {
+      expect(canSubmitForApproval(value)).toBe(false);
+    }
+  });
+
+  it('reads the legacy spellings through the normaliser', () => {
+    // `Pending` means "sent to the customer", never "draft" - submitting it
+    // for approval would be nonsense.
+    expect(canSubmitForApproval('Pending')).toBe(false);
+    expect(canSubmitForApproval('Accepted')).toBe(false);
+  });
+});
+
+describe('canRecallQuotation', () => {
+  it('is true only while pending AND only for the requester', () => {
+    expect(canRecallQuotation('pending_approval', true)).toBe(true);
+    // A17: a second person does not cancel someone else's request; they
+    // approve or reject it.
+    expect(canRecallQuotation('pending_approval', false)).toBe(false);
+    for (const value of ['draft', 'sent', 'accepted', 'rejected', 'expired']) {
+      expect(canRecallQuotation(value, true)).toBe(false);
+    }
+  });
+});
+
+describe('canDecideApproval', () => {
+  it('needs the status, the grant, and NOT being the requester', () => {
+    expect(canDecideApproval('pending_approval', true, false)).toBe(true);
+    // The requester of an ORDINARY request still sees no button: that
+    // decision can only ever 403.
+    expect(canDecideApproval('pending_approval', true, true)).toBe(false);
+    expect(canDecideApproval('pending_approval', false, false)).toBe(false);
+    expect(canDecideApproval('draft', true, false)).toBe(false);
+    expect(canDecideApproval('sent', true, false)).toBe(false);
+  });
+
+  it('lets the requester decide a SELF-APPROVED row (A17, owner amendment)', () => {
+    // The tenant had no second `quotations:approve` holder, so the request was
+    // routed to its own requester and the row says so. Hiding the button here
+    // is what left every staging tenant - and production's Superjob - with a
+    // `pending_approval` quotation whose only escape was recall.
+    expect(canDecideApproval('pending_approval', true, true, true)).toBe(true);
+    // The grant is still required, and so is the status.
+    expect(canDecideApproval('pending_approval', false, true, true)).toBe(false);
+    expect(canDecideApproval('draft', true, true, true)).toBe(false);
+    // Absent argument keeps the old, stricter behaviour.
+    expect(canDecideApproval('pending_approval', true, true)).toBe(false);
+  });
+});
+
+describe('canSendQuotation', () => {
+  it('is true only for sent - which includes a just-approved quotation', () => {
+    // A20: approval lands the row on `sent` BEFORE any delivery exists, which
+    // is exactly the state the send action is for.
+    expect(canSendQuotation('sent')).toBe(true);
+    expect(canSendQuotation('Pending')).toBe(true);
+    for (const value of ['draft', 'pending_approval', 'accepted', 'rejected', 'expired']) {
+      expect(canSendQuotation(value)).toBe(false);
+    }
+  });
+});
+
+describe('canReviseQuotation', () => {
+  it('allows sent, rejected and expired when there is no child yet', () => {
+    for (const value of ['sent', 'rejected', 'expired']) {
+      expect(canReviseQuotation(value, false)).toBe(true);
+    }
+  });
+
+  it('refuses accepted, draft and pending_approval', () => {
+    // `accepted` is a closed commitment; a draft or a pending row is simply
+    // edited (or recalled and edited) instead.
+    for (const value of ['accepted', 'draft', 'pending_approval']) {
+      expect(canReviseQuotation(value, false)).toBe(false);
+    }
+  });
+
+  it('refuses ANY status once a child revision exists', () => {
+    // One live tip per chain (A5). Without the flag the UI would offer Revisi
+    // on every `expired` row - and `expired` is produced ONLY by the supersede
+    // path, so every one of them already has a child and the server would
+    // answer 409 QUOTATION_ALREADY_REVISED every time.
+    for (const value of ['sent', 'rejected', 'expired', 'accepted', 'draft']) {
+      expect(canReviseQuotation(value, true)).toBe(false);
+    }
+  });
+});
+
+describe('canDeleteQuotation', () => {
+  it('is true only for a draft, matching the new server guard', () => {
+    // A21 / E6.3: seven production users hold `quotations:delete`, and before
+    // this guard one of them could hard-delete a `sent` parent and orphan its
+    // whole revision chain through ON DELETE SET NULL.
+    expect(canDeleteQuotation('draft')).toBe(true);
+    for (const value of ['pending_approval', 'sent', 'accepted', 'rejected', 'expired']) {
+      expect(canDeleteQuotation(value)).toBe(false);
+    }
+  });
+});
+
+describe('blocked reasons name the next action, not just the refusal', () => {
+  it('separates "waiting on someone else" from "superseded by a revision"', () => {
+    expect(quotationEditBlockedReason('draft')).toBeUndefined();
+    expect(quotationEditBlockedReason('pending_approval')).toMatch(/persetujuan/i);
+    // The locked case points at Revisi - the actual way forward - while still
+    // naming Draft as the only editable state.
+    const locked = quotationEditBlockedReason('sent');
+    expect(locked).toMatch(/Draft/);
+    expect(locked).toMatch(/Revisi/i);
+  });
+
+  it('gives the delete guard its own two reasons', () => {
+    expect(quotationDeleteBlockedReason('draft')).toBeUndefined();
+    expect(quotationDeleteBlockedReason('pending_approval')).toMatch(/pengajuan/i);
+    expect(quotationDeleteBlockedReason('sent')).toMatch(/draft/i);
+  });
+
+  it('names the existing child when a row was already revised', () => {
+    expect(quotationReviseBlockedReason('sent', false)).toBeUndefined();
+    expect(quotationReviseBlockedReason('sent', true)).toMatch(/sudah punya revisi/i);
+    // "Already revised" wins over "wrong status": it is the more specific and
+    // more actionable fact, and it is what the server reports too.
+    expect(quotationReviseBlockedReason('accepted', true)).toMatch(/sudah punya revisi/i);
+    expect(quotationReviseBlockedReason('accepted', false)).toMatch(/diterima/i);
+    expect(quotationReviseBlockedReason('draft', false)).toMatch(/terkirim/i);
   });
 });

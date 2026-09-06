@@ -1,8 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
+  APPROVAL_ALREADY_DECIDED,
   DISCOUNT_POLICY_VIOLATION,
+  NO_ELIGIBLE_APPROVER,
+  POLICY_COMPANY_ROW_EXISTS,
+  QUOTATION_ALREADY_REVISED,
+  QUOTATION_APPROVAL_REQUIRED,
+  QUOTATION_DELIVERY_FAILED,
+  QUOTATION_LOCKED,
+  WHATSAPP_TEMPLATE_NOT_APPROVED,
   mapQuotationError,
   mapQuotationException,
+  quotationErrorPlacement,
 } from './quotation-errors';
 
 /**
@@ -129,6 +138,10 @@ describe('mapQuotationError', () => {
       fieldsByRow: {},
       fieldsHeader: {},
       message: 'Only draft quotations can be updated',
+      // Phase 4: every mapped error now carries where it belongs on screen,
+      // and the raw details so a screen can read a code-specific key.
+      placement: 'toast',
+      details: {},
     });
     expect(mapQuotationError(null, '').message).toBe('Quotation tidak dapat diproses');
     expect(mapQuotationError('garbage', undefined).byRow).toEqual({});
@@ -314,5 +327,115 @@ describe('mapQuotationError - manual override refusals (Phase 2)', () => {
     expect(result.fieldsByRow[0].unit_price).toBe(sentence);
     expect(result.fieldsByRow[0].discount).toBeUndefined();
     expect(result.header).toBeUndefined();
+  });
+});
+
+// ── Phase 4: every new code lands on a control, not only in a toast ────────
+//
+// The failure this pins is a specific one: a governance refusal that arrives
+// as a toast and nothing else leaves the seller staring at a form with no
+// indication of WHAT to change or WHO to ask. Each code below has an owner.
+
+describe('quotationErrorPlacement', () => {
+  it('routes the approval codes to the header, where the whole quotation is', () => {
+    // Both are statements about the quotation and about the tenant's setup -
+    // NO_ELIGIBLE_APPROVER in particular is about the workspace having nobody
+    // else with the grant, which no single line can express.
+    expect(quotationErrorPlacement(QUOTATION_APPROVAL_REQUIRED)).toBe('header');
+    expect(quotationErrorPlacement(NO_ELIGIBLE_APPROVER)).toBe('header');
+    expect(quotationErrorPlacement(POLICY_COMPANY_ROW_EXISTS)).toBe('header');
+  });
+
+  it('routes "the row moved under you" codes to the status area', () => {
+    expect(quotationErrorPlacement(APPROVAL_ALREADY_DECIDED)).toBe('status');
+    expect(quotationErrorPlacement(QUOTATION_LOCKED)).toBe('status');
+    expect(quotationErrorPlacement(QUOTATION_ALREADY_REVISED)).toBe('status');
+  });
+
+  it('routes the delivery codes into the send dialog', () => {
+    expect(quotationErrorPlacement(WHATSAPP_TEMPLATE_NOT_APPROVED)).toBe('delivery');
+    expect(quotationErrorPlacement(QUOTATION_DELIVERY_FAILED)).toBe('delivery');
+  });
+
+  it('keeps the discount bands per row, where the offending line is', () => {
+    expect(quotationErrorPlacement(DISCOUNT_POLICY_VIOLATION)).toBe('rows');
+  });
+
+  it('falls back to a toast for anything it does not know', () => {
+    expect(quotationErrorPlacement('SOMETHING_NEW')).toBe('toast');
+    expect(quotationErrorPlacement(null)).toBe('toast');
+    expect(quotationErrorPlacement(undefined)).toBe('toast');
+  });
+});
+
+describe('mapQuotationError carries the placement and the raw details', () => {
+  it('marks a locked-row refusal as a status message and keeps the status', () => {
+    const result = mapQuotationError(
+      { quotation_status: 'pending_approval' },
+      'Quotation sedang menunggu persetujuan',
+      QUOTATION_LOCKED
+    );
+    expect(result.placement).toBe('status');
+    expect(result.code).toBe(QUOTATION_LOCKED);
+    expect(result.details?.quotation_status).toBe('pending_approval');
+    expect(result.byRow).toEqual({});
+  });
+
+  it('keeps the child revision so the UI can point at it instead of retrying', () => {
+    // A5: the server refuses a second revision and NAMES the one that exists.
+    const result = mapQuotationError(
+      { revision_id: 'abc-123', revision_number: 'QUO-2026-0007-R2' },
+      'Quotation ini sudah punya revisi',
+      QUOTATION_ALREADY_REVISED
+    );
+    expect(result.placement).toBe('status');
+    expect(result.details?.revision_id).toBe('abc-123');
+    expect(result.details?.revision_number).toBe('QUO-2026-0007-R2');
+  });
+
+  it('maps the MARGIN band per row, exactly like the percent band', () => {
+    // The margin band is not a new code: DISCOUNT_POLICY_VIOLATION widened
+    // (spec E1), so the per-row placement the form already honours keeps
+    // working with no caller change.
+    const result = mapQuotationError(
+      {
+        policy: { id: 'p1', applies_to: 'role', min_margin_percent: '20.00' },
+        items: [
+          {
+            index: 2,
+            product_id: 'prod-9',
+            margin_percent: '4.50',
+            errors: [{ field: 'discount', message: 'Margin 4,5% di bawah batas 20%' }],
+          },
+        ],
+      },
+      'Margin di bawah batas kebijakan',
+      DISCOUNT_POLICY_VIOLATION
+    );
+    expect(result.placement).toBe('rows');
+    expect(result.byRow[2]).toBe('discount: Margin 4,5% di bawah batas 20%');
+    expect(result.fieldsByRow[2]).toEqual({ discount: 'Margin 4,5% di bawah batas 20%' });
+    expect(result.details?.items?.[0]?.margin_percent).toBe('4.50');
+  });
+
+  it('lets real per-row entries beat an unknown code rather than hiding them', () => {
+    const result = mapQuotationError(
+      { items: [{ index: 0, errors: [{ field: 'quantity', message: 'harus > 0' }] }] },
+      'Some items are invalid',
+      'A_CODE_THIS_BUILD_DOES_NOT_KNOW'
+    );
+    expect(result.placement).toBe('rows');
+    expect(result.byRow[0]).toBe('quantity: harus > 0');
+  });
+
+  it('reads the code straight off a thrown error', () => {
+    const err = Object.assign(new Error('Tidak ada penyetuju lain di workspace ini'), {
+      code: NO_ELIGIBLE_APPROVER,
+      details: {},
+    });
+    const mapped = mapQuotationException(err);
+    expect(mapped.code).toBe(NO_ELIGIBLE_APPROVER);
+    expect(mapped.placement).toBe('header');
+    expect(mapped.message).toBe('Tidak ada penyetuju lain di workspace ini');
   });
 });

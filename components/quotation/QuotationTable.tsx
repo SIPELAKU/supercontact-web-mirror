@@ -8,14 +8,35 @@ import { Quotation } from "@/lib/store/quotation";
 import { formatRupiah } from "@/lib/helper/currency";
 import {
   QUOTATION_STATUS_OPTIONS,
+  canDecideApproval,
   canDecideQuotation,
+  canReviseQuotation,
+  canSendQuotation,
+  canSubmitForApproval,
   displayQuotationStatus,
+  quotationDeleteBlockedReason,
   quotationEditBlockedReason,
+  quotationReviseBlockedReason,
 } from "@/lib/constants/quotation-status";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Download, Eye, FileText, Pencil, Plus, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Download,
+  Eye,
+  FileText,
+  Pencil,
+  Plus,
+  Send,
+  ShieldQuestion,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
+  X,
+} from "lucide-react";
 import QuotationPdfDocument from "@/components/quotation/QuotationPdfDocument";
+import QuotationSendDialog from "@/components/quotation/QuotationSendDialog";
 import { fetchQuotationById } from "@/lib/api/quotations";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
@@ -46,6 +67,27 @@ interface QuotationTableProps {
   /** `sent -> accepted` / `sent -> rejected`; hidden on every other status. */
   onAccept?: (quotation: Quotation) => void;
   onReject?: (quotation: Quotation) => void;
+  /**
+   * Phase 4 governance (spec I5). Every one is optional: a screen that does
+   * not own the mutation simply does not pass it and the action hides itself,
+   * which is why `hidden` checks the callback as well as the status.
+   */
+  onSubmitApproval?: (quotation: Quotation) => void;
+  onApprove?: (quotation: Quotation) => void;
+  onRejectApproval?: (quotation: Quotation) => void;
+  onRevise?: (quotation: Quotation) => void;
+  /**
+   * Called after a successful send so the parent can refetch the page. The
+   * send itself is owned HERE, not by the parent, because it needs the PDF -
+   * and the hidden <QuotationPdfDocument/> node the rasteriser reads lives in
+   * this component. Handing a blob up to the parent and back would be the
+   * same work with one more hop to get wrong.
+   */
+  onSendComplete?: () => void;
+  /** The caller holds `quotations:approve`, resolved by the server. */
+  canApprove?: boolean;
+  /** The signed-in user's id: A17 forbids approving your own request. */
+  currentUserId?: string | null;
   renderTopLeftToolbar?: () => React.ReactNode;
 }
 
@@ -79,6 +121,13 @@ export default function QuotationTable({
   onDelete,
   onAccept,
   onReject,
+  onSubmitApproval,
+  onApprove,
+  onRejectApproval,
+  onRevise,
+  onSendComplete,
+  canApprove = false,
+  currentUserId = null,
   renderTopLeftToolbar,
 }: QuotationTableProps) {
   // "Unduh PDF" (spec I7.1). Without it the extracted template would be
@@ -88,6 +137,46 @@ export default function QuotationTable({
   const { definitions: productDefinitions } = useCustomFieldDefinitionsFor("product");
   const [pdfRow, setPdfRow] = useState<StoredQuotation | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  // Phase 4: the send dialog, owned here because the PDF node is here.
+  const [sendRow, setSendRow] = useState<StoredQuotation | null>(null);
+  const [openingSendId, setOpeningSendId] = useState<string | null>(null);
+
+  /**
+   * The list row is a SUMMARY. The PDF needs the lines, the snapshots and the
+   * Phase 3 briefs, and the dialog needs the contact's email and phone, so the
+   * stored row is re-read before either can happen - the same reason
+   * handleDownloadPdf re-reads it.
+   */
+  const handleOpenSend = async (row: Quotation) => {
+    if (!row?.id) return;
+    setOpeningSendId(row.id);
+    try {
+      const token = await getToken();
+      const detail = await fetchQuotationById(token, row.id);
+      setSendRow(detail.data as StoredQuotation);
+    } catch (error: any) {
+      notify.error("Gagal membuka pengiriman", { description: error?.message });
+    } finally {
+      setOpeningSendId(null);
+    }
+  };
+
+  /** Renders THIS row into the hidden template and rasterises it, exactly as
+   *  the download action does; the dialog uploads whatever comes back. */
+  const generatePdfForSend = async (row: StoredQuotation): Promise<Blob | null> => {
+    try {
+      flushSync(() => setPdfRow(row));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const node = document.getElementById(PDF_NODE_ID);
+      if (!node) throw new Error("Template quotation tidak ditemukan");
+      return await generateQuotationPdf(node, quotationPdfFilename(row.quotation_number));
+    } catch (error: any) {
+      notify.error("Gagal membuat PDF", { description: error?.message });
+      return null;
+    } finally {
+      setPdfRow(null);
+    }
+  };
 
   const handleDownloadPdf = async (row: Quotation) => {
     if (!row?.id) return;
@@ -219,6 +308,80 @@ export default function QuotationTable({
             onClick: (row) => onEdit(row),
           },
           {
+            // Phase 4. Routing a draft into the approval queue from the list,
+            // so a seller who already knows the discount needs a sign-off does
+            // not have to open the form to ask for one.
+            id: "submit-approval",
+            label: "Ajukan persetujuan",
+            icon: <ShieldQuestion size={16} />,
+            hidden: (row) => !onSubmitApproval || !canSubmitForApproval(row.quotation_status),
+            onClick: (row) => onSubmitApproval?.(row),
+          },
+          {
+            // The approver's pair. Hidden - not disabled - for a requester
+            // whose row was NOT routed as a self-approval: that decision can
+            // only ever 403, and showing it would be a lie about what this
+            // user can do. A `self_approved` row is the owner's A17 amendment
+            // and DOES get the control, or a single-approver tenant's queue is
+            // permanently stuck.
+            id: "approve",
+            label: "Setujui",
+            icon: <Check size={16} />,
+            permission: "quotations:approve",
+            hidden: (row) =>
+              !onApprove ||
+              !canDecideApproval(
+                row.quotation_status,
+                canApprove,
+                !!currentUserId && row.approval?.requested_by === currentUserId,
+                !!row.approval?.self_approved
+              ),
+            onClick: (row) => onApprove?.(row),
+          },
+          {
+            id: "reject-approval",
+            label: "Tolak",
+            icon: <X size={16} />,
+            permission: "quotations:approve",
+            hidden: (row) =>
+              !onRejectApproval ||
+              !canDecideApproval(
+                row.quotation_status,
+                canApprove,
+                !!currentUserId && row.approval?.requested_by === currentUserId,
+                !!row.approval?.self_approved
+              ),
+            onClick: (row) => onRejectApproval?.(row),
+          },
+          {
+            // Deliver a `sent` quotation. Distinct from "Tandai diterima":
+            // that records what the CUSTOMER decided, this puts the document
+            // in front of them in the first place.
+            id: "send",
+            label: "Kirim",
+            icon: <Send size={16} />,
+            hidden: (row) => !canSendQuotation(row.quotation_status),
+            disabled: (row) =>
+              openingSendId !== null && openingSendId !== row.id
+                ? "Quotation lain sedang disiapkan"
+                : false,
+            onClick: (row) => {
+              void handleOpenSend(row);
+            },
+          },
+          {
+            id: "revise",
+            label: "Revisi",
+            icon: <Copy size={16} />,
+            hidden: (row) =>
+              !onRevise || !canReviseQuotation(row.quotation_status, row.has_revision ?? false),
+            // Never reached while `hidden` is true; kept so a future caller
+            // that shows the action always sees the reason with it.
+            disabled: (row) =>
+              quotationReviseBlockedReason(row.quotation_status, row.has_revision ?? false) ?? false,
+            onClick: (row) => onRevise?.(row),
+          },
+          {
             id: "accept",
             label: "Tandai diterima",
             icon: <ThumbsUp size={16} />,
@@ -253,6 +416,14 @@ export default function QuotationTable({
             icon: <Trash2 size={16} />,
             destructive: true,
             hidden: () => !onDelete,
+            // Phase 4 (A21 / E6.3): the server now refuses to delete anything
+            // but a draft. Before that guard a holder of `quotations:delete`
+            // (seven users in production) could hard-delete a `sent` parent
+            // and `fk_quotations_revision_of_id`'s ON DELETE SET NULL would
+            // silently orphan its whole revision chain. Disabled WITH the
+            // reason rather than hidden: the row is still deletable in
+            // principle, just not in this state.
+            disabled: (row) => quotationDeleteBlockedReason(row.quotation_status) ?? false,
             onClick: (row) => onDelete?.(row),
           },
         ]}
@@ -298,6 +469,16 @@ export default function QuotationTable({
         quotation={pdfRow}
         productDefinitions={productDefinitions}
         nodeId={PDF_NODE_ID}
+      />
+
+      <QuotationSendDialog
+        open={!!sendRow}
+        onClose={() => setSendRow(null)}
+        quotation={sendRow}
+        contactEmail={sendRow?.lead?.contact?.email ?? null}
+        contactPhone={sendRow?.lead?.contact?.phone_number ?? null}
+        onGeneratePdf={generatePdfForSend}
+        onSent={() => onSendComplete?.()}
       />
     </Box>
   );

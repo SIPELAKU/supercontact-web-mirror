@@ -8,7 +8,13 @@ import { AppAutocomplete } from "../ui/app-autocomplete"
 import { AppSelect } from "../ui/app-select"
 import { format } from "date-fns"
 import { useState, useCallback, useRef, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext"
+import { usePermission } from "@/lib/hooks/usePermission"
+import { useAuth } from "@/lib/context/AuthContext"
+import { fetchPipelines } from "@/lib/api/pipelines"
+import { fetchPipelineStages } from "@/lib/api/pipeline-stages"
+import type { PipelineStage } from "@/lib/types/PipelineStage"
 
 interface ClientDetailsProps {
   clientData?: Record<string, any>
@@ -20,6 +26,12 @@ interface ClientDetailsProps {
   isReadOnlyClient?: boolean
   /** Nothing is editable: the quotation is no longer a draft. */
   readOnly?: boolean
+  /**
+   * Phase 4 (spec I10): the contact this quotation is for, so the deal picker
+   * can offer only THAT customer's open deals. `GET /pipelines` has no
+   * contact filter today, so the match happens here on `client_account`.
+   */
+  contactId?: string | null
 }
 
 interface ClientDetailsData {
@@ -34,6 +46,8 @@ interface ClientDetailsData {
   salesperson?: string;
   /** Phase 3 (spec I6): a RESOLUTION LEVEL, so changing it re-prices. */
   sales_channel_id?: string;
+  /** Phase 4 (spec I10): the deal acceptance moves. Not a pricing input. */
+  pipeline_id?: string;
 }
 
 
@@ -45,6 +59,7 @@ export default function ClientDetailsSection({
   onClientSearch = () => { },
   isReadOnlyClient = false,
   readOnly = false,
+  contactId = null,
 }: ClientDetailsProps) {
   // `comm02seed` seeds four channels for EVERY company (spec A20), so this
   // picker is non-empty on day one for every tenant - it never renders as an
@@ -60,6 +75,102 @@ export default function ClientDetailsSection({
     ],
     [channelPage]
   );
+
+  // ── Phase 4: the deal this acceptance will move (spec I10 / A16) ────────
+  //
+  // Gated on `pipelines`, which is the grant BOTH endpoints below require. A
+  // Staff seller holding only `quotations` does not have it, so for them the
+  // picker is not rendered at all rather than rendered empty or 403-ing on
+  // every keystroke.
+  //
+  // Two shapes this has to work around, both recorded as requests to the API
+  // slice rather than papered over with a guess:
+  //   * `GET /pipelines` has no `contact_id` filter, so the tenant's deals are
+  //     fetched and matched here on `client_account`;
+  //   * `PipelineResponse` does not expose `stage_outcome`, so "open" is
+  //     resolved by looking this deal's `deal_stage` NAME up in the tenant's
+  //     own stage catalogue. Never compare against the literal 'Closed - Won':
+  //     a tenant may name its winning stage anything (prod has two of them).
+  const { can } = usePermission();
+  const { getToken } = useAuth();
+  const canReadPipelines = can("pipelines");
+  // DISABLED UNDER readOnly, NEVER HIDDEN (spec I10) - like the five other
+  // controls on this card. `readOnly` is true for every status but draft, so
+  // gating VISIBILITY on it meant the row vanished from `pending_approval`
+  // onward: an approver could not see that approving this quotation will,
+  // on the customer's acceptance, close a specific deal; the seller could not
+  // see afterwards which deal was moved; and nobody could check what a
+  // revision inherited (`pipeline_id` is in `_REVISION_COPY_COLUMNS`).
+  //
+  // `|| !!clientData.pipeline_id` covers the legacy draft whose `contact_id`
+  // is NULL: the link exists, so it must be shown even when no customer can
+  // be resolved to filter the option list by.
+  //
+  // The fetch deliberately runs under `readOnly` too. Without it there is
+  // nothing to resolve the stored id against, and the picker would show the
+  // raw UUID `AppSelect.renderValue` falls back to - which answers the
+  // approver's question no better than hiding the row did.
+  const dealPickerEnabled =
+    canReadPipelines && (!!contactId || !!clientData.pipeline_id);
+
+  const { data: stagesResponse } = useQuery({
+    queryKey: ["pipeline-stages", false],
+    queryFn: async () => fetchPipelineStages(await getToken(), false),
+    enabled: dealPickerEnabled,
+  });
+
+  const { data: pipelinesResponse, isLoading: isLoadingDeals } = useQuery({
+    queryKey: ["pipelines", "quotation-deal-picker"],
+    queryFn: async () => fetchPipelines(),
+    enabled: dealPickerEnabled,
+  });
+
+  const openDealOptions = useMemo(() => {
+    const stages: PipelineStage[] = stagesResponse?.data?.data ?? [];
+    // A stage the catalogue does not know is treated as OPEN: refusing to
+    // offer a deal because its stage was renamed would silently drop real
+    // work, while offering a closed one is caught by the server (A16 moves
+    // nothing when the deal is already closed).
+    const closedStageNames = new Set(
+      stages.filter((stage) => stage.outcome !== "open").map((stage) => stage.name)
+    );
+    const rows: any[] = pipelinesResponse?.data?.pipelines ?? [];
+    const labelFor = (row: any) =>
+      `${row?.product?.product_name ?? "Deal"} - ${row?.deal_stage ?? ""}`;
+    const options = [
+      { value: "", label: "Tanpa deal" },
+      ...rows
+        .filter(
+          (row) =>
+            String(row?.client_account ?? "") === String(contactId ?? "") &&
+            !closedStageNames.has(String(row?.deal_stage ?? ""))
+        )
+        .map((row) => ({
+          value: String(row.id),
+          label: labelFor(row),
+        })),
+    ];
+
+    // THE STORED LINK ALWAYS HAS AN OPTION. Without one, `AppSelect` renders
+    // the raw UUID - which is what a read-only quotation, a deal that has
+    // since closed, a deal on a later `GET /pipelines` page, and a deal
+    // belonging to a DIFFERENT customer all produce. The last of those is
+    // worth naming out loud rather than showing as an anonymous row: it is
+    // the shape that moves the wrong customer's deal to the winning stage.
+    const linked = String(clientData.pipeline_id ?? "");
+    if (linked && !options.some((option) => option.value === linked)) {
+      const known = rows.find((row) => String(row?.id ?? "") === linked);
+      const foreign =
+        known && String(known?.client_account ?? "") !== String(contactId ?? "");
+      options.splice(1, 0, {
+        value: linked,
+        label: known
+          ? `${labelFor(known)}${foreign ? " (deal pelanggan lain)" : ""}`
+          : "Deal terkait tersimpan",
+      });
+    }
+    return options;
+  }, [stagesResponse, pipelinesResponse, contactId, clientData.pipeline_id]);
 
   // Did the USER pick the channel, or did `handleLeadChange` seed it a moment
   // ago? Reading `clientData.sales_channel_id` alone cannot tell the two
@@ -100,6 +211,14 @@ export default function ClientDetailsSection({
         sales_channel_id: channelTouchedRef.current
           ? clientData.sales_channel_id || ""
           : selectedLead.sales_channel?.id ?? "",
+        // THE DEAL GOES WITH THE CUSTOMER IT BELONGS TO. Leaving it set here
+        // is how a quotation for customer B gets saved carrying customer A's
+        // `pipeline_id`: the picker below filters A's deal out of B's option
+        // list (so the field shows a bare UUID), the server's
+        // `_resolve_pipeline_id` checks tenant ownership and nothing else,
+        // and B's acceptance then moves A's deal to the winning stage. This
+        // is the same bug the `sales_channel_id` line above already documents.
+        pipeline_id: "",
       });
     }
   };
@@ -123,6 +242,9 @@ export default function ClientDetailsSection({
         quotationTitle: "New Project Proposal",
         salesperson: "",
         sales_channel_id: "",
+        // Same reason as in handleLeadChange: the deal belongs to the customer
+        // being cleared here, not to whoever is typed in next.
+        pipeline_id: "",
       });
     }
 
@@ -179,6 +301,7 @@ export default function ClientDetailsSection({
                       emailAddress: "",
                       quotationTitle: "New Project Proposal",
                       salesperson: "",
+                      pipeline_id: "",
                     });
                   }
                 }}
@@ -321,6 +444,33 @@ export default function ClientDetailsSection({
               helperText="Dari mana penjualan ini datang. Bisa memengaruhi daftar harga yang dipakai."
             />
           </div>
+
+          {/* Row 5: the linked deal (Phase 4, spec I10). Rendered whenever the
+              user can read deals and there is something to show - a selected
+              customer, or a link already stored. Under `readOnly` it is
+              DISABLED like every other control on this card, never hidden:
+              who the acceptance will close is exactly what an approver needs
+              to see. An empty picker on a blank form still teaches nothing,
+              so a form with neither is the one case that renders nothing. */}
+          {dealPickerEnabled && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Deal terkait</Label>
+              <AppSelect
+                isBgWhite
+                fullWidth
+                height="48px"
+                rounded="8px"
+                value={clientData.pipeline_id || ""}
+                options={openDealOptions}
+                disabled={readOnly || isLoadingDeals}
+                onChange={(e) => handleChange("pipeline_id", String(e.target.value))}
+                // Says exactly what acceptance does, and - just as important -
+                // what it does NOT do: the server never guesses a deal from
+                // the contact, so an empty picker means nothing moves.
+                helperText="Saat pelanggan menyetujui penawaran ini, deal tersebut dipindahkan ke tahap menang. Dikosongkan: tidak ada deal yang berpindah."
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -12,6 +12,18 @@ interface QuotationSuccessModalProps {
     quotationId: string;    // The UUID for URLs
     quotationNumber: string; // The number for display (e.g. TC-202609-0001)
     pdfUrl?: string; // Blob URL for the PDF
+    /**
+     * The CUSTOMER-facing acceptance link, `/q/{public_code}` (Phase 4, A6).
+     *
+     * "Salin tautan" used to copy `/sales/quotation/{id}` - an INTERNAL URL
+     * behind `middleware.ts` and a `quotations` grant. Pasted to a customer
+     * it produced a login screen, so the one button whose whole purpose is
+     * sharing shared something unshareable. Empty when the row has no
+     * `public_code` yet (it is minted the moment the quotation first reaches
+     * `sent`), in which case the button is not offered at all rather than
+     * copying the internal URL again.
+     */
+    publicUrl?: string;
 }
 
 export default function QuotationSuccessModal({
@@ -20,11 +32,14 @@ export default function QuotationSuccessModal({
     quotationId,
     quotationNumber,
     pdfUrl,
+    publicUrl,
 }: QuotationSuccessModalProps) {
     const handleCopyLink = () => {
-        const url = `${window.location.origin}/sales/quotation/${quotationId}`;
-        navigator.clipboard.writeText(url);
-        notify.success("Tautan disalin", { description: "Tautan quotation disalin ke clipboard" });
+        if (!publicUrl) return;
+        navigator.clipboard.writeText(publicUrl);
+        notify.success("Tautan disalin", {
+            description: "Tautan persetujuan pelanggan disalin ke clipboard",
+        });
     };
 
     const handleDownloadPDF = () => {
@@ -62,9 +77,15 @@ export default function QuotationSuccessModal({
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Quotation terkirim</h2>
 
+                {/* The old copy asserted "sudah dikirim ke pelanggan" for every
+                    publish, including one whose delivery failed and one that
+                    was approved but never delivered (A20 / 0.31). What is
+                    always TRUE is the status; what happened to the delivery is
+                    on the quotation's own page, in its delivery history. */}
                 <p className="text-gray-600 mb-8 max-w-md">
-                    Quotation sudah dikirim ke pelanggan dan berstatus Terkirim.
-                    Anda bisa melihat, mengunduh PDF-nya, atau membagikan tautannya.
+                    Quotation {quotationNumber} kini berstatus Terkirim. Bagikan tautan
+                    persetujuan ke pelanggan, atau unduh PDF-nya. Rincian pengiriman ada di
+                    halaman quotation.
                 </p>
 
                 <div className="w-full bg-gray-50 rounded-lg p-4 mb-8">
@@ -75,14 +96,16 @@ export default function QuotationSuccessModal({
                         </div>
 
                         <div className="flex gap-2">
-                            <AppButton
-                                onClick={handleCopyLink}
-                                variantStyle="outline"
-                                color="gray"
-                            >
-                                <Copy size={16} className="mr-2" />
-                                Salin tautan
-                            </AppButton>
+                            {publicUrl && (
+                                <AppButton
+                                    onClick={handleCopyLink}
+                                    variantStyle="outline"
+                                    color="gray"
+                                >
+                                    <Copy size={16} className="mr-2" />
+                                    Salin tautan
+                                </AppButton>
+                            )}
 
                             <Link href={`/sales/quotation/${quotationId}`} passHref>
                                 <AppButton variantStyle="primary" color="primary">

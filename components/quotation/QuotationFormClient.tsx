@@ -11,20 +11,32 @@ import { QuotationStatusChip } from "@/components/quotation/QuotationTable";
 import PageHeader from "@/components/ui/page-header";
 import {
   createQuotation,
+  decideQuotationApproval,
   fetchQuotationDefaults,
+  fetchQuotationDeliveries,
   previewQuotationTotals,
+  recallQuotationApproval,
+  reviseQuotation,
+  sendQuotation,
+  submitQuotationForApproval,
   transitionQuotationStatus,
   updateQuotation,
 } from "@/lib/api/quotations";
 import type { QuotationLead } from "@/lib/api/quotations";
+import { publicQuotationUrl } from "@/lib/api/quotations-public";
 import {
   QUOTATION_STATUS,
+  canDecideApproval,
   canDecideQuotation,
   canEditQuotation,
+  canRecallQuotation,
+  canReviseQuotation,
+  canSendQuotation,
   normalizeQuotationStatus,
   quotationStatusMeta,
 } from "@/lib/constants/quotation-status";
 import { useAuth } from "@/lib/context/AuthContext";
+import { usePermission } from "@/lib/hooks/usePermission";
 import { formatPercent, formatRupiah } from "@/lib/helper/currency";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
@@ -42,6 +54,7 @@ import type {
   ItemRow,
   Quotation,
   QuotationDefaults,
+  QuotationDelivery,
   QuotationDetail,
   QuotationItemPayload,
   QuotationTotals,
@@ -54,8 +67,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
+import { AppTextarea } from "../ui/app-textarea";
 import { ConfirmationPopup } from "../ui/confirmation-popup";
 import QuotationSuccessModal from "./QuotationSuccessModal";
+import QuotationApprovalCard from "./QuotationApprovalCard";
+import QuotationSendDialog from "./QuotationSendDialog";
 
 interface QuotationFormClientProps {
   initialData?: QuotationDetail | Quotation;
@@ -83,6 +99,10 @@ const newRow = (): ItemRow => ({
   overrideAllowed: false,
   priceList: null,
   billingPeriod: null,
+  // A row that has never been saved has no server-computed margin, and the
+  // preview does not carry one. Null, never 0 - see ItemRow.
+  costSnapshot: null,
+  marginPercent: null,
 });
 
 function toDateInput(value?: string | null, fallback?: Date): string {
@@ -126,6 +146,11 @@ function rowsFromQuotation(row: Quotation): ItemRow[] {
     overrideAllowed: item.override_allowed ?? false,
     priceList: item.price_list ?? null,
     billingPeriod: item.billing_period ?? null,
+    // Phase 4 (spec I3). Both are already `null` on the response for a caller
+    // without `quotations:margin:view` (the API suppresses them), so `?? null`
+    // is the whole gate - the column below hides itself when every row is null.
+    costSnapshot: item.cost_snapshot ?? null,
+    marginPercent: item.margin_percent ?? null,
   }));
 }
 
@@ -221,7 +246,12 @@ function isOverrideComplete(row: ItemRow): boolean {
 
 export default function QuotationFormClient({ initialData }: QuotationFormClientProps) {
   const router = useRouter();
-  const { getToken } = useAuth();
+  // `userProfile.id` answers the one question every approval control depends
+  // on: is the caller the person who ASKED for the approval? A17 forbids a
+  // self-approval, so the requester sees Batalkan pengajuan and never
+  // Setujui/Tolak - and the server refuses it anyway if this ever drifts.
+  const { getToken, userProfile } = useAuth();
+  const { can } = usePermission();
 
   // The saved row, if any. Updated after every create, update and status
   // transition so the buttons, the chip and the PDF always describe what the
@@ -273,6 +303,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     issueDate: toDateInput(null, new Date()),
     expiryDate: toDateInput(null, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     salesperson: "",
+    pipeline_id: "",
   });
 
   const [items, setItems] = useState<ItemRow[]>([newRow()]);
@@ -291,13 +322,38 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "" });
+  // `publicUrl` is the CUSTOMER-facing /q/{code} link (A6), not the internal
+  // /sales/quotation/{id} URL the modal used to copy - which required a login
+  // and a `quotations` grant, so pasting it to a customer produced a login
+  // screen.
+  const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "", publicUrl: "" });
 
   // What the hidden PDF template renders: the STORED row after a draft save.
   const [pdfQuotation, setPdfQuotation] = useState<Quotation | null>(null);
 
   const [decision, setDecision] = useState<Decision | null>(null);
   const [isDeciding, setIsDeciding] = useState(false);
+
+  // ── Phase 4 governance state ─────────────────────────────────────────────
+  //
+  // `governanceBusy` names the action in flight rather than being a bare
+  // boolean, so every button can disable itself while exactly one of them
+  // shows a spinner.
+  const [governanceBusy, setGovernanceBusy] = useState<
+    null | "submit" | "recall" | "approve" | "reject" | "revise"
+  >(null);
+  // Bumped after every governance write so QuotationApprovalCard reloads its
+  // timeline from the server rather than being handed a guess.
+  const [approvalSeq, setApprovalSeq] = useState(0);
+  const [approvalDecision, setApprovalDecision] = useState<null | "approve" | "reject">(null);
+  const [approvalComment, setApprovalComment] = useState("");
+  const [reviseOpen, setReviseOpen] = useState(false);
+  const [reviseReason, setReviseReason] = useState("");
+  const [sendOpen, setSendOpen] = useState(false);
+  // The delivery rows for THIS quotation. `null` = not loaded yet, which is
+  // deliberately different from `[]` = loaded and genuinely empty: only the
+  // second one may claim "belum ada pengiriman tercatat" (A20 / 0.31).
+  const [deliveries, setDeliveries] = useState<QuotationDelivery[] | null>(null);
 
   // ── Company defaults (tax basis, terms, discount ceiling) ────────────────
   useEffect(() => {
@@ -356,6 +412,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
       // change (a sentinel or `exclude_unset` handling) - recorded as a
       // request to the CONTEXT-API slice, not worked around here.
       sales_channel_id: initialData.sales_channel_id ?? "",
+      // Phase 4 (spec I10): the deal acceptance will move. Seeded from the
+      // stored row for the same reason the channel is - the picker and the
+      // save must agree about what is currently linked.
+      pipeline_id: initialData.pipeline_id ?? "",
     });
 
     // Only the quotation's own lines. `item_others` are Proposal-stage
@@ -489,6 +549,73 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // The save's errors win over the preview's: they are the most recent word.
   const errors = saveError ?? previewError;
 
+  // ── Phase 4: who may do what to this row ─────────────────────────────────
+  //
+  // Every flag below mirrors a server guard exactly (spec E5/E6/E8). None of
+  // them is a substitute for the server check - they only stop the UI from
+  // offering an action that would come back 400 or 403.
+  const approval = quotation?.approval ?? null;
+  const isRequester =
+    !!approval && !!userProfile?.id && approval.requested_by === userProfile.id;
+  // The caller's grant, preferring what the SERVER resolved for this request
+  // (`GET /quotations/defaults`) and falling back to the profile's own
+  // permission list. The fallback is not belt-and-braces: `can_approve` is a
+  // NEW field, and this web build may run for a while against a leg that does
+  // not send it yet - defaulting to `false` there would silently hide the
+  // approve buttons from every Admin in the tenant. An explicit `false` from
+  // the server still wins, because `??` only falls through on null/undefined.
+  const canApproveGrant = defaults?.can_approve ?? can("quotations:approve");
+  const hasRevision = quotation?.has_revision ?? false;
+
+  // A17 (owner amendment): a request routed to its own requester because the
+  // tenant has no second `quotations:approve` holder. Without this the flag is
+  // written on the row, refused at the button, and the quotation is stuck on
+  // `pending_approval` with recall as its only way out.
+  const isSelfApproval = !!approval?.self_approved;
+  const showApprove =
+    !!quotation && canDecideApproval(status, canApproveGrant, isRequester, isSelfApproval);
+  const showRecall = !!quotation && canRecallQuotation(status, isRequester);
+  const showRevise = !!quotation && canReviseQuotation(status, hasRevision);
+  const showSend = !!quotation && canSendQuotation(status);
+
+  // `null` while unloaded; only a loaded, genuinely empty list may claim there
+  // is nothing recorded.
+  const deliveriesCount = deliveries?.length ?? null;
+  const noDeliveriesYet = deliveriesCount === 0;
+  // Rows exist but none of them actually left. The spec's zero-row case (A20 /
+  // 0.31) and this one are the same situation from the customer's side -
+  // nothing reached them - and the banner must not claim otherwise just
+  // because a `failed` row was written.
+  const allDeliveriesFailed =
+    !!deliveries && deliveries.length > 0 && !deliveries.some((row) => row.status === "sent");
+  const nothingDelivered = noDeliveriesYet || allDeliveriesFailed;
+
+  // The delivery history is what decides whether the banner says "siap
+  // dikirim" and whether Kirim is the primary action (A20 / 0.31). Loaded only
+  // for a `sent` row - the only status that can be delivered - so a draft
+  // never spends a request on it.
+  useEffect(() => {
+    if (!quotation?.id || !canSendQuotation(status)) {
+      setDeliveries(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const rows = await fetchQuotationDeliveries(token, quotation.id);
+        if (!cancelled) setDeliveries(rows);
+      } catch {
+        // Context, not an action: a failure leaves the banner in its neutral
+        // "unknown" shape rather than asserting there were no deliveries.
+        if (!cancelled) setDeliveries(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [quotation?.id, status, getToken, approvalSeq]);
+
   // ── Row editing ──────────────────────────────────────────────────────────
   const updateQty = (index: number, qty: number) => {
     setItems((prev) => {
@@ -531,6 +658,20 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     // tenant that never touches the picker keeps sending the Phase 0 form.
     if (clientData.sales_channel_id) {
       payload.append("sales_channel_id", clientData.sales_channel_id);
+    }
+    // Unlike the channel above, the deal link IS removable. `POST /send`-side
+    // the API distinguishes "not sent" (leave the stored link alone) from
+    // "sent empty" (unlink), which is what makes the picker's "Tanpa deal"
+    // mean something on an existing quotation.
+    //
+    // The blank is sent ONLY when a link that EXISTS is being cleared. Sending
+    // it unconditionally would unlink the deal of any quotation saved from a
+    // form whose picker never rendered - it is hidden without the deals grant,
+    // and a save must not silently undo what the user cannot see.
+    if (clientData.pipeline_id) {
+      payload.append("pipeline_id", clientData.pipeline_id);
+    } else if (quotation?.pipeline_id) {
+      payload.append("pipeline_id", "");
     }
     // Header custom fields travel as one JSON object string (spec A8/D5),
     // and only when the tenant has quotation definitions - a tenant without
@@ -624,37 +765,153 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         return;
       }
 
-      // Step 2 - the PDF, from the stored response.
-      const pdfBlob = await generatePDF(savedRow);
-      if (!pdfBlob) {
-        notify.warning("Draft tersimpan, PDF gagal dibuat", {
-          description: "Quotation tetap berstatus draft. Coba kirim lagi.",
+      // Step 2 - the approval gate (spec I3 / A2). The preview already told
+      // us whether the policy routes this quotation for approval (E4.2), and
+      // the draft we just saved carries exactly the lines it was computed
+      // from. Submitting explicitly - rather than letting the publish route
+      // itself - keeps "this went for approval" a separate, named outcome
+      // instead of a publish that quietly did something else.
+      //
+      // `NO_ELIGIBLE_APPROVER` is RETIRED (owner amendment to A17, 5 Sep
+      // 2026): a tenant with nobody but the requester holding
+      // `quotations:approve` no longer gets a refusal here - the request is
+      // routed to the requester and the row is marked `self_approved`.
+      //
+      // NO PDF AND NO ATTACHMENT on this path: the quotation has not left the
+      // building, and rasterising one would only invite it to be sent.
+      if (totals?.approval_required) {
+        const submitted = await submitQuotationForApproval(token, savedRow.id);
+        previewSeq.current += 1;
+        setPreviewing(false);
+        setQuotation(submitted);
+        setTotals(totalsFromQuotation(submitted));
+        setApprovalSeq((n) => n + 1);
+        notify.info("Menunggu persetujuan", {
+          description: `Quotation ${submitted.quotation_number} diajukan untuk persetujuan dan belum dikirim ke pelanggan.`,
         });
-        if (isNew) router.replace(`/sales/quotation/${savedRow.id}`);
+        if (isNew) router.replace(`/sales/quotation/${submitted.id}`);
         return;
       }
 
-      // Step 3 - publish: status and attachment only, no items.
+      // Step 3 - publish WITH NO ATTACHMENT (A6 / 0.9). `attachments` is
+      // optional on publish as of Phase 4, and that is what makes step 4
+      // possible: the response carries `public_code` / `acceptance_url`, so
+      // the PDF can print the acceptance link it could never carry before,
+      // when the code was minted after the PDF had already been rasterised.
       const publishForm = new FormData();
       publishForm.append("action", "publish");
-      publishForm.append("attachments", pdfBlob, `quotation-${savedRow.quotation_number}.pdf`);
       const published = await updateQuotation(token, savedRow.id, publishForm);
-      // The row is now `sent`: the stored totals are final. Retire any preview
-      // still in flight so it cannot land on top of them.
+      // The row is now `sent` (or `pending_approval`): the stored totals are
+      // final. Retire any preview still in flight so it cannot land on top.
       previewSeq.current += 1;
       setPreviewing(false);
       setQuotation(published.data);
       setTotals(totalsFromQuotation(published.data));
 
-      if (!clientData.emailAddress) {
-        notify.warning("Kontak tanpa alamat email", {
-          description: "Quotation terkirim tanpa email; unduh PDF-nya untuk dibagikan.",
+      // The SERVER decides, not the preview: it re-evaluates the stored lines
+      // against the policy resolved for this caller, and a preview that was a
+      // few seconds stale (or a policy edited underneath) can differ. Branch
+      // on the RESULTING STATUS, never on the action - that is the exact bug
+      // 0.8 records, where the publish-time email was keyed on the action and
+      // mailed the customer a quotation that was still awaiting approval.
+      if (
+        normalizeQuotationStatus(published.data.quotation_status) ===
+        QUOTATION_STATUS.PENDING_APPROVAL
+      ) {
+        setApprovalSeq((n) => n + 1);
+        notify.info("Menunggu persetujuan", {
+          description: `Quotation ${published.data.quotation_number} diajukan untuk persetujuan dan belum dikirim ke pelanggan.`,
         });
+        if (isNew) router.replace(`/sales/quotation/${published.data.id}`);
+        return;
       }
+
+      // Step 4 - the PDF, rendered FROM THE PUBLISHED ROW so its footer
+      // carries the acceptance link, then `POST /send`.
+      const pdfBlob = await generatePDF(published.data);
+      if (!pdfBlob) {
+        notify.warning("Quotation terkirim, PDF gagal dibuat", {
+          description: "Statusnya sudah Terkirim. Pakai tombol Kirim untuk mencoba lagi.",
+        });
+        if (isNew) router.replace(`/sales/quotation/${published.data.id}`);
+        return;
+      }
+
+      if (!clientData.emailAddress) {
+        // Nothing to email. The row is published and the dialog is the honest
+        // next step: it is where WhatsApp and an explicit recipient live.
+        notify.warning("Kontak tanpa alamat email", {
+          description: "Quotation berstatus Terkirim. Pilih kanal pengiriman lewat tombol Kirim.",
+        });
+        // No `setSendOpen` when we are about to navigate: `router.replace`
+        // unmounts this screen and the dialog state would go with it. The
+        // toast names the button, and the row's own banner then says there is
+        // nothing delivered yet.
+        if (isNew) router.replace(`/sales/quotation/${published.data.id}`);
+        else setSendOpen(true);
+        return;
+      }
+
+      let sentRow = published.data;
+      try {
+        const sendResult = await sendQuotation(token, published.data.id, {
+          channel: "email",
+          pdf: pdfBlob,
+          filename: quotationPdfFilename(published.data.quotation_number),
+        });
+        setDeliveries(sendResult.deliveries ?? []);
+        sentRow = {
+          ...published.data,
+          pdf_url: sendResult.pdf_url ?? published.data.pdf_url ?? null,
+          public_code: sendResult.public_code ?? published.data.public_code ?? null,
+          acceptance_url: sendResult.acceptance_url ?? published.data.acceptance_url ?? null,
+          deliveries_count: (sendResult.deliveries ?? []).length,
+        };
+        setQuotation(sentRow);
+      } catch (sendError: any) {
+        // The quotation IS published - that write succeeded and must not be
+        // reported as a failure. Only the delivery failed, and the seller can
+        // retry it from the dialog without republishing anything.
+        //
+        // BUT A TIMEOUT IS NOT PROOF THAT NOTHING WAS SENT. The API's
+        // TimeoutMiddleware answers 408 without stopping the endpoint, which
+        // keeps running headless - so the upload, the customer's email and the
+        // delivery row can all land after this catch fired. Only the PDF
+        // upload is de-duplicated (by SHA-256); the dispatch is not, so an
+        // uninformed retry mails the customer a second time. Load the delivery
+        // history first and say what actually happened.
+        const httpStatus = (sendError as { status?: number } | null)?.status;
+        let landed: QuotationDelivery[] = [];
+        if (!httpStatus || httpStatus === 408 || httpStatus >= 500) {
+          try {
+            landed = await fetchQuotationDeliveries(token, published.data.id);
+            setDeliveries(landed);
+          } catch {
+            // History is context; failing to read it must not change the
+            // message the seller gets about the send itself.
+          }
+        }
+        const anySent = landed.some((row) => row.status === "sent");
+        if (anySent) {
+          notify.success("Quotation terkirim", {
+            description:
+              "Jaringan terputus sebelum jawabannya sampai, tetapi pengiriman tercatat berhasil. Periksa riwayat sebelum mengirim ulang.",
+          });
+        } else {
+          notify.warning("Quotation terkirim, pengiriman gagal", {
+            description: mapQuotationException(sendError).message,
+          });
+        }
+        if (isNew) router.replace(`/sales/quotation/${published.data.id}`);
+        else setSendOpen(true);
+        return;
+      }
+
       setSuccessData({
-        id: published.data.id,
-        number: published.data.quotation_number,
+        id: sentRow.id,
+        number: sentRow.quotation_number,
         pdfUrl: URL.createObjectURL(pdfBlob),
+        publicUrl: sentRow.acceptance_url ?? publicQuotationUrl(sentRow.public_code) ?? "",
       });
       setShowSuccessModal(true);
     } catch (error: any) {
@@ -695,6 +952,104 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     }
   };
 
+  // ── Phase 4 governance actions ───────────────────────────────────────────
+  //
+  // Each one replaces the whole stored row with what the server returned, so
+  // the chip, the banner, the buttons and the read-only freeze can never
+  // disagree with the database about what state this quotation is in.
+
+  const applyGovernanceResult = (row: Quotation) => {
+    previewSeq.current += 1;
+    setPreviewing(false);
+    setQuotation(row);
+    setTotals(totalsFromQuotation(row));
+    setItems(rowsFromQuotation(row));
+    setApprovalSeq((n) => n + 1);
+  };
+
+  /** The requester cancels their own pending request; the row returns to
+   *  `draft` so they can lower the discount and try again (E5.4). */
+  const handleRecall = async () => {
+    if (!quotation) return;
+    setGovernanceBusy("recall");
+    try {
+      const token = await getToken();
+      applyGovernanceResult(await recallQuotationApproval(token, quotation.id));
+      notify.success("Pengajuan dibatalkan", {
+        description: "Quotation kembali ke Draft dan bisa diedit lagi.",
+      });
+    } catch (error: any) {
+      notify.error("Gagal membatalkan pengajuan", {
+        description: mapQuotationException(error).message,
+      });
+    } finally {
+      setGovernanceBusy(null);
+    }
+  };
+
+  /**
+   * Approve or reject (E5.3). Approve lands the quotation on `sent` and mints
+   * its `public_code` - it does NOT deliver anything (A20), which is exactly
+   * why the banner then puts Kirim in the primary position.
+   */
+  const handleConfirmApproval = async () => {
+    if (!quotation || !approvalDecision) return;
+    const approved = approvalDecision === "approve";
+    setGovernanceBusy(approved ? "approve" : "reject");
+    try {
+      const token = await getToken();
+      applyGovernanceResult(
+        await decideQuotationApproval(token, quotation.id, approved, approvalComment)
+      );
+      notify.success(approved ? "Quotation disetujui" : "Quotation ditolak", {
+        description: approved
+          ? "Statusnya kini Terkirim. Kirim ke pelanggan lewat tombol Kirim."
+          : "Quotation dikembalikan ke Draft untuk diperbaiki pengaju.",
+      });
+      setApprovalDecision(null);
+      setApprovalComment("");
+    } catch (error: any) {
+      notify.error("Gagal memproses persetujuan", {
+        description: mapQuotationException(error).message,
+      });
+    } finally {
+      setGovernanceBusy(null);
+    }
+  };
+
+  /**
+   * Create the revision (A5). The server answers with the NEW draft, so the
+   * page navigates to it: staying on the superseded parent - which is now
+   * `expired` and carries no `public_code` - would be the wrong document to
+   * be looking at.
+   */
+  const handleConfirmRevise = async () => {
+    if (!quotation) return;
+    setGovernanceBusy("revise");
+    try {
+      const token = await getToken();
+      const revision = await reviseQuotation(token, quotation.id, reviseReason);
+      setReviseOpen(false);
+      setReviseReason("");
+      notify.success("Revisi dibuat", {
+        description: `Quotation ${revision.quotation_number} dibuat sebagai draft baru.`,
+      });
+      router.push(`/sales/quotation/${revision.id}`);
+    } catch (error: any) {
+      const mapped = mapQuotationException(error);
+      // A5's `409 QUOTATION_ALREADY_REVISED` names the child that already
+      // exists, so the seller is pointed at it instead of retrying.
+      const childId = mapped.details?.revision_id;
+      notify.error("Gagal membuat revisi", {
+        description: childId
+          ? `${mapped.message} (revisi ${mapped.details?.revision_number ?? childId})`
+          : mapped.message,
+      });
+    } finally {
+      setGovernanceBusy(null);
+    }
+  };
+
   // ── PDF ──────────────────────────────────────────────────────────────────
   const generatePDF = async (row: Quotation): Promise<Blob | null> => {
     // Commit the stored row to the hidden template synchronously, then let
@@ -723,16 +1078,55 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const bannerText = useMemo(() => {
     if (!quotation || !readOnly) return "";
     switch (status) {
+      // Phase 4. The row is frozen because someone ELSE has to act, so the
+      // banner names who: an approval nobody is told about is an approval
+      // nobody gives.
+      case QUOTATION_STATUS.PENDING_APPROVAL:
+        return isRequester
+          ? isSelfApproval && canApproveGrant
+            ? "Menunggu persetujuan Anda sendiri: tidak ada pengguna lain di workspace ini yang punya hak \u201cSetujui quotation\u201d. Keputusan Anda dicatat sebagai disetujui sendiri."
+            : "Menunggu persetujuan. Pengaju tidak bisa menyetujui pengajuannya sendiri - batalkan pengajuan untuk mengedit lagi."
+          : canApproveGrant
+            ? `Menunggu persetujuan Anda. Diajukan ${approval?.requester_name || "pengguna"} pada ${safeDate(approval?.requested_at, "dd MMM yyyy HH:mm")}.`
+            : `Menunggu persetujuan pemegang hak "Setujui quotation". Diajukan ${approval?.requester_name || "pengguna"} pada ${safeDate(approval?.requested_at, "dd MMM yyyy HH:mm")}.`;
       case QUOTATION_STATUS.SENT:
-        return `Terkirim ke pelanggan pada ${safeDate(quotation.sent_at, "dd MMM yyyy HH:mm")}. Quotation yang sudah terkirim tidak bisa diedit.`;
+        // A20 / 0.31: approval lands the row on `sent` BEFORE anything is
+        // delivered, so "Terkirim" can be true of the status and false of the
+        // world. With zero delivery rows the banner says so plainly and Kirim
+        // becomes the primary action. The same is already true of an ordinary
+        // publish whose delivery failed.
+        if (noDeliveriesYet) {
+          return "Disetujui dan siap dikirim - belum ada pengiriman tercatat. Pakai Kirim untuk meneruskannya ke pelanggan.";
+        }
+        if (allDeliveriesFailed) {
+          return "Belum ada pengiriman yang berhasil - percobaan terakhir gagal. Pakai Kirim untuk mencoba lagi; rinciannya ada di dialog pengiriman.";
+        }
+        return `Terkirim ke pelanggan pada ${safeDate(quotation.sent_at, "dd MMM yyyy HH:mm")}. Quotation yang sudah terkirim tidak bisa diedit - pakai Revisi untuk versi baru.`;
       case QUOTATION_STATUS.ACCEPTED:
-        return `Diterima pelanggan pada ${safeDate(quotation.accepted_at, "dd MMM yyyy HH:mm")}.`;
+        return quotation.accepted_by_name
+          ? `Diterima ${quotation.accepted_by_name} pada ${safeDate(quotation.accepted_at, "dd MMM yyyy HH:mm")}.`
+          : `Diterima pelanggan pada ${safeDate(quotation.accepted_at, "dd MMM yyyy HH:mm")}.`;
       case QUOTATION_STATUS.REJECTED:
-        return "Ditolak pelanggan. Buat quotation baru untuk penawaran berikutnya.";
+        return "Ditolak pelanggan. Pakai Revisi untuk menawarkan versi berikutnya.";
+      case QUOTATION_STATUS.EXPIRED:
+        return hasRevision
+          ? "Digantikan oleh revisi yang lebih baru."
+          : "Kedaluwarsa. Pakai Revisi untuk menawarkan versi berikutnya.";
       default:
         return `Quotation berstatus ${quotationStatusMeta(status).label} dan tidak bisa diedit.`;
     }
-  }, [quotation, readOnly, status]);
+  }, [
+    quotation,
+    readOnly,
+    status,
+    isRequester,
+    isSelfApproval,
+    canApproveGrant,
+    approval,
+    noDeliveriesYet,
+    allDeliveriesFailed,
+    hasRevision,
+  ]);
 
   return (
     <div className="p-6">
@@ -765,26 +1159,132 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             />
             <p className="text-sm text-gray-700">{bannerText}</p>
           </div>
-          {canDecideQuotation(status) && (
-            <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Phase 4. Kirim is FIRST and primary on a `sent` row with no
+                delivery recorded (A20 / 0.31): that row reads "Terkirim" but
+                nothing has actually reached the customer, and the seller's
+                next act is to send it. Once a delivery exists it steps back
+                to an outline button beside the customer-decision pair. */}
+            {showSend && (
               <AppButton
-                variantStyle="primary"
-                color="success"
-                onClick={() => setDecision("accepted")}
-                disabled={isDeciding}
+                variantStyle={nothingDelivered ? "primary" : "outline"}
+                color="primary"
+                onClick={() => setSendOpen(true)}
+                disabled={!!governanceBusy}
               >
-                Tandai diterima
+                Kirim
               </AppButton>
+            )}
+            {/* The approve / reject pair, beside the customer-decision pair
+                below and never instead of it: they answer different
+                questions - "may this discount go out" vs "did the customer
+                say yes". */}
+            {showApprove && (
+              <>
+                <AppButton
+                  variantStyle="primary"
+                  color="success"
+                  onClick={() => {
+                    setApprovalComment("");
+                    setApprovalDecision("approve");
+                  }}
+                  disabled={!!governanceBusy}
+                  isLoading={governanceBusy === "approve"}
+                >
+                  Setujui
+                </AppButton>
+                <AppButton
+                  variantStyle="outline"
+                  color="danger"
+                  onClick={() => {
+                    setApprovalComment("");
+                    setApprovalDecision("reject");
+                  }}
+                  disabled={!!governanceBusy}
+                  isLoading={governanceBusy === "reject"}
+                >
+                  Tolak
+                </AppButton>
+              </>
+            )}
+            {showRecall && (
               <AppButton
                 variantStyle="outline"
-                color="danger"
-                onClick={() => setDecision("rejected")}
-                disabled={isDeciding}
+                color="gray"
+                onClick={() => void handleRecall()}
+                disabled={!!governanceBusy}
+                isLoading={governanceBusy === "recall"}
               >
-                Tandai ditolak
+                Batalkan pengajuan
               </AppButton>
-            </div>
-          )}
+            )}
+            {showRevise && (
+              <AppButton
+                variantStyle="outline"
+                color="primary"
+                onClick={() => {
+                  setReviseReason("");
+                  setReviseOpen(true);
+                }}
+                disabled={!!governanceBusy}
+                isLoading={governanceBusy === "revise"}
+              >
+                Revisi
+              </AppButton>
+            )}
+            {canDecideQuotation(status) && (
+              <>
+                <AppButton
+                  variantStyle={nothingDelivered ? "outline" : "primary"}
+                  color="success"
+                  onClick={() => setDecision("accepted")}
+                  disabled={isDeciding || !!governanceBusy}
+                >
+                  Tandai diterima
+                </AppButton>
+                <AppButton
+                  variantStyle="outline"
+                  color="danger"
+                  onClick={() => setDecision("rejected")}
+                  disabled={isDeciding || !!governanceBusy}
+                >
+                  Tandai ditolak
+                </AppButton>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* The approval timeline. Rendered for every saved quotation, not only
+          a pending one: after a decision it is the ONLY place a tenant user
+          can read who approved what and why (activity_logs is backoffice-only).
+          It returns null when the quotation was never routed. */}
+      {quotation && <QuotationApprovalCard quotationId={quotation.id} refreshKey={approvalSeq} />}
+
+      {/* An editable draft that the CURRENT numbers will route for approval.
+          Said before the seller presses the primary button, because pressing
+          it and landing in a queue is a surprise; reading it first is a
+          choice. `approval_required` comes from the preview (E4.2), which no
+          longer 400s on the approval band. */}
+      {!readOnly && totals?.approval_required && (
+        <div
+          className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4"
+          role="status"
+        >
+          <p className="text-sm font-medium text-amber-900">
+            Diskon ini butuh persetujuan sebelum dikirim ke pelanggan.
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            {totals.approval_threshold_percent
+              ? `Ambang persetujuan ${formatPercent(totals.approval_threshold_percent)}%.`
+              : ""}{" "}
+            {totals.approval_min_margin_percent
+              ? `Margin minimum ${formatPercent(totals.approval_min_margin_percent)}%.`
+              : ""}{" "}
+            Menekan &ldquo;Kirim ke Pelanggan&rdquo; akan mengajukan quotation ini untuk
+            disetujui, bukan mengirimkannya.
+          </p>
         </div>
       )}
 
@@ -798,6 +1298,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             onClientSearch={setClientSearchQuery}
             isReadOnlyClient={!isNew}
             readOnly={readOnly}
+            contactId={selectedLead?.contact_id ?? quotation?.contact_id ?? null}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
 
@@ -930,7 +1431,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
                     isLoading={isSubmitting}
                     disabled={isSubmitting}
                   >
-                    Kirim ke Pelanggan
+                    {/* The label follows the ACTUAL outcome. Pressing "Kirim
+                        ke Pelanggan" and getting an approval queue instead is
+                        the kind of surprise that gets read as a bug. */}
+                    {totals?.approval_required ? "Ajukan Persetujuan" : "Kirim ke Pelanggan"}
                   </AppButton>
                 </>
               )}
@@ -943,6 +1447,81 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             quotationId={successData.id}
             quotationNumber={successData.number}
             pdfUrl={successData.pdfUrl}
+            publicUrl={successData.publicUrl}
+          />
+
+          {/* Approve / reject, with the comment the decision is recorded
+              with. `activity_logs` is append-only under
+              trg_activity_logs_immutable on all three tiers, so a decision
+              made in error can never be edited - only compensated by another
+              one. The confirmation step is the last chance to not make it. */}
+          <ConfirmationPopup
+            isOpen={!!approvalDecision}
+            onClose={() => setApprovalDecision(null)}
+            onConfirm={handleConfirmApproval}
+            title={approvalDecision === "approve" ? "Setujui quotation" : "Tolak quotation"}
+            description={
+              approvalDecision === "approve"
+                ? `Setujui diskon pada quotation ${quotation?.quotation_number ?? ""}? Statusnya menjadi Terkirim dan siap dikirim ke pelanggan.`
+                : `Tolak quotation ${quotation?.quotation_number ?? ""}? Quotation kembali ke Draft agar pengaju bisa memperbaikinya.`
+            }
+            confirmText={approvalDecision === "approve" ? "Setujui" : "Tolak"}
+            cancelText="Batal"
+            variant={approvalDecision === "approve" ? "info" : "warning"}
+            isLoading={governanceBusy === "approve" || governanceBusy === "reject"}
+          >
+            <AppTextarea
+              isBgWhite
+              label="Catatan (opsional)"
+              rows={3}
+              placeholder="Alasan keputusan ini - terbaca oleh pengaju"
+              value={approvalComment}
+              onChange={(e) => setApprovalComment(e.target.value.slice(0, 1000))}
+              inputProps={{ maxLength: 1000 }}
+            />
+          </ConfirmationPopup>
+
+          <ConfirmationPopup
+            isOpen={reviseOpen}
+            onClose={() => setReviseOpen(false)}
+            onConfirm={handleConfirmRevise}
+            title="Buat revisi"
+            description={`Buat draft baru dari quotation ${quotation?.quotation_number ?? ""}. Quotation ini berhenti berlaku dan tautan persetujuan pelanggannya dinonaktifkan. Satu quotation hanya bisa direvisi sekali.`}
+            confirmText="Buat revisi"
+            cancelText="Batal"
+            variant="warning"
+            isLoading={governanceBusy === "revise"}
+          >
+            <AppTextarea
+              isBgWhite
+              label="Alasan revisi (opsional)"
+              rows={3}
+              placeholder="mis. pelanggan minta penyesuaian volume"
+              value={reviseReason}
+              onChange={(e) => setReviseReason(e.target.value.slice(0, 500))}
+              inputProps={{ maxLength: 500 }}
+            />
+          </ConfirmationPopup>
+
+          <QuotationSendDialog
+            open={sendOpen}
+            onClose={() => setSendOpen(false)}
+            quotation={quotation}
+            contactEmail={quotation?.lead?.contact?.email ?? clientData.emailAddress}
+            contactPhone={quotation?.lead?.contact?.phone_number ?? clientData.phoneNumber}
+            onGeneratePdf={generatePDF}
+            onSent={(rows, acceptanceUrl) => {
+              setDeliveries(rows);
+              setQuotation((current) =>
+                current
+                  ? {
+                      ...current,
+                      deliveries_count: rows.length,
+                      acceptance_url: acceptanceUrl ?? current.acceptance_url ?? null,
+                    }
+                  : current
+              );
+            }}
           />
 
           <ConfirmationPopup

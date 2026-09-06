@@ -21,13 +21,81 @@
 //
 // `index` is the running row index across all flattened `items` entries. An
 // entry without one (older API builds) falls back to its array position.
+//
+// PHASE 4 widens DISCOUNT_POLICY_VIOLATION rather than adding a code for it:
+// the same shape now also reports the AMOUNT band (a total discount above
+// `max_discount_amount`) and the MARGIN band (a line whose `margin_percent`
+// falls below `min_margin_percent`), the latter carrying `margin_percent` on
+// the offending entry. Both land per row exactly like the percent band, so no
+// caller changes. The APPROVAL band is not an error at all - it is a 200 with
+// `approval_required` on the totals (spec E4.2).
 
 export const DISCOUNT_POLICY_VIOLATION = 'DISCOUNT_POLICY_VIOLATION';
+
+// ── Phase 4 error codes (spec D1) ──────────────────────────────────────────
+//
+// Eight new codes, and the point of naming them here is PLACEMENT: a
+// governance refusal that lands only in a toast is a refusal the seller cannot
+// act on. `quotationErrorPlacement` below says, for each one, which control
+// owns the message.
+
+export const QUOTATION_APPROVAL_REQUIRED = 'QUOTATION_APPROVAL_REQUIRED';
+export const NO_ELIGIBLE_APPROVER = 'NO_ELIGIBLE_APPROVER';
+export const APPROVAL_ALREADY_DECIDED = 'APPROVAL_ALREADY_DECIDED';
+export const QUOTATION_LOCKED = 'QUOTATION_LOCKED';
+export const QUOTATION_ALREADY_REVISED = 'QUOTATION_ALREADY_REVISED';
+export const WHATSAPP_TEMPLATE_NOT_APPROVED = 'WHATSAPP_TEMPLATE_NOT_APPROVED';
+export const QUOTATION_DELIVERY_FAILED = 'QUOTATION_DELIVERY_FAILED';
+export const POLICY_COMPANY_ROW_EXISTS = 'POLICY_COMPANY_ROW_EXISTS';
+
+/**
+ * Where a mapped error belongs on screen.
+ *
+ *   'rows'     - one message per offending line (the discount bands)
+ *   'header'   - the banner at the top of the form: it is about the whole
+ *                quotation or about the tenant's configuration, not a line
+ *   'status'   - the status/action area: the row moved under the caller
+ *   'delivery' - inside the send dialog, beside the channel picker
+ *   'toast'    - nothing more specific is known
+ */
+export type QuotationErrorPlacement = 'rows' | 'header' | 'status' | 'delivery' | 'toast';
+
+const PLACEMENT_BY_CODE: Record<string, QuotationErrorPlacement> = {
+  // The publish was routed for approval, or the tenant has nobody who could
+  // approve it. Both are statements about the WHOLE quotation and about the
+  // tenant's setup - never about one line.
+  [QUOTATION_APPROVAL_REQUIRED]: 'header',
+  [NO_ELIGIBLE_APPROVER]: 'header',
+  // The row moved out from under this screen: someone else decided, or the
+  // status is no longer what the action needs.
+  [APPROVAL_ALREADY_DECIDED]: 'status',
+  [QUOTATION_LOCKED]: 'status',
+  [QUOTATION_ALREADY_REVISED]: 'status',
+  // Both are answers to a send attempt and belong beside the channel picker.
+  [WHATSAPP_TEMPLATE_NOT_APPROVED]: 'delivery',
+  [QUOTATION_DELIVERY_FAILED]: 'delivery',
+  // Only reachable from the policy manager, where the form owns the message.
+  [POLICY_COMPANY_ROW_EXISTS]: 'header',
+  // Phase 0/2 behaviour, unchanged: the percent, amount and margin bands all
+  // report per-line entries under `details.items[]`.
+  [DISCOUNT_POLICY_VIOLATION]: 'rows',
+};
+
+export function quotationErrorPlacement(
+  code: string | null | undefined
+): QuotationErrorPlacement {
+  if (!code) return 'toast';
+  return PLACEMENT_BY_CODE[code] ?? 'toast';
+}
 
 export interface QuotationItemErrorEntry {
   index?: number;
   product_id?: string;
   effective_discount_percent?: string;
+  /** Phase 4: the line's margin at refusal time, when the margin band fired
+   *  (`PolicyLineViolation.margin_percent`). Decimal-as-string, or null when
+   *  the line has no recorded cost and is therefore exempt (A7). */
+  margin_percent?: string | null;
   input?: string;
   errors?: Array<{ field?: string | null; message: string }>;
 }
@@ -36,6 +104,12 @@ export interface QuotationErrorDetails {
   items?: QuotationItemErrorEntry[];
   header?: Record<string, unknown>;
   policy?: Record<string, unknown>;
+  /** Phase 4, QUOTATION_ALREADY_REVISED: the child that already exists, so
+   *  the UI can link to it instead of retrying an action that always 409s. */
+  revision_id?: string;
+  revision_number?: string;
+  /** Phase 4, QUOTATION_LOCKED: the status that blocked the write. */
+  quotation_status?: string;
   /**
    * Header-level field errors (Phase 1): custom-field values refused by the
    * `_as_validation_error` shape, `{ field, message }` each. `field` is a
@@ -60,6 +134,17 @@ export interface MappedQuotationError {
   /** The sentence for the toast. */
   message: string;
   code?: string;
+  /** Which control owns this message (Phase 4). `rows` when there are per-row
+   *  entries even if the code says otherwise - a mapped row error always has a
+   *  home, and the toast still carries the sentence. */
+  placement: QuotationErrorPlacement;
+  /**
+   * The `details` payload as given, so a screen can read a code-specific key
+   * without this module growing one field per code: the child revision's id
+   * and number on QUOTATION_ALREADY_REVISED, the offending status on
+   * QUOTATION_LOCKED, the account list on the multi-account send refusal.
+   */
+  details?: QuotationErrorDetails;
 }
 
 const FALLBACK_MESSAGE = 'Quotation tidak dapat diproses';
@@ -113,7 +198,22 @@ export function mapQuotationError(
     fieldsHeader[key] = fieldsHeader[key] ? `${fieldsHeader[key]}; ${err.message}` : err.message;
   }
 
-  const result: MappedQuotationError = { byRow, fieldsByRow, fieldsHeader, message: text };
+  // A code's declared placement is a default, not a verdict: when the API
+  // actually returned per-row entries they are what the seller must fix, so
+  // the rows win. Anything unrecognised with rows still lands on the rows.
+  const declared = quotationErrorPlacement(code);
+  const hasRows = Object.keys(byRow).length > 0;
+  const placement: QuotationErrorPlacement =
+    hasRows && declared === 'toast' ? 'rows' : declared;
+
+  const result: MappedQuotationError = {
+    byRow,
+    fieldsByRow,
+    fieldsHeader,
+    message: text,
+    placement,
+    details: parsed,
+  };
   if (code) result.code = code;
 
   // The policy check reports a header that exceeds on its own under

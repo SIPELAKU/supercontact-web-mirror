@@ -15,6 +15,12 @@ export const PERMISSIONS = [
   "pipelines",
   "products",
   "quotations",
+  // Phase 4 governance. `quotations:delete` is NOT new - it has been seeded
+  // and enforced server-side for phases, it was only ever missing from this
+  // offline fallback, which is the drift bug this array exists to avoid.
+  "quotations:approve",
+  "quotations:delete",
+  "quotations:margin:view",
   "reports",
   // Catalogue configuration (Phase 1): categories, units, custom fields.
   "sales:config:manage",
@@ -71,6 +77,11 @@ const PREFIX_GROUP_LABELS: Record<string, string> = {
   tasks: "Tasks",
   contacts: "Contacts",
   sales: "Sales",
+  // Without this a colon-prefixed `quotations:approve` falls through to
+  // formatPermissionLabel("quotations") and forms its OWN stray "Quotations"
+  // section in the Roles editor, next to the un-prefixed `quotations` that
+  // UNPREFIXED_GROUP already files under Sales.
+  quotations: "Sales",
 };
 
 // Un-prefixed permission -> section label.

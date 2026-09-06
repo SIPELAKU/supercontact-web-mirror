@@ -6,23 +6,36 @@ import QuotationTable from "@/components/quotation/QuotationTable";
 import { useGetQuotationstore, Quotation, type FetchQuotationParams } from "@/lib/store/quotation";
 import { SuperTableState } from "@/components/ui/super-table";
 import { useAuth } from "@/lib/context/AuthContext";
+import { usePermission } from "@/lib/hooks/usePermission";
 import { AppButton } from "@/components/ui/app-button";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
-import { deleteQuotation, transitionQuotationStatus } from "@/lib/api/quotations";
+import {
+  decideQuotationApproval,
+  deleteQuotation,
+  reviseQuotation,
+  submitQuotationForApproval,
+  transitionQuotationStatus,
+} from "@/lib/api/quotations";
 import { handleError } from "@/lib/utils/errorHandler";
 import { quotationListFilterQuery } from "@/lib/constants/quotation-status";
+import { mapQuotationException } from "@/lib/utils/quotation-errors";
+import { AppTextarea } from "@/components/ui/app-textarea";
 
 type Decision = "accepted" | "rejected";
+
+/** The governance action a confirmation popup is currently asking about. */
+type GovernanceAction = "submit" | "approve" | "reject" | "revise";
 
 /** What fetchQuotations() takes from this screen (spec D2.4). */
 type QuotationQuery = Partial<FetchQuotationParams>;
 
 export default function QuotationClient() {
   const router = useRouter();
-  const { token, getToken } = useAuth();
+  const { token, getToken, userProfile } = useAuth();
+  const { can } = usePermission();
 
   const {
     fetchQuotations,
@@ -209,6 +222,77 @@ export default function QuotationClient() {
     }
   };
 
+  // ── Phase 4 governance from the list (spec I5) ───────────────────────────
+  //
+  // The grant comes from the profile's own permission list - the same
+  // server-resolved `role_permissions` set the sidebar and the approvals
+  // screen read - rather than from a second request to
+  // `GET /quotations/defaults` on a screen that has no other use for defaults.
+  // It is a hint either way: `POST /quotations/{id}/approve` enforces
+  // `quotations:approve` itself, and refuses the requester on top of it.
+  const canApprove = can("quotations:approve");
+
+  const [governanceTarget, setGovernanceTarget] = useState<
+    { quotation: Quotation; action: GovernanceAction } | null
+  >(null);
+  const [governanceNote, setGovernanceNote] = useState("");
+  const [isGoverning, setIsGoverning] = useState(false);
+
+  const openGovernance = (quotation: Quotation, action: GovernanceAction) => {
+    setGovernanceNote("");
+    setGovernanceTarget({ quotation, action });
+  };
+
+  const handleConfirmGovernance = async () => {
+    if (!governanceTarget) return;
+    const { quotation, action } = governanceTarget;
+    setIsGoverning(true);
+    try {
+      const authToken = await getToken();
+      if (action === "submit") {
+        await submitQuotationForApproval(authToken, quotation.id);
+        notify.success(`Quotation ${quotation.quotation_number} diajukan untuk persetujuan`);
+      } else if (action === "revise") {
+        const revision = await reviseQuotation(authToken, quotation.id, governanceNote);
+        notify.success(`Revisi ${revision.quotation_number} dibuat sebagai draft`);
+        // The new draft is the document to work on now; the parent is
+        // superseded and no longer carries a customer link.
+        router.push(`/sales/quotation/${revision.id}`);
+        return;
+      } else {
+        await decideQuotationApproval(
+          authToken,
+          quotation.id,
+          action === "approve",
+          governanceNote
+        );
+        notify.success(
+          action === "approve"
+            ? `Quotation ${quotation.quotation_number} disetujui`
+            : `Quotation ${quotation.quotation_number} ditolak`
+        );
+      }
+      setGovernanceTarget(null);
+      setGovernanceNote("");
+      refetchCurrentPage();
+    } catch (err: any) {
+      notify.error("Error", { description: mapQuotationException(err).message });
+    } finally {
+      setIsGoverning(false);
+    }
+  };
+
+  const governanceCopy: Record<GovernanceAction, { title: string; confirm: string; note: string }> = {
+    submit: {
+      title: "Ajukan persetujuan",
+      confirm: "Ajukan",
+      note: "Catatan tidak dikirim pada pengajuan.",
+    },
+    approve: { title: "Setujui quotation", confirm: "Setujui", note: "Catatan (opsional)" },
+    reject: { title: "Tolak quotation", confirm: "Tolak", note: "Catatan (opsional)" },
+    revise: { title: "Buat revisi", confirm: "Buat revisi", note: "Alasan revisi (opsional)" },
+  };
+
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <QuotationHeader />
@@ -228,6 +312,13 @@ export default function QuotationClient() {
          onDelete={handleDelete}
          onAccept={(q) => setDecisionTarget({ quotation: q, status: "accepted" })}
          onReject={(q) => setDecisionTarget({ quotation: q, status: "rejected" })}
+         onSubmitApproval={(q) => openGovernance(q, "submit")}
+         onApprove={(q) => openGovernance(q, "approve")}
+         onRejectApproval={(q) => openGovernance(q, "reject")}
+         onRevise={(q) => openGovernance(q, "revise")}
+         onSendComplete={refetchCurrentPage}
+         canApprove={canApprove}
+         currentUserId={userProfile?.id ?? null}
          renderTopLeftToolbar={() => (
            <>
              {/* Desktop */}
@@ -278,6 +369,40 @@ export default function QuotationClient() {
         variant={decisionTarget?.status === "accepted" ? "info" : "warning"}
         isLoading={isDeciding}
       />
+
+      {/* One popup for all four governance actions. Approve, reject and
+          revise carry a note; submit does not, because the server records no
+          comment on a request - only on a decision. */}
+      <ConfirmationPopup
+        isOpen={!!governanceTarget}
+        onClose={() => setGovernanceTarget(null)}
+        onConfirm={handleConfirmGovernance}
+        title={governanceTarget ? governanceCopy[governanceTarget.action].title : ""}
+        description={
+          governanceTarget?.action === "submit"
+            ? `Ajukan quotation ${governanceTarget.quotation.quotation_number} untuk disetujui? Quotation belum dikirim ke pelanggan sampai disetujui.`
+            : governanceTarget?.action === "approve"
+              ? `Setujui quotation ${governanceTarget.quotation.quotation_number}? Statusnya menjadi Terkirim dan siap dikirim ke pelanggan.`
+              : governanceTarget?.action === "reject"
+                ? `Tolak quotation ${governanceTarget.quotation.quotation_number}? Quotation kembali ke Draft agar pengaju bisa memperbaikinya.`
+                : `Buat draft baru dari quotation ${governanceTarget?.quotation.quotation_number ?? ""}. Quotation ini berhenti berlaku dan tautan persetujuan pelanggannya dinonaktifkan.`
+        }
+        confirmText={governanceTarget ? governanceCopy[governanceTarget.action].confirm : undefined}
+        cancelText="Batal"
+        variant={governanceTarget?.action === "reject" ? "warning" : "info"}
+        isLoading={isGoverning}
+      >
+        {governanceTarget && governanceTarget.action !== "submit" && (
+          <AppTextarea
+            isBgWhite
+            label={governanceCopy[governanceTarget.action].note}
+            rows={3}
+            value={governanceNote}
+            onChange={(e) => setGovernanceNote(e.target.value.slice(0, 1000))}
+            inputProps={{ maxLength: 1000 }}
+          />
+        )}
+      </ConfirmationPopup>
     </div>
   );
 }

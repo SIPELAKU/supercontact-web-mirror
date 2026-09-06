@@ -189,10 +189,142 @@ export function canDecideQuotation(status: string | null | undefined): boolean {
   return normalizeQuotationStatus(status) === QUOTATION_STATUS.SENT;
 }
 
+// ── Phase 4 governance capabilities ────────────────────────────────────────
+//
+// Each one mirrors a server guard one-for-one (spec E5/E6/E8). They are
+// deliberately PURE and take every input explicitly - the caller's grants and
+// whether the caller is the requester come from the response, never from a
+// second fetch - so the whole set is testable without a DOM or a token.
+
+/** API: `POST /quotations/{id}/submit` is allowed only from `draft` (E5.1). */
+export function canSubmitForApproval(status: string | null | undefined): boolean {
+  return normalizeQuotationStatus(status) === QUOTATION_STATUS.DRAFT;
+}
+
+/**
+ * API: `POST /quotations/{id}/recall` (E5.4) - the REQUESTER cancels their own
+ * pending request. A second person cannot recall it; they approve or reject.
+ */
+export function canRecallQuotation(
+  status: string | null | undefined,
+  isRequester: boolean
+): boolean {
+  return (
+    normalizeQuotationStatus(status) === QUOTATION_STATUS.PENDING_APPROVAL && isRequester
+  );
+}
+
+/**
+ * API: `POST /quotations/{id}/revise` (A5 / E6.2) - allowed from `sent`,
+ * `rejected` and `expired`, and refused `409 QUOTATION_ALREADY_REVISED` once
+ * the row has a child.
+ *
+ * `hasRevision` is not optional by accident: `expired` is produced ONLY by the
+ * supersede path, so every `expired` row that predates this check already has
+ * a child. Without the flag the UI would offer an action the server always
+ * refuses.
+ */
+export function canReviseQuotation(
+  status: string | null | undefined,
+  hasRevision: boolean
+): boolean {
+  if (hasRevision) return false;
+  const value = normalizeQuotationStatus(status);
+  return (
+    value === QUOTATION_STATUS.SENT ||
+    value === QUOTATION_STATUS.REJECTED ||
+    value === QUOTATION_STATUS.EXPIRED
+  );
+}
+
+/**
+ * API: `POST /quotations/{id}/send` (E8.1) refuses anything but `sent` - which
+ * includes a quotation that was just approved (A20: approval lands on `sent`,
+ * before any delivery exists).
+ */
+export function canSendQuotation(status: string | null | undefined): boolean {
+  return normalizeQuotationStatus(status) === QUOTATION_STATUS.SENT;
+}
+
+/**
+ * API: `POST /quotations/{id}/approve|reject` (E5.3). The row is waiting, the
+ * caller holds `quotations:approve`, and the caller is not the requester -
+ * UNLESS the request was routed as a SELF-APPROVAL.
+ *
+ * A17 was superseded by the owner on 5 Sep 2026 and this argument is that
+ * amendment. A tenant whose only `quotations:approve` holder is the requester
+ * routes to itself, the approval row carries `self_approved`, and the API
+ * accepts the decision. Hiding the button for that case leaves the quotation
+ * stuck on `pending_approval` with recall as its only escape - which is
+ * precisely the blocked single-user tenant the amendment exists to prevent,
+ * and every staging tenant plus production's Superjob is exactly that shape.
+ *
+ * `selfApproved` defaults to false so a caller that has not been updated keeps
+ * the old, stricter behaviour rather than silently opening the gate; the
+ * server re-checks eligibility on every decision either way, so a stale `true`
+ * from an old response still cannot approve past a second holder.
+ */
+export function canDecideApproval(
+  status: string | null | undefined,
+  canApprove: boolean,
+  isRequester: boolean,
+  selfApproved: boolean = false
+): boolean {
+  return (
+    normalizeQuotationStatus(status) === QUOTATION_STATUS.PENDING_APPROVAL &&
+    canApprove &&
+    (!isRequester || selfApproved)
+  );
+}
+
+/**
+ * API: `DELETE /quotations/{id}` refuses anything but `draft` as of Phase 4
+ * (A21 / E6.3). Before this guard a holder of `quotations:delete` could
+ * hard-delete a `sent` parent and orphan its whole revision chain.
+ */
+export function canDeleteQuotation(status: string | null | undefined): boolean {
+  return normalizeQuotationStatus(status) === QUOTATION_STATUS.DRAFT;
+}
+
+/**
+ * Why the edit controls are frozen, in the words that tell the seller what to
+ * do next: a quotation under review is waiting on someone else, while a
+ * quotation that has left the building is superseded by a REVISION, not edited
+ * in place.
+ */
 export function quotationEditBlockedReason(
   status: string | null | undefined
 ): string | undefined {
-  return canEditQuotation(status)
-    ? undefined
-    : 'Hanya quotation berstatus Draft yang bisa diedit';
+  if (canEditQuotation(status)) return undefined;
+  if (normalizeQuotationStatus(status) === QUOTATION_STATUS.PENDING_APPROVAL) {
+    return 'Sedang menunggu persetujuan';
+  }
+  return 'Hanya quotation berstatus Draft yang bisa diedit - pakai Revisi untuk versi baru';
+}
+
+/** The same sentence for the delete control, which now carries the same guard. */
+export function quotationDeleteBlockedReason(
+  status: string | null | undefined
+): string | undefined {
+  if (canDeleteQuotation(status)) return undefined;
+  if (normalizeQuotationStatus(status) === QUOTATION_STATUS.PENDING_APPROVAL) {
+    return 'Sedang menunggu persetujuan - batalkan pengajuan dulu';
+  }
+  return 'Hanya draft yang bisa dihapus';
+}
+
+/**
+ * Why **Revisi** is unavailable. A row that already has a child names it, so
+ * the seller looks for the newer draft instead of retrying an action the
+ * server answers `409 QUOTATION_ALREADY_REVISED`.
+ */
+export function quotationReviseBlockedReason(
+  status: string | null | undefined,
+  hasRevision: boolean
+): string | undefined {
+  if (canReviseQuotation(status, hasRevision)) return undefined;
+  if (hasRevision) return 'Quotation ini sudah punya revisi';
+  const value = normalizeQuotationStatus(status);
+  if (value === QUOTATION_STATUS.ACCEPTED) return 'Quotation yang sudah diterima tidak bisa direvisi';
+  return 'Hanya quotation terkirim, ditolak atau kedaluwarsa yang bisa direvisi';
 }

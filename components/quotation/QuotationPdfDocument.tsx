@@ -41,6 +41,7 @@ import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnl
 import { formatPercent, formatRupiah } from "@/lib/helper/currency";
 import { formatQuantityWithUnit } from "@/lib/helper/quantity";
 import { billingPeriodSuffix } from "@/lib/utils/priceSource";
+import { publicQuotationUrl } from "@/lib/api/quotations-public";
 import type { CustomFieldDefinition } from "@/lib/types/CustomFieldDefinition";
 import type { DiscountType, Quotation } from "@/lib/types/Quotation";
 
@@ -114,6 +115,14 @@ export default function QuotationPdfDocument({
     : "";
 
   const block = quotation ? buildPdfAddressBlock(quotation) : null;
+
+  // The server's own `acceptance_url` wins; `public_code` is the fallback for
+  // a row written by a leg that predates the field. A quotation still in draft
+  // has neither, and prints no acceptance block at all - printing a dead link
+  // would be worse than printing none.
+  const acceptanceLink =
+    quotation?.acceptance_url?.trim() ||
+    (quotation?.public_code ? publicQuotationUrl(quotation.public_code) : null);
 
   return (
     <div
@@ -273,6 +282,31 @@ export default function QuotationPdfDocument({
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* PHASE 4 (spec I11 / A6 / 0.12): the acceptance link.
+              This is only possible now because `public_code` is minted the
+              moment the quotation first reaches `sent` - by publish OR by
+              approval - and the web's publish no longer carries an attachment,
+              so the PDF is rasterised AFTER the code exists. Before that, the
+              PDF was built from a draft that had no code to print.
+              The URL is printed as TEXT, not as an <a>: html2canvas rasterises
+              the page, so a hyperlink would not survive anyway, and a customer
+              reading a printed copy needs the address itself. Inline colours,
+              like every other element here - html2canvas cannot resolve the
+              app's CSS custom properties. */}
+          {acceptanceLink && (
+            <div className="mt-8 pt-4 border-t" style={{ borderColor: "#e5e7eb" }}>
+              <h3 className="font-bold mb-1 text-sm" style={{ color: "#000000" }}>
+                Setujui penawaran ini secara online
+              </h3>
+              <p className="text-sm" style={{ color: "#4b5563" }}>
+                Buka tautan berikut untuk menyetujui penawaran ini:
+              </p>
+              <p className="text-sm font-medium break-all" style={{ color: "#1d4ed8" }}>
+                {acceptanceLink}
+              </p>
             </div>
           )}
         </>

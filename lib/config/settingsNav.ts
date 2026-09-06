@@ -129,6 +129,18 @@ export const settingsNav: SettingsRegistry = [
         permission: "sales:config:manage",
       },
       {
+        // Phase 4 (spec I9). The twelfth Sales entry, on the same
+        // `sales:config:manage` grant as the eleven before it - the same
+        // authority that already sets price lists and segments, because a
+        // discount ceiling decides what a quotation may cost the company.
+        // READS are open to `quotations` as well server-side, so a seller's
+        // own limit still resolves without this screen.
+        id: "discount-policies",
+        title: "Kebijakan Diskon",
+        path: "/settings/sales/discount-policies",
+        permission: "sales:config:manage",
+      },
+      {
         // Contact tags (spec A0.1). Managed here rather than under a contacts
         // section because renaming a tag lands on every contact that carries
         // it at once - a config act, not a per-record edit. ATTACHING a tag to

@@ -70,6 +70,16 @@ export interface QuotationItem {
   override_allowed?: boolean;
   tier_min_quantity?: string | null;
   billing_period?: QuotationBillingPeriod | null;
+  /**
+   * Phase 4 (spec D3 / A11). BOTH are forced to `null` by the API unless the
+   * caller holds `quotations:margin:view`, so "absent" and "zero" are
+   * different facts and neither may be defaulted to 0 here: a `?? 0` would
+   * paint a 0% margin on every line for a seller who simply cannot see costs.
+   * `cost_snapshot` is the cost that PRICED the line, frozen at build time, so
+   * an approval decided days later reads the same number the seller did.
+   */
+  cost_snapshot?: string | null;
+  margin_percent?: string | null;
 }
 
 export interface LeadContact {
@@ -184,7 +194,140 @@ export interface Quotation {
   items: QuotationItem[];
   created_at: string;
   updated_at: string;
+  /**
+   * Phase 4 (spec D3). Every one is optional with a default on the server, so
+   * a leg still running v1.140.0 answers without them and nothing here breaks.
+   */
+  /** The deal acceptance will move (A16). NULL = acceptance moves nothing. */
+  pipeline_id?: string | null;
+  /** Where the uploaded PDF lives after `POST /send` (E8.2). */
+  pdf_url?: string | null;
+  /** Who accepted, as typed on the public page. */
+  accepted_by_name?: string | null;
+  /** The LATEST approval row, whatever its status; null when never routed. */
+  approval?: QuotationApproval | null;
+  approvals_count?: number;
+  /** A5: at most one live tip per chain, so Revisi is hidden once true. */
+  has_revision?: boolean;
+  latest_revision_id?: string | null;
+  /** How many `quotation_deliveries` rows exist - 0 drives the "belum ada
+   *  pengiriman tercatat" banner and puts Kirim in the primary slot (0.31). */
+  deliveries_count?: number;
+  /** Server-built `${CLIENT_BASE_URL}/q/{public_code}`; minted at `sent` (A6). */
+  acceptance_url?: string | null;
 }
+
+// ── Phase 4: approvals ─────────────────────────────────────────────────────
+
+/** One row of `GET /quotations/whatsapp-senders` - the picker that answers the
+ *  server's multiple-active-accounts 400. No credentials, by design. */
+export interface QuotationWhatsappSender {
+  id: string;
+  display_name: string;
+  channel_identifier: string;
+  branch?: string | null;
+}
+
+export type QuotationApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+/** Which band of the policy fired (A1): the percent, the margin, or both. */
+export type QuotationApprovalReason = 'discount_percent' | 'margin' | 'both';
+
+/** `GET /quotations/{id}/approvals` - the on-quote timeline (spec D3). */
+export interface QuotationApproval {
+  id: string;
+  quotation_id: string;
+  status: QuotationApprovalStatus;
+  trigger_reason: QuotationApprovalReason;
+  requested_by: string;
+  requester_name?: string | null;
+  requested_at: string;
+  decided_by?: string | null;
+  approver_name?: string | null;
+  decided_at?: string | null;
+  comment?: string | null;
+  requested_max_percent?: string | null;
+  requested_min_margin_percent?: string | null;
+  /**
+   * A17 (owner amendment, 5 Sep 2026): this request was routed to its own
+   * requester because the tenant had no OTHER active `quotations:approve`
+   * holder. The row is approved by one person, and the UI must say so - a
+   * plain "Disetujui" chip is exactly the "implying a second pair of eyes"
+   * the flag was added to prevent. `activity_logs` is backoffice-only, so
+   * the approval card is the only place a tenant user can read this fact.
+   */
+  self_approved?: boolean;
+  /**
+   * The four thresholds AS THEY WERE at submit time (A18). Editing the policy
+   * underneath a pending request must not move the decision, so the card reads
+   * this and never the live policy.
+   */
+  policy_snapshot?: Record<string, unknown>;
+}
+
+/** One row of the tenant queue, `GET /quotations/approvals` (spec D3). */
+export interface QuotationApprovalQueueItem {
+  approval_id: string;
+  quotation_id: string;
+  quotation_number: string;
+  quotation_title?: string | null;
+  customer_name?: string | null;
+  grand_total: string;
+  currency: string;
+  status: QuotationApprovalStatus;
+  trigger_reason: QuotationApprovalReason;
+  requested_by: string;
+  requester_name?: string | null;
+  requested_at: string;
+  requested_max_percent?: string | null;
+  requested_min_margin_percent?: string | null;
+  /** A17: routed to its own requester because the tenant had no second
+   *  active `quotations:approve` holder. */
+  self_approved?: boolean;
+  /** Server-computed: false when the caller IS the requester (A17) - EXCEPT a
+   *  `self_approved` row in a tenant that still has no second holder, which
+   *  the API accepts and which therefore gets a live button, not a dead one. */
+  can_decide: boolean;
+}
+
+export interface QuotationApprovalListResponse {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  approvals: QuotationApprovalQueueItem[];
+}
+
+// ── Phase 4: deliveries ────────────────────────────────────────────────────
+
+export type QuotationDeliveryChannel = 'email' | 'whatsapp';
+/** `skipped` is a real outcome, not a failure: no contact email, or a
+ *  non-production WhatsApp send with QUOTATION_WA_SANDBOX_TO unset (A9). */
+export type QuotationDeliveryStatus = 'pending' | 'sent' | 'failed' | 'skipped';
+
+export interface QuotationDelivery {
+  id: string;
+  quotation_id: string;
+  channel: QuotationDeliveryChannel;
+  status: QuotationDeliveryStatus;
+  recipient?: string | null;
+  provider_message_sid?: string | null;
+  error_message?: string | null;
+  sent_at?: string | null;
+  created_at: string;
+}
+
+/** `POST /quotations/{id}/send` (spec D3). */
+export interface QuotationSendResponse {
+  quotation_id: string;
+  public_code?: string | null;
+  acceptance_url?: string | null;
+  pdf_url?: string | null;
+  deliveries: QuotationDelivery[];
+}
+
+/** What the send dialog asks for; `both` fans out to two delivery rows. */
+export type QuotationSendChannel = 'email' | 'whatsapp' | 'both';
 
 /** GET /quotations/{id}: the row plus Proposal-stage suggestions. */
 export interface QuotationDetail extends Quotation {
@@ -248,6 +391,16 @@ export interface QuotationTotals {
    * the same context the server validates an override against (spec A14).
    */
   price_context?: 'lead' | 'none';
+  /**
+   * Phase 4 (spec E4.2). The preview NO LONGER 400s on the approval band -
+   * it answers these four instead, so the seller can still see the totals of
+   * the very quote this phase exists to route for approval. `false`/absent
+   * means the publish will land `sent` directly.
+   */
+  approval_required?: boolean;
+  approval_reason?: string | null;
+  approval_threshold_percent?: string | null;
+  approval_min_margin_percent?: string | null;
 }
 
 /** GET /quotations/defaults: the company's snapshot basis for a new quotation. */
@@ -258,6 +411,19 @@ export interface QuotationDefaults {
   terms: string | null;
   payment_terms: string | null;
   max_discount_percent: string;
+  /**
+   * Phase 4 (spec D3). Resolved for THIS caller (user > role > company, A26),
+   * so a seller is shown the same limit they will be refused against.
+   * `null` on any limit means NO limit - which is why the 22 seeded 25.00
+   * company rows behave on day one exactly as they do today.
+   */
+  max_discount_amount?: string | null;
+  min_margin_percent?: string | null;
+  approval_above_percent?: string | null;
+  /** The caller holds `quotations:approve` / `quotations:margin:view`. The
+   *  server resolves both, so no screen re-derives a grant from a role name. */
+  can_approve?: boolean;
+  can_view_margin?: boolean;
 }
 
 /** One line as the API accepts it (QuotationItemRequest, `extra="forbid"`). No `price`. */
@@ -335,4 +501,18 @@ export interface ItemRow {
   overrideAllowed: boolean;
   priceList: PriceListBrief | null;
   billingPeriod: QuotationBillingPeriod | null;
+  /**
+   * Phase 4 (spec I3). Carried from `QuotationItemResponse` so the form can
+   * render the seller's margin column. `null` means the API did not return one
+   * - either this caller lacks `quotations:margin:view`, or the product has no
+   * cost recorded, or the line's net is <= 0 (spec A7). NEVER default it to 0:
+   * "absent" and "zero margin" are different facts, and a `?? 0` paints a red
+   * 0% on every line for a seller who simply cannot see costs.
+   *
+   * The PREVIEW carries neither (`QuotationLineTotals` has no margin field),
+   * so a line that has never been saved has no margin to show - which is
+   * exactly what "renders only when the API returned `margin_percent`" means.
+   */
+  costSnapshot: string | null;
+  marginPercent: string | null;
 }

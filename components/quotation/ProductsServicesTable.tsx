@@ -1,7 +1,7 @@
 "use client";
 
 import CustomFieldsReadOnly from "@/components/custom-fields/CustomFieldsReadOnly";
-import { formatRupiah } from "@/lib/helper/currency";
+import { formatPercent, formatRupiah } from "@/lib/helper/currency";
 import { stepForPrecision } from "@/lib/helper/quantity";
 import type { CustomFieldDefinitionLike } from "@/lib/types/CustomFieldDefinition";
 import type {
@@ -113,6 +113,18 @@ export default function ProductsServicesCard({
     return map;
   }, [totals]);
 
+  // Spec I3: "the seller's margin column renders only when the API returned
+  // `margin_percent`". All-null is exactly the shape the API returns for a
+  // caller without `quotations:margin:view` (it forces both fields to None),
+  // and also for a tenant whose products carry no cost at all - in both cases
+  // an empty column would be furniture that explains nothing. One line with a
+  // value is enough to show it, because the other lines' blanks then MEAN
+  // something: no cost recorded on that product, or a net of <= 0 (spec A7).
+  const showMargin = useMemo(
+    () => items.some((item) => item.marginPercent !== null && item.marginPercent !== undefined),
+    [items]
+  );
+
   const handleProductChange = (index: number, productId: string) => {
     const selected = listProduct.find((p) => p.id === productId);
     if (!selected) return;
@@ -177,7 +189,20 @@ export default function ProductsServicesCard({
         <div className="col-span-4 text-xs font-semibold text-gray-700">Produk</div>
         <div className="col-span-2 text-xs font-semibold text-gray-700">Qty</div>
         <div className="col-span-2 text-xs font-semibold text-gray-700">Harga satuan</div>
-        <div className="col-span-3 text-xs font-semibold text-gray-700">Total baris</div>
+        {showMargin && (
+          <div className="col-span-1 text-right text-xs font-semibold text-gray-700">Margin</div>
+        )}
+        {/* Literal class names, both of them: Tailwind v4 scans the source for
+            utilities and a template-built `col-span-${n}` is never generated. */}
+        <div
+          className={
+            showMargin
+              ? "col-span-2 text-xs font-semibold text-gray-700"
+              : "col-span-3 text-xs font-semibold text-gray-700"
+          }
+        >
+          Total baris
+        </div>
         <div className="col-span-1"></div>
       </div>
 
@@ -350,13 +375,41 @@ export default function ProductsServicesCard({
                 )}
               </div>
 
+              {/* Margin per line (spec I3). The value comes from the STORED
+                  line - the preview carries none - so it appears once the
+                  quotation has been saved, and only for a caller the API
+                  returned it to. A dash means "no margin recorded", never 0. */}
+              {showMargin && (
+                <div className="sm:col-span-1 text-sm sm:pt-3 sm:text-right">
+                  <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Margin</span>
+                  {item.marginPercent !== null && item.marginPercent !== undefined ? (
+                    <span className="font-medium text-gray-900">
+                      {formatPercent(item.marginPercent)}%
+                    </span>
+                  ) : (
+                    <span
+                      className="text-gray-400"
+                      title="Produk ini belum punya HPP, atau nilai bersih barisnya nol"
+                    >
+                      &mdash;
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Line total: server value once previewed, local qty x price
                   until then - and a DASH once the preview has failed, exactly
                   like the unit price above it. `item.unitPrice` is seeded from
                   the CATALOGUE row, which Phase 2 makes systematically wrong
                   for any tenant using price lists, so qty x that price is a
                   guess with no marker on it. */}
-              <div className="sm:col-span-3 text-sm text-gray-900 font-semibold sm:pt-3">
+              <div
+                className={
+                  showMargin
+                    ? "sm:col-span-2 text-sm text-gray-900 font-semibold sm:pt-3"
+                    : "sm:col-span-3 text-sm text-gray-900 font-semibold sm:pt-3"
+                }
+              >
                 <span className="sm:hidden block text-xs font-semibold text-gray-700 mb-1">Total baris</span>
                 {line ? (
                   formatRupiah(line.line_total)

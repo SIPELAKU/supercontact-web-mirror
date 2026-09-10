@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container, Typography, Stack, Button, Breadcrumbs, Paper, Chip } from "@mui/material";
+import { Box, Container, Typography, Stack, Button, Breadcrumbs, Paper, Chip, Link as MuiLink } from "@mui/material";
 import Link from "next/link";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -8,6 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { BlogArticle, BlogBodyBlock } from "@/content/blog/types";
+import { resolveAuthor } from "@/lib/blog/authors";
 
 const LABELS = {
     id: {
@@ -47,6 +48,7 @@ function slugify(s: string) {
 export default function BlogArticleTemplate({ article, related = [] }: { article: BlogArticle; related?: BlogArticle[] }) {
     const { language } = useLanguage();
     const t = LABELS[language];
+    const author = resolveAuthor(article.author.id);
 
     const toc = article.body
         .filter((b): b is Extract<BlogBodyBlock, { type: 'h2' }> => b.type === 'h2')
@@ -83,7 +85,17 @@ export default function BlogArticleTemplate({ article, related = [] }: { article
                     </Typography>
 
                     <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                        {t.by} {article.author[language]} · {formatDate(article.publishedDate, language)}
+                        {t.by}{' '}
+                        <MuiLink
+                            href={author.linkedin}
+                            target="_blank"
+                            rel="author noopener noreferrer"
+                            sx={{ color: 'var(--brand-deep)', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                        >
+                            {author.name}
+                        </MuiLink>
+                        {' · '}{author.role[language]}
+                        {' · '}{formatDate(article.publishedDate, language)}
                         {article.updatedDate && article.updatedDate !== article.publishedDate
                             ? ` · ${t.updated} ${formatDate(article.updatedDate, language)}`
                             : ''}

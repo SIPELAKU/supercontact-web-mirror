@@ -211,6 +211,50 @@ export default function BlogArticleTemplate({ article, related = [] }: { article
                                 </Box>
                             );
                         }
+                        if (block.type === 'linklist') {
+                            return (
+                                <Paper
+                                    key={index}
+                                    elevation={0}
+                                    sx={{ p: { xs: 3, md: 3.5 }, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: 'var(--surface-alt)' }}
+                                >
+                                    {block.title && (
+                                        <Typography sx={{ fontWeight: 800, color: '#0F172A', mb: 2, fontSize: '1.05rem' }}>
+                                            {block.title[language]}
+                                        </Typography>
+                                    )}
+                                    <Stack spacing={1.5}>
+                                        {block.items.map((item, i) => (
+                                            <Paper
+                                                key={i}
+                                                component={Link}
+                                                href={`/blog/${item.slug}`}
+                                                elevation={0}
+                                                sx={{
+                                                    p: 2.5,
+                                                    borderRadius: '12px',
+                                                    border: '1px solid #E2E8F0',
+                                                    bgcolor: 'white',
+                                                    textDecoration: 'none',
+                                                    display: 'block',
+                                                    transition: 'border-color 0.2s',
+                                                    '&:hover': { borderColor: '#597CFF' },
+                                                }}
+                                            >
+                                                <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>
+                                                    {item.label[language]} →
+                                                </Typography>
+                                                {item.desc && (
+                                                    <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5, lineHeight: 1.5 }}>
+                                                        {item.desc[language]}
+                                                    </Typography>
+                                                )}
+                                            </Paper>
+                                        ))}
+                                    </Stack>
+                                </Paper>
+                            );
+                        }
                         return null;
                     })}
                 </Stack>

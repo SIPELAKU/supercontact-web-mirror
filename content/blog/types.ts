@@ -5,7 +5,15 @@ export type BlogBodyBlock =
     | { type: 'p'; text: Localized<string> }
     | { type: 'list'; items: Localized<string[]> }
     | { type: 'callout'; text: Localized<string> }
-    | { type: 'table'; headers: Localized<string[]>; rows: Localized<string[][]> };
+    | { type: 'table'; headers: Localized<string[]>; rows: Localized<string[][]> }
+    // Hub tautan internal (untuk pillar page): tiap item menaut ke /blog/<slug>.
+    | { type: 'linklist'; title?: Localized<string>; items: BlogLinkItem[] };
+
+export interface BlogLinkItem {
+    slug: string;
+    label: Localized<string>;
+    desc?: Localized<string>;
+}
 
 export interface BlogFaqItem {
     q: Localized<string>;

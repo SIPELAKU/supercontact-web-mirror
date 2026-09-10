@@ -4,7 +4,8 @@ export type BlogBodyBlock =
     | { type: 'h2'; text: Localized<string> }
     | { type: 'p'; text: Localized<string> }
     | { type: 'list'; items: Localized<string[]> }
-    | { type: 'callout'; text: Localized<string> };
+    | { type: 'callout'; text: Localized<string> }
+    | { type: 'table'; headers: Localized<string[]>; rows: Localized<string[][]> };
 
 export interface BlogFaqItem {
     q: Localized<string>;

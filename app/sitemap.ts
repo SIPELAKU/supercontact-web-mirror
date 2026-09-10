@@ -45,8 +45,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter((a) => !a.slug.startsWith('_'))
         .map((article) => ({
             url: `${BASE_URL}/blog/${article.slug}`,
-            lastModified: LAST_MODIFIED,
-            changeFrequency: 'monthly',
+            lastModified: article.updatedDate || article.publishedDate || LAST_MODIFIED,
+            changeFrequency: 'monthly' as const,
             priority: 0.65,
         }));
 

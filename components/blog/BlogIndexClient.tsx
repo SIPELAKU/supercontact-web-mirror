@@ -6,6 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { BlogArticle } from "@/content/blog/types";
+import { ogImageUrl } from "@/lib/utils/og-image";
 
 const LABELS = {
     id: {
@@ -68,30 +69,40 @@ export default function BlogIndexClient({ articles = [] }: { articles?: BlogArti
                                 href={`/blog/${article.slug}`}
                                 elevation={0}
                                 sx={{
-                                    p: 4,
                                     height: '100%',
                                     borderRadius: '20px',
                                     border: '1px solid #E2E8F0',
                                     textDecoration: 'none',
-                                    display: 'block',
-                                    transition: 'border-color 0.2s',
-                                    '&:hover': { borderColor: '#597CFF' },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    overflow: 'hidden',
+                                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                                    '&:hover': { borderColor: '#597CFF', boxShadow: '0 8px 24px rgba(89,124,255,0.10)' },
                                 }}
                             >
-                                <Chip
-                                    label={article.category[language]}
-                                    size="small"
-                                    sx={{ bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', fontWeight: 700, mb: 2 }}
+                                <Box
+                                    component="img"
+                                    src={article.ogImageOverride || ogImageUrl({ title: article.h1.id, category: article.category.id })}
+                                    alt={article.h1[language]}
+                                    loading="lazy"
+                                    sx={{ width: '100%', aspectRatio: '1.9 / 1', objectFit: 'cover', display: 'block', bgcolor: 'var(--surface-alt)' }}
                                 />
-                                <Typography variant="h6" component="h2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                                    {article.h1[language]}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6, mb: 2 }}>
-                                    {article.description[language]}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
-                                    {formatDate(article.publishedDate, language)}
-                                </Typography>
+                                <Box sx={{ p: 4 }}>
+                                    <Chip
+                                        label={article.category[language]}
+                                        size="small"
+                                        sx={{ bgcolor: 'var(--surface-tint)', color: 'var(--brand-deep)', fontWeight: 700, mb: 2 }}
+                                    />
+                                    <Typography variant="h6" component="h2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
+                                        {article.h1[language]}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6, mb: 2 }}>
+                                        {article.description[language]}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>
+                                        {formatDate(article.publishedDate, language)}
+                                    </Typography>
+                                </Box>
                             </Paper>
                         </Grid>
                     ))}

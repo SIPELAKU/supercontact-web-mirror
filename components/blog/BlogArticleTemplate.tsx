@@ -7,7 +7,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/lib/context/LanguageContext";
-import { BlogArticle } from "@/content/blog/types";
+import { BlogArticle, BlogBodyBlock } from "@/content/blog/types";
 
 const LABELS = {
     id: {
@@ -15,6 +15,7 @@ const LABELS = {
         breadcrumbBlog: 'Blog',
         relatedTitle: 'Artikel Terkait',
         faqTitle: 'Pertanyaan Terkait',
+        tocTitle: 'Daftar Isi',
         by: 'Oleh',
         updated: 'Diperbarui',
     },
@@ -23,6 +24,7 @@ const LABELS = {
         breadcrumbBlog: 'Blog',
         relatedTitle: 'Related Articles',
         faqTitle: 'Related Questions',
+        tocTitle: 'Table of Contents',
         by: 'By',
         updated: 'Updated',
     },
@@ -37,9 +39,18 @@ function formatDate(iso: string, language: 'id' | 'en') {
     });
 }
 
+// Anchor id dari teks Indonesia agar stabil lintas bahasa (TOC ↔ heading cocok).
+function slugify(s: string) {
+    return s.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
 export default function BlogArticleTemplate({ article, related = [] }: { article: BlogArticle; related?: BlogArticle[] }) {
     const { language } = useLanguage();
     const t = LABELS[language];
+
+    const toc = article.body
+        .filter((b): b is Extract<BlogBodyBlock, { type: 'h2' }> => b.type === 'h2')
+        .map((b) => ({ id: slugify(b.text.id), label: b.text[language] }));
 
     return (
         <Box sx={{ bgcolor: 'white' }}>
@@ -85,15 +96,35 @@ export default function BlogArticleTemplate({ article, related = [] }: { article
             </Box>
 
             <Container maxWidth="md" sx={{ py: { xs: 6, md: 8 } }}>
+                {toc.length >= 3 && (
+                    <Paper
+                        elevation={0}
+                        sx={{ p: 3, mb: 5, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: 'var(--surface-alt)' }}
+                    >
+                        <Typography sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, fontSize: '0.95rem' }}>
+                            {t.tocTitle}
+                        </Typography>
+                        <Stack component="ol" spacing={0.8} sx={{ pl: 2.5, m: 0 }}>
+                            {toc.map((h) => (
+                                <Typography key={h.id} component="li" sx={{ fontSize: '0.95rem', lineHeight: 1.5 }}>
+                                    <Link href={`#${h.id}`} style={{ color: '#597CFF', textDecoration: 'none', fontWeight: 600 }}>
+                                        {h.label}
+                                    </Link>
+                                </Typography>
+                            ))}
+                        </Stack>
+                    </Paper>
+                )}
                 <Stack spacing={3}>
                     {article.body.map((block, index) => {
                         if (block.type === 'h2') {
                             return (
                                 <Typography
                                     key={index}
+                                    id={slugify(block.text.id)}
                                     variant="h4"
                                     component="h2"
-                                    sx={{ fontWeight: 800, color: '#0F172A', mt: 2, fontSize: { xs: '1.5rem', md: '1.75rem' } }}
+                                    sx={{ fontWeight: 800, color: '#0F172A', mt: 2, fontSize: { xs: '1.5rem', md: '1.75rem' }, scrollMarginTop: '90px' }}
                                 >
                                     {block.text[language]}
                                 </Typography>
@@ -128,6 +159,44 @@ export default function BlogArticleTemplate({ article, related = [] }: { article
                                         {block.text[language]}
                                     </Typography>
                                 </Paper>
+                            );
+                        }
+                        if (block.type === 'table') {
+                            const headers = block.headers[language];
+                            const rows = block.rows[language];
+                            return (
+                                <Box key={index} sx={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                                    <Box component="table" sx={{ width: '100%', minWidth: 480, borderCollapse: 'collapse', fontSize: '0.98rem' }}>
+                                        <Box component="thead">
+                                            <Box component="tr">
+                                                {headers.map((h, i) => (
+                                                    <Box
+                                                        component="th"
+                                                        key={i}
+                                                        sx={{ textAlign: 'left', p: 1.5, bgcolor: 'var(--surface-alt)', color: '#0F172A', fontWeight: 700, borderBottom: '2px solid #E2E8F0' }}
+                                                    >
+                                                        {h}
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                        <Box component="tbody">
+                                            {rows.map((row, ri) => (
+                                                <Box component="tr" key={ri}>
+                                                    {row.map((cell, ci) => (
+                                                        <Box
+                                                            component="td"
+                                                            key={ci}
+                                                            sx={{ p: 1.5, color: '#334155', lineHeight: 1.6, verticalAlign: 'top', borderBottom: ri === rows.length - 1 ? 'none' : '1px solid #E2E8F0' }}
+                                                        >
+                                                            {cell}
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                </Box>
                             );
                         }
                         return null;

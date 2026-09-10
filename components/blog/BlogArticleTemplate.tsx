@@ -8,7 +8,6 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { BlogArticle } from "@/content/blog/types";
-import { blogArticles } from "@/content/blog/registry";
 
 const LABELS = {
     id: {
@@ -38,14 +37,9 @@ function formatDate(iso: string, language: 'id' | 'en') {
     });
 }
 
-export default function BlogArticleTemplate({ article }: { article: BlogArticle }) {
+export default function BlogArticleTemplate({ article, related = [] }: { article: BlogArticle; related?: BlogArticle[] }) {
     const { language } = useLanguage();
     const t = LABELS[language];
-
-    const related = article.relatedSlugs
-        .map((slug) => blogArticles.find((a) => a.slug === slug))
-        .filter((a): a is BlogArticle => Boolean(a))
-        .slice(0, 3);
 
     return (
         <Box sx={{ bgcolor: 'white' }}>

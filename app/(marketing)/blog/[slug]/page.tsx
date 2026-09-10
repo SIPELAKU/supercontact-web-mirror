@@ -1,33 +1,42 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import BlogArticleTemplate from '@/components/blog/BlogArticleTemplate';
-import { blogArticles, getArticleBySlug } from '@/content/blog/registry';
+import { getAllArticles, getRelated } from '@/lib/blog/api';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
 const BASE_URL = 'https://smartsales.id';
 
-export function generateStaticParams() {
-    return blogArticles.map((article) => ({ slug: article.slug }));
+// ISR: konten dari CMS; artikel/slug baru muncul tanpa redeploy.
+export const revalidate = 300;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+    const all = await getAllArticles();
+    return all.map((article) => ({ slug: article.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-    const article = getArticleBySlug(params.slug);
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+    const all = await getAllArticles();
+    const article = all.find((a) => a.slug === params.slug);
     if (!article) {
         return {};
     }
 
     const pageUrl = `${BASE_URL}/blog/${article.slug}`;
-    const image = ogImageUrl({ title: article.h1.id, category: article.category.id });
+    const canonical = article.canonicalOverride || pageUrl;
+    const image = article.ogImageOverride || ogImageUrl({ title: article.h1.id, category: article.category.id });
+    const title = article.metaTitle || article.title.id;
+    const description = article.metaDescription || article.description.id;
 
     return {
-        title: article.title.id,
-        description: article.description.id,
+        title,
+        description,
         alternates: {
-            canonical: pageUrl,
+            canonical,
         },
         openGraph: {
-            title: article.title.id,
-            description: article.description.id,
+            title,
+            description,
             url: pageUrl,
             siteName: 'SmartSales',
             locale: 'id_ID',
@@ -37,21 +46,23 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
         },
         twitter: {
             card: 'summary_large_image',
-            title: article.title.id,
-            description: article.description.id,
+            title,
+            description,
             images: [image],
         },
     };
 }
 
-export default function BlogArticlePage({ params }: { params: { slug: string } }) {
-    const article = getArticleBySlug(params.slug);
+export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
+    const all = await getAllArticles();
+    const article = all.find((a) => a.slug === params.slug);
     if (!article) {
         notFound();
     }
 
+    const related = getRelated(article, all);
     const pageUrl = `${BASE_URL}/blog/${article.slug}`;
-    const image = ogImageUrl({ title: article.h1.id, category: article.category.id });
+    const image = article.ogImageOverride || ogImageUrl({ title: article.h1.id, category: article.category.id });
 
     const breadcrumbSchema = {
         '@context': 'https://schema.org',
@@ -104,7 +115,7 @@ export default function BlogArticlePage({ params }: { params: { slug: string } }
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(combinedSchema) }}
             />
-            <BlogArticleTemplate article={article} />
+            <BlogArticleTemplate article={article} related={related} />
         </>
     );
 }

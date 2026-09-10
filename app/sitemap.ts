@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blogArticles } from '@/content/blog/registry';
+import { getAllArticles } from '@/lib/blog/api';
 
 const BASE_URL = 'https://smartsales.id';
 
@@ -26,7 +26,8 @@ const produkRoutes = ['crm-sales', 'crm-services', 'omnichannel', 'ticket'];
 // enough and costs nothing.
 const LAST_MODIFIED = new Date();
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+    const blogArticles = await getAllArticles();
     const staticRoutes: MetadataRoute.Sitemap = [
         { url: `${BASE_URL}`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 1 },
         { url: `${BASE_URL}/company`, lastModified: LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.6 },

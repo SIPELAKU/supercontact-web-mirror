@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/lib/context/LanguageContext";
-import { blogArticles } from "@/content/blog/registry";
+import { BlogArticle } from "@/content/blog/types";
 
 const LABELS = {
     id: {
@@ -29,7 +29,7 @@ function formatDate(iso: string, language: 'id' | 'en') {
     });
 }
 
-export default function BlogIndexClient() {
+export default function BlogIndexClient({ articles = [] }: { articles?: BlogArticle[] }) {
     const { language } = useLanguage();
     const t = LABELS[language];
 
@@ -61,7 +61,7 @@ export default function BlogIndexClient() {
 
             <Container maxWidth="lg" sx={{ py: { xs: 8, md: 10 } }}>
                 <Grid container spacing={4}>
-                    {blogArticles.filter((a) => !a.slug.startsWith('_')).map((article) => (
+                    {articles.filter((a) => !a.slug.startsWith('_')).map((article) => (
                         <Grid item xs={12} md={6} key={article.slug}>
                             <Paper
                                 component={Link}

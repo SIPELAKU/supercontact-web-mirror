@@ -26,4 +26,9 @@ export interface BlogArticle {
     relatedSlugs: string[];
     primaryCtaHref: string;
     primaryCtaLabel: Localized<string>;
+    // Field SEO opsional dari CMS (tidak diisi oleh file .ts lama)
+    metaTitle?: string;
+    metaDescription?: string;
+    canonicalOverride?: string;
+    ogImageOverride?: string;
 }

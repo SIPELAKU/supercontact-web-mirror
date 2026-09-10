@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import BlogIndexClient from '@/components/blog/BlogIndexClient';
+import { getAllArticles } from '@/lib/blog/api';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
 const PAGE_URL = 'https://smartsales.id/blog';
@@ -63,7 +64,10 @@ const breadcrumbJsonLd = {
     ],
 };
 
-export default function BlogPage() {
+export const revalidate = 300;
+
+export default async function BlogPage() {
+    const articles = await getAllArticles();
     return (
         <>
             <script
@@ -74,7 +78,7 @@ export default function BlogPage() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
-            <BlogIndexClient />
+            <BlogIndexClient articles={articles} />
         </>
     );
 }

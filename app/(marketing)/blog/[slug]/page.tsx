@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import BlogArticleTemplate from '@/components/blog/BlogArticleTemplate';
 import { getAllArticles, getRelated } from '@/lib/blog/api';
+import { resolveAuthor } from '@/lib/blog/authors';
 import { ogImageUrl } from '@/lib/utils/og-image';
 
 const BASE_URL = 'https://smartsales.id';
@@ -61,6 +62,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
     }
 
     const related = getRelated(article, all);
+    const author = resolveAuthor(article.author.id);
     const pageUrl = `${BASE_URL}/blog/${article.slug}`;
     const image = article.ogImageOverride || ogImageUrl({ title: article.h1.id, category: article.category.id });
 
@@ -82,11 +84,24 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
         image: [image],
         datePublished: article.publishedDate,
         dateModified: article.updatedDate ?? article.publishedDate,
-        author: { '@type': 'Organization', name: article.author.id },
+        author: {
+            '@type': 'Person',
+            name: author.name,
+            url: author.linkedin,
+            sameAs: [author.linkedin],
+            jobTitle: author.role.id,
+            worksFor: { '@type': 'Organization', '@id': `${BASE_URL}/#organization`, name: 'SmartSales' },
+        },
         publisher: {
             '@type': 'Organization',
+            '@id': `${BASE_URL}/#organization`,
             name: 'SmartSales',
+            url: BASE_URL,
             logo: { '@type': 'ImageObject', url: `${BASE_URL}/assets/sc-icon-512.png`, width: 512, height: 512 },
+            sameAs: [
+                'https://www.instagram.com/smartsales.id/',
+                'https://www.linkedin.com/company/smartsales-indonesia/',
+            ],
         },
         mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
     };

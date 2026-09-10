@@ -38,6 +38,7 @@ export const metadata: Metadata = {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": "https://smartsales.id/#organization",
   name: "SmartSales",
   url: "https://smartsales.id",
   logo: "https://smartsales.id/assets/sc-icon-512.png",

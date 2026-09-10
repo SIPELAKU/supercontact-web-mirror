@@ -10,6 +10,7 @@ import MarketingSolutions from './MarketingSolutions';
 import MarketingImpactCTA from './MarketingImpactCTA';
 import MarketingComparison from './MarketingComparison';
 import MarketingFAQ from './MarketingFAQ';
+import RelatedReading from '@/components/layout/RelatedReading';
 
 export default function MarketingClient() {
     return (
@@ -21,6 +22,14 @@ export default function MarketingClient() {
             <MarketingComparison />
             <MarketingFAQ />
             <MarketingImpactCTA />
+            <RelatedReading
+                heading="Panduan marketing & integrasi sales"
+                items={[
+                    { href: '/blog/mql-vs-sql', title: 'MQL vs SQL', desc: 'Bedakan lead marketing vs sales sebelum di-follow-up.' },
+                    { href: '/blog/kesalahan-umum-integrasi-sales-marketing', title: 'Kesalahan integrasi sales-marketing', desc: 'Jebakan umum yang membuat leads bocor.' },
+                    { href: '/blog/cara-menghitung-leads-yang-hilang', title: 'Menghitung leads yang hilang', desc: 'Ukur kebocoran lead di tiap tahap corong.' },
+                ]}
+            />
             <Footer />
         </Box>
     );

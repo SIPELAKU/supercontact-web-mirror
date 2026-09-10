@@ -22,6 +22,8 @@ const solusiRoutes = [
 
 const produkRoutes = ['crm-sales', 'crm-services', 'omnichannel', 'ticket'];
 
+const bandingkanRoutes = ['smartsales-vs-qontak', 'smartsales-vs-barantum'];
+
 // Build-time timestamp: content only changes on deploy, so this is accurate
 // enough and costs nothing.
 const LAST_MODIFIED = new Date();
@@ -57,6 +59,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
     }));
 
+    const bandingkan: MetadataRoute.Sitemap = bandingkanRoutes.map((slug) => ({
+        url: `${BASE_URL}/bandingkan/${slug}`,
+        lastModified: LAST_MODIFIED,
+        changeFrequency: 'monthly',
+        priority: 0.75,
+    }));
+
     const solusi: MetadataRoute.Sitemap = solusiRoutes.map((slug) => ({
         url: `${BASE_URL}/solusi/${slug}`,
         lastModified: LAST_MODIFIED,
@@ -64,5 +73,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: slug === 'integrasi-sales-marketing' ? 0.85 : 0.8,
     }));
 
-    return [...staticRoutes, ...produk, ...solusi, ...blog];
+    return [...staticRoutes, ...produk, ...solusi, ...bandingkan, ...blog];
 }

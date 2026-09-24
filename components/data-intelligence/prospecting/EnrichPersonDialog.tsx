@@ -24,6 +24,10 @@ interface EnrichPersonDialogProps {
     onClose: () => void;
     person: EnrichPersonQuery;
     availableCredits: number | null;
+    /** LOCAL/DEV backends bypass the credit check server-side — mirror that
+     * here so the button is never disabled and the copy doesn't warn about
+     * a shortfall that will not actually block anything. */
+    unlimitedCredits?: boolean;
     /** Called once the job is successfully queued, so the caller can refresh
      * its credit balance and (on the profile page) start polling job status. */
     onQueued?: (jobId: string) => void;
@@ -34,7 +38,14 @@ interface EnrichPersonDialogProps {
 // rather than making the user pick fields before every click. See
 // PersonEnrichmentJobCreateRequest.fields on the backend — a future UI can
 // still request a narrower set without any API change.
-export function EnrichPersonDialog({ open, onClose, person, availableCredits, onQueued }: EnrichPersonDialogProps) {
+export function EnrichPersonDialog({
+    open,
+    onClose,
+    person,
+    availableCredits,
+    unlimitedCredits,
+    onQueued,
+}: EnrichPersonDialogProps) {
     const { getToken } = useAuth();
     const [step, setStep] = useState<"confirm" | "done">("confirm");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +58,8 @@ export function EnrichPersonDialog({ open, onClose, person, availableCredits, on
         }
     }, [open]);
 
-    const insufficientCredit = availableCredits !== null && availableCredits < ENRICH_ALL_COST;
+    const insufficientCredit =
+        !unlimitedCredits && availableCredits !== null && availableCredits < ENRICH_ALL_COST;
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -138,13 +150,17 @@ export function EnrichPersonDialog({ open, onClose, person, availableCredits, on
                     <span className="text-sm text-gray-600">Total cost</span>
                     <span className="text-sm font-bold text-gray-900">{ENRICH_ALL_COST} credits</span>
                 </div>
-                {availableCredits !== null && (
-                    <p className="text-right text-xs text-gray-400">
-                        {availableCredits.toLocaleString()} available now →{" "}
-                        <span className="font-medium text-gray-600">
-                            {Math.max(availableCredits - ENRICH_ALL_COST, 0).toLocaleString()} after
-                        </span>
-                    </p>
+                {unlimitedCredits ? (
+                    <p className="text-right text-xs font-medium text-emerald-600">Unlimited credit (dev) — never blocked.</p>
+                ) : (
+                    availableCredits !== null && (
+                        <p className="text-right text-xs text-gray-400">
+                            {availableCredits.toLocaleString()} available now →{" "}
+                            <span className="font-medium text-gray-600">
+                                {Math.max(availableCredits - ENRICH_ALL_COST, 0).toLocaleString()} after
+                            </span>
+                        </p>
+                    )
                 )}
                 {insufficientCredit && (
                     <p className="text-right text-xs font-medium text-rose-600">

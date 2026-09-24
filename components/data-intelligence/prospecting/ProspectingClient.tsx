@@ -24,6 +24,7 @@ export default function ProspectingClient() {
     const [error, setError] = useState<string | null>(null);
 
     const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+    const [unlimitedCredits, setUnlimitedCredits] = useState(false);
     const [isCreditLoading, setIsCreditLoading] = useState(true);
 
     const [tableState, setTableState] = useState({
@@ -39,8 +40,9 @@ export default function ProspectingClient() {
         setIsCreditLoading(true);
         try {
             const token = await getToken();
-            const { available } = await getEnrichmentCreditBalance(token);
+            const { available, unlimited } = await getEnrichmentCreditBalance(token);
             setAvailableCredits(Math.trunc(parseFloat(available)));
+            setUnlimitedCredits(unlimited);
         } catch (err) {
             // Non-fatal — the pill just shows "—" and the real 402 guard
             // still lives server-side. Don't block the list over this.
@@ -157,7 +159,9 @@ export default function ProspectingClient() {
                 title="Prospecting"
                 description="Search the shared identity graph for free, then enrich the people who matter — one click gets you every verified channel we can find, metered per person."
                 breadcrumbs={[{ label: "Data Intelligence" }, { label: "Prospecting" }]}
-                actions={<CreditBalancePill available={availableCredits} isLoading={isCreditLoading} />}
+                actions={
+                    <CreditBalancePill available={availableCredits} isLoading={isCreditLoading} unlimited={unlimitedCredits} />
+                }
             />
 
             {rows.length === 0 && !isLoading && !error ? (
@@ -244,6 +248,7 @@ export default function ProspectingClient() {
                         linkedin_url: enrichTarget.linkedin_url,
                     }}
                     availableCredits={availableCredits}
+                    unlimitedCredits={unlimitedCredits}
                     onQueued={() => {
                         notify.success("Enrichment queued", {
                             description: `${enrichTarget.full_name} will be updated shortly.`,

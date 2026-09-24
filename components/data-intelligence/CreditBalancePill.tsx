@@ -1,10 +1,14 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { Zap, Infinity as InfinityIcon } from "lucide-react";
 
 interface CreditBalancePillProps {
     available: number | null;
     isLoading?: boolean;
+    /** LOCAL/DEV backend environments bypass the credit check entirely —
+     * shows "Unlimited (dev)" instead of the raw (possibly negative)
+     * available number, which is otherwise correct but reads as broken. */
+    unlimited?: boolean;
 }
 
 // New UI for this product — no other module here meters usage per-action
@@ -12,7 +16,16 @@ interface CreditBalancePillProps {
 // Deliberately prominent (a header pill, not tucked into settings): this is
 // the first spend-per-click concept users have seen, so it needs to be
 // visible before someone queues a job and gets surprised by a 402.
-export function CreditBalancePill({ available, isLoading }: CreditBalancePillProps) {
+export function CreditBalancePill({ available, isLoading, unlimited }: CreditBalancePillProps) {
+    if (unlimited) {
+        return (
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3.5 py-2">
+                <InfinityIcon size={15} className="shrink-0 text-emerald-600" />
+                <span className="text-[13px] font-semibold text-emerald-700">Unlimited credit (dev)</span>
+            </div>
+        );
+    }
+
     return (
         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-[#DDE4FC] px-3.5 py-2">
             <Zap size={15} className="shrink-0 text-[#3F66E0]" />

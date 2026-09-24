@@ -66,6 +66,10 @@ export interface EnrichmentCreditBalanceResponse {
     balance: string;
     reserved: string;
     available: string;
+    // True in LOCAL/DEV only (app/services/enrichment_credit_service.py) —
+    // `available` can be negative there since enforcement is bypassed but
+    // the ledger still runs for real. Show "Unlimited", not the raw number.
+    unlimited: boolean;
 }
 
 export interface PersonEmailDetail {

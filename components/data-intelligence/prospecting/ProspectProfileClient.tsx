@@ -35,6 +35,7 @@ export default function ProspectProfileClient({ personId }: ProspectProfileClien
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [availableCredits, setAvailableCredits] = useState<number | null>(null);
+    const [unlimitedCredits, setUnlimitedCredits] = useState(false);
     const [enrichOpen, setEnrichOpen] = useState(false);
 
     const tab = (searchParams.get("tab") as TabValue) || "overview";
@@ -61,8 +62,9 @@ export default function ProspectProfileClient({ personId }: ProspectProfileClien
     const fetchCredit = useCallback(async () => {
         try {
             const token = await getToken();
-            const { available } = await getEnrichmentCreditBalance(token);
+            const { available, unlimited } = await getEnrichmentCreditBalance(token);
             setAvailableCredits(Math.trunc(parseFloat(available)));
+            setUnlimitedCredits(unlimited);
         } catch (err) {
             console.error("Failed to fetch enrichment credit balance:", err);
         }
@@ -123,7 +125,7 @@ export default function ProspectProfileClient({ personId }: ProspectProfileClien
                 ]}
                 actions={
                     <div className="flex items-center gap-3">
-                        <CreditBalancePill available={availableCredits} />
+                        <CreditBalancePill available={availableCredits} unlimited={unlimitedCredits} />
                         <AppButton variantStyle="primary" startIcon={<Sparkles size={15} />} onClick={() => setEnrichOpen(true)}>
                             Enrich · 3 credits
                         </AppButton>
@@ -287,6 +289,7 @@ export default function ProspectProfileClient({ personId }: ProspectProfileClien
                     linkedin_url: person.linkedin_url,
                 }}
                 availableCredits={availableCredits}
+                unlimitedCredits={unlimitedCredits}
                 onQueued={() => {
                     fetchCredit();
                 }}

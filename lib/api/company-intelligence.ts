@@ -173,6 +173,42 @@ export async function enrichSocialProfiles(
     return json?.data;
 }
 
+// On-demand crawl of a company's own website (robots.txt honored, max 5
+// pages) - fills empty contact/social columns and detects technology
+// signals. Runs asynchronously server-side: the response's
+// raw_data.website_crawl.status is "queued" right after this call unless an
+// unexpired result (< 24h) was already on file, in which case it comes back
+// "completed" immediately with no new crawl performed. Callers should poll
+// getCompanyIntelligenceProfile() while status is "queued" (see
+// WebsiteIntelligenceCard).
+export async function crawlCompanyWebsite(
+    token: string,
+    cacheId: string
+): Promise<CompanyIntelligenceProfileResponse> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const res = await fetchWithTimeout(`${baseUrl}/company-intelligence/${cacheId}/crawl-website`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const json = await res.json();
+
+    if (res.status === 401) {
+        throw new Error("UNAUTHORIZED");
+    }
+
+    if (!res.ok || json?.success === false) {
+        const message = json?.error?.message || json?.message || "Failed to crawl website";
+        throw new Error(message);
+    }
+
+    return json?.data;
+}
+
 // Search Assist paste-back: PATCH one or more social profile links onto a
 // cache row. The API canonicalizes what it stores and refuses individual
 // LinkedIn /in/ URLs with an explanatory message - surface that message

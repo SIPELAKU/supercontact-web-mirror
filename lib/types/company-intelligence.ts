@@ -313,6 +313,28 @@ export interface CompanyProfile360 {
     // still-only-cached search result carries an empty map.
     customFields: Record<string, unknown>;
     createdAt: string;
+    // On-demand website crawl status/results, from raw_data.website_crawl -
+    // same "always null on the saved path" limitation as socialProfiles
+    // above (the saved detail response carries no raw_data). "Crawl website"
+    // still works there via the linked cacheId; a completed crawl's results
+    // only become visible after the profile is next loaded from the search
+    // path, or immediately via client-side polling merge (see
+    // WebsiteIntelligenceCard/CompanyProfile360Client).
+    websiteCrawl: WebsiteCrawlInfo | null;
+}
+
+// raw_data.website_crawl, written by POST /company-intelligence/{cacheId}/
+// crawl-website (on-demand path) - status flows queued -> completed|failed.
+// fieldsFilled/technologySignals are only meaningful once status==="completed".
+export interface WebsiteCrawlInfo {
+    status: "queued" | "completed" | "failed" | string;
+    requestedAt?: string | null;
+    crawledAt?: string | null;
+    failedAt?: string | null;
+    pagesCrawled?: number | null;
+    fieldsFilled?: string[];
+    technologySignals?: string[];
+    error?: string | null;
 }
 
 export interface MyTargetCompaniesSummary {

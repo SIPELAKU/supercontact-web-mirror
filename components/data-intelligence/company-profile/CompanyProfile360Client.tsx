@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { AppTabs } from "@/components/ui/app-tabs";
@@ -18,11 +18,21 @@ import ProvenanceList from "./ProvenanceList";
 import OrgChartSection from "./OrgChartSection";
 import SocialLookupModal from "./SocialLookupModal";
 import SocialPresenceCard, { SOCIAL_PLATFORM_LABELS } from "./SocialPresenceCard";
+import WebsiteIntelligenceCard from "./WebsiteIntelligenceCard";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
-import { enrichSocialProfiles, saveCompanyToCrm } from "@/lib/api/company-intelligence";
+import {
+    crawlCompanyWebsite,
+    enrichSocialProfiles,
+    getCompanyIntelligenceProfile,
+    saveCompanyToCrm,
+} from "@/lib/api/company-intelligence";
 import { verifyContact, VerificationResultItem } from "@/lib/api/verification";
 import { fetchNotifications } from "@/lib/api/notifications";
-import { CompanyProfile360, SocialLinksValues } from "@/lib/types/company-intelligence";
+import {
+    CompanyIntelligenceProfileResponse,
+    CompanyProfile360,
+    SocialLinksValues,
+} from "@/lib/types/company-intelligence";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
 
@@ -54,6 +64,8 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
     const [isSaved, setIsSaved] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isRefreshingSocial, setIsRefreshingSocial] = useState(false);
+    const [isCrawlingWebsite, setIsCrawlingWebsite] = useState(false);
+    const crawlPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [signals, setSignals] = useState<AutomatedSignal[]>([]);
     const [isLoadingSignals, setIsLoadingSignals] = useState(false);
     const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
@@ -83,6 +95,12 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
     useEffect(() => {
         loadProfile();
     }, [loadProfile]);
+
+    useEffect(() => {
+        return () => {
+            if (crawlPollRef.current) clearInterval(crawlPollRef.current);
+        };
+    }, []);
 
     // Signals are keyed by the shared Organization id (see SignalEngineService),
     // which only exists once a cache row/CrmCompany has been resolved to one -
@@ -298,6 +316,110 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
         );
     };
 
+    // Crawl runs asynchronously server-side (a Celery job, not this request) -
+    // the POST returns immediately with status "queued" (or "completed" with
+    // no new crawl if a result from the last 24h is still fresh). While
+    // queued, poll the raw profile endpoint (which carries raw_data, unlike
+    // the saved-path detail response) until it settles, merging the result
+    // into local state rather than a full reload - same reasoning as
+    // handleRefreshSocial's in-state merge.
+    const handleCrawlWebsite = async () => {
+        if (!profile?.cacheId) return;
+        setIsCrawlingWebsite(true);
+        try {
+            const token = await getToken();
+            const result = await crawlCompanyWebsite(token, profile.cacheId);
+            const status = (result.raw_data as any)?.website_crawl?.status;
+            if (status !== "queued") {
+                // Already fresh (< 24h) or something unexpected - reflect
+                // whatever came back immediately, no polling needed.
+                applyCrawlResult(result);
+                setIsCrawlingWebsite(false);
+                return;
+            }
+
+            let attempts = 0;
+            const maxAttempts = 20; // ~100s at 5s intervals - generous above
+            // the engine's typical runtime; the job keeps running server-side
+            // even if this stops, so leaving/returning to the page still
+            // shows the final result via a fresh load.
+            crawlPollRef.current = setInterval(async () => {
+                attempts += 1;
+                try {
+                    const cacheId = profile.cacheId;
+                    if (!cacheId) return;
+                    const polled = await getCompanyIntelligenceProfile(token, cacheId);
+                    const polledStatus = (polled.raw_data as any)?.website_crawl?.status;
+                    if (polledStatus === "queued" && attempts < maxAttempts) return;
+                    if (crawlPollRef.current) clearInterval(crawlPollRef.current);
+                    crawlPollRef.current = null;
+                    setIsCrawlingWebsite(false);
+                    applyCrawlResult(polled);
+                    if (polledStatus === "completed") {
+                        const signals = (polled.raw_data as any)?.website_crawl?.technology_signals ?? [];
+                        notify.success("Website crawl complete", {
+                            description:
+                                signals.length > 0
+                                    ? `Detected: ${signals.join(", ")}`
+                                    : "No new technology signals detected.",
+                        });
+                    } else if (polledStatus === "failed") {
+                        notify.error("Website crawl failed", {
+                            description: (polled.raw_data as any)?.website_crawl?.error ?? undefined,
+                        });
+                    } else {
+                        notify.info("Still crawling", {
+                            description: "The crawl is taking longer than expected - check back on this page shortly.",
+                        });
+                    }
+                } catch (err: any) {
+                    if (crawlPollRef.current) clearInterval(crawlPollRef.current);
+                    crawlPollRef.current = null;
+                    setIsCrawlingWebsite(false);
+                    console.error("Failed to poll crawl status:", err);
+                }
+            }, 5000);
+        } catch (err: any) {
+            console.error("Failed to start website crawl:", err);
+            notify.error(err?.message || "Failed to start website crawl");
+            setIsCrawlingWebsite(false);
+        }
+    };
+
+    // Merges a raw (snake_case) CompanyIntelligenceProfileResponse's
+    // crawl-relevant fields into profile state: the filled contact columns
+    // themselves, plus the mapped websiteCrawl summary the card reads.
+    const applyCrawlResult = (result: CompanyIntelligenceProfileResponse) => {
+        const rawWebsiteCrawl = result.raw_data?.website_crawl;
+        setProfile((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                email: prev.email ?? result.email ?? null,
+                phone: prev.phone ?? result.phone ?? null,
+                instagramUrl: prev.instagramUrl ?? result.instagram_url ?? null,
+                facebookUrl: prev.facebookUrl ?? result.facebook_url ?? null,
+                linkedinUrl: prev.linkedinUrl ?? result.linkedin_url ?? null,
+                tiktokUrl: prev.tiktokUrl ?? result.tiktok_url ?? null,
+                xUrl: prev.xUrl ?? result.x_url ?? null,
+                threadsUrl: prev.threadsUrl ?? result.threads_url ?? null,
+                whatsappNumber: prev.whatsappNumber ?? result.whatsapp_number ?? null,
+                websiteCrawl: rawWebsiteCrawl
+                    ? {
+                          status: rawWebsiteCrawl.status,
+                          requestedAt: rawWebsiteCrawl.requested_at ?? null,
+                          crawledAt: rawWebsiteCrawl.crawled_at ?? null,
+                          failedAt: rawWebsiteCrawl.failed_at ?? null,
+                          pagesCrawled: rawWebsiteCrawl.pages_crawled ?? null,
+                          fieldsFilled: rawWebsiteCrawl.fields_filled ?? [],
+                          technologySignals: rawWebsiteCrawl.technology_signals ?? [],
+                          error: rawWebsiteCrawl.error ?? null,
+                      }
+                    : prev.websiteCrawl,
+            };
+        });
+    };
+
     const handleTabChange = (tab: ProfileTab) => {
         setActiveTab(tab);
         router.replace(`/data-intelligence/company/${id}?source=${source}&tab=${tab}`, { scroll: false });
@@ -430,6 +552,13 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                         onRefresh={handleRefreshSocial}
                         cacheId={profile.cacheId ?? null}
                         onLinksSaved={handleSocialLinksSaved}
+                    />
+
+                    <WebsiteIntelligenceCard
+                        profile={profile}
+                        canCrawl={Boolean(profile.cacheId && profile.domain)}
+                        isCrawling={isCrawlingWebsite}
+                        onCrawl={handleCrawlWebsite}
                     />
 
                     {profile.social && (

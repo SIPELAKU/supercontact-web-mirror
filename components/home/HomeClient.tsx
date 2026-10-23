@@ -25,7 +25,7 @@ export default function HomeClient() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      // Redirect to analytics dashboard page if authenticated
+      // Redirect to dashboard page if authenticated
       router.push("/dashboard");
     }
   }, [isAuthenticated, loading, router]);

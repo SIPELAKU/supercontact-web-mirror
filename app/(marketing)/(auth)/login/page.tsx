@@ -46,7 +46,7 @@ export default function LoginPage() {
       await login(email, password);
       // Straight to the dashboard — going via "/" only flashes the homepage
       // before HomeClient redirects here anyway.
-      router.push("/analytics/dashboard");
+      router.push("/dashboard");
     } catch (err: unknown) {
       setError(handleError(err, "Login"));
     } finally {
@@ -64,7 +64,9 @@ export default function LoginPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
           {strings.auth_login_title}
         </h1>
-        <p className="mt-2 text-sm text-gray-500">{strings.auth_login_subtitle}</p>
+        <p className="mt-2 text-sm text-gray-500">
+          {strings.auth_login_subtitle}
+        </p>
       </div>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -78,7 +80,10 @@ export default function LoginPage() {
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700"
+          >
             {strings.auth_email_label}
           </label>
           <AppInput
@@ -93,7 +98,10 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700"
+          >
             {strings.auth_password_label}
           </label>
           <AppInput
@@ -128,7 +136,10 @@ export default function LoginPage() {
 
       <p className="mt-6 text-sm text-gray-600 text-center">
         {strings.auth_no_account}{" "}
-        <Link href="/register" className="text-brand font-medium hover:underline">
+        <Link
+          href="/register"
+          className="text-brand font-medium hover:underline"
+        >
           {strings.auth_register_here}
         </Link>
       </p>

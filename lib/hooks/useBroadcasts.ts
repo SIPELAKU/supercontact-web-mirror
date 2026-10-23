@@ -113,14 +113,15 @@ export function useBroadcastRecipients(
   id: string,
   page: number = 1,
   limit: number = 10,
-  search?: string
+  search?: string,
+  status?: string
 ) {
   return useQuery({
-    queryKey: ['broadcast-recipients', id, page, limit, search],
+    queryKey: ['broadcast-recipients', id, page, limit, search, status],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchBroadcastRecipients(token, id, page, limit, search);
+      return fetchBroadcastRecipients(token, id, page, limit, search, status);
     },
     enabled: !!id,
   });

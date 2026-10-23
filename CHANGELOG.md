@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.106.1] - 2026-10-23
+
+### Detail Versi 1.106.1
+
+#### 🐛 Bug Fix Redirect Setelah Login
+
+- **Deskripsi:**
+  - **Redirect Login:** User sekarang diarahkan ke `/dashboard` setelah login (sebelumnya `/analytics/dashboard`), sesuai permintaan BO
+  - **Root Cause:** Regresi dari redesain login (`87e97cd`, 2026-08-31) yang tidak mengikuti perpindahan halaman utama ke `/dashboard` di middleware (`f246361`, 2026-08-19)
+  - **Redirect Cadangan:** Redirect di landing page untuk user yang sudah login juga diarahkan ke `/dashboard`, supaya konsisten dengan middleware dan halaman login
+  - **Impact:** User tanpa permission `analytics` tidak lagi mendarat di halaman yang menunya disembunyikan untuk mereka
+  - **Technical Notes:** `app/(marketing)/(auth)/login/page.tsx`, `components/home/HomeClient.tsx`
+
+#### 🐛 Bug Fix Filter Status Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Filter Status Penerima:** Daftar penerima di modal statistik broadcast bisa difilter berdasarkan status (Pending, Sent, Delivered, Read, Failed)
+  - **Server-side Filtering:** Filter dikirim ke backend lewat parameter `status`, sehingga hasilnya akurat di semua halaman (pagination), bukan hanya di halaman yang sedang tampil
+  - **Impact:** User bisa langsung melihat penerima yang gagal atau belum terkirim tanpa menelusuri seluruh daftar
+  - **Technical Notes:** `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`, `lib/api/whatsapp-marketing.ts`, `lib/hooks/useBroadcasts.ts`
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Halaman 404:** Label tombol kedua diubah dari "Dashboard" menjadi "Analytics Dashboard" agar sesuai dengan tujuannya (`/analytics/dashboard`). Link-nya tidak berubah (`app/not-found.tsx`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **Middleware Route Test:** Ekspektasi redirect user yang sudah login diperbarui menjadi `/dashboard`, sesuai dengan `middleware.ts` (`lib/tests/middleware-routes.test.ts`)
+
+---
+
 ## [1.22.1] - 2026-08-02
 
 ### 🐛 Fix

@@ -333,7 +333,8 @@ export async function fetchBroadcastRecipients(
   id: string,
   page: number = 1,
   limit: number = 10,
-  search?: string
+  search?: string,
+  status?: string
 ): Promise<import('../types/whatsapp-marketing').BroadcastRecipientsResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -343,9 +344,13 @@ export async function fetchBroadcastRecipients(
   if (search) {
     queryParams.append('search', search);
   }
+
+  if (status) {
+    queryParams.append('status', status);
+  }
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcasts/${id}/recipients?${queryParams.toString()}`;
 
-  logger.info("Making GET request to fetch broadcast recipients (v1)", { url, id, page, limit });
+  logger.info("Making GET request to fetch broadcast recipients (v1)", { url, id, page, limit, status });
 
   try {
     const res = await fetchWithTimeout(url, {

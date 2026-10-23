@@ -39,6 +39,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     pageIndex: 0,
     pageSize: 5,
     globalFilter: "",
+    status: "",
   });
 
   const [editingRecipient, setEditingRecipient] = useState<BroadcastRecipient | null>(null);
@@ -50,7 +51,8 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     broadcast?.id || '',
     tableState.pageIndex + 1,
     tableState.pageSize,
-    tableState.globalFilter
+    tableState.globalFilter,
+    tableState.status || undefined
   );
 
   const handleReload = () => {
@@ -239,11 +241,25 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
                 />
               )}
               manualPagination={true}
+              manualFiltering={true}
+              filters={[
+                {
+                  id: "status",
+                  label: "Status",
+                  type: "select",
+                  pinned: true,
+                  options: ["pending", "sent", "delivered", "read", "failed"].map((v) => ({
+                    value: v,
+                    label: v.charAt(0).toUpperCase() + v.slice(1),
+                  })),
+                },
+              ]}
               onStateChange={(state) => {
                 setTableState({
                   pageIndex: state.pagination.pageIndex,
                   pageSize: state.pagination.pageSize,
                   globalFilter: state.globalFilter || "",
+                  status: (state.filters.status as string) || "",
                 });
               }}
               features={{

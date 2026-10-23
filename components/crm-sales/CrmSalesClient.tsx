@@ -9,6 +9,7 @@ import CrmSalesWhyChoose from "./CrmSalesWhyChoose";
 import CrmSalesComparison from "./CrmSalesComparison";
 import CrmSalesFAQ from "./CrmSalesFAQ";
 import CrmSalesCta from "./CrmSalesCta";
+import RelatedReading from "@/components/layout/RelatedReading";
 
 export default function CrmSalesClient() {
     return (
@@ -21,6 +22,14 @@ export default function CrmSalesClient() {
                 <CrmSalesComparison />
                 <CrmSalesFAQ />
                 <CrmSalesCta />
+                <RelatedReading
+                    heading="Panduan sales & lead management"
+                    items={[
+                        { href: "/blog/lead-management", title: "Panduan Lead Management", desc: "Kelola & kualifikasi leads dari masuk sampai closing." },
+                        { href: "/blog/lead-routing-adalah", title: "Apa itu lead routing", desc: "Arahkan lead ke sales yang tepat secara otomatis." },
+                        { href: "/blog/sla-follow-up-leads", title: "SLA follow-up leads", desc: "Standar kecepatan follow-up yang bisa ditagih." },
+                    ]}
+                />
             </main>
             <Footer />
         </Box>

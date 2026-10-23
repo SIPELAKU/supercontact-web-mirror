@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blogArticles } from '@/content/blog/registry';
+import { getAllArticles } from '@/lib/blog/api';
 
 const BASE_URL = 'https://smartsales.id';
 
@@ -22,11 +22,14 @@ const solusiRoutes = [
 
 const produkRoutes = ['crm-sales', 'crm-services', 'omnichannel', 'ticket'];
 
+const bandingkanRoutes = ['smartsales-vs-qontak', 'smartsales-vs-barantum'];
+
 // Build-time timestamp: content only changes on deploy, so this is accurate
 // enough and costs nothing.
 const LAST_MODIFIED = new Date();
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+    const blogArticles = await getAllArticles();
     const staticRoutes: MetadataRoute.Sitemap = [
         { url: `${BASE_URL}`, lastModified: LAST_MODIFIED, changeFrequency: 'weekly', priority: 1 },
         { url: `${BASE_URL}/company`, lastModified: LAST_MODIFIED, changeFrequency: 'monthly', priority: 0.6 },
@@ -44,8 +47,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         .filter((a) => !a.slug.startsWith('_'))
         .map((article) => ({
             url: `${BASE_URL}/blog/${article.slug}`,
-            lastModified: LAST_MODIFIED,
-            changeFrequency: 'monthly',
+            lastModified: article.updatedDate || article.publishedDate || LAST_MODIFIED,
+            changeFrequency: 'monthly' as const,
             priority: 0.65,
         }));
 
@@ -56,6 +59,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.8,
     }));
 
+    const bandingkan: MetadataRoute.Sitemap = bandingkanRoutes.map((slug) => ({
+        url: `${BASE_URL}/bandingkan/${slug}`,
+        lastModified: LAST_MODIFIED,
+        changeFrequency: 'monthly',
+        priority: 0.75,
+    }));
+
     const solusi: MetadataRoute.Sitemap = solusiRoutes.map((slug) => ({
         url: `${BASE_URL}/solusi/${slug}`,
         lastModified: LAST_MODIFIED,
@@ -63,5 +73,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: slug === 'integrasi-sales-marketing' ? 0.85 : 0.8,
     }));
 
-    return [...staticRoutes, ...produk, ...solusi, ...blog];
+    return [...staticRoutes, ...produk, ...solusi, ...bandingkan, ...blog];
 }

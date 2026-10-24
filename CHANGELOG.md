@@ -9,6 +9,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.107.2] - 2026-10-24
+
+### Detail Versi 1.107.2
+
+#### 🎨 UI/UX Enhancement: Template Approved Tidak Bisa Dihapus
+
+- **Deskripsi:**
+  - **Delete per Baris:** Di halaman Template Broadcasting, item **Delete** di menu aksi (⋮) kini nonaktif untuk template berstatus **Approved**, dengan keterangan "Approved templates cannot be deleted" di bawah label. Template dengan status lain (Not submitted, Received, Pending, Rejected, Paused, Disabled) tetap bisa dihapus
+  - **Delete Massal:** Tombol **Delete (N)** di aksi massal nonaktif jika ada satu atau lebih template Approved yang ikut dicentang, walaupun template lain yang dicentang berstatus lain. Tooltip menyebut berapa template Approved yang terpilih dan meminta user menghapus centangnya. Tombol Duplicate massal tetap aktif
+  - **Alasan:** Template Approved sudah aktif di WhatsApp dan bisa sedang dipakai oleh broadcast, jadi tidak boleh terhapus tanpa sengaja dari daftar
+  - **Catatan:** Ini penjagaan di frontend. Dokumentasi `DELETE /broadcast-templates/{id}` tidak menyebut larangan menghapus template Approved, jadi penolakan di backend perlu dikonfirmasi ke tim BE
+  - **Technical Notes:**
+    - aturan di `components/whatsapp-marketing/templates/templateDeletion.ts` (`isDeletableTemplate`, `bulkDeleteBlockReason`)
+    - dipakai di `BroadcastTemplatesTable.tsx` (`disabled` di row action dan tombol bulk delete)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **4 Test Baru:**
+    - template Approved tidak bisa dihapus, sedangkan semua status lain bisa;
+    - delete massal diblokir jika ada 1 atau lebih template Approved yang terpilih, dengan pesan yang menyebut jumlahnya;
+    - delete massal diizinkan jika tidak ada template Approved
+  - **Technical Notes:** `components/whatsapp-marketing/templates/templateDeletion.test.ts`
+
+---
+
+## [1.107.1] - 2026-10-24
+
+### Detail Versi 1.107.1
+
+#### 🐛 Bug Fix Sorting Tabel WhatsApp Marketing (Sekarang Lewat API)
+
+- **Deskripsi:**
+  - **Modal Statistik Broadcast (tabel Recipients Status):** Sebelumnya klik header kolom hanya mengurutkan 5 baris di halaman yang sedang tampil. Sekarang diurutkan oleh backend dengan `sort_by` / `sort_order` untuk kolom Name, Phone Number dan Status. Status diurutkan berdasarkan tahap pengiriman (Pending → Sent → Delivered → Read → Failed), bukan abjad. Kolom Error Message tidak bisa diurutkan
+  - **Broadcasting WA:** Kolom **Target** tidak lagi bisa diurutkan. `GET /broadcasts` hanya mendukung `name`, `status` dan `created_at`, sehingga sorting Target selama ini diam-diam diabaikan backend. Broadcast Name, Status dan Created tetap diurutkan lewat API
+  - **Recipients:** Kolom **Phone Number** dan **Position** tidak lagi bisa diurutkan. `GET /recipients` hanya mendukung `name`, `email`, `company`, `created_at` dan `updated_at`. Name dan Company tetap diurutkan lewat API
+  - **Hanya Kunci yang Didukung:** Kunci sorting tiap endpoint dicatat di satu tempat, dan hanya kunci itu yang dikirim ke API. Sorting lama yang tersimpan di URL untuk kolom yang tidak didukung diabaikan, tidak lagi dikirim lalu diabaikan backend
+  - **Root Cause:** Tabel di modal belum memakai sorting di server (`manualSorting`). Di Broadcasting WA dan Recipients, beberapa kolom bisa diklik padahal tidak termasuk kunci sorting API, dan backend memakai urutan default untuk kunci yang tidak dikenal tanpa memberi error
+  - **Impact:** Urutan yang tampil selalu berlaku untuk seluruh data, dan tidak ada lagi kolom yang terlihat bisa diurutkan padahal tidak berfungsi
+  - **Technical Notes:**
+    - helper `toApiSort` di `lib/utils/apiSort.ts`
+    - daftar kunci `BROADCAST_SORT_KEYS`, `WA_RECIPIENT_SORT_KEYS` dan `BROADCAST_RECIPIENT_SORT_KEYS` di `lib/types/whatsapp-marketing.ts`; tipe `WaRecipientSortBy` kini mengikuti daftar ini
+    - parameter `sortBy`/`sortOrder` di `fetchBroadcastRecipients` dan `useBroadcastRecipients`
+    - `manualSorting` di `ViewBroadcastStatsModal.tsx`
+    - `enableSorting: false` di kolom yang tidak didukung (`BroadcastingWATable.tsx`, `RecipientsTable.tsx`)
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Export Mengikuti Filter Status Kumulatif:** Backend kini membuat filter `status` di `GET /broadcasts/{id}/recipients` bersifat kumulatif, sama dengan angka di kartu: penerima yang sudah Read juga termasuk di Sent dan Delivered. Akibatnya jumlah baris export dari kartu Sent, Delivered dan Read sekarang sama dengan angka kartunya. Kolom Status di file menunjukkan tahap terakhir masing-masing penerima, jadi export Sent bisa berisi baris berstatus Delivered atau Read
+  - **Pesan yang Diperbarui:** Peringatan saat tidak ada data dan catatan di kode tidak lagi menyebut bahwa jumlah baris bisa berbeda dari angka kartu (`ViewBroadcastStatsModal.tsx`, `recipientExport.ts`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **9 Test Baru:**
+    - sorting tabel penerima terkirim sebagai `sort_by`/`sort_order`, dan tidak dikirim jika tidak dipilih;
+    - `toApiSort` hanya meneruskan kunci yang didukung endpoint, dan hanya kolom sorting pertama;
+    - daftar kunci sorting tiap endpoint dicatat sebagai test
+  - **Technical Notes:** `lib/api/whatsapp-marketing.recipients.test.ts`, `lib/utils/apiSort.test.ts`
+
+---
+
 ## [1.107.0] - 2026-10-24
 
 ### Detail Versi 1.107.0

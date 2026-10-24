@@ -97,6 +97,9 @@ export default function BroadcastingWATable({
       accessorKey: "total_target",
       header: "Target",
       enableColumnFilter: false,
+      // Not one of GET /broadcasts' sort keys (BROADCAST_SORT_KEYS): the API
+      // would ignore it and keep its default order.
+      enableSorting: false,
       Cell: ({ cell }) => cell.getValue<number>(),
     },
     {

@@ -26,7 +26,13 @@ import {
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
-import { BroadcastCampaign, BroadcastRecipient, BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
+import {
+  BROADCAST_RECIPIENT_SORT_KEYS,
+  BroadcastCampaign,
+  BroadcastRecipient,
+  BroadcastTemplateType,
+} from '@/lib/types/whatsapp-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
 import { format } from 'date-fns';
 import { notify } from '@/lib/notifications';
 import { downloadRows, type ExportFileFormat } from '@/lib/utils/exportRows';
@@ -60,7 +66,11 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     pageSize: 5,
     globalFilter: "",
     status: "",
+    sorting: [] as { id: string; desc: boolean }[],
   });
+  // Server-side sorting, same sort_by/sort_order contract as the broadcasts
+  // list. Column ids are the API's sort keys (name, phone_number, status).
+  const { sortBy, sortOrder } = toApiSort(tableState.sorting, BROADCAST_RECIPIENT_SORT_KEYS);
 
   const [editingRecipient, setEditingRecipient] = useState<BroadcastRecipient | null>(null);
 
@@ -72,7 +82,9 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     tableState.pageIndex + 1,
     tableState.pageSize,
     tableState.globalFilter,
-    tableState.status || undefined
+    tableState.status || undefined,
+    sortBy,
+    sortOrder
   );
 
   const exportRecipients = useExportBroadcastRecipients();
@@ -118,6 +130,8 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     {
       accessorKey: 'error_message',
       header: 'Error Message',
+      // Not one of the API's sort keys.
+      enableSorting: false,
       Cell: ({ row, cell }) => {
         const val = cell.getValue<string>();
         const status = row.original.status?.toLowerCase();
@@ -131,6 +145,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
       id: 'actions',
       header: 'Actions',
       size: 80,
+      enableSorting: false,
       Cell: ({ row }) => (
         <EditButton onClick={() => setEditingRecipient(row.original)} />
       ),
@@ -143,19 +158,18 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   const activeBroadcast = detailData || broadcast;
   const stats = activeBroadcast?.stats || { sent: 0, delivered: 0, read: 0, failed: 0 };
 
-  // A card exports every recipient whose LATEST status matches it, from the
-  // same endpoint as the table below (is_limit=false returns the whole list).
-  // The card's number comes from the broadcast logs, so the two can differ -
-  // the toast reports how many rows the file actually holds.
+  // A card exports the recipients it counts, from the same endpoint as the
+  // table below (is_limit=false returns the whole list). The API's status
+  // filter is cumulative, like the cards: a recipient who has read the message
+  // is under Sent and Delivered too, and the file's Status column shows how
+  // far each one got.
   const handleExport = async (status: ExportableStatus, fileFormat: ExportFileFormat) => {
     if (!activeBroadcast || exportRecipients.isPending) return;
     const label = statusLabel(status);
     try {
       const rows = await exportRecipients.mutateAsync({ broadcastId: activeBroadcast.id, status });
       if (rows.length === 0) {
-        notify.warning(`No ${label} recipients to export`, {
-          description: `No recipient's latest status is ${label}.`,
-        });
+        notify.warning(`No ${label} recipients to export`);
         return;
       }
       const fileName = recipientExportFileName(activeBroadcast.name, status, fileFormat);
@@ -343,6 +357,9 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
               )}
               manualPagination={true}
               manualFiltering={true}
+              // Sorting asks the API; on the client it would only reorder the
+              // five rows of the current page.
+              manualSorting={true}
               filters={[
                 {
                   id: "status",
@@ -361,11 +378,13 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
                   pageSize: state.pagination.pageSize,
                   globalFilter: state.globalFilter || "",
                   status: (state.filters.status as string) || "",
+                  sorting: state.sorting || [],
                 });
               }}
               features={{
                 pagination: true,
                 globalFilter: true,
+                sorting: true,
                 densityToggle: false,
                 columnVisibility: false,
                 fullScreenToggle: false,

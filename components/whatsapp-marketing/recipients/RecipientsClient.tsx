@@ -18,11 +18,12 @@ import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import RecipientsTable from './RecipientsTable';
 import AddRecipientModal from './AddRecipientModal';
 import ImportWaRecipientModal from './ImportWaRecipientModal';
-import type {
-  WaRecipient,
-  WaRecipientSortBy,
-  WaRecipientsParams,
+import {
+  WA_RECIPIENT_SORT_KEYS,
+  type WaRecipient,
+  type WaRecipientsParams,
 } from '@/lib/types/whatsapp-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
 
 export default function RecipientsClient() {
   // Pagination, search & sorting state
@@ -42,15 +43,15 @@ export default function RecipientsClient() {
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
   // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
-  const sort = sorting[0];
+  const { sortBy, sortOrder } = toApiSort(sorting, WA_RECIPIENT_SORT_KEYS);
 
   const listParams: WaRecipientsParams = {
     recipient_type: 'whatsapp',
     page,
     limit,
     search: searchQuery || undefined,
-    sort_by: sort?.id as WaRecipientSortBy | undefined,
-    sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
+    sort_by: sortBy,
+    sort_order: sortOrder,
   };
   const { data, isLoading, isError, error, refetch } = useWaRecipients(listParams);
 

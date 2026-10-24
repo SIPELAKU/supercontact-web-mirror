@@ -1,7 +1,8 @@
 // components/whatsapp-marketing/broadcasting-wa/recipientExport.ts
 //
-// What the stats cards in ViewBroadcastStatsModal export: every recipient of
-// the broadcast whose latest status matches the card, as a CSV or Excel file.
+// What the stats cards in ViewBroadcastStatsModal export: every recipient the
+// card counts, as a CSV or Excel file. The API's status filter is cumulative,
+// like the cards, so Sent also holds those that were delivered or read.
 
 import { format } from 'date-fns';
 

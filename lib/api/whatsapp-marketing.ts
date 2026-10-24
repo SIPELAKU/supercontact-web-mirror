@@ -334,7 +334,9 @@ export async function fetchBroadcastRecipients(
   page: number = 1,
   limit: number = 10,
   search?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
 ): Promise<import('../types/whatsapp-marketing').BroadcastRecipientsResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -350,6 +352,13 @@ export async function fetchBroadcastRecipients(
 
   if (status) {
     queryParams.append('status', status);
+  }
+
+  // Same sort_by/sort_order contract as the broadcasts list. Without a sort
+  // the API keeps its own order (newest contact first).
+  if (sortBy) {
+    queryParams.append('sort_by', sortBy);
+    queryParams.append('sort_order', sortOrder ?? 'asc');
   }
 
   return requestBroadcastRecipients(token, id, queryParams);

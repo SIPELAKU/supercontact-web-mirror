@@ -19,7 +19,8 @@ import {
   useDuplicateBroadcast,
 } from '@/lib/hooks/useBroadcasts';
 import { useListRefresh } from '@/lib/hooks/useListRefresh';
-import { BroadcastCampaign } from '@/lib/types/whatsapp-marketing';
+import { BROADCAST_SORT_KEYS, BroadcastCampaign } from '@/lib/types/whatsapp-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
 import { fetchBroadcasts } from '@/lib/api';
 
 // Modals (to be created)
@@ -73,12 +74,12 @@ export default function BroadcastingWAClient() {
   const searchParam = tableState.globalFilter || "";
   const statusParam = getFilterValue("status") || undefined;
 
-  // Server-side sorting (sort_by/sort_order contract)
-  const sortParam = tableState.sorting[0];
-  const sortByParam = sortParam?.id;
-  const sortOrderParam: 'asc' | 'desc' | undefined = sortParam
-    ? (sortParam.desc ? 'desc' : 'asc')
-    : undefined;
+  // Server-side sorting (sort_by/sort_order contract), on the keys
+  // GET /broadcasts accepts.
+  const { sortBy: sortByParam, sortOrder: sortOrderParam } = toApiSort(
+    tableState.sorting,
+    BROADCAST_SORT_KEYS
+  );
 
   // React Query Fetcher (Main Table Data)
   const {

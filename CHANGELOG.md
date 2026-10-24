@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.107.0] - 2026-10-24
+
+### Detail Versi 1.107.0
+
+#### ✨ Export Penerima (CSV atau Excel) dari Kartu Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Kartu yang Bisa Diklik:** Di modal statistik broadcast (klik baris di halaman Broadcasting WA), kartu **Sent**, **Delivered** dan **Read** kini bisa diklik. Muncul menu untuk memilih format **CSV (.csv)** atau **Excel (.xlsx)**. Kartu **Failed** tidak termasuk
+  - **Data yang Diexport:** Semua penerima broadcast yang status terakhirnya sama dengan kartu yang diklik, diambil dari endpoint yang sama dengan tabel penerima, `GET /broadcasts/{id}/recipients`, dengan `status=<status kartu>` dan `is_limit=false` (seluruh data tanpa pagination)
+  - **Isi File:** Kolom tabel penerima lebih dulu dengan urutan yang sama (Name, Phone Number, Status), lalu Email, Company dan Updated At. Tanggal berformat `yyyy-MM-dd HH:mm` dan spasi berlebih dibuang. Nama file mengikuti pola `Broadcast_<nama>_<Status>_<tanggal>.csv` atau `.xlsx`
+  - **Excel:** File selalu terbuka per kolom di Excel, WPS maupun Google Sheets, tanpa bergantung pada pengaturan pemisah regional seperti CSV. Nomor telepon tersimpan sebagai teks, sehingga tidak berubah menjadi `6.29E+12`. Lebar kolom menyesuaikan isi, header diberi filter, dan nama sheet mengikuti status
+  - **Feedback:** Ikon unduh dan tooltip di setiap kartu, spinner selama export, serta toast yang menyebut jumlah baris yang diexport. Jika tidak ada data, muncul peringatan; jika gagal, muncul pesan error
+  - **Catatan:** Angka di kartu berasal dari statistik log broadcast, sedangkan export memfilter berdasarkan status terakhir tiap penerima, jadi jumlah baris di file bisa berbeda dari angka kartu. Export juga tidak mengikuti pencarian atau filter tabel di bawahnya
+  - **Impact:** Tim bisa langsung mengunduh daftar penerima yang sudah terkirim, diterima atau dibaca untuk ditindaklanjuti, tanpa menyalin dari tabel halaman per halaman
+  - **Technical Notes:**
+    - `fetchAllBroadcastRecipients` di `lib/api/whatsapp-marketing.ts`, berbagi logika request dengan `fetchBroadcastRecipients`, dengan timeout 120 detik untuk daftar besar
+    - hook `useExportBroadcastRecipients` di `lib/hooks/useBroadcasts.ts`
+    - utilitas `lib/utils/exportRows.ts` untuk CSV dan Excel, memakai `xlsx` yang sudah ada dan dimuat hanya saat diklik
+    - definisi kolom dan nama file di `components/whatsapp-marketing/broadcasting-wa/recipientExport.ts`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **17 Test Baru:**
+    - parameter request export (`status`, `is_limit=false`, tanpa `page`/`limit`);
+    - tabel tetap `is_limit=true`;
+    - penanganan error API;
+    - isi kolom dan nama file (.csv dan .xlsx);
+    - nilai kosong, serta nama yang mengandung koma atau tanda kutip;
+    - file Excel dibaca ulang: nomor telepon tetap teks, lebar kolom dan filter header terpasang, nama sheet valid
+  - **Technical Notes:** `lib/api/whatsapp-marketing.recipients.test.ts`, `lib/utils/exportRows.test.ts`, `components/whatsapp-marketing/broadcasting-wa/recipientExport.test.ts`
+
+---
+
 ## [1.106.2] - 2026-10-23
 
 ### Detail Versi 1.106.2

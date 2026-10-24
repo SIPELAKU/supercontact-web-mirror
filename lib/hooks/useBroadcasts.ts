@@ -9,6 +9,7 @@ import {
   updateBroadcast,
   deleteBroadcast,
   fetchBroadcastRecipients,
+  fetchAllBroadcastRecipients,
   fetchBroadcastDetail,
   duplicateBroadcast
 } from '../api/whatsapp-marketing';
@@ -128,6 +129,21 @@ export function useBroadcastRecipients(
       return fetchBroadcastRecipients(token, id, page, limit, search, status);
     },
     enabled: !!id,
+  });
+}
+
+/**
+ * Every recipient of a broadcast with one status, fetched on demand for a CSV
+ * export. A mutation rather than a query: it runs on a click, and its
+ * `variables` say which status is exporting.
+ */
+export function useExportBroadcastRecipients() {
+  return useMutation({
+    mutationFn: async ({ broadcastId, status }: { broadcastId: string; status: string }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchAllBroadcastRecipients(token, broadcastId, status);
+    },
   });
 }
 

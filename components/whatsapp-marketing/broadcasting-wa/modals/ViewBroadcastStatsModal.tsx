@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, Users } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, RefreshCw, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog,
@@ -13,15 +13,35 @@ import {
   Divider,
   Stack,
   Card,
+  CardActionArea,
   CardContent,
   Chip,
-  IconButton
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  Menu,
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
+import { Spinner } from '@/components/ui/spinner';
 import { BroadcastCampaign, BroadcastRecipient, BroadcastTemplateType } from '@/lib/types/whatsapp-marketing';
 import { format } from 'date-fns';
+import { notify } from '@/lib/notifications';
+import { downloadRows, type ExportFileFormat } from '@/lib/utils/exportRows';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
-import { useBroadcastRecipients, useBroadcastDetail } from '@/lib/hooks/useBroadcasts';
+import {
+  useBroadcastRecipients,
+  useBroadcastDetail,
+  useExportBroadcastRecipients,
+} from '@/lib/hooks/useBroadcasts';
+import {
+  RECIPIENT_EXPORT_COLUMNS,
+  recipientExportFileName,
+  statusLabel,
+  type ExportableStatus,
+} from '../recipientExport';
 import { EditButton } from '@/components/ui/app-action-buttons-table';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
 import MessagePreview from '../../templates/create/MessagePreview';
@@ -54,6 +74,11 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     tableState.globalFilter,
     tableState.status || undefined
   );
+
+  const exportRecipients = useExportBroadcastRecipients();
+  const exportingStatus = exportRecipients.isPending ? exportRecipients.variables?.status : undefined;
+  // The card that was clicked, while its "CSV or Excel" menu is open.
+  const [exportMenu, setExportMenu] = useState<{ anchor: HTMLElement; status: ExportableStatus } | null>(null);
 
   const handleReload = () => {
     // Invalidate everything related to broadcasts to ensure stats are updated
@@ -117,6 +142,40 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
 
   const activeBroadcast = detailData || broadcast;
   const stats = activeBroadcast?.stats || { sent: 0, delivered: 0, read: 0, failed: 0 };
+
+  // A card exports every recipient whose LATEST status matches it, from the
+  // same endpoint as the table below (is_limit=false returns the whole list).
+  // The card's number comes from the broadcast logs, so the two can differ -
+  // the toast reports how many rows the file actually holds.
+  const handleExport = async (status: ExportableStatus, fileFormat: ExportFileFormat) => {
+    if (!activeBroadcast || exportRecipients.isPending) return;
+    const label = statusLabel(status);
+    try {
+      const rows = await exportRecipients.mutateAsync({ broadcastId: activeBroadcast.id, status });
+      if (rows.length === 0) {
+        notify.warning(`No ${label} recipients to export`, {
+          description: `No recipient's latest status is ${label}.`,
+        });
+        return;
+      }
+      const fileName = recipientExportFileName(activeBroadcast.name, status, fileFormat);
+      await downloadRows(fileName, RECIPIENT_EXPORT_COLUMNS, rows, fileFormat, label);
+      notify.success(
+        `Exported ${rows.length.toLocaleString()} recipient${rows.length === 1 ? '' : 's'}`,
+        { description: `Saved as ${fileName}` }
+      );
+    } catch (err: any) {
+      notify.error('Export failed', {
+        description: err?.message || 'Could not build the file. Please try again.',
+      });
+    }
+  };
+
+  const handleChooseFormat = (fileFormat: ExportFileFormat) => {
+    const target = exportMenu;
+    setExportMenu(null);
+    if (target) handleExport(target.status, fileFormat);
+  };
 
   const activeType = primaryContentType(activeBroadcast?.template_content?.types) ?? null;
   const activeTemplateData = activeBroadcast?.template_content && activeType ? activeBroadcast.template_content.types[activeType] : null;
@@ -185,18 +244,60 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
 
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <StatCard label="Sent" value={stats.sent} color="primary.main" />
+                <StatCard
+                  label="Sent"
+                  value={stats.sent}
+                  color="primary.main"
+                  onExport={(anchor) => setExportMenu({ anchor, status: 'sent' })}
+                  exporting={exportingStatus === 'sent'}
+                  disabled={exportRecipients.isPending}
+                />
               </Grid>
               <Grid item xs={6}>
-                <StatCard label="Delivered" value={stats.delivered} color="info.main" />
+                <StatCard
+                  label="Delivered"
+                  value={stats.delivered}
+                  color="info.main"
+                  onExport={(anchor) => setExportMenu({ anchor, status: 'delivered' })}
+                  exporting={exportingStatus === 'delivered'}
+                  disabled={exportRecipients.isPending}
+                />
               </Grid>
               <Grid item xs={6}>
-                <StatCard label="Read" value={stats.read} color="success.main" />
+                <StatCard
+                  label="Read"
+                  value={stats.read}
+                  color="success.main"
+                  onExport={(anchor) => setExportMenu({ anchor, status: 'read' })}
+                  exporting={exportingStatus === 'read'}
+                  disabled={exportRecipients.isPending}
+                />
               </Grid>
               <Grid item xs={6}>
                 <StatCard label="Failed" value={stats.failed} color="error.main" />
               </Grid>
             </Grid>
+
+            <Menu
+              anchorEl={exportMenu?.anchor}
+              open={!!exportMenu}
+              onClose={() => setExportMenu(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+              slotProps={{ paper: { sx: { minWidth: 200, borderRadius: 2 } } }}
+            >
+              <ListSubheader sx={{ lineHeight: '32px' }}>
+                Export {exportMenu ? statusLabel(exportMenu.status) : ''} recipients
+              </ListSubheader>
+              <MenuItem onClick={() => handleChooseFormat('csv')}>
+                <ListItemIcon><FileText size={16} /></ListItemIcon>
+                <ListItemText primary="CSV (.csv)" />
+              </MenuItem>
+              <MenuItem onClick={() => handleChooseFormat('excel')}>
+                <ListItemIcon><FileSpreadsheet size={16} /></ListItemIcon>
+                <ListItemText primary="Excel (.xlsx)" />
+              </MenuItem>
+            </Menu>
 
             <Box sx={{ mt: 4 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Configuration</Typography>
@@ -298,14 +399,58 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({
+  label,
+  value,
+  color,
+  onExport,
+  exporting = false,
+  disabled = false,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  /** Makes the card a button; it hands over itself, to anchor the format menu. */
+  onExport?: (anchor: HTMLElement) => void;
+  exporting?: boolean;
+  disabled?: boolean;
+}) {
+  const content = (
+    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, position: 'relative' }}>
+      {onExport && (
+        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', color: 'text.secondary' }}>
+          {exporting ? <Spinner /> : <Download size={14} />}
+        </Box>
+      )}
+      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
+      <Typography variant="h5" sx={{ fontWeight: 700, color }}>{value}</Typography>
+    </CardContent>
+  );
+
+  if (!onExport) {
+    return (
+      <Card variant="outlined" sx={{ textAlign: 'center', height: '100%', borderColor: color }}>
+        {content}
+      </Card>
+    );
+  }
+
+  // The tooltip sits on the Card, not on the action area: a disabled button
+  // cannot host a tooltip, and the area is disabled while any export runs.
   return (
-    <Card variant="outlined" sx={{ textAlign: 'center', height: '100%', borderColor: color }}>
-      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>{label}</Typography>
-        <Typography variant="h5" sx={{ fontWeight: 700, color }}>{value}</Typography>
-      </CardContent>
-    </Card>
+    <Tooltip title={`Export ${label} recipients (CSV or Excel)`}>
+      <Card variant="outlined" sx={{ textAlign: 'center', height: '100%', borderColor: color }}>
+        <CardActionArea
+          onClick={(event) => onExport(event.currentTarget)}
+          disabled={disabled}
+          aria-haspopup="menu"
+          aria-label={`Export ${label} recipients`}
+          sx={{ height: '100%' }}
+        >
+          {content}
+        </CardActionArea>
+      </Card>
+    </Tooltip>
   );
 }
 

@@ -351,9 +351,35 @@ export async function fetchBroadcastRecipients(
   if (status) {
     queryParams.append('status', status);
   }
+
+  return requestBroadcastRecipients(token, id, queryParams);
+}
+
+/**
+ * Every recipient of a broadcast with the given status, in one response - for
+ * the CSV export on the stats cards. `is_limit=false` is the API's export
+ * switch: it ignores `page` and `limit` and returns the whole list.
+ */
+export async function fetchAllBroadcastRecipients(
+  token: string,
+  id: string,
+  status: string
+): Promise<import('../types/whatsapp-marketing').BroadcastRecipient[]> {
+  const queryParams = new URLSearchParams({ status, is_limit: 'false' });
+  // A whole list can take longer to build than one page.
+  const json = await requestBroadcastRecipients(token, id, queryParams, 120_000);
+  return json.data?.recipients ?? [];
+}
+
+async function requestBroadcastRecipients(
+  token: string,
+  id: string,
+  queryParams: URLSearchParams,
+  timeout?: number
+): Promise<import('../types/whatsapp-marketing').BroadcastRecipientsResponse> {
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcasts/${id}/recipients?${queryParams.toString()}`;
 
-  logger.info("Making GET request to fetch broadcast recipients (v1)", { url, id, page, limit, status });
+  logger.info("Making GET request to fetch broadcast recipients (v1)", { url, id });
 
   try {
     const res = await fetchWithTimeout(url, {
@@ -362,6 +388,7 @@ export async function fetchBroadcastRecipients(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      timeout,
     });
 
     let json;

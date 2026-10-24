@@ -12,7 +12,13 @@ import { handleError } from '@/lib/utils/errorHandler';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 
 import BroadcastingWATable from '@/components/whatsapp-marketing/broadcasting-wa/BroadcastingWATable';
-import { useBroadcasts, useDeleteBroadcast, useDuplicateBroadcast } from '@/lib/hooks/useBroadcasts';
+import {
+  broadcastsKey,
+  useBroadcasts,
+  useDeleteBroadcast,
+  useDuplicateBroadcast,
+} from '@/lib/hooks/useBroadcasts';
+import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import { BroadcastCampaign } from '@/lib/types/whatsapp-marketing';
 import { fetchBroadcasts } from '@/lib/api';
 
@@ -86,6 +92,12 @@ export default function BroadcastingWAClient() {
   const totalCount = broadcastsResponse?.data?.total || 0;
   const broadcasts = broadcastsResponse?.data?.broadcasts || [];
 
+  // Loading state and batch-1 refresh around every write on this page.
+  const listRefresh = useListRefresh({
+    batchIndex: tableState.pageIndex,
+    firstBatchKey: broadcastsKey(1, limitParam, searchParam, statusParam, sortByParam, sortOrderParam),
+  });
+
   // Export logic (Do-While loop to fetch all pages)
   const handleExportRequest = async (): Promise<BroadcastCampaign[]> => {
     if (!token) throw new Error("No authorization token");
@@ -122,26 +134,33 @@ export default function BroadcastingWAClient() {
     setViewModalOpen(true);
   };
 
-  const handleDuplicate = async (broadcast: BroadcastCampaign) => {
-    try {
-      await duplicateMutation.mutateAsync([broadcast.id]);
-      notify.success(`Broadcast "${broadcast.name}" duplicated successfully.`);
-    } catch (err: any) {
-      handleError(err, "Duplicate Broadcast");
-    }
-  };
+  // The Create and Edit modals save on their own and only tell us afterwards.
+  const handleModalSaved = () => listRefresh.refreshAfterSave();
 
-  const handleBulkDuplicate = async (selectedRows: BroadcastCampaign[], clearSelection: () => void) => {
-    if (!selectedRows.length) return;
-    try {
-      const ids = selectedRows.map(r => r.id);
-      await duplicateMutation.mutateAsync(ids);
-      notify.success(`${selectedRows.length} broadcasts duplicated successfully.`);
-      clearSelection();
-    } catch (err: any) {
-      handleError(err, "Duplicate Broadcasts");
-    }
-  };
+  const handleDuplicate = (broadcast: BroadcastCampaign) =>
+    listRefresh.run(async () => {
+      try {
+        await duplicateMutation.mutateAsync([broadcast.id]);
+        notify.success(`Broadcast "${broadcast.name}" duplicated successfully.`);
+        await listRefresh.refresh();
+      } catch (err: any) {
+        handleError(err, "Duplicate Broadcast");
+      }
+    });
+
+  const handleBulkDuplicate = (selectedRows: BroadcastCampaign[], clearSelection: () => void) =>
+    listRefresh.run(async () => {
+      if (!selectedRows.length) return;
+      try {
+        const ids = selectedRows.map(r => r.id);
+        await duplicateMutation.mutateAsync(ids);
+        notify.success(`${selectedRows.length} broadcasts duplicated successfully.`);
+        clearSelection();
+        await listRefresh.refresh();
+      } catch (err: any) {
+        handleError(err, "Duplicate Broadcasts");
+      }
+    });
 
   // Mirrors CampaignsClient's bulk delete: only Draft rows are deletable,
   // others are skipped and reported (no bulk delete endpoint — loop singles).
@@ -152,7 +171,7 @@ export default function BroadcastingWAClient() {
     setBulkDeleteTarget({ broadcasts: selectedRows, clearSelection });
   };
 
-  const performBulkDelete = async () => {
+  const performBulkDelete = () => listRefresh.run(async () => {
     if (!bulkDeleteTarget) return;
     const { broadcasts: selectedBroadcasts, clearSelection } = bulkDeleteTarget;
     setIsBulkDeleting(true);
@@ -190,26 +209,29 @@ export default function BroadcastingWAClient() {
       );
     }
 
-    refetch();
-  };
+    await listRefresh.refresh();
+  });
 
   const handleDeleteRequest = (broadcast: BroadcastCampaign) => {
     setBroadcastToDelete(broadcast);
     setConfirmOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!broadcastToDelete) return;
-    try {
-      await deleteMutation.mutateAsync(broadcastToDelete.id);
-      notify.success(`Broadcast "${broadcastToDelete.name}" deleted successfully.`);
-    } catch (err: any) {
-      handleError(err, "Delete Broadcast");
-    } finally {
-      setConfirmOpen(false);
-      setBroadcastToDelete(null);
-    }
-  };
+  const handleConfirmDelete = () =>
+    listRefresh.run(async () => {
+      if (!broadcastToDelete) return;
+      try {
+        await deleteMutation.mutateAsync(broadcastToDelete.id);
+        notify.success(`Broadcast "${broadcastToDelete.name}" deleted successfully.`);
+      } catch (err: any) {
+        handleError(err, "Delete Broadcast");
+      } finally {
+        setConfirmOpen(false);
+        setBroadcastToDelete(null);
+      }
+      // After the popup has closed, so it does not wait on the list.
+      await listRefresh.refresh();
+    });
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
@@ -223,7 +245,8 @@ export default function BroadcastingWAClient() {
 
       <BroadcastingWATable
         broadcasts={broadcasts}
-        isLoading={isLoading}
+        isLoading={isLoading || listRefresh.isRefreshing}
+        restartKey={listRefresh.restartKey}
         isError={isError}
         errorMessage={isError && error ? handleError(error, "Fetch Broadcasts") : undefined}
         onRetry={() => refetch()}
@@ -267,11 +290,16 @@ export default function BroadcastingWAClient() {
         )}
       />
 
-      <AddBroadcastModal open={isAddModalOpen} onClose={handleCloseModals} />
+      <AddBroadcastModal
+        open={isAddModalOpen}
+        onClose={handleCloseModals}
+        onSaved={handleModalSaved}
+      />
 
       <EditBroadcastModal
         open={isEditModalOpen}
         onClose={handleCloseModals}
+        onSaved={handleModalSaved}
         broadcast={selectedBroadcast}
       />
 

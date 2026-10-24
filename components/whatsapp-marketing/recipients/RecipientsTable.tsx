@@ -19,6 +19,7 @@ interface RecipientsTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   totalCount: number;
+  restartKey?: number;
   onAdd: () => void;
   onImport: () => void;
   onEdit: (recipient: WaRecipient) => void;
@@ -37,6 +38,7 @@ const RecipientsTable = ({
   errorMessage,
   onRetry,
   totalCount,
+  restartKey,
   onAdd,
   onImport,
   onEdit,
@@ -86,6 +88,7 @@ const RecipientsTable = ({
         data={recipients}
         columns={columns}
         rowCount={totalCount}
+        restartKey={restartKey}
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage}

@@ -626,6 +626,16 @@ export function useTableConfig<TData extends object>(
     }),
   };
 
+  // The row-actions Menu and Drawer (and any Dialog, Select or Popover a cell
+  // renders) live in a portal under <body>, but React bubbles their clicks up
+  // the component tree to this row anyway - so picking a menu item, or
+  // clicking the backdrop to close the menu, also opened the row. In the DOM
+  // they sit outside the <tr>, which the `closest()` guard below cannot see.
+  // Deliberately not stopPropagation in RowActionsCell: that would also hide
+  // the click from document-level listeners such as MUI's ClickAwayListener.
+  const isClickFromPortal = (e: React.MouseEvent<HTMLTableRowElement>) =>
+    !e.currentTarget.contains(e.target as Node);
+
   mrtConfig.muiTableBodyRowProps = ({ row, isDetailPanel }) => {
     // MRT reuses these props for the detail-panel row too. Without this, a
     // click anywhere inside an expanded panel counts as a click on the row
@@ -634,6 +644,7 @@ export function useTableConfig<TData extends object>(
 
     return {
       onClick: (e) => {
+        if (isClickFromPortal(e)) return;
         // ONE guard, here, instead of every caller inventing its own. Before
         // this, three tables each solved it differently: a Box wrapper with
         // stopPropagation, stopPropagation sprinkled per button, and DOM
@@ -644,6 +655,7 @@ export function useTableConfig<TData extends object>(
         props.onRowClick?.(row.original, e);
       },
       onDoubleClick: (e) => {
+        if (isClickFromPortal(e)) return;
         if ((e.target as HTMLElement).closest?.('[data-st-no-row-click]')) return;
         props.onRowDoubleClick?.(row.original, e);
       },

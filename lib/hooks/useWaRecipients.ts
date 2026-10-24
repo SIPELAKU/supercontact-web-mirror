@@ -1,6 +1,7 @@
 // lib/hooks/useWaRecipients.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
+import { markListsStale } from './useListRefresh';
 import { fetchWithTimeout } from '@/lib/api/api-client';
 import type {
   CreateWaRecipientData,
@@ -214,9 +215,17 @@ async function deleteAllWaRecipients(
 // Hooks
 // ---------------------------------------------------------------------------
 
+export const waRecipientsKey = (params: WaRecipientsParams) =>
+  ['wa-recipients', params] as const;
+
+// Writes below mark the recipient lists stale only; RecipientsClient refreshes
+// the list it shows (see useListRefresh). The other screens that write
+// recipients - group broadcast detail, broadcast stats, contact detail - show
+// no recipient list and refresh their own data.
+
 export function useWaRecipients(params: WaRecipientsParams) {
   return useQuery<WaRecipientsResponse>({
-    queryKey: ['wa-recipients', params],
+    queryKey: waRecipientsKey(params),
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
@@ -234,9 +243,7 @@ export function useCreateWaRecipient() {
       if (!token) throw new Error('No authentication token');
       return createRecipient(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -253,9 +260,7 @@ export function useUpdateWaRecipient() {
       if (!token) throw new Error('No authentication token');
       return updateRecipient(token, id, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -268,9 +273,7 @@ export function useDeleteWaRecipient() {
       if (!token) throw new Error('No authentication token');
       return deleteRecipient(token, id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -283,9 +286,7 @@ export function useBulkDeleteWaRecipients() {
       if (!token) throw new Error('No authentication token');
       return bulkDeleteRecipients(token, ids);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -302,9 +303,7 @@ export function useBulkCreateWaRecipients() {
       if (!token) throw new Error('No authentication token');
       return bulkCreateRecipients(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -317,9 +316,7 @@ export function useDuplicateWaRecipients() {
       if (!token) throw new Error('No authentication token');
       return duplicateRecipients(token, ids, target);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }
 
@@ -332,8 +329,6 @@ export function useDeleteAllWaRecipients() {
       if (!token) throw new Error('No authentication token');
       return deleteAllWaRecipients(token);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wa-recipients'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });
 }

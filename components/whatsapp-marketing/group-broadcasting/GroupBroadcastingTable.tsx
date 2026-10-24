@@ -3,57 +3,47 @@
 
 import { AppButton } from '@/components/ui/app-button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
-import { useGroupBroadcasts, useDuplicateGroupBroadcasts } from '@/lib/hooks/useGroupBroadcasts';
+import { SuperTable, MRT_ColumnDef, SuperTableState } from '@/components/ui/super-table';
 import { GroupBroadcast } from '@/lib/types/whatsapp-marketing';
 import { Box } from '@mui/material';
 import { format } from 'date-fns';
 import { Megaphone, Plus, Copy, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { notify } from '@/lib/notifications';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 interface GroupBroadcastingTableProps {
+  broadcasts: GroupBroadcast[];
+  isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
+  totalCount: number;
+  restartKey?: number;
+  onStateChange: (state: SuperTableState) => void;
   onAdd: () => void;
   onEdit: (broadcast: GroupBroadcast) => void;
+  onDuplicate: (ids: string[], clearSelection?: () => void) => void;
+  /** Ids of a duplicate still in flight, for the spinner on their rows. */
+  duplicatingIds: string[];
   onDeleteRequest: (broadcast: GroupBroadcast) => void;
   onBulkDeleteRequest: (ids: string[]) => void;
-  refreshTrigger: number;
 }
 
-const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRequest }: GroupBroadcastingTableProps) => {
+const GroupBroadcastingTable = ({
+  broadcasts,
+  isLoading,
+  isError,
+  onRetry,
+  totalCount,
+  restartKey,
+  onStateChange,
+  onAdd,
+  onEdit,
+  onDuplicate,
+  duplicatingIds,
+  onDeleteRequest,
+  onBulkDeleteRequest,
+}: GroupBroadcastingTableProps) => {
   const router = useRouter();
-
-  // Server-side pagination (gained in Phase 1) driven by SuperTable state
-  const [tableState, setTableState] = useState({
-    pageIndex: 0,
-    pageSize: 25,
-  });
-
-  const { data, isLoading, isError, error, refetch } = useGroupBroadcasts({
-    page: tableState.pageIndex + 1,
-    limit: tableState.pageSize,
-  });
-  const duplicateMutation = useDuplicateGroupBroadcasts();
-
-  useEffect(() => {
-    if (isError && error) {
-      notify.error('Failed to fetch group broadcasts.');
-    }
-  }, [isError, error]);
-
-  const broadcasts = data?.data?.broadcast_groups || [];
-  const totalCount = data?.data?.total || 0;
-
-  const handleDuplicate = async (ids: string[], clearSelection?: () => void) => {
-    try {
-      await duplicateMutation.mutateAsync({ broadcast_group_ids: ids });
-      notify.success(`${ids.length} group(s) duplicated successfully.`);
-      clearSelection?.();
-    } catch (err: any) {
-      notify.error(err.message || 'Failed to duplicate group(s).');
-    }
-  };
 
   const columns = useMemo<MRT_ColumnDef<GroupBroadcast>[]>(
     () => [
@@ -97,15 +87,11 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
       isLoading={isLoading}
       isError={isError}
       errorMessage="Failed to load group broadcasts. Please try again."
-      onRetry={() => refetch()}
+      onRetry={onRetry}
       manualPagination={true}
       rowCount={totalCount}
-      onStateChange={(state) => {
-        setTableState({
-          pageIndex: state.pagination.pageIndex,
-          pageSize: state.pagination.pageSize,
-        });
-      }}
+      restartKey={restartKey}
+      onStateChange={onStateChange}
       primaryColumn={{
         accessorKey: 'name',
         href: (row) => `/whatsapp-marketing/group-broadcasting/${row.id}`,
@@ -128,8 +114,8 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
               variantStyle="outline"
               color="primary"
               startIcon={<Copy className="w-4 h-4" />}
-              onClick={() => handleDuplicate(rows.map((b) => b.id), clearSelection)}
-              disabled={duplicateMutation.isPending}
+              onClick={() => onDuplicate(rows.map((b) => b.id), clearSelection)}
+              disabled={duplicatingIds.length > 0}
             >
               Duplicate ({rows.length})
             </AppButton>
@@ -154,10 +140,8 @@ const GroupBroadcastingTable = ({ onAdd, onEdit, onDeleteRequest, onBulkDeleteRe
           id: 'duplicate',
           label: 'Duplicate',
           icon: <Copy size={16} />,
-          isLoading: (row) =>
-            duplicateMutation.isPending &&
-            (duplicateMutation.variables?.broadcast_group_ids || []).includes(row.id),
-          onClick: (row) => handleDuplicate([row.id]),
+          isLoading: (row) => duplicatingIds.includes(row.id),
+          onClick: (row) => onDuplicate([row.id]),
         },
         {
           id: 'edit',

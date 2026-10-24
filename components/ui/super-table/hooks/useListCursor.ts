@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { LIST_CURSOR_PREFIX } from '@/lib/utils/listMemory';
 
 /**
  * Remembers where a list was when you left it.
@@ -18,7 +19,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
  * alone.
  */
 
-const PREFIX = 'st:list:';
+// Cleared on login and logout (lib/utils/listMemory).
+const PREFIX = LIST_CURSOR_PREFIX;
 
 export function listCursorKey(pathname: string) {
   return `${PREFIX}${pathname}`;

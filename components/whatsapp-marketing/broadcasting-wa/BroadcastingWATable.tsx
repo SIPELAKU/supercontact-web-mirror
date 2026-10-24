@@ -16,6 +16,7 @@ interface BroadcastingWATableProps {
   onRetry?: () => void;
   onAdd?: () => void;
   rowCount?: number;
+  restartKey?: number;
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: any) => Promise<BroadcastCampaign[]>;
   onEdit: (broadcast: BroadcastCampaign) => void;
@@ -47,6 +48,7 @@ export default function BroadcastingWATable({
   onRetry,
   onAdd,
   rowCount = 0,
+  restartKey,
   onStateChange,
   onExportRequest,
   onEdit,
@@ -119,6 +121,7 @@ export default function BroadcastingWATable({
         data={broadcasts}
         columns={columns}
         rowCount={rowCount}
+        restartKey={restartKey}
         manualFiltering={true}
         manualPagination={true}
         manualSorting={true}

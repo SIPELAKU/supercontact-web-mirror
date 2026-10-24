@@ -1,6 +1,7 @@
 // lib/hooks/useGroupBroadcasts.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
+import { markListsStale } from './useListRefresh';
 import { fetchWithTimeout } from '@/lib/api/api-client';
 import type {
   CreateGroupBroadcastData,
@@ -67,9 +68,17 @@ async function createGroupBroadcast(
   return json;
 }
 
+export const groupBroadcastsKey = (params: GroupBroadcastsParams) =>
+  ['group-broadcasts', params] as const;
+
+// Writes below mark the group lists stale only; GroupBroadcastingClient
+// refreshes the list it shows (see useListRefresh). The group pickers in the
+// broadcast and recipient modals are not on screen during these writes and
+// refetch, stale, the next time they open.
+
 export function useGroupBroadcasts(params: GroupBroadcastsParams = { page: 1, limit: 10 }) {
   return useQuery<GroupBroadcastsResponse>({
-    queryKey: ['group-broadcasts', params],
+    queryKey: groupBroadcastsKey(params),
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
@@ -87,9 +96,7 @@ export function useCreateGroupBroadcast() {
       if (!token) throw new Error('No authentication token');
       return createGroupBroadcast(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['group-broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['group-broadcasts']),
   });
 }
 
@@ -127,9 +134,7 @@ export function useDuplicateGroupBroadcasts() {
       if (!token) throw new Error('No authentication token');
       return duplicateGroupBroadcasts(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['group-broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['group-broadcasts']),
   });
 }
 
@@ -193,9 +198,7 @@ export function useUpdateGroupBroadcast() {
       if (!token) throw new Error('No authentication token');
       return updateGroupBroadcast(token, id, { name });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['group-broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['group-broadcasts']),
   });
 }
 
@@ -208,9 +211,7 @@ export function useDeleteGroupBroadcast() {
       if (!token) throw new Error('No authentication token');
       return deleteGroupBroadcast(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['group-broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['group-broadcasts']),
   });
 }
 

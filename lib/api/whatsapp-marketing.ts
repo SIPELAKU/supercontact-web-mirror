@@ -339,6 +339,9 @@ export async function fetchBroadcastRecipients(
   const queryParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
+    // The recipients table paginates server-side; send this explicitly so a
+    // change in the BE default can never return the whole list at once.
+    is_limit: 'true',
   });
 
   if (search) {

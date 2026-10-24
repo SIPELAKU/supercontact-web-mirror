@@ -98,8 +98,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🐛 Bug Fix Filter Status Statistik Broadcast WhatsApp
 
 - **Deskripsi:**
-  - **Filter Status Penerima:** Daftar penerima di modal statistik broadcast bisa difilter berdasarkan status (Pending, Sent, Delivered, Read, Failed)
-  - **Server-side Filtering:** Filter dikirim ke backend lewat parameter `status`, sehingga hasilnya akurat di semua halaman (pagination), bukan hanya di halaman yang sedang tampil
+  - **Filter Status Penerima:** Daftar penerima di modal statistik broadcast bisa difilter berdasarkan status (Pending, Sent, Delivered, Read, Failed). Status Pending juga mencakup penerima yang belum punya log pengiriman
+  - **Server-side Filtering:** Filter dikirim ke backend lewat parameter `status` di `GET /api/v1/broadcasts/{broadcast_id}/recipients`, sehingga hasilnya akurat di semua halaman (pagination), bukan hanya di halaman yang sedang tampil
+  - **Tanpa Filter:** Pilihan "Semua status" tidak mengirim parameter `status`, sehingga semua penerima ditampilkan
+  - **Pagination Eksplisit:** Request selalu mengirim `is_limit=true`, sehingga tabel tetap memakai pagination server-side dan tidak bergantung pada default backend (`is_limit=false` mengambil semua data sekaligus)
   - **Impact:** User bisa langsung melihat penerima yang gagal atau belum terkirim tanpa menelusuri seluruh daftar
   - **Technical Notes:** `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`, `lib/api/whatsapp-marketing.ts`, `lib/hooks/useBroadcasts.ts`
 

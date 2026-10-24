@@ -68,4 +68,24 @@ describe('broadcast recipients API', () => {
     expect(params.get('search')).toBe('budi');
     expect(params.get('status')).toBe('read');
   });
+
+  it('table: sends the sort as sort_by / sort_order', async () => {
+    vi.stubGlobal('fetch', respond(200, page([])));
+
+    await fetchBroadcastRecipients('token', 'b1', 1, 5, undefined, undefined, 'status', 'desc');
+
+    const params = requested[0].searchParams;
+    expect(params.get('sort_by')).toBe('status');
+    expect(params.get('sort_order')).toBe('desc');
+  });
+
+  it('table: no sort chosen sends neither, so the API keeps its default order', async () => {
+    vi.stubGlobal('fetch', respond(200, page([])));
+
+    await fetchBroadcastRecipients('token', 'b1', 1, 5);
+
+    const params = requested[0].searchParams;
+    expect(params.has('sort_by')).toBe(false);
+    expect(params.has('sort_order')).toBe(false);
+  });
 });

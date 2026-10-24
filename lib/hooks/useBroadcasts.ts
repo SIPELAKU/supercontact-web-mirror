@@ -119,14 +119,16 @@ export function useBroadcastRecipients(
   page: number = 1,
   limit: number = 10,
   search?: string,
-  status?: string
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
 ) {
   return useQuery({
-    queryKey: ['broadcast-recipients', id, page, limit, search, status],
+    queryKey: ['broadcast-recipients', id, page, limit, search, status, sortBy, sortOrder],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchBroadcastRecipients(token, id, page, limit, search, status);
+      return fetchBroadcastRecipients(token, id, page, limit, search, status, sortBy, sortOrder);
     },
     enabled: !!id,
   });

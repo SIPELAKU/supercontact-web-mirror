@@ -2,7 +2,27 @@
 
 export type WaRecipientType = 'subscribers' | 'whatsapp';
 // Matches the backend sort_by contract (unknown keys silently fall back to default)
-export type WaRecipientSortBy = 'name' | 'email' | 'phone_number' | 'position' | 'company' | 'created_at';
+// The sort keys each list endpoint accepts (API 1.144.2). Unknown keys are
+// not rejected, they fall back to the default order - so the tables only
+// offer sorting on these columns and toApiSort only sends these.
+/** GET /recipients */
+export const WA_RECIPIENT_SORT_KEYS = ['name', 'email', 'company', 'created_at', 'updated_at'] as const;
+/** GET /broadcasts */
+export const BROADCAST_SORT_KEYS = ['name', 'status', 'created_at'] as const;
+/** GET /broadcasts/{id}/recipients */
+export const BROADCAST_RECIPIENT_SORT_KEYS = [
+  'name',
+  'email',
+  'phone_number',
+  'company',
+  'position',
+  'address',
+  'status',
+  'created_at',
+  'updated_at',
+] as const;
+
+export type WaRecipientSortBy = (typeof WA_RECIPIENT_SORT_KEYS)[number];
 export type WaRecipientSortOrder = 'asc' | 'desc';
 
 export interface WaRecipient {

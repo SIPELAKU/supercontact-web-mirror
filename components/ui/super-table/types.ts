@@ -689,6 +689,20 @@ export interface SuperTableProps<TData extends object>
    */
   resetPageKey?: string | number;
   /**
+   * Change this to start the list over from batch 1 after the page itself
+   * wrote something - create, edit, duplicate, delete. A lazy list keeps every
+   * batch it has loaded, but a refetch only refreshes the batch requested
+   * last, so after a write the earlier ones are stale: a deleted row stays, a
+   * new one never shows. This drops them all and reloads from the top. Like
+   * `resetPageKey` it also clears the row selection.
+   *
+   * Unlike `resetPageKey` it does not change the list's identity, so the
+   * remembered scroll position - restored when the reader comes back - still
+   * matches. A write counter passed as `resetPageKey` made every position
+   * saved after a write unmatchable.
+   */
+  restartKey?: string | number;
+  /**
    * Ubah nilainya untuk MENGOSONGKAN seleksi baris saja - tanpa memulangkan
    * tabel ke batch pertama.
    *

@@ -34,9 +34,11 @@ interface EditBroadcastModalProps {
   open: boolean;
   onClose: () => void;
   broadcast: BroadcastCampaign | null;
+  /** After a successful save only - `onClose` also runs on Cancel. */
+  onSaved?: () => void;
 }
 
-export default function EditBroadcastModal({ open, onClose, broadcast }: EditBroadcastModalProps) {
+export default function EditBroadcastModal({ open, onClose, broadcast, onSaved }: EditBroadcastModalProps) {
   // Form State
   const [name, setName] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -170,6 +172,7 @@ export default function EditBroadcastModal({ open, onClose, broadcast }: EditBro
       await updateMutation.mutateAsync({ id: broadcast.id, data: payload });
       notify.success(`Broadcast "${name}" updated successfully.`);
       handleClose();
+      onSaved?.();
     } catch (err: any) {
       if (err.data?.error?.code === 'TEMPLATE_VARIABLES_INVALID') {
         setValidationErrors(err.data.error.details || {});

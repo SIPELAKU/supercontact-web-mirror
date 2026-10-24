@@ -9,6 +9,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.106.2] - 2026-10-23
+
+### Detail Versi 1.106.2
+
+#### 🐛 Bug Fix Data Tabel Tidak Terbarui Setelah Aksi (WhatsApp Marketing)
+
+- **Deskripsi:**
+  - **Halaman Terdampak:** Template Broadcasting, Broadcasting WA, Recipients, dan Group Broadcasting
+  - **Gejala:** Setelah Duplicate, Create atau Import, data baru tidak muncul. Setelah Delete, data yang dihapus masih tampil. Setelah Edit, perubahan baru terlihat setelah refresh (F5)
+  - **Root Cause:** Tabel lazy (SuperTable) menyimpan semua batch yang sudah dimuat, tetapi setelah aksi hanya batch terakhir yang di-refetch. Data baru masuk ke batch 1, sehingga tidak pernah tampil. Selain itu, perubahan isi baris yang tidak mengubah id dianggap "tidak berubah"
+  - **Solusi:** Setelah aksi berhasil, batch 1 di-refetch dan daftar dimulai ulang dari batch 1. Modal Create/Edit/Import memberi sinyal ke halaman hanya saat simpan berhasil, sehingga Cancel tidak memicu reload
+  - **Group Broadcasting:** Query daftar dan aksi Duplicate dipindah dari tabel ke halaman. `refreshTrigger`, yang tidak pernah dibaca oleh tabel, dihapus
+  - **Impact:** Hasil setiap aksi langsung terlihat tanpa refresh halaman, termasuk setelah user scroll lebih dari 25 baris
+  - **Technical Notes:** `lib/hooks/useListRefresh.ts` (baru), `*Client.tsx` di `templates/`, `broadcasting-wa/`, `recipients/`, `group-broadcasting/`, serta prop `onSaved` di `AddBroadcastModal.tsx` dan `EditBroadcastModal.tsx`
+
+#### 🐛 Bug Fix Klik Menu Aksi Ikut Membuka Detail
+
+- **Deskripsi:**
+  - **Gejala:** Memilih item di menu aksi (⋮), atau klik di luar menu untuk menutupnya, ikut membuka detail baris (popup statistik atau halaman detail)
+  - **Root Cause:** Menu dirender lewat portal di luar `<tr>`. Event klik React tetap merambat ke baris, sedangkan pengecekan yang lama hanya melihat struktur DOM
+  - **Impact:** Berlaku untuk semua tabel SuperTable yang punya klik baris dan menu aksi
+  - **Technical Notes:** `components/ui/super-table/hooks/useTableConfig.tsx`
+
+#### 🐛 Bug Fix Hapus Massal Template Selalu Gagal
+
+- **Deskripsi:**
+  - **Root Cause:** Frontend memanggil `DELETE /broadcast-templates` dengan body berisi daftar id, padahal endpoint itu tidak ada di backend (405), sehingga tidak ada template yang terhapus
+  - **Solusi:** Template dihapus satu per satu lewat `DELETE /broadcast-templates/{id}` secara berurutan. Jika sebagian gagal, pesan error menyebut jumlahnya, dan proses berhenti saat sesi habis (401)
+  - **Technical Notes:** `lib/hooks/useBroadcastTemplates.ts`
+
+#### 🐛 Bug Fix Halaman Template Broadcasting
+
+- **Deskripsi:**
+  - **"No templates found" Saat Halaman Dibuka:** Selama daftar akun WhatsApp dimuat, tabel kini menampilkan skeleton. Jika API akun gagal, tampil pesan error dengan tombol Retry
+  - **Ganti Akun WhatsApp:** Template dari dua akun tidak lagi tercampur setelah scroll, karena tabel direset setiap kali akun berganti
+  - **Technical Notes:** `components/whatsapp-marketing/templates/BroadcastTemplatesClient.tsx`
+
+#### 🐛 Bug Fix Posisi Scroll Tabel
+
+- **Deskripsi:**
+  - **Setelah Aksi:** Posisi scroll yang diingat tabel kembali bisa dipulihkan setelah user melakukan aksi lalu kembali ke halaman. Prop baru SuperTable, `restartKey`, memulai ulang daftar tanpa mengubah identitas daftar, berbeda dengan `resetPageKey`
+  - **Logout/Login:** Memori posisi dan URL daftar di sessionStorage dibersihkan saat login dan logout. Sesi baru, termasuk user lain di tab yang sama, mulai dari atas dan tidak membawa kata kunci pencarian sesi sebelumnya
+  - **Technical Notes:** `components/ui/super-table/SuperTable.tsx`, `types.ts`, `hooks/useTableState.ts`, `lib/utils/listMemory.ts` (baru), `lib/context/AuthContext.tsx`
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Indikator Loading Setelah Aksi:** Progress bar tampil sejak Duplicate, Delete, Create atau Edit diklik sampai daftar terbaru selesai dimuat. Sebelumnya tidak ada tanda apa pun. Data lama tetap tampil selama proses
+
+#### 🚀 Peningkatan Performa
+
+- **Deskripsi:**
+  - **Satu Request per Aksi:** Hook mutation hanya menandai data list sebagai basi (`markListsStale`), dan halaman yang mengambil ulang batch 1. Sebelumnya satu aksi bisa memicu 2 request (page 1 dan page 2), dan hapus massal broadcast memicu satu request list untuk setiap baris
+  - **Technical Notes:** `lib/hooks/useBroadcastTemplates.ts`, `useBroadcasts.ts`, `useWaRecipients.ts`, `useGroupBroadcasts.ts`
+
+#### ♻️ Refactor
+
+- **Deskripsi:**
+  - **Modul Bersama `useListRefresh`:** Logika loading dan refresh setelah aksi, yang sebelumnya disalin di empat halaman, kini menjadi satu modul (`lib/hooks/useListRefresh.ts`) yang bisa dipakai tabel lazy lain
+  - **Group Broadcasting:** `GroupBroadcastingTable` kini hanya komponen tampilan, sedangkan query dan aksi dikelola `GroupBroadcastingClient`, sama seperti halaman lain
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **101 Test Baru:**
+    - unit test `useListRefresh` dan `listMemory`;
+    - skenario loading dan error API di halaman template;
+    - perilaku batch `useLazyRows`;
+    - simulasi alur lengkap untuk keempat halaman: setiap aksi tepat 1 request, dan tidak ada frame "No ... found" yang sempat tampil
+  - **Technical Notes:** `lib/hooks/useListRefresh.test.ts`, `lib/utils/listMemory.test.ts`, `lib/hooks/useBroadcastTemplates.loading.test.ts`, `components/ui/super-table/hooks/useLazyRows.test.ts`, dan `*.flow.test.ts` di keempat folder halaman
+
+---
+
 ## [1.106.1] - 2026-10-23
 
 ### Detail Versi 1.106.1

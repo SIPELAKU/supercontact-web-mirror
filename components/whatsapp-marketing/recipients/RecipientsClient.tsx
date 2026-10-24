@@ -12,11 +12,17 @@ import {
   useBulkDeleteWaRecipients,
   useDuplicateWaRecipients,
   useDeleteAllWaRecipients,
+  waRecipientsKey,
 } from '@/lib/hooks/useWaRecipients';
+import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import RecipientsTable from './RecipientsTable';
 import AddRecipientModal from './AddRecipientModal';
 import ImportWaRecipientModal from './ImportWaRecipientModal';
-import type { WaRecipient } from '@/lib/types/whatsapp-marketing';
+import type {
+  WaRecipient,
+  WaRecipientSortBy,
+  WaRecipientsParams,
+} from '@/lib/types/whatsapp-marketing';
 
 export default function RecipientsClient() {
   // Pagination, search & sorting state
@@ -38,14 +44,15 @@ export default function RecipientsClient() {
   // Search is already debounced by SuperTable (500ms) — no extra debounce layer here
   const sort = sorting[0];
 
-  const { data, isLoading, isError, error, refetch } = useWaRecipients({
+  const listParams: WaRecipientsParams = {
     recipient_type: 'whatsapp',
     page,
     limit,
     search: searchQuery || undefined,
-    sort_by: sort?.id as import('@/lib/types/whatsapp-marketing').WaRecipientSortBy | undefined,
+    sort_by: sort?.id as WaRecipientSortBy | undefined,
     sort_order: sort ? (sort.desc ? 'desc' : 'asc') : undefined,
-  });
+  };
+  const { data, isLoading, isError, error, refetch } = useWaRecipients(listParams);
 
   const recipients = data?.data?.recipients || [];
   const totalCount = data?.data?.total || 0;
@@ -55,6 +62,12 @@ export default function RecipientsClient() {
   const deleteAllMutation = useDeleteAllWaRecipients();
   const duplicateMutation = useDuplicateWaRecipients();
 
+  // Loading state and batch-1 refresh around every write on this page.
+  const listRefresh = useListRefresh({
+    batchIndex: page - 1,
+    firstBatchKey: waRecipientsKey({ ...listParams, page: 1 }),
+  });
+
   // Handlers
   const handleOpenAddModal = () => setAddModalOpen(true);
   const handleCloseModals = () => {
@@ -63,9 +76,10 @@ export default function RecipientsClient() {
     setImportModalOpen(false);
     setSelectedRecipient(null);
   };
+  // Add, Edit and Import save inside their modals and call this afterwards.
   const handleSuccess = () => {
     handleCloseModals();
-    refetch();
+    void listRefresh.refreshAfterSave();
   };
 
   const handleOpenEditModal = (recipient: WaRecipient) => {
@@ -80,45 +94,49 @@ export default function RecipientsClient() {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!selectedToDelete) return;
-    try {
-      if (selectedToDelete.length === 1) {
-        await deleteMutation.mutateAsync(selectedToDelete[0]);
-      } else {
-        await bulkDeleteMutation.mutateAsync(selectedToDelete);
+  const handleConfirmDelete = () =>
+    listRefresh.run(async () => {
+      if (!selectedToDelete) return;
+      try {
+        if (selectedToDelete.length === 1) {
+          await deleteMutation.mutateAsync(selectedToDelete[0]);
+        } else {
+          await bulkDeleteMutation.mutateAsync(selectedToDelete);
+        }
+        notify.success(`${selectedToDelete.length} recipient(s) deleted successfully.`);
+      } catch (err: any) {
+        notify.error(err.message || 'Failed to delete recipient(s).');
+      } finally {
+        setConfirmOpen(false);
+        setSelectedToDelete(null);
       }
-      notify.success(`${selectedToDelete.length} recipient(s) deleted successfully.`);
-      refetch();
-    } catch (err: any) {
-      notify.error(err.message || 'Failed to delete recipient(s).');
-    } finally {
-      setConfirmOpen(false);
-      setSelectedToDelete(null);
-    }
-  };
+      // After the popup has closed, so it does not wait on the list.
+      await listRefresh.refresh();
+    });
 
-  const handleConfirmDeleteAll = async () => {
-    try {
-      await deleteAllMutation.mutateAsync();
-      notify.success('All recipients deleted successfully.');
-      refetch();
-    } catch (err: any) {
-      notify.error(err.message || 'Failed to delete all recipients.');
-    } finally {
-      setConfirmAllOpen(false);
-    }
-  };
+  const handleConfirmDeleteAll = () =>
+    listRefresh.run(async () => {
+      try {
+        await deleteAllMutation.mutateAsync();
+        notify.success('All recipients deleted successfully.');
+      } catch (err: any) {
+        notify.error(err.message || 'Failed to delete all recipients.');
+      } finally {
+        setConfirmAllOpen(false);
+      }
+      await listRefresh.refresh();
+    });
 
-  const handleDuplicate = async (ids: string[], target: string) => {
-    try {
-      await duplicateMutation.mutateAsync({ ids, target });
-      notify.success(`${ids.length} recipient(s) duplicated successfully.`);
-      refetch();
-    } catch (err: any) {
-      notify.error(err.message || 'Failed to duplicate recipient(s).');
-    }
-  };
+  const handleDuplicate = (ids: string[], target: string) =>
+    listRefresh.run(async () => {
+      try {
+        await duplicateMutation.mutateAsync({ ids, target });
+        notify.success(`${ids.length} recipient(s) duplicated successfully.`);
+        await listRefresh.refresh();
+      } catch (err: any) {
+        notify.error(err.message || 'Failed to duplicate recipient(s).');
+      }
+    });
 
   const handleStateChange = useCallback(
     (state: { page: number; limit: number; search: string; sorting: { id: string; desc: boolean }[] }) => {
@@ -149,11 +167,12 @@ export default function RecipientsClient() {
 
       <RecipientsTable
         recipients={recipients}
-        isLoading={isLoading}
+        isLoading={isLoading || listRefresh.isRefreshing}
         isError={isError}
         errorMessage={error instanceof Error ? error.message : undefined}
         onRetry={() => refetch()}
         totalCount={totalCount}
+        restartKey={listRefresh.restartKey}
         onAdd={handleOpenAddModal}
         onImport={() => setImportModalOpen(true)}
         onEdit={handleOpenEditModal}

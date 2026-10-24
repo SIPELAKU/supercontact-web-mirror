@@ -23,6 +23,8 @@ interface BroadcastTemplatesTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   totalCount: number;
+  resetPageKey?: string;
+  restartKey?: number;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   onCreate: () => void;
   onEdit: (template: BroadcastTemplate) => void;
@@ -37,6 +39,8 @@ const BroadcastTemplatesTable = ({
   errorMessage,
   onRetry,
   totalCount,
+  resetPageKey,
+  restartKey,
   onStateChange,
   onCreate,
   onEdit,
@@ -100,6 +104,8 @@ const BroadcastTemplatesTable = ({
       data={templates}
       columns={columns}
       rowCount={totalCount}
+      resetPageKey={resetPageKey}
+      restartKey={restartKey}
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}

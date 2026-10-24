@@ -18,6 +18,7 @@ export function useTableState<TData extends object>(
     | 'features'
     | 'tableId'
     | 'resetPageKey'
+    | 'restartKey'
     | 'clearSelectionKey'
   > & {
     /**
@@ -152,20 +153,28 @@ export function useTableState<TData extends object>(
     suppressNextSortingReset.current = true;
   }, []);
 
-  // Filters the PAGE owns, outside the table (`resetPageKey`). Besides going
+  // Filters the PAGE owns, outside the table (`resetPageKey`), and the page
+  // asking the list to start over after a write (`restartKey`). Besides going
   // back to page 1, this clears the row selection: rowSelection is keyed by
   // getRowId and survives a refetch, so without it the bulk bar could keep
   // reading "3 selected" for rows the server no longer returns - easy to hit
   // now that renderFilters puts the filter control beside that bar.
   const prevResetPageKey = useRef(props.resetPageKey);
+  const prevRestartKey = useRef(props.restartKey);
   useEffect(() => {
-    if (prevResetPageKey.current === props.resetPageKey) return;
+    if (
+      prevResetPageKey.current === props.resetPageKey &&
+      prevRestartKey.current === props.restartKey
+    ) {
+      return;
+    }
     prevResetPageKey.current = props.resetPageKey;
+    prevRestartKey.current = props.restartKey;
     setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
     // Keep the same object when nothing was selected, so this cannot cause an
     // extra render and a phantom onStateChange on every filter change.
     setRowSelection((prev) => (Object.keys(prev).length === 0 ? prev : {}));
-  }, [props.resetPageKey]);
+  }, [props.resetPageKey, props.restartKey]);
 
   // Selection only - no page reset, no accumulated rows discarded. This is
   // what a page-owned "Batal pilih" button needs; `resetPageKey` would also

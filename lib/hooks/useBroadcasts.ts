@@ -2,6 +2,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { markListsStale } from './useListRefresh';
 import {
   fetchBroadcasts,
   createBroadcast,
@@ -12,6 +13,15 @@ import {
   duplicateBroadcast
 } from '../api/whatsapp-marketing';
 import Cookies from 'js-cookie';
+
+export const broadcastsKey = (
+  page: number,
+  limit: number,
+  search?: string,
+  status?: string,
+  sortBy?: string,
+  sortOrder?: 'asc' | 'desc'
+) => ['broadcasts', page, limit, search, status, sortBy, sortOrder] as const;
 
 /**
  * Fetch all WhatsApp broadcasts
@@ -25,7 +35,7 @@ export function useBroadcasts(
   sortOrder?: 'asc' | 'desc'
 ) {
   return useQuery({
-    queryKey: ['broadcasts', page, limit, search, status, sortBy, sortOrder],
+    queryKey: broadcastsKey(page, limit, search, status, sortBy, sortOrder),
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
@@ -34,6 +44,8 @@ export function useBroadcasts(
   });
 }
 
+// Writes below mark the lists stale only; BroadcastingWAClient refreshes the
+// list it shows (see useListRefresh).
 /**
  * Create a new WhatsApp broadcast
  */
@@ -46,9 +58,7 @@ export function useCreateBroadcast() {
       if (!token) throw new Error('No authentication token');
       return createBroadcast(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcasts']),
   });
 }
 
@@ -64,9 +74,7 @@ export function useUpdateBroadcast() {
       if (!token) throw new Error('No authentication token');
       return updateBroadcast(token, id, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcasts']),
   });
 }
 
@@ -82,9 +90,7 @@ export function useDeleteBroadcast() {
       if (!token) throw new Error('No authentication token');
       return deleteBroadcast(token, id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcasts']),
   });
 }
 
@@ -100,9 +106,7 @@ export function useDuplicateBroadcast() {
       if (!token) throw new Error('No authentication token');
       return duplicateBroadcast(token, broadcastIds);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcasts']),
   });
 }
 

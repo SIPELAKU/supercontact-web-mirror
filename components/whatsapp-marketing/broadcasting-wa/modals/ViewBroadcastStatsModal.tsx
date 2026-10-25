@@ -38,6 +38,8 @@ import { notify } from '@/lib/notifications';
 import { downloadRows, type ExportFileFormat } from '@/lib/utils/exportRows';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
 import {
+  broadcastRecipientsKey,
+  reloadBroadcastStats,
   useBroadcastRecipients,
   useBroadcastDetail,
   useExportBroadcastRecipients,
@@ -74,7 +76,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
 
   const [editingRecipient, setEditingRecipient] = useState<BroadcastRecipient | null>(null);
 
-  const { data: detailResponse, isLoading: isLoadingDetail, isFetching: isFetchingDetail, refetch: refetchDetail } = useBroadcastDetail(broadcast?.id || '');
+  const { data: detailResponse, isLoading: isLoadingDetail, isFetching: isFetchingDetail } = useBroadcastDetail(broadcast?.id || '');
   const detailData = detailResponse?.data;
 
   const { data: recipientsResponse, isLoading, refetch } = useBroadcastRecipients(
@@ -92,13 +94,18 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   // The card that was clicked, while its "CSV or Excel" menu is open.
   const [exportMenu, setExportMenu] = useState<{ anchor: HTMLElement; status: ExportableStatus } | null>(null);
 
-  const handleReload = () => {
-    // Invalidate everything related to broadcasts to ensure stats are updated
-    queryClient.invalidateQueries({ queryKey: ['broadcasts'] });
-    queryClient.invalidateQueries({ queryKey: ['group-broadcast-campaigns'] });
-    refetchDetail();
-    refetch();
+  // Busy until EVERY request the reload started is done - not just the stats -
+  // so no table changes after the button says it has finished.
+  const [isReloading, setIsReloading] = useState(false);
+  const handleReload = async () => {
+    setIsReloading(true);
+    try {
+      await reloadBroadcastStats(queryClient, broadcast?.id || '');
+    } finally {
+      setIsReloading(false);
+    }
   };
+  const isReloadBusy = isReloading || isFetchingDetail || isLoading;
 
   // console.log("recipientsResponse", recipientsResponse);
 
@@ -234,10 +241,10 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
           variantStyle="outline"
           size="small"
           onClick={handleReload}
-          startIcon={<RefreshCw size={16} className={isFetchingDetail ? "animate-spin" : ""} />}
-          disabled={isFetchingDetail || isLoading}
+          startIcon={<RefreshCw size={16} className={isReloadBusy ? "animate-spin" : ""} />}
+          disabled={isReloadBusy}
         >
-          {isFetchingDetail || isLoading ? "Reloading..." : "Reload Data"}
+          {isReloadBusy ? "Reloading..." : "Reload Data"}
         </AppButton>
       </DialogTitle>
       <DialogContent dividers>
@@ -410,7 +417,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
         onClose={() => setEditingRecipient(null)}
         onSuccess={() => {
           // Refresh the recipients list for this broadcast
-          queryClient.invalidateQueries({ queryKey: ['broadcast-recipients', activeBroadcast.id] });
+          queryClient.invalidateQueries({ queryKey: broadcastRecipientsKey(activeBroadcast.id) });
           setEditingRecipient(null);
         }}
       />

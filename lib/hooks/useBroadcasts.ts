@@ -1,7 +1,7 @@
 // lib/hooks/useBroadcasts.ts
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { markListsStale } from './useListRefresh';
 import {
   fetchBroadcasts,
@@ -112,6 +112,12 @@ export function useDuplicateBroadcast() {
 }
 
 /**
+ * Prefix shared by every cached page/sort/filter of one broadcast's
+ * recipients. Invalidate THIS, not the full key, to refresh all of them.
+ */
+export const broadcastRecipientsKey = (id: string) => ['broadcast-recipients', id] as const;
+
+/**
  * Fetch recipients for a specific broadcast
  */
 export function useBroadcastRecipients(
@@ -124,7 +130,7 @@ export function useBroadcastRecipients(
   sortOrder?: 'asc' | 'desc'
 ) {
   return useQuery({
-    queryKey: ['broadcast-recipients', id, page, limit, search, status, sortBy, sortOrder],
+    queryKey: [...broadcastRecipientsKey(id), page, limit, search, status, sortBy, sortOrder],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
@@ -162,4 +168,20 @@ export function useBroadcastDetail(id: string) {
     },
     enabled: !!id,
   });
+}
+
+/**
+ * Everything "Reload Data" in the broadcast stats modal refreshes: the
+ * broadcast lists behind the modal, its stats, and every cached sort/filter
+ * of its recipients. Resolves once every refetch it started has settled -
+ * failures included - so the button can stay busy until nothing on screen
+ * is still about to change.
+ */
+export async function reloadBroadcastStats(queryClient: QueryClient, id: string) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['broadcasts'] }),
+    queryClient.invalidateQueries({ queryKey: ['group-broadcast-campaigns'] }),
+    queryClient.invalidateQueries({ queryKey: ['broadcast-detail', id] }),
+    queryClient.invalidateQueries({ queryKey: broadcastRecipientsKey(id) }),
+  ]);
 }

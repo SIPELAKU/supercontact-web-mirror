@@ -305,7 +305,9 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
           data={bulkJobs}
           columns={columns}
           rowCount={totalCount}
-          isLoading={isLoading || isFetching}
+          // Only the first load of a page/search shows the skeleton. The
+          // auto-refresh polls in the background and swaps the rows in place.
+          isLoading={isLoading}
           onRetry={() => refetch()}
           renderEmptyState={() => (
             <EmptyState
@@ -331,7 +333,10 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
             }
           }}
           features={{
-            pagination: true,
+            // Numbered pages, not lazy batches: a lazy table only replaces a
+            // batch when its rows or first/last id change, so the polled
+            // progress and status of the same jobs would never show.
+            pagination: "pages",
             globalFilter: true,
             columnFilters: false,
             sorting: false,

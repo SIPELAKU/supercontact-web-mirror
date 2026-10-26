@@ -297,3 +297,28 @@ describe('useLazyRows: what the Template Broadcasting table shows around a write
     });
   });
 });
+
+describe('useLazyRows: a polled list whose rows change in place (Import History)', () => {
+  // The modal polls the same jobs every few seconds; only their progress and
+  // status move. `name` stands in for that progress here.
+  const poll1 = [{ id: 'j2', name: 'Processing 100/1000' }, { id: 'j1', name: 'Completed 500/500' }];
+  const poll2 = [{ id: 'j2', name: 'Completed 1000/1000' }, { id: 'j1', name: 'Completed 500/500' }];
+  const progressOfJ2 = (r: { rows: Row[] }) => r.rows.find((x) => x.id === 'j2')?.name;
+
+  it('lazy (pagination: true): the polled progress never shows - same length, same first/last id', () => {
+    const table = lazyTable();
+    table.render({ data: poll1, rowCount: 2 });
+
+    const after = table.render({ data: poll2, rowCount: 2 });
+    expect(progressOfJ2(after)).toBe('Processing 100/1000');
+  });
+
+  it("pages (pagination: 'pages' → SuperTable passes enabled: false): the polled progress shows at once, no loading", () => {
+    const table = lazyTable();
+    table.render({ enabled: false, data: poll1, rowCount: 2 });
+
+    const after = table.render({ data: poll2, rowCount: 2, isLoading: false });
+    expect(progressOfJ2(after)).toBe('Completed 1000/1000');
+    expect(after.ids).toEqual(['j2', 'j1']);
+  });
+});

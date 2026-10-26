@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.107.3] - 2026-10-26
+
+### Detail Versi 1.107.3
+
+#### 🐛 Bug Fix Import History: Loading Berulang dan Progress Tidak Ter-update
+
+- **Deskripsi:**
+  - **Tanpa Loading Saat Auto-refresh:** Modal Import History (halaman Subscribers dan detail Mailing List) tidak lagi menampilkan loading setiap kali auto-refresh berjalan. Loading hanya muncul saat modal pertama dibuka, saat ganti halaman, atau saat mencari. Ikon tombol Refresh tetap berputar sebagai tanda data sedang diperbarui
+  - **Progress dan Status Live:** Angka Processed, Created, Skipped dan Failed serta status job (misalnya Processing → Completed) kini langsung berubah di tabel setiap auto-refresh, tanpa perlu menutup dan membuka ulang modal, dan tanpa posisi scroll berpindah
+  - **Pagination Bernomor:** Tabel kembali memakai nomor halaman (10/25/50/100 per halaman) seperti desain awal modal ini, menggantikan "muat lagi" saat di-scroll
+  - **Root Cause:**
+    - tabel menerima `isLoading || isFetching`, padahal `isFetching` menyala setiap kali polling berjalan (sudah ada sejak modal dibuat);
+    - sejak lazy pagination SuperTable (3 Sep 2026), `pagination: true` berarti infinite scroll. Mode ini hanya mengganti baris jika jumlah baris atau id baris pertama/terakhir berubah, sehingga progress job yang sama tidak pernah tampil. Auto-refresh juga hanya memuat ulang potongan data terakhir yang dimuat
+  - **Impact:** User bisa memantau proses import secara real time tanpa tabel berkedip, dan status di tabel selalu sesuai dengan daftar subscriber yang ikut diperbarui saat job selesai
+  - **Technical Notes:**
+    - `isLoading={isLoading}` dan `features.pagination: "pages"` di `components/email-marketing/subscribers/modals/ImportHistoryModal.tsx`
+    - mode `pages` membuat SuperTable menonaktifkan `useLazyRows`, sehingga baris langsung mengikuti data terbaru dari polling
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **2 Test Baru:**
+    - mode infinite scroll tetap menampilkan progress lama saat job yang sama di-polling (dokumentasi penyebab);
+    - mode halaman langsung menampilkan progress terbaru tanpa loading
+  - **Technical Notes:** `components/ui/super-table/hooks/useLazyRows.test.ts`
+
+---
+
 ## [1.107.2] - 2026-10-24
 
 ### Detail Versi 1.107.2

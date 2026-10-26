@@ -167,6 +167,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Modul Bersama `useListRefresh`:** Logika loading dan refresh setelah aksi, yang sebelumnya disalin di empat halaman, kini menjadi satu modul (`lib/hooks/useListRefresh.ts`) yang bisa dipakai tabel lazy lain
   - **Group Broadcasting:** `GroupBroadcastingTable` kini hanya komponen tampilan, sedangkan query dan aksi dikelola `GroupBroadcastingClient`, sama seperti halaman lain
 
+#### 🔧 Configuration
+
+- **Deskripsi:**
+  - **Fitur Data Intelligence yang Belum Dirilis Disembunyikan:** Tiga fitur yang sudah ada di kode tetapi belum boleh tampil di production kini tersembunyi secara default:
+    - **Prospecting:** menu di sidebar Data Intelligence disembunyikan, dan halaman `/data-intelligence/prospecting` serta `/data-intelligence/prospect/[id]` menampilkan 404 walaupun dibuka langsung lewat URL
+    - **Kredit "Unlimited (dev)":** ikut tersembunyi karena hanya tampil di dalam halaman Prospecting
+    - **Website Intelligence:** kartu "Crawl website" di Company 360 → Overview tidak dirender, sehingga crawl tidak bisa dipicu
+  - **Cara Mengaktifkan:** Fitur hanya tampil jika `NEXT_PUBLIC_ENABLE_DATA_INTEL_PREVIEW=true`. Variabel yang tidak diisi, kosong, atau bernilai lain membuat fitur tetap tersembunyi. Nilai dibaca saat build, jadi perubahan baru berlaku setelah deploy ulang
+  - **Impact:** Isi `dev` bisa dirilis ke staging/production tanpa fitur yang belum disetujui ikut terlihat oleh user
+  - **Technical Notes:** `lib/config/featureFlags.ts` (baru), `components/layout/Sidebar.tsx`, `app/(app)/data-intelligence/prospecting/page.tsx`, `app/(app)/data-intelligence/prospect/[id]/page.tsx` (kini server component), `components/data-intelligence/company-profile/CompanyProfile360Client.tsx`, `.env.example`
+
 #### 🧪 Testing
 
 - **Deskripsi:**

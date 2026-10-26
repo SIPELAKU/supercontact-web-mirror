@@ -3,6 +3,7 @@
 import { useSidebar } from "@/lib/context/SidebarContext";
 import { usePermission } from "@/lib/hooks/usePermission";
 import { ALL_SETTINGS_PERMISSIONS } from "@/lib/config/settingsNav";
+import { SHOW_DATA_INTEL_PREVIEW } from "@/lib/config/featureFlags";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@mui/material";
 import {
@@ -152,7 +153,10 @@ const menuData: MenuSection[] = [
           // sibling to People rather than a replacement, since People reads
           // off the older company-scraping key_people[] flow and the two
           // are backed by genuinely different pipelines for now.
-          { name: "Prospecting", path: "/data-intelligence/prospecting", permission: "person_intelligence:read" },
+          // Unreleased: hidden unless the preview flag is on (featureFlags.ts).
+          ...(SHOW_DATA_INTEL_PREVIEW
+            ? [{ name: "Prospecting", path: "/data-intelligence/prospecting", permission: "person_intelligence:read" }]
+            : []),
           { name: "ICP Builder", path: "/data-intelligence/icp", permission: "data_intelligence:icp" },
           { name: "Compliance", path: "/data-intelligence/compliance/suppression", permission: "data_intelligence:compliance" },
           // Integrations' own duplicate link (into ADMIN > Settings) was

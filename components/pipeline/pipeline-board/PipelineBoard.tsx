@@ -59,7 +59,8 @@ export default function PipelineBoard() {
     isModalOpen,
     setIsModalOpen,
     updateStagePipeline,
-    fetchPipeline
+    fetchPipeline,
+    scopeUserId
   } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [stages, setStages] = useState(listPipeline)
@@ -388,8 +389,9 @@ export default function PipelineBoard() {
                 />
               )
             },
-            {
-              type: "custom",
+            // Hidden for a user who only sees their own deals.
+            ...(scopeUserId ? [] : [{
+              type: "custom" as const,
               component: (
                 <CustomSelectStage
                   placeholder="Select Assigned To"
@@ -399,7 +401,7 @@ export default function PipelineBoard() {
                   className="bg-white rounded-lg font-normal"
                 />
               )
-            },
+            }]),
             {
               type: "custom",
               component: (

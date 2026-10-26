@@ -29,6 +29,10 @@ export interface Deal {
   is_delete: boolean;
   wonDate?: string;
   lostDate?: string;
+  /** Open stage and past its expected close date (see `isDealExpired`). */
+  is_expired?: boolean;
+  /** Expired deals only: days left before deletion (see `daysUntilDeletion`). */
+  days_until_deletion?: number;
 }
 
 interface Stats {
@@ -61,6 +65,8 @@ export interface DealCardProps {
   lostDate?: string
   probability_of_close: number
   is_delete: boolean
+  is_expired?: boolean
+  days_until_deletion?: number
   stageName: string;
 }
 

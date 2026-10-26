@@ -50,6 +50,8 @@ export interface reqBody {
   quantity: number;
   probability_of_close: number | string;
   notes: string;
+  assigned_to: string;
+  lead_id?: string;
 }
 
 export type DealForm = Omit<reqBody, "expected_close_date"> & {
@@ -72,7 +74,7 @@ interface GetState {
   setEditId: (val: string) => void;
   setStage: (val: string) => void;
   setIsModalOpen: (val: boolean) => void;
-  fetchActiveUser: () => void;
+  fetchActiveUser: (param?: { isSilent?: boolean }) => Promise<void>;
 
   fetchPipeline: (param?: PipelineQuery) => Promise<void>;
 
@@ -113,9 +115,13 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
 
   setIsModalOpen: (v) => set({ isModalOpen: v }),
 
-  fetchActiveUser: async () => {
+  // `isSilent` refreshes the Assigned To filter after a write without turning
+  // on the board's global loading (which would flash the skeleton).
+  fetchActiveUser: async (param) => {
     try {
-      set({ loading: true, error: null });
+      if (!param?.isSilent) {
+        set({ loading: true, error: null });
+      }
       const res = await pipelineAPI.fetchActiveUsers();
       const data = res.data
       const temp: DealStage[] = [{ label: "All", value: 'all' }]
@@ -131,7 +137,9 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
     } catch (err) {
       set({ error: "Failed to fetch data" });
     } finally {
-      set({ loading: false });
+      if (!param?.isSilent) {
+        set({ loading: false });
+      }
     }
   },
 
@@ -207,7 +215,8 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       const response = await pipelineAPI.createPipeline(body as pipelineAPI.CreatePipelineRequest);
 
       if (response.success) {
-        await get().fetchPipeline();
+        // The deal's assignee may be new to the Assigned To filter.
+        await Promise.all([get().fetchPipeline(), get().fetchActiveUser({ isSilent: true })]);
         return { success: true };
       }
 
@@ -232,7 +241,8 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       set({ error: null });
       await pipelineAPI.updatePipelineStage(id, { deal_stage: stage });
 
-      await get().fetchPipeline({ isSilent: true });
+      // A stage change can change who still has an active deal.
+      await Promise.all([get().fetchPipeline({ isSilent: true }), get().fetchActiveUser({ isSilent: true })]);
       return;
     } catch (error) {
       console.error("Error patching pipeline stage:", error);
@@ -250,7 +260,8 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
       const response = await pipelineAPI.updatePipeline(id!, body as pipelineAPI.UpdatePipelineRequest);
 
       if (response.success) {
-        await get().fetchPipeline();
+        // The assignee may have changed, so the Assigned To filter too.
+        await Promise.all([get().fetchPipeline(), get().fetchActiveUser({ isSilent: true })]);
         return { success: true };
       }
 

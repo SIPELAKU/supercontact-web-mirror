@@ -14,7 +14,22 @@ import {
     CompanyProfile360,
     SocialProfilesMap,
     TargetCompanyDetailResponse,
+    WebsiteCrawlInfo,
 } from "@/lib/types/company-intelligence";
+
+function normalizeWebsiteCrawl(raw: any): WebsiteCrawlInfo | null {
+    if (!raw || typeof raw !== "object" || !raw.status) return null;
+    return {
+        status: raw.status,
+        requestedAt: raw.requested_at ?? null,
+        crawledAt: raw.crawled_at ?? null,
+        failedAt: raw.failed_at ?? null,
+        pagesCrawled: raw.pages_crawled ?? null,
+        fieldsFilled: Array.isArray(raw.fields_filled) ? raw.fields_filled : [],
+        technologySignals: Array.isArray(raw.technology_signals) ? raw.technology_signals : [],
+        error: raw.error ?? null,
+    };
+}
 
 export type ProfileSource = "saved" | "search";
 
@@ -84,6 +99,7 @@ function fromSearch(data: CompanyIntelligenceProfileResponse): CompanyProfile360
         regionName: null,
         customFields: {},
         createdAt: data.created_at,
+        websiteCrawl: normalizeWebsiteCrawl(rawData.website_crawl),
     };
 }
 
@@ -154,6 +170,9 @@ function fromSaved(data: TargetCompanyDetailResponse): CompanyProfile360 {
                 ? data.custom_fields
                 : {},
         createdAt: data.created_at,
+        // Same raw_data limitation as socialProfiles above - "Crawl website"
+        // still works via cacheId and merges its result into profile state.
+        websiteCrawl: null,
     };
 }
 

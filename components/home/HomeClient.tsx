@@ -25,8 +25,8 @@ export default function HomeClient() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      // Redirect to analytics dashboard page if authenticated
-      router.push("/analytics/dashboard");
+      // Redirect to dashboard page if authenticated
+      router.push("/dashboard");
     }
   }, [isAuthenticated, loading, router]);
 
@@ -46,7 +46,7 @@ export default function HomeClient() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Navbar />
       <main>
         <FadeIn direction="up" delay={0.1} fullWidth>
@@ -79,33 +79,36 @@ export default function HomeClient() {
       {/* Slim sticky register CTA, mobile only */}
       <Box
         sx={{
-          display: { xs: 'flex', md: 'none' },
-          position: 'fixed',
+          display: { xs: "flex", md: "none" },
+          position: "fixed",
           bottom: 0,
           left: 0,
           right: 0,
           zIndex: 1100,
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          alignItems: "center",
+          justifyContent: "space-between",
           gap: 2,
           px: 2,
           py: 1,
-          bgcolor: 'white',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
-          pb: 'max(8px, env(safe-area-inset-bottom))',
+          bgcolor: "white",
+          borderTop: "1px solid",
+          borderColor: "divider",
+          boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
+          pb: "max(8px, env(safe-area-inset-bottom))",
         }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, color: "text.primary" }}
+        >
           {strings.sticky_cta_text}
         </Typography>
         <AppButton
           variantStyle="primary"
           component={Link}
           href="/register"
-          onClick={() => trackCtaClick('home', 'sticky_mobile_cta')}
-          sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          onClick={() => trackCtaClick("home", "sticky_mobile_cta")}
+          sx={{ whiteSpace: "nowrap", flexShrink: 0 }}
         >
           {strings.hero_cta_free}
         </AppButton>

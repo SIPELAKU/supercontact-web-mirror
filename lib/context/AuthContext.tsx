@@ -1,6 +1,7 @@
 "use client";
 
 import { cookieUtils } from '@/lib/utils/cookies';
+import { clearListMemory } from '@/lib/utils/listMemory';
 import { fetchProfile, ProfileData } from '@/lib/api';
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 
@@ -125,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const plan_expires_at = json.data.user?.plan_expires_at;
 
     cookieUtils.setAuthToken(accessToken);
+    // A new session starts at the top of every list.
+    clearListMemory();
 
     // Store extra info in localStorage
     if (role && typeof window !== 'undefined') localStorage.setItem('userRole', role);
@@ -177,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     cookieUtils.removeAuthToken();
+    clearListMemory();
     if (typeof window !== 'undefined') {
       localStorage.removeItem('userRole');
       localStorage.removeItem('userCompany');

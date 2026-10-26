@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
+import { LIST_POSITION_PREFIX } from '@/lib/utils/listMemory';
 
 /**
  * Remembers HOW FAR DOWN a lazy list you were, so opening a record and coming
@@ -18,7 +19,8 @@ import { useCallback, useMemo, useRef } from 'react';
  * working different filters must not share it.
  */
 
-const PREFIX = 'st:pos:';
+// Cleared on login and logout (lib/utils/listMemory).
+const PREFIX = LIST_POSITION_PREFIX;
 
 export interface ListPosition {
   /** Batches that were loaded when the list was left. */

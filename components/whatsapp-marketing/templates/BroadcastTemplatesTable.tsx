@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { Box } from '@mui/material';
+import { Box, Tooltip } from '@mui/material';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -14,6 +14,11 @@ import { primaryContentType } from '@/lib/utils/whatsapp-template';
 import { Stack } from '@mui/material';
 import { Copy, Trash2, LayoutTemplate } from 'lucide-react';
 import { TemplateApprovalStatusBadge } from './TemplateApprovalBadge';
+import {
+  APPROVED_DELETE_REASON,
+  bulkDeleteBlockReason,
+  isDeletableTemplate,
+} from './templateDeletion';
 import { EmptyState } from '@/components/ui/empty-state';
 
 interface BroadcastTemplatesTableProps {
@@ -23,6 +28,8 @@ interface BroadcastTemplatesTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   totalCount: number;
+  resetPageKey?: string;
+  restartKey?: number;
   onStateChange: (state: { page: number; limit: number; search: string }) => void;
   onCreate: () => void;
   onEdit: (template: BroadcastTemplate) => void;
@@ -37,6 +44,8 @@ const BroadcastTemplatesTable = ({
   errorMessage,
   onRetry,
   totalCount,
+  resetPageKey,
+  restartKey,
   onStateChange,
   onCreate,
   onEdit,
@@ -100,6 +109,8 @@ const BroadcastTemplatesTable = ({
       data={templates}
       columns={columns}
       rowCount={totalCount}
+      resetPageKey={resetPageKey}
+      restartKey={restartKey}
       isLoading={isLoading}
       isError={isError}
       errorMessage={errorMessage}
@@ -146,32 +157,40 @@ const BroadcastTemplatesTable = ({
           <span className="hidden sm:inline">Create Template</span>
         </AppButton>
       )}
-      renderBulkActions={({ selectedRows, clearSelection }) => (
-        <Stack direction="row" spacing={1}>
-          <AppButton
-            variantStyle="primary"
-            onClick={() => {
-              const ids = (selectedRows as BroadcastTemplate[]).map((r) => r.id);
-              onDuplicate(ids);
-              clearSelection();
-            }}
-          >
-            Duplicate ({selectedRows.length})
-          </AppButton>
-          <AppButton
-            variantStyle="danger"
-            color="danger"
-            startIcon={<Trash2 size={16} />}
-            onClick={() => {
-              const ids = (selectedRows as BroadcastTemplate[]).map((r) => r.id);
-              onDeleteRequest(ids);
-              clearSelection();
-            }}
-          >
-            Delete ({selectedRows.length})
-          </AppButton>
-        </Stack>
-      )}
+      renderBulkActions={({ selectedRows, clearSelection }) => {
+        const rows = selectedRows as BroadcastTemplate[];
+        const deleteBlocked = bulkDeleteBlockReason(rows);
+        return (
+          <Stack direction="row" spacing={1}>
+            <AppButton
+              variantStyle="primary"
+              onClick={() => {
+                onDuplicate(rows.map((r) => r.id));
+                clearSelection();
+              }}
+            >
+              Duplicate ({rows.length})
+            </AppButton>
+            {/* The span lets the tooltip work on a disabled button. */}
+            <Tooltip title={deleteBlocked ?? ''}>
+              <span>
+                <AppButton
+                  variantStyle="danger"
+                  color="danger"
+                  startIcon={<Trash2 size={16} />}
+                  disabled={!!deleteBlocked}
+                  onClick={() => {
+                    onDeleteRequest(rows.map((r) => r.id));
+                    clearSelection();
+                  }}
+                >
+                  Delete ({rows.length})
+                </AppButton>
+              </span>
+            </Tooltip>
+          </Stack>
+        );
+      }}
       rowActions={[
         {
           id: 'duplicate',
@@ -184,6 +203,7 @@ const BroadcastTemplatesTable = ({
           label: 'Delete',
           icon: <Trash2 size={16} />,
           destructive: true,
+          disabled: (row) => (isDeletableTemplate(row) ? false : APPROVED_DELETE_REASON),
           onClick: (row) => onDeleteRequest([row.id]),
         },
       ]}

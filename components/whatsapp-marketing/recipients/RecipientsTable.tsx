@@ -19,6 +19,7 @@ interface RecipientsTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   totalCount: number;
+  restartKey?: number;
   onAdd: () => void;
   onImport: () => void;
   onEdit: (recipient: WaRecipient) => void;
@@ -37,6 +38,7 @@ const RecipientsTable = ({
   errorMessage,
   onRetry,
   totalCount,
+  restartKey,
   onAdd,
   onImport,
   onEdit,
@@ -53,9 +55,12 @@ const RecipientsTable = ({
 
   const columns = useMemo<MRT_ColumnDef<WaRecipient>[]>(
     () => [
+      // Sortable columns are the ones GET /recipients can sort by
+      // (WA_RECIPIENT_SORT_KEYS); phone number and position are not among them.
       {
         accessorKey: 'phone_number',
         header: 'Phone Number',
+        enableSorting: false,
         Cell: ({ cell }) => (
           <span className="font-medium text-gray-900">{cell.getValue<string>()}</span>
         ),
@@ -73,6 +78,7 @@ const RecipientsTable = ({
       {
         accessorKey: 'position',
         header: 'Position',
+        enableSorting: false,
         Cell: ({ cell }) => cell.getValue<string>() || 'N/A',
       },
     ],
@@ -86,6 +92,7 @@ const RecipientsTable = ({
         data={recipients}
         columns={columns}
         rowCount={totalCount}
+        restartKey={restartKey}
         isLoading={isLoading}
         isError={isError}
         errorMessage={errorMessage}

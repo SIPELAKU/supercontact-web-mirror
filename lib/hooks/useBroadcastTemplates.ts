@@ -116,40 +116,43 @@ async function deleteBroadcastTemplate(
   return json;
 }
 
+// There is no bulk endpoint. `/broadcast-templates` only takes GET and POST,
+// and DELETE exists only per id (API 1.142.2), so the old
+// `DELETE /broadcast-templates` with a body of ids answered 405 and deleted
+// nothing. One request per template instead - in sequence, because each one
+// also deletes the content at Twilio - mirroring the WA broadcasts bulk delete.
 async function bulkDeleteBroadcastTemplates(
   token: string,
   ids: string[]
 ): Promise<{ success: boolean }> {
-  const res = await fetchWithTimeout(
-    `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ template_ids: ids }),
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      await deleteBroadcastTemplate(token, id);
+    } catch (err) {
+      if ((err as Error).message === 'UNAUTHORIZED') throw err;
+      failed += 1;
     }
-  );
-
-  const json = await res.json();
-  if (res.status === 401) throw new Error('UNAUTHORIZED');
-  if (!res.ok || !json.success) {
-    throw new Error(json.error?.message || json.message || 'Failed to bulk delete templates');
   }
-  return json;
+  if (failed > 0) {
+    throw new Error(`${failed} of ${ids.length} template(s) could not be deleted.`);
+  }
+  return { success: true };
 }
 
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
+export const broadcastTemplatesKey = (params: BroadcastTemplatesParams) =>
+  ['broadcast-templates', params] as const;
+
 export function useBroadcastTemplates(
   params: BroadcastTemplatesParams,
   options?: { enabled?: boolean }
 ) {
   return useQuery<BroadcastTemplatesResponse>({
-    queryKey: ['broadcast-templates', params],
+    queryKey: broadcastTemplatesKey(params),
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
@@ -172,6 +175,12 @@ export function useBroadcastTemplateDetail(id: string) {
 }
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { markListsStale } from './useListRefresh';
+
+// Duplicate and delete - the list page's own writes - mark the lists stale
+// only; BroadcastTemplatesClient refreshes the list it shows (see
+// useListRefresh). The hooks further down are used on other screens and keep
+// refetching as before.
 
 export function useDuplicateBroadcastTemplates() {
   const queryClient = useQueryClient();
@@ -182,9 +191,7 @@ export function useDuplicateBroadcastTemplates() {
       if (!token) throw new Error('No authentication token');
       return duplicateBroadcastTemplates(token, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcast-templates']),
   });
 }
 
@@ -197,9 +204,7 @@ export function useDeleteBroadcastTemplate() {
       if (!token) throw new Error('No authentication token');
       return deleteBroadcastTemplate(token, id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });
-    },
+    onSuccess: () => markListsStale(queryClient, ['broadcast-templates']),
   });
 }
 
@@ -212,9 +217,8 @@ export function useBulkDeleteBroadcastTemplates() {
       if (!token) throw new Error('No authentication token');
       return bulkDeleteBroadcastTemplates(token, ids);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['broadcast-templates'] });
-    },
+    // Settled, not success: a partial failure has still deleted the others.
+    onSettled: () => markListsStale(queryClient, ['broadcast-templates']),
   });
 }
 

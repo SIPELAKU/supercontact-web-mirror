@@ -130,9 +130,9 @@ export function SuperTable<TData extends object>(
     [props.getRowId]
   );
 
-  // Everything that defines WHICH rows the server would return. When it
-  // changes, rows loaded under the old query no longer belong together.
-  const resetToken = React.useMemo(
+  // Everything that defines WHICH rows the server would return - the list's
+  // identity. A remembered scroll position belongs to exactly this.
+  const listToken = React.useMemo(
     () =>
       JSON.stringify([
         tableState.debouncedGlobalFilter,
@@ -149,6 +149,11 @@ export function SuperTable<TData extends object>(
       props.resetPageKey,
     ]
   );
+  // The list's identity plus `restartKey`. When this changes, rows loaded so
+  // far no longer belong together and the list starts over from batch 1. A
+  // restart is not a different list, so it stays out of `listToken`: a write
+  // counter in there made every position saved after a write unmatchable.
+  const resetToken = `${listToken}|${props.restartKey ?? ''}`;
 
   const lazyRows = useLazyRows<TData>({
     enabled: isServerLazy,
@@ -273,7 +278,7 @@ export function SuperTable<TData extends object>(
 
   // The stored position belongs to a QUERY, and on mount the query is not
   // settled yet: useUrlSync applies `?q=`/`?sort=`/`?f=` in an effect, so
-  // `resetToken` changes once shortly after mount. Watching the token rather
+  // `listToken` changes once shortly after mount. Watching the token rather
   // than firing on mount is what makes a restore wait for the URL to land -
   // and what makes a later filter change (a different token) correctly NOT
   // restore anything.
@@ -294,13 +299,13 @@ export function SuperTable<TData extends object>(
     if (!isLazy || restoreConsumed.current) return;
     if (!storedRead.current) return;
     const stored = storedOnMount.current;
-    if (!stored || stored.token !== resetToken) return;
+    if (!stored || stored.token !== listToken) return;
     restoreConsumed.current = true;
     if (stored.batches <= 1) return;
     restoreScrollTop.current = stored.scrollTop;
     restoreToken.current = resetToken;
     setRestoreTarget(Math.min(stored.batches, RESTORE_MAX_BATCHES));
-  }, [isLazy, resetToken, position]);
+  }, [isLazy, listToken, resetToken, position]);
 
   // Drive the restore one batch at a time, waiting for each to settle. This
   // deliberately bypasses the auto-load brake: the brake exists to stop idle
@@ -366,9 +371,18 @@ export function SuperTable<TData extends object>(
     position.remember({
       batches: batchesLoaded,
       scrollTop: el?.scrollTop ?? 0,
-      token: resetToken,
+      token: listToken,
     });
-  }, [isLazy, batchesLoaded, resetToken, restoreTarget, position]);
+  }, [isLazy, batchesLoaded, listToken, restoreTarget, position]);
+
+  // A restart puts the list back at batch 1, so the depth remembered before it
+  // no longer describes the list; the next scroll records the new one.
+  const prevRestartKey = React.useRef(props.restartKey);
+  React.useEffect(() => {
+    if (prevRestartKey.current === props.restartKey) return;
+    prevRestartKey.current = props.restartKey;
+    position.forget();
+  }, [props.restartKey, position]);
 
   const handleNearEnd = useNearEndOfScroll({
     enabled:
@@ -389,10 +403,10 @@ export function SuperTable<TData extends object>(
       const scrollTop = event.currentTarget.scrollTop;
       handleNearEnd(event);
       if (restoreTarget === null) {
-        position.remember({ batches: batchesLoaded, scrollTop, token: resetToken });
+        position.remember({ batches: batchesLoaded, scrollTop, token: listToken });
       }
     },
-    [handleNearEnd, position, batchesLoaded, resetToken, restoreTarget]
+    [handleNearEnd, position, batchesLoaded, listToken, restoreTarget]
   );
 
   const lazyConfig: TableLazyConfig<TData> = {

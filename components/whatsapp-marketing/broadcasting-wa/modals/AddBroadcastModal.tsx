@@ -33,9 +33,11 @@ import { primaryContentType } from '@/lib/utils/whatsapp-template';
 interface AddBroadcastModalProps {
   open: boolean;
   onClose: () => void;
+  /** After a successful save only - `onClose` also runs on Cancel. */
+  onSaved?: () => void;
 }
 
-export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalProps) {
+export default function AddBroadcastModal({ open, onClose, onSaved }: AddBroadcastModalProps) {
   // Form State
   const [name, setName] = useState('');
   const [accountId, setAccountId] = useState('');
@@ -157,6 +159,7 @@ export default function AddBroadcastModal({ open, onClose }: AddBroadcastModalPr
       await createMutation.mutateAsync(payload);
       notify.success(`Broadcast "${name}" ${action === 'send' ? 'queued for sending' : 'saved as draft'}.`);
       handleClose();
+      onSaved?.();
     } catch (err: any) {
       if (err.data?.error?.code === 'TEMPLATE_VARIABLES_INVALID') {
         const details = err.data.error.details;

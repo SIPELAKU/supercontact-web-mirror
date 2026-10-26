@@ -7,6 +7,224 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.107.2] - 2026-10-24
+
+### Detail Versi 1.107.2
+
+#### 🎨 UI/UX Enhancement: Template Approved Tidak Bisa Dihapus
+
+- **Deskripsi:**
+  - **Delete per Baris:** Di halaman Template Broadcasting, item **Delete** di menu aksi (⋮) kini nonaktif untuk template berstatus **Approved**, dengan keterangan "Approved templates cannot be deleted" di bawah label. Template dengan status lain (Not submitted, Received, Pending, Rejected, Paused, Disabled) tetap bisa dihapus
+  - **Delete Massal:** Tombol **Delete (N)** di aksi massal nonaktif jika ada satu atau lebih template Approved yang ikut dicentang, walaupun template lain yang dicentang berstatus lain. Tooltip menyebut berapa template Approved yang terpilih dan meminta user menghapus centangnya. Tombol Duplicate massal tetap aktif
+  - **Alasan:** Template Approved sudah aktif di WhatsApp dan bisa sedang dipakai oleh broadcast, jadi tidak boleh terhapus tanpa sengaja dari daftar
+  - **Catatan:** Ini penjagaan di frontend. Dokumentasi `DELETE /broadcast-templates/{id}` tidak menyebut larangan menghapus template Approved, jadi penolakan di backend perlu dikonfirmasi ke tim BE
+  - **Technical Notes:**
+    - aturan di `components/whatsapp-marketing/templates/templateDeletion.ts` (`isDeletableTemplate`, `bulkDeleteBlockReason`)
+    - dipakai di `BroadcastTemplatesTable.tsx` (`disabled` di row action dan tombol bulk delete)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **4 Test Baru:**
+    - template Approved tidak bisa dihapus, sedangkan semua status lain bisa;
+    - delete massal diblokir jika ada 1 atau lebih template Approved yang terpilih, dengan pesan yang menyebut jumlahnya;
+    - delete massal diizinkan jika tidak ada template Approved
+  - **Technical Notes:** `components/whatsapp-marketing/templates/templateDeletion.test.ts`
+
+---
+
+## [1.107.1] - 2026-10-24
+
+### Detail Versi 1.107.1
+
+#### 🐛 Bug Fix Sorting Tabel WhatsApp Marketing (Sekarang Lewat API)
+
+- **Deskripsi:**
+  - **Modal Statistik Broadcast (tabel Recipients Status):** Sebelumnya klik header kolom hanya mengurutkan 5 baris di halaman yang sedang tampil. Sekarang diurutkan oleh backend dengan `sort_by` / `sort_order` untuk kolom Name, Phone Number dan Status. Status diurutkan berdasarkan tahap pengiriman (Pending → Sent → Delivered → Read → Failed), bukan abjad. Kolom Error Message tidak bisa diurutkan
+  - **Broadcasting WA:** Kolom **Target** tidak lagi bisa diurutkan. `GET /broadcasts` hanya mendukung `name`, `status` dan `created_at`, sehingga sorting Target selama ini diam-diam diabaikan backend. Broadcast Name, Status dan Created tetap diurutkan lewat API
+  - **Recipients:** Kolom **Phone Number** dan **Position** tidak lagi bisa diurutkan. `GET /recipients` hanya mendukung `name`, `email`, `company`, `created_at` dan `updated_at`. Name dan Company tetap diurutkan lewat API
+  - **Hanya Kunci yang Didukung:** Kunci sorting tiap endpoint dicatat di satu tempat, dan hanya kunci itu yang dikirim ke API. Sorting lama yang tersimpan di URL untuk kolom yang tidak didukung diabaikan, tidak lagi dikirim lalu diabaikan backend
+  - **Root Cause:** Tabel di modal belum memakai sorting di server (`manualSorting`). Di Broadcasting WA dan Recipients, beberapa kolom bisa diklik padahal tidak termasuk kunci sorting API, dan backend memakai urutan default untuk kunci yang tidak dikenal tanpa memberi error
+  - **Impact:** Urutan yang tampil selalu berlaku untuk seluruh data, dan tidak ada lagi kolom yang terlihat bisa diurutkan padahal tidak berfungsi
+  - **Technical Notes:**
+    - helper `toApiSort` di `lib/utils/apiSort.ts`
+    - daftar kunci `BROADCAST_SORT_KEYS`, `WA_RECIPIENT_SORT_KEYS` dan `BROADCAST_RECIPIENT_SORT_KEYS` di `lib/types/whatsapp-marketing.ts`; tipe `WaRecipientSortBy` kini mengikuti daftar ini
+    - parameter `sortBy`/`sortOrder` di `fetchBroadcastRecipients` dan `useBroadcastRecipients`
+    - `manualSorting` di `ViewBroadcastStatsModal.tsx`
+    - `enableSorting: false` di kolom yang tidak didukung (`BroadcastingWATable.tsx`, `RecipientsTable.tsx`)
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Export Mengikuti Filter Status Kumulatif:** Backend kini membuat filter `status` di `GET /broadcasts/{id}/recipients` bersifat kumulatif, sama dengan angka di kartu: penerima yang sudah Read juga termasuk di Sent dan Delivered. Akibatnya jumlah baris export dari kartu Sent, Delivered dan Read sekarang sama dengan angka kartunya. Kolom Status di file menunjukkan tahap terakhir masing-masing penerima, jadi export Sent bisa berisi baris berstatus Delivered atau Read
+  - **Pesan yang Diperbarui:** Peringatan saat tidak ada data dan catatan di kode tidak lagi menyebut bahwa jumlah baris bisa berbeda dari angka kartu (`ViewBroadcastStatsModal.tsx`, `recipientExport.ts`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **9 Test Baru:**
+    - sorting tabel penerima terkirim sebagai `sort_by`/`sort_order`, dan tidak dikirim jika tidak dipilih;
+    - `toApiSort` hanya meneruskan kunci yang didukung endpoint, dan hanya kolom sorting pertama;
+    - daftar kunci sorting tiap endpoint dicatat sebagai test
+  - **Technical Notes:** `lib/api/whatsapp-marketing.recipients.test.ts`, `lib/utils/apiSort.test.ts`
+
+---
+
+## [1.107.0] - 2026-10-24
+
+### Detail Versi 1.107.0
+
+#### ✨ Export Penerima (CSV atau Excel) dari Kartu Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Kartu yang Bisa Diklik:** Di modal statistik broadcast (klik baris di halaman Broadcasting WA), kartu **Sent**, **Delivered** dan **Read** kini bisa diklik. Muncul menu untuk memilih format **CSV (.csv)** atau **Excel (.xlsx)**. Kartu **Failed** tidak termasuk
+  - **Data yang Diexport:** Semua penerima broadcast yang status terakhirnya sama dengan kartu yang diklik, diambil dari endpoint yang sama dengan tabel penerima, `GET /broadcasts/{id}/recipients`, dengan `status=<status kartu>` dan `is_limit=false` (seluruh data tanpa pagination)
+  - **Isi File:** Kolom tabel penerima lebih dulu dengan urutan yang sama (Name, Phone Number, Status), lalu Email, Company dan Updated At. Tanggal berformat `yyyy-MM-dd HH:mm` dan spasi berlebih dibuang. Nama file mengikuti pola `Broadcast_<nama>_<Status>_<tanggal>.csv` atau `.xlsx`
+  - **Excel:** File selalu terbuka per kolom di Excel, WPS maupun Google Sheets, tanpa bergantung pada pengaturan pemisah regional seperti CSV. Nomor telepon tersimpan sebagai teks, sehingga tidak berubah menjadi `6.29E+12`. Lebar kolom menyesuaikan isi, header diberi filter, dan nama sheet mengikuti status
+  - **Feedback:** Ikon unduh dan tooltip di setiap kartu, spinner selama export, serta toast yang menyebut jumlah baris yang diexport. Jika tidak ada data, muncul peringatan; jika gagal, muncul pesan error
+  - **Catatan:** Angka di kartu berasal dari statistik log broadcast, sedangkan export memfilter berdasarkan status terakhir tiap penerima, jadi jumlah baris di file bisa berbeda dari angka kartu. Export juga tidak mengikuti pencarian atau filter tabel di bawahnya
+  - **Impact:** Tim bisa langsung mengunduh daftar penerima yang sudah terkirim, diterima atau dibaca untuk ditindaklanjuti, tanpa menyalin dari tabel halaman per halaman
+  - **Technical Notes:**
+    - `fetchAllBroadcastRecipients` di `lib/api/whatsapp-marketing.ts`, berbagi logika request dengan `fetchBroadcastRecipients`, dengan timeout 120 detik untuk daftar besar
+    - hook `useExportBroadcastRecipients` di `lib/hooks/useBroadcasts.ts`
+    - utilitas `lib/utils/exportRows.ts` untuk CSV dan Excel, memakai `xlsx` yang sudah ada dan dimuat hanya saat diklik
+    - definisi kolom dan nama file di `components/whatsapp-marketing/broadcasting-wa/recipientExport.ts`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **17 Test Baru:**
+    - parameter request export (`status`, `is_limit=false`, tanpa `page`/`limit`);
+    - tabel tetap `is_limit=true`;
+    - penanganan error API;
+    - isi kolom dan nama file (.csv dan .xlsx);
+    - nilai kosong, serta nama yang mengandung koma atau tanda kutip;
+    - file Excel dibaca ulang: nomor telepon tetap teks, lebar kolom dan filter header terpasang, nama sheet valid
+  - **Technical Notes:** `lib/api/whatsapp-marketing.recipients.test.ts`, `lib/utils/exportRows.test.ts`, `components/whatsapp-marketing/broadcasting-wa/recipientExport.test.ts`
+
+---
+
+## [1.106.2] - 2026-10-23
+
+### Detail Versi 1.106.2
+
+#### 🐛 Bug Fix Data Tabel Tidak Terbarui Setelah Aksi (WhatsApp Marketing)
+
+- **Deskripsi:**
+  - **Halaman Terdampak:** Template Broadcasting, Broadcasting WA, Recipients, dan Group Broadcasting
+  - **Gejala:** Setelah Duplicate, Create atau Import, data baru tidak muncul. Setelah Delete, data yang dihapus masih tampil. Setelah Edit, perubahan baru terlihat setelah refresh (F5)
+  - **Root Cause:** Tabel lazy (SuperTable) menyimpan semua batch yang sudah dimuat, tetapi setelah aksi hanya batch terakhir yang di-refetch. Data baru masuk ke batch 1, sehingga tidak pernah tampil. Selain itu, perubahan isi baris yang tidak mengubah id dianggap "tidak berubah"
+  - **Solusi:** Setelah aksi berhasil, batch 1 di-refetch dan daftar dimulai ulang dari batch 1. Modal Create/Edit/Import memberi sinyal ke halaman hanya saat simpan berhasil, sehingga Cancel tidak memicu reload
+  - **Group Broadcasting:** Query daftar dan aksi Duplicate dipindah dari tabel ke halaman. `refreshTrigger`, yang tidak pernah dibaca oleh tabel, dihapus
+  - **Impact:** Hasil setiap aksi langsung terlihat tanpa refresh halaman, termasuk setelah user scroll lebih dari 25 baris
+  - **Technical Notes:** `lib/hooks/useListRefresh.ts` (baru), `*Client.tsx` di `templates/`, `broadcasting-wa/`, `recipients/`, `group-broadcasting/`, serta prop `onSaved` di `AddBroadcastModal.tsx` dan `EditBroadcastModal.tsx`
+
+#### 🐛 Bug Fix Klik Menu Aksi Ikut Membuka Detail
+
+- **Deskripsi:**
+  - **Gejala:** Memilih item di menu aksi (⋮), atau klik di luar menu untuk menutupnya, ikut membuka detail baris (popup statistik atau halaman detail)
+  - **Root Cause:** Menu dirender lewat portal di luar `<tr>`. Event klik React tetap merambat ke baris, sedangkan pengecekan yang lama hanya melihat struktur DOM
+  - **Impact:** Berlaku untuk semua tabel SuperTable yang punya klik baris dan menu aksi
+  - **Technical Notes:** `components/ui/super-table/hooks/useTableConfig.tsx`
+
+#### 🐛 Bug Fix Hapus Massal Template Selalu Gagal
+
+- **Deskripsi:**
+  - **Root Cause:** Frontend memanggil `DELETE /broadcast-templates` dengan body berisi daftar id, padahal endpoint itu tidak ada di backend (405), sehingga tidak ada template yang terhapus
+  - **Solusi:** Template dihapus satu per satu lewat `DELETE /broadcast-templates/{id}` secara berurutan. Jika sebagian gagal, pesan error menyebut jumlahnya, dan proses berhenti saat sesi habis (401)
+  - **Technical Notes:** `lib/hooks/useBroadcastTemplates.ts`
+
+#### 🐛 Bug Fix Halaman Template Broadcasting
+
+- **Deskripsi:**
+  - **"No templates found" Saat Halaman Dibuka:** Selama daftar akun WhatsApp dimuat, tabel kini menampilkan skeleton. Jika API akun gagal, tampil pesan error dengan tombol Retry
+  - **Ganti Akun WhatsApp:** Template dari dua akun tidak lagi tercampur setelah scroll, karena tabel direset setiap kali akun berganti
+  - **Technical Notes:** `components/whatsapp-marketing/templates/BroadcastTemplatesClient.tsx`
+
+#### 🐛 Bug Fix Posisi Scroll Tabel
+
+- **Deskripsi:**
+  - **Setelah Aksi:** Posisi scroll yang diingat tabel kembali bisa dipulihkan setelah user melakukan aksi lalu kembali ke halaman. Prop baru SuperTable, `restartKey`, memulai ulang daftar tanpa mengubah identitas daftar, berbeda dengan `resetPageKey`
+  - **Logout/Login:** Memori posisi dan URL daftar di sessionStorage dibersihkan saat login dan logout. Sesi baru, termasuk user lain di tab yang sama, mulai dari atas dan tidak membawa kata kunci pencarian sesi sebelumnya
+  - **Technical Notes:** `components/ui/super-table/SuperTable.tsx`, `types.ts`, `hooks/useTableState.ts`, `lib/utils/listMemory.ts` (baru), `lib/context/AuthContext.tsx`
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Indikator Loading Setelah Aksi:** Progress bar tampil sejak Duplicate, Delete, Create atau Edit diklik sampai daftar terbaru selesai dimuat. Sebelumnya tidak ada tanda apa pun. Data lama tetap tampil selama proses
+
+#### 🚀 Peningkatan Performa
+
+- **Deskripsi:**
+  - **Satu Request per Aksi:** Hook mutation hanya menandai data list sebagai basi (`markListsStale`), dan halaman yang mengambil ulang batch 1. Sebelumnya satu aksi bisa memicu 2 request (page 1 dan page 2), dan hapus massal broadcast memicu satu request list untuk setiap baris
+  - **Technical Notes:** `lib/hooks/useBroadcastTemplates.ts`, `useBroadcasts.ts`, `useWaRecipients.ts`, `useGroupBroadcasts.ts`
+
+#### ♻️ Refactor
+
+- **Deskripsi:**
+  - **Modul Bersama `useListRefresh`:** Logika loading dan refresh setelah aksi, yang sebelumnya disalin di empat halaman, kini menjadi satu modul (`lib/hooks/useListRefresh.ts`) yang bisa dipakai tabel lazy lain
+  - **Group Broadcasting:** `GroupBroadcastingTable` kini hanya komponen tampilan, sedangkan query dan aksi dikelola `GroupBroadcastingClient`, sama seperti halaman lain
+
+#### 🔧 Configuration
+
+- **Deskripsi:**
+  - **Fitur Data Intelligence yang Belum Dirilis Disembunyikan:** Tiga fitur yang sudah ada di kode tetapi belum boleh tampil di production kini tersembunyi secara default:
+    - **Prospecting:** menu di sidebar Data Intelligence disembunyikan, dan halaman `/data-intelligence/prospecting` serta `/data-intelligence/prospect/[id]` menampilkan 404 walaupun dibuka langsung lewat URL
+    - **Kredit "Unlimited (dev)":** ikut tersembunyi karena hanya tampil di dalam halaman Prospecting
+    - **Website Intelligence:** kartu "Crawl website" di Company 360 → Overview tidak dirender, sehingga crawl tidak bisa dipicu
+  - **Cara Mengaktifkan:** Fitur hanya tampil jika `NEXT_PUBLIC_ENABLE_DATA_INTEL_PREVIEW=true`. Variabel yang tidak diisi, kosong, atau bernilai lain membuat fitur tetap tersembunyi. Nilai dibaca saat build, jadi perubahan baru berlaku setelah deploy ulang
+  - **Impact:** Isi `dev` bisa dirilis ke staging/production tanpa fitur yang belum disetujui ikut terlihat oleh user
+  - **Technical Notes:** `lib/config/featureFlags.ts` (baru), `components/layout/Sidebar.tsx`, `app/(app)/data-intelligence/prospecting/page.tsx`, `app/(app)/data-intelligence/prospect/[id]/page.tsx` (kini server component), `components/data-intelligence/company-profile/CompanyProfile360Client.tsx`, `.env.example`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **101 Test Baru:**
+    - unit test `useListRefresh` dan `listMemory`;
+    - skenario loading dan error API di halaman template;
+    - perilaku batch `useLazyRows`;
+    - simulasi alur lengkap untuk keempat halaman: setiap aksi tepat 1 request, dan tidak ada frame "No ... found" yang sempat tampil
+  - **Technical Notes:** `lib/hooks/useListRefresh.test.ts`, `lib/utils/listMemory.test.ts`, `lib/hooks/useBroadcastTemplates.loading.test.ts`, `components/ui/super-table/hooks/useLazyRows.test.ts`, dan `*.flow.test.ts` di keempat folder halaman
+
+---
+
+## [1.106.1] - 2026-10-23
+
+### Detail Versi 1.106.1
+
+#### 🐛 Bug Fix Redirect Setelah Login
+
+- **Deskripsi:**
+  - **Redirect Login:** User sekarang diarahkan ke `/dashboard` setelah login (sebelumnya `/analytics/dashboard`), sesuai permintaan BO
+  - **Root Cause:** Regresi dari redesain login (`87e97cd`, 2026-08-31) yang tidak mengikuti perpindahan halaman utama ke `/dashboard` di middleware (`f246361`, 2026-08-19)
+  - **Redirect Cadangan:** Redirect di landing page untuk user yang sudah login juga diarahkan ke `/dashboard`, supaya konsisten dengan middleware dan halaman login
+  - **Impact:** User tanpa permission `analytics` tidak lagi mendarat di halaman yang menunya disembunyikan untuk mereka
+  - **Technical Notes:** `app/(marketing)/(auth)/login/page.tsx`, `components/home/HomeClient.tsx`
+
+#### 🐛 Bug Fix Filter Status Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Filter Status Penerima:** Daftar penerima di modal statistik broadcast bisa difilter berdasarkan status (Pending, Sent, Delivered, Read, Failed). Status Pending juga mencakup penerima yang belum punya log pengiriman
+  - **Server-side Filtering:** Filter dikirim ke backend lewat parameter `status` di `GET /api/v1/broadcasts/{broadcast_id}/recipients`, sehingga hasilnya akurat di semua halaman (pagination), bukan hanya di halaman yang sedang tampil
+  - **Tanpa Filter:** Pilihan "Semua status" tidak mengirim parameter `status`, sehingga semua penerima ditampilkan
+  - **Pagination Eksplisit:** Request selalu mengirim `is_limit=true`, sehingga tabel tetap memakai pagination server-side dan tidak bergantung pada default backend (`is_limit=false` mengambil semua data sekaligus)
+  - **Impact:** User bisa langsung melihat penerima yang gagal atau belum terkirim tanpa menelusuri seluruh daftar
+  - **Technical Notes:** `components/whatsapp-marketing/broadcasting-wa/modals/ViewBroadcastStatsModal.tsx`, `lib/api/whatsapp-marketing.ts`, `lib/hooks/useBroadcasts.ts`
+
+#### 🎨 UI/UX Enhancement
+
+- **Deskripsi:**
+  - **Halaman 404:** Label tombol kedua diubah dari "Dashboard" menjadi "Analytics Dashboard" agar sesuai dengan tujuannya (`/analytics/dashboard`). Link-nya tidak berubah (`app/not-found.tsx`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **Middleware Route Test:** Ekspektasi redirect user yang sudah login diperbarui menjadi `/dashboard`, sesuai dengan `middleware.ts` (`lib/tests/middleware-routes.test.ts`)
+
+---
+
 ## [1.22.1] - 2026-08-02
 
 ### 🐛 Fix

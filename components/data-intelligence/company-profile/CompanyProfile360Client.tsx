@@ -19,6 +19,7 @@ import OrgChartSection from "./OrgChartSection";
 import SocialLookupModal from "./SocialLookupModal";
 import SocialPresenceCard, { SOCIAL_PLATFORM_LABELS } from "./SocialPresenceCard";
 import WebsiteIntelligenceCard from "./WebsiteIntelligenceCard";
+import { SHOW_DATA_INTEL_PREVIEW } from "@/lib/config/featureFlags";
 import { fetchCompanyProfile360, ProfileSource } from "@/lib/api/organization";
 import {
     crawlCompanyWebsite,
@@ -554,12 +555,16 @@ export default function CompanyProfile360Client({ id, source }: CompanyProfile36
                         onLinksSaved={handleSocialLinksSaved}
                     />
 
-                    <WebsiteIntelligenceCard
-                        profile={profile}
-                        canCrawl={Boolean(profile.cacheId && profile.domain)}
-                        isCrawling={isCrawlingWebsite}
-                        onCrawl={handleCrawlWebsite}
-                    />
+                    {/* Unreleased: hidden unless the preview flag is on (featureFlags.ts).
+                        The crawl only ever starts from this card's button. */}
+                    {SHOW_DATA_INTEL_PREVIEW && (
+                        <WebsiteIntelligenceCard
+                            profile={profile}
+                            canCrawl={Boolean(profile.cacheId && profile.domain)}
+                            isCrawling={isCrawlingWebsite}
+                            onCrawl={handleCrawlWebsite}
+                        />
+                    )}
 
                     {profile.social && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">

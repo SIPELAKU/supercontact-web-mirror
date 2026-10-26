@@ -96,12 +96,14 @@ export async function fetchActiveUsers() {
  * Leads for the deal form's Client/Account picker: a deal's client always
  * comes from a lead, which brings its contact and its assignee.
  */
-export async function fetchDealLeads(search?: string): Promise<DealLead[]> {
+export async function fetchDealLeads(search?: string, assignedTo?: string): Promise<DealLead[]> {
     // Built by hand: axios would send an array as `lead_status[]=...`, which
     // FastAPI does not read - it expects the key repeated.
     const params = new URLSearchParams({ limit: "100" });
     DEAL_LEAD_STATUSES.forEach((status) => params.append("lead_status", status));
     if (search) params.append("search", search);
+    // A sales user only picks their own leads.
+    if (assignedTo) params.append("assigned_to", assignedTo);
 
     const response = await api.get("/leads", { params });
     return response.data?.data?.leads ?? [];

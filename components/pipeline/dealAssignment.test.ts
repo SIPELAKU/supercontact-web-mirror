@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canAssignDeals } from './dealAssignment';
+import { canAssignDeals, canSeeAllDeals } from './dealAssignment';
 
 describe('canAssignDeals', () => {
   it('lets an Admin, a Manager and a Super Admin pick the assignee', () => {
@@ -24,5 +24,13 @@ describe('canAssignDeals', () => {
     expect(canAssignDeals('')).toBe(false);
     expect(canAssignDeals(null)).toBe(false);
     expect(canAssignDeals(undefined)).toBe(false);
+  });
+
+  it('the same roles see every deal on the kanban; others only their own', () => {
+    expect(canSeeAllDeals('Admin')).toBe(true);
+    expect(canSeeAllDeals('Manager')).toBe(true);
+    expect(canSeeAllDeals('super_admin')).toBe(true);
+    expect(canSeeAllDeals('Staff')).toBe(false);
+    expect(canSeeAllDeals(null)).toBe(false);
   });
 });

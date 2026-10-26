@@ -68,6 +68,13 @@ interface GetState {
   error: string | null;
   isModalOpen: boolean;
   salespersonFilter: string;
+  /**
+   * Set for roles that only see their own deals (not Admin/Manager/Super
+   * Admin): every board fetch is then limited to this user, whatever the
+   * Assigned To filter says. null = sees every deal.
+   */
+  scopeUserId: string | null;
+  setScopeUserId: (val: string | null) => void;
   dateRangeFilter: string;
   setSalespersonFilter: (val: string) => void;
   setDateRangeFilter: (val: string) => void;
@@ -103,9 +110,12 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   id: "",
   error: null,
   salespersonFilter: "all",
+  scopeUserId: null,
   dateRangeFilter: "all",
 
   setSalespersonFilter: (v) => set({ salespersonFilter: v }),
+
+  setScopeUserId: (v) => set({ scopeUserId: v }),
 
   setDateRangeFilter: (v) => set({ dateRangeFilter: v }),
 
@@ -118,6 +128,8 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
   // `isSilent` refreshes the Assigned To filter after a write without turning
   // on the board's global loading (which would flash the skeleton).
   fetchActiveUser: async (param) => {
+    // A scoped user has no Assigned To filter, so there is nothing to load.
+    if (get().scopeUserId) return;
     try {
       if (!param?.isSilent) {
         set({ loading: true, error: null });
@@ -151,10 +163,12 @@ export const useGetPipelineStore = create<GetState>((set, get) => ({
         set({ error: null });
       }
 
-      const { dateRangeFilter, salespersonFilter } = get();
+      const { dateRangeFilter, salespersonFilter, scopeUserId } = get();
 
       const dateRange = param?.dateRange || dateRangeFilter;
-      const assignedTo = param?.assigned_to || salespersonFilter;
+      // A scoped user only ever sees their own deals - this wins over any
+      // filter, so no call path can load someone else's.
+      const assignedTo = scopeUserId || param?.assigned_to || salespersonFilter;
 
       const params: pipelineAPI.PipelineQueryParams = {};
 

@@ -79,11 +79,15 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   const [leadSearch, setLeadSearch] = useState("");
   // Searches only once the user has stopped typing for a second.
   const debouncedLeadSearch = useDebounce(leadSearch, 1000);
+  // Admin/Manager/Super Admin pick any lead; everyone else only their own, so
+  // the deal they create is theirs and stays on their kanban.
+  const leadOwner = canAssign ? undefined : userProfile?.id;
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
-    queryKey: ["deal-leads", debouncedLeadSearch],
-    queryFn: () => pipelineAPI.fetchDealLeads(debouncedLeadSearch),
+    queryKey: ["deal-leads", debouncedLeadSearch, leadOwner],
+    queryFn: () => pipelineAPI.fetchDealLeads(debouncedLeadSearch, leadOwner),
     // Update Pipeline keeps the deal's client, so it never needs the list.
-    enabled: open && !id,
+    // A sales user waits for their id, so they never see others' leads.
+    enabled: open && !id && (canAssign || Boolean(leadOwner)),
   });
 
   const reset = () => {
@@ -560,42 +564,57 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Assign To <span className="text-red-500">*</span>
                 </label>
-                <AppAutocomplete
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  disabled={!canAssign || !formData.client_account}
-                  loading={canAssign && loadingUsers}
-                  value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
-                  options={assigneeOptions}
-                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                  // The list is already the API's search result.
-                  filterOptions={(options) => options}
-                  onChange={(_, newValue) => {
-                    if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                      const val = newValue as { value: string; label: string };
-                      setFormData({ ...formData, assigned_to: val.value });
-                      setPersistedAssignee(val);
-                    } else if (!newValue) {
-                      setFormData({ ...formData, assigned_to: "" });
-                      setPersistedAssignee(null);
-                    }
-                  }}
-                  onInputChange={(_, inputValue, reason) => {
-                    // Only what the user types searches; selecting an option
-                    // also fills the input and must not become the search.
-                    if (reason === "input") setAssigneeSearch(inputValue.trim());
-                    else if (reason === "clear") setAssigneeSearch("");
-                  }}
-                  isOptionEqualToValue={(option, value) => {
-                    if (!value) return false;
-                    if (typeof option === 'string' || typeof value === 'string') return option === value;
-                    return (option as any).value === (value as any).value;
-                  }}
-                  placeholder={!formData.client_account ? "Select a client/account first" : "Select User"}
-                  error={Boolean(errors.assigned_to)}
-                  helperText={errors.assigned_to || (!canAssign ? "Only an Admin or Manager can change the assignee" : undefined)}
-                />
+                {/* Locked (by role, or no client yet): the same disabled input as
+                    Product Name and Client/Account, not a greyed-out dropdown. */}
+                {!canAssign || !formData.client_account ? (
+                  <AppInput
+                    disabled={true}
+                    value={assigneeOptions.find(u => u.value === formData.assigned_to)?.label || ""}
+                    placeholder={!formData.client_account ? "Select a client/account first" : ""}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
+                    readOnly
+                    error={Boolean(errors.assigned_to)}
+                    helperText={errors.assigned_to || (!canAssign ? "Only an Admin or Manager can change the assignee" : undefined)}
+                  />
+                ) : (
+                  <AppAutocomplete
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
+                    loading={loadingUsers}
+                    value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
+                    options={assigneeOptions}
+                    getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                    // The list is already the API's search result.
+                    filterOptions={(options) => options}
+                    onChange={(_, newValue) => {
+                      if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                        const val = newValue as { value: string; label: string };
+                        setFormData({ ...formData, assigned_to: val.value });
+                        setPersistedAssignee(val);
+                      } else if (!newValue) {
+                        setFormData({ ...formData, assigned_to: "" });
+                        setPersistedAssignee(null);
+                      }
+                    }}
+                    onInputChange={(_, inputValue, reason) => {
+                      // Only what the user types searches; selecting an option
+                      // also fills the input and must not become the search.
+                      if (reason === "input") setAssigneeSearch(inputValue.trim());
+                      else if (reason === "clear") setAssigneeSearch("");
+                    }}
+                    isOptionEqualToValue={(option, value) => {
+                      if (!value) return false;
+                      if (typeof option === 'string' || typeof value === 'string') return option === value;
+                      return (option as any).value === (value as any).value;
+                    }}
+                    placeholder="Select User"
+                    error={Boolean(errors.assigned_to)}
+                    helperText={errors.assigned_to}
+                  />
+                )}
               </div>
 
               <div>

@@ -74,3 +74,47 @@ describe('pipeline store: Assigned To filter refresh', () => {
     expect(filterNames()).toEqual(['All', 'Tim SmartSales']);
   });
 });
+
+describe('pipeline store: a sales user only sees their own deals', () => {
+  const sentAssignedTo = () => api.fetchPipelines.mock.calls.at(-1)?.[0]?.assigned_to;
+
+  beforeEach(() => {
+    Object.values(api).forEach((fn) => fn.mockReset());
+    api.fetchPipelines.mockResolvedValue({
+      data: { pipelines: [], stats: { total_pipeline: stat, avg_pipeline: stat, winrate_pipeline: stat } },
+    });
+    api.fetchActiveUsers.mockResolvedValue({ data: { users: [] } });
+    useGetPipelineStore.setState({ scopeUserId: null, salespersonFilter: 'all', listActiveUser: [] });
+  });
+
+  it('limits every fetch to the scoped user, whatever filter is asked for', async () => {
+    useGetPipelineStore.setState({ scopeUserId: 'staff-1', salespersonFilter: 'someone-else' });
+
+    await store().fetchPipeline({ assigned_to: 'all' });
+    expect(sentAssignedTo()).toBe('staff-1');
+
+    await store().fetchPipeline({ assigned_to: 'manager-1', isSilent: true });
+    expect(sentAssignedTo()).toBe('staff-1');
+
+    // After a save, the store refetches with no params at all.
+    api.createPipeline.mockResolvedValue({ success: true });
+    await store().postFormPipeline({} as never);
+    expect(sentAssignedTo()).toBe('staff-1');
+  });
+
+  it('lets a manager see everyone, or filter by one user', async () => {
+    await store().fetchPipeline({ assigned_to: 'all' });
+    expect(sentAssignedTo()).toBeUndefined();
+
+    await store().fetchPipeline({ assigned_to: 'staff-1' });
+    expect(sentAssignedTo()).toBe('staff-1');
+  });
+
+  it('skips loading the Assigned To filter for a scoped user (it is hidden)', async () => {
+    useGetPipelineStore.setState({ scopeUserId: 'staff-1' });
+
+    await store().fetchActiveUser();
+
+    expect(api.fetchActiveUsers).not.toHaveBeenCalled();
+  });
+});

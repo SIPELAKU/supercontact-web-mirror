@@ -20,3 +20,9 @@ export function canAssignDeals(role: string | null | undefined): boolean {
   const normalized = normalizeRole(role);
   return DEAL_ASSIGNER_ROLES.some((r) => normalizeRole(r) === normalized);
 }
+
+/**
+ * The same roles see every deal on the kanban; everyone else only sees the
+ * deals assigned to them (and only picks their own leads on Add Deal).
+ */
+export const canSeeAllDeals = canAssignDeals;

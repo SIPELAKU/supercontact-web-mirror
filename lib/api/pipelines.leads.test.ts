@@ -31,6 +31,12 @@ describe('fetchDealLeads', () => {
     expect(leads).toEqual([{ id: 'l1' }]);
   });
 
+  it("limits a sales user to their own leads", async () => {
+    await fetchDealLeads('', 'staff-1');
+
+    expect(sentQuery()).toBe('limit=100&lead_status=Contacted&lead_status=Qualified&assigned_to=staff-1');
+  });
+
   it('returns an empty list when the response has no leads', async () => {
     get.mockResolvedValue({ data: { success: true, data: {} } });
     expect(await fetchDealLeads()).toEqual([]);

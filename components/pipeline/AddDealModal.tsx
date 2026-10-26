@@ -8,12 +8,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useGetContactStore } from "@/lib/store/contact";
 import { useGetProductStore } from "@/lib/store/product";
 import type { DealForm, reqBody } from "@/lib/store/pipeline";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 import { AddDealModalProps } from "@/lib/types/Pipeline";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useUsers } from "@/lib/hooks/useUsers";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { canAssignDeals } from "./dealAssignment";
+import { toLeadOption, type LeadOption } from "./dealLeadOptions";
 import { AppInput } from "../ui/app-input";
 import { AppDatePicker } from "../ui/app-datepicker";
 import { AppTextarea } from "../ui/app-textarea";
@@ -38,7 +43,6 @@ export const dealStages = [
 
 export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
-  const { listContact, fetchContact, loading: loadingContacts, clearContact } = useGetContactStore();
   // The picker slice (page 1, limit 100, active) - never the product page's
   // list, whose page/search/status/sort would otherwise leak in here (S3-1).
   const { catalogue: listProduct, fetchCatalogue } = useGetProductStore();
@@ -52,13 +56,35 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     expected_close_date: undefined,
     quantity: 1,
     probability_of_close: "0",
-    notes: ""
+    notes: "",
+    assigned_to: "",
+    lead_id: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [fetchedDeal, setFetchedDeal] = useState<any>(null);
-  const [persistedContact, setPersistedContact] = useState<{ value: string; label: string } | null>(null);
   const [persistedProduct, setPersistedProduct] = useState<{ value: string; label: string } | null>(null);
+  const [persistedAssignee, setPersistedAssignee] = useState<{ value: string; label: string } | null>(null);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const debouncedAssigneeSearch = useDebounce(assigneeSearch);
+  const { data: usersResponse, isLoading: loadingUsers } = useUsers(1, 20, debouncedAssigneeSearch || undefined);
+  const { userProfile, userRole } = useAuth();
+  // Managers pick the assignee; the sales team is locked to the lead's
+  // assignee (Add Deal) or to the deal's current assignee (Update Pipeline).
+  const canAssign = canAssignDeals(userProfile?.role ?? userRole);
+
+  // The client always comes from a LEAD (BO): a lead has exactly one contact
+  // (the deal's client) and one assignee, which "Assign To" starts from.
+  const [selectedLead, setSelectedLead] = useState<LeadOption | null>(null);
+  const [leadSearch, setLeadSearch] = useState("");
+  // Searches only once the user has stopped typing for a second.
+  const debouncedLeadSearch = useDebounce(leadSearch, 1000);
+  const { data: leads = [], isLoading: loadingLeads } = useQuery({
+    queryKey: ["deal-leads", debouncedLeadSearch],
+    queryFn: () => pipelineAPI.fetchDealLeads(debouncedLeadSearch),
+    // Update Pipeline keeps the deal's client, so it never needs the list.
+    enabled: open && !id,
+  });
 
   const reset = () => {
     setFormData({
@@ -68,10 +94,15 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       expected_close_date: undefined,
       quantity: 1,
       probability_of_close: "0",
-      notes: ""
+      notes: "",
+      assigned_to: "",
+      lead_id: ""
     });
-    setPersistedContact(null);
+    setSelectedLead(null);
+    setLeadSearch("");
     setPersistedProduct(null);
+    setPersistedAssignee(null);
+    setAssigneeSearch("");
   };
 
   const deal = fetchedDeal;
@@ -105,7 +136,12 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
             quantity: detail.quantity ?? 1,
             probability_of_close: String(detail.probability_of_close ?? 0),
             notes: detail.notes ?? "",
+            assigned_to: detail.assigned_to || detail.user?.id || "",
+            lead_id: "",
           });
+          setPersistedAssignee(
+            detail.user ? { value: detail.user.id, label: detail.user.fullname } : null
+          );
 
           if (detail.deal_stage) {
             setStage(detail.deal_stage);
@@ -124,63 +160,28 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     } else {
       setFetchedDeal(null);
       reset();
-      setPersistedContact(null);
-      setPersistedProduct(null);
     }
   }, [id, setStage]);
 
   useEffect(() => {
     if (open) {
-      fetchContact({ query: "" });
       // Phase 5 (spec I9, M-e): variants are the sellable rows, and the list is
       // top-level only without this.
       fetchCatalogue({ includeVariants: true });
     }
-  }, [open, fetchContact, fetchCatalogue]);
+  }, [open, fetchCatalogue]);
 
-
-  const selectedContactOption = useMemo(() => {
-    // Priority 1: If we have a fetched deal and the ID matches, use the detailed contact/company info from it
-    if (deal && (deal.contact?.id === formData.client_account || deal.company?.id === formData.client_account)) {
-      if (deal.contact) {
-        return {
-          value: deal.contact.id,
-          label: deal.contact.name || deal.contact.company
-        };
-      }
-      if (deal.company) {
-        return {
-          value: deal.company.id,
-          label: deal.company.name
-        };
-      }
+  const leadOptions = useMemo(() => {
+    const listOpts = leads.map(toLeadOption);
+    // Keep the picked lead selectable when a new search no longer returns it.
+    if (selectedLead && !listOpts.find(o => o.value === selectedLead.value)) {
+      return [selectedLead, ...listOpts];
     }
+    return listOpts;
+  }, [leads, selectedLead]);
 
-    // Priority 2: Use the existing list of contacts
-    if (formData.client_account) {
-      const found = listContact.find(c => c.value === formData.client_account);
-      if (found) return found;
-
-      // Priority 3: Use persisted selection if still matching the ID
-      if (persistedContact && persistedContact.value === formData.client_account) {
-        return persistedContact;
-      }
-    }
-
-    return null;
-  }, [deal, formData.client_account, listContact, persistedContact]);
-
-  const contactOptions = useMemo(() => {
-    if (!selectedContactOption) return listContact;
-
-    const exists = listContact.some(
-      (c) => c.value === selectedContactOption.value
-    );
-
-    return exists
-      ? listContact
-      : [selectedContactOption, ...listContact];
-  }, [listContact, selectedContactOption]);
+  // Update Pipeline shows the deal's client as it is; it cannot be changed.
+  const dealClientName = deal?.contact?.name || deal?.contact?.company || deal?.company?.name || "";
 
   const selectedProductOption = useMemo(() => {
     // Priority 1: Fetched deal detail
@@ -226,6 +227,21 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
     return listProduct.find(p => p.id === formData.product_id) || null;
   }, [formData.product_id, listProduct, deal]);
 
+  const assigneeOptions = useMemo(() => {
+    const listOpts = (usersResponse?.data?.users ?? []).map(u => ({
+      value: u.id,
+      label: u.fullname,
+    }));
+
+    // Keep the current assignee selectable even when the search results
+    // (first 20 users, or a search) do not include them.
+    if (persistedAssignee && persistedAssignee.value === formData.assigned_to
+      && !listOpts.find(o => o.value === persistedAssignee.value)) {
+      return [persistedAssignee, ...listOpts];
+    }
+    return listOpts;
+  }, [usersResponse, persistedAssignee, formData.assigned_to]);
+
   const validateForm = (data: DealForm): FormErrors => {
     const errs: FormErrors = {};
 
@@ -235,6 +251,10 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
     if (!data.product_id) {
       errs.product_id = "Product is required";
+    }
+
+    if (!data.assigned_to) {
+      errs.assigned_to = "Assign To is required";
     }
 
     if (!data.deal_stage) {
@@ -289,7 +309,10 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       expected_close_date: toApiDate(formData.expected_close_date),
       quantity: formData.quantity,
       probability_of_close: Number(formData.probability_of_close),
-      notes: formData.notes
+      notes: formData.notes,
+      assigned_to: formData.assigned_to,
+      // The lead is chosen on create only; an update keeps the deal's lead.
+      ...(!id && formData.lead_id ? { lead_id: formData.lead_id } : {})
     };
 
     if (!id) {
@@ -460,41 +483,118 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Client/Account <span className="text-red-500">*</span>
                 </label>
+                {id ? (
+                  <AppInput
+                    disabled={true}
+                    value={dealClientName}
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
+                    readOnly
+                  />
+                ) : (
+                  <AppAutocomplete
+                    isBgWhite
+                    height="48px"
+                    rounded="8px"
+                    loading={loadingLeads}
+                    value={selectedLead}
+                    options={leadOptions}
+                    getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                    // The list is already the API's search result.
+                    filterOptions={(options) => options}
+                    renderOption={(props, option) => {
+                      const { key, ...optionProps } = props as typeof props & { key: string };
+                      return (
+                        <li key={option.value} {...optionProps}>
+                          <div className="flex flex-col">
+                            <span>{option.label}</span>
+                            {option.detail && (
+                              <span className="text-xs text-gray-500">{option.detail}</span>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    }}
+                    onChange={(_, newValue) => {
+                      // Picking a lead sets the client and starts "Assign To"
+                      // from that lead's assignee.
+                      if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                        const lead = newValue as LeadOption;
+                        setSelectedLead(lead);
+                        setFormData({
+                          ...formData,
+                          client_account: lead.contactId,
+                          lead_id: lead.value,
+                          assigned_to: lead.assignedTo,
+                        });
+                        setPersistedAssignee(
+                          lead.assignedTo ? { value: lead.assignedTo, label: lead.assigneeName } : null
+                        );
+                      } else if (!newValue) {
+                        setSelectedLead(null);
+                        setFormData({ ...formData, client_account: "", lead_id: "", assigned_to: "" });
+                        setPersistedAssignee(null);
+                      }
+                    }}
+                    onInputChange={(_, inputValue, reason) => {
+                      // Only what the user types searches; picking a lead also
+                      // fills the input and must not become the search.
+                      if (reason === "input") setLeadSearch(inputValue.trim());
+                      else if (reason === "clear") setLeadSearch("");
+                    }}
+                    isOptionEqualToValue={(option, value) => {
+                      if (!value) return false;
+                      if (typeof option === 'string' || typeof value === 'string') return option === value;
+                      return (option as any).value === (value as any).value;
+                    }}
+                    noOptionsText="No Contacted or Qualified leads found"
+                    placeholder="Select Client"
+                    error={Boolean(errors.client_account)}
+                    helperText={errors.client_account}
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Assign To <span className="text-red-500">*</span>
+                </label>
                 <AppAutocomplete
                   isBgWhite
                   height="48px"
                   rounded="8px"
-                  disabled={id ? true : false}
-                  loading={loadingContacts}
-                  value={contactOptions.find(c => c.value === formData.client_account) || null}
-                  options={contactOptions}
+                  disabled={!canAssign || !formData.client_account}
+                  loading={canAssign && loadingUsers}
+                  value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
+                  options={assigneeOptions}
                   getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                  // The list is already the API's search result.
+                  filterOptions={(options) => options}
                   onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
                       const val = newValue as { value: string; label: string };
-                      setFormData({ ...formData, client_account: val.value });
-                      setPersistedContact(val);
+                      setFormData({ ...formData, assigned_to: val.value });
+                      setPersistedAssignee(val);
                     } else if (!newValue) {
-                      setFormData({ ...formData, client_account: "" });
-                      setPersistedContact(null);
+                      setFormData({ ...formData, assigned_to: "" });
+                      setPersistedAssignee(null);
                     }
                   }}
-                  onInputChange={(_, inputValue) => {
-                    const keyword = inputValue.trim();
-                    if (keyword.length < 1) {
-                      fetchContact({ query: "" });
-                      return;
-                    }
-                    fetchContact({ query: inputValue });
+                  onInputChange={(_, inputValue, reason) => {
+                    // Only what the user types searches; selecting an option
+                    // also fills the input and must not become the search.
+                    if (reason === "input") setAssigneeSearch(inputValue.trim());
+                    else if (reason === "clear") setAssigneeSearch("");
                   }}
                   isOptionEqualToValue={(option, value) => {
                     if (!value) return false;
                     if (typeof option === 'string' || typeof value === 'string') return option === value;
                     return (option as any).value === (value as any).value;
                   }}
-                  placeholder="Select Client"
-                  error={Boolean(errors.client_account)}
-                  helperText={errors.client_account}
+                  placeholder={!formData.client_account ? "Select a client/account first" : "Select User"}
+                  error={Boolean(errors.assigned_to)}
+                  helperText={errors.assigned_to || (!canAssign ? "Only an Admin or Manager can change the assignee" : undefined)}
                 />
               </div>
 
@@ -557,7 +657,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Probability of Close (%) <span className="text-red-500">*</span>
+                  Probability of Close Won (%) <span className="text-red-500">*</span>
                 </label>
                 <AppSelect
                   value={String(formData.probability_of_close)}

@@ -19,9 +19,36 @@ export interface CreatePipelineRequest {
     quantity: number;
     probability_of_close: number;
     notes: string;
+    /**
+     * User the deal is assigned to - the avatar on the kanban card. Sent on
+     * create and update; the BE also moves the deal's lead to this user.
+     * Not in the API spec yet (DEV 1.144.3): until BE adds it, create assigns
+     * the logged-in user and update keeps the assignee.
+     */
+    assigned_to: string;
+    /**
+     * Lead the deal is created from (the client always comes from a lead), so
+     * the BE can store it and keep that lead's assignee in sync. Sent on
+     * create only. Not in the API spec yet either.
+     */
+    lead_id?: string;
 }
 
 export interface UpdatePipelineRequest extends CreatePipelineRequest { }
+
+/** The fields of a lead the deal form's Client/Account picker reads. */
+export interface DealLead {
+    id: string;
+    contact_id: string;
+    assigned_to: string;
+    lead_status: string;
+    created_at: string;
+    contact?: { id: string; name: string; company?: string | null } | null;
+    user?: { id: string; fullname: string } | null;
+}
+
+/** Only these leads can become a deal (BO, 2026-10-26). */
+export const DEAL_LEAD_STATUSES = ["Contacted", "Qualified"];
 
 export interface UpdatePipelineStageRequest {
     deal_stage: string;
@@ -63,6 +90,21 @@ export async function fetchPipelineById(id: string) {
 export async function fetchActiveUsers() {
     const response = await api.get("/pipelines/active-users");
     return response.data;
+}
+
+/**
+ * Leads for the deal form's Client/Account picker: a deal's client always
+ * comes from a lead, which brings its contact and its assignee.
+ */
+export async function fetchDealLeads(search?: string): Promise<DealLead[]> {
+    // Built by hand: axios would send an array as `lead_status[]=...`, which
+    // FastAPI does not read - it expects the key repeated.
+    const params = new URLSearchParams({ limit: "100" });
+    DEAL_LEAD_STATUSES.forEach((status) => params.append("lead_status", status));
+    if (search) params.append("search", search);
+
+    const response = await api.get("/leads", { params });
+    return response.data?.data?.leads ?? [];
 }
 
 /**

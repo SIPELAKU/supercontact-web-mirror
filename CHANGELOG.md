@@ -9,6 +9,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.108.0] - 2026-10-26
+
+### Detail Versi 1.108.0
+
+#### ✨ Fitur Assign To di Add Deal & Update Pipeline (FE siap, menunggu BE)
+
+- **Deskripsi:**
+  - **Client/Account dari Leads:** Pilihan Client/Account di form Add Deal kini diambil dari daftar **Leads** berstatus **Contacted** dan **Qualified** (keputusan BO), bukan dari daftar contact. Setiap pilihan adalah satu lead, dengan keterangan status dan assignee di bawah nama client (misalnya "Qualified · Assigned to Sari"), sehingga client yang punya beberapa lead tetap bisa dibedakan
+  - **Pencarian Client:** Menampilkan hingga 100 lead. Pencarian ke API hanya berjalan saat user mengetik, dengan debounce 1 detik setelah ketikan terakhir
+  - **Field Assign To (wajib):** Nonaktif sampai lead dipilih, lalu otomatis terisi assignee lead tersebut
+    - **Admin, Manager dan Super Admin** dapat mengganti assignee, baik saat Add Deal maupun Update Pipeline;
+    - role lain (Staff dan role custom) terkunci ke assignee lead saat Add Deal, dan ke assignee deal saat Update Pipeline
+  - **Update Pipeline:** Client/Account ditampilkan sebagai teks yang tidak bisa diubah, dan Assign To terisi assignee deal saat ini
+  - **Status: menunggu BE.** FE sudah mengirim `assigned_to` (Add dan Update) serta `lead_id` (Add), tetapi `POST /pipelines` dan `PUT /pipelines/{id}` di API DEV (1.144.3) belum menerima kedua field tersebut. Saat ini BE masih meng-assign deal ke user yang membuatnya. Sinkronisasi assignee ke lead juga akan dikerjakan BE. **Jangan dirilis ke production sebelum BE siap**
+  - **Impact:** Manager bisa langsung menentukan penanggung jawab deal sejak awal, dan deal selalu berasal dari lead yang sudah dihubungi atau terkualifikasi
+  - **Technical Notes:**
+    - `fetchDealLeads` di `lib/api/pipelines.ts` menyusun `lead_status=Contacted&lead_status=Qualified` secara manual (`URLSearchParams`), karena axios mengirim array sebagai `lead_status[]=` yang tidak dibaca FastAPI
+    - aturan role di `components/pipeline/dealAssignment.ts` (`DEAL_ASSIGNER_ROLES`); pencocokan nama role mengabaikan huruf besar/kecil, spasi dan garis bawah, sehingga `super_admin` dari BE ikut dikenali
+    - mapping lead ke pilihan dropdown di `components/pipeline/dealLeadOptions.ts`
+    - field `assigned_to` dan `lead_id` di `CreatePipelineRequest` dan `reqBody`
+
+#### ✨ Kanban Diurutkan Berdasarkan Probability of Close Won
+
+- **Deskripsi:**
+  - **Urutan per Kolom:** Kartu di setiap kolom kanban diurutkan dari Probability of Close Won terbesar ke terkecil, setiap kali data dimuat. Deal dengan nilai yang sama tetap mengikuti urutan dari API
+  - **Badge Persentase:** Setiap kartu menampilkan persentase probability di samping nominal, dengan warna hijau (80–100%), kuning (40–60%) dan abu-abu (0–20%)
+  - **Label Form:** "Probability of Close (%)" diganti menjadi "Probability of Close Won (%)"
+  - **Catatan:** Diurutkan di FE karena `GET /pipelines` tidak memiliki parameter sort. Menggeser kartu di dalam satu kolom tetap hanya berubah di layar dan kembali ke urutan probability saat data dimuat ulang
+  - **Impact:** Deal yang paling berpeluang menang selalu terlihat paling atas
+  - **Technical Notes:** sorting di `transformPipelineResponse` (`lib/helper/transformPipeline.ts`); badge di `components/pipeline/pipeline-board/DealCard.tsx`
+
+#### 🎨 UI/UX Enhancement: Penanda Deal Expired
+
+- **Deskripsi:**
+  - **Kartu Expired Transparan:** Deal yang masih di stage terbuka (Prospect sampai Proposal) dan sudah melewati `expected_close_date` ditampilkan transparan, lalu kembali jelas saat di-hover. Untuk saat ini status expired dihitung dari `expected_close_date`, bukan dari field `status` BE. Deal yang close hari ini belum dianggap expired, dan deal Closed - Won/Lost tidak pernah expired
+  - **Tag Hitung Mundur Penghapusan:** Kartu expired memiliki strip penuh di tepi atas kartu berisi sisa hari sebelum deal dihapus, yaitu **30 hari setelah `expected_close_date`**
+    - teks: "Expired · Deleted in N days", "Deleted tomorrow", "Deleted today", atau "Scheduled for deletion" bila tanggal hapus sudah lewat;
+    - warna kuning saat sisa lebih dari 7 hari, merah saat 7 hari atau kurang
+  - **Catatan:** Tag ini hanya tampilan. Proses penghapusan otomatis tidak tercantum di dokumentasi API, sehingga perlu dikonfirmasi ke BE
+  - **Impact:** Sales langsung tahu deal mana yang perlu ditindaklanjuti sebelum terhapus
+  - **Technical Notes:**
+    - `isDealExpired`, `daysUntilDeletion` dan `EXPIRED_DEAL_RETENTION_DAYS` di `lib/helper/transformPipeline.ts`
+    - field `is_expired` dan `days_until_deletion` di tipe `Deal`
+    - strip di `DealCard.tsx` (Card `overflow-hidden` dan `pt-0` agar strip menempel di tepi atas)
+
+#### 🐛 Bug Fix Filter Assigned To Tidak Ter-update
+
+- **Deskripsi:**
+  - **Masalah:** Setelah membuat deal untuk user yang belum punya deal, nama user tersebut baru muncul di filter Assigned To setelah halaman di-reload manual
+  - **Root Cause:** Daftar filter (`GET /pipelines/active-users`) hanya dimuat sekali saat halaman Pipeline dibuka
+  - **Solusi:** Daftar filter kini dimuat ulang setelah Add Deal, Update Deal, dan perpindahan stage berhasil. Pemuatan dilakukan tanpa loading global, sehingga board tidak menampilkan skeleton
+  - **Impact:** Filter selalu sesuai dengan data deal terbaru tanpa reload
+  - **Technical Notes:** opsi `isSilent` pada `fetchActiveUser` di `lib/store/pipeline/index.ts`
+
+#### ⏳ Menunggu Backend
+
+- **Deskripsi:**
+  - **Notifikasi 5 Hari Sebelum Expired:** Notifikasi ke user 5 hari sebelum deal melewati `expected_close_date`. Menunggu BE
+  - **Notifikasi 5 Hari Sebelum Dihapus:** Notifikasi ke user 5 hari sebelum deal expired dihapus (30 hari setelah `expected_close_date`). Menunggu BE
+  - **Assign To:** Menunggu BE menambahkan `assigned_to` di `POST` dan `PUT /pipelines`, `lead_id` di `POST /pipelines`, serta sinkronisasi assignee ke lead. FE sudah siap
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **27 Test Baru:**
+    - urutan kanban per kolom, status expired dan hitung mundur penghapusan (`lib/helper/transformPipeline.test.ts`, 13);
+    - filter Assigned To dimuat ulang setelah Add, Update dan pindah stage tanpa loading global (`lib/store/pipeline/pipelineStore.test.ts`, 4);
+    - mapping lead ke pilihan Client/Account (`components/pipeline/dealLeadOptions.test.ts`, 4);
+    - aturan role Assign To (`components/pipeline/dealAssignment.test.ts`, 3);
+    - parameter request daftar leads (`lib/api/pipelines.leads.test.ts`, 3)
+  - **Total:** 38 file test, 496 test lolos
+
+---
+
 ## [1.107.3] - 2026-10-26
 
 ### Detail Versi 1.107.3

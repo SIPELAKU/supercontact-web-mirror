@@ -4,14 +4,14 @@
  * Update Pipeline.
  *
  * Role names are configurable per company, so they are matched loosely:
- * case, spaces and underscores are ignored ("Super Admin" = "super_admin").
- * This is a UI rule only - the BE should enforce the same thing.
+ * case, spaces and underscores are ignored ("MANAGER" = " manager ").
+ * The BE enforces the same rule (403 on PUT, role-scoped GET /pipelines).
  */
-// Confirmed by BE (2026-10-26): super admin, admin and manager. "Admin" and
-// "Manager" are system roles (BE `ManageUserLevel`, FE `DEFAULT_ROLE_NAMES`);
-// the BE value for super admin is `super_admin`, which "Super Admin" matches
-// once normalised. Staff and custom roles stay locked.
-export const DEAL_ASSIGNER_ROLES = ["Admin", "Manager", "Super Admin"];
+// "Admin" and "Manager" are the system roles (BE `ManageUserLevel`, FE
+// `DEFAULT_ROLE_NAMES`), the only ones the BE (1.145.0) lets pick the PIC and
+// see every deal. Super admin (`super_admin`) exists but is not part of this
+// feature, so it stays locked like Staff and custom roles.
+export const DEAL_ASSIGNER_ROLES = ["Admin", "Manager"];
 
 const normalizeRole = (role: string) => role.toLowerCase().replace(/[^a-z]/g, "");
 

@@ -9,6 +9,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.110.0] - 2026-10-27
+
+### Detail Versi 1.110.0
+
+#### 🔒 Deal Won & Lost Bersifat Final
+
+- **Deskripsi:**
+  - **Update Pipeline Hanya Bisa Dilihat:** Deal di stage **Closed - Won** atau **Closed - Lost** tetap bisa dibuka dari kanban, tetapi semua field dan tombol **Update** dinonaktifkan. Di bawah judul modal tampil keterangan "This deal is closed (…). You can view it, but it can no longer be edited or moved."
+  - **Tidak Bisa Dipindah Lagi:** Kartu Won/Lost tidak bisa digeser ke stage lain, termasuk dari Won ke Lost atau sebaliknya. Kartu tetap bisa diklik untuk melihat detailnya
+  - **Konfirmasi Sebelum Menjadi Won/Lost:**
+    - menggeser kartu ke kolom Won/Lost memunculkan konfirmasi "Move this deal to Closed - Won?" (atau Closed - Lost). **Cancel** mengembalikan kartu ke posisi semula tanpa memanggil API, dan **Yes, move it** menyimpan perpindahan;
+    - menyimpan form Add Deal atau Update Pipeline dengan Deal Stage Won/Lost memunculkan konfirmasi "Save this deal as Closed - Won?" sebelum data dikirim
+  - **Catatan:** Penguncian ini baru ada di frontend. Dokumentasi API DEV (1.145.0) tidak menyebut penolakan perubahan deal Won/Lost di `PATCH /pipelines/{id}/stage` maupun `PUT /pipelines/{id}`, jadi perlu diminta ke tim BE agar perubahan lewat API langsung juga ditolak
+  - **Impact:** Deal yang sudah ditutup tidak berubah tanpa sengaja, dan user diingatkan sebelum menutup sebuah deal
+  - **Technical Notes:**
+    - `CLOSED_STAGES` dan `isClosedStage` di `lib/helper/transformPipeline.ts`; penulisan seperti "Closed-Won" atau huruf kecil ikut dikenali, dan `isDealExpired` memakai fungsi yang sama
+    - prop `disabled` di `SortableDeal.tsx`; `requestStageMove` dan konfirmasi di `PipelineBoard.tsx`, dengan pengaman tambahan di `handleDragEnd` yang mengembalikan kartu bila asalnya stage tertutup
+    - `isClosedDeal` di `AddDealModal.tsx` dinilai dari stage deal yang tersimpan, bukan dari isi form; submit dipisah menjadi `handleSubmit` (validasi dan konfirmasi) dan `submitDeal`
+
+#### 🎨 UI/UX Enhancement: Tampilan Field Terkunci Seragam
+
+- **Deskripsi:**
+  - **Satu Gaya untuk Field Terkunci:** Semua field yang tidak bisa diubah di modal Add Deal dan Update Pipeline kini tampil sama dengan Product Name (input abu-abu)
+    - Update Pipeline: SKU, yang sebelumnya memakai tampilan autocomplete nonaktif yang berbeda, kini sama dengan Product Name, Client/Account dan Assign To yang terkunci;
+    - deal Won/Lost: Deal Stage, Expected Close Date (format "dd MMM yyyy"), Quantity dan Probability of Close Won memakai tampilan yang sama
+  - **Notes Tanpa Placeholder di Update Pipeline:** Notes di Update Pipeline tidak bisa diubah, jadi saat kosong tidak lagi menampilkan "Add any relevant notes here..." yang terkesan bisa diisi. Placeholder tetap ada di Add Deal
+  - **Impact:** User langsung bisa membedakan field yang bisa diisi dan yang hanya untuk dilihat
+  - **Technical Notes:** komponen `LockedField` di `components/pipeline/AddDealModal.tsx`; kontrol yang bisa diedit (autocomplete, select, date picker) hanya dirender saat field bisa diubah
+
+#### ✨ Kanban Sesuai Role User (melengkapi 1.108.0)
+
+- **Deskripsi:**
+  - **Belum Tercatat Sebelumnya:** Perubahan ini sudah masuk `dev` bersama 1.108.0, tetapi belum ada di CHANGELOG
+  - **Daftar Deal per Role:** **Admin dan Manager** melihat semua deal perusahaan. Role lain (Staff, Super Admin dan role custom) hanya melihat deal yang di-assign ke dirinya, dan filter Assigned To disembunyikan untuk mereka
+  - **Tanpa Kilasan Data:** Kanban baru dimuat setelah role user diketahui, sehingga Staff tidak sempat melihat deal milik orang lain
+  - **Add Deal untuk Staff:** Pilihan Client/Account hanya berisi lead yang di-assign ke dirinya
+  - **Assign To Terkunci:** Tampil sebagai input abu-abu berisi nama assignee, dengan keterangan "Only an Admin or Manager can change the assignee"
+  - **Super Admin Dikeluarkan:** Berbeda dengan yang tertulis di 1.108.0, Super Admin tidak lagi bisa mengganti Assign To atau melihat semua deal. Role ini ada, tetapi bukan untuk fitur ini, dan BE juga hanya mengizinkan Admin dan Manager (Super Admin yang mengganti assignee akan ditolak 403)
+  - **Catatan:** Sejak BE DEV 1.145.0, `GET /pipelines` juga dibatasi sesuai role di backend, termasuk statistiknya. Penyaringan di FE tetap dipertahankan sebagai pengaman tambahan
+  - **Technical Notes:**
+    - `scopeUserId` di `lib/store/pipeline/index.ts` dan `canSeeAllDeals` di `components/pipeline/dealAssignment.ts`; `PipelineClient` menunggu data auth sebelum fetch pertama
+    - 5 test (prioritas scope di store, lead untuk Staff, `canSeeAllDeals`) sudah termasuk dalam total test 1.109.0
+
+#### 🔄 Update Status Backend (dari 1.108.0 dan 1.109.0)
+
+- **Deskripsi:**
+  - **Assign To: Selesai di BE DEV (1.145.0).** `POST /pipelines` kini menerima `lead_id` (wajib) dan `assigned_to` (opsional, default PIC lead), dan `PUT /pipelines/{id}` menerima `assigned_to`. Aturan BE sama dengan FE:
+    - hanya Admin/Manager yang boleh mengganti PIC (selain itu 403);
+    - lead harus berstatus Contacted/Qualified, dan untuk role lain harus lead miliknya sendiri;
+    - **sinkron PIC:** mengganti PIC memindahkan lead dan semua deal open lain dari lead itu, dan PIC baru mendapat notifikasi;
+    - `assigned_to` yang dikirim ulang tanpa berubah tidak ditolak (dikonfirmasi BE), jadi FE aman selalu mengirimnya
+  - **Notifikasi 5 Hari Sebelum Expired dan 5 Hari Sebelum Dihapus: Selesai (dikonfirmasi BE).** Keduanya berjalan sebagai job di backend, sehingga tidak tercantum di dokumentasi API. Mengklik notifikasinya membuka deal terkait (fitur 1.109.0), selama BE mengirim `entity_type = "pipeline"` dan `entity_id` = id deal
+  - **Penghapusan Otomatis Deal Expired: Selesai (dikonfirmasi BE).** Deal expired dihapus 30 hari setelah `expected_close_date`, sesuai tag hitung mundur di kartu kanban (1.108.0). Proses ini juga berjalan sebagai job dan tidak tercantum di dokumentasi API
+  - **⚠️ Production:** API PROD masih 1.144.3 dan belum menerima `assigned_to` maupun `lead_id`. **Assign To (1.108.0) jangan dirilis ke production sebelum BE PROD diperbarui.** Job notifikasi dan penghapusan di PROD juga perlu dipastikan bersama deploy BE tersebut
+  - **Masih Perlu ke BE:** Penguncian deal Won/Lost di API (lihat fitur di atas)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **3 Test Baru:**
+    - stage Won/Lost dikenali sebagai final dengan berbagai penulisan, sedangkan stage terbuka atau kosong tidak (`lib/helper/transformPipeline.test.ts`, 2);
+    - Super Admin terkunci dari Assign To dan tidak melihat semua deal (`components/pipeline/dealAssignment.test.ts`, 1; test role lain disesuaikan)
+  - **Total:** 40 file test, 511 test lolos
+
+---
+
 ## [1.109.1] - 2026-10-27
 
 ### Detail Versi 1.109.1

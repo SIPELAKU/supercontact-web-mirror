@@ -1,5 +1,6 @@
 import api from "@/lib/utils/axiosClient";
 import type { AxiosError } from "axios";
+import type { PipelineAPIItem } from "@/lib/helper/transformPipeline";
 
 // Types
 export interface PipelineQueryParams {
@@ -66,6 +67,93 @@ export interface PipelineValidationResponse {
     details: ValidationItem[];
 }
 
+export type PipelineDealStatus = "active" | "expired" | "won" | "lost";
+
+/**
+ * The filters the kanban board is loaded with. "Load more" on a column must
+ * resend exactly the same ones (the BE ties each cursor to them).
+ */
+export interface PipelineBoardFilters {
+    search?: string;
+    assigned_to?: string[];
+    /**
+     * Deal status. `expired` = an open stage past its expected close date,
+     * marked by an hourly BE job; won/lost deals are never active or expired.
+     */
+    status?: PipelineDealStatus[];
+    /** `expected_close_date` range, both ends inclusive. */
+    date_from?: string;
+    date_to?: string;
+}
+
+export interface PipelineMetricResponse {
+    value: number;
+    percent: number;
+    trend: string;
+}
+
+export interface PipelineStatsResponse {
+    total_pipeline: PipelineMetricResponse;
+    avg_pipeline: PipelineMetricResponse;
+    winrate_pipeline: PipelineMetricResponse;
+}
+
+/** One kanban column from `GET /pipelines/board`. */
+export interface PipelineBoardStage {
+    name: string;
+    outcome: "open" | "won" | "lost";
+    display_order: number | null;
+    /** Every deal in the column that matches the filters, not only `deals`. */
+    count: number;
+    /** Total of those same deals: a Decimal as a string, e.g. "1500.00". */
+    total_amount: string;
+    deals: PipelineAPIItem[];
+    /** Cursor for `GET /pipelines/board/column`; null = nothing more to load. */
+    next_cursor: string | null;
+}
+
+export interface PipelineBoardResponse {
+    stats: PipelineStatsResponse;
+    stages: PipelineBoardStage[];
+}
+
+export interface PipelineBoardColumnResponse {
+    deals: PipelineAPIItem[];
+    next_cursor: string | null;
+}
+
+/** Deals per column on the first load, and per "Load more" (the BE caps both at 50). */
+// TEMP for manual testing of Load More: back to 20 before committing.
+export const BOARD_PAGE_SIZE = 5;
+
+type QueryValue = string | number | string[] | null | undefined;
+
+/**
+ * Query string for the board endpoints. Built by hand: axios would send an
+ * array as `key[]=...`, which FastAPI does not read - it expects the key
+ * repeated. Empty values are left out.
+ */
+export function toBoardQuery(params: Record<string, QueryValue>): URLSearchParams {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        const values = Array.isArray(value) ? value : [value];
+        values.forEach((item) => {
+            if (item === null || item === undefined || String(item).trim() === "") return;
+            query.append(key, String(item));
+        });
+    });
+    return query;
+}
+
+/**
+ * A 400 on `cursor`: the cursor no longer matches the filters it was made
+ * for, so the board has to be loaded again.
+ */
+export function isStaleCursorError(error: unknown): boolean {
+    const response = (error as AxiosError<any>)?.response;
+    return response?.status === 400 && response.data?.error?.details?.field === "cursor";
+}
+
 // API Functions
 
 /**
@@ -74,6 +162,27 @@ export interface PipelineValidationResponse {
 export async function fetchPipelines(params?: PipelineQueryParams) {
     const response = await api.get("/pipelines", { params });
     return response.data;
+}
+
+/**
+ * The kanban board in one request: every stage column with its first deals,
+ * its count and total, plus the stats cards.
+ */
+export async function fetchPipelineBoard(filters: PipelineBoardFilters): Promise<PipelineBoardResponse> {
+    const params = toBoardQuery({ ...filters, per_stage: BOARD_PAGE_SIZE });
+    const response = await api.get("/pipelines/board", { params });
+    return response.data?.data;
+}
+
+/** "Load more" for one column: the deals after `cursor`, under the board's filters. */
+export async function fetchPipelineBoardColumn(
+    filters: PipelineBoardFilters,
+    dealStage: string,
+    cursor: string
+): Promise<PipelineBoardColumnResponse> {
+    const params = toBoardQuery({ ...filters, deal_stage: dealStage, cursor, limit: BOARD_PAGE_SIZE });
+    const response = await api.get("/pipelines/board/column", { params });
+    return response.data?.data;
 }
 
 /**

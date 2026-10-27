@@ -17,13 +17,12 @@ export function ColumnDropZone({
     },
   });
 
+  // A flex row, so the column inside stretches to the board's tallest column:
+  // its whole height takes a drop, not only the part with cards.
   return (
     <div
       ref={setNodeRef}
-      className={`
-        w-full rounded-lg transition-all
-        h-full
-      `}
+      className="flex w-full rounded-lg transition-all"
     >
       {children}
     </div>

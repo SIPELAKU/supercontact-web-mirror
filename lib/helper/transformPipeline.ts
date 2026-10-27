@@ -1,10 +1,16 @@
 import { formatMDY } from "@/lib/helper/date";
 import { Deal } from "@/lib/types/Pipeline";
+import type { PipelineBoardStage } from "@/lib/api/pipelines";
 
 export type StageUI = {
   id: string;
   name: string;
+  /** Total amount of every deal in the column that matches the filters. */
   value: number;
+  /** Number of those deals; `deals` holds only the ones loaded so far. */
+  count: number;
+  /** Cursor for the column's next deals; null = all loaded. */
+  nextCursor: string | null;
   deals: Deal[];
 };
 
@@ -32,7 +38,8 @@ export interface PipelineAPIItem {
     price: string;
   };
   quantity?: number;
-  amount: number;
+  /** A Decimal as a string from the API, e.g. "1500.00". */
+  amount: number | string;
   notes?: string;
   avatar: string;
   client_account?: string;
@@ -42,21 +49,6 @@ export interface PipelineAPIItem {
   deal_stage: string;
 }
 
-export interface PipelineAPIResponse {
-  pipelines: PipelineAPIItem[];
-  stats?: unknown;
-}
-
-export function generateUUID() {
-  return crypto.randomUUID();
-}
-
-/**
- * A deal is expired once its expected close date has passed while it is
- * still in an open stage. Worked out from the date for now, not from the
- * BE's `status`. A deal closing today is not expired yet, and a closed deal
- * (won or lost) never is.
- */
 /**
  * Won and Lost are final. A closed deal can be viewed but not edited, and it
  * cannot be moved to another stage.
@@ -70,6 +62,12 @@ export function isClosedStage(stage: string | null | undefined): boolean {
   return CLOSED_STAGES.some((closed) => closed.toLowerCase() === normalized);
 }
 
+/**
+ * A deal is expired once its expected close date has passed while it is
+ * still in an open stage. Worked out from the date for now, not from the
+ * BE's `status`. A deal closing today is not expired yet, and a closed deal
+ * (won or lost) never is.
+ */
 export function isDealExpired(expectedCloseDate: string | undefined, stage: string, now: Date = new Date()): boolean {
   if (!expectedCloseDate || isClosedStage(stage)) return false;
   // The BE sends the date as midnight UTC, so its first 10 characters are the day.
@@ -95,73 +93,53 @@ export function daysUntilDeletion(expectedCloseDate: string, now: Date = new Dat
   return Math.round((deletionDay - today) / DAY_MS);
 }
 
-export function transformPipelineResponse(api: PipelineAPIResponse): StageUI[] {
-  if (!api || !api.pipelines) return [];
+/** One deal from the API as a kanban card. */
+export function mapPipelineDeal(item: PipelineAPIItem, now: Date = new Date()): Deal {
+  const stageName = item.deal_stage.trim();
+  const expired = isDealExpired(item.expected_close_date, stageName, now);
 
-  const STAGE_ORDER = [
-    "Prospect",
-    "Qualified",
-    "Negotiation",
-    "Proposal",
-    "Closed - Won",
-    "Closed - Lost",
-  ];
+  return {
+    id: item.id,
+    deal_name: item.deal_name || item.product?.product_name || "",
+    company: {
+      id: item.contact.id,
+      name: item.contact.name,
+      company: item.contact.company,
+    },
+    product: item.product,
+    quantity: item.quantity,
+    amount: Number(item.amount) || 0,
+    avatar: item.user?.avatar_url || "",
+    avatar_initial: item.user?.avatar_initial || "",
+    notes: item.notes ?? "",
+    client_account: item.client_account ?? "",
+    expected_close_date: formatMDY(item.expected_close_date),
+    probability_of_close: item.probability_of_close ?? 0,
+    is_delete: item.is_deleted ?? false,
+    is_expired: expired,
+    days_until_deletion: expired && item.expected_close_date
+      ? daysUntilDeletion(item.expected_close_date, now)
+      : undefined,
 
-  const stageMap: Record<string, StageUI> = {};
+    wonDate: stageName === "Closed - Won" ? formatMDY(item.expected_close_date) : undefined,
+    lostDate: stageName === "Closed - Lost" ? formatMDY(item.expected_close_date) : undefined,
+  };
+}
 
-  STAGE_ORDER.forEach((stage) => {
-    stageMap[stage] = {
-      id: generateUUID(),
-      name: stage,
-      value: 0,
-      deals: [],
-    };
-  });
-
-  api.pipelines.forEach((item, index) => {
-    const stageName = item.deal_stage.trim();
-    const expired = isDealExpired(item.expected_close_date, stageName);
-
-    const mappedDeal: Deal = {
-      id: item.id,
-      deal_name: item.deal_name || item.product?.product_name || "",
-      company: {
-        id: item.contact.id,
-        name: item.contact.name,
-        company: item.contact.company,
-      },
-      product: item.product,
-      quantity: item.quantity,
-      amount: Number(item.amount) || 0,
-      avatar: item.user?.avatar_url || "",
-      avatar_initial: item.user?.avatar_initial || "",
-      notes: item.notes ?? "",
-      client_account: item.client_account ?? "",
-      expected_close_date: formatMDY(item.expected_close_date),
-      probability_of_close: item.probability_of_close ?? 0,
-      is_delete: item.is_deleted ?? false,
-      is_expired: expired,
-      days_until_deletion: expired && item.expected_close_date
-        ? daysUntilDeletion(item.expected_close_date)
-        : undefined,
-
-      wonDate: stageName === "Closed - Won" ? formatMDY(item.expected_close_date) : undefined,
-      lostDate: stageName === "Closed - Lost" ? formatMDY(item.expected_close_date) : undefined,
-    };
-
-    if (stageMap[stageName]) {
-      stageMap[stageName].deals.push(mappedDeal);
-    }
-  });
-
-  Object.values(stageMap).forEach((stage) => {
-    const total = stage.deals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-    stage.value = total;
-    // Each column shows the most likely to close-won first. `GET /pipelines`
-    // has no sort param, so it is done here; the sort is stable, so deals with
-    // the same probability keep the API's order.
-    stage.deals.sort((a, b) => (b.probability_of_close ?? 0) - (a.probability_of_close ?? 0));
-  });
-
-  return STAGE_ORDER.map((name) => stageMap[name]);
+/**
+ * The kanban columns from `GET /pipelines/board`, as the API orders them
+ * (the company's stages, plus any other stage that still has deals). Each
+ * column's deals keep the API's sort - highest probability of close won
+ * first, then the most recently updated - and its count and total cover
+ * every matching deal, not only the loaded ones.
+ */
+export function mapBoardStages(stages: PipelineBoardStage[], now: Date = new Date()): StageUI[] {
+  return (stages ?? []).map((stage) => ({
+    id: stage.name,
+    name: stage.name,
+    value: Number(stage.total_amount) || 0,
+    count: stage.count ?? 0,
+    nextCursor: stage.next_cursor ?? null,
+    deals: (stage.deals ?? []).map((item) => mapPipelineDeal(item, now)),
+  }));
 }

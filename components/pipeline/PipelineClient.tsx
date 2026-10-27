@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 
 export default function PipelineClient() {
-  const { fetchPipeline, fetchActiveUser, dateRangeFilter, salespersonFilter, setScopeUserId, setEditId, setIsModalOpen } = useGetPipelineStore();
+  const { fetchPipeline, fetchActiveUser, dateRangeFilter, salespersonFilter, searchFilter, dealStatusFilter, setScopeUserId, setEditId, setIsModalOpen } = useGetPipelineStore();
   const router = useRouter();
   // Deep link from a deal notification: /sales/pipeline?deal=<id>.
   const dealToOpen = useSearchParams().get("deal");
@@ -27,11 +27,8 @@ export default function PipelineClient() {
   useEffect(() => {
     if (!canFetch) return;
     setScopeUserId(scopeUserId);
-    // Initial fetch of all data
-    fetchPipeline({
-      dateRange: "all",
-      assigned_to: "all"
-    });
+    // First load, with the filters on screen (the store keeps them across visits).
+    fetchPipeline();
     fetchActiveUser();
     readyRef.current = true;
   }, [canFetch, scopeUserId, setScopeUserId, fetchPipeline, fetchActiveUser]);
@@ -47,26 +44,18 @@ export default function PipelineClient() {
     router.replace("/sales/pipeline", { scroll: false });
   }, [canFetch, dealToOpen, setEditId, setIsModalOpen, router]);
 
-  // Silent fetch for salesperson filter change
+  // The API filters the board, so every filter change reloads it once,
+  // silently (the board stays on screen until the new one arrives).
+  const filterKey = JSON.stringify([searchFilter, salespersonFilter, dateRangeFilter, dealStatusFilter]);
+  const loadedFilterKeyRef = useRef(filterKey);
   useEffect(() => {
-    // The initial fetch above already covers the first render.
+    // Only a real change: on mount (even when auth is already known and the
+    // initial fetch runs in the same commit) there is nothing new to load.
+    if (loadedFilterKeyRef.current === filterKey) return;
+    loadedFilterKeyRef.current = filterKey;
     if (!readyRef.current) return;
-    if (salespersonFilter !== "all") {
-      fetchPipeline({
-        dateRange: "all", // Always fetch all dates
-        assigned_to: salespersonFilter,
-        isSilent: true
-      });
-    } else {
-      // If switching back to 'all', we might want to fetch everything again silently
-      // checking if we already have all data would be optimization, but for now just fetch
-      fetchPipeline({
-        dateRange: "all",
-        assigned_to: "all",
-        isSilent: true
-      });
-    }
-  }, [salespersonFilter, fetchPipeline]);
+    fetchPipeline({ isSilent: true });
+  }, [filterKey, fetchPipeline]);
 
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">

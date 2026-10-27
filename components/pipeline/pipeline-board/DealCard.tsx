@@ -4,7 +4,7 @@ import { formatRupiah } from "@/lib/helper/currency"
 import { EXPIRED_DEAL_RETENTION_DAYS } from "@/lib/helper/transformPipeline"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { DealCardProps } from "@/lib/types/Pipeline"
-import { Calendar, Clock } from "lucide-react"
+import { Calendar, Clock, Loader2 } from "lucide-react"
 import React from "react"
 
 export const dealStages = [
@@ -40,7 +40,7 @@ const deletionTagColor = (days: number) =>
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-amber-50 text-amber-700 border-amber-200"
 
-function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product, probability_of_close, is_expired, days_until_deletion }: DealCardProps) {
+function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product, probability_of_close, is_expired, days_until_deletion, isSaving, isHighlighted }: DealCardProps) {
   // Still in an open stage but past its expected close date.
   const isExpired = Boolean(is_expired)
   const daysLeft = days_until_deletion ?? 0
@@ -64,12 +64,18 @@ function DealCardComponent({ id, deal_name, company, amount, expected_close_date
     <Card
       // overflow-hidden rounds the strip's top corners with the card's; pt-0
       // drops the card's top padding so the strip sits flush on its top edge.
-      className={`group overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer ${isExpired ? "pt-0" : ""}`}
+      className={`group relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer ${isExpired ? "pt-0" : ""} ${isHighlighted ? "ring-2 ring-primary ring-offset-2" : ""}`}
       onClick={() => {
         setEditId(id)
         setStage(stageName)
         setIsModalOpen(true)
       }}>
+      {isSaving && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50" aria-busy="true">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" aria-label="Saving" />
+        </div>
+      )}
+
       {/* Full-width strip on the card's top edge: rounded on top (the card's
           corners), square below. It stays fully opaque; only the details fade. */}
       {isExpired && (

@@ -5,7 +5,9 @@ import { filterStagesBySelection } from './stageFilter';
 const stage = (name: string, dealIds: string[]): StageUI => ({
   id: name,
   name,
-  value: 0,
+  value: 1000 * dealIds.length,
+  count: 10 * dealIds.length,
+  nextCursor: dealIds.length ? `cursor-${name}` : null,
   deals: dealIds.map((id) => ({ id }) as StageUI['deals'][number]),
 });
 
@@ -40,6 +42,13 @@ describe('filterStagesBySelection (kanban stage filter, multi-select)', () => {
       'Negotiation',
       'Closed - Won',
     ]);
+  });
+
+  it("zeroes an emptied column's count and total, with nothing more to load", () => {
+    const [prospect, qualified] = filterStagesBySelection(board(), ['Prospect']);
+
+    expect(prospect).toMatchObject({ count: 20, value: 2000, nextCursor: 'cursor-Prospect' });
+    expect(qualified).toMatchObject({ deals: [], count: 0, value: 0, nextCursor: null });
   });
 
   it('matches stage names however the dash is spaced or cased', () => {

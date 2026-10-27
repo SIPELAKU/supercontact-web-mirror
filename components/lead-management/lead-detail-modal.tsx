@@ -101,7 +101,8 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
   const [contactSearch, setContactSearch] = useState("");
   const [showContactPicker, setShowContactPicker] = useState(false);
   const queryClient = useQueryClient();
-  const { data: usersResponse } = useUsers();
+  // lead_assignee: Staff only see themselves, Admin / Manager see everyone.
+  const { data: usersResponse } = useUsers(1, 10, undefined, undefined, undefined, "lead_assignee");
   const { data: salesChannelPage } = useActiveSalesChannels({ enabled: open });
   const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -610,7 +611,12 @@ export default function LeadDetailModal({ open, onOpenChange, lead }: LeadDetail
                     {filteredUsers.slice(0, 5).map((user) => (
                       <div
                         key={user.id}
-                        onClick={() => handleUserSelect(user)}
+                        // Same as the contact picker above: select on
+                        // mousedown so the input's blur cannot swallow it.
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleUserSelect(user);
+                        }}
                         className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
                         <div className="font-medium text-gray-900">{user.fullname}</div>

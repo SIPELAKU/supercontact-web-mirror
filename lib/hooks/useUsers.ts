@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchUsers, UserResponse } from "@/lib/api/users";
+import { fetchUsers, UserListScope, UserResponse } from "@/lib/api/users";
 import { useAuth } from "../context/AuthContext";
 
 export function useUsers(
@@ -10,14 +10,15 @@ export function useUsers(
   limit: number = 10,
   search?: string,
   position?: string,
-  status?: string
+  status?: string,
+  scope?: UserListScope
 ) {
   const { token } = useAuth();
   return useQuery<UserResponse, Error>({
-    queryKey: ["users", page, limit, search, position, status],
+    queryKey: ["users", page, limit, search, position, status, scope],
     queryFn: () => {
       if (!token) throw new Error('No authentication token');
-      return fetchUsers(token, page, limit, search, position, status);
+      return fetchUsers(token, page, limit, search, position, status, scope);
     },
     staleTime: 1000 * 60, // 1 minute cache
     refetchOnWindowFocus: false,

@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.109.0] - 2026-10-27
+
+### Detail Versi 1.109.0
+
+#### ✨ Notifikasi Deal Langsung Membuka Deal
+
+- **Deskripsi:**
+  - **Deep Link ke Deal:** Mengklik notifikasi deal, baik dari dropdown lonceng maupun halaman Notifications, kini membuka halaman Pipeline dan langsung menampilkan modal **Update Pipeline** untuk deal tersebut. Sebelumnya notifikasi hanya membuka halaman Pipeline tanpa membuka deal-nya
+  - **URL Bersih:** Setelah modal terbuka, parameter `?deal=` dihapus dari URL, sehingga refresh halaman atau menutup modal tidak membuka deal itu lagi
+  - **Catatan:** Bergantung pada BE mengirim `entity_type = "pipeline"` dan `entity_id` = id deal pada notifikasi deal. Notifikasi pengingat 5 hari sebelum expired dan sebelum dihapus (masih dikerjakan BE) akan ikut berfungsi bila memakai `entity_type` yang sama
+  - **Impact:** User bisa langsung menindaklanjuti deal dari notifikasi tanpa mencarinya di kanban
+  - **Technical Notes:**
+    - `getNotificationRoute` di `lib/api/notifications.ts` memetakan `pipeline` ke `/sales/pipeline?deal=<id>`, atau ke `/sales/pipeline` bila tidak ada id
+    - `PipelineClient` membaca `?deal` (`useSearchParams`) dan membuka modal setelah role user diketahui; halaman pipeline dibungkus `<Suspense>`
+
+#### ✨ Filter Stage Kanban Bisa Memilih Lebih dari Satu
+
+- **Deskripsi:**
+  - **Pilihan Ganda:** Filter stage di kanban kini bisa memilih beberapa stage sekaligus, misalnya Prospect, Qualified dan Proposal. Dropdown tetap terbuka saat memilih, dan **All** menghapus semua pilihan
+  - **Tampilan:** Kotak filter menampilkan chip berwarna untuk stage yang dipilih (maksimal 2, sisanya ditampilkan sebagai "+N")
+  - **Catatan:** Kolom stage yang tidak dipilih dikosongkan, bukan dihilangkan, sehingga tata letak board tidak berubah. Filter lain yang memakai dropdown sejenis (Assigned To, tanggal, status lead) tetap satu pilihan
+  - **Impact:** Sales bisa memantau beberapa tahap deal sekaligus tanpa berganti filter
+  - **Technical Notes:**
+    - komponen baru `components/pipeline/MultiSelectDealStage.tsx` (tampilan sama dengan `CustomDealStageSelect`, yang tidak diubah)
+    - logika penyaringan di `filterStagesBySelection` (`components/pipeline/pipeline-board/stageFilter.ts`)
+
+#### 🎨 UI/UX Enhancement: Loading Saat Membuka Modal Deal
+
+- **Deskripsi:**
+  - **Skeleton Loading:** Modal **Add Deal** dan **Update Pipeline** menampilkan skeleton berbentuk sama dengan form selama data pertama dimuat, sehingga tidak ada lompatan tata letak
+    - Update Pipeline: menunggu detail deal, sehingga form kosong tidak sempat terlihat sebelum datanya masuk;
+    - Add Deal: menunggu daftar SKU dan daftar leads pertama. Pencarian berikutnya tetap memakai indikator loading di field masing-masing
+  - **Selama Loading:** Judul modal tetap tampil, tombol Cancel tetap aktif, dan tombol simpan dinonaktifkan
+  - **Impact:** User tahu data sedang dimuat dan tidak menyimpan form yang belum lengkap
+  - **Technical Notes:** `DealFormSkeleton` dan `isInitialLoading` di `components/pipeline/AddDealModal.tsx`
+
+#### 🐛 Bug Fix Modal Update Pipeline Kosong Saat Deal Tidak Bisa Dibuka
+
+- **Deskripsi:**
+  - **Masalah:** Bila detail deal gagal dimuat, modal Update Pipeline tetap terbuka dengan form kosong
+  - **Root Cause:** Error saat memuat detail deal hanya menampilkan pesan, tanpa menutup modal
+  - **Solusi:** Modal kini ditutup dan menampilkan pesan "Deal not found or you no longer have access" (404) atau "Failed to load latest deal details." untuk error lain. Kasus ini terjadi misalnya saat membuka notifikasi untuk deal yang sudah dihapus, atau deal milik user lain bagi role Staff
+  - **Impact:** User tidak lagi melihat form kosong yang membingungkan
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **7 Test Baru:**
+    - URL tujuan notifikasi deal, dengan dan tanpa id, serta jenis notifikasi lain yang tidak berubah (`lib/api/notifications.route.test.ts`, 3);
+    - filter stage pilihan ganda: All, beberapa stage, kolom tidak hilang, dan penulisan nama stage (`components/pipeline/pipeline-board/stageFilter.test.ts`, 4)
+  - **Total:** 40 file test, 508 test lolos
+
+---
+
 ## [1.108.0] - 2026-10-26
 
 ### Detail Versi 1.108.0

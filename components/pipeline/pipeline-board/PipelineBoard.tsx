@@ -23,6 +23,8 @@ import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
 import { ColumnDropZone } from "@/components/pipeline/pipeline-board/DroppableColumn"
 import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
+import MultiSelectDealStage from "@/components/pipeline/MultiSelectDealStage"
+import { filterStagesBySelection } from "@/components/pipeline/pipeline-board/stageFilter"
 
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
@@ -64,7 +66,8 @@ export default function PipelineBoard() {
   } = useGetPipelineStore();
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [stages, setStages] = useState(listPipeline)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  // Picked stages; empty = all.
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
 
   // Track how many deals are visible per stage (defaults to 20)
@@ -115,17 +118,7 @@ export default function PipelineBoard() {
   const filteredStages = useMemo(() => {
 
 
-    const stageFiltered =
-      statusFilter === "all"
-        ? searchPipeline
-        : searchPipeline.map((stage) => {
-          const normalized = stage.name.replace(/\s*-\s*/g, " - ").toLowerCase();
-          const target = statusFilter.toLowerCase();
-
-          if (normalized === target) return stage;
-
-          return { ...stage, deals: [] };
-        });
+    const stageFiltered = filterStagesBySelection(searchPipeline, statusFilter);
 
     // Client-side Date Range Filtering
     const finalStages = stageFiltered.map((stage) => {
@@ -380,12 +373,12 @@ export default function PipelineBoard() {
             {
               type: "custom",
               component: (
-                <CustomSelectStage
+                <MultiSelectDealStage
                   placeholder="Select All"
                   value={statusFilter}
                   onChange={setStatusFilter}
                   data={dealStages}
-                  className="bg-white rounded-lg font-normal"
+                  className="font-normal"
                 />
               )
             },

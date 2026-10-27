@@ -123,7 +123,6 @@ export interface PipelineBoardColumnResponse {
 }
 
 /** Deals per column on the first load, and per "Load more" (the BE caps both at 50). */
-// TEMP for manual testing of Load More: back to 20 before committing.
 export const BOARD_PAGE_SIZE = 5;
 
 type QueryValue = string | number | string[] | null | undefined;

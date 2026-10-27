@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatRupiah } from "@/lib/helper/currency"
-import { EXPIRED_DEAL_RETENTION_DAYS } from "@/lib/helper/transformPipeline"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { DealCardProps } from "@/lib/types/Pipeline"
 import { Calendar, Clock, Loader2 } from "lucide-react"
@@ -24,26 +23,24 @@ const probabilityColor = (probability: number) =>
       ? "bg-amber-100 text-amber-700"
       : "bg-gray-100 text-gray-600"
 
-// Countdown on an expired deal's tag.
+// Countdown on an expired deal's tag. The API never sends a negative number:
+// 0 covers a deal already due that its delete job has not reached yet.
 const deletionLabel = (days: number) =>
   days > 1
     ? `Deleted in ${days} days`
     : days === 1
       ? "Deleted tomorrow"
-      : days === 0
-        ? "Deleted today"
-        : "Scheduled for deletion"
+      : "Deleted today"
 
-// A week or less left reads as urgent.
-const deletionTagColor = (days: number) =>
-  days <= 7
+// A week or less left reads as urgent; no countdown at all is not.
+const deletionTagColor = (days: number | undefined) =>
+  days !== undefined && days <= 7
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-amber-50 text-amber-700 border-amber-200"
 
 function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product, probability_of_close, is_expired, days_until_deletion, isSaving, isHighlighted }: DealCardProps) {
-  // Still in an open stage but past its expected close date.
   const isExpired = Boolean(is_expired)
-  const daysLeft = days_until_deletion ?? 0
+  const daysLeft = days_until_deletion
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
   const getStageColor = (stageName?: string) => {
     if (!stageName) {
@@ -80,13 +77,17 @@ function DealCardComponent({ id, deal_name, company, amount, expected_close_date
           corners), square below. It stays fully opaque; only the details fade. */}
       {isExpired && (
         <div
-          title={`Expired deals are deleted ${EXPIRED_DEAL_RETENTION_DAYS} days after the expected close date`}
+          title="Expired deals are permanently deleted 30 days after they expire"
           className={`flex items-center gap-1.5 border-b px-4 py-1.5 text-[11px] font-medium ${deletionTagColor(daysLeft)}`}
         >
           <Clock className="h-3.5 w-3.5 shrink-0" />
           <span className="font-semibold">Expired</span>
-          <span aria-hidden="true">·</span>
-          <span className="truncate">{deletionLabel(daysLeft)}</span>
+          {daysLeft !== undefined && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">{deletionLabel(daysLeft)}</span>
+            </>
+          )}
         </div>
       )}
 

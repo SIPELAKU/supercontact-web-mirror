@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.112.2] - 2026-10-27
+
+### Detail Versi 1.112.2
+
+#### 🐛 Tag Expired & Hitung Mundur Hapus di Kartu Kanban dari API
+
+- **Deskripsi:**
+  - **Masalah:** tag Expired dan "Deleted in N days" di kartu dihitung FE dari expected close date + 30 hari. Hasilnya bisa berbeda dengan BE: tag Expired bisa muncul atau hilang sampai sehari lebih awal dibanding status di BE, dan deal yang expired sebelum migration BE `e2b6c8d4a917` tampil "Scheduled for deletion" padahal belum akan dihapus
+  - **Solusi:** kartu kini memakai data dari API:
+    - **Tag Expired** muncul bila `status === "expired"`;
+    - **Hitung mundur** memakai `days_until_deletion`, yaitu sisa hari sampai dihapus permanen, dihitung BE dari hari deal expired + 30 hari (WIB). `0` = "Deleted today", `1` = "Deleted tomorrow";
+    - label "Scheduled for deletion" dihapus, karena BE tidak pernah mengirim angka negatif
+  - **Tooltip** tag diperbarui: deal expired dihapus permanen 30 hari setelah menjadi expired, bukan setelah expected close date
+  - **Impact:** tag dan hitung mundur di kartu selalu sama dengan status dan jadwal hapus di BE
+  - **Catatan BE (menjawab catatan di 1.112.1):** BE 1.148.0 juga menolak close date lampau untuk deal open (400, `details.field = "expected_close_date"`) dengan pengecualian yang sama (tanggal tersimpan yang dikirim ulang tetap boleh), dan memajukan close date deal expired ke hari ini atau setelahnya membuat deal kembali active: flag expired dan jadwal hapus 30 hari di-reset, sehingga deal tidak lagi muncul di filter Expired
+  - **Technical Notes:**
+    - `isDealExpired`, `daysUntilDeletion` dan `EXPIRED_DEAL_RETENTION_DAYS` dihapus dari `lib/helper/transformPipeline.ts`;
+    - `mapPipelineDeal` / `mapBoardStages` tidak lagi menerima parameter `now`;
+    - field `status` dan `days_until_deletion` ditambahkan ke `PipelineAPIItem`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **Diubah:** `lib/helper/transformPipeline.test.ts`: `is_expired` mengikuti `status` dari API, dan `days_until_deletion` diteruskan apa adanya (kosong bila API tidak mengirimnya)
+
+---
+
 ## [1.112.1] - 2026-10-27
 
 ### Detail Versi 1.112.1

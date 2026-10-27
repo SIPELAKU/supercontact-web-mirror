@@ -47,6 +47,9 @@ export interface PipelineAPIItem {
   probability_of_close?: number;
   is_deleted?: boolean;
   deal_stage: string;
+  /** Worked out by the API from what the stage MEANS, not its name. */
+  status?: "active" | "expired" | "won" | "lost";
+  days_until_deletion?: number | null;
 }
 
 /**
@@ -63,40 +66,12 @@ export function isClosedStage(stage: string | null | undefined): boolean {
 }
 
 /**
- * A deal is expired once its expected close date has passed while it is
- * still in an open stage. Worked out from the date for now, not from the
- * BE's `status`. A deal closing today is not expired yet, and a closed deal
- * (won or lost) never is.
+ * One deal from the API as a kanban card. Whether it is expired and how many
+ * days it has left both come from the API, which deletes it 30 days after the
+ * day it expired - not 30 days after its close date.
  */
-export function isDealExpired(expectedCloseDate: string | undefined, stage: string, now: Date = new Date()): boolean {
-  if (!expectedCloseDate || isClosedStage(stage)) return false;
-  // The BE sends the date as midnight UTC, so its first 10 characters are the day.
-  const closeDay = expectedCloseDate.slice(0, 10);
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  return closeDay < today;
-}
-
-/** An expired deal is deleted this many days after its expected close date. */
-export const EXPIRED_DEAL_RETENTION_DAYS = 30;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Days left before a deal is deleted: its expected close date plus
- * EXPIRED_DEAL_RETENTION_DAYS, counted from today. 0 = deleted today; below 0
- * = its deletion day has passed but it is still there.
- */
-export function daysUntilDeletion(expectedCloseDate: string, now: Date = new Date()): number {
-  const [y, m, d] = expectedCloseDate.slice(0, 10).split("-").map(Number);
-  const deletionDay = Date.UTC(y, m - 1, d) + EXPIRED_DEAL_RETENTION_DAYS * DAY_MS;
-  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((deletionDay - today) / DAY_MS);
-}
-
-/** One deal from the API as a kanban card. */
-export function mapPipelineDeal(item: PipelineAPIItem, now: Date = new Date()): Deal {
+export function mapPipelineDeal(item: PipelineAPIItem): Deal {
   const stageName = item.deal_stage.trim();
-  const expired = isDealExpired(item.expected_close_date, stageName, now);
 
   return {
     id: item.id,
@@ -116,10 +91,8 @@ export function mapPipelineDeal(item: PipelineAPIItem, now: Date = new Date()): 
     expected_close_date: formatMDY(item.expected_close_date),
     probability_of_close: item.probability_of_close ?? 0,
     is_delete: item.is_deleted ?? false,
-    is_expired: expired,
-    days_until_deletion: expired && item.expected_close_date
-      ? daysUntilDeletion(item.expected_close_date, now)
-      : undefined,
+    is_expired: item.status === "expired",
+    days_until_deletion: item.days_until_deletion ?? undefined,
 
     wonDate: stageName === "Closed - Won" ? formatMDY(item.expected_close_date) : undefined,
     lostDate: stageName === "Closed - Lost" ? formatMDY(item.expected_close_date) : undefined,
@@ -133,13 +106,13 @@ export function mapPipelineDeal(item: PipelineAPIItem, now: Date = new Date()): 
  * first, then the most recently updated - and its count and total cover
  * every matching deal, not only the loaded ones.
  */
-export function mapBoardStages(stages: PipelineBoardStage[], now: Date = new Date()): StageUI[] {
+export function mapBoardStages(stages: PipelineBoardStage[]): StageUI[] {
   return (stages ?? []).map((stage) => ({
     id: stage.name,
     name: stage.name,
     value: Number(stage.total_amount) || 0,
     count: stage.count ?? 0,
     nextCursor: stage.next_cursor ?? null,
-    deals: (stage.deals ?? []).map((item) => mapPipelineDeal(item, now)),
+    deals: (stage.deals ?? []).map((item) => mapPipelineDeal(item)),
   }));
 }

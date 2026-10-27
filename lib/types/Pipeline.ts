@@ -29,9 +29,9 @@ export interface Deal {
   is_delete: boolean;
   wonDate?: string;
   lostDate?: string;
-  /** Open stage and past its expected close date (see `isDealExpired`). */
+  /** The API's `status === "expired"`. */
   is_expired?: boolean;
-  /** Expired deals only: days left before deletion (see `daysUntilDeletion`). */
+  /** Expired deals only: the API's `days_until_deletion` (0 = today). */
   days_until_deletion?: number;
 }
 

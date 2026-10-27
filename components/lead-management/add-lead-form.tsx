@@ -97,7 +97,10 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const [showContactPicker, setShowContactPicker] = useState(false);
   const queryClient = useQueryClient();
   const { data: contactsResponse, isLoading: isLoadingContacts } = useContacts(contactSearch);
-  const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers();
+  // lead_assignee: Staff only see themselves, Admin / Manager see everyone.
+  const { data: usersResponse, isLoading: isLoadingUsers, error: usersError } = useUsers(
+    1, 10, undefined, undefined, undefined, "lead_assignee"
+  );
   // Four channels are seeded for EVERY company (spec A20), so this is never
   // an empty select.
   const { data: salesChannelPage } = useActiveSalesChannels();
@@ -645,7 +648,13 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                         filteredUsers.slice(0, 5).map((user) => (
                           <div
                             key={user.id}
-                            onClick={() => handleUserSelect(user)}
+                            // mousedown + preventDefault keeps the input from
+                            // blurring first: the blur re-validates the form,
+                            // the layout shifts, and a plain click misses.
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleUserSelect(user);
+                            }}
                             className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                           >
                             <div className="font-medium text-gray-900">{user.fullname}</div>

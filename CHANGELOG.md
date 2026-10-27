@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.109.1] - 2026-10-27
+
+### Detail Versi 1.109.1
+
+#### ✨ Assigned To di Form Lead Mengikuti Role
+
+- **Deskripsi:**
+  - **Dropdown Assigned To** di form Add Lead dan Update Lead kini meminta daftar user dengan
+    `GET /users?scope=lead_assignee`. Admin dan Manager melihat semua user, role lain (Staff dan
+    role custom) hanya dirinya sendiri, sama dengan aturan BE yang menolak assign ke user lain
+    (403)
+  - Picker user lain (Support Workspace, Omnichannel, task, agent group, Add Deal) tidak berubah
+  - **Butuh BE 1.146.0** (param `scope`). Di BE yang lebih lama param ini diabaikan dan semua
+    user tetap tampil
+  - **Impact:** Staff tidak lagi bisa memilih user lain lalu baru ditolak saat menyimpan
+  - **Technical Notes:** param opsional `scope` (tipe `UserListScope`) di `fetchUsers`
+    (`lib/api/users.ts`) dan `useUsers` (`lib/hooks/useUsers.ts`), ikut masuk `queryKey`
+
+#### 🐛 Bug Fix Pilihan Assigned To Harus Diklik Dua Kali
+
+- **Deskripsi:**
+  - **Masalah:** Di form Add Lead dan Update Lead, memilih user di dropdown Assigned To baru
+    berhasil pada klik kedua
+  - **Root Cause:** Saat tombol mouse ditekan, input kehilangan fokus dan form menampilkan error
+    validasi di bawahnya. Layout bergeser, sehingga saat tombol dilepas kursor sudah tidak di atas
+    pilihan dan klik pertama hilang
+  - **Solusi:** Pilihan dipilih saat `mousedown` dengan `preventDefault`, pola yang sama dengan
+    picker contact di Update Lead
+  - **Impact:** User langsung terpilih dengan sekali klik
+  - **Technical Notes:** `components/lead-management/add-lead-form.tsx` dan
+    `components/lead-management/lead-detail-modal.tsx`
+
+---
+
 ## [1.109.0] - 2026-10-27
 
 ### Detail Versi 1.109.0

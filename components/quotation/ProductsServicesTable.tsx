@@ -18,6 +18,7 @@ import type {
   QuotationTotals,
 } from "@/lib/types/Quotation";
 import { billingPeriodSuffix, describePriceSource, priceSourceTone } from "@/lib/utils/priceSource";
+import { seedUnitPrice } from "@/lib/utils/quotationRows";
 import { promoChipLabel } from "@/lib/constants/promotion";
 import { variantValueChips } from "@/lib/utils/variantMatrix";
 import { Plus, Trash2 } from "lucide-react";
@@ -189,15 +190,10 @@ export default function ProductsServicesCard({
     updateItemField(index, "title", selected.product_name);
     updateItemField(index, "sku", selected.sku);
     // A fresh pick shows the customer's resolved price when the picker carries
-    // one, else the catalogue price - both provisional until the preview lands,
-    // which is what the "Harga sementara" note under the price says. An
-    // existing row keeps what was stored (the form seeds unitPrice from
-    // item.unit_price, never product.price).
-    const seeded =
-      selected.resolvedPrice !== null && selected.resolvedPrice !== undefined
-        ? Number(selected.resolvedPrice)
-        : Number(selected.price);
-    updateItemField(index, "unitPrice", Number.isFinite(seeded) ? seeded : Number(selected.price));
+    // one, else the catalogue price (see seedUnitPrice). An existing row keeps
+    // what was stored (the form seeds unitPrice from item.unit_price, never
+    // product.price).
+    updateItemField(index, "unitPrice", seedUnitPrice(selected.price, selected.resolvedPrice));
     updateItemField(index, "listPrice", Number(selected.price));
     // The unit is a display/step hint; the server re-checks the quantity
     // against the unit's CURRENT precision at save time (spec A5/A12).

@@ -52,6 +52,9 @@ export interface QuotationLeadItem {
     unit?: { id: string; code: string; name: string; precision: number } | null;
     category?: { id: string; code: string; name: string } | null;
     custom_fields?: Record<string, unknown>;
+    /** A variant's axes and its family (`ProductItem`), so its line can name both. */
+    variant_values?: Record<string, unknown>;
+    parent?: { id: string; product_name: string; sku: string } | null;
     /**
      * Phase 2 (spec D6): what this customer would actually pay. `price` above
      * stays the LIVE catalogue row - showing one price in the picker and

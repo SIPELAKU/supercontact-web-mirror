@@ -45,7 +45,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   type FormErrors = Partial<Record<keyof reqBody, string>>;
   // The picker slice (page 1, limit 100, active) - never the product page's
   // list, whose page/search/status/sort would otherwise leak in here (S3-1).
-  const { catalogue: listProduct, fetchCatalogue } = useGetProductStore();
+  const { catalogue: listProduct, fetchCatalogue, catalogueLoading } = useGetProductStore();
   const { listPipeline, postFormPipeline, id, setEditId, stage, updateFormPipeline, setStage } = useGetPipelineStore();
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -82,13 +82,25 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   // Admin/Manager/Super Admin pick any lead; everyone else only their own, so
   // the deal they create is theirs and stays on their kanban.
   const leadOwner = canAssign ? undefined : userProfile?.id;
+  // Update Pipeline keeps the deal's client, so it never needs the list.
+  // A sales user waits for their id, so they never see others' leads.
+  const leadsEnabled = open && !id && (canAssign || Boolean(leadOwner));
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ["deal-leads", debouncedLeadSearch, leadOwner],
     queryFn: () => pipelineAPI.fetchDealLeads(debouncedLeadSearch, leadOwner),
-    // Update Pipeline keeps the deal's client, so it never needs the list.
-    // A sales user waits for their id, so they never see others' leads.
-    enabled: open && !id && (canAssign || Boolean(leadOwner)),
+    enabled: leadsEnabled,
   });
+
+  // Add Deal is ready once the first SKU and lead lists have loaded. Later
+  // searches show the field's own spinner, not the whole-form skeleton.
+  const [addListsReady, setAddListsReady] = useState(false);
+  useEffect(() => {
+    if (!open) {
+      setAddListsReady(false);
+      return;
+    }
+    if (leadsEnabled && !catalogueLoading && !loadingLeads) setAddListsReady(true);
+  }, [open, leadsEnabled, catalogueLoading, loadingLeads]);
 
   const reset = () => {
     setFormData({
@@ -110,6 +122,11 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   };
 
   const deal = fetchedDeal;
+
+  // Update Pipeline waits for THIS deal's detail - checking the id also
+  // covers the first frame, before the fetch effect has even started.
+  const loadingDeal = Boolean(id) && (loadingDetails || fetchedDeal?.id !== id);
+  const isInitialLoading = id ? loadingDeal : !addListsReady;
 
   useEffect(() => {
     async function fetchDetails() {
@@ -153,7 +170,15 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         }
       } catch (err) {
         console.error("Failed to fetch pipeline details:", err);
-        notify.error("Error", { description: "Failed to load latest deal details." });
+        // A 404 = deleted, or (for a sales user) someone else's deal - e.g.
+        // opened from an old notification. Either way there is nothing to
+        // edit, so close instead of showing an empty Update form.
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        notify.error(
+          status === 404 ? "Deal not found or you no longer have access" : "Failed to load latest deal details."
+        );
+        onOpenChange(false);
+        setEditId("");
       } finally {
         setLoadingDetails(false);
       }
@@ -165,7 +190,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
       setFetchedDeal(null);
       reset();
     }
-  }, [id, setStage]);
+  }, [id, setStage, onOpenChange, setEditId]);
 
   useEffect(() => {
     if (open) {
@@ -422,297 +447,303 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
           </div>
 
           <form className="mt-6 space-y-8" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {isInitialLoading ? (
+              <DealFormSkeleton />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  SKU <span className="text-red-500">*</span>
-                </label>
-                <AppAutocomplete
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  disabled={id ? true : false}
-                  value={productOptions.find(p => p.value === formData.product_id) || null}
-                  options={productOptions}
-                  getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                  onChange={(_, newValue) => {
-                    if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                      const val = newValue as { value: string; label: string };
-                      setFormData({ ...formData, product_id: val.value });
-                      setPersistedProduct(val);
-                    } else if (!newValue) {
-                      setFormData({ ...formData, product_id: "" });
-                      setPersistedProduct(null);
-                    }
-                  }}
-                  onInputChange={(_, inputValue) => {
-                    // COMMERCIAL Phase 5 (spec I9, M-e). `GET /products` became
-                    // TOP-LEVEL ONLY by default (E5.1), so without
-                    // `includeVariants` every VARIANT would silently become
-                    // unpickable on the deal form - and a deal names the
-                    // sellable thing, which after A8 is the variant.
-                    const keyword = inputValue.trim();
-                    if (keyword.length < 1) {
-                      fetchCatalogue({ includeVariants: true });
-                      return;
-                    }
-                    fetchCatalogue({ search: keyword, includeVariants: true });
-                  }}
-                  isOptionEqualToValue={(option, value) => {
-                    if (!value) return false;
-                    if (typeof option === 'string' || typeof value === 'string') return option === value;
-                    return (option as any).value === (value as any).value;
-                  }}
-                  placeholder="Search by SKU"
-                  error={Boolean(errors.product_id)}
-                  helperText={errors.product_id}
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      SKU <span className="text-red-500">*</span>
+                    </label>
+                    <AppAutocomplete
+                      isBgWhite
+                      height="48px"
+                      rounded="8px"
+                      disabled={id ? true : false}
+                      value={productOptions.find(p => p.value === formData.product_id) || null}
+                      options={productOptions}
+                      getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                      onChange={(_, newValue) => {
+                        if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                          const val = newValue as { value: string; label: string };
+                          setFormData({ ...formData, product_id: val.value });
+                          setPersistedProduct(val);
+                        } else if (!newValue) {
+                          setFormData({ ...formData, product_id: "" });
+                          setPersistedProduct(null);
+                        }
+                      }}
+                      onInputChange={(_, inputValue) => {
+                        // COMMERCIAL Phase 5 (spec I9, M-e). `GET /products` became
+                        // TOP-LEVEL ONLY by default (E5.1), so without
+                        // `includeVariants` every VARIANT would silently become
+                        // unpickable on the deal form - and a deal names the
+                        // sellable thing, which after A8 is the variant.
+                        const keyword = inputValue.trim();
+                        if (keyword.length < 1) {
+                          fetchCatalogue({ includeVariants: true });
+                          return;
+                        }
+                        fetchCatalogue({ search: keyword, includeVariants: true });
+                      }}
+                      isOptionEqualToValue={(option, value) => {
+                        if (!value) return false;
+                        if (typeof option === 'string' || typeof value === 'string') return option === value;
+                        return (option as any).value === (value as any).value;
+                      }}
+                      placeholder="Search by SKU"
+                      error={Boolean(errors.product_id)}
+                      helperText={errors.product_id}
+                    />
+                  </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
-                <AppInput
-                  disabled={true}
-                  placeholder="Product name will appear here"
-                  value={selectedProduct?.product_name || ""}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  readOnly
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Product Name</label>
+                    <AppInput
+                      disabled={true}
+                      placeholder="Product name will appear here"
+                      value={selectedProduct?.product_name || ""}
+                      isBgWhite
+                      height="48px"
+                      rounded="8px"
+                      readOnly
+                    />
+                  </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Client/Account <span className="text-red-500">*</span>
-                </label>
-                {id ? (
-                  <AppInput
-                    disabled={true}
-                    value={dealClientName}
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                    readOnly
-                  />
-                ) : (
-                  <AppAutocomplete
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                    loading={loadingLeads}
-                    value={selectedLead}
-                    options={leadOptions}
-                    getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                    // The list is already the API's search result.
-                    filterOptions={(options) => options}
-                    renderOption={(props, option) => {
-                      const { key, ...optionProps } = props as typeof props & { key: string };
-                      return (
-                        <li key={option.value} {...optionProps}>
-                          <div className="flex flex-col">
-                            <span>{option.label}</span>
-                            {option.detail && (
-                              <span className="text-xs text-gray-500">{option.detail}</span>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    }}
-                    onChange={(_, newValue) => {
-                      // Picking a lead sets the client and starts "Assign To"
-                      // from that lead's assignee.
-                      if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                        const lead = newValue as LeadOption;
-                        setSelectedLead(lead);
-                        setFormData({
-                          ...formData,
-                          client_account: lead.contactId,
-                          lead_id: lead.value,
-                          assigned_to: lead.assignedTo,
-                        });
-                        setPersistedAssignee(
-                          lead.assignedTo ? { value: lead.assignedTo, label: lead.assigneeName } : null
-                        );
-                      } else if (!newValue) {
-                        setSelectedLead(null);
-                        setFormData({ ...formData, client_account: "", lead_id: "", assigned_to: "" });
-                        setPersistedAssignee(null);
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Client/Account <span className="text-red-500">*</span>
+                    </label>
+                    {id ? (
+                      <AppInput
+                        disabled={true}
+                        value={dealClientName}
+                        isBgWhite
+                        height="48px"
+                        rounded="8px"
+                        readOnly
+                      />
+                    ) : (
+                      <AppAutocomplete
+                        isBgWhite
+                        height="48px"
+                        rounded="8px"
+                        loading={loadingLeads}
+                        value={selectedLead}
+                        options={leadOptions}
+                        getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                        // The list is already the API's search result.
+                        filterOptions={(options) => options}
+                        renderOption={(props, option) => {
+                          const { key, ...optionProps } = props as typeof props & { key: string };
+                          return (
+                            <li key={option.value} {...optionProps}>
+                              <div className="flex flex-col">
+                                <span>{option.label}</span>
+                                {option.detail && (
+                                  <span className="text-xs text-gray-500">{option.detail}</span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        }}
+                        onChange={(_, newValue) => {
+                          // Picking a lead sets the client and starts "Assign To"
+                          // from that lead's assignee.
+                          if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                            const lead = newValue as LeadOption;
+                            setSelectedLead(lead);
+                            setFormData({
+                              ...formData,
+                              client_account: lead.contactId,
+                              lead_id: lead.value,
+                              assigned_to: lead.assignedTo,
+                            });
+                            setPersistedAssignee(
+                              lead.assignedTo ? { value: lead.assignedTo, label: lead.assigneeName } : null
+                            );
+                          } else if (!newValue) {
+                            setSelectedLead(null);
+                            setFormData({ ...formData, client_account: "", lead_id: "", assigned_to: "" });
+                            setPersistedAssignee(null);
+                          }
+                        }}
+                        onInputChange={(_, inputValue, reason) => {
+                          // Only what the user types searches; picking a lead also
+                          // fills the input and must not become the search.
+                          if (reason === "input") setLeadSearch(inputValue.trim());
+                          else if (reason === "clear") setLeadSearch("");
+                        }}
+                        isOptionEqualToValue={(option, value) => {
+                          if (!value) return false;
+                          if (typeof option === 'string' || typeof value === 'string') return option === value;
+                          return (option as any).value === (value as any).value;
+                        }}
+                        noOptionsText="No Contacted or Qualified leads found"
+                        placeholder="Select Client"
+                        error={Boolean(errors.client_account)}
+                        helperText={errors.client_account}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Assign To <span className="text-red-500">*</span>
+                    </label>
+                    {/* Locked (by role, or no client yet): the same disabled input as
+                        Product Name and Client/Account, not a greyed-out dropdown. */}
+                    {!canAssign || !formData.client_account ? (
+                      <AppInput
+                        disabled={true}
+                        value={assigneeOptions.find(u => u.value === formData.assigned_to)?.label || ""}
+                        placeholder={!formData.client_account ? "Select a client/account first" : ""}
+                        isBgWhite
+                        height="48px"
+                        rounded="8px"
+                        readOnly
+                        error={Boolean(errors.assigned_to)}
+                        helperText={errors.assigned_to || (!canAssign ? "Only an Admin or Manager can change the assignee" : undefined)}
+                      />
+                    ) : (
+                      <AppAutocomplete
+                        isBgWhite
+                        height="48px"
+                        rounded="8px"
+                        loading={loadingUsers}
+                        value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
+                        options={assigneeOptions}
+                        getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                        // The list is already the API's search result.
+                        filterOptions={(options) => options}
+                        onChange={(_, newValue) => {
+                          if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
+                            const val = newValue as { value: string; label: string };
+                            setFormData({ ...formData, assigned_to: val.value });
+                            setPersistedAssignee(val);
+                          } else if (!newValue) {
+                            setFormData({ ...formData, assigned_to: "" });
+                            setPersistedAssignee(null);
+                          }
+                        }}
+                        onInputChange={(_, inputValue, reason) => {
+                          // Only what the user types searches; selecting an option
+                          // also fills the input and must not become the search.
+                          if (reason === "input") setAssigneeSearch(inputValue.trim());
+                          else if (reason === "clear") setAssigneeSearch("");
+                        }}
+                        isOptionEqualToValue={(option, value) => {
+                          if (!value) return false;
+                          if (typeof option === 'string' || typeof value === 'string') return option === value;
+                          return (option as any).value === (value as any).value;
+                        }}
+                        placeholder="Select User"
+                        error={Boolean(errors.assigned_to)}
+                        helperText={errors.assigned_to}
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Deal Stage <span className="text-red-500">*</span>
+                    </label>
+                    <AppSelect
+                      value={formData.deal_stage}
+                      disabled={false}
+                      onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
+                      options={dealStages.filter(s => s.value !== "all")}
+                      placeholder="Select Deal Stage"
+                      isBgWhite
+                      height="48px"
+                      rounded="8px"
+                      error={Boolean(errors.deal_stage)}
+                      helperText={errors.deal_stage}
+                    // disabled={id ? true : false} // Corrected based on requirement to be editable
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Expected Close Date <span className="text-red-500">*</span>
+                    </label>
+                    <AppDatePicker
+                      value={formData.expected_close_date}
+                      onChange={(value) => {
+                        if (Array.isArray(value)) return;
+                        setFormData({ ...formData, expected_close_date: value ?? undefined });
+                      }}
+                      placeholder="Select close date"
+                      isBgWhite
+                      error={Boolean(errors.expected_close_date)}
+                      helperText={errors.expected_close_date}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Quantity <span className="text-red-500">*</span>
+                    </label>
+                    <AppInput
+                      type="number"
+                      disabled={false}
+                      placeholder="1"
+                      value={formData.quantity}
+                      onChange={(e) =>
+                        setFormData({ ...formData, quantity: Number(e.target.value) })
                       }
-                    }}
-                    onInputChange={(_, inputValue, reason) => {
-                      // Only what the user types searches; picking a lead also
-                      // fills the input and must not become the search.
-                      if (reason === "input") setLeadSearch(inputValue.trim());
-                      else if (reason === "clear") setLeadSearch("");
-                    }}
-                    isOptionEqualToValue={(option, value) => {
-                      if (!value) return false;
-                      if (typeof option === 'string' || typeof value === 'string') return option === value;
-                      return (option as any).value === (value as any).value;
-                    }}
-                    noOptionsText="No Contacted or Qualified leads found"
-                    placeholder="Select Client"
-                    error={Boolean(errors.client_account)}
-                    helperText={errors.client_account}
-                  />
-                )}
-              </div>
+                      isBgWhite
+                      height="48px"
+                      rounded="8px"
+                      error={Boolean(errors.quantity)}
+                      helperText={errors.quantity}
+                    // disabled={id ? true : false} // Corrected
+                    />
+                  </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Assign To <span className="text-red-500">*</span>
-                </label>
-                {/* Locked (by role, or no client yet): the same disabled input as
-                    Product Name and Client/Account, not a greyed-out dropdown. */}
-                {!canAssign || !formData.client_account ? (
-                  <AppInput
-                    disabled={true}
-                    value={assigneeOptions.find(u => u.value === formData.assigned_to)?.label || ""}
-                    placeholder={!formData.client_account ? "Select a client/account first" : ""}
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                    readOnly
-                    error={Boolean(errors.assigned_to)}
-                    helperText={errors.assigned_to || (!canAssign ? "Only an Admin or Manager can change the assignee" : undefined)}
-                  />
-                ) : (
-                  <AppAutocomplete
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                    loading={loadingUsers}
-                    value={assigneeOptions.find(u => u.value === formData.assigned_to) || null}
-                    options={assigneeOptions}
-                    getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
-                    // The list is already the API's search result.
-                    filterOptions={(options) => options}
-                    onChange={(_, newValue) => {
-                      if (newValue && typeof newValue !== 'string' && !Array.isArray(newValue)) {
-                        const val = newValue as { value: string; label: string };
-                        setFormData({ ...formData, assigned_to: val.value });
-                        setPersistedAssignee(val);
-                      } else if (!newValue) {
-                        setFormData({ ...formData, assigned_to: "" });
-                        setPersistedAssignee(null);
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Probability of Close Won (%) <span className="text-red-500">*</span>
+                    </label>
+                    <AppSelect
+                      value={String(formData.probability_of_close)}
+                      onChange={(e) =>
+                        setFormData({ ...formData, probability_of_close: e.target.value as string })
                       }
-                    }}
-                    onInputChange={(_, inputValue, reason) => {
-                      // Only what the user types searches; selecting an option
-                      // also fills the input and must not become the search.
-                      if (reason === "input") setAssigneeSearch(inputValue.trim());
-                      else if (reason === "clear") setAssigneeSearch("");
-                    }}
-                    isOptionEqualToValue={(option, value) => {
-                      if (!value) return false;
-                      if (typeof option === 'string' || typeof value === 'string') return option === value;
-                      return (option as any).value === (value as any).value;
-                    }}
-                    placeholder="Select User"
-                    error={Boolean(errors.assigned_to)}
-                    helperText={errors.assigned_to}
+                      placeholder="0"
+                      options={[
+                        { label: "20%", value: "20" },
+                        { label: "40%", value: "40" },
+                        { label: "60%", value: "60" },
+                        { label: "80%", value: "80" },
+                        { label: "100%", value: "100" },
+                      ]}
+                      isBgWhite
+                      height="48px"
+                      rounded="8px"
+                      error={Boolean(errors.probability_of_close)}
+                      helperText={errors.probability_of_close}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Notes</Label>
+                  <AppTextarea
+                    disabled={id ? true : false}
+                    placeholder="Add any relevant notes here..."
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    isBgWhite
+                    rounded="8px"
                   />
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Deal Stage <span className="text-red-500">*</span>
-                </label>
-                <AppSelect
-                  value={formData.deal_stage}
-                  disabled={false}
-                  onChange={(e) => setFormData({ ...formData, deal_stage: e.target.value as string })}
-                  options={dealStages.filter(s => s.value !== "all")}
-                  placeholder="Select Deal Stage"
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  error={Boolean(errors.deal_stage)}
-                  helperText={errors.deal_stage}
-                // disabled={id ? true : false} // Corrected based on requirement to be editable
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Expected Close Date <span className="text-red-500">*</span>
-                </label>
-                <AppDatePicker
-                  value={formData.expected_close_date}
-                  onChange={(value) => {
-                    if (Array.isArray(value)) return;
-                    setFormData({ ...formData, expected_close_date: value ?? undefined });
-                  }}
-                  placeholder="Select close date"
-                  isBgWhite
-                  error={Boolean(errors.expected_close_date)}
-                  helperText={errors.expected_close_date}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Quantity <span className="text-red-500">*</span>
-                </label>
-                <AppInput
-                  type="number"
-                  disabled={false}
-                  placeholder="1"
-                  value={formData.quantity}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quantity: Number(e.target.value) })
-                  }
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  error={Boolean(errors.quantity)}
-                  helperText={errors.quantity}
-                // disabled={id ? true : false} // Corrected
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Probability of Close Won (%) <span className="text-red-500">*</span>
-                </label>
-                <AppSelect
-                  value={String(formData.probability_of_close)}
-                  onChange={(e) =>
-                    setFormData({ ...formData, probability_of_close: e.target.value as string })
-                  }
-                  placeholder="0"
-                  options={[
-                    { label: "20%", value: "20" },
-                    { label: "40%", value: "40" },
-                    { label: "60%", value: "60" },
-                    { label: "80%", value: "80" },
-                    { label: "100%", value: "100" },
-                  ]}
-                  isBgWhite
-                  height="48px"
-                  rounded="8px"
-                  error={Boolean(errors.probability_of_close)}
-                  helperText={errors.probability_of_close}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Notes</Label>
-              <AppTextarea
-                disabled={id ? true : false}
-                placeholder="Add any relevant notes here..."
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                isBgWhite
-                rounded="8px"
-              />
-            </div>
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <AppButton
@@ -729,6 +760,7 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                 variantStyle="primary"
                 color="primary"
                 isLoading={isSubmitting}
+                disabled={isInitialLoading}
               >
                 {id ? "Update Deal" : "Save Deal"}
               </AppButton>
@@ -748,5 +780,27 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
         variant="discard"
       />
     </>
+  );
+}
+
+// Stand-in with the form's own shape (8 fields in two columns, then Notes), so
+// nothing jumps when the data lands.
+function DealFormSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse" aria-busy="true">
+      <span className="sr-only">Loading deal...</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 w-28 rounded bg-gray-200" />
+            <div className="h-12 w-full rounded-lg bg-gray-100" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 w-16 rounded bg-gray-200" />
+        <div className="h-24 w-full rounded-lg bg-gray-100" />
+      </div>
+    </div>
   );
 }

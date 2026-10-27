@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PipelineHeader from "@/components/pipeline/PipelineHeader";
 import PipelineStats from "@/components/pipeline/PipelineStats";
 import PipelineBoardWrapper from "@/components/pipeline/pipeline-board/PipelineBoardWrapper";
@@ -9,7 +10,10 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { useGetPipelineStore } from "@/lib/store/pipeline";
 
 export default function PipelineClient() {
-  const { fetchPipeline, fetchActiveUser, dateRangeFilter, salespersonFilter, setScopeUserId } = useGetPipelineStore();
+  const { fetchPipeline, fetchActiveUser, dateRangeFilter, salespersonFilter, setScopeUserId, setEditId, setIsModalOpen } = useGetPipelineStore();
+  const router = useRouter();
+  // Deep link from a deal notification: /sales/pipeline?deal=<id>.
+  const dealToOpen = useSearchParams().get("deal");
   const { userProfile, userRole, loading: authLoading } = useAuth();
   const seesAllDeals = canSeeAllDeals(userProfile?.role ?? userRole);
   // Everyone but Admin/Manager/Super Admin only sees the deals assigned to them.
@@ -31,6 +35,17 @@ export default function PipelineClient() {
     fetchActiveUser();
     readyRef.current = true;
   }, [canFetch, scopeUserId, setScopeUserId, fetchPipeline, fetchActiveUser]);
+
+  // Open the linked deal's Update Pipeline modal once the board can load (the
+  // role is known), then drop ?deal from the URL so a refresh or closing the
+  // modal does not open it again. A deal the user can't see is handled by the
+  // modal itself (it closes with a message).
+  useEffect(() => {
+    if (!canFetch || !dealToOpen) return;
+    setEditId(dealToOpen);
+    setIsModalOpen(true);
+    router.replace("/sales/pipeline", { scroll: false });
+  }, [canFetch, dealToOpen, setEditId, setIsModalOpen, router]);
 
   // Silent fetch for salesperson filter change
   useEffect(() => {

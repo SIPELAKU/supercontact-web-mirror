@@ -16,7 +16,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { AddDealModal, dealStages } from "@/components/pipeline/AddDealModal"
 import { DealCard } from "@/components/pipeline/pipeline-board/DealCard"
@@ -28,7 +28,8 @@ import { filterStagesBySelection } from "@/components/pipeline/pipeline-board/st
 
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
-import { StageUI } from "@/lib/helper/transformPipeline"
+import { StageUI, isClosedStage } from "@/lib/helper/transformPipeline"
+import { ConfirmationPopup } from "@/components/ui/confirmation-popup"
 
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { Deal } from "@/lib/types/Pipeline"
@@ -69,6 +70,11 @@ export default function PipelineBoard() {
   // Picked stages; empty = all.
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
+  // Board as it was when a drag began, to put a card back when a move to
+  // Won/Lost is cancelled.
+  const dragSnapshotRef = useRef<StageUI[] | null>(null)
+  // A drop into Won/Lost waiting for the user to confirm it (it can't be undone).
+  const [pendingClose, setPendingClose] = useState<{ dealId: string; toStage: string } | null>(null)
 
   // Track how many deals are visible per stage (defaults to 20)
   const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({})
@@ -178,7 +184,32 @@ export default function PipelineBoard() {
     const loc = findDeal(String(event.active.id), stages);
     if (!loc) return;
 
+    dragSnapshotRef.current = stages;
     setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
+  };
+
+  const moveDealToStage = async (dealId: string, toStage: string) => {
+    try {
+      await updateStagePipeline(dealId, toStage);
+      notify.success(`Moved to ${toStage}`);
+    } catch (error) {
+      console.error("Failed to update stage:", error);
+      notify.error("Failed to update stage. Reverting...");
+      await fetchPipeline();
+    }
+  };
+
+  // Won and Lost are final, so a move there waits for the user to confirm.
+  const requestStageMove = async (dealId: string, toStage: string) => {
+    if (isClosedStage(toStage)) {
+      setPendingClose({ dealId, toStage });
+      return;
+    }
+    await moveDealToStage(dealId, toStage);
+  };
+
+  const revertToSnapshot = () => {
+    if (dragSnapshotRef.current) setStages(dragSnapshotRef.current);
   };
 
   const handleDragOver = (event: DragOverEvent,
@@ -241,6 +272,12 @@ export default function PipelineBoard() {
     // Find the original stage from the store (not the optimistic state)
     const originalStage = listPipeline.find(s => s.deals.some(d => String(d.id) === activeId))?.name;
 
+    // A closed deal never moves (its card can't be dragged; this is the backstop).
+    if (isClosedStage(originalStage)) {
+      revertToSnapshot();
+      return;
+    }
+
     const from = findDeal(activeId, stages)
     if (!from) return
 
@@ -263,14 +300,7 @@ export default function PipelineBoard() {
       }
 
       if (originalStage && originalStage !== toStageName) {
-        try {
-          await updateStagePipeline(activeId, toStageName);
-          notify.success(`Moved to ${toStageName}`);
-        } catch (error) {
-          console.error("Failed to update stage:", error);
-          notify.error("Failed to update stage. Reverting...");
-          await fetchPipeline();
-        }
+        await requestStageMove(activeId, toStageName);
       }
       return
     }
@@ -293,14 +323,7 @@ export default function PipelineBoard() {
     const toStage = updated[to.stageIndex].name;
 
     if (originalStage && originalStage !== toStage) {
-      try {
-        await updateStagePipeline(activeId, toStage);
-        notify.success(`Moved to ${toStage}`);
-      } catch (error) {
-        console.error("Failed to update stage:", error);
-        notify.error("Failed to update stage. Reverting...");
-        await fetchPipeline();
-      }
+      await requestStageMove(activeId, toStage);
     }
   }
 
@@ -365,6 +388,23 @@ export default function PipelineBoard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 space-y-8">
       <AddDealModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      <ConfirmationPopup
+        isOpen={Boolean(pendingClose)}
+        onClose={() => {
+          revertToSnapshot();
+          setPendingClose(null);
+        }}
+        onConfirm={() => {
+          const move = pendingClose;
+          setPendingClose(null);
+          if (move) moveDealToStage(move.dealId, move.toStage);
+        }}
+        title={`Move this deal to ${pendingClose?.toStage ?? "a closed stage"}?`}
+        description="A Won or Lost deal is final: it can't be moved back to another stage or edited afterwards."
+        confirmText="Yes, move it"
+        cancelText="Cancel"
+        variant="warning"
+      />
       <div className="px-6 pt-5">
         <h2 className="font-medium pb-2">Filters</h2>
         <FilterBar
@@ -500,7 +540,7 @@ export default function PipelineBoard() {
 
                             {dealsToShow.map((deal) => (
                               <div key={deal.id} className="pointer-events-auto shrink-0">
-                                <SortableDeal id={deal.id}>
+                                <SortableDeal id={deal.id} disabled={isClosedStage(stage.name)}>
                                   <DealCard {...deal} stageName={stage.name} />
                                 </SortableDeal>
                               </div>

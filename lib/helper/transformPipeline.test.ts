@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { daysUntilDeletion, isDealExpired, transformPipelineResponse, type PipelineAPIItem } from './transformPipeline';
+import { daysUntilDeletion, isClosedStage, isDealExpired, transformPipelineResponse, type PipelineAPIItem } from './transformPipeline';
 
 const item = (id: string, deal_stage: string, probability_of_close?: number): PipelineAPIItem => ({
   id,
@@ -128,5 +128,20 @@ describe('daysUntilDeletion', () => {
 
     expect(deals.find((d) => d.id === 'late')?.days_until_deletion).toBeLessThan(0);
     expect(deals.find((d) => d.id === 'ahead')?.days_until_deletion).toBeUndefined();
+  });
+});
+
+describe('isClosedStage', () => {
+  it('treats Won and Lost as closed (final), however the name is written', () => {
+    expect(isClosedStage('Closed - Won')).toBe(true);
+    expect(isClosedStage('Closed - Lost')).toBe(true);
+    expect(isClosedStage('closed-won')).toBe(true);
+    expect(isClosedStage(' Closed-Lost ')).toBe(true);
+  });
+
+  it('treats every open stage, and a missing one, as not closed', () => {
+    for (const stage of ['Prospect', 'Qualified', 'Negotiation', 'Proposal', '', null, undefined]) {
+      expect(isClosedStage(stage)).toBe(false);
+    }
   });
 });

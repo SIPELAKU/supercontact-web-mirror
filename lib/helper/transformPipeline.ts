@@ -57,8 +57,21 @@ export function generateUUID() {
  * BE's `status`. A deal closing today is not expired yet, and a closed deal
  * (won or lost) never is.
  */
+/**
+ * Won and Lost are final. A closed deal can be viewed but not edited, and it
+ * cannot be moved to another stage.
+ */
+export const CLOSED_STAGES = ["Closed - Won", "Closed - Lost"];
+
+export function isClosedStage(stage: string | null | undefined): boolean {
+  if (!stage) return false;
+  // "Closed-Won", "Closed - Won" and "closed - won" are the same stage.
+  const normalized = stage.replace(/\s*-\s*/g, " - ").trim().toLowerCase();
+  return CLOSED_STAGES.some((closed) => closed.toLowerCase() === normalized);
+}
+
 export function isDealExpired(expectedCloseDate: string | undefined, stage: string, now: Date = new Date()): boolean {
-  if (!expectedCloseDate || stage === "Closed - Won" || stage === "Closed - Lost") return false;
+  if (!expectedCloseDate || isClosedStage(stage)) return false;
   // The BE sends the date as midnight UTC, so its first 10 characters are the day.
   const closeDay = expectedCloseDate.slice(0, 10);
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;

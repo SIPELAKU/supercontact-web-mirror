@@ -16,7 +16,7 @@ export default function PipelineClient() {
   const dealToOpen = useSearchParams().get("deal");
   const { userProfile, userRole, loading: authLoading } = useAuth();
   const seesAllDeals = canSeeAllDeals(userProfile?.role ?? userRole);
-  // Everyone but Admin/Manager/Super Admin only sees the deals assigned to them.
+  // Everyone but Admin/Manager only sees the deals assigned to them.
   const scopeUserId = seesAllDeals ? null : userProfile?.id ?? null;
   // Nothing is fetched until the role is known (and, for a scoped user, their
   // id), so a sales user never sees the whole company's deals, not even once.

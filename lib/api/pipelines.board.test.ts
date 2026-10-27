@@ -48,7 +48,7 @@ describe('fetchPipelineBoard', () => {
     expect(sent().path).toBe('/pipelines/board');
     expect(sent().query).toBe(
       'search=Budi&assigned_to=u1&assigned_to=u2' +
-      '&date_from=2026-10-01T00%3A00%3A00%2B07%3A00&date_to=2026-10-31T23%3A59%3A59%2B07%3A00&per_stage=20'
+      '&date_from=2026-10-01T00%3A00%3A00%2B07%3A00&date_to=2026-10-31T23%3A59%3A59%2B07%3A00&per_stage=5'
     );
     expect(board.stages).toEqual([{ name: 'Prospect' }]);
   });
@@ -56,7 +56,7 @@ describe('fetchPipelineBoard', () => {
   it('asks for no stage, so every column comes back (the stage filter is in the browser)', async () => {
     await fetchPipelineBoard({});
 
-    expect(sent().query).toBe('per_stage=20');
+    expect(sent().query).toBe('per_stage=5');
   });
 });
 
@@ -73,7 +73,7 @@ describe('fetchPipelineBoardColumn', () => {
     const query = new URLSearchParams(sent().query);
     expect(query.get('deal_stage')).toBe('Closed - Won');
     expect(query.get('cursor')).toBe('abc==');
-    expect(query.get('limit')).toBe('20');
+    expect(query.get('limit')).toBe('5');
     expect(query.getAll('assigned_to')).toEqual(['u1', 'u2']);
     expect(query.get('search')).toBe('Budi');
     expect(query.get('date_from')).toBe(filters.date_from);

@@ -19,6 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { canAssignDeals } from "./dealAssignment";
 import { toLeadOption, type LeadOption } from "./dealLeadOptions";
+import { isCloseDateAllowed, PAST_CLOSE_DATE_MESSAGE } from "./dealCloseDate";
 import { AppInput } from "../ui/app-input";
 import { AppDatePicker } from "../ui/app-datepicker";
 import { AppTextarea } from "../ui/app-textarea";
@@ -30,7 +31,7 @@ import { notify } from "@/lib/notifications";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import * as pipelineAPI from "@/lib/api/pipelines";
 import { isClosedStage } from "@/lib/helper/transformPipeline";
-import { format } from "date-fns";
+import { format, startOfToday } from "date-fns";
 import { Lock } from "lucide-react";
 
 export const dealStages = [
@@ -135,6 +136,9 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
   // Won/Lost is final: the deal can still be opened and read, but every field
   // and the save button are disabled. Judged by the SAVED stage, not the form.
   const isClosedDeal = Boolean(id) && isClosedStage(deal?.deal_stage);
+  // The close date the deal has now (Update only): it may stay as it is even
+  // when it has passed (an expired deal).
+  const savedCloseDate = id && deal?.expected_close_date ? new Date(deal.expected_close_date) : undefined;
 
   useEffect(() => {
     async function fetchDetails() {
@@ -300,6 +304,10 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
 
     if (!data.expected_close_date) {
       errs.expected_close_date = "Expected close date is required";
+    } else if (!isCloseDateAllowed(data.expected_close_date, savedCloseDate)) {
+      // The calendar already blocks past days; this catches a modal left
+      // open past midnight.
+      errs.expected_close_date = PAST_CLOSE_DATE_MESSAGE;
     }
 
     if (!data.quantity || data.quantity <= 0) {
@@ -697,6 +705,8 @@ export function AddDealModal({ open, onOpenChange }: AddDealModalProps) {
                           setFormData({ ...formData, expected_close_date: value ?? undefined });
                         }}
                         placeholder="Select close date"
+                        // No past dates on an open deal (Add and Update).
+                        minDate={startOfToday()}
                         isBgWhite
                         error={Boolean(errors.expected_close_date)}
                         helperText={errors.expected_close_date}

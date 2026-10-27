@@ -9,6 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.112.1] - 2026-10-27
+
+### Detail Versi 1.112.1
+
+#### 🎨 Close Date Deal Tidak Bisa Diisi Tanggal yang Sudah Lewat
+
+- **Deskripsi:**
+  - **Masalah:** Expected Close Date di Add Deal dan Update Pipeline bisa diisi tanggal yang sudah lewat, termasuk saat memperbarui deal yang sudah expired. Deal dengan tanggal lampau langsung (atau tetap) expired
+  - **Solusi:**
+    - kalender **Expected Close Date** hanya bisa memilih **hari ini dan seterusnya**; hari-hari sebelumnya nonaktif, di Add Deal maupun Update Pipeline untuk semua deal yang masih open;
+    - tanggal yang sudah tersimpan tetap boleh dipertahankan, sehingga deal expired masih bisa diedit (misalnya notes atau probability) tanpa harus mengubah close date-nya;
+    - validasi saat simpan sebagai pengaman, misalnya bila modal dibiarkan terbuka melewati tengah malam: "Pick a close date from today onward"
+  - **Tidak Berubah:** deal Won/Lost tetap terkunci seluruhnya
+  - **Impact:** Close date deal open tidak bisa dimundurkan ke tanggal yang sudah lewat
+  - **Catatan BE:**
+    - validasi close date lampau di BE akan ditambahkan oleh tim BE; sampai saat itu aturan ini baru dijaga FE;
+    - memajukan close date deal expired seharusnya membuat deal kembali active (flag expired dan jadwal hapus 30 hari di-reset). Perilaku ini belum tertulis di spec BE, jadi perlu dicek: deal yang tanggalnya sudah dimajukan tidak boleh lagi muncul di filter Expired
+  - **Technical Notes:**
+    - `isCloseDateAllowed` dan `PAST_CLOSE_DATE_MESSAGE` di `components/pipeline/dealCloseDate.ts`, dipakai `validateForm` di `AddDealModal.tsx`
+    - prop opsional baru `minDate` di komponen bersama `AppDatePicker` (`components/ui/app-datepicker.tsx`); pemakaian lain tidak berubah
+
+#### 🔧 Kanban Memuat 5 Deal per Kolom
+
+- **Deskripsi:**
+  - Board dan Load More memuat 5 deal per kolom per request (`BOARD_PAGE_SIZE` di `lib/api/pipelines.ts`), sesuai keputusan setelah testing. Entri 1.112.0 sudah disesuaikan
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **5 Test Baru** (`components/pipeline/dealCloseDate.test.ts`): hari ini dan setelahnya boleh, tanggal lampau ditolak, tanggal tersimpan deal expired tetap boleh, memindah deal expired ke tanggal lampau lain ditolak, tanggal kosong diserahkan ke validasi wajib isi
+  - **Diubah:** 3 test di `lib/api/pipelines.board.test.ts` kini mengharapkan 5 deal per kolom
+  - **Total:** 45 file test, 582 test lolos
+
+---
+
 ## [1.112.0] - 2026-10-27
 
 ### Detail Versi 1.112.0
@@ -17,8 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Deskripsi:**
   - **Masalah:** Kanban memuat **semua** deal perusahaan sekaligus lewat `GET /pipelines`, lalu search, filter tanggal, total per kolom, urutan probability dan "Load More" dikerjakan di browser. Semakin banyak deal, semakin berat board dibuka
-  - **Solusi:** Board kini memakai `GET /pipelines/board`. Satu request memuat semua kolom stage, masing-masing 20 deal pertama, jumlah deal (`count`) dan total nilai (`total_amount`) kolom itu, plus statistik. Setiap perubahan filter juga hanya satu request
-  - **Load More per Kolom:** "Load More (N remaining)" memuat 20 deal berikutnya dari `GET /pipelines/board/column` memakai cursor kolom itu dan filter yang sama dengan board di layar. Bila BE menolak cursor (filter sudah berubah), board dimuat ulang otomatis
+  - **Solusi:** Board kini memakai `GET /pipelines/board`. Satu request memuat semua kolom stage, masing-masing 5 deal pertama, jumlah deal (`count`) dan total nilai (`total_amount`) kolom itu, plus statistik. Setiap perubahan filter juga hanya satu request
+  - **Load More per Kolom:** "Load More (N remaining)" memuat 5 deal berikutnya dari `GET /pipelines/board/column` memakai cursor kolom itu dan filter yang sama dengan board di layar. Bila BE menolak cursor (filter sudah berubah), board dimuat ulang otomatis
   - **Filter oleh API:**
     - **Search** mencari nama contact, perusahaan, produk dan notes, dan berjalan 1 detik setelah berhenti mengetik;
     - **Assigned To** dan **Date Range** (expected close date) juga disaring BE;

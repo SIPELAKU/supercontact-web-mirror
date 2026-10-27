@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   PointerSensor,
@@ -12,9 +11,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core"
 import {
-  arrayMove,
   SortableContext,
-  verticalListSortingStrategy,
+  type SortingStrategy,
 } from "@dnd-kit/sortable"
 import { useEffect, useMemo, useRef, useState } from "react"
 
@@ -25,6 +23,13 @@ import SortableDeal from "@/components/pipeline/pipeline-board/SortableDeal"
 import CustomSelectStage from "@/components/pipeline/SelectDealStage"
 import MultiSelectDealStage from "@/components/pipeline/MultiSelectDealStage"
 import { filterStagesBySelection } from "@/components/pipeline/pipeline-board/stageFilter"
+import { columnCollision, dropIndex, moveDealToColumn, stageNameAt } from "@/components/pipeline/pipeline-board/boardMoves"
+import {
+  createMoveFeedback,
+  moveDirection,
+  moveFeedbackClass,
+  type MoveFeedbackState,
+} from "@/components/pipeline/pipeline-board/moveFeedback"
 
 import { FilterBar } from "@/components/ui/filter"
 import { formatRupiah } from "@/lib/helper/currency"
@@ -32,8 +37,8 @@ import { StageUI, isClosedStage } from "@/lib/helper/transformPipeline"
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup"
 
 import { useGetPipelineStore } from "@/lib/store/pipeline"
+import { useDebounce } from "@/lib/hooks/useDebounce"
 import { Deal } from "@/lib/types/Pipeline"
-import { getDateRange } from "@/lib/helper/getDateRange";
 import { Plus, Search } from "lucide-react"
 import { notify } from "@/lib/notifications"
 import { AppInput } from "@/components/ui/app-input"
@@ -50,153 +55,153 @@ const stageColors: Record<string, string> = {
   "Closed - Lost": "bg-[#FFE8E8]",
 }
 
+// A stage outside the default six (the company's own, or an inactive one that
+// still has deals) gets a neutral column.
+const DEFAULT_STAGE_COLOR = "bg-gray-50"
+
+// A column's cards as on screen, in column order (read once, on drop).
+const cardRectsIn = (stageName: string) =>
+  Array.from(
+    document.querySelectorAll<HTMLElement>(`[data-stage-cards="${CSS.escape(stageName)}"] > [data-deal-id]`)
+  ).map((node) => node.getBoundingClientRect())
+
+// The other cards stay put while one is dragged: there is no manual order, the
+// API's sort places the card once it is dropped.
+const keepInPlace: SortingStrategy = () => null
+
 export default function PipelineBoard() {
   const {
     listPipeline,
     salespersonFilter,
     dateRangeFilter,
+    dealStatusFilter,
+    searchFilter,
     setDateRangeFilter,
+    setDealStatusFilter,
     setSalespersonFilter,
+    setSearchFilter,
     loading,
+    refreshing,
+    loadingMoreStages,
     listActiveUser,
     isModalOpen,
     setIsModalOpen,
     updateStagePipeline,
     fetchPipeline,
+    loadMoreDeals,
     scopeUserId
   } = useGetPipelineStore();
-  const [searchQuery, setSearchQuery] = useState<string>("")
+  // What is typed. The API searches, so the board reloads once typing pauses.
+  const [searchQuery, setSearchQuery] = useState<string>(searchFilter)
+  const debouncedSearch = useDebounce(searchQuery, 1000)
   const [stages, setStages] = useState(listPipeline)
   // Picked stages; empty = all.
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [stageFilter, setStageFilter] = useState<string[]>([])
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null)
+  // While dragging: the card's own column, and the column under the pointer.
+  const [dragFromStage, setDragFromStage] = useState<string | null>(null)
+  const [overStage, setOverStage] = useState<string | null>(null)
   // Board as it was when a drag began, to put a card back when a move to
   // Won/Lost is cancelled.
   const dragSnapshotRef = useRef<StageUI[] | null>(null)
   // A drop into Won/Lost waiting for the user to confirm it (it can't be undone).
   const [pendingClose, setPendingClose] = useState<{ dealId: string; toStage: string } | null>(null)
+  // The card just moved to another stage: saving, fading out, or highlighted.
+  const [moveFx, setMoveFx] = useState<MoveFeedbackState | null>(null)
+  const feedbackRef = useRef<ReturnType<typeof createMoveFeedback> | null>(null)
+  if (!feedbackRef.current) feedbackRef.current = createMoveFeedback(setMoveFx)
+  const feedback = feedbackRef.current
+  // A board came in while a moved card held the screen, and is not shown yet.
+  const heldBoardRef = useRef(false)
+  // The board as on screen, for code that runs after an await.
+  const stagesRef = useRef(stages)
+  stagesRef.current = stages
 
-  // Track how many deals are visible per stage (defaults to 20)
-  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>({})
+  useEffect(() => () => feedback.dispose(), [feedback])
 
   useEffect(() => {
+    setSearchFilter(debouncedSearch.trim())
+  }, [debouncedSearch, setSearchFilter])
+
+  useEffect(() => {
+    // While a moved card is saving or fading out, the move shows the new board itself.
+    if (feedback.holdsBoard()) {
+      heldBoardRef.current = true
+      return
+    }
     if (listPipeline.length > 0) {
+      heldBoardRef.current = false
       setStages(listPipeline)
     }
-  }, [listPipeline])
+  }, [listPipeline, feedback])
 
+  const showLatestBoard = () => {
+    heldBoardRef.current = false
+    const latest = useGetPipelineStore.getState().listPipeline
+    if (latest.length > 0) setStages(latest)
+  }
 
-  const computeStageTotals = useMemo(() => {
-    return (currentStages: StageUI[]) => {
-      return currentStages.map(stage => ({
-        ...stage,
-        value: stage.deals.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)
-      }))
-    }
-  }, [])
-
-  const searchQueryLower = searchQuery.toLowerCase();
-
-  const searchPipeline = useMemo(() => {
-
-    if (!searchQueryLower) return stages;
-
-    return stages.map((stage) => {
-      const filteredDeals = stage.deals.filter((deal) => {
-        const dealName = (deal?.deal_name || "").toLowerCase();
-        const companyName = (deal?.company?.name || "").toLowerCase();
-        const productName = (deal?.product?.product_name || "").toLowerCase();
-
-        return (
-          dealName.includes(searchQueryLower) ||
-          companyName.includes(searchQueryLower) ||
-          productName.includes(searchQueryLower)
-        );
-      });
-
-      return { ...stage, deals: filteredDeals };
-    });
-
-  }, [searchQueryLower, stages]);
-
-
-
-  const filteredStages = useMemo(() => {
-
-
-    const stageFiltered = filterStagesBySelection(searchPipeline, statusFilter);
-
-    // Client-side Date Range Filtering
-    const finalStages = stageFiltered.map((stage) => {
-      // If date filter is 'all', keep all deals
-      if (dateRangeFilter === 'all') return stage;
-
-      const range = getDateRange(dateRangeFilter);
-      if (!range) return stage;
-
-      const filteredDeals = stage.deals.filter((deal) => {
-        if (!deal.expected_close_date) return false;
-
-        // Parse dates safely. expected_close_date is YYYY-MM-DD or similar standard format
-        const dealDate = new Date(deal.expected_close_date);
-        const startDate = new Date(range.start);
-        const endDate = new Date(range.end);
-
-        return dealDate >= startDate && dealDate <= endDate;
-      });
-
-      return { ...stage, deals: filteredDeals };
-    });
-
-    // Reset visible counts when filters change
-    setVisibleCounts({})
-    return computeStageTotals(finalStages);
-
-  }, [searchPipeline, statusFilter, dateRangeFilter]);
-
-
+  // The stage filter stays in the browser: the board always loads every
+  // column, and the ones not picked are shown empty.
+  const visibleStages = useMemo(
+    () => filterStagesBySelection(stages, stageFilter),
+    [stages, stageFilter]
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
-
-  const findDeal = (
-    id: string,
-    stages: StageUI[]
-  ): { stageIndex: number; dealIndex: number } | null => {
-    for (let stageIndex = 0; stageIndex < stages.length; stageIndex++) {
-      const dealIndex = stages[stageIndex].deals.findIndex(
-        (d) => String(d.id) === id
-      );
-
-      if (dealIndex !== -1) return { stageIndex, dealIndex };
-    }
-    return null;
-  };
-
-
-  const handleDragStart = (
-    event: DragStartEvent,
-    stages: StageUI[],
-    setActiveDeal: (deal: Deal | null) => void
-  ) => {
-    const loc = findDeal(String(event.active.id), stages);
-    if (!loc) return;
+  const handleDragStart = (event: DragStartEvent) => {
+    const dealId = String(event.active.id);
+    const fromStage = stageNameAt(stages, dealId);
+    const deal = stages.find((s) => s.name === fromStage)?.deals.find((d) => String(d.id) === dealId);
+    if (!deal) return;
 
     dragSnapshotRef.current = stages;
-    setActiveDeal(stages[loc.stageIndex].deals[loc.dealIndex]);
+    setActiveDeal(deal);
+    setDragFromStage(fromStage);
   };
 
   const moveDealToStage = async (dealId: string, toStage: string) => {
+    const run = feedback.start(dealId);
+
+    let reloaded: boolean;
     try {
-      await updateStagePipeline(dealId, toStage);
-      notify.success(`Moved to ${toStage}`);
+      reloaded = await updateStagePipeline(dealId, toStage);
     } catch (error) {
+      run.cancel();
       console.error("Failed to update stage:", error);
       notify.error("Failed to update stage. Reverting...");
       await fetchPipeline();
+      return;
     }
+
+    // A newer move took over; it shows the board when it is done.
+    if (!run.isCurrent()) {
+      notify.success(`Moved to ${toStage}`);
+      return;
+    }
+
+    // Saved, but the board didn't reload: the card stays where it was dropped,
+    // unless another board came in meanwhile.
+    if (!reloaded) {
+      run.cancel();
+      if (heldBoardRef.current) showLatestBoard();
+      notify.success(`Moved to ${toStage}`);
+      return;
+    }
+
+    const dropped = stagesRef.current.find((s) => s.name === toStage)?.deals ?? [];
+    const landed = useGetPipelineStore.getState().listPipeline.find((s) => s.name === toStage)?.deals ?? [];
+    const direction = moveDirection(dropped, landed, dealId);
+    notify.success(
+      `Moved to ${toStage}`,
+      direction === "gone"
+        ? { description: "Sorted further down by probability. Use Load More to see it." }
+        : undefined
+    );
+    run.finish(direction, showLatestBoard);
   };
 
   // Won and Lost are final, so a move there waits for the user to confirm.
@@ -212,118 +217,49 @@ export default function PipelineBoard() {
     if (dragSnapshotRef.current) setStages(dragSnapshotRef.current);
   };
 
-  const handleDragOver = (event: DragOverEvent,
-    stages: StageUI[],
-    setStages: (s: StageUI[]) => void) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-
-    const from = findDeal(activeId, stages);
-    if (!from) return;
-
-    const isOverColumn = overId.startsWith("column-") || stages.some(s => s.name === overId);
-
-    if (isOverColumn) {
-      const stageName = overId.replace("column-", "");
-      const toStageIndex = stages.findIndex(s => s.name === stageName);
-
-      if (toStageIndex !== -1 && from.stageIndex !== toStageIndex) {
-        const updated = [...stages];
-        updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] };
-        updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] };
-
-        const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
-        updated[toStageIndex].deals.push(moved);
-        setStages(updated);
-      }
-    } else {
-      const to = findDeal(overId, stages);
-      if (!to) return;
-
-      if (from.stageIndex === to.stageIndex) return;
-
-      const updated = [...stages];
-      updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] };
-      updated[to.stageIndex] = { ...updated[to.stageIndex], deals: [...updated[to.stageIndex].deals] };
-
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1);
-      updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved);
-      setStages(updated);
-    }
+  // While dragging, only the column under the pointer is marked. The board
+  // itself doesn't change until the drop: moving the card into each column it
+  // passed changed the columns' size, which made dnd-kit pick the previous
+  // column again, and so on without end ("Maximum update depth exceeded").
+  const handleDragOver = ({ over }: DragOverEvent) => {
+    setOverStage(over ? stageNameAt(stages, String(over.id)) : null);
   };
 
+  const endDrag = () => {
+    setActiveDeal(null);
+    setDragFromStage(null);
+    setOverStage(null);
+  };
 
-  const handleDragEnd = async (
-    event: DragEndEvent,
-    stages: StageUI[],
-    setStages: (s: StageUI[]) => void,
-    setActiveDeal: (deal: Deal | null) => void,
-  ) => {
-    const { active, over } = event
-    setActiveDeal(null)
-    if (!over) return
+  const handleDragEnd = async ({ active, over }: DragEndEvent) => {
+    endDrag();
 
-    const activeId = String(active.id)
-    const overId = String(over.id)
+    const dealId = String(active.id)
+    const originalStage = stageNameAt(stages, dealId);
+    const toStage = over ? stageNameAt(stages, String(over.id)) : null;
 
-    // Find the original stage from the store (not the optimistic state)
-    const originalStage = listPipeline.find(s => s.deals.some(d => String(d.id) === activeId))?.name;
-
-    // A closed deal never moves (its card can't be dragged; this is the backstop).
-    if (isClosedStage(originalStage)) {
-      revertToSnapshot();
+    // Nothing to save when the card is dropped outside the board, or back in
+    // its own column (the order inside a column is the API's sort, so there
+    // is no manual order), or for a closed deal (its card can't be dragged;
+    // this is the backstop).
+    if (!originalStage || !toStage || toStage === originalStage || isClosedStage(originalStage)) {
       return;
     }
 
-    const from = findDeal(activeId, stages)
-    if (!from) return
+    // The card goes where it was dropped, so it saves there and then fades out
+    // from there toward its sorted place (up or down).
+    const dropRect = active.rect.current.translated;
+    const index = dropRect ? dropIndex(cardRectsIn(toStage), dropRect.top + dropRect.height / 2) : undefined;
+    setStages(moveDealToColumn(stages, dealId, toStage, index));
+    await requestStageMove(dealId, toStage);
+  }
 
-    const updated = [...stages]
-    updated[from.stageIndex] = { ...updated[from.stageIndex], deals: [...updated[from.stageIndex].deals] }
-
-    if (overId.startsWith("column-") || stages.some(s => s.name === overId)) {
-      const toStageName = overId.startsWith("column-") ? overId.replace("column-", "") : overId;
-      const toStageIndex = updated.findIndex((s: StageUI) => s.name === toStageName);
-
-      // Even if from.stageIndex === toStageIndex (moved by onDragOver), 
-      // we still check if it needs a backend update vs originalStage.
-      if (from.stageIndex !== toStageIndex) {
-        updated[toStageIndex] = { ...updated[toStageIndex], deals: [...updated[toStageIndex].deals] }
-        const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-        updated[toStageIndex].deals.push(moved)
-
-        const updatedWithTotals = computeStageTotals(updated)
-        setStages(updatedWithTotals)
-      }
-
-      if (originalStage && originalStage !== toStageName) {
-        await requestStageMove(activeId, toStageName);
-      }
-      return
-    }
-
-    const to = findDeal(overId, updated)
-    if (!to) return
-
-    if (from.stageIndex === to.stageIndex) {
-      updated[from.stageIndex].deals = arrayMove(updated[from.stageIndex].deals, from.dealIndex, to.dealIndex)
-    } else {
-      updated[to.stageIndex] = { ...updated[to.stageIndex], deals: [...updated[to.stageIndex].deals] }
-      const [moved] = updated[from.stageIndex].deals.splice(from.dealIndex, 1)
-      updated[to.stageIndex].deals.splice(to.dealIndex, 0, moved)
-    }
-
-
-    const updatedWithTotals = computeStageTotals(updated)
-    setStages(updatedWithTotals)
-
-    const toStage = updated[to.stageIndex].name;
-
-    if (originalStage && originalStage !== toStage) {
-      await requestStageMove(activeId, toStage);
+  const handleLoadMore = async (stageName: string) => {
+    try {
+      await loadMoreDeals(stageName);
+    } catch (error) {
+      console.error("Failed to load more deals:", error);
+      notify.error("Failed to load more deals");
     }
   }
 
@@ -349,7 +285,7 @@ export default function PipelineBoard() {
           <div className="h-10 w-40 bg-gray-300 rounded-lg"></div>
         </div>
 
-        <div className="w-full overflow-x-auto scrollbar-hide pb-6 pt-1 px-6">
+        <div className="w-full overflow-x-auto pb-6 pt-1 px-6">
           <div className="inline-flex gap-6 min-w-full mt-4">
 
             {[1, 2, 3, 4, 5].map((col) => (
@@ -415,8 +351,8 @@ export default function PipelineBoard() {
               component: (
                 <MultiSelectDealStage
                   placeholder="Select All"
-                  value={statusFilter}
-                  onChange={setStatusFilter}
+                  value={stageFilter}
+                  onChange={setStageFilter}
                   data={dealStages}
                   className="font-normal"
                 />
@@ -454,13 +390,42 @@ export default function PipelineBoard() {
                 />
               )
             },
+            // Filtered by the API. Won/Lost deals are never active or expired,
+            // so with either option their columns are empty.
+            {
+              type: "custom",
+              component: (
+                <CustomSelectStage
+                  placeholder="Select Status"
+                  value={dealStatusFilter}
+                  onChange={setDealStatusFilter}
+                  data={[
+                    { label: "All", value: "all" },
+                    { label: "Active", value: "active" },
+                    { label: "Expired", value: "expired" }
+                  ]}
+                  className="bg-white rounded-lg font-normal"
+                />
+              )
+            },
           ]}
         />
       </div>
 
       <div className="border-b w-full p-0 border-gray-300" />
 
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 w-full">
+      <div className="relative flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 px-6 w-full">
+        {/* A quiet reload (a filter change, or after a move): a thin bar in the
+            gap above the columns; the board stays usable. */}
+        {refreshing && (
+          <div className="absolute inset-x-6 -bottom-4 h-0.5 overflow-hidden rounded-full bg-primary/15">
+            <div
+              role="progressbar"
+              aria-label="Updating board"
+              className="h-full w-1/3 rounded-full bg-primary animate-board-progress motion-reduce:animate-none"
+            />
+          </div>
+        )}
         <div className="lg:w-[50%] w-full">
           <AppInput
             isBgWhite
@@ -483,92 +448,96 @@ export default function PipelineBoard() {
 
       </div>
 
-      <div className="w-full overflow-x-auto scrollbar-hide pb-6 pt-1 px-6">
+      <div className="w-full overflow-x-auto pb-6 pt-1 px-6">
 
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={(event) => handleDragStart(event, stages, setActiveDeal)}
-          onDragOver={(event) => handleDragOver(event, stages, setStages)}
-          onDragEnd={(event) => handleDragEnd(event, stages, setStages, setActiveDeal)}
+          collisionDetection={columnCollision}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={endDrag}
         >
           <div className="inline-flex gap-6 min-w-full mt-4">
 
-            {filteredStages.map((stage) => (
-              <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>
-                <div className="w-80 shrink-0 flex flex-col max-h-[calc(100vh-220px)]">
+            {visibleStages.map((stage) => {
+              // count covers the whole column; only some of it is loaded.
+              const remaining = Math.max(0, stage.count - stage.deals.length);
+              const isLoadingMore = Boolean(loadingMoreStages[stage.name]);
 
-                  <div
-                    className={`rounded-xl p-4 flex flex-col h-full flex-grow shadow-sm border border-gray-200 ${stageColors[stage.name]}`}
-                  >
+              return (
+                <ColumnDropZone key={stage.id} id={`column-${stage.name}`}>
+                  <div className="w-80 shrink-0 flex flex-col max-h-[calc(100vh-220px)]">
 
-                    <div className="flex items-center justify-between mb-4 px-1">
-                      <h3 className="font-semibold text-gray-900">{stage.name}</h3>
-                      <span className="text-sm font-medium text-gray-600">
-                        {formatRupiah(stage.value)}
-                      </span>
-                    </div>
+                    <div
+                      className={`rounded-xl p-4 flex flex-col h-full flex-grow shadow-sm border border-gray-200 transition-shadow ${stageColors[stage.name] ?? DEFAULT_STAGE_COLOR} ${overStage === stage.name && overStage !== dragFromStage ? "ring-2 ring-primary ring-offset-2" : ""}`}
+                    >
 
-                    {(() => {
-                      const limit = visibleCounts[stage.name] || 20;
-                      const visibleDeals = stage.deals.slice(0, limit);
+                      <div className="flex items-center justify-between gap-2 mb-4 px-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{stage.name}</h3>
+                          <span
+                            title="Deals in this stage"
+                            className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-xs font-medium text-gray-600"
+                          >
+                            {stage.count}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-sm font-medium text-gray-600">
+                          {formatRupiah(stage.value)}
+                        </span>
+                      </div>
 
-                      // If active deal is in this stage but hidden by lazy loading, add it to the list
-                      // This is critical for dnd-kit to not lose track of the active item
-                      const dealsToShow = [...visibleDeals];
-                      if (activeDeal) {
-                        const activeDealInStageIndex = stage.deals.findIndex(d => d.id === activeDeal.id);
-                        if (activeDealInStageIndex !== -1) {
-                          const isAlreadyVisible = visibleDeals.some(d => d.id === activeDeal.id);
-                          if (!isAlreadyVisible) {
-                            dealsToShow.push(stage.deals[activeDealInStageIndex]);
-                          }
-                        }
-                      }
+                      <SortableContext
+                        items={stage.deals.map((d) => d.id)}
+                        strategy={keepInPlace}
+                      >
+                        <div data-stage-cards={stage.name} className="flex flex-col gap-3 flex-grow min-h-25 overflow-y-auto scrollbar-hide pr-2 -mr-2">
+                          {stage.deals.length === 0 && (
+                            <div className="h-24 flex shrink-0 items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
+                              Drag deals here
+                            </div>
+                          )}
 
-                      return (
-                        <SortableContext
-                          items={dealsToShow.map((d) => d.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="flex flex-col gap-3 flex-grow min-h-25 overflow-y-auto custom-scrollbar pr-2 -mr-2">
-                            {stage.deals.length === 0 && (
-                              <div className="h-24 flex shrink-0 items-center justify-center text-gray-400 text-sm rounded-xl border border-gray-200 bg-white shadow-inner">
-                                Drag deals here
-                              </div>
-                            )}
-
-                            {dealsToShow.map((deal) => (
-                              <div key={deal.id} className="pointer-events-auto shrink-0">
-                                <SortableDeal id={deal.id} disabled={isClosedStage(stage.name)}>
-                                  <DealCard {...deal} stageName={stage.name} />
+                          {stage.deals.map((deal) => {
+                            const fx = moveFx?.dealId === deal.id ? moveFx : null;
+                            return (
+                              <div key={deal.id} data-deal-id={deal.id} className={`pointer-events-auto shrink-0 ${moveFeedbackClass(fx)}`}>
+                                {/* Not draggable while its move is still being saved or fading out. */}
+                                <SortableDeal id={deal.id} disabled={isClosedStage(stage.name) || (fx !== null && fx.phase !== "entering")}>
+                                  <DealCard
+                                    {...deal}
+                                    stageName={stage.name}
+                                    isSaving={fx?.phase === "saving"}
+                                    isHighlighted={fx?.phase === "entering"}
+                                  />
                                 </SortableDeal>
                               </div>
-                            ))}
+                            );
+                          })}
 
-                            {stage.deals.length > limit && (
-                              <div className="pt-2 pb-1">
-                                <AppButton
-                                  variantStyle="text"
-                                  className="w-full text-xs text-gray-500 hover:text-gray-900 h-8"
-                                  onClick={() => setVisibleCounts(prev => ({
-                                    ...prev,
-                                    [stage.name]: (prev[stage.name] || 20) + 20
-                                  }))}
-                                >
-                                  Load More ({stage.deals.length - limit} remaining)
-                                </AppButton>
-                              </div>
-                            )}
-                          </div>
-                        </SortableContext>
-                      );
-                    })()}
+                          {stage.nextCursor && (
+                            <div className="pt-2 pb-1">
+                              <AppButton
+                                variantStyle="text"
+                                className="w-full text-xs text-gray-500 hover:text-gray-900 h-8"
+                                disabled={isLoadingMore}
+                                onClick={() => handleLoadMore(stage.name)}
+                              >
+                                {isLoadingMore
+                                  ? "Loading..."
+                                  : remaining > 0 ? `Load More (${remaining} remaining)` : "Load More"}
+                              </AppButton>
+                            </div>
+                          )}
+                        </div>
+                      </SortableContext>
 
+                    </div>
                   </div>
-                </div>
-              </ColumnDropZone>
-            ))}
+                </ColumnDropZone>
+              );
+            })}
 
 
           </div>

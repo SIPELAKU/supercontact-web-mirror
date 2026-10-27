@@ -1,82 +1,86 @@
 import { describe, it, expect } from 'vitest';
-import { daysUntilDeletion, isClosedStage, isDealExpired, transformPipelineResponse, type PipelineAPIItem } from './transformPipeline';
+import type { PipelineBoardStage } from '@/lib/api/pipelines';
+import { daysUntilDeletion, isClosedStage, isDealExpired, mapBoardStages, type PipelineAPIItem } from './transformPipeline';
 
 const item = (id: string, deal_stage: string, probability_of_close?: number): PipelineAPIItem => ({
   id,
   deal_name: id,
   deal_stage,
   probability_of_close,
-  amount: 1000,
+  amount: '1000.00',
   avatar: '',
   contact: { id: `c-${id}`, name: `Client ${id}`, company: '' },
   user: { id: 'u1', fullname: 'Sari', email: 's@x.id', avatar_initial: 'S', avatar_url: null },
 });
 
-const idsIn = (stages: ReturnType<typeof transformPipelineResponse>, stage: string) =>
-  stages.find((s) => s.name === stage)!.deals.map((d) => d.id);
+const column = (name: string, deals: PipelineAPIItem[], extra: Partial<PipelineBoardStage> = {}): PipelineBoardStage => ({
+  name,
+  outcome: 'open',
+  display_order: 1,
+  count: deals.length,
+  total_amount: '0',
+  deals,
+  next_cursor: null,
+  ...extra,
+});
 
-describe('transformPipelineResponse: kanban order', () => {
-  it('orders each column by probability of close won, highest first', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [
-        item('p20', 'Prospect', 20),
-        item('p80', 'Prospect', 80),
-        item('p40', 'Prospect', 40),
-        item('p100', 'Prospect', 100),
+// 26 Oct 2026, mid-afternoon local time.
+const now = new Date(2026, 9, 26, 15, 0, 0);
+
+describe('mapBoardStages (GET /pipelines/board)', () => {
+  it("keeps the API's column order, including a stage outside the default six", () => {
+    const stages = mapBoardStages([column('Prospect', []), column('Demo', []), column('Closed - Won', [])]);
+
+    expect(stages.map((s) => s.name)).toEqual(['Prospect', 'Demo', 'Closed - Won']);
+  });
+
+  it("keeps the API's order inside a column - the API sorts, the board does not re-sort", () => {
+    const stages = mapBoardStages([column('Prospect', [item('p40', 'Prospect', 40), item('p80', 'Prospect', 80)])]);
+
+    expect(stages[0].deals.map((d) => d.id)).toEqual(['p40', 'p80']);
+  });
+
+  it("takes the header's count and total from the API, not from the loaded deals", () => {
+    const stages = mapBoardStages([
+      column('Prospect', [item('a', 'Prospect'), item('b', 'Prospect')], {
+        count: 134,
+        total_amount: '101121550.00',
+        next_cursor: 'cursor-1',
+      }),
+    ]);
+
+    expect(stages[0]).toMatchObject({ count: 134, value: 101121550, nextCursor: 'cursor-1' });
+    expect(stages[0].deals).toHaveLength(2);
+  });
+
+  it('has nothing more to load when the API sends no cursor', () => {
+    expect(mapBoardStages([column('Qualified', [])])[0].nextCursor).toBeNull();
+  });
+
+  it('reads the Decimal amount of each deal as a number', () => {
+    const stages = mapBoardStages([column('Proposal', [{ ...item('a', 'Proposal'), amount: '1500.50' }])]);
+
+    expect(stages[0].deals[0].amount).toBe(1500.5);
+  });
+
+  it('still marks expired deals from their expected close date, with the deletion countdown', () => {
+    const stages = mapBoardStages(
+      [
+        column('Prospect', [
+          { ...item('late', 'Prospect'), expected_close_date: '2026-10-25T00:00:00Z' },
+          { ...item('ahead', 'Prospect'), expected_close_date: '2999-01-01T00:00:00Z' },
+        ]),
       ],
-    });
+      now
+    );
+    const deals = stages[0].deals;
 
-    expect(idsIn(stages, 'Prospect')).toEqual(['p100', 'p80', 'p40', 'p20']);
-  });
-
-  it('keeps the API order for deals with the same probability', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [item('first', 'Qualified', 60), item('top', 'Qualified', 80), item('second', 'Qualified', 60)],
-    });
-
-    expect(idsIn(stages, 'Qualified')).toEqual(['top', 'first', 'second']);
-  });
-
-  it('sorts every column on its own, and puts a missing probability last', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [
-        item('n-none', 'Negotiation'),
-        item('p-low', 'Prospect', 20),
-        item('n-high', 'Negotiation', 100),
-        item('p-high', 'Prospect', 80),
-      ],
-    });
-
-    expect(idsIn(stages, 'Prospect')).toEqual(['p-high', 'p-low']);
-    expect(idsIn(stages, 'Negotiation')).toEqual(['n-high', 'n-none']);
-  });
-
-  it('marks a deal expired from its expected close date, so the card can fade it', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [
-        { ...item('late', 'Prospect', 40), expected_close_date: '2020-01-01T00:00:00Z' },
-        { ...item('ahead', 'Prospect', 20), expected_close_date: '2999-01-01T00:00:00Z' },
-      ],
-    });
-
-    const deals = stages.find((s) => s.name === 'Prospect')!.deals;
-    expect(deals.find((d) => d.id === 'late')?.is_expired).toBe(true);
-    expect(deals.find((d) => d.id === 'ahead')?.is_expired).toBe(false);
-  });
-
-  it('still totals each column', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [item('a', 'Proposal', 20), item('b', 'Proposal', 80)],
-    });
-
-    expect(stages.find((s) => s.name === 'Proposal')!.value).toBe(2000);
+    expect(deals.find((d) => d.id === 'late')).toMatchObject({ is_expired: true, days_until_deletion: 29 });
+    expect(deals.find((d) => d.id === 'ahead')).toMatchObject({ is_expired: false, days_until_deletion: undefined });
   });
 });
 
 describe('isDealExpired', () => {
-  // 26 Oct 2026, mid-afternoon local time.
-  const now = new Date(2026, 9, 26, 15, 0, 0);
-
   it('is expired once the expected close date has passed', () => {
     expect(isDealExpired('2026-10-25T00:00:00Z', 'Prospect', now)).toBe(true);
     expect(isDealExpired('2026-09-16T00:00:00Z', 'Negotiation', now)).toBe(true);
@@ -99,9 +103,6 @@ describe('isDealExpired', () => {
 });
 
 describe('daysUntilDeletion', () => {
-  // 26 Oct 2026, mid-afternoon local time.
-  const now = new Date(2026, 9, 26, 15, 0, 0);
-
   it('counts down to 30 days after the expected close date', () => {
     expect(daysUntilDeletion('2026-10-25T00:00:00Z', now)).toBe(29); // deleted 24 Nov
     expect(daysUntilDeletion('2026-10-06T00:00:00Z', now)).toBe(10); // deleted 5 Nov
@@ -115,19 +116,6 @@ describe('daysUntilDeletion', () => {
 
   it('counts calendar days across a month end', () => {
     expect(daysUntilDeletion('2026-10-02T00:00:00Z', now)).toBe(6); // deleted 1 Nov
-  });
-
-  it('is filled in by the transform for expired deals only', () => {
-    const stages = transformPipelineResponse({
-      pipelines: [
-        { ...item('late', 'Prospect', 40), expected_close_date: '2020-01-01T00:00:00Z' },
-        { ...item('ahead', 'Prospect', 20), expected_close_date: '2999-01-01T00:00:00Z' },
-      ],
-    });
-    const deals = stages.find((s) => s.name === 'Prospect')!.deals;
-
-    expect(deals.find((d) => d.id === 'late')?.days_until_deletion).toBeLessThan(0);
-    expect(deals.find((d) => d.id === 'ahead')?.days_until_deletion).toBeUndefined();
   });
 });
 

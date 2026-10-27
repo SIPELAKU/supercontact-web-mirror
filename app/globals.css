@@ -67,6 +67,19 @@
       transform: translateX(0);
     }
   }
+
+  /* Pipeline kanban: thin indeterminate bar while the board reloads quietly.
+     The bar is a third of its track, so 300% carries it across. */
+  --animate-board-progress: board-progress 1.2s ease-in-out infinite;
+
+  @keyframes board-progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
 }
 
 :root {
@@ -184,6 +197,15 @@
 @utility mask-gradient {
   mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, white 10%, white 90%, transparent);
+}
+
+/* Still scrolls (wheel, touch, keyboard), but shows no scrollbar. */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 /* Knowledge Base Markdown preview (components/knowledge/MarkdownEditor.tsx,
    ArticleVersionHistory read-only previews). Plain CSS so it doesn't depend on

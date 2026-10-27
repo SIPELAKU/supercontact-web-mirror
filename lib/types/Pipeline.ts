@@ -68,6 +68,10 @@ export interface DealCardProps {
   is_expired?: boolean
   days_until_deletion?: number
   stageName: string;
+  /** Just moved to another stage, waiting for the board to reload. */
+  isSaving?: boolean
+  /** Just moved: shown for a moment where it landed. */
+  isHighlighted?: boolean
 }
 
 export interface AddDealModalProps {

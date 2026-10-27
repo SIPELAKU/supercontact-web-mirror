@@ -9,6 +9,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.112.0] - 2026-10-27
+
+### Detail Versi 1.112.0
+
+#### ⚡ Kanban Pipeline Dimuat per Kolom dari API Board
+
+- **Deskripsi:**
+  - **Masalah:** Kanban memuat **semua** deal perusahaan sekaligus lewat `GET /pipelines`, lalu search, filter tanggal, total per kolom, urutan probability dan "Load More" dikerjakan di browser. Semakin banyak deal, semakin berat board dibuka
+  - **Solusi:** Board kini memakai `GET /pipelines/board`. Satu request memuat semua kolom stage, masing-masing 20 deal pertama, jumlah deal (`count`) dan total nilai (`total_amount`) kolom itu, plus statistik. Setiap perubahan filter juga hanya satu request
+  - **Load More per Kolom:** "Load More (N remaining)" memuat 20 deal berikutnya dari `GET /pipelines/board/column` memakai cursor kolom itu dan filter yang sama dengan board di layar. Bila BE menolak cursor (filter sudah berubah), board dimuat ulang otomatis
+  - **Filter oleh API:**
+    - **Search** mencari nama contact, perusahaan, produk dan notes, dan berjalan 1 detik setelah berhenti mengetik;
+    - **Assigned To** dan **Date Range** (expected close date) juga disaring BE;
+    - **Status** baru (All / Active / Expired) disaring BE. Dengan Active atau Expired, kolom Won/Lost kosong karena deal yang sudah ditutup tidak pernah active atau expired. Status expired ditandai job BE tiap jam, jadi bisa berbeda sampai sekitar 1 jam dengan tag Expired di kartu, yang masih dihitung FE dari expected close date sampai BE menambah field baru;
+    - **filter stage** (multi-select) tetap di browser: semua kolom dimuat, kolom yang tidak dipilih tampil kosong dengan jumlah dan total 0
+  - **Header Kolom:** jumlah deal tampil di samping nama stage. Jumlah dan total Rp mencakup semua deal yang cocok dengan filter, bukan hanya yang sudah tampil
+  - **Urutan Kartu:** urutan di dalam kolom ditentukan BE, yaitu probability tertinggi lalu yang terakhir di-update.
+    - Drag di dalam kolom yang sama tidak mengubah apa pun dan tidak memanggil API (tidak ada urutan manual);
+    - drag ke kolom lain hanya mengganti stage, lalu board dimuat ulang diam-diam sehingga kartu masuk di posisi sesuai urutan
+  - **Stage Lain:** stage di luar enam stage bawaan (milik perusahaan, atau stage nonaktif yang masih punya deal) ikut tampil dengan warna kolom netral
+  - **Tidak Berubah:**
+    - kunci deal Won/Lost beserta konfirmasinya, badge probability dan stats cards;
+    - tag Expired dan hitung mundur penghapusan, yang masih dihitung dari expected close date + 30 hari;
+    - scope per role, refresh filter Assigned To, deep link `?deal=` dan skeleton modal
+  - **Impact:** Board terbuka dengan satu request kecil berapa pun jumlah deal, dan total per kolom tetap akurat
+  - **Technical Notes:**
+    - `fetchPipelineBoard`, `fetchPipelineBoardColumn`, `toBoardQuery` (key list diulang seperti yang dibaca FastAPI, nilai kosong dibuang) dan `isStaleCursorError` di `lib/api/pipelines.ts`
+    - store `lib/store/pipeline/index.ts`:
+      - semua filter dirakit dalam satu objek (`boardFiltersFrom`), termasuk `searchFilter` dan `dealStatusFilter` baru (param `status`);
+      - `boardFilters` menyimpan filter board yang sedang tampil, untuk dikirim ulang oleh Load More;
+      - `loadMoreDeals`, `refreshing` dan `loadingMoreStages`;
+      - response board lama yang datang terlambat dibuang (`boardRequestSeq`), begitu juga halaman Load More dari board sebelumnya
+    - `mapBoardStages` dan `mapPipelineDeal` di `lib/helper/transformPipeline.ts` menggantikan `transformPipelineResponse`; `StageUI` mendapat `count` dan `nextCursor`
+    - `moveDealToColumn` dan `stageNameAt` di `components/pipeline/pipeline-board/boardMoves.ts`
+    - dihapus dari `PipelineBoard.tsx`: `searchPipeline`, filter tanggal di browser, `computeStageTotals`, `visibleCounts` dan cabang `arrayMove`
+    - `PipelineClient` memuat ulang board sekali per perubahan search, Assigned To atau Date Range, tanpa request ganda saat halaman dibuka
+    - `GET /pipelines` tidak diubah dan masih dipakai form quotation
+    - **Butuh BE 1.147.0** (`/pipelines/board`). PROD BE (1.144.3) belum punya endpoint ini, jadi versi ini tidak boleh rilis ke PROD sebelum BE PROD naik
+    - BE 1.147.0 kini juga menolak memindahkan atau mengubah deal Won/Lost (`PATCH /pipelines/{id}/stage` dan `PUT /pipelines/{id}` → 400), sejalan dengan kunci di FE (1.110.0)
+
+#### ✨ Kartu yang Dipindah Menunjukkan Arah Pindahnya
+
+- **Deskripsi:**
+  - **Masalah:** Kolom diurutkan berdasarkan probability, sehingga kartu yang dipindah ke stage lain bisa langsung loncat ke atas atau ke bawah setelah board dimuat ulang. Bila posisinya berada di luar kartu yang sudah dimuat, kartu itu tiba-tiba hilang
+  - **Solusi:**
+    - **Saat dilepas:** kartu ditaruh di posisi tempat ia dilepas di kolom tujuan, tampil redup dengan spinner, dan tidak bisa di-drag sampai board baru masuk;
+    - **setelah board dimuat ulang:** kartu fade-out ke arah posisi barunya (ke atas atau ke bawah), lalu muncul di tempat barunya dengan fade-in singkat dan highlight selama 1,5 detik;
+    - **posisi di luar kartu yang dimuat:** kartu fade-out ke bawah, dan toast "Moved to …" menambahkan keterangan "Sorted further down by probability. Use Load More to see it.";
+    - **posisi tidak berubah:** hanya highlight
+  - **Bar Memuat:** bar tipis tampil di atas kolom setiap kali board dimuat ulang diam-diam (filter berubah, atau setelah kartu dipindah). Bar ini menggantikan spinner di kotak search
+  - **Catatan:**
+    - tidak ada request tambahan dan tidak ada scroll otomatis;
+    - user yang mengaktifkan *reduce motion* di OS tidak mendapat animasi geser, hanya highlight;
+    - bila simpan gagal, perilakunya sama seperti sebelumnya (pesan error lalu board dimuat ulang). Bila simpan berhasil tetapi board gagal dimuat ulang, kartu tetap di tempat dilepas
+  - **Impact:** User bisa melihat ke mana kartu yang baru dipindah, termasuk saat kartu turun ke bagian yang belum dimuat
+  - **Technical Notes:**
+    - `components/pipeline/pipeline-board/moveFeedback.ts`: `moveDirection` (up / down / same / gone), `moveFeedbackClass` (class tw-animate-css) dan `createMoveFeedback`, yang mengikuti satu kartu melalui tahap saving → exiting → entering. Pindah kartu yang lebih baru menghentikan yang lama, dan setiap jalan keluar membersihkan timer
+    - `PipelineBoard.tsx` menahan board di layar selama tahap saving dan exiting (`holdsBoard`), lalu menampilkan board terbaru dari store setelah fade-out
+    - `fetchPipeline` dan `updateStagePipeline` kini mengembalikan apakah board berhasil dimuat ulang, untuk membedakan "pindah berhasil" dari "board gagal dimuat ulang"
+    - `DealCard` mendapat prop `isSaving` dan `isHighlighted`; keyframe `board-progress` di `app/globals.css`
+
+#### 🐛 Bug Fix Halaman Error Saat Menggeser Kartu Antar Kolom
+
+- **Deskripsi:**
+  - **Masalah:** Menggeser kartu bolak-balik di dekat batas dua kolom bisa membuat halaman pipeline error dengan pesan "Maximum update depth exceeded". Error ini paling mudah terjadi pada kolom yang pendek
+  - **Root Cause:**
+    - Selama drag, kartu langsung dipindah ke setiap kolom yang dilewati sebagai preview. Setiap perpindahan mengubah isi kolom, dan karena semua kolom setinggi kolom tertinggi, tinggi kolom ikut berubah;
+    - dnd-kit lalu mengukur ulang dan memilih target berdasarkan kartu terdekat (`closestCenter`), yang kini berada di kolom sebelumnya, sehingga kartu dipindah balik. Begitu terus sampai React menghentikannya
+  - **Solusi:** Board tidak berubah selama drag. Kartu hanya mengikuti kursor, kolom di bawah kursor diberi sorotan, dan kartu baru dipindah saat dilepas, ke posisi tempat ia dilepas (dihitung sekali dari posisi kartu-kartu kolom tujuan, `dropIndex`). Kartu lain di kolom asal juga tidak lagi bergeser memberi ruang, karena urutan kartu ditentukan API
+  - **Impact:** Halaman tidak lagi error saat menggeser kartu. Membatalkan drag (Escape atau dilepas di luar kolom) juga tidak meninggalkan kartu di kolom yang salah
+  - **Technical Notes:** `onDragOver` di `PipelineBoard.tsx` hanya mencatat kolom di bawah kursor (`overStage`), dan `SortableContext` memakai strategi `keepInPlace`
+
+#### 🎨 Kolom yang Sedikit Isinya Bisa Menerima Kartu di Seluruh Tingginya
+
+- **Deskripsi:**
+  - **Masalah:** Untuk memindahkan kartu ke kolom yang hanya berisi sedikit deal, user harus scroll jauh ke atas dan mendekatkan kartu ke deal-deal di kolom itu
+  - **Root Cause:** Kolom tujuan dipilih dari kartu yang titik tengahnya paling dekat dengan kartu yang digeser. Kolom pendek hanya punya kartu di bagian atas, sehingga saat kartu digeser di bawah, kolom lain yang terpilih
+  - **Solusi:**
+    - kolom tujuan adalah kolom yang berada di bawah kursor, di sepanjang tingginya, termasuk area kosong di bawah kartu terakhir;
+    - semua kolom kini setinggi kolom tertinggi (tetap dibatasi tinggi layar), sehingga area kosong itu terlihat sebagai bagian kolom;
+    - kolom tujuan disorot selama kartu digeser di atasnya;
+    - scrollbar di dalam kolom disembunyikan. Kolom tetap bisa di-scroll dengan mouse wheel, touchpad atau keyboard
+  - **Impact:** Kartu bisa dilepas di bagian mana pun dari kolom tujuan tanpa scroll ke atas
+  - **Technical Notes:** `columnCollision` di `components/pipeline/pipeline-board/boardMoves.ts` (`pointerWithin` hanya pada kolom, cadangan `rectIntersection`); `ColumnDropZone` di `DroppableColumn.tsx` kini berupa flex row agar kolom di dalamnya ikut setinggi board; utility baru `scrollbar-hide` di `app/globals.css`. Class `custom-scrollbar` dan `scrollbar-hide` yang sebelumnya dipakai board tidak pernah didefinisikan (tidak berefek); scroll horizontal board tetap menampilkan scrollbar seperti sebelumnya
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **59 Test Baru:**
+    - `components/pipeline/pipeline-board/moveFeedback.test.ts` (14): arah pindah kartu, class animasi (termasuk reduce motion), urutan tahap dengan fake timer, pindah kartu yang lebih baru, batal, dan unmount;
+    - `lib/api/pipelines.board.test.ts` (7): query board dan Load More, key list diulang, nilai kosong dibuang, deteksi cursor yang ditolak;
+    - `lib/store/pipeline/pipelineStore.test.ts` (16): satu request dengan semua filter, filter Status (termasuk All dan Load More), hasil berhasil/tidaknya muat ulang board dan pindah stage, jumlah/total/cursor dari API, response lama dibuang, reload diam-diam tanpa skeleton, Load More (menambah deal, cursor baru, filter board yang sama, tanpa duplikat, kolom yang sudah habis, cursor ditolak → board dimuat ulang, halaman dari board lama dibuang, error lain);
+    - `components/pipeline/pipeline-board/boardMoves.test.ts` (15): posisi drop di kolom tujuan (atas, di antara kartu, bawah, kolom kosong), kolom tujuan dari posisi kursor (bukan kartu, di seluruh tinggi kolom pendek, cadangan saat kursor di antara kolom, di luar board), kolom dari id kartu, jumlah dan total ikut kartu, drag di kolom sendiri tidak mengubah apa pun;
+    - `lib/helper/transformPipeline.test.ts` (6): `mapBoardStages`, menggantikan 6 test pengelompokan dan urutan lama;
+    - `components/pipeline/pipeline-board/stageFilter.test.ts` (1): kolom yang dikosongkan berjumlah dan bertotal 0
+  - **Diubah:** 7 test store yang ada kini memakai endpoint board
+  - **Total:** 44 file test, 577 test lolos
+
+---
+
 ## [1.111.0] - 2026-10-27
 
 ### Detail Versi 1.111.0

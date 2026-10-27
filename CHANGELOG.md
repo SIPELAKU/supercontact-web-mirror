@@ -9,6 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.111.0] - 2026-10-27
+
+### Detail Versi 1.111.0
+
+#### ✨ Produk Quotation Otomatis Terisi dari Pesanan Client
+
+- **Deskripsi:**
+  - **Isi Otomatis:** Saat memilih client di **Create Quotation**, daftar Products & Services langsung diisi dengan produk yang dipesan client, yaitu produk dari deal client tersebut yang berada di stage **Proposal**. Setiap baris berisi:
+    - produk dan qty sesuai deal;
+    - harga khusus client bila ada, selain itu harga katalog (tetap dihitung ulang oleh preview seperti biasa);
+    - catatan deal di kolom **Catatan**
+  - **Tetap Bisa Diedit:** Baris hasil isi otomatis adalah baris biasa. Produk, qty, catatan, diskon dan harga tetap bisa diubah, dan baris bisa dihapus atau ditambah
+  - **Konfirmasi Sebelum Mengganti:** Bila sudah ada baris yang dipilih produknya, misalnya sales menambah produk manual lalu memilih atau mengganti client, muncul konfirmasi "Ganti daftar produk?". **Ganti dengan pesanan** mengganti semua baris, sedangkan **Biarkan** mempertahankan baris yang ada. Bila belum ada produk yang dipilih, daftar langsung diisi tanpa konfirmasi
+  - **Catatan:**
+    - hanya untuk quotation baru; quotation draft yang dibuka ulang tidak berubah, dan mengosongkan client tidak menghapus baris;
+    - produk yang sudah diarsipkan tidak ikut diisi;
+    - kolom Catatan baris ikut tercetak di PDF quotation, jadi catatan deal juga terlihat oleh client. Sales bisa mengubah atau menghapusnya sebelum mengirim
+  - **Impact:** Sales tidak perlu lagi memasukkan produk satu per satu dari deal ke quotation
+  - **Technical Notes:**
+    - data dari `items` di `GET /quotations/lead`, yang berisi produk dari pipeline Proposal milik contact lead tersebut
+    - `rowsFromLeadOrder`, `orderFillAction` dan `seedUnitPrice` di `lib/utils/quotationRows.ts`; `newRow` dipindah ke file yang sama dari `QuotationFormClient`
+    - `handleClientDataChange` dan konfirmasi di `components/quotation/QuotationFormClient.tsx`; filter produk arsip (`isLeadItemOnSale`) dipakai bersama oleh pemilih produk
+    - pemilihan produk manual di `ProductsServicesTable.tsx` memakai `seedUnitPrice` yang sama untuk harga awal
+    - field `variant_values` dan `parent` ditambahkan ke tipe `QuotationLeadItem`, sesuai yang sudah dikirim BE
+
+#### 🐛 Bug Fix Keterangan Dropdown Tampil Seperti Error
+
+- **Deskripsi:**
+  - **Masalah:** Di Create Quotation, keterangan di bawah **Kanal Penjualan**, **Deal terkait** dan **Mata Uang** berwarna merah seperti pesan error, dan keterangan Deal terkait menimpa label "Kurs yang dipakai" di bawahnya
+  - **Root Cause:** Komponen bersama `AppSelect` selalu mewarnai keterangan dengan warna error, walaupun field tidak error. Selain itu tinggi pembungkusnya dikunci sesuai tinggi dropdown (misalnya 48px), sehingga label dan keterangan meluap ke baris berikutnya
+  - **Solusi:** Keterangan kini berwarna abu-abu dan baru merah saat field error, sama dengan `AppInput`. Tinggi hanya diterapkan ke dropdown, sehingga keterangan mendorong baris di bawahnya
+  - **Dampak ke Halaman Lain:**
+    - keterangan dropdown di Settings katalog (Bulk Price Update, Discount Policies, Promotions) dan dialog kirim quotation ikut berwarna abu-abu;
+    - pesan error dropdown di Add Deal, detail Lead dan pemilih produk quotation tetap merah, tetapi tidak lagi menimpa field di bawahnya
+  - **Impact:** User bisa membedakan keterangan biasa dari pesan error
+  - **Technical Notes:** `components/ui/app-select.tsx`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **13 Test Baru** (`lib/utils/quotationRows.test.ts`):
+    - baris dari pesanan client: produk, qty, catatan, harga khusus atau katalog, varian, dan pesanan kosong (8);
+    - kapan daftar langsung diisi, meminta konfirmasi, atau dibiarkan (3);
+    - harga awal produk (2)
+  - **Total:** 41 file test, 524 test lolos
+
+---
+
 ## [1.110.0] - 2026-10-27
 
 ### Detail Versi 1.110.0

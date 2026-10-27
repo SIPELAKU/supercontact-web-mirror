@@ -22,7 +22,7 @@ import {
   transitionQuotationStatus,
   updateQuotation,
 } from "@/lib/api/quotations";
-import type { QuotationLead } from "@/lib/api/quotations";
+import type { QuotationLead, QuotationLeadItem } from "@/lib/api/quotations";
 import { publicQuotationUrl } from "@/lib/api/quotations-public";
 import {
   QUOTATION_STATUS,
@@ -44,6 +44,7 @@ import {
   exchangeRateNote,
   quotationCurrencyOptions,
 } from "@/lib/utils/quotationForm";
+import { newRow, orderFillAction, rowsFromLeadOrder } from "@/lib/utils/quotationRows";
 import { fetchExchangeRateCurrencies } from "@/lib/api/exchange-rates";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
@@ -90,41 +91,6 @@ interface QuotationFormClientProps {
 type Decision = "accepted" | "rejected";
 
 const PREVIEW_DEBOUNCE_MS = 300;
-
-const newRow = (): ItemRow => ({
-  product_id: "",
-  title: "",
-  sku: "",
-  desc: "",
-  qty: 1,
-  unitPrice: 0,
-  listPrice: 0,
-  discountType: "percent",
-  discountValue: 0,
-  unitLabel: null,
-  unitPrecision: 2,
-  attributes: {},
-  overridePrice: null,
-  overrideReason: "",
-  overrideAllowed: false,
-  priceList: null,
-  billingPeriod: null,
-  // A row that has never been saved has no server-computed margin, and the
-  // preview does not carry one. Null, never 0 - see ItemRow.
-  costSnapshot: null,
-  marginPercent: null,
-  // COMMERCIAL Phase 5 (spec I8). `unitId` null = the product's own unit,
-  // which is what every pre-Phase-5 line means; everything else is read-only
-  // context the server decides and the preview fills in.
-  unitId: null,
-  unitOptions: [],
-  variantValues: {},
-  parentName: null,
-  bundleComponents: null,
-  promoCode: null,
-  promoDiscountAmount: null,
-  prePromoUnitPrice: null,
-});
 
 function toDateInput(value?: string | null, fallback?: Date): string {
   const date = value ? new Date(value) : fallback;
@@ -581,15 +547,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     return leads;
   }, [leads, initialData]);
 
-  // Picker options: the lead's Proposal-stage products first, then the active
-  // catalogue, keyed by product id.
-  //
-  // Lead items carry no status (GET /quotations/lead), so they are checked
-  // against the active catalogue: an archived product would only earn a 400
-  // from the preview and the save. When the catalogue fetch came back full
-  // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
-  // proof of archival and the lead item is kept - the server filters
-  // archived products out of the lead payload as well.
   // The lead the form is currently bound to. Hoisted to component scope in
   // Phase 3 because the price-list explainer needs its `contact_id` and its
   // CRM-company brief too, not only its Proposal-stage items.
@@ -598,12 +555,26 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     [leadsWithCurrent, clientData.lead_id]
   );
 
+  // Lead items carry no status (GET /quotations/lead), so they are checked
+  // against the active catalogue: an archived product would only earn a 400
+  // from the preview and the save. When the catalogue fetch came back full
+  // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
+  // proof of archival and the lead item is kept - the server filters
+  // archived products out of the lead payload as well.
+  const isLeadItemOnSale = useMemo(() => {
+    const activeIds = new Set(
+      catalogue.filter((p) => p.status !== "archived").map((p) => p.id)
+    );
+    const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
+    return (item: QuotationLeadItem) => activeIds.has(item.id) || catalogueMayBeTruncated;
+  }, [catalogue]);
+
+  // Picker options: the lead's Proposal-stage products first, then the active
+  // catalogue, keyed by product id.
   const availableProducts = useMemo<PickerProduct[]>(() => {
     const active = catalogue.filter((p) => p.status !== "archived");
-    const activeIds = new Set(active.map((p) => p.id));
-    const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
     const leadItems: PickerProduct[] = (selectedLead?.items ?? [])
-      .filter((item) => activeIds.has(item.id) || catalogueMayBeTruncated)
+      .filter(isLeadItemOnSale)
       .map((item) => ({
         id: item.id,
         product_name: item.product_name,
@@ -631,7 +602,22 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         parent_name: p.parent?.product_name ?? null,
       }));
     return [...leadItems, ...rest];
-  }, [catalogue, selectedLead]);
+  }, [catalogue, selectedLead, isLeadItemOnSale]);
+
+  // Picking the client of a new quotation fills Products & Services with what
+  // they ordered (the products of their Proposal-stage deals). Lines the
+  // seller already picked a product for are only replaced once they confirm.
+  const [pendingOrderRows, setPendingOrderRows] = useState<ItemRow[] | null>(null);
+
+  const handleClientDataChange = (next: Record<string, any>) => {
+    setClientData(next);
+    if (!isNew || !next.lead_id || next.lead_id === clientData.lead_id) return;
+    const lead = leadsWithCurrent.find((l) => l.id === next.lead_id);
+    const orderRows = rowsFromLeadOrder((lead?.items ?? []).filter(isLeadItemOnSale));
+    const action = orderFillAction(items, orderRows);
+    if (action === "fill") setItems(orderRows);
+    else if (action === "confirm") setPendingOrderRows(orderRows);
+  };
 
   // ── COMMERCIAL Phase 5: the per-line unit select's options (spec I8) ──────
   //
@@ -1520,7 +1506,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         <div className="lg:col-span-2 space-y-8">
           <ClientDetailsCard
             clientData={clientData}
-            setClientData={setClientData}
+            setClientData={handleClientDataChange}
             leads={leadsWithCurrent}
             isLoadingLeads={isLoadingLeads}
             onClientSearch={setClientSearchQuery}
@@ -1779,6 +1765,20 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             cancelText="Batal"
             variant={decision === "accepted" ? "info" : "warning"}
             isLoading={isDeciding}
+          />
+
+          <ConfirmationPopup
+            isOpen={!!pendingOrderRows}
+            onClose={() => setPendingOrderRows(null)}
+            onConfirm={() => {
+              if (pendingOrderRows) setItems(pendingOrderRows);
+              setPendingOrderRows(null);
+            }}
+            title="Ganti daftar produk?"
+            description="Klien ini punya pesanan dari deal tahap Proposal. Ganti baris di Products & Services dengan pesanan tersebut? Baris yang sudah diisi akan dihapus."
+            confirmText="Ganti dengan pesanan"
+            cancelText="Biarkan"
+            variant="warning"
           />
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { flushSync } from "react-dom";
 import { Box, Chip } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
 import { Quotation } from "@/lib/store/quotation";
@@ -35,21 +34,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import QuotationPdfDocument from "@/components/quotation/QuotationPdfDocument";
 import QuotationSendDialog from "@/components/quotation/QuotationSendDialog";
 import { fetchQuotationById } from "@/lib/api/quotations";
 import { useAuth } from "@/lib/context/AuthContext";
-import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
+import { useQuotationPdf } from "@/lib/hooks/useQuotationPdf";
 import { notify } from "@/lib/notifications";
-import {
-  downloadPdfBlob,
-  generateQuotationPdf,
-  quotationPdfFilename,
-} from "@/lib/utils/quotationPdf";
+import { downloadPdfBlob, quotationPdfFilename } from "@/lib/utils/quotationPdf";
 import type { Quotation as StoredQuotation } from "@/lib/types/Quotation";
-
-/** Distinct from the form's node id so both templates can coexist. */
-const PDF_NODE_ID = "quotation-content-list";
 
 interface QuotationTableProps {
   quotations: Quotation[];
@@ -78,10 +69,9 @@ interface QuotationTableProps {
   onRevise?: (quotation: Quotation) => void;
   /**
    * Called after a successful send so the parent can refetch the page. The
-   * send itself is owned HERE, not by the parent, because it needs the PDF -
-   * and the hidden <QuotationPdfDocument/> node the rasteriser reads lives in
-   * this component. Handing a blob up to the parent and back would be the
-   * same work with one more hop to get wrong.
+   * send itself is owned HERE, not by the parent, because it needs the PDF,
+   * which is built here from the stored row. Handing a blob up to the parent
+   * and back would be the same work with one more hop to get wrong.
    */
   onSendComplete?: () => void;
   /** The caller holds `quotations:approve`, resolved by the server. */
@@ -130,14 +120,12 @@ export default function QuotationTable({
   currentUserId = null,
   renderTopLeftToolbar,
 }: QuotationTableProps) {
-  // "Unduh PDF" (spec I7.1). Without it the extracted template would be
-  // unreachable for the 12 dev / 1 prod quotations already published - the
-  // form only renders it on the publish path, for a quotation it just saved.
+  // "Unduh PDF" (spec I7.1): a published quotation's PDF, rendered with its
+  // template (the snapshot it was sent with, or its template / the default).
   const { getToken } = useAuth();
-  const { definitions: productDefinitions } = useCustomFieldDefinitionsFor("product");
-  const [pdfRow, setPdfRow] = useState<StoredQuotation | null>(null);
+  const generateTemplatePdf = useQuotationPdf();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  // Phase 4: the send dialog, owned here because the PDF node is here.
+  // Phase 4: the send dialog, owned here because the PDF is built here.
   const [sendRow, setSendRow] = useState<StoredQuotation | null>(null);
   const [openingSendId, setOpeningSendId] = useState<string | null>(null);
 
@@ -161,20 +149,14 @@ export default function QuotationTable({
     }
   };
 
-  /** Renders THIS row into the hidden template and rasterises it, exactly as
-   *  the download action does; the dialog uploads whatever comes back. */
+  /** Renders THIS row with its template, exactly as the download action
+   *  does; the dialog uploads (or previews) whatever comes back. */
   const generatePdfForSend = async (row: StoredQuotation): Promise<Blob | null> => {
     try {
-      flushSync(() => setPdfRow(row));
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const node = document.getElementById(PDF_NODE_ID);
-      if (!node) throw new Error("Template quotation tidak ditemukan");
-      return await generateQuotationPdf(node, quotationPdfFilename(row.quotation_number));
+      return await generateTemplatePdf(row);
     } catch (error: any) {
       notify.error("Gagal membuat PDF", { description: error?.message });
       return null;
-    } finally {
-      setPdfRow(null);
     }
   };
 
@@ -184,21 +166,16 @@ export default function QuotationTable({
     try {
       const token = await getToken();
       // The list row is a summary; the template needs the LINES, the
-      // snapshots and the Phase 3 briefs, so the stored row is re-read.
+      // snapshots, the Phase 3 briefs and the template snapshot (detail
+      // only), so the stored row is re-read.
       const detail = await fetchQuotationById(token, row.id);
       const stored = detail.data as StoredQuotation;
-      flushSync(() => setPdfRow(stored));
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const node = document.getElementById(PDF_NODE_ID);
-      if (!node) throw new Error("Template quotation tidak ditemukan");
-      const filename = quotationPdfFilename(stored.quotation_number);
-      const blob = await generateQuotationPdf(node, filename);
-      downloadPdfBlob(blob, filename);
+      const blob = await generateTemplatePdf(stored);
+      downloadPdfBlob(blob, quotationPdfFilename(stored.quotation_number));
     } catch (error: any) {
       notify.error("Gagal membuat PDF", { description: error?.message });
     } finally {
       setDownloadingId(null);
-      setPdfRow(null);
     }
   };
 
@@ -462,15 +439,6 @@ export default function QuotationTable({
           densityToggle: true,
           fullScreenToggle: true,
         }}
-      />
-
-      {/* The same template the quotation form mounts, under its own node id so
-          the two can never collide if both are on screen. It renders nothing
-          until a row is being downloaded. */}
-      <QuotationPdfDocument
-        quotation={pdfRow}
-        productDefinitions={productDefinitions}
-        nodeId={PDF_NODE_ID}
       />
 
       <QuotationSendDialog

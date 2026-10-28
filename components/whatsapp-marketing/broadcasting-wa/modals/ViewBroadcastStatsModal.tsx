@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Download, FileSpreadsheet, FileText, RefreshCw, Users } from 'lucide-react';
+import { Download, RefreshCw, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog,
@@ -17,14 +17,10 @@ import {
   CardContent,
   Chip,
   IconButton,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
-  Menu,
-  MenuItem,
   Tooltip
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
+import { ExportFormatMenu } from '@/components/ui/export-format-menu';
 import { Spinner } from '@/components/ui/spinner';
 import {
   BROADCAST_RECIPIENT_SORT_KEYS,
@@ -307,26 +303,12 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
               </Grid>
             </Grid>
 
-            <Menu
-              anchorEl={exportMenu?.anchor}
-              open={!!exportMenu}
+            <ExportFormatMenu
+              anchorEl={exportMenu?.anchor ?? null}
+              title={`Export ${exportMenu ? statusLabel(exportMenu.status) : ''} recipients`}
               onClose={() => setExportMenu(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-              slotProps={{ paper: { sx: { minWidth: 200, borderRadius: 2 } } }}
-            >
-              <ListSubheader sx={{ lineHeight: '32px' }}>
-                Export {exportMenu ? statusLabel(exportMenu.status) : ''} recipients
-              </ListSubheader>
-              <MenuItem onClick={() => handleChooseFormat('csv')}>
-                <ListItemIcon><FileText size={16} /></ListItemIcon>
-                <ListItemText primary="CSV (.csv)" />
-              </MenuItem>
-              <MenuItem onClick={() => handleChooseFormat('excel')}>
-                <ListItemIcon><FileSpreadsheet size={16} /></ListItemIcon>
-                <ListItemText primary="Excel (.xlsx)" />
-              </MenuItem>
-            </Menu>
+              onChoose={handleChooseFormat}
+            />
 
             <Box sx={{ mt: 4 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Configuration</Typography>

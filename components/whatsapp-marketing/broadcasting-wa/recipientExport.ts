@@ -8,7 +8,8 @@
 import { format } from 'date-fns';
 
 import {
-  EXPORT_FILE_EXTENSION,
+  exportFileName,
+  statusLabel,
   type ExportColumn,
   type ExportFileFormat,
 } from '@/lib/utils/exportRows';
@@ -18,7 +19,8 @@ import type { BroadcastRecipient } from '@/lib/types/whatsapp-marketing';
 export const EXPORTABLE_STATUSES = ['sent', 'delivered', 'read', 'failed'] as const;
 export type ExportableStatus = (typeof EXPORTABLE_STATUSES)[number];
 
-export const statusLabel = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
+// Shared with the other exports; kept importable from here.
+export { statusLabel };
 
 // The recipients table's own columns first, in its order, then the extra
 // details. Dates as `yyyy-MM-dd HH:mm`: unambiguous, and they sort correctly
@@ -48,6 +50,5 @@ export function recipientExportFileName(
   fileFormat: ExportFileFormat,
   date = new Date()
 ) {
-  const name = broadcastName.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Untitled';
-  return `Broadcast_${name}_${statusLabel(status)}_${format(date, 'yyyy-MM-dd')}.${EXPORT_FILE_EXTENSION[fileFormat]}`;
+  return exportFileName('Broadcast', broadcastName, statusLabel(status), fileFormat, date);
 }

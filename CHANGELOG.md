@@ -9,6 +9,148 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.115.0] - 2026-10-28
+
+### Detail Versi 1.115.0
+
+#### ✨ Export Subscriber dari Statistik Campaign Email
+
+- **Deskripsi:**
+  - **Kartu Bisa Diklik:** Di statistik campaign email (halaman detail campaign dan modal statistik dari daftar campaign), kartu **Delivered**, **Opened**, **Clicked** dan **Bounced** kini bisa diklik untuk export ke **CSV** atau **Excel**, sama seperti statistik broadcast WhatsApp
+    - setiap kartu menampilkan ikon download dan tooltip "Export … subscribers (CSV or Excel)";
+    - klik membuka menu **CSV (.csv)** / **Excel (.xlsx)**;
+    - selama export berjalan, kartu yang dipilih menampilkan indikator loading dan keempat kartu nonaktif;
+    - kartu Bounce Rate, Complaint Rate, Dropped, Marked as Spam dan Simulated tidak berubah
+  - **Isi File:** Name, Email, Status, Phone Number, Company dan Updated At. File **Bounced** ditambah kolom **Error Message**, yaitu pesan error terakhir dari BE (kosong bila tidak ada)
+  - **Data Sama dengan Angka Kartu:** filter status di API bersifat kumulatif seperti kartu. Delivered juga memuat subscriber yang sudah membuka atau mengklik, dan Bounced juga memuat yang failed; kolom Status di file menunjukkan status terakhir masing-masing
+  - **Nama File:** dari subject campaign, misalnya `Campaign_Promo_Oktober_Delivered_2026-10-28.xlsx`
+  - **Notifikasi:** jumlah subscriber yang diexport, "No … subscribers to export" bila kosong, atau pesan error
+  - **Impact:** Tim bisa mengambil daftar subscriber per hasil kirim, misalnya yang membuka email untuk follow-up atau yang bounce untuk dibersihkan
+  - **Technical Notes:**
+    - data dari `GET /campaigns/{id}/subscribers?status=<kartu>&is_limit=false`, sudah tersedia di BE DEV dan PROD
+    - `fetchAllCampaignSubscribers` (timeout 120 detik) di `lib/api/email-marketing/campaigns.ts`; request dan penanganan error kini satu fungsi (`requestCampaignSubscribers`) yang juga dipakai tabel subscriber. Hook `useExportCampaignSubscribers` di `lib/hooks/useCampaigns.ts`
+    - kolom dan nama file di `components/email-marketing/campaigns/subscriberExport.ts`; kartu dan menu di `CampaignStatsPanel.tsx`
+
+#### ✨ Filter Status dan Sorting di Tabel Subscriber Campaign
+
+- **Deskripsi:**
+  - **Filter Status:** Tabel subscriber di statistik campaign email kini punya filter **Status** (Pending, Sent, Delivered, Opened, Clicked, Bounced, Dropped, Marked as Spam, Failed, Simulated), sama seperti tabel recipient broadcast WhatsApp. Filternya kumulatif seperti kartu: Delivered juga menampilkan yang sudah membuka atau mengklik, Bounced juga yang failed
+  - **Sorting:** kolom **Name**, **Email** dan **Status** bisa diurutkan. Status diurutkan sesuai tahap kirim, bukan abjad. Error Message tidak bisa diurutkan karena API tidak mendukungnya
+  - **Lewat API:** filter dan sorting diproses BE untuk seluruh subscriber, bukan hanya baris yang sudah tampil
+  - **Impact:** User bisa langsung melihat, misalnya, hanya subscriber yang bounce, atau mengurutkannya per status
+  - **Technical Notes:**
+    - `GET /campaigns/{id}/subscribers` dengan `status`, `sort_by` dan `sort_order` (sudah ada di BE DEV dan PROD); param hanya dikirim bila dipilih
+    - `fetchCampaignSubscribers` dan `useCampaignSubscribers` kini menerima **satu objek query** (`CampaignSubscribersQuery`: page, limit, search, status, sortBy, sortOrder) alih-alih parameter berurutan, sehingga filter baru cukup satu field
+    - kunci sort yang diterima API di `CAMPAIGN_SUBSCRIBER_SORT_KEYS` (`lib/types/email-marketing.ts`), dipakai lewat `toApiSort`
+
+#### ✨ Template PDF Quotation
+
+- **Deskripsi:**
+  - **PDF Memakai Template:** Semua PDF quotation kini dibuat dari template yang disimpan di BE, menggantikan layout PDF lama. Berlaku di semua tempat PDF dibuat:
+    - lampiran saat **Kirim ke Pelanggan** dari form;
+    - **Unduh PDF** di daftar quotation;
+    - dialog **Kirim** (dari form maupun daftar)
+  - **4 Template Sistem:** Monochrome, Fresh, Corporate (default awal) dan Surat Penawaran. Template tidak bisa dibuat atau diubah dari web
+  - **Template yang Dipakai:**
+    - quotation yang sudah dikirim memakai template yang dibekukan saat dikirim (`template_snapshot`), jadi PDF-nya tetap sama dengan yang diterima pelanggan walau template default diganti;
+    - selain itu memakai template quotation tersebut (`template_id`);
+    - quotation lama tanpa template memakai template default company
+  - **Pilih Template di Form:** bagian baru **Template PDF** di form quotation (create dan edit):
+    - dropdown berisi 4 template; nilai awalnya template default company (ditandai "(default)"), atau template quotation itu sendiri;
+    - deskripsi template tampil di bawah dropdown, dan thumbnail kecil menunjukkan template terpilih dengan **data di form** (klien, produk, qty, catatan, syarat, total hasil hitungan BE), ikut berubah saat form diubah; klik thumbnail untuk **pratinjau besar** (semua halaman) di dialog. PDF yang dikirim tetap dibuat dari data yang disimpan;
+    - hanya bisa diganti selama **draft**; setelah dikirim dropdown nonaktif dan menampilkan template yang dipakai saat dikirim;
+    - pilihan tersimpan saat draft disimpan atau dikirim (`template_id`); bila BE menolak template, pesannya tampil di bawah dropdown
+  - **Isi PDF:**
+    - logo perusahaan; bila belum ada logo, nama atau inisial perusahaan (inisial sama dengan di Company Profile);
+    - alamat dan kontak perusahaan;
+    - data pelanggan, dengan NPWP dan alamat dari company CRM bila ada;
+    - item lengkap dengan SKU, varian, atribut produk, isi paket, promo, catatan dan periode tagihan;
+    - total;
+    - kurs dan total dalam mata uang perusahaan untuk quotation mata uang asing;
+    - ketentuan penawaran dan link persetujuan online
+  - **Multi-halaman Rapi:** quotation dengan banyak item dibagi per halaman A4, dan baris yang akan terpotong batas halaman dipindah utuh ke halaman berikutnya (dengan margin atas dan bawah), jadi tidak ada baris item, total atau ketentuan yang terbelah dua. Sebelumnya PDF dipotong pada tinggi tetap sehingga satu baris bisa terbelah
+  - **Pratinjau per Halaman:** pratinjau besar menampilkan halaman A4 terpisah ("Halaman 1 dari 2"), sama persis dengan hasil PDF, bukan satu kertas yang memanjang
+  - **Impact:** PDF yang diterima pelanggan tampil profesional dengan identitas perusahaan, dan perusahaan bisa memilih gaya PDF-nya
+  - **Technical Notes:**
+    - endpoint `GET /quotation-templates`, `GET /quotation-templates/{id}`, `PUT /quotation-templates/default`, serta `template_id` di `GET /quotations/defaults` dan response quotation; perlu BE **1.152.0** ke atas (DEV 1.151.0 dan PROD 1.144.3 belum punya)
+    - id template berbeda per environment, jadi tidak ada id yang di-hardcode; semua diambil dari API
+    - template berupa HTML Handlebars + CSS, dirender di browser:
+      - hasilnya disanitasi dengan DOMPurify;
+      - lalu dipasang di iframe `sandbox="allow-same-origin"` tanpa `allow-scripts`;
+      - isi iframe dipotret html2canvas-pro + jsPDF
+    - data template dibangun persis sesuai kontrak BE di `lib/quotation/templateContext.ts`; aturan pemilihan template di `lib/quotation/resolveTemplate.ts`; render di `lib/quotation/renderTemplate.ts`
+    - dropdown di `components/quotation/QuotationTemplatePicker.tsx`; dialog pratinjau besar `QuotationTemplatePreviewDialog.tsx` dipakai bersama form dan halaman Settings; data form disusun jadi bentuk quotation oleh `lib/quotation/formQuotation.ts` (uang dari preview BE, baris yang belum dihitung memakai harganya sendiri), dengan debounce 600 ms; pemindahan baris ke halaman berikutnya di `lib/quotation/paginate.ts`, dipakai pratinjau dan PDF; `template_id` dikirim di `buildDraftForm` hanya bila sudah diketahui
+    - `useQuotationPdf` (`lib/hooks/useQuotationPdf.ts`) mengambil company (`GET /companies`), defaults dan template lewat cache React Query, lalu menghasilkan PDF. `generateTemplatePdf` di `lib/utils/quotationPdf.ts` menunggu iframe dan gambar (logo) selesai dimuat sebelum memotret
+    - logo harus bisa diambil dengan CORS supaya tampil di PDF (Solvera Storage)
+
+#### ✨ Halaman Settings › Sales › Template Quotation
+
+- **Deskripsi:**
+  - **Daftar Template:** halaman baru berisi 4 kartu template, masing-masing dengan pratinjau halaman pertama. Pratinjau memakai data quotation contoh dan profil perusahaan asli (nama, logo, kontak)
+  - **Pratinjau Besar:** klik kartu untuk melihat template utuh di dialog
+  - **Jadikan Default:**
+    - tombol **Jadikan default** di kartu dan di dialog;
+    - mengubah template untuk quotation baru berikutnya; quotation yang sudah ada tidak berubah;
+    - template default ditandai badge **Default** dan garis tepi
+  - **Akses:**
+    - menu terlihat untuk user dengan permission `quotations` atau `sales:config:manage`;
+    - tombol **Jadikan default** hanya untuk `sales:config:manage` (Admin dan Manager)
+  - **Impact:** Admin bisa membandingkan template dengan data perusahaan sendiri sebelum memilih default
+  - **Technical Notes:** `app/(app)/settings/sales/quotation-templates/page.tsx`, `components/admin/quotation-templates/QuotationTemplatesTab.tsx`, data contoh di `lib/quotation/sampleQuotation.ts`, menu di `lib/config/settingsNav.ts`
+
+#### ✨ Tombol Lihat PDF
+
+- **Deskripsi:**
+  - **Lihat Sebelum Kirim:** tombol **Lihat PDF** membuka PDF asli (file yang sama dengan lampiran saat dikirim) di viewer browser, lengkap dengan tombol **Unduh PDF**. Tersedia di:
+    - form quotation yang sudah tersimpan;
+    - dialog **Kirim**
+  - **Draft:** PDF dibuat dari data yang terakhir disimpan, bukan perubahan yang belum disimpan (dijelaskan lewat tooltip)
+  - **Impact:** Sales bisa mengecek tampilan PDF sebelum mengirimnya ke pelanggan
+  - **Technical Notes:** `components/quotation/QuotationPdfPreviewDialog.tsx`; URL blob dilepas saat dialog ditutup
+
+#### 🎨 Kartu Identitas Company Profile untuk Semua Role
+
+- **Deskripsi:**
+  - **Semua Role:** logo, website, email, telepon dan kota perusahaan di **Settings › Company Profile** kini terlihat oleh semua role, karena `GET /companies` cukup login sejak BE 1.152.0
+  - **Tetap Admin:** ubah atau hapus logo dan **Quotation Defaults** tetap hanya untuk Admin (permission `companies`)
+
+#### ♻️ Kode Export Dipakai Bersama WhatsApp dan Email
+
+- **Deskripsi:**
+  - Menu pilihan CSV/Excel kini satu komponen bersama, `ExportFormatMenu` (`components/ui/export-format-menu.tsx`), dipakai statistik broadcast WhatsApp dan statistik campaign email
+  - Pembuat nama file `exportFileName` dan `statusLabel` dipindah ke `lib/utils/exportRows.ts`; export WhatsApp memakainya lewat fungsi lamanya, sehingga tampilan dan nama file WhatsApp tidak berubah
+
+#### ♻️ Layout PDF Quotation Lama Dihapus
+
+- **Deskripsi:**
+  - `components/quotation/QuotationPdfDocument.tsx` dihapus karena semua PDF kini memakai template
+  - Helper-nya (`buildPdfAddressBlock`, `discountLabel`, `safeDate`) dipindah ke `lib/quotation/templateContext.ts`
+  - Node tersembunyi di form dan daftar quotation (beserta `flushSync`) tidak dipakai lagi
+  - `generateQuotationPdf` memotret elemen di tempatnya (tanpa clone), karena CSS template hanya ada di dalam iframe
+
+#### 🔧 Dependensi Baru
+
+- **Deskripsi:**
+  - `handlebars` ^4.7.8 untuk merender template
+  - `dompurify` ^3.3.1 untuk menyanitasi hasil render. Panduan BE menyebut 3.2.4; dipakai 3.3.1 karena versi ini sudah terpasang lewat `jspdf`, sehingga tidak ada dua salinan dan versinya lebih baru
+  - Keduanya di-import dinamis, jadi hanya diunduh saat PDF atau pratinjau dibuat
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **50 Test Baru:**
+    - `components/email-marketing/campaigns/subscriberExport.test.ts` (5): kartu yang bisa diexport, kolom dan isinya, Error Message hanya di file Bounced, nilai kosong, nama file;
+    - `lib/api/email-marketing/campaigns.subscribers.test.ts` (6): request export satu status dengan `is_limit=false` tanpa page/limit, respons kosong, pesan error BE, tabel memakai page/limit/search, filter status dan sorting dikirim ke API, tanpa filter/sort sampai dipilih (urutan bawaan desc);
+    - `lib/utils/exportRows.test.ts` (3): format nama file bersama, karakter yang tidak aman dan nama kosong, `statusLabel`;
+    - `lib/quotation/templateContext.test.ts` (15): semua key kontrak template terkirim, logo teks/inisial/website/alamat perusahaan, company kosong, format tanggal, isi item, kolom dan label diskon, varian/atribut/isi paket/promo, total, kurs mata uang asing, urutan ketentuan, link persetujuan, NPWP dan alamat pelanggan, sales;
+    - `lib/quotation/resolveTemplate.test.ts` (5): snapshot lebih dulu, lalu template quotation, lalu default; tanpa template; dokumen iframe dan CSS yang tidak bisa menutup tag style;
+    - `lib/quotation/formQuotation.test.ts` (7): pratinjau form memakai produk di form dengan harga dari preview BE, header/pelanggan/sales dari form, nomor dan tanggal quotation tersimpan, baris tanpa produk dilewati, baris yang belum dihitung, total dari server, penjumlahan saat preview belum ada;
+    - `lib/quotation/paginate.test.ts` (9): jumlah halaman, baris yang terpotong batas halaman, baris di margin bawah dan margin atas, halaman berikutnya, blok lebih tinggi dari satu halaman
+  - **Uji Render Template BE:** keempat template asli dari repo BE dirender dengan Handlebars mode `strict` memakai context ini (dengan dan tanpa data perusahaan) dan lolos, jadi tidak ada key yang hilang
+  - **Total:** 58 file test, 668 test lolos
+
+---
+
 ## [1.114.1] - 2026-10-28
 
 ### Detail Versi 1.114.1

@@ -326,9 +326,10 @@ export async function fetchRecentSignals(token: string): Promise<CompanySignal[]
 }
 
 /**
- * The caller's own company row (GET /companies). Gated on the `companies`
- * permission - Admin only. Sellers get their defaults from
- * `fetchQuotationDefaults` instead and never call this.
+ * The caller's own company row (GET /companies). Any logged-in user may read
+ * it since API v1.152.0 - the quotation PDF prints the seller from it. The
+ * quotation defaults a seller is held to still come from
+ * `fetchQuotationDefaults`.
  */
 export async function fetchMyCompany(token: string): Promise<CompanyGeneral> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;

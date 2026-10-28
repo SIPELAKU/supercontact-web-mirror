@@ -119,7 +119,7 @@ export interface QuotationLeadsResponse {
 // Helpers
 // ============================================
 
-function toApiError(error: any, fallback: string): QuotationApiError {
+export function toApiError(error: any, fallback: string): QuotationApiError {
     const payload = error?.response?.data;
     if (payload && typeof payload === "object") {
         const message =
@@ -210,8 +210,8 @@ export async function fetchQuotationById(
 }
 
 /**
- * The company's quotation defaults (currency, tax basis, terms, discount cap).
- * Sellers never call GET /companies - this route is gated on `quotations`.
+ * The company's quotation defaults (currency, tax basis, terms, discount cap)
+ * and its default PDF template, resolved for the caller (gated on `quotations`).
  */
 export async function fetchQuotationDefaults(token: string): Promise<QuotationDefaults> {
     try {

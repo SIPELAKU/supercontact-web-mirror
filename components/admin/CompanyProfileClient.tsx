@@ -40,9 +40,11 @@ const DOT_COLOR_MAP: Record<string, string> = {
 export default function CompanyProfileClient() {
   const { getToken } = useAuth();
   const { can } = usePermission();
-  // GET /companies (logo, contact details, quotation defaults) is Admin only.
+  // GET /companies (logo, contact details) needs only a login, so every role
+  // sees the identity card. Changing the logo and the quotation defaults
+  // stays Admin only (`companies`).
   const canManageCompany = can("companies");
-  const myCompany = useMyCompany(canManageCompany);
+  const myCompany = useMyCompany();
   // True from the first render: the profile is fetched on mount, so nothing
   // shows placeholder content before it arrives.
   const [isLoading, setIsloading] = useState<boolean>(true);
@@ -290,7 +292,7 @@ export default function CompanyProfileClient() {
       <CompanyIdentityCard
         name={company.name}
         company={myCompany.data}
-        isLoading={isLoading || (canManageCompany && myCompany.isLoading)}
+        isLoading={isLoading || myCompany.isLoading}
         canEditLogo={canManageCompany}
       />
 

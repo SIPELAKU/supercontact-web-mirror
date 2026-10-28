@@ -10,6 +10,7 @@
 import {
     Alert,
     Box,
+    CardActionArea,
     Chip,
     Grid,
     IconButton,
@@ -20,47 +21,108 @@ import {
 } from '@mui/material';
 import { useMemo, useEffect, useState } from 'react';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
-import { useCampaignDetail, useCampaignSubscribers } from '@/lib/hooks/useCampaigns';
-import { Campaign, CampaignSubscriber } from '@/lib/types/email-marketing';
+import { useCampaignDetail, useCampaignSubscribers, useExportCampaignSubscribers } from '@/lib/hooks/useCampaigns';
+import { CAMPAIGN_SUBSCRIBER_SORT_KEYS, Campaign, CampaignSubscriber } from '@/lib/types/email-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
 import { format } from 'date-fns';
-import { Activity, AlertTriangle, Ban, FlaskConical, Mail, MousePointerClick, Percent, RefreshCcw, ShieldAlert, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Ban, Download, FlaskConical, Mail, MousePointerClick, Percent, RefreshCcw, ShieldAlert, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ExportFormatMenu } from '@/components/ui/export-format-menu';
+import { Spinner } from '@/components/ui/spinner';
+import { notify } from '@/lib/notifications';
+import { downloadRows, statusLabel, type ExportFileFormat } from '@/lib/utils/exportRows';
+import {
+    subscriberExportColumns,
+    subscriberExportFileName,
+    type ExportableSubscriberStatus,
+} from './subscriberExport';
 
-const StatCard = ({ title, value, icon: Icon, color }: { title: string, value: number | string, icon: any, color: string }) => (
-    <Paper
-        elevation={0}
-        sx={{
-            p: 2.5,
-            border: '1px solid #E5E7EB',
-            borderRadius: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-        }}
-    >
-        <Box
-            sx={{
-                p: 1.5,
-                borderRadius: 2,
-                backgroundColor: `${color}15`,
-                color: color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-            }}
-        >
-            <Icon size={24} />
+// The table's status filter, in sending order. Cumulative like the cards:
+// Delivered also lists those who opened or clicked, Bounced also the failed.
+const SUBSCRIBER_STATUS_FILTER_OPTIONS: { value: CampaignSubscriber['status']; label: string }[] = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'sent', label: 'Sent' },
+    { value: 'delivered', label: 'Delivered' },
+    { value: 'opened', label: 'Opened' },
+    { value: 'clicked', label: 'Clicked' },
+    { value: 'bounced', label: 'Bounced' },
+    { value: 'dropped', label: 'Dropped' },
+    { value: 'complained', label: 'Marked as Spam' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'simulated', label: 'Simulated' },
+];
+
+const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+    onExport,
+    exporting = false,
+    disabled = false,
+}: {
+    title: string;
+    value: number | string;
+    icon: any;
+    color: string;
+    /** Makes the card a button; it hands over itself, to anchor the format menu. */
+    onExport?: (anchor: HTMLElement) => void;
+    exporting?: boolean;
+    disabled?: boolean;
+}) => {
+    const body = (
+        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
+            {onExport && (
+                <Box sx={{ position: 'absolute', top: 10, right: 10, display: 'flex', color: 'text.secondary' }}>
+                    {exporting ? <Spinner /> : <Download size={14} />}
+                </Box>
+            )}
+            <Box
+                sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    backgroundColor: `${color}15`,
+                    color: color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+            >
+                <Icon size={24} />
+            </Box>
+            <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
+                    {title}
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 600, color: '#111827' }}>
+                    {value}
+                </Typography>
+            </Box>
         </Box>
-        <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 0.5 }}>
-                {title}
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600, color: '#111827' }}>
-                {value}
-            </Typography>
-        </Box>
-    </Paper>
-);
+    );
+    const paperSx = { border: '1px solid #E5E7EB', borderRadius: 2, overflow: 'hidden' };
+
+    if (!onExport) {
+        return <Paper elevation={0} sx={paperSx}>{body}</Paper>;
+    }
+
+    // The tooltip sits on the Paper, not on the action area: a disabled button
+    // cannot host a tooltip, and the area is disabled while any export runs.
+    return (
+        <Tooltip title={`Export ${title} subscribers (CSV or Excel)`}>
+            <Paper elevation={0} sx={paperSx}>
+                <CardActionArea
+                    onClick={(event) => onExport(event.currentTarget)}
+                    disabled={disabled}
+                    aria-haspopup="menu"
+                    aria-label={`Export ${title} subscribers`}
+                >
+                    {body}
+                </CardActionArea>
+            </Paper>
+        </Tooltip>
+    );
+};
 
 export interface CampaignStatsPanelProps {
     /** Seeds the panel so a modal opened from a list row paints instantly. */
@@ -84,15 +146,25 @@ export function CampaignStatsPanel({
         pageIndex: 0,
         pageSize: 25,
         globalFilter: "",
+        status: "" as CampaignSubscriber['status'] | "",
+        sorting: [] as { id: string; desc: boolean }[],
     });
+    // Server-side sorting and filtering: on the client they would only cover
+    // the rows already loaded. Column ids are the API's sort keys.
+    const { sortBy, sortOrder } = toApiSort(tableState.sorting, CAMPAIGN_SUBSCRIBER_SORT_KEYS);
 
     const { data: campaignData, refetch, isRefetching } = useCampaignDetail(campaign?.id || '');
 
     const { data: subscribersData, isLoading: isLoadingSubscribers, refetch: refetchSubscribers } = useCampaignSubscribers(
         campaign?.id || '',
-        tableState.pageIndex + 1,
-        tableState.pageSize,
-        tableState.globalFilter
+        {
+            page: tableState.pageIndex + 1,
+            limit: tableState.pageSize,
+            search: tableState.globalFilter || undefined,
+            status: tableState.status || undefined,
+            sortBy,
+            sortOrder,
+        }
     );
 
     useEffect(() => {
@@ -102,6 +174,50 @@ export function CampaignStatsPanel({
             setCurrentCampaign(campaign);
         }
     }, [campaignData, campaign]);
+
+    const exportSubscribers = useExportCampaignSubscribers();
+    const exportingStatus = exportSubscribers.isPending ? exportSubscribers.variables?.status : undefined;
+    // The card that was clicked, while its "CSV or Excel" menu is open.
+    const [exportMenu, setExportMenu] = useState<{ anchor: HTMLElement; status: ExportableSubscriberStatus } | null>(null);
+
+    // A card exports the subscribers it counts, from the same endpoint as the
+    // table below (is_limit=false returns the whole list). The API's status
+    // filter is cumulative, like the cards, and the file's Status column shows
+    // how far each one got. The Bounced file also says why each one bounced.
+    const handleExport = async (status: ExportableSubscriberStatus, fileFormat: ExportFileFormat) => {
+        if (!currentCampaign || exportSubscribers.isPending) return;
+        const label = statusLabel(status);
+        try {
+            const rows = await exportSubscribers.mutateAsync({ campaignId: currentCampaign.id, status });
+            if (rows.length === 0) {
+                notify.warning(`No ${label} subscribers to export`);
+                return;
+            }
+            const fileName = subscriberExportFileName(currentCampaign.subject, status, fileFormat);
+            await downloadRows(fileName, subscriberExportColumns(status), rows, fileFormat, label);
+            notify.success(
+                `Exported ${rows.length.toLocaleString()} subscriber${rows.length === 1 ? '' : 's'}`,
+                { description: `Saved as ${fileName}` }
+            );
+        } catch (err: any) {
+            notify.error('Export failed', {
+                description: err?.message || 'Could not build the file. Please try again.',
+            });
+        }
+    };
+
+    const handleChooseFormat = (fileFormat: ExportFileFormat) => {
+        const target = exportMenu;
+        setExportMenu(null);
+        if (target) handleExport(target.status, fileFormat);
+    };
+
+    // Props that make a stats card export its subscribers.
+    const exportProps = (status: ExportableSubscriberStatus) => ({
+        onExport: (anchor: HTMLElement) => setExportMenu({ anchor, status }),
+        exporting: exportingStatus === status,
+        disabled: exportSubscribers.isPending,
+    });
 
     const columns = useMemo<MRT_ColumnDef<CampaignSubscriber>[]>(() => [
         {
@@ -140,6 +256,8 @@ export function CampaignStatsPanel({
         {
             accessorKey: 'error_message',
             header: 'Error Message',
+            // Not one of the API's sort keys.
+            enableSorting: false,
             Cell: ({ row, cell }) => {
                 const val = cell.getValue<string>();
                 const status = row.original.status?.toLowerCase();
@@ -264,6 +382,7 @@ export function CampaignStatsPanel({
                                     value={stats.delivered.toLocaleString()}
                                     icon={Mail}
                                     color="#0ea5e9"
+                                    {...exportProps('delivered')}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -272,6 +391,7 @@ export function CampaignStatsPanel({
                                     value={stats.opened.toLocaleString()}
                                     icon={Activity}
                                     color="#10b981"
+                                    {...exportProps('opened')}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -280,6 +400,7 @@ export function CampaignStatsPanel({
                                     value={stats.clicked.toLocaleString()}
                                     icon={MousePointerClick}
                                     color="#8b5cf6"
+                                    {...exportProps('clicked')}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -288,6 +409,7 @@ export function CampaignStatsPanel({
                                     value={stats.bounced.toLocaleString()}
                                     icon={RefreshCcw}
                                     color="#ef4444"
+                                    {...exportProps('bounced')}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -340,6 +462,13 @@ export function CampaignStatsPanel({
                                 </Grid>
                             )}
                         </Grid>
+
+                        <ExportFormatMenu
+                            anchorEl={exportMenu?.anchor ?? null}
+                            title={`Export ${exportMenu ? statusLabel(exportMenu.status) : ''} subscribers`}
+                            onClose={() => setExportMenu(null)}
+                            onChoose={handleChooseFormat}
+                        />
                     </Stack>
                 </Grid>
 
@@ -419,16 +548,32 @@ export function CampaignStatsPanel({
                             />
                         )}
                         manualPagination={true}
+                        manualFiltering={true}
+                        // Sorting asks the API; on the client it would only
+                        // reorder the rows already loaded.
+                        manualSorting={true}
+                        filters={[
+                            {
+                                id: "status",
+                                label: "Status",
+                                type: "select",
+                                pinned: true,
+                                options: SUBSCRIBER_STATUS_FILTER_OPTIONS,
+                            },
+                        ]}
                         onStateChange={(state) => {
                             setTableState({
                                 pageIndex: state.pagination.pageIndex,
                                 pageSize: state.pagination.pageSize,
                                 globalFilter: state.globalFilter || "",
+                                status: (state.filters.status as CampaignSubscriber['status']) || "",
+                                sorting: state.sorting || [],
                             });
                         }}
                         features={{
                             pagination: true,
                             globalFilter: true,
+                            sorting: true,
                             densityToggle: false,
                             columnVisibility: false,
                             fullScreenToggle: false,

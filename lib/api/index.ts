@@ -42,7 +42,7 @@ export {
     createCampaign, createMailingList, createSubscriber, deleteCampaign, duplicateCampaigns, deleteMailingList,
     deleteMailingListSubscriber, bulkDeleteMailingListSubscribers, deleteAllMailingListSubscribers, deleteSubscriber, bulkDeleteSubscribers, deleteAllSubscribers, fetchCampaignDetail,
     // Campaigns
-    fetchCampaigns, fetchCampaignSubscribers, fetchMailingListDetail,
+    fetchCampaigns, fetchCampaignSubscribers, fetchAllCampaignSubscribers, fetchMailingListDetail,
     // Mailing Lists
     fetchMailingLists, fetchMailingListCampaigns,
     // Subscribers

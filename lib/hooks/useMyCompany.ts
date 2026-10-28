@@ -7,10 +7,10 @@ export const myCompanyKey = ["company", "me"] as const;
 
 /**
  * The caller's own company row (`GET /companies`): contact details, logo and
- * quotation defaults. One request shared by every card on the Company Profile
- * page. Admin only (permission `companies`), so pass `enabled = false` for
- * anyone else. After a PATCH, put its response in the cache under
- * `myCompanyKey` (it returns the same shape).
+ * quotation defaults. Shared by the Company Profile cards and the quotation
+ * PDF (the seller block). Any logged-in user may read it (API v1.152.0);
+ * writing stays Admin only. After a PATCH, put its response in the cache
+ * under `myCompanyKey` (it returns the same shape).
  */
 export function useMyCompany(enabled = true) {
   const { getToken } = useAuth();

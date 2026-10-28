@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
 
-import { buildWorkbook, columnWidths, toRows, type ExportColumn } from './exportRows';
+import { buildWorkbook, columnWidths, exportFileName, statusLabel, toRows, type ExportColumn } from './exportRows';
 
 type Person = { name: string | null; phone?: string; visits: number };
 
@@ -71,5 +71,25 @@ describe('buildWorkbook', () => {
   it('keeps sheet names within what Excel accepts', () => {
     const book = buildWorkbook(XLSX, columns, rows, 'Sent / Read: [all] recipients of the October promo');
     expect(book.SheetNames[0]).toBe('Sent  Read all recipients of th');
+  });
+});
+
+describe('exportFileName (shared by the WhatsApp and email exports)', () => {
+  const day = new Date(2026, 9, 28);
+
+  it('is <Prefix>_<name>_<Label>_<day>.<ext>', () => {
+    expect(exportFileName('Campaign', 'Promo Oktober', 'Opened', 'excel', day)).toBe('Campaign_Promo_Oktober_Opened_2026-10-28.xlsx');
+    expect(exportFileName('Broadcast', 'Promo Oktober', 'Sent', 'csv', day)).toBe('Broadcast_Promo_Oktober_Sent_2026-10-28.csv');
+  });
+
+  it('keeps only letters and digits in the name, and calls an empty one Untitled', () => {
+    expect(exportFileName('Campaign', '  Diskon 50%! (VIP) ', 'Clicked', 'csv', day)).toBe('Campaign_Diskon_50_VIP_Clicked_2026-10-28.csv');
+    expect(exportFileName('Campaign', '***', 'Bounced', 'csv', day)).toBe('Campaign_Untitled_Bounced_2026-10-28.csv');
+  });
+});
+
+describe('statusLabel', () => {
+  it('capitalises the first letter', () => {
+    expect(statusLabel('delivered')).toBe('Delivered');
   });
 });

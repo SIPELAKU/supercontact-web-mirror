@@ -173,6 +173,15 @@ export const settingsNav: SettingsRegistry = [
         permission: "sales:config:manage",
       },
       {
+        // The quotation PDF templates. Viewing needs only `quotations` (the
+        // list endpoint's grant), so a seller can see what the customer gets;
+        // "Jadikan default" is gated on `sales:config:manage` inside the page.
+        id: "quotation-templates",
+        title: "Template Quotation",
+        path: "/settings/sales/quotation-templates",
+        permission: ["sales:config:manage", "quotations"],
+      },
+      {
         // Contact tags (spec A0.1). Managed here rather than under a contacts
         // section because renaming a tag lands on every contact that carries
         // it at once - a config act, not a per-record edit. ATTACHING a tag to

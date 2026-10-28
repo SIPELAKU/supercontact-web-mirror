@@ -4,6 +4,7 @@
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import { AppInput } from '@/components/ui/app-input';
 import { AppSelect } from '@/components/ui/app-select';
+import { TEMPLATE_LANGUAGES } from '@/lib/types/whatsapp-marketing';
 
 interface GeneralInfoCardProps {
   name: string;
@@ -13,10 +14,6 @@ interface GeneralInfoCardProps {
   isEdit?: boolean;
 }
 
-const LANGUAGES = [
-  { label: 'English', value: 'en' },
-  { label: 'Indonesian', value: 'id' },
-];
 
 export default function GeneralInfoCard({
   name,
@@ -65,7 +62,7 @@ export default function GeneralInfoCard({
               isBgWhite
               value={language}
               onChange={(e) => onLanguageChange(e.target.value as string)}
-              options={LANGUAGES}
+              options={TEMPLATE_LANGUAGES}
               disabled={isEdit}
             />
           </Box>

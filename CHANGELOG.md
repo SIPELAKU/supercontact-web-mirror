@@ -9,6 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.0] - 2026-10-28
+
+### Detail Versi 1.116.0
+
+#### ✨ Filter dan Sorting di Template Broadcast
+
+- **Deskripsi:**
+  - **Filter Baru:** tabel Template Broadcast kini punya filter **Approval Status** (Not submitted, Received, Pending, Approved, Rejected, Paused, Disabled) dan **Language** (English, Indonesian)
+  - **Sorting lewat API:** kolom Campaign Name, Language, Approval Status dan Updated diurutkan oleh BE untuk seluruh template, bukan hanya baris yang sudah tampil. Content Type tidak bisa diurutkan karena API tidak mendukungnya
+  - **Kolom Updated:** kini menampilkan waktu template terakhir diubah (`updated_at`); sebelumnya menampilkan waktu dibuat
+  - **Impact:** User bisa langsung menemukan, misalnya, template yang masih Pending atau yang berbahasa Indonesia, dan urutannya benar di semua halaman
+  - **Technical Notes:**
+    - `GET /broadcast-templates` dengan `status`, `language`, `sort_by` (friendly_name, language, whatsapp_approval_status, created_at, updated_at) dan `sort_order`; param hanya dikirim bila dipilih
+    - filter memakai `filters` SuperTable dan diteruskan sebagai satu objek params (`BroadcastTemplatesParams`); query dibangun `broadcastTemplatesQuery` di `lib/hooks/useBroadcastTemplates.ts`
+    - daftar bahasa `TEMPLATE_LANGUAGES` dipakai bersama form buat template dan filter
+    - sorting sudah ada di BE DEV dan PROD; filter Approval Status dan Language baru ada di BE DEV (1.154.1), di PROD (1.144.3) filter ini belum berefek
+
+#### ✨ Search dan Sorting di Group Broadcasting
+
+- **Deskripsi:**
+  - **Search:** tabel Group Broadcasting kini punya kotak search nama grup
+  - **Sorting lewat API:** kolom Name, Recipients dan Created bisa diurutkan untuk seluruh grup
+  - **Impact:** Grup mudah dicari dan diurutkan, misalnya dari yang anggotanya paling banyak
+  - **Technical Notes:**
+    - `GET /broadcast-groups` dengan `search`, `sort_by` (name, recipient_count, created_at) dan `sort_order`; query dibangun `groupBroadcastsQuery` di `lib/hooks/useGroupBroadcasts.ts`
+    - sorting sudah ada di BE DEV dan PROD; search baru ada di BE DEV (1.154.1)
+    - tabel detail grup tetap tanpa sorting karena API-nya belum mendukung
+
+#### 🎨 Sorting Lengkap di Broadcasting WA dan Recipients
+
+- **Deskripsi:**
+  - **Broadcasting WA:** kolom **Target** kini bisa diurutkan (`total_target`)
+  - **Recipients:** kolom **Phone Number** dan **Position** kini bisa diurutkan
+  - **Filter Status Broadcasting WA:** opsi "Sending" diganti **"In Queue"**, sesuai status dari API. Sebelumnya memilih "Sending" tidak pernah menemukan broadcast apa pun
+  - **Technical Notes:** daftar key sort per endpoint (`BROADCAST_SORT_KEYS`, `WA_RECIPIENT_SORT_KEYS`, `BROADCAST_TEMPLATE_SORT_KEYS`, `BROADCAST_GROUP_SORT_KEYS`) dan status broadcast (`BROADCAST_STATUSES`) di `lib/types/whatsapp-marketing.ts`, diterapkan lewat `toApiSort`
+
+#### 🎨 Chip Sumber Harga di Quotation
+
+- **Deskripsi:**
+  - Chip sumber harga (mis. "Harga dari Daftar Harga Harga Umum, tier ≥ 1") dan chip promo di baris produk quotation kini bersudut kecil, bukan bulat penuh, sehingga tetap rapi saat teksnya turun ke beberapa baris
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **9 Test Baru:**
+    - `lib/hooks/waListQueries.test.ts` (7): query Template Broadcast (tanpa filter, search/status/language, sort dan urutan bawaan desc, tanpa sort_order bila tidak ada sort_by) dan Group Broadcasting (tanpa search, search dan sort, urutan bawaan);
+    - `lib/utils/apiSort.test.ts` (+2): key sort Template Broadcast dan Group Broadcasting; key Broadcasting WA dan Recipients diperbarui ke API terbaru
+  - **Total:** 59 file test, 677 test lolos
+
+---
+
 ## [1.115.0] - 2026-10-28
 
 ### Detail Versi 1.115.0

@@ -1,7 +1,7 @@
 // components/whatsapp-marketing/templates/BroadcastTemplatesClient.tsx
 "use client";
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography } from '@mui/material';
 
@@ -20,7 +20,14 @@ import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import BroadcastTemplatesTable from './BroadcastTemplatesTable';
 import AccountSelect from '@/components/omnichannel/AccountSelect';
 import { useSelectedWaAccount } from '@/lib/hooks/useSelectedWaAccount';
-import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
+import type { SuperTableState } from '@/components/ui/super-table';
+import {
+  BROADCAST_TEMPLATE_SORT_KEYS,
+  type BroadcastTemplate,
+  type BroadcastTemplateApprovalStatus,
+  type BroadcastTemplatesParams,
+} from '@/lib/types/whatsapp-marketing';
 
 export default function BroadcastTemplatesClient() {
   const router = useRouter();
@@ -36,21 +43,29 @@ export default function BroadcastTemplatesClient() {
   // navigation and left the table empty behind an unselected dropdown.
   const { accountId, setAccountId, accounts } = useSelectedWaAccount(waAccounts);
 
-  // Pagination & search state
-  // (search is already debounced by SuperTable — no extra debounce layer here)
+  // The table's page, search, filters and sort, all applied by the API.
+  // SuperTable debounces the search and goes back to page 1 whenever the
+  // search, a filter or the sort changes, so this only mirrors its state.
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<Record<string, unknown>>({});
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const { sortBy, sortOrder } = toApiSort(sorting, BROADCAST_TEMPLATE_SORT_KEYS);
 
   // Confirmation state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedToDelete, setSelectedToDelete] = useState<string[] | null>(null);
 
-  const listParams = {
+  const listParams: BroadcastTemplatesParams = {
     page,
     limit,
     search: searchQuery || undefined,
     account_id: accountId || undefined,
+    status: (filters.status as BroadcastTemplateApprovalStatus | undefined) || undefined,
+    language: (filters.language as string | undefined) || undefined,
+    sort_by: sortBy,
+    sort_order: sortOrder,
   };
   const { data, isLoading, isError, refetch } = useBroadcastTemplates(listParams, {
     enabled: !!accountId,
@@ -73,21 +88,13 @@ export default function BroadcastTemplatesClient() {
     firstBatchKey: broadcastTemplatesKey({ ...listParams, page: 1 }),
   });
 
-  const handleStateChange = useCallback(
-    (state: { page: number; limit: number; search: string }) => {
-      const searchChanged = state.search !== searchQuery;
-      if (searchChanged) setSearchQuery(state.search);
-      if (state.limit !== limit) {
-        setLimit(state.limit);
-        setPage(1);
-      } else if (searchChanged) {
-        setPage(1); // Reset to first page on search
-      } else if (state.page !== page) {
-        setPage(state.page);
-      }
-    },
-    [page, limit, searchQuery]
-  );
+  const handleStateChange = (state: SuperTableState) => {
+    setPage(state.pagination.pageIndex + 1);
+    setLimit(state.pagination.pageSize);
+    setSearchQuery(state.globalFilter || '');
+    setFilters(state.filters ?? {});
+    setSorting(state.sorting ?? []);
+  };
 
   const handleCreate = () => {
     router.push('/whatsapp-marketing/template-broadcasting/create');

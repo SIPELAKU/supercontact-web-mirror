@@ -78,6 +78,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tooltip } from "@mui/material";
 import { Eye } from "lucide-react";
+import { AppAlert } from "../ui/app-alert";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
@@ -394,6 +395,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const [totals, setTotals] = useState<QuotationTotals | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState<MappedQuotationError | null>(null);
+  // Bumped by "Coba lagi" to run the same preview again.
+  const [previewRetry, setPreviewRetry] = useState(0);
   const [saveError, setSaveError] = useState<MappedQuotationError | null>(null);
 
   /**
@@ -748,6 +751,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     // Phase 5: the currency belongs here for the same reason `lead_id` and the
     // channel do - changing it changes every price on the screen.
     clientData.currency,
+    previewRetry,
   ]);
 
   const fallbackSubtotal = useMemo(
@@ -1568,6 +1572,37 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             exchangeRateNote={rateNote}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
+
+          {/* Why the prices read "-": the server refused to price the lines.
+              Row errors are also marked on their rows; anything else (an
+              unknown lead, a missing exchange rate, a server error) used to
+              have no place on screen at all. */}
+          {!readOnly && previewError && (
+            <div className="mb-4 px-6">
+              <AppAlert
+                variant="failed"
+                title="Harga belum bisa dihitung"
+                description={
+                  <div className="flex flex-col items-start gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      {previewError.message}
+                      {previewError.code ? ` (${previewError.code})` : ""}
+                    </span>
+                    <AppButton
+                      variantStyle="outline"
+                      color="primary"
+                      size="small"
+                      onClick={() => setPreviewRetry((n) => n + 1)}
+                      disabled={previewing}
+                      isLoading={previewing}
+                    >
+                      Coba lagi
+                    </AppButton>
+                  </div>
+                }
+              />
+            </div>
+          )}
 
           <ProductsServicesCard
             items={itemsWithUnits}

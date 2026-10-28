@@ -89,6 +89,8 @@ const GroupBroadcastingTable = ({
       errorMessage="Failed to load group broadcasts. Please try again."
       onRetry={onRetry}
       manualPagination={true}
+      manualFiltering={true}
+      manualSorting={true}
       rowCount={totalCount}
       restartKey={restartKey}
       onStateChange={onStateChange}
@@ -167,10 +169,10 @@ const GroupBroadcastingTable = ({
       )}
       features={{
           urlSync: true,
-        // API has no sort/search params yet - keep both off rather than
-        // offering controls that only act on the loaded page
-        sorting: false,
-        globalFilter: false,
+        // Search (group name) and sorting (name, recipients, created) are
+        // done by GET /broadcast-groups over every group, not the loaded page.
+        sorting: true,
+        globalFilter: true,
         columnFilters: false,
         pagination: true,
         rowSelection: 'multi',

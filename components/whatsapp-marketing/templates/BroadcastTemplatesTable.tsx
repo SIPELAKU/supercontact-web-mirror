@@ -6,10 +6,14 @@ import { Box, Tooltip } from '@mui/material';
 import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
-import { SuperTable } from '@/components/ui/super-table';
+import { SuperTable, type SuperTableState } from '@/components/ui/super-table';
 import type { MRT_ColumnDef } from '@/components/ui/super-table/types';
 import { AppButton } from '@/components/ui/app-button';
-import type { BroadcastTemplate } from '@/lib/types/whatsapp-marketing';
+import {
+  BROADCAST_TEMPLATE_APPROVAL_STATUSES,
+  TEMPLATE_LANGUAGES,
+  type BroadcastTemplate,
+} from '@/lib/types/whatsapp-marketing';
 import { primaryContentType } from '@/lib/utils/whatsapp-template';
 import { Stack } from '@mui/material';
 import { Copy, Trash2, LayoutTemplate } from 'lucide-react';
@@ -30,7 +34,8 @@ interface BroadcastTemplatesTableProps {
   totalCount: number;
   resetPageKey?: string;
   restartKey?: number;
-  onStateChange: (state: { page: number; limit: number; search: string }) => void;
+  /** Search, filters and sorting all go to the API. */
+  onStateChange: (state: SuperTableState) => void;
   onCreate: () => void;
   onEdit: (template: BroadcastTemplate) => void;
   onDuplicate: (ids: string[]) => void;
@@ -76,6 +81,8 @@ const BroadcastTemplatesTable = ({
       {
         accessorKey: 'types',
         header: 'Content Type',
+        // Not a sort key of GET /broadcast-templates.
+        enableSorting: false,
         Cell: ({ row }) => {
           // The template's REAL type, not its text fallback. Every rich type
           // ships a `twilio/text` beside it and JSONB sorts keys by length, so
@@ -92,7 +99,7 @@ const BroadcastTemplatesTable = ({
         ),
       },
       {
-        accessorKey: 'created_at',
+        accessorKey: 'updated_at',
         header: 'Updated',
         Cell: ({ cell }) => {
           const date = cell.getValue<string>();
@@ -125,20 +132,24 @@ const BroadcastTemplatesTable = ({
       )}
       manualPagination={true}
       manualFiltering={true}
-      onStateChange={(state) => {
-        onStateChange({
-          page: state.pagination.pageIndex + 1,
-          limit: state.pagination.pageSize,
-          search: state.globalFilter || '',
-        });
-      }}
+      manualSorting={true}
+      onStateChange={onStateChange}
       entityLabel="template"
       searchPlaceholder="Cari nama template atau SID"
-      // The name/language text boxes and the approval-status dropdown are
-      // gone: GET /broadcast-templates accepts page, limit, search and
-      // account_id, so with `manualFiltering` on none of the three ever
-      // reached the server. Approval status is worth having back as a real
-      // filter once the endpoint can honour it.
+      filters={[
+        {
+          id: 'status',
+          label: 'Approval Status',
+          type: 'select',
+          options: BROADCAST_TEMPLATE_APPROVAL_STATUSES.map((status) => ({ value: status, label: status })),
+        },
+        {
+          id: 'language',
+          label: 'Language',
+          type: 'select',
+          options: TEMPLATE_LANGUAGES,
+        },
+      ]}
       features={{
         globalFilter: true,
         sorting: true,

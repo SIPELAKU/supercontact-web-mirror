@@ -6,7 +6,12 @@ import { useEffect, useState } from 'react';
 import GroupBroadcastingTable from './GroupBroadcastingTable';
 import PageHeader from '@/components/ui/page-header';
 import type { SuperTableState } from '@/components/ui/super-table';
-import { GroupBroadcast } from '@/lib/types/whatsapp-marketing';
+import {
+  BROADCAST_GROUP_SORT_KEYS,
+  type GroupBroadcast,
+  type GroupBroadcastsParams,
+} from '@/lib/types/whatsapp-marketing';
+import { toApiSort } from '@/lib/utils/apiSort';
 import { ConfirmationPopup } from '@/components/ui/confirmation-popup';
 import { notify } from '@/lib/notifications';
 import AddGroupBroadcastModal from './modals/AddGroupBroadcastModal';
@@ -28,10 +33,18 @@ export default function GroupBroadcastingClient() {
   const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
   const [deleteDescription, setDeleteDescription] = useState('');
 
-  // Server-side pagination driven by SuperTable. The API takes page and limit
-  // only - no search or sort.
+  // Page, search and sort driven by SuperTable and applied by the API.
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
-  const listParams = { page: pagination.pageIndex + 1, limit: pagination.pageSize };
+  const [search, setSearch] = useState('');
+  const [sorting, setSorting] = useState<{ id: string; desc: boolean }[]>([]);
+  const { sortBy, sortOrder } = toApiSort(sorting, BROADCAST_GROUP_SORT_KEYS);
+  const listParams: GroupBroadcastsParams = {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    search: search || undefined,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  };
   const { data, isLoading, isError, error, refetch } = useGroupBroadcasts(listParams);
 
   useEffect(() => {
@@ -60,6 +73,8 @@ export default function GroupBroadcastingClient() {
       pageIndex: state.pagination.pageIndex,
       pageSize: state.pagination.pageSize,
     });
+    setSearch(state.globalFilter || '');
+    setSorting(state.sorting ?? []);
   };
 
   const handleOpenAddModal = () => {

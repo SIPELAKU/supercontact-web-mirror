@@ -553,7 +553,7 @@ export default function ProductsServicesCard({
                 )}
                 {sourceLabel && (
                   <span
-                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${SOURCE_CHIP_CLASS[sourceTone]}`}
+                    className={`mt-1 inline-block rounded-md px-2 py-0.5 text-[11px] font-medium ${SOURCE_CHIP_CLASS[sourceTone]}`}
                   >
                     {sourceLabel}
                   </span>
@@ -564,7 +564,7 @@ export default function ProductsServicesCard({
                     COMPANY's promotion with the SELLER's discount. */}
                 {promoCode && (
                   <span
-                    className={`mt-1 ml-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${SOURCE_CHIP_CLASS.promo}`}
+                    className={`mt-1 ml-1 inline-block rounded-md px-2 py-0.5 text-[11px] font-medium ${SOURCE_CHIP_CLASS.promo}`}
                   >
                     {promoChipLabel(promoCode)}
                   </span>

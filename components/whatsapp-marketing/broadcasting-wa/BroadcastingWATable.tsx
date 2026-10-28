@@ -7,6 +7,7 @@ import { BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Copy, Eye, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { broadcastStatusChip } from "./broadcastStatus";
 
 interface BroadcastingWATableProps {
   broadcasts: BroadcastCampaign[];
@@ -26,19 +27,6 @@ interface BroadcastingWATableProps {
   renderTopLeftToolbar?: () => React.ReactNode;
   renderBulkActions?: (params: { selectedRows: BroadcastCampaign[]; clearSelection: () => void }) => React.ReactNode;
 }
-
-const getStatusChip = (status: string) => {
-  const statusLower = status.toLowerCase();
-  switch (statusLower) {
-    case 'draft': return <Chip label="Draft" color="default" size="small" />;
-    case 'sending': return <Chip label="Sending" color="primary" size="small" />;
-    case 'sent':
-    case 'done':
-    case 'completed': return <Chip label="Sent" color="success" size="small" />;
-    case 'failed': return <Chip label="Failed" color="error" size="small" />;
-    default: return <Chip label={status} size="small" />;
-  }
-};
 
 export default function BroadcastingWATable({
   broadcasts,
@@ -73,7 +61,7 @@ export default function BroadcastingWATable({
       id: "status",
       accessorKey: "status",
       header: "Status",
-      Cell: ({ row }) => getStatusChip(row.original.status),
+      Cell: ({ row }) => <Chip size="small" {...broadcastStatusChip(row.original.status)} />,
     },
     {
       id: "stats",

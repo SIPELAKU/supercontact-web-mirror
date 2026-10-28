@@ -16,6 +16,16 @@ import {
   type TopDealItem
 } from "@/lib/api/sales-dashboard";
 import { formatRupiah } from "@/lib/helper/currency";
+import ProductPerformanceDetailModal from "@/components/dashboard/ProductPerformanceDetailModal";
+import { AppButton } from "@/components/ui/app-button";
+import {
+  DEFAULT_PRODUCT_RANGE,
+  PRODUCT_RANGE_OPTIONS,
+  productChartRows,
+  productRangeParams,
+  type ProductChartRow,
+  type ProductRange,
+} from "@/components/dashboard/productPerformance";
 import {
   Box,
   Button,
@@ -74,6 +84,20 @@ function getStatusStyle(status: string): { color: string; bg: string } {
   return { color: "#6b7280", bg: "#f3f4f6" };
 }
 
+// Product Performance bar tooltip: the units sold and the Won deals.
+function ProductTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: ProductChartRow }> }) {
+  const row = active ? payload?.[0]?.payload : undefined;
+  if (!row) return null;
+  const units = new Intl.NumberFormat("id-ID").format(row.quantity);
+  return (
+    <Box sx={{ bgcolor: "white", border: "1px solid #e5e7eb", borderRadius: "8px", px: 1.5, py: 1, fontSize: 12 }}>
+      <Typography fontSize={12} fontWeight={600} mb={0.5}>{row.fullName}</Typography>
+      <Typography fontSize={12}>Sold: {units} {row.quantity === 1 ? "unit" : "units"}</Typography>
+      <Typography fontSize={12} color="text.secondary">Won deals: {row.deals}</Typography>
+    </Box>
+  );
+}
+
 // ── Component ───────────────────────────────────────────────────────────
 
 export default function DashboardClient() {
@@ -96,13 +120,19 @@ export default function DashboardClient() {
   // Funnel independent filter
   const [funnelView, setFunnelView] = useState<"weekly" | "monthly">("weekly");
   const [funnelLoading, setFunnelLoading] = useState(true);
-  // Product independent filter (default: This Month)
+  // Product independent filter: a preset (default: This month); the dates
+  // below are only for "Custom range".
+  const [productRange, setProductRange] = useState<ProductRange>(DEFAULT_PRODUCT_RANGE);
   const [productDateFrom, setProductDateFrom] = useState<Date | null>(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [productDateTo, setProductDateTo] = useState<Date | null>(() => new Date());
   const [productsLoading, setProductsLoading] = useState(true);
+  // Detail modal. A new key on every open remounts it, so it starts from the
+  // card's period each time.
+  const [productDetailOpen, setProductDetailOpen] = useState(false);
+  const [productDetailKey, setProductDetailKey] = useState(0);
 
 
   // Avoid fetch on mount running twice in StrictMode
@@ -126,14 +156,9 @@ export default function DashboardClient() {
     return { date_from: toDateStr(from), date_to: toDateStr(now) };
   }
 
-  function getProductParams(): DashboardDateParams {
-    if (productDateFrom && productDateTo) {
-      return { date_from: toDateStr(productDateFrom), date_to: toDateStr(productDateTo) };
-    }
-    // Default fallback (e.g. This Month)
-    const now = new Date();
-    const from = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { date_from: toDateStr(from), date_to: toDateStr(now) };
+  // null while a custom range is only half picked: the chart keeps what it shows.
+  function getProductParams(): DashboardDateParams | null {
+    return productRangeParams(productRange, [productDateFrom, productDateTo]);
   }
 
   // ─── Fetch ────────────────────────────────────────────────────────
@@ -147,20 +172,21 @@ export default function DashboardClient() {
       const params = getParams();
       console.log("[Dashboard] fetching with params:", params);
 
+      const productParams = getProductParams();
       const [summaryRes, funnelRes, productsRes, topDealsRes] = await Promise.all([
         fetchDashboardSummary(params),
         fetchSalesFunnel({ ...params, group_by: funnelView }),
-        fetchProductPerformance({ ...getProductParams(), limit: 50 }),
+        productParams ? fetchProductPerformance({ ...productParams, limit: 50 }) : Promise.resolve(null),
         fetchTopDeals({ ...params, limit: 5 }),
       ]);
 
       if (summaryRes.success) setSummary(summaryRes.data);
       if (funnelRes.success) setFunnelPeriods(funnelRes.data);
-      if (productsRes.success) setProducts(productsRes.data.items);
+      if (productsRes?.success) setProducts(productsRes.data.items);
       if (topDealsRes.success) setTopDeals(topDealsRes.data.items);
 
       // Handle errors if any
-      const errs = [summaryRes, funnelRes, productsRes, topDealsRes]
+      const errs = [summaryRes, funnelRes, ...(productsRes ? [productsRes] : []), topDealsRes]
         .filter((r) => !r.success)
         .map((r) => r.error?.message || "Unknown error");
 
@@ -183,9 +209,11 @@ export default function DashboardClient() {
   }
 
   async function fetchProductsOnly() {
+    const productParams = getProductParams();
+    if (!productParams) return;
     setProductsLoading(true);
     try {
-      const res = await fetchProductPerformance({ ...getProductParams(), limit: 50 });
+      const res = await fetchProductPerformance({ ...productParams, limit: 50 });
       if (res.success) setProducts(res.data.items);
     } catch (err) {
       console.error("Product fetch error:", err);
@@ -244,7 +272,7 @@ export default function DashboardClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFrom, dateTo, quickFilter]);
 
-  // Re-fetch products when date changes
+  // Re-fetch products when the preset or the custom dates change
   const productDateInit = useRef(true);
   useEffect(() => {
     if (productDateInit.current) {
@@ -253,7 +281,7 @@ export default function DashboardClient() {
     }
     fetchProductsOnly();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productDateFrom, productDateTo]);
+  }, [productRange, productDateFrom, productDateTo]);
 
   // Re-fetch funnel when view changes
   const funnelViewInit = useRef(true);
@@ -321,14 +349,7 @@ export default function DashboardClient() {
     { stage: "Closed - Lost", count: funnelAgg.closed_lost },
   ];
 
-  const productChartData = products
-    .filter((p) => p.total_value > 0)
-    .slice(0, 10)
-    .map((p) => ({
-      name: p.product_name.length > 18 ? p.product_name.slice(0, 18) + "…" : p.product_name,
-      fullName: p.product_name,
-      value: Math.round(p.total_value),
-    }));
+  const productChartData = productChartRows(products);
 
   // ─── Stat cards ───────────────────────────────────────────────────
   const statCards: UserStatType[] = summary
@@ -616,24 +637,57 @@ export default function DashboardClient() {
       {/* ── PRODUCT PERFORMANCE (horizontal bar) ───────────────────── */}
       <Card sx={{ borderRadius: "16px", mb: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
         <CardContent sx={{ p: 3 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6" fontWeight="bold">Product Performance</Typography>
-            <Box width={250}>
-              <AppDatePicker
-                mode="range"
-                placeholder="Select date range"
-                isBgWhite
-                value={[productDateFrom, productDateTo]}
-                maxDate={new Date()}
-                onChange={(val) => {
-                  if (Array.isArray(val)) {
-                    setProductDateFrom(val[0]);
-                    setProductDateTo(val[1]);
-                  }
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2} mb={3}>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">Product Performance</Typography>
+              <Typography variant="body2" color="text.secondary">Units sold in Won deals</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" flexWrap="wrap" gap={1.5}>
+              <Box width={180}>
+                <AppSelect
+                  value={productRange}
+                  onChange={(e: any) => setProductRange(e.target.value as ProductRange)}
+                  isBgWhite
+                  options={PRODUCT_RANGE_OPTIONS}
+                  // Same height as the date picker beside it
+                  height="48px"
+                />
+              </Box>
+              {productRange === "custom" && (
+                <Box width={250}>
+                  <AppDatePicker
+                    mode="range"
+                    placeholder="Select date range"
+                    isBgWhite
+                    value={[productDateFrom, productDateTo]}
+                    maxDate={new Date()}
+                    onChange={(val) => {
+                      if (Array.isArray(val)) {
+                        setProductDateFrom(val[0]);
+                        setProductDateTo(val[1]);
+                      }
+                    }}
+                  />
+                </Box>
+              )}
+              <AppButton
+                variantStyle="outline"
+                onClick={() => {
+                  setProductDetailKey((k) => k + 1);
+                  setProductDetailOpen(true);
                 }}
-              />
+              >
+                Detail
+              </AppButton>
             </Box>
           </Box>
+          <ProductPerformanceDetailModal
+            key={productDetailKey}
+            open={productDetailOpen}
+            onClose={() => setProductDetailOpen(false)}
+            initialRange={productRange}
+            initialCustom={[productDateFrom, productDateTo]}
+          />
 
           {productsLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" height={250}>
@@ -649,19 +703,15 @@ export default function DashboardClient() {
                 <BarChart data={productChartData} layout="vertical" margin={{ top: 0, right: 80, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                   <XAxis
-                    type="number" axisLine={false} tickLine={false}
+                    type="number" axisLine={false} tickLine={false} allowDecimals={false}
                     tick={{ fontSize: 11, fill: "#999" }}
                     tickFormatter={(val: number) =>
                       new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(val)
                     }
                   />
                   <YAxis type="category" dataKey="name" width={130} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#555" }} />
-                  <RechartsTooltip
-                    formatter={(value: number) => [formatRupiah(value), "Value"]}
-                    contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
-                    labelStyle={{ fontWeight: 600 }}
-                  />
-                  <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
+                  <RechartsTooltip content={<ProductTooltip />} cursor={{ fill: "#f8fafc" }} />
+                  <Bar dataKey="quantity" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>

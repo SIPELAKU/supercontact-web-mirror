@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `components/admin/companyLogo.test.ts` (4): tipe yang diterima, SVG dan PDF ditolak, batas 10 MB, file tanpa tipe dinilai dari ekstensi;
     - `components/admin/logoCrop.test.ts` (6): area di dalam gambar, zoom out pada logo lebar (gambar utuh di tengah, sisa transparan), area yang melewati satu sisi, area di luar gambar, zoom yang memuat seluruh gambar;
     - `lib/api/company-profile.logo.test.ts` (6): upload multipart field `file`, pesan error BE diteruskan, halaman error gateway, hapus logo dengan DELETE, `updateCompanyGeneral` tetap mengembalikan data serta code dan details error, 401 menjadi UNAUTHORIZED
-  - **Total:** 51 file test, 612 test lolos
+  - **Total:** 52 file test, 618 test lolos (termasuk test dari 1.113.0 setelah merge dengan `dev`)
 
 ---
 

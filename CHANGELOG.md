@@ -45,6 +45,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Filter Status Broadcasting WA:** opsi "Sending" diganti **"In Queue"**, sesuai status dari API. Sebelumnya memilih "Sending" tidak pernah menemukan broadcast apa pun
   - **Technical Notes:** daftar key sort per endpoint (`BROADCAST_SORT_KEYS`, `WA_RECIPIENT_SORT_KEYS`, `BROADCAST_TEMPLATE_SORT_KEYS`, `BROADCAST_GROUP_SORT_KEYS`) dan status broadcast (`BROADCAST_STATUSES`) di `lib/types/whatsapp-marketing.ts`, diterapkan lewat `toApiSort`
 
+#### 🐛 Daftar Quotation Memanggil API Berkali-kali
+
+- **Deskripsi:**
+  - **Masalah:** membuka **Sales › Quotation** mengirim request daftar quotation yang sama sampai 4 kali di development (2 kali di production). Halaman punya fetch sendiri saat dibuka, dan tabel juga mengumumkan state awalnya; React Strict Mode di development menjalankan keduanya dua kali. Fetch saat dibuka itu juga mengabaikan filter dari URL, jadi link yang sudah difilter sempat memuat daftar tanpa filter dulu
+  - **Respons Basi:** request yang lebih lama bisa selesai belakangan dan menimpa hasil yang lebih baru, misalnya saat mengetik search dengan cepat
+  - **Perbaikan:**
+    - fetch awal kini hanya dari tabel (halaman 1, batch 25, termasuk search/filter/sort dari URL), jadi cukup 1 request;
+    - request yang identik dengan yang sedang berjalan tidak dikirim ulang;
+    - hanya jawaban request terakhir yang dipakai; jawaban dan error request lama dibuang;
+    - refetch setelah aksi (hapus, terima/tolak, approval, kirim, coba lagi) tetap selalu mengirim request baru
+  - **Technical Notes:** `fetchQuotations` di `lib/store/quotation/index.ts` (query dibangun `buildQuotationListQuery`, opsi `{ force }`); fetch saat mount di `QuotationClient.tsx` dihapus
+
+#### 🐛 Alasan Harga Quotation Tidak Terhitung Kini Tampil
+
+- **Deskripsi:**
+  - **Masalah:** bila BE menolak menghitung harga (preview), semua harga di Products & Services tampil "—" tanpa penjelasan, kecuali error yang terikat ke baris tertentu
+  - **Perbaikan:** pesan dari BE (beserta kodenya) tampil di atas tabel Products & Services dengan judul "Harga belum bisa dihitung" dan tombol **Coba lagi** untuk menghitung ulang
+
 #### 🎨 Chip Sumber Harga di Quotation
 
 - **Deskripsi:**
@@ -53,10 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### 🧪 Testing
 
 - **Deskripsi:**
-  - **9 Test Baru:**
+  - **16 Test Baru:**
     - `lib/hooks/waListQueries.test.ts` (7): query Template Broadcast (tanpa filter, search/status/language, sort dan urutan bawaan desc, tanpa sort_order bila tidak ada sort_by) dan Group Broadcasting (tanpa search, search dan sort, urutan bawaan);
-    - `lib/utils/apiSort.test.ts` (+2): key sort Template Broadcast dan Group Broadcasting; key Broadcasting WA dan Recipients diperbarui ke API terbaru
-  - **Total:** 59 file test, 677 test lolos
+    - `lib/utils/apiSort.test.ts` (+2): key sort Template Broadcast dan Group Broadcasting; key Broadcasting WA dan Recipients diperbarui ke API terbaru;
+    - `lib/store/quotation/quotationList.test.ts` (7): request identik digabung, jawaban terbaru menang, error request lama dibuang, `force` tetap mengirim, request berikutnya setelah selesai, isi query daftar quotation
+  - **Total:** 60 file test, 684 test lolos
 
 ---
 

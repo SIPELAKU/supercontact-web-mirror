@@ -77,6 +77,9 @@ export interface CompanyGeneral {
   address_2?: string | null;
   city?: string | null;
   postal_code?: string | null;
+  /** Company logo. Read-only for the tenant until BE adds an upload endpoint. */
+  logo_url?: string | null;
+  logo_file_id?: string | null;
   contacts_cross_user_visibility?: boolean;
   // Quotation defaults (Phase 0). Snapshotted onto each quotation at create
   // and draft update; changing them affects only quotations made afterwards.

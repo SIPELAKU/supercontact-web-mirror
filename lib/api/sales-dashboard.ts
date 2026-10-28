@@ -47,12 +47,24 @@ export interface FunnelData {
 export interface ProductItem {
   product_id: string;
   product_name: string;
+  /** Units sold in Won deals. New in BE 1.149.0 (DEV); missing on older APIs. */
+  quantity_sold: number;
+  /** Price x quantity. The API orders the items by this. */
   total_value: number;
+  /** Won deals with this product. */
   total_deals: number;
 }
 
 export interface ProductPerformanceData {
   items: ProductItem[];
+  /**
+   * Pagination, being added by the BE in the same shape as the other lists
+   * (`page`, `limit` in; these out). Absent until then.
+   */
+  total?: number;
+  page?: number;
+  limit?: number;
+  total_pages?: number;
 }
 
 // /top-deals
@@ -98,9 +110,10 @@ export async function fetchSalesFunnel(params?: DashboardDateParams & { group_by
 }
 
 /**
- * GET /sales/dashboard/products
+ * GET /sales/dashboard/products. `page` (1-based) + `limit` = one page of the
+ * list, like the other paged endpoints.
  */
-export async function fetchProductPerformance(params?: DashboardDateParams & { limit?: number }) {
+export async function fetchProductPerformance(params?: DashboardDateParams & { limit?: number; page?: number }) {
   const response = await api.get<ApiResponse<ProductPerformanceData>>("/sales/dashboard/products", { params });
   return response.data;
 }

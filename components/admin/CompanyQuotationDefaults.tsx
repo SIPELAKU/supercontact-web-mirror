@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
@@ -12,7 +13,8 @@ import { AppTextarea } from "@/components/ui/app-textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/context/AuthContext";
 import { notify } from "@/lib/notifications";
-import { fetchMyCompany, updateCompanyGeneral } from "@/lib/api/company-profile";
+import { updateCompanyGeneral } from "@/lib/api/company-profile";
+import { myCompanyKey, useMyCompany } from "@/lib/hooks/useMyCompany";
 import type { CompanyGeneral } from "@/lib/types/company-profile";
 
 /**
@@ -55,36 +57,28 @@ export function normaliseTaxRate(value: string): string | null {
 
 export default function CompanyQuotationDefaults() {
   const { getToken } = useAuth();
-  const [company, setCompany] = useState<CompanyGeneral | null>(null);
+  const queryClient = useQueryClient();
+  // The company row is shared with the rest of the page (one GET /companies).
+  const { data: company, isLoading: loading, error, refetch } = useMyCompany();
+  const loadError = error ? (error as Error).message || "Gagal memuat pengaturan quotation" : "";
   const [form, setForm] = useState<DefaultsForm>({
     taxRate: "11",
     pricesIncludeTax: false,
     terms: "",
     paymentTerms: "",
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadError, setLoadError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof DefaultsForm, string>>>({});
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const token = await getToken();
-      const data = await fetchMyCompany(token);
-      setCompany(data);
-      setForm(formFromCompany(data));
-    } catch (err: any) {
-      setLoadError(err?.message || "Gagal memuat pengaturan quotation");
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
-
+  // The form starts from the saved values once they arrive, and only then: a
+  // background refetch must not wipe what the user is typing.
+  const formLoaded = useRef(false);
   useEffect(() => {
-    load();
-  }, [load]);
+    if (company && !formLoaded.current) {
+      formLoaded.current = true;
+      setForm(formFromCompany(company));
+    }
+  }, [company]);
 
   const saved = useMemo(() => (company ? formFromCompany(company) : null), [company]);
   const dirty =
@@ -123,7 +117,7 @@ export default function CompanyQuotationDefaults() {
         quotation_terms: form.terms.trim() ? form.terms : null,
         quotation_payment_terms: form.paymentTerms.trim() ? form.paymentTerms : null,
       });
-      setCompany(updated);
+      queryClient.setQueryData<CompanyGeneral>(myCompanyKey, updated);
       setForm(formFromCompany(updated));
       notify.success("Pengaturan quotation disimpan", {
         description: "Berlaku untuk quotation yang dibuat setelah ini; quotation lama tidak berubah.",
@@ -151,7 +145,7 @@ export default function CompanyQuotationDefaults() {
           {loadError ? (
             <div className="space-y-3">
               <Typography className="text-sm! text-red-500!">{loadError}</Typography>
-              <AppButton variantStyle="outline" size="small" onClick={load}>
+              <AppButton variantStyle="outline" size="small" onClick={() => refetch()}>
                 Coba lagi
               </AppButton>
             </div>

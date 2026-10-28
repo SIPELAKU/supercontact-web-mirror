@@ -9,6 +9,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.114.1] - 2026-10-28
+
+### Detail Versi 1.114.1
+
+#### ✨ Upload dan Hapus Logo Perusahaan
+
+- **Deskripsi:**
+  - **Tombol Edit di Logo:** Di kartu identitas **Settings › Company Profile**, Admin melihat ikon pensil di pojok kanan bawah logo, seperti foto profil di Facebook atau LinkedIn
+    - belum ada logo: klik ikon langsung membuka pemilih file;
+    - sudah ada logo: klik ikon membuka menu **Upload new logo** dan **Remove logo**
+  - **Sesuaikan Dulu (Adjust logo):** setelah file dipilih, muncul dialog dengan bingkai kotak 1:1 bersudut siku, sama dengan tampilan logo di kartu
+    - gambar bisa **digeser** (drag, juga sentuh di HP) dan **di-zoom** (slider, tombol −/+, scroll mouse atau pinch);
+    - dialog terbuka pada zoom yang memuat **seluruh gambar**, sehingga logo memanjang tidak terpotong; area kotak yang tidak tertutup gambar menjadi transparan (ditandai pola kotak-kotak);
+    - **Save** memotong gambar sesuai bingkai menjadi PNG 512×512 (transparansi tetap), **Cancel** membatalkan tanpa upload;
+    - GIF animasi menjadi gambar diam setelah disesuaikan
+  - **Upload:** hasil penyesuaian langsung tampil sebagai preview dengan indikator loading, lalu disimpan. Preview tetap tampil sampai logo dari server selesai dimuat, sehingga gambar tidak berkedip. Setelah itu muncul notifikasi "Company logo updated"
+  - **Validasi File:** sebelum dikirim, file dicek sesuai aturan BE: JPG, PNG, GIF atau WebP, maksimal 10 MB. File tanpa tipe dinilai dari ekstensinya. File yang tidak sesuai langsung ditolak dengan pesan yang jelas
+  - **Hapus Logo:** dengan konfirmasi "Remove company logo?", lalu kartu kembali menampilkan inisial perusahaan
+  - **Gagal:** logo kembali ke yang lama dan pesan dari BE ditampilkan (misalnya file rusak atau storage sedang bermasalah)
+  - **Hak Akses:** hanya Admin (permission `companies`); role lain tidak melihat tombol edit
+  - **Impact:** Admin bisa mengatur logo perusahaan sendiri, yang nantinya dipakai di template PDF quotation
+  - **Technical Notes:**
+    - `POST /internal/company-profile/logo` (multipart, field `file`; BE mengompres ke WebP dan menghapus logo lama setelah upload berhasil) dan `DELETE /internal/company-profile/logo`; keduanya mengembalikan data company terbaru
+    - `uploadCompanyLogo` (timeout 120 detik) dan `deleteCompanyLogo` di `lib/api/company-profile.ts`. Ketiga fungsi tulis company kini memakai satu pembaca response, `readCompanyResponse`, sehingga response yang bukan JSON (misalnya halaman error gateway) menghasilkan pesan yang jelas, bukan error parsing
+    - hook `useUploadCompanyLogo` dan `useDeleteCompanyLogo` (`lib/hooks/useMyCompany.ts`) memperbarui cache `GET /companies` dari response, tanpa request ulang
+    - validasi file di `components/admin/companyLogo.ts`; tombol, menu dan konfirmasi di `components/admin/CompanyIdentityCard.tsx`
+    - dialog penyesuaian `components/admin/LogoCropDialog.tsx` memakai dependency baru **`react-easy-crop`** 6.2.4 (MIT, plus `normalize-wheel`); hitungan potong (`cropDrawPlan`, `fitWholeZoom`) dan pembuatan PNG via canvas (`cropLogoImage`) di `components/admin/logoCrop.ts`
+    - **Butuh BE 1.151.0.** Deploy BE ke DEV sempat tertahan karena runner CI; merge ke `dev` setelah endpoint ini ada di DEV, dan rilis ke PROD setelah BE PROD diperbarui
+
+#### 🐛 Bug Fix Data Contoh Muncul Sesaat di Company Profile
+
+- **Deskripsi:**
+  - **Masalah:** Saat halaman **Settings › Company Profile** dimuat, kartu metrik sempat menampilkan angka contoh ("200 - 500" karyawan, "Est. Revenue 4,215", "24 Tools", "Series C Funding...") sebelum diganti data asli. Bila data profil gagal dimuat, angka contoh itu tetap tampil dan bisa disangka data perusahaan
+  - **Root Cause:** Komponen bersama `CompanyDetailStats` menampilkan data contoh setiap kali daftar metriknya kosong, termasuk selama data masih dimuat
+  - **Solusi:**
+    - selama dimuat, tampil skeleton 3 kartu metrik dengan ukuran yang sama;
+    - bila data profil gagal dimuat, baris metrik tidak ditampilkan (pesan error tetap muncul);
+    - halaman juga langsung mulai dalam keadaan loading, sehingga kartu About tidak sempat menampilkan teks "Company profile information is not available."
+  - **Impact:** Halaman hanya menampilkan data perusahaan yang sebenarnya
+  - **Technical Notes:** prop opsional `isLoading` dan `CompanyDetailStatsSkeleton` di `components/omnichannel/company/detail-company/`; data contoh tetap menjadi cadangan bagi pemakai lain komponen ini (Company 360), yang tidak berubah. `CompanyProfileClient` memulai `isLoading` dari `true` dan hanya merender baris metrik saat loading atau saat profil berhasil dimuat
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **16 Test Baru:**
+    - `components/admin/companyLogo.test.ts` (4): tipe yang diterima, SVG dan PDF ditolak, batas 10 MB, file tanpa tipe dinilai dari ekstensi;
+    - `components/admin/logoCrop.test.ts` (6): area di dalam gambar, zoom out pada logo lebar (gambar utuh di tengah, sisa transparan), area yang melewati satu sisi, area di luar gambar, zoom yang memuat seluruh gambar;
+    - `lib/api/company-profile.logo.test.ts` (6): upload multipart field `file`, pesan error BE diteruskan, halaman error gateway, hapus logo dengan DELETE, `updateCompanyGeneral` tetap mengembalikan data serta code dan details error, 401 menjadi UNAUTHORIZED
+  - **Total:** 51 file test, 612 test lolos
+
+---
+
+## [1.114.0] - 2026-10-28
+
+### Detail Versi 1.114.0
+
+#### ✨ Product Performance Menampilkan Jumlah Produk Terjual + Filter Periode
+
+- **Deskripsi:**
+  - **Sebelumnya:** Grafik **Product Performance** di Dashboard menampilkan nilai penjualan (Rp) 10 produk teratas, dengan filter berupa rentang tanggal saja
+  - **Jumlah Terjual:** Bar kini menampilkan **jumlah unit terjual** per produk dari deal Won (`quantity_sold`), untuk **4 produk** yang paling banyak terjual. Produk tanpa unit terjual tidak ditampilkan
+  - **Tooltip:** nama produk, jumlah unit terjual dan jumlah deal Won
+  - **Filter Periode:** pilihan **All time**, **This month** (default), **Last 3 months**, **Last 6 months**, **Last 1 year** dan **Custom range**
+    - All time tidak membatasi tanggal;
+    - Last 3 months, Last 6 months dan Last 1 year berakhir hari ini dan mencakup tepat periode itu;
+    - Custom range memakai pemilih rentang tanggal seperti sebelumnya, dan data baru dimuat setelah kedua tanggal dipilih
+  - **Impact:** Sales dan manajemen bisa melihat produk yang paling laku dari sisi jumlah, untuk periode yang dibutuhkan
+  - **Technical Notes:**
+    - data dari `GET /sales/dashboard/products`, field baru `quantity_sold` (BE DEV 1.149.0). `date_from` / `date_to` dihitung FE sesuai arahan BE; filter tanggal BE memakai tanggal deal ditutup
+    - FE mengurutkan dari `quantity_sold`. Menurut info BE, API kini juga mengurutkan dari jumlah terjual, tetapi spec DEV 1.149.0 masih menulis `total_value`, jadi urutan di FE menjamin hasilnya tetap benar
+    - `productRangeParams`, `productChartRows`, pilihan preset dan `PRODUCT_CHART_TOP` di `components/dashboard/productPerformance.ts`; `ProductTooltip` dan dropdown preset di `components/dashboard/DashboardClient.tsx`
+    - field `quantity_sold` ditambahkan ke tipe `ProductItem` (`lib/api/sales-dashboard.ts`)
+
+#### ✨ Detail Product Performance dengan Tabel Berhalaman
+
+- **Deskripsi:**
+  - **Tombol Detail:** Di kartu Product Performance ada tombol **Detail** yang membuka modal berisi seluruh produk yang terjual
+  - **Tabel:** per produk hanya **Product**, **Units Sold** (jumlah terjual) dan **Won Deals** (jumlah deal Won), dengan pagination 10 / 25 / 50 baris per halaman. Tanpa search maupun sort
+  - **Periode Sendiri:** modal punya pilihan periode sendiri (pilihan yang sama dengan kartu). Saat dibuka, modal mengikuti periode kartu saat itu; mengubah periode di modal tidak mengubah kartu. Ganti periode kembali ke halaman 1
+  - **Impact:** User bisa melihat performa semua produk, bukan hanya 4 teratas
+  - **Technical Notes:**
+    - pagination diminta ke BE dengan pola yang sama seperti list lain: param `page` dan `limit`, response `total`, `page`, `limit`, `total_pages`. **BE sedang menambahkan pagination ini**; sampai `total` dikirim, tabel menampilkan satu halaman berisi data yang dikembalikan BE
+    - `components/dashboard/ProductPerformanceDetailModal.tsx` (SuperTable, `manualPagination`, mode `pages`); data lewat `useProductPerformancePage` di `lib/hooks/useSalesDashboard.ts` (TanStack Query, key di bawah `sales-dashboard`, halaman sebelumnya tetap tampil selama halaman berikut dimuat)
+    - `productTableTotal` di `components/dashboard/productPerformance.ts`; field pagination opsional di `ProductPerformanceData`
+  - **Butuh BE:** `quantity_sold` (DEV 1.149.0) dan pagination endpoint ini. PROD BE (1.144.3) belum mengirim `quantity_sold`, sehingga grafik akan kosong bila versi ini naik ke PROD sebelum BE PROD diperbarui
+
+#### ✨ Logo dan Identitas Perusahaan di Company Profile
+
+- **Deskripsi:**
+  - **Kartu Identitas:** Halaman **Settings › Company Profile** kini punya kartu di bagian atas, tepat di bawah nama perusahaan, berisi **logo perusahaan**, nama, dan kontak: website (bisa diklik), email, telepon dan kota. Kontak yang kosong tidak ditampilkan
+  - **Tanpa Logo:** bila perusahaan belum punya logo, atau gambarnya gagal dimuat, tampil monogram inisial nama dengan warna brand. Bentuk hukum seperti PT, CV dan Tbk dilewati, misalnya "PT Solvera Global Teknologi" menjadi "SG"
+  - **Hak Akses:** logo dan kontak berasal dari `GET /companies`, yang hanya bisa dibaca Admin (permission `companies`). Role lain melihat monogram dan nama perusahaan
+  - **Belum Bisa Diubah:** logo hanya ditampilkan. Endpoint upload logo untuk tenant sedang disiapkan BE
+  - **Judul Halaman:** header halaman kini bertuliskan **Company Profile**, seperti halaman Settings lain, sehingga nama perusahaan tidak tampil dua kali
+  - **Impact:** Identitas perusahaan terlihat jelas di halaman profilnya, dan siap dipakai untuk template PDF quotation berikutnya
+  - **Technical Notes:**
+    - `components/admin/CompanyIdentityCard.tsx` (logo dengan `<img>` biasa karena host storage BE tidak ada di `images.remotePatterns`; fallback monogram saat logo kosong atau error; skeleton saat loading) dan helper `companyInitials`, `websiteHref`, `websiteLabel` di `components/admin/companyIdentity.ts`
+    - hook baru `useMyCompany` (`lib/hooks/useMyCompany.ts`, TanStack Query) dipakai bersama kartu identitas dan kartu **Pengaturan Quotation**, sehingga halaman tetap memanggil `GET /companies` satu kali. Setelah Pengaturan Quotation disimpan, cache diperbarui dengan response PATCH. Form Pengaturan Quotation tetap diisi sekali saat data datang, sehingga refetch di background tidak menimpa isian user
+    - field `logo_url` dan `logo_file_id` ditambahkan ke tipe `CompanyGeneral`
+    - jarak antar-kartu di atas halaman kini mengikuti jarak standar halaman
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **19 Test Baru:**
+    - `components/dashboard/productPerformance.test.ts` (10): daftar preset, All time tanpa tanggal, This month, Last 3/6 months dan Last 1 year, Custom range (lengkap dan belum lengkap), urutan berdasarkan jumlah terjual, produk tanpa unit terjual atau tanpa `quantity_sold`, 4 produk di kartu dan isi tooltip (tanpa nilai Rp), total baris tabel (dengan dan tanpa `total` dari BE);
+    - `lib/api/sales-dashboard.products.test.ts` (4): request `page` + `limit` dengan periode, All time tanpa tanggal, cache key di bawah `sales-dashboard`, key berbeda per periode/halaman/ukuran halaman;
+    - `components/admin/companyIdentity.test.ts` (5): inisial monogram (dua kata pertama, melewati PT/CV/Tbk, nama kosong), link website tanpa skema dan label website
+  - **Total:** 48 file test, 596 test lolos
+
+---
+
 ## [1.113.0] - 2026-10-28
 
 ### Detail Versi 1.113.0

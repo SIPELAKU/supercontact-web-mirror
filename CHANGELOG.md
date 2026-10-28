@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.113.0] - 2026-10-28
+
+### Detail Versi 1.113.0
+
+#### ✨ Export Recipient Failed di Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Sebelumnya:** Di modal **Broadcast Details & Statistics**, hanya kartu Sent, Delivered dan Read yang bisa di-export. Kartu Failed sengaja tidak bisa (keputusan 1.107.0)
+  - **Sekarang:** Kartu **Failed** juga bisa diklik untuk export ke **CSV** atau **Excel**, sama seperti kartu lain
+  - **Kolom Error Message:** File Failed berisi kolom yang sama dengan kartu lain ditambah **Error Message** di akhir, yaitu pesan error terakhir dari BE untuk recipient itu (kosong bila BE tidak mengirimnya). File Sent, Delivered dan Read tidak berubah
+  - **Nama File:** mengikuti pola yang sama, misalnya `Broadcast_Promo_Oktober_Failed_2026-10-28.xlsx`
+  - **Impact:** Tim bisa mengambil daftar recipient yang gagal beserta alasannya, untuk diperbaiki lalu dikirim ulang
+  - **Technical Notes:**
+    - data dari `GET /broadcasts/{id}/recipients?status=failed&is_limit=false`, endpoint yang sama dengan kartu lain. Param ini sudah ada di BE DEV (1.148.0) dan PROD (1.144.3)
+    - `EXPORTABLE_STATUSES` kini berisi `failed`, dan `recipientExportColumns(status)` di `components/whatsapp-marketing/broadcasting-wa/recipientExport.ts` menambah kolom Error Message khusus Failed
+    - kartu Failed di `ViewBroadcastStatsModal.tsx` memakai menu format dan indikator export yang sama dengan kartu lain
+
+#### 🎨 Warna Status Broadcast Konsisten
+
+- **Deskripsi:**
+  - **Masalah:** Di header modal **Broadcast Details & Statistics**, status broadcast selalu tampil abu-abu, sehingga broadcast yang sudah Sent terlihat seperti Draft. Di daftar Broadcasting WA, status **In Queue** juga tampil abu-abu
+  - **Root Cause:** Modal memakai chip polos tanpa warna, sedangkan pewarnaan status hanya ada di tabel daftar dan belum mengenal In Queue
+  - **Solusi:** Satu aturan warna dipakai di daftar dan di modal: Draft abu-abu, In Queue kuning, Sent hijau, Failed merah (Sending biru untuk data lama)
+  - **Impact:** Status broadcast terlihat sama di daftar dan di modal
+  - **Technical Notes:** `broadcastStatusChip` di `components/whatsapp-marketing/broadcasting-wa/broadcastStatus.ts`, dipakai `BroadcastingWATable.tsx` (menggantikan `getStatusChip`) dan `ViewBroadcastStatsModal.tsx`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **6 Test Baru:**
+    - `components/whatsapp-marketing/broadcasting-wa/recipientExport.test.ts` (2): kolom Error Message hanya di file Failed, dan kosong bila BE tidak mengirim pesan error;
+    - `components/whatsapp-marketing/broadcasting-wa/broadcastStatus.test.ts` (4): warna tiap status, huruf besar/kecil dan spasi, nilai lama, status tidak dikenal
+  - **Diubah:** test daftar kartu yang bisa di-export kini mengharapkan Failed ikut
+  - **Total:** 46 file test, 583 test lolos
+
+---
+
 ## [1.112.2] - 2026-10-27
 
 ### Detail Versi 1.112.2

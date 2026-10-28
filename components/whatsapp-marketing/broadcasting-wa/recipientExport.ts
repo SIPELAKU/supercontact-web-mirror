@@ -3,6 +3,7 @@
 // What the stats cards in ViewBroadcastStatsModal export: every recipient the
 // card counts, as a CSV or Excel file. The API's status filter is cumulative,
 // like the cards, so Sent also holds those that were delivered or read.
+// Failed adds why each one failed.
 
 import { format } from 'date-fns';
 
@@ -13,8 +14,8 @@ import {
 } from '@/lib/utils/exportRows';
 import type { BroadcastRecipient } from '@/lib/types/whatsapp-marketing';
 
-/** The cards that export their recipients. Failed deliberately does not. */
-export const EXPORTABLE_STATUSES = ['sent', 'delivered', 'read'] as const;
+/** The cards that export their recipients: all four. */
+export const EXPORTABLE_STATUSES = ['sent', 'delivered', 'read', 'failed'] as const;
 export type ExportableStatus = (typeof EXPORTABLE_STATUSES)[number];
 
 export const statusLabel = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
@@ -33,6 +34,12 @@ export const RECIPIENT_EXPORT_COLUMNS: ExportColumn<BroadcastRecipient>[] = [
     value: (r) => (r.updated_at ? format(new Date(r.updated_at), 'yyyy-MM-dd HH:mm') : ''),
   },
 ];
+
+/** The columns of one card's file: Failed adds the last error the API sent. */
+export function recipientExportColumns(status: ExportableStatus): ExportColumn<BroadcastRecipient>[] {
+  if (status !== 'failed') return RECIPIENT_EXPORT_COLUMNS;
+  return [...RECIPIENT_EXPORT_COLUMNS, { header: 'Error Message', value: (r) => r.error_message }];
+}
 
 /** e.g. `Broadcast_Promo_Oktober_Sent_2026-10-24.xlsx` */
 export function recipientExportFileName(

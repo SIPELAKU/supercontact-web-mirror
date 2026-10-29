@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { CompanyAbout, CompanyDetailStats, CompanyKeyPeopleCard, OrganizationStructureCard, RecentSignals, CompanyDocumentsCard } from "@/components/omnichannel";
 import CompanyQuotationDefaults from "@/components/admin/CompanyQuotationDefaults";
+import CompanyIdentityCard from "@/components/admin/CompanyIdentityCard";
+import { useMyCompany } from "@/lib/hooks/useMyCompany";
 import SettingsPageHeader from "@/components/settings/SettingsPageHeader";
 import { usePermission } from "@/lib/hooks/usePermission";
 
@@ -38,7 +40,14 @@ const DOT_COLOR_MAP: Record<string, string> = {
 export default function CompanyProfileClient() {
   const { getToken } = useAuth();
   const { can } = usePermission();
-  const [isLoading, setIsloading] = useState<boolean>(false);
+  // GET /companies (logo, contact details) needs only a login, so every role
+  // sees the identity card. Changing the logo and the quotation defaults
+  // stays Admin only (`companies`).
+  const canManageCompany = can("companies");
+  const myCompany = useMyCompany();
+  // True from the first render: the profile is fetched on mount, so nothing
+  // shows placeholder content before it arrives.
+  const [isLoading, setIsloading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [profile, setProfile] = useState<CompanyProfileData | null>(null);
   const [keyPeople, setKeyPeople] = useState<CompanyProfileKeyPerson[]>([]);
@@ -271,16 +280,29 @@ export default function CompanyProfileClient() {
   return (
     <div className="w-full max-w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 space-y-6">
       <SettingsPageHeader
-        title={company.name}
+        // The page's name, like every Settings page; the company's own name is
+        // on the identity card below.
+        title="Company Profile"
         breadcrumbs={[
           { label: "Settings", href: "/settings" },
           { label: "Company Profile" }
         ]}
       />
 
-      <div className="mt-[63px] grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">
-        <CompanyDetailStats stats={company.stats} />
-      </div>
+      <CompanyIdentityCard
+        name={company.name}
+        company={myCompany.data}
+        isLoading={isLoading || myCompany.isLoading}
+        canEditLogo={canManageCompany}
+      />
+
+      {/* Real stats only: skeletons while loading, nothing if the profile
+          failed (the error shows below) - never the sample stats. */}
+      {(isLoading || profile) && (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(267px,1fr))] gap-5">
+          <CompanyDetailStats stats={company.stats} isLoading={isLoading} />
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-6 mt-[63px]">
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
@@ -314,7 +336,7 @@ export default function CompanyProfileClient() {
             viewAllHref="/settings/organization"
           />
           {/* GET /companies and the PATCH are Admin-only (`companies`). */}
-          {can("companies") && <CompanyQuotationDefaults />}
+          {canManageCompany && <CompanyQuotationDefaults />}
           <CompanyKeyPeopleCard
             isLoading={isLoading}
             people={keyPeopleList}

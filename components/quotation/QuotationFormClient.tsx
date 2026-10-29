@@ -22,7 +22,7 @@ import {
   transitionQuotationStatus,
   updateQuotation,
 } from "@/lib/api/quotations";
-import type { QuotationLead } from "@/lib/api/quotations";
+import type { QuotationLead, QuotationLeadItem } from "@/lib/api/quotations";
 import { publicQuotationUrl } from "@/lib/api/quotations-public";
 import {
   QUOTATION_STATUS,
@@ -44,6 +44,7 @@ import {
   exchangeRateNote,
   quotationCurrencyOptions,
 } from "@/lib/utils/quotationForm";
+import { newRow, orderFillAction, rowsFromLeadOrder } from "@/lib/utils/quotationRows";
 import { fetchExchangeRateCurrencies } from "@/lib/api/exchange-rates";
 import { useCustomFieldDefinitionsFor } from "@/lib/hooks/useCustomFieldDefinitions";
 import { useQuotationLeads } from "@/lib/hooks/useQuotationLeads";
@@ -52,10 +53,11 @@ import { CATALOGUE_LIMIT, useGetProductStore } from "@/lib/store/product";
 import { customFieldErrorsByKey, validateCustomFieldValues } from "@/lib/utils/customFieldValues";
 import QuotationCustomFieldsCard from "@/components/quotation/QuotationCustomFieldsCard";
 import QuotationPriceListExplainer from "@/components/quotation/QuotationPriceListExplainer";
-import QuotationPdfDocument, {
-  QUOTATION_PDF_NODE_ID,
-} from "@/components/quotation/QuotationPdfDocument";
-import { generateQuotationPdf, quotationPdfFilename } from "@/lib/utils/quotationPdf";
+import QuotationPdfPreviewDialog from "@/components/quotation/QuotationPdfPreviewDialog";
+import QuotationTemplatePicker from "@/components/quotation/QuotationTemplatePicker";
+import { quotationFromForm } from "@/lib/quotation/formQuotation";
+import { useQuotationPdf } from "@/lib/hooks/useQuotationPdf";
+import { quotationPdfFilename } from "@/lib/utils/quotationPdf";
 import type {
   DiscountType,
   ItemRow,
@@ -74,7 +76,9 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { Tooltip } from "@mui/material";
+import { Eye } from "lucide-react";
+import { AppAlert } from "../ui/app-alert";
 import { AppButton } from "../ui/app-button";
 import { AppInput } from "../ui/app-input";
 import { AppTextarea } from "../ui/app-textarea";
@@ -90,41 +94,6 @@ interface QuotationFormClientProps {
 type Decision = "accepted" | "rejected";
 
 const PREVIEW_DEBOUNCE_MS = 300;
-
-const newRow = (): ItemRow => ({
-  product_id: "",
-  title: "",
-  sku: "",
-  desc: "",
-  qty: 1,
-  unitPrice: 0,
-  listPrice: 0,
-  discountType: "percent",
-  discountValue: 0,
-  unitLabel: null,
-  unitPrecision: 2,
-  attributes: {},
-  overridePrice: null,
-  overrideReason: "",
-  overrideAllowed: false,
-  priceList: null,
-  billingPeriod: null,
-  // A row that has never been saved has no server-computed margin, and the
-  // preview does not carry one. Null, never 0 - see ItemRow.
-  costSnapshot: null,
-  marginPercent: null,
-  // COMMERCIAL Phase 5 (spec I8). `unitId` null = the product's own unit,
-  // which is what every pre-Phase-5 line means; everything else is read-only
-  // context the server decides and the preview fills in.
-  unitId: null,
-  unitOptions: [],
-  variantValues: {},
-  parentName: null,
-  bundleComponents: null,
-  promoCode: null,
-  promoDiscountAmount: null,
-  prePromoUnitPrice: null,
-});
 
 function toDateInput(value?: string | null, fallback?: Date): string {
   const date = value ? new Date(value) : fallback;
@@ -315,6 +284,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const readOnly = !isNew && !canEditQuotation(status);
 
   const [defaults, setDefaults] = useState<QuotationDefaults | null>(null);
+  // The PDF template. Seeded from the stored row (its snapshot once sent),
+  // otherwise from the company default once the defaults arrive.
+  const [templateId, setTemplateId] = useState("");
 
   const [clientSearchQuery, setClientSearchQuery] = useState("");
   const { data: leadsResponse, isLoading: isLoadingLeads } = useQuotationLeads(
@@ -423,6 +395,8 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   const [totals, setTotals] = useState<QuotationTotals | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [previewError, setPreviewError] = useState<MappedQuotationError | null>(null);
+  // Bumped by "Coba lagi" to run the same preview again.
+  const [previewRetry, setPreviewRetry] = useState(0);
   const [saveError, setSaveError] = useState<MappedQuotationError | null>(null);
 
   /**
@@ -460,8 +434,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
   // screen.
   const [successData, setSuccessData] = useState({ id: "", number: "", pdfUrl: "", publicUrl: "" });
 
-  // What the hidden PDF template renders: the STORED row after a draft save.
-  const [pdfQuotation, setPdfQuotation] = useState<Quotation | null>(null);
+  // The PDF is rendered from the STORED row with the quotation's template.
+  const generateTemplatePdf = useQuotationPdf();
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
 
   const [decision, setDecision] = useState<Decision | null>(null);
   const [isDeciding, setIsDeciding] = useState(false);
@@ -521,6 +496,13 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     }));
   }, [defaults, isNew]);
 
+  // A new quotation, or an old one saved before templates existed, starts on
+  // the company default. Never overrides a template already chosen.
+  useEffect(() => {
+    const fallback = defaults?.template_id;
+    if (fallback) setTemplateId((current) => current || fallback);
+  }, [defaults?.template_id]);
+
   // ── Seed from the stored row ─────────────────────────────────────────────
   useEffect(() => {
     if (!initialData) return;
@@ -571,6 +553,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     setPaymentTerms(initialData.payment_terms ?? "");
     setCustomFields({ ...(initialData.custom_fields ?? {}) });
     setTotals(totalsFromQuotation(initialData));
+    setTemplateId(initialData.template_snapshot?.id ?? initialData.template_id ?? "");
   }, [initialData]);
 
   // Ensure the current lead is in the list when editing
@@ -581,15 +564,6 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     return leads;
   }, [leads, initialData]);
 
-  // Picker options: the lead's Proposal-stage products first, then the active
-  // catalogue, keyed by product id.
-  //
-  // Lead items carry no status (GET /quotations/lead), so they are checked
-  // against the active catalogue: an archived product would only earn a 400
-  // from the preview and the save. When the catalogue fetch came back full
-  // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
-  // proof of archival and the lead item is kept - the server filters
-  // archived products out of the lead payload as well.
   // The lead the form is currently bound to. Hoisted to component scope in
   // Phase 3 because the price-list explainer needs its `contact_id` and its
   // CRM-company brief too, not only its Proposal-stage items.
@@ -598,12 +572,26 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     [leadsWithCurrent, clientData.lead_id]
   );
 
+  // Lead items carry no status (GET /quotations/lead), so they are checked
+  // against the active catalogue: an archived product would only earn a 400
+  // from the preview and the save. When the catalogue fetch came back full
+  // (CATALOGUE_LIMIT rows) it may be truncated, so absence from it is not
+  // proof of archival and the lead item is kept - the server filters
+  // archived products out of the lead payload as well.
+  const isLeadItemOnSale = useMemo(() => {
+    const activeIds = new Set(
+      catalogue.filter((p) => p.status !== "archived").map((p) => p.id)
+    );
+    const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
+    return (item: QuotationLeadItem) => activeIds.has(item.id) || catalogueMayBeTruncated;
+  }, [catalogue]);
+
+  // Picker options: the lead's Proposal-stage products first, then the active
+  // catalogue, keyed by product id.
   const availableProducts = useMemo<PickerProduct[]>(() => {
     const active = catalogue.filter((p) => p.status !== "archived");
-    const activeIds = new Set(active.map((p) => p.id));
-    const catalogueMayBeTruncated = catalogue.length >= CATALOGUE_LIMIT;
     const leadItems: PickerProduct[] = (selectedLead?.items ?? [])
-      .filter((item) => activeIds.has(item.id) || catalogueMayBeTruncated)
+      .filter(isLeadItemOnSale)
       .map((item) => ({
         id: item.id,
         product_name: item.product_name,
@@ -631,7 +619,22 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         parent_name: p.parent?.product_name ?? null,
       }));
     return [...leadItems, ...rest];
-  }, [catalogue, selectedLead]);
+  }, [catalogue, selectedLead, isLeadItemOnSale]);
+
+  // Picking the client of a new quotation fills Products & Services with what
+  // they ordered (the products of their Proposal-stage deals). Lines the
+  // seller already picked a product for are only replaced once they confirm.
+  const [pendingOrderRows, setPendingOrderRows] = useState<ItemRow[] | null>(null);
+
+  const handleClientDataChange = (next: Record<string, any>) => {
+    setClientData(next);
+    if (!isNew || !next.lead_id || next.lead_id === clientData.lead_id) return;
+    const lead = leadsWithCurrent.find((l) => l.id === next.lead_id);
+    const orderRows = rowsFromLeadOrder((lead?.items ?? []).filter(isLeadItemOnSale));
+    const action = orderFillAction(items, orderRows);
+    if (action === "fill") setItems(orderRows);
+    else if (action === "confirm") setPendingOrderRows(orderRows);
+  };
 
   // ── COMMERCIAL Phase 5: the per-line unit select's options (spec I8) ──────
   //
@@ -748,6 +751,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     // Phase 5: the currency belongs here for the same reason `lead_id` and the
     // channel do - changing it changes every price on the screen.
     clientData.currency,
+    previewRetry,
   ]);
 
   const fallbackSubtotal = useMemo(
@@ -757,6 +761,49 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
   // The save's errors win over the preview's: they are the most recent word.
   const errors = saveError ?? previewError;
+
+  // What the template preview beside the picker shows: the form as it is now
+  // (money from the server's preview), or the saved row once it is read-only.
+  // Debounced so typing a note does not re-render the template per keystroke.
+  const formQuotation = useMemo(
+    () =>
+      readOnly && quotation
+        ? quotation
+        : quotationFromForm({
+            stored: quotation,
+            lead: selectedLead ?? null,
+            title: clientData.quotationTitle || "",
+            issueDate: clientData.issueDate,
+            expiryDate: clientData.expiryDate,
+            currency: displayCurrency,
+            terms,
+            paymentTerms,
+            headerDiscountType,
+            headerDiscountValue,
+            rows: items,
+            totals,
+            taxRate: defaults?.tax_rate ?? null,
+            pricesIncludeTax: defaults?.prices_include_tax ?? null,
+          }),
+    [
+      readOnly,
+      quotation,
+      selectedLead,
+      clientData.quotationTitle,
+      clientData.issueDate,
+      clientData.expiryDate,
+      displayCurrency,
+      terms,
+      paymentTerms,
+      headerDiscountType,
+      headerDiscountValue,
+      items,
+      totals,
+      defaults?.tax_rate,
+      defaults?.prices_include_tax,
+    ]
+  );
+  const previewQuotation = useDebounce(formQuotation, 600);
 
   // ── Phase 4: who may do what to this row ─────────────────────────────────
   //
@@ -863,6 +910,9 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
     payload.append("discount_value", String(round2(headerDiscountValue || 0)));
     payload.append("terms", terms);
     payload.append("payment_terms", paymentTerms);
+    // Only when known: absent means "company default" on create and "keep
+    // the stored one" on update, so a slow defaults load never clears it.
+    if (templateId) payload.append("template_id", templateId);
     // Only when set: an empty string is not a uuid and would 422, and a
     // tenant that never touches the picker keeps sending the Phase 0 form.
     if (clientData.sales_channel_id) {
@@ -1280,21 +1330,10 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
 
   // ── PDF ──────────────────────────────────────────────────────────────────
   const generatePDF = async (row: Quotation): Promise<Blob | null> => {
-    // Commit the stored row to the hidden template synchronously, then let
-    // the browser paint it, so the capture below sees the server's numbers.
-    flushSync(() => setPdfQuotation(row));
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-    const node = document.getElementById(QUOTATION_PDF_NODE_ID);
-    if (!node) {
-      notify.error("Error", { description: "Template quotation tidak ditemukan" });
-      return null;
-    }
-
     try {
-      // The clone, the two dynamic imports and the A4 page live in
-      // lib/utils/quotationPdf.ts so the list screen can reuse them.
-      return await generateQuotationPdf(node, quotationPdfFilename(row.quotation_number));
+      // Always the server's row (a save's response or the detail), so the PDF
+      // prints the server's numbers; useQuotationPdf picks the template.
+      return await generateTemplatePdf(row);
     } catch (error: any) {
       console.error("PDF Generation Error:", error);
       notify.error("PDF Error", { description: error?.message || "Gagal membuat PDF" });
@@ -1520,7 +1559,7 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
         <div className="lg:col-span-2 space-y-8">
           <ClientDetailsCard
             clientData={clientData}
-            setClientData={setClientData}
+            setClientData={handleClientDataChange}
             leads={leadsWithCurrent}
             isLoadingLeads={isLoadingLeads}
             onClientSearch={setClientSearchQuery}
@@ -1533,6 +1572,37 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             exchangeRateNote={rateNote}
           />
           <div className="w-full border-t border-dashed border-gray-300 my-8 dash-large" />
+
+          {/* Why the prices read "-": the server refused to price the lines.
+              Row errors are also marked on their rows; anything else (an
+              unknown lead, a missing exchange rate, a server error) used to
+              have no place on screen at all. */}
+          {!readOnly && previewError && (
+            <div className="mb-4 px-6">
+              <AppAlert
+                variant="failed"
+                title="Harga belum bisa dihitung"
+                description={
+                  <div className="flex flex-col items-start gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      {previewError.message}
+                      {previewError.code ? ` (${previewError.code})` : ""}
+                    </span>
+                    <AppButton
+                      variantStyle="outline"
+                      color="primary"
+                      size="small"
+                      onClick={() => setPreviewRetry((n) => n + 1)}
+                      disabled={previewing}
+                      isLoading={previewing}
+                    >
+                      Coba lagi
+                    </AppButton>
+                  </div>
+                }
+              />
+            </div>
+          )}
 
           <ProductsServicesCard
             items={itemsWithUnits}
@@ -1626,6 +1696,21 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             onPaymentTermsChange={setPaymentTerms}
             readOnly={readOnly}
           />
+          <QuotationTemplatePicker
+            value={templateId}
+            onChange={setTemplateId}
+            readOnly={readOnly}
+            snapshot={quotation?.template_snapshot ?? null}
+            quotation={previewQuotation}
+            companyCurrency={companyCurrency}
+            productDefinitions={productDefinitions}
+            error={
+              errors?.fieldsHeader?.template_id ??
+              ((errors?.details as { field?: string } | undefined)?.field === "template_id"
+                ? errors?.message
+                : undefined)
+            }
+          />
           <QuotationCustomFieldsCard
             values={customFields}
             onChange={(fieldKey, value) => {
@@ -1641,6 +1726,23 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
           />
           <div className="flex justify-end items-center mb-8 px-6">
             <div className="flex flex-wrap justify-end gap-3">
+              {/* The saved row's PDF, as the customer will get it. On a draft
+                  that is the last save, not the unsaved edits on screen. */}
+              {quotation && (
+                <Tooltip title={readOnly ? "" : "PDF dari data yang terakhir disimpan"}>
+                  <span>
+                    <AppButton
+                      variantStyle="outline"
+                      color="primary"
+                      startIcon={<Eye size={16} />}
+                      onClick={() => setPdfPreviewOpen(true)}
+                      disabled={isSubmitting}
+                    >
+                      Lihat PDF
+                    </AppButton>
+                  </span>
+                </Tooltip>
+              )}
               {readOnly ? (
                 <Link href="/sales/quotation">
                   <AppButton variantStyle="outline" color="primary">
@@ -1780,22 +1882,28 @@ export default function QuotationFormClient({ initialData }: QuotationFormClient
             variant={decision === "accepted" ? "info" : "warning"}
             isLoading={isDeciding}
           />
+
+          <ConfirmationPopup
+            isOpen={!!pendingOrderRows}
+            onClose={() => setPendingOrderRows(null)}
+            onConfirm={() => {
+              if (pendingOrderRows) setItems(pendingOrderRows);
+              setPendingOrderRows(null);
+            }}
+            title="Ganti daftar produk?"
+            description="Klien ini punya pesanan dari deal tahap Proposal. Ganti baris di Products & Services dengan pesanan tersebut? Baris yang sudah diisi akan dihapus."
+            confirmText="Ganti dengan pesanan"
+            cancelText="Biarkan"
+            variant="warning"
+          />
         </div>
       </div>
 
-      {/* The PDF template, extracted in Phase 3 (spec I7.1). It renders from
-          the STORED row (`pdfQuotation`), set right after the draft save,
-          never from the form's own state - and it is now a component, so the
-          quotation LIST can mount the same template for its "Unduh PDF"
-          action instead of the template being unreachable once a quotation is
-          published. */}
-      {/* The COMPANY's currency is passed so the PDF can print the rupiah
-          equivalent of the PPN and the grand total under the foreign totals
-          (spec I10) - an Indonesian tax document is read in rupiah. */}
-      <QuotationPdfDocument
-        quotation={pdfQuotation}
-        productDefinitions={productDefinitions}
-        companyCurrency={companyCurrency}
+      <QuotationPdfPreviewDialog
+        open={pdfPreviewOpen}
+        onClose={() => setPdfPreviewOpen(false)}
+        quotation={quotation}
+        generatePdf={generatePDF}
       />
     </div>
   );

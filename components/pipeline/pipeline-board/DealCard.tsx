@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { formatRupiah } from "@/lib/helper/currency"
 import { useGetPipelineStore } from "@/lib/store/pipeline"
 import { DealCardProps } from "@/lib/types/Pipeline"
-import { Calendar } from "lucide-react"
+import { Calendar, Clock, Loader2 } from "lucide-react"
 import React from "react"
 
 export const dealStages = [
@@ -15,7 +15,32 @@ export const dealStages = [
   { label: "Closed - Lost", bgColor: "bg-[#EF4444]/16", textColor: "text-[#EF4444]" },
 ] as const
 
-function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product }: DealCardProps) {
+// Colour of the probability badge, so the likely wins stand out at a glance.
+const probabilityColor = (probability: number) =>
+  probability >= 80
+    ? "bg-green-100 text-green-700"
+    : probability >= 40
+      ? "bg-amber-100 text-amber-700"
+      : "bg-gray-100 text-gray-600"
+
+// Countdown on an expired deal's tag. The API never sends a negative number:
+// 0 covers a deal already due that its delete job has not reached yet.
+const deletionLabel = (days: number) =>
+  days > 1
+    ? `Deleted in ${days} days`
+    : days === 1
+      ? "Deleted tomorrow"
+      : "Deleted today"
+
+// A week or less left reads as urgent; no countdown at all is not.
+const deletionTagColor = (days: number | undefined) =>
+  days !== undefined && days <= 7
+    ? "bg-red-50 text-red-700 border-red-200"
+    : "bg-amber-50 text-amber-700 border-amber-200"
+
+function DealCardComponent({ id, deal_name, company, amount, expected_close_date, wonDate, avatar, avatar_initial, lostDate, stageName, product, probability_of_close, is_expired, days_until_deletion, isSaving, isHighlighted }: DealCardProps) {
+  const isExpired = Boolean(is_expired)
+  const daysLeft = days_until_deletion
   const { setEditId, setIsModalOpen, setStage } = useGetPipelineStore();
   const getStageColor = (stageName?: string) => {
     if (!stageName) {
@@ -34,45 +59,80 @@ function DealCardComponent({ id, deal_name, company, amount, expected_close_date
   const stageColor = getStageColor(stageName)
   return (
     <Card
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer"
+      // overflow-hidden rounds the strip's top corners with the card's; pt-0
+      // drops the card's top padding so the strip sits flush on its top edge.
+      className={`group relative overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition cursor-pointer ${isExpired ? "pt-0" : ""} ${isHighlighted ? "ring-2 ring-primary ring-offset-2" : ""}`}
       onClick={() => {
         setEditId(id)
         setStage(stageName)
         setIsModalOpen(true)
       }}>
-      <CardContent className="p-4 space-y-4">
-
-        <div className="space-y-1.5">
-          <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${stageColor.bg} ${stageColor.text}`}>
-            {deal_name || 'No Name'}
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 line-clamp-1">{company.name}</p>
-          </div>
+      {isSaving && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50" aria-busy="true">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" aria-label="Saving" />
         </div>
+      )}
 
-        <p className="text-xl font-bold text-gray-900">{formatRupiah(amount)}</p>
-
-        <div className="flex items-center justify-between pt-1">
-          {(expected_close_date || wonDate || lostDate) && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Calendar className="h-3.5 w-3.5 text-gray-400" />
-              <span>
-                {wonDate
-                  ? `Won: ${wonDate}`
-                  : lostDate
-                    ? `Lost: ${lostDate}`
-                    : `Close: ${expected_close_date}`}
-              </span>
-            </div>
+      {/* Full-width strip on the card's top edge: rounded on top (the card's
+          corners), square below. It stays fully opaque; only the details fade. */}
+      {isExpired && (
+        <div
+          title="Expired deals are permanently deleted 30 days after they expire"
+          className={`flex items-center gap-1.5 border-b px-4 py-1.5 text-[11px] font-medium ${deletionTagColor(daysLeft)}`}
+        >
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span className="font-semibold">Expired</span>
+          {daysLeft !== undefined && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">{deletionLabel(daysLeft)}</span>
+            </>
           )}
+        </div>
+      )}
 
-          <Avatar className="h-7 w-7 border">
-            {avatar && <AvatarImage src={avatar} alt={deal_name} />}
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-              {avatar_initial || company.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+      <CardContent className="p-4 space-y-4">
+        <div className={`space-y-4 transition-opacity ${isExpired ? "opacity-60 group-hover:opacity-100" : ""}`}>
+          <div className="space-y-1.5">
+            <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold ${stageColor.bg} ${stageColor.text}`}>
+              {deal_name || 'No Name'}
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 line-clamp-1">{company.name}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xl font-bold text-gray-900">{formatRupiah(amount)}</p>
+            <span
+              title="Probability of Close Won"
+              className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${probabilityColor(probability_of_close ?? 0)}`}
+            >
+              {probability_of_close ?? 0}%
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            {(expected_close_date || wonDate || lostDate) && (
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                <span>
+                  {wonDate
+                    ? `Won: ${wonDate}`
+                    : lostDate
+                      ? `Lost: ${lostDate}`
+                      : `Close: ${expected_close_date}`}
+                </span>
+              </div>
+            )}
+
+            <Avatar className="h-7 w-7 border">
+              {avatar && <AvatarImage src={avatar} alt={deal_name} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                {avatar_initial || company.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
 
       </CardContent>

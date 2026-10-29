@@ -326,9 +326,10 @@ export async function fetchRecentSignals(token: string): Promise<CompanySignal[]
 }
 
 /**
- * The caller's own company row (GET /companies). Gated on the `companies`
- * permission - Admin only. Sellers get their defaults from
- * `fetchQuotationDefaults` instead and never call this.
+ * The caller's own company row (GET /companies). Any logged-in user may read
+ * it since API v1.152.0 - the quotation PDF prints the seller from it. The
+ * quotation defaults a seller is held to still come from
+ * `fetchQuotationDefaults`.
  */
 export async function fetchMyCompany(token: string): Promise<CompanyGeneral> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -356,21 +357,65 @@ export async function updateCompanyGeneral(
     body: JSON.stringify(payload),
   });
 
-  const json = await res.json();
+  return readCompanyResponse(res, 'Failed to update company defaults');
+}
+
+/**
+ * POST /internal/company-profile/logo (multipart, field `file`). Admin only.
+ * JPG, PNG, GIF or WebP up to 10 MB; the BE re-encodes it to WebP and deletes
+ * the old logo once the new one is stored. Returns the updated company.
+ */
+export async function uploadCompanyLogo(token: string, file: File): Promise<CompanyGeneral> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/logo`, {
+    method: 'POST',
+    // No Content-Type: the browser sets it, with the multipart boundary.
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+    body: formData,
+    // Up to 10 MB, re-encoded before the BE answers.
+    timeout: 120_000,
+  });
+
+  return readCompanyResponse(res, 'Failed to upload the logo');
+}
+
+/** DELETE /internal/company-profile/logo. Admin only; safe to repeat. Returns the updated company. */
+export async function deleteCompanyLogo(token: string): Promise<CompanyGeneral> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const res = await fetchWithTimeout(`${baseUrl}/internal/company-profile/logo`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+  });
+
+  return readCompanyResponse(res, 'Failed to remove the logo');
+}
+
+/**
+ * The `ResponseModel[CompanyResponse]` every company write returns. An error
+ * carries the API's message, code and details; a body that isn't JSON (a
+ * gateway error page) gets `fallbackMessage` instead of a parse error.
+ */
+async function readCompanyResponse(res: Response, fallbackMessage: string): Promise<CompanyGeneral> {
+  const json = await res.json().catch(() => null);
 
   if (res.status === 401) {
     throw new Error('UNAUTHORIZED');
   }
 
-  if (!res.ok || json?.success === false) {
-    const message = json?.error?.message || json?.message || 'Failed to update company defaults';
+  if (!res.ok || !json || json.success === false) {
+    const message = json?.error?.message || json?.message || fallbackMessage;
     const err = new Error(message) as Error & { code?: string; details?: unknown };
     err.code = json?.error?.code;
     err.details = json?.error?.details;
     throw err;
   }
 
-  return (json?.data ?? json) as CompanyGeneral;
+  return (json.data ?? json) as CompanyGeneral;
 }
 
 export async function addRecentSignal(token: string, data: CompanySignalPayload): Promise<void> {

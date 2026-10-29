@@ -353,7 +353,7 @@ export default function PublicQuotationClient() {
           </div>
           {/* The rate that priced this document, its date, and the company-
               currency equivalents of the PPN and the grand total - the SAME
-              three things `QuotationPdfDocument` prints (spec I10), because the
+              three things the quotation PDF prints (spec I10), because the
               customer holds both documents for one quotation and an Indonesian
               tax document is read in rupiah. */}
           {hasRate && (

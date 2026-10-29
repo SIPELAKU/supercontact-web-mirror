@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Copy, Globe, AlertTriangle } from "lucide-react";
 import { notify } from "@/lib/notifications";
+import { widgetEmbedUrls } from "@/lib/utils/widgetEmbed";
 
 interface WebWidgetEmbedGuideProps {
   widgetKey: string;
@@ -57,25 +58,32 @@ const WebWidgetEmbedGuide: React.FC<WebWidgetEmbedGuideProps> = ({ widgetKey }) 
     if (typeof window !== "undefined") setOrigin(window.location.origin);
   }, []);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const apiUrlMissing = !apiUrl;
+  // Absolute API + WS addresses: the snippet runs on the tenant's own site,
+  // where our relative "/api/proxy" would point at the wrong domain.
+  const urls = widgetEmbedUrls({
+    apiUrl: process.env.NEXT_PUBLIC_API_URL,
+    wsUrl: process.env.NEXT_PUBLIC_WS_URL,
+  });
+  const apiUrl = urls?.apiUrl ?? "";
+  const wsUrl = urls?.wsUrl ?? "";
 
   const snippet = useMemo(() => {
-    if (!origin) return "";
+    if (!origin || !apiUrl) return "";
     // data-locale is optional; defaults to "id" inside widget.js when absent.
     // Shown here so a tenant can switch the widget chrome to English ("en").
-    return `<script\n  src="${origin}/widget.js"\n  data-widget-key="${widgetKey}"\n  data-api-url="${apiUrl}"\n  data-locale="id"\n  async\n></script>`;
-  }, [origin, widgetKey, apiUrl]);
+    return `<script\n  src="${origin}/widget.js"\n  data-widget-key="${widgetKey}"\n  data-api-url="${apiUrl}"\n  data-ws-url="${wsUrl}"\n  data-locale="id"\n  async\n></script>`;
+  }, [origin, widgetKey, apiUrl, wsUrl]);
 
   return (
     <div className="space-y-8">
-      {apiUrlMissing && (
+      {!urls && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            <strong>Heads up:</strong> the API URL is not configured for this environment, so the snippet
-            below has an empty <code className="bg-amber-100 px-1 rounded">data-api-url</code> and the widget
-            will not connect. Contact your administrator before installing it.
+            <strong>Heads up:</strong> this environment has no absolute API address (
+            <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_WS_URL</code> is empty), so no embed
+            snippet can be built - a widget on another website would not connect. Contact your
+            administrator before installing it.
           </p>
         </div>
       )}

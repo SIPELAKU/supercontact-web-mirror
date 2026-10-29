@@ -297,3 +297,50 @@ describe('useLazyRows: what the Template Broadcasting table shows around a write
     });
   });
 });
+
+describe('useLazyRows: a polled list whose rows change in place (Import History)', () => {
+  // The modal polls the same jobs every few seconds; only their progress and
+  // status move. `name` stands in for that progress here.
+  const poll1 = [{ id: 'j2', name: 'Processing 100/1000' }, { id: 'j1', name: 'Completed 500/500' }];
+  const poll2 = [{ id: 'j2', name: 'Completed 1000/1000' }, { id: 'j1', name: 'Completed 500/500' }];
+  const progressOfJ2 = (r: { rows: Row[] }) => r.rows.find((x) => x.id === 'j2')?.name;
+
+  it('lazy (pagination: true): the polled progress never shows - same length, same first/last id', () => {
+    const table = lazyTable();
+    table.render({ data: poll1, rowCount: 2 });
+
+    const after = table.render({ data: poll2, rowCount: 2 });
+    expect(progressOfJ2(after)).toBe('Processing 100/1000');
+  });
+
+  it('lazy restarted on each poll from batch 1 (useListRefresh reload): the new progress shows, no loading', () => {
+    const table = lazyTable();
+    table.render({ data: poll1, rowCount: 2 });
+
+    // The refetched batch 1 lands first - same fingerprint, still the old
+    // progress - and the restart that follows files it again.
+    expect(progressOfJ2(table.render({ data: poll2 }))).toBe('Processing 100/1000');
+    const after = table.render({ resetToken: 'query-1|1' });
+    expect(progressOfJ2(after)).toBe('Completed 1000/1000');
+    expect(after.ids).toEqual(['j2', 'j1']);
+  });
+
+  it('lazy restarted from a later batch: nothing old is filed while loading, then only the new batch 1 shows', () => {
+    const server = fakeServer(['a', 'b', 'c', 'd', 'e', 'f', 'g']);
+    const table = lazyTable();
+    expect(scrollThrough(table, server, 2).ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
+
+    // reload restarts first with loading on; for one render the table is still
+    // at batch 2, then it moves to batch 1 while the parent holds batch 2's rows.
+    expect(table.render({ resetToken: 'query-1|1', isLoading: true }).ids).toEqual([]);
+    expect(table.render({ pageIndex: 0, isLoading: true }).ids).toEqual([]);
+
+    // A new job arrived meanwhile; the fresh batch 1 has it, nothing else.
+    server.duplicateToTop('new');
+    const after = table.render({ pageIndex: 0, data: server.page(0), rowCount: server.total, isLoading: false });
+    expect(after.ids).toEqual(['new', 'a', 'b']);
+    expect(after.loadedCount).toBe(3);
+    expect(after.knownTotal).toBe(8);
+    expect(after.hasMore).toBe(true);
+  });
+});

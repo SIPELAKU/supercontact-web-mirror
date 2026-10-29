@@ -9,6 +9,909 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.2] - 2026-10-29
+
+### Detail Versi 1.116.2
+
+#### 🐛 Save Pengaturan Web Widget Mematikan Shadow Mode
+
+- **Deskripsi:**
+  - **Masalah:** Di **Settings › Web Widget**, setiap klik **Save Settings** diam-diam mematikan **Shadow mode** (Bot Playground › Shadow review) dan izin aplikasi mobile (`allow_native_apps`, belum ada tombolnya di FE). Admin yang menyalakan Shadow mode lalu mengubah, misalnya, judul widget akan kehilangan Shadow mode tanpa pemberitahuan
+  - **Root Cause:** formulir pengaturan hanya mengirim field yang ada di formulir. Endpoint `PUT /accounts/{id}/web-widget-config` mengganti seluruh config, sehingga field yang tidak dikirim kembali ke nilai default BE (`false`). Field ini ada di BE DEV dan PROD, jadi bug ini juga terjadi di production
+  - **Perbaikan:** setiap penyimpanan config widget kini berangkat dari config yang tersimpan, lalu hanya field yang diubah yang ditimpa. Berlaku untuk Save Settings, tombol Shadow mode dan "apply config" di Bot Playground
+  - **Impact:** Shadow mode dan izin aplikasi mobile tetap seperti yang diatur, apa pun yang disimpan dari halaman ini
+  - **Technical Notes:**
+    - helper `widgetConfigPayload(stored, changes)` di `lib/utils/webWidgetConfig.ts`, dipakai `WebWidgetConfigPanel.tsx` dan `BotPlaygroundPanel.tsx` (menggantikan dua salinan `{ id, account_id, ...rest }`)
+    - tipe `WebWidgetConfig` ditambah `allow_native_apps`
+    - BE akan menambah pengaman serupa di sisinya (PUT hanya mengubah field yang dikirim)
+
+#### 🐛 Snippet Embed Web Widget Tidak Jalan di Website Klien
+
+- **Deskripsi:**
+  - **Masalah:** snippet di **Settings › Web Widget › Connection & Embed** berisi `data-api-url="/api/proxy"`, yaitu alamat relatif. Di website klien (WordPress, Shopify, HTML biasa) alamat itu mengarah ke domain klien sendiri, sehingga config widget gagal dimuat dan bubble chat tidak pernah muncul. Snippet juga tidak memuat `data-ws-url`, sehingga balasan agent tidak bisa masuk secara realtime. Widget di website SmartSales sendiri tidak terkena karena memakai alamat dari domain yang sama
+  - **Perbaikan:**
+    - snippet kini berisi alamat API lengkap, misalnya `data-api-url="https://prod-supersales.smartcore.id/api/v1"`, ditambah `data-ws-url="wss://prod-supersales.smartcore.id/api/v1"`;
+    - alamat diturunkan dari `NEXT_PUBLIC_WS_URL` (`wss://` → `https://`), yang sudah terisi di dev, staging dan prod. Nilai env tidak diubah, fitur lain yang memakainya (chat, notifikasi, inbox realtime, widget website marketing) tidak terpengaruh;
+    - bila environment tidak punya alamat absolut, halaman menampilkan peringatan dan snippet tidak dibuat, bukan snippet yang tidak akan jalan
+  - **Kenapa tidak lewat proxy FE:** proxy `/api/proxy` tidak meneruskan header `Origin`/`Referer`, sehingga BE menolak widget yang mengisi Allowed Domains
+  - **Impact:** klien yang memasang snippet di website mereka mendapatkan bubble chat yang tersambung dan balasan agent yang masuk tanpa refresh. Klien yang sudah terlanjur memasang snippet lama perlu menyalin snippet yang baru
+  - **Technical Notes:**
+    - helper `widgetEmbedUrls` di `lib/utils/widgetEmbed.ts`, dipakai `components/omnichannel/WebWidgetEmbedGuide.tsx`
+    - CORS endpoint publik widget di BE dev dan prod sudah dicek menerima domain luar
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **10 Test Baru:**
+    - `lib/utils/webWidgetConfig.test.ts` (4): field yang tidak ada di formulir (Shadow mode, aplikasi mobile) tetap terkirim, nilai yang diubah menang atas nilai tersimpan, `id`/`account_id` tidak ikut dikirim, tanpa config tersimpan hanya perubahan yang dikirim;
+    - `lib/utils/widgetEmbed.test.ts` (6): deploy kita (`/api/proxy` + `wss://`) menjadi https/wss, `ws://` lokal menjadi `http://`, API absolut dipakai apa adanya, WS mengikuti API bila kosong, garis miring dan spasi di akhir dibuang, tanpa alamat absolut tidak ada snippet
+  - **Total:** 63 file test, 703 test lolos
+
+---
+
+## [1.116.1] - 2026-10-29
+
+### Detail Versi 1.116.1
+
+#### 🎨 Import History Kembali ke Infinite Scroll
+
+- **Deskripsi:**
+  - **Infinite Scroll:** Modal Import History (halaman Subscribers dan detail Mailing List) kembali memakai infinite scroll seperti sebelum versi 1.107.3, menggantikan nomor halaman. Data dimuat 25 baris per potongan (bisa diganti 50 atau 100 lewat menu Baris). Potongan berikutnya dimuat saat tabel di-scroll ke bawah atau lewat tombol "Muat lebih banyak"
+  - **Auto-refresh Kembali ke Atas:** setiap kali auto-refresh berjalan, tabel dimuat ulang dari potongan pertama:
+    - bila user masih di potongan pertama, angka progress dan status job langsung berubah tanpa loading;
+    - bila user sudah scroll ke bawah, tabel kembali ke atas, menampilkan skeleton sebentar, lalu data terbaru;
+    - tombol **Refresh** dan aksi job (Stop, Continue, Rollback, Replay) bekerja dengan cara yang sama
+  - **Info Jumlah Data:** footer tabel menampilkan jumlah data yang sedang tampil dan totalnya, misalnya "Menampilkan 25 dari 120 impor". Bila semua sudah dimuat: "120 impor" dan "Semua impor sudah dimuat"
+  - **Auto-refresh Off:** pilihan "Off (Manual)" tetap ada bagi user yang tidak ingin tabel kembali ke atas saat sedang membaca
+  - **Alasan:** permintaan pimpinan: tetap infinite scroll seperti sebelumnya, tetapi saat auto-refresh berjalan kembali ke halaman 1, dengan info jumlah data yang tampil dan totalnya
+  - **Root Cause (kenapa versi 1.107.3 memakai nomor halaman):** infinite scroll SuperTable hanya mengganti satu potongan data jika jumlah barisnya atau id baris pertama/terakhirnya berubah, dan auto-refresh hanya memuat ulang potongan terakhir. Progress job yang sama tidak pernah tampil. Kini setiap refresh memulai ulang daftar dari potongan pertama, sehingga tidak ada potongan lama yang tertinggal
+  - **Impact:** User tetap bisa scroll riwayat import tanpa nomor halaman, sementara progress import terbaru selalu terlihat di atas
+  - **Technical Notes:**
+    - `reload()` baru di `lib/hooks/useListRefresh.ts` (modul yang sama dengan tabel WA Marketing): refetch potongan 1 lalu `restartKey`; skeleton hanya muncul bila tabel harus kembali dari potongan berikutnya
+    - `lib/hooks/usePolling.ts` menggantikan `refetchInterval` TanStack: tick dilewati selama tick sebelumnya belum selesai dan selama tab browser tidak aktif
+    - `useBulkJobs` tanpa `refetchInterval`, dengan key bersama `bulkJobsKey`. `useActionBulkJob` hanya menandai daftar basi (`markListsStale`) dan modal yang memuat ulang, sehingga 1 request per aksi
+    - saat modal ditutup, polling tetap berjalan (seperti sebelumnya) pada potongan pertama, sehingga daftar subscriber tetap diperbarui saat job selesai
+    - total di footer tidak lagi berkedip "0" saat potongan berikutnya dimuat (`rowCount` dibiarkan kosong selama loading)
+    - modal dan tabel memakai ukuran potongan awal yang sama (`BATCH_SIZE` 25, lewat `initialState`), dan saat modal ditutup ukuran potongan serta search kembali ke awal, sehingga membuka modal hanya mengirim 1 request daftar
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **9 Test Baru:**
+    - `lib/hooks/useListRefresh.test.ts` (+3): reload di potongan 1 tanpa loading (refetch lalu restart), reload dari potongan berikutnya (restart dulu, loading sampai potongan 1 tiba, 1 request), loading kembali mati saat refetch gagal;
+    - `lib/hooks/usePolling.test.ts` (5): tick per interval sampai dihentikan, Off tidak pernah tick, tick tidak menumpuk saat request lambat, berhenti selama tab tersembunyi, tick gagal tidak menghentikan polling;
+    - `components/ui/super-table/hooks/useLazyRows.test.ts` (+1): restart per polling menampilkan progress baru tanpa loading, dan restart dari potongan berikutnya tidak menyimpan baris lama selama loading lalu hanya menampilkan potongan 1 terbaru (menggantikan test mode halaman)
+  - **Total:** 61 file test, 693 test lolos
+
+---
+
+## [1.116.0] - 2026-10-28
+
+### Detail Versi 1.116.0
+
+#### ✨ Filter dan Sorting di Template Broadcast
+
+- **Deskripsi:**
+  - **Filter Baru:** tabel Template Broadcast kini punya filter **Approval Status** (Not submitted, Received, Pending, Approved, Rejected, Paused, Disabled) dan **Language** (English, Indonesian)
+  - **Sorting lewat API:** kolom Campaign Name, Language, Approval Status dan Updated diurutkan oleh BE untuk seluruh template, bukan hanya baris yang sudah tampil. Content Type tidak bisa diurutkan karena API tidak mendukungnya
+  - **Kolom Updated:** kini menampilkan waktu template terakhir diubah (`updated_at`); sebelumnya menampilkan waktu dibuat
+  - **Impact:** User bisa langsung menemukan, misalnya, template yang masih Pending atau yang berbahasa Indonesia, dan urutannya benar di semua halaman
+  - **Technical Notes:**
+    - `GET /broadcast-templates` dengan `status`, `language`, `sort_by` (friendly_name, language, whatsapp_approval_status, created_at, updated_at) dan `sort_order`; param hanya dikirim bila dipilih
+    - filter memakai `filters` SuperTable dan diteruskan sebagai satu objek params (`BroadcastTemplatesParams`); query dibangun `broadcastTemplatesQuery` di `lib/hooks/useBroadcastTemplates.ts`
+    - daftar bahasa `TEMPLATE_LANGUAGES` dipakai bersama form buat template dan filter
+    - sorting sudah ada di BE DEV dan PROD; filter Approval Status dan Language baru ada di BE DEV (1.154.1), di PROD (1.144.3) filter ini belum berefek
+
+#### ✨ Search dan Sorting di Group Broadcasting
+
+- **Deskripsi:**
+  - **Search:** tabel Group Broadcasting kini punya kotak search nama grup
+  - **Sorting lewat API:** kolom Name, Recipients dan Created bisa diurutkan untuk seluruh grup
+  - **Impact:** Grup mudah dicari dan diurutkan, misalnya dari yang anggotanya paling banyak
+  - **Technical Notes:**
+    - `GET /broadcast-groups` dengan `search`, `sort_by` (name, recipient_count, created_at) dan `sort_order`; query dibangun `groupBroadcastsQuery` di `lib/hooks/useGroupBroadcasts.ts`
+    - sorting sudah ada di BE DEV dan PROD; search baru ada di BE DEV (1.154.1)
+    - tabel detail grup tetap tanpa sorting karena API-nya belum mendukung
+
+#### 🎨 Sorting Lengkap di Broadcasting WA dan Recipients
+
+- **Deskripsi:**
+  - **Broadcasting WA:** kolom **Target** kini bisa diurutkan (`total_target`)
+  - **Recipients:** kolom **Phone Number** dan **Position** kini bisa diurutkan
+  - **Filter Status Broadcasting WA:** opsi "Sending" diganti **"In Queue"**, sesuai status dari API. Sebelumnya memilih "Sending" tidak pernah menemukan broadcast apa pun
+  - **Technical Notes:** daftar key sort per endpoint (`BROADCAST_SORT_KEYS`, `WA_RECIPIENT_SORT_KEYS`, `BROADCAST_TEMPLATE_SORT_KEYS`, `BROADCAST_GROUP_SORT_KEYS`) dan status broadcast (`BROADCAST_STATUSES`) di `lib/types/whatsapp-marketing.ts`, diterapkan lewat `toApiSort`
+
+#### 🐛 Daftar Quotation Memanggil API Berkali-kali
+
+- **Deskripsi:**
+  - **Masalah:** membuka **Sales › Quotation** mengirim request daftar quotation yang sama sampai 4 kali di development (2 kali di production). Halaman punya fetch sendiri saat dibuka, dan tabel juga mengumumkan state awalnya; React Strict Mode di development menjalankan keduanya dua kali. Fetch saat dibuka itu juga mengabaikan filter dari URL, jadi link yang sudah difilter sempat memuat daftar tanpa filter dulu
+  - **Respons Basi:** request yang lebih lama bisa selesai belakangan dan menimpa hasil yang lebih baru, misalnya saat mengetik search dengan cepat
+  - **Perbaikan:**
+    - fetch awal kini hanya dari tabel (halaman 1, batch 25, termasuk search/filter/sort dari URL), jadi cukup 1 request;
+    - request yang identik dengan yang sedang berjalan tidak dikirim ulang;
+    - hanya jawaban request terakhir yang dipakai; jawaban dan error request lama dibuang;
+    - refetch setelah aksi (hapus, terima/tolak, approval, kirim, coba lagi) tetap selalu mengirim request baru
+  - **Technical Notes:** `fetchQuotations` di `lib/store/quotation/index.ts` (query dibangun `buildQuotationListQuery`, opsi `{ force }`); fetch saat mount di `QuotationClient.tsx` dihapus
+
+#### 🐛 Alasan Harga Quotation Tidak Terhitung Kini Tampil
+
+- **Deskripsi:**
+  - **Masalah:** bila BE menolak menghitung harga (preview), semua harga di Products & Services tampil "—" tanpa penjelasan, kecuali error yang terikat ke baris tertentu
+  - **Perbaikan:** pesan dari BE (beserta kodenya) tampil di atas tabel Products & Services dengan judul "Harga belum bisa dihitung" dan tombol **Coba lagi** untuk menghitung ulang
+
+#### 🎨 Chip Sumber Harga di Quotation
+
+- **Deskripsi:**
+  - Chip sumber harga (mis. "Harga dari Daftar Harga Harga Umum, tier ≥ 1") dan chip promo di baris produk quotation kini bersudut kecil, bukan bulat penuh, sehingga tetap rapi saat teksnya turun ke beberapa baris
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **16 Test Baru:**
+    - `lib/hooks/waListQueries.test.ts` (7): query Template Broadcast (tanpa filter, search/status/language, sort dan urutan bawaan desc, tanpa sort_order bila tidak ada sort_by) dan Group Broadcasting (tanpa search, search dan sort, urutan bawaan);
+    - `lib/utils/apiSort.test.ts` (+2): key sort Template Broadcast dan Group Broadcasting; key Broadcasting WA dan Recipients diperbarui ke API terbaru;
+    - `lib/store/quotation/quotationList.test.ts` (7): request identik digabung, jawaban terbaru menang, error request lama dibuang, `force` tetap mengirim, request berikutnya setelah selesai, isi query daftar quotation
+  - **Total:** 60 file test, 684 test lolos
+
+---
+
+## [1.115.0] - 2026-10-28
+
+### Detail Versi 1.115.0
+
+#### ✨ Export Subscriber dari Statistik Campaign Email
+
+- **Deskripsi:**
+  - **Kartu Bisa Diklik:** Di statistik campaign email (halaman detail campaign dan modal statistik dari daftar campaign), kartu **Delivered**, **Opened**, **Clicked** dan **Bounced** kini bisa diklik untuk export ke **CSV** atau **Excel**, sama seperti statistik broadcast WhatsApp
+    - setiap kartu menampilkan ikon download dan tooltip "Export … subscribers (CSV or Excel)";
+    - klik membuka menu **CSV (.csv)** / **Excel (.xlsx)**;
+    - selama export berjalan, kartu yang dipilih menampilkan indikator loading dan keempat kartu nonaktif;
+    - kartu Bounce Rate, Complaint Rate, Dropped, Marked as Spam dan Simulated tidak berubah
+  - **Isi File:** Name, Email, Status, Phone Number, Company dan Updated At. File **Bounced** ditambah kolom **Error Message**, yaitu pesan error terakhir dari BE (kosong bila tidak ada)
+  - **Data Sama dengan Angka Kartu:** filter status di API bersifat kumulatif seperti kartu. Delivered juga memuat subscriber yang sudah membuka atau mengklik, dan Bounced juga memuat yang failed; kolom Status di file menunjukkan status terakhir masing-masing
+  - **Nama File:** dari subject campaign, misalnya `Campaign_Promo_Oktober_Delivered_2026-10-28.xlsx`
+  - **Notifikasi:** jumlah subscriber yang diexport, "No … subscribers to export" bila kosong, atau pesan error
+  - **Impact:** Tim bisa mengambil daftar subscriber per hasil kirim, misalnya yang membuka email untuk follow-up atau yang bounce untuk dibersihkan
+  - **Technical Notes:**
+    - data dari `GET /campaigns/{id}/subscribers?status=<kartu>&is_limit=false`, sudah tersedia di BE DEV dan PROD
+    - `fetchAllCampaignSubscribers` (timeout 120 detik) di `lib/api/email-marketing/campaigns.ts`; request dan penanganan error kini satu fungsi (`requestCampaignSubscribers`) yang juga dipakai tabel subscriber. Hook `useExportCampaignSubscribers` di `lib/hooks/useCampaigns.ts`
+    - kolom dan nama file di `components/email-marketing/campaigns/subscriberExport.ts`; kartu dan menu di `CampaignStatsPanel.tsx`
+
+#### ✨ Filter Status dan Sorting di Tabel Subscriber Campaign
+
+- **Deskripsi:**
+  - **Filter Status:** Tabel subscriber di statistik campaign email kini punya filter **Status** (Pending, Sent, Delivered, Opened, Clicked, Bounced, Dropped, Marked as Spam, Failed, Simulated), sama seperti tabel recipient broadcast WhatsApp. Filternya kumulatif seperti kartu: Delivered juga menampilkan yang sudah membuka atau mengklik, Bounced juga yang failed
+  - **Sorting:** kolom **Name**, **Email** dan **Status** bisa diurutkan. Status diurutkan sesuai tahap kirim, bukan abjad. Error Message tidak bisa diurutkan karena API tidak mendukungnya
+  - **Lewat API:** filter dan sorting diproses BE untuk seluruh subscriber, bukan hanya baris yang sudah tampil
+  - **Impact:** User bisa langsung melihat, misalnya, hanya subscriber yang bounce, atau mengurutkannya per status
+  - **Technical Notes:**
+    - `GET /campaigns/{id}/subscribers` dengan `status`, `sort_by` dan `sort_order` (sudah ada di BE DEV dan PROD); param hanya dikirim bila dipilih
+    - `fetchCampaignSubscribers` dan `useCampaignSubscribers` kini menerima **satu objek query** (`CampaignSubscribersQuery`: page, limit, search, status, sortBy, sortOrder) alih-alih parameter berurutan, sehingga filter baru cukup satu field
+    - kunci sort yang diterima API di `CAMPAIGN_SUBSCRIBER_SORT_KEYS` (`lib/types/email-marketing.ts`), dipakai lewat `toApiSort`
+
+#### ✨ Template PDF Quotation
+
+- **Deskripsi:**
+  - **PDF Memakai Template:** Semua PDF quotation kini dibuat dari template yang disimpan di BE, menggantikan layout PDF lama. Berlaku di semua tempat PDF dibuat:
+    - lampiran saat **Kirim ke Pelanggan** dari form;
+    - **Unduh PDF** di daftar quotation;
+    - dialog **Kirim** (dari form maupun daftar)
+  - **4 Template Sistem:** Monochrome, Fresh, Corporate (default awal) dan Surat Penawaran. Template tidak bisa dibuat atau diubah dari web
+  - **Template yang Dipakai:**
+    - quotation yang sudah dikirim memakai template yang dibekukan saat dikirim (`template_snapshot`), jadi PDF-nya tetap sama dengan yang diterima pelanggan walau template default diganti;
+    - selain itu memakai template quotation tersebut (`template_id`);
+    - quotation lama tanpa template memakai template default company
+  - **Pilih Template di Form:** bagian baru **Template PDF** di form quotation (create dan edit):
+    - dropdown berisi 4 template; nilai awalnya template default company (ditandai "(default)"), atau template quotation itu sendiri;
+    - deskripsi template tampil di bawah dropdown, dan thumbnail kecil menunjukkan template terpilih dengan **data di form** (klien, produk, qty, catatan, syarat, total hasil hitungan BE), ikut berubah saat form diubah; klik thumbnail untuk **pratinjau besar** (semua halaman) di dialog. PDF yang dikirim tetap dibuat dari data yang disimpan;
+    - hanya bisa diganti selama **draft**; setelah dikirim dropdown nonaktif dan menampilkan template yang dipakai saat dikirim;
+    - pilihan tersimpan saat draft disimpan atau dikirim (`template_id`); bila BE menolak template, pesannya tampil di bawah dropdown
+  - **Isi PDF:**
+    - logo perusahaan; bila belum ada logo, nama atau inisial perusahaan (inisial sama dengan di Company Profile);
+    - alamat dan kontak perusahaan;
+    - data pelanggan, dengan NPWP dan alamat dari company CRM bila ada;
+    - item lengkap dengan SKU, varian, atribut produk, isi paket, promo, catatan dan periode tagihan;
+    - total;
+    - kurs dan total dalam mata uang perusahaan untuk quotation mata uang asing;
+    - ketentuan penawaran dan link persetujuan online
+  - **Multi-halaman Rapi:** quotation dengan banyak item dibagi per halaman A4, dan baris yang akan terpotong batas halaman dipindah utuh ke halaman berikutnya (dengan margin atas dan bawah), jadi tidak ada baris item, total atau ketentuan yang terbelah dua. Sebelumnya PDF dipotong pada tinggi tetap sehingga satu baris bisa terbelah
+  - **Pratinjau per Halaman:** pratinjau besar menampilkan halaman A4 terpisah ("Halaman 1 dari 2"), sama persis dengan hasil PDF, bukan satu kertas yang memanjang
+  - **Impact:** PDF yang diterima pelanggan tampil profesional dengan identitas perusahaan, dan perusahaan bisa memilih gaya PDF-nya
+  - **Technical Notes:**
+    - endpoint `GET /quotation-templates`, `GET /quotation-templates/{id}`, `PUT /quotation-templates/default`, serta `template_id` di `GET /quotations/defaults` dan response quotation; perlu BE **1.152.0** ke atas (DEV 1.151.0 dan PROD 1.144.3 belum punya)
+    - id template berbeda per environment, jadi tidak ada id yang di-hardcode; semua diambil dari API
+    - template berupa HTML Handlebars + CSS, dirender di browser:
+      - hasilnya disanitasi dengan DOMPurify;
+      - lalu dipasang di iframe `sandbox="allow-same-origin"` tanpa `allow-scripts`;
+      - isi iframe dipotret html2canvas-pro + jsPDF
+    - data template dibangun persis sesuai kontrak BE di `lib/quotation/templateContext.ts`; aturan pemilihan template di `lib/quotation/resolveTemplate.ts`; render di `lib/quotation/renderTemplate.ts`
+    - dropdown di `components/quotation/QuotationTemplatePicker.tsx`; dialog pratinjau besar `QuotationTemplatePreviewDialog.tsx` dipakai bersama form dan halaman Settings; data form disusun jadi bentuk quotation oleh `lib/quotation/formQuotation.ts` (uang dari preview BE, baris yang belum dihitung memakai harganya sendiri), dengan debounce 600 ms; pemindahan baris ke halaman berikutnya di `lib/quotation/paginate.ts`, dipakai pratinjau dan PDF; `template_id` dikirim di `buildDraftForm` hanya bila sudah diketahui
+    - `useQuotationPdf` (`lib/hooks/useQuotationPdf.ts`) mengambil company (`GET /companies`), defaults dan template lewat cache React Query, lalu menghasilkan PDF. `generateTemplatePdf` di `lib/utils/quotationPdf.ts` menunggu iframe dan gambar (logo) selesai dimuat sebelum memotret
+    - logo harus bisa diambil dengan CORS supaya tampil di PDF (Solvera Storage)
+
+#### ✨ Halaman Settings › Sales › Template Quotation
+
+- **Deskripsi:**
+  - **Daftar Template:** halaman baru berisi 4 kartu template, masing-masing dengan pratinjau halaman pertama. Pratinjau memakai data quotation contoh dan profil perusahaan asli (nama, logo, kontak)
+  - **Pratinjau Besar:** klik kartu untuk melihat template utuh di dialog
+  - **Jadikan Default:**
+    - tombol **Jadikan default** di kartu dan di dialog;
+    - mengubah template untuk quotation baru berikutnya; quotation yang sudah ada tidak berubah;
+    - template default ditandai badge **Default** dan garis tepi
+  - **Akses:**
+    - menu terlihat untuk user dengan permission `quotations` atau `sales:config:manage`;
+    - tombol **Jadikan default** hanya untuk `sales:config:manage` (Admin dan Manager)
+  - **Impact:** Admin bisa membandingkan template dengan data perusahaan sendiri sebelum memilih default
+  - **Technical Notes:** `app/(app)/settings/sales/quotation-templates/page.tsx`, `components/admin/quotation-templates/QuotationTemplatesTab.tsx`, data contoh di `lib/quotation/sampleQuotation.ts`, menu di `lib/config/settingsNav.ts`
+
+#### ✨ Tombol Lihat PDF
+
+- **Deskripsi:**
+  - **Lihat Sebelum Kirim:** tombol **Lihat PDF** membuka PDF asli (file yang sama dengan lampiran saat dikirim) di viewer browser, lengkap dengan tombol **Unduh PDF**. Tersedia di:
+    - form quotation yang sudah tersimpan;
+    - dialog **Kirim**
+  - **Draft:** PDF dibuat dari data yang terakhir disimpan, bukan perubahan yang belum disimpan (dijelaskan lewat tooltip)
+  - **Impact:** Sales bisa mengecek tampilan PDF sebelum mengirimnya ke pelanggan
+  - **Technical Notes:** `components/quotation/QuotationPdfPreviewDialog.tsx`; URL blob dilepas saat dialog ditutup
+
+#### 🎨 Kartu Identitas Company Profile untuk Semua Role
+
+- **Deskripsi:**
+  - **Semua Role:** logo, website, email, telepon dan kota perusahaan di **Settings › Company Profile** kini terlihat oleh semua role, karena `GET /companies` cukup login sejak BE 1.152.0
+  - **Tetap Admin:** ubah atau hapus logo dan **Quotation Defaults** tetap hanya untuk Admin (permission `companies`)
+
+#### ♻️ Kode Export Dipakai Bersama WhatsApp dan Email
+
+- **Deskripsi:**
+  - Menu pilihan CSV/Excel kini satu komponen bersama, `ExportFormatMenu` (`components/ui/export-format-menu.tsx`), dipakai statistik broadcast WhatsApp dan statistik campaign email
+  - Pembuat nama file `exportFileName` dan `statusLabel` dipindah ke `lib/utils/exportRows.ts`; export WhatsApp memakainya lewat fungsi lamanya, sehingga tampilan dan nama file WhatsApp tidak berubah
+
+#### ♻️ Layout PDF Quotation Lama Dihapus
+
+- **Deskripsi:**
+  - `components/quotation/QuotationPdfDocument.tsx` dihapus karena semua PDF kini memakai template
+  - Helper-nya (`buildPdfAddressBlock`, `discountLabel`, `safeDate`) dipindah ke `lib/quotation/templateContext.ts`
+  - Node tersembunyi di form dan daftar quotation (beserta `flushSync`) tidak dipakai lagi
+  - `generateQuotationPdf` memotret elemen di tempatnya (tanpa clone), karena CSS template hanya ada di dalam iframe
+
+#### 🔧 Dependensi Baru
+
+- **Deskripsi:**
+  - `handlebars` ^4.7.8 untuk merender template
+  - `dompurify` ^3.3.1 untuk menyanitasi hasil render. Panduan BE menyebut 3.2.4; dipakai 3.3.1 karena versi ini sudah terpasang lewat `jspdf`, sehingga tidak ada dua salinan dan versinya lebih baru
+  - Keduanya di-import dinamis, jadi hanya diunduh saat PDF atau pratinjau dibuat
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **50 Test Baru:**
+    - `components/email-marketing/campaigns/subscriberExport.test.ts` (5): kartu yang bisa diexport, kolom dan isinya, Error Message hanya di file Bounced, nilai kosong, nama file;
+    - `lib/api/email-marketing/campaigns.subscribers.test.ts` (6): request export satu status dengan `is_limit=false` tanpa page/limit, respons kosong, pesan error BE, tabel memakai page/limit/search, filter status dan sorting dikirim ke API, tanpa filter/sort sampai dipilih (urutan bawaan desc);
+    - `lib/utils/exportRows.test.ts` (3): format nama file bersama, karakter yang tidak aman dan nama kosong, `statusLabel`;
+    - `lib/quotation/templateContext.test.ts` (15): semua key kontrak template terkirim, logo teks/inisial/website/alamat perusahaan, company kosong, format tanggal, isi item, kolom dan label diskon, varian/atribut/isi paket/promo, total, kurs mata uang asing, urutan ketentuan, link persetujuan, NPWP dan alamat pelanggan, sales;
+    - `lib/quotation/resolveTemplate.test.ts` (5): snapshot lebih dulu, lalu template quotation, lalu default; tanpa template; dokumen iframe dan CSS yang tidak bisa menutup tag style;
+    - `lib/quotation/formQuotation.test.ts` (7): pratinjau form memakai produk di form dengan harga dari preview BE, header/pelanggan/sales dari form, nomor dan tanggal quotation tersimpan, baris tanpa produk dilewati, baris yang belum dihitung, total dari server, penjumlahan saat preview belum ada;
+    - `lib/quotation/paginate.test.ts` (9): jumlah halaman, baris yang terpotong batas halaman, baris di margin bawah dan margin atas, halaman berikutnya, blok lebih tinggi dari satu halaman
+  - **Uji Render Template BE:** keempat template asli dari repo BE dirender dengan Handlebars mode `strict` memakai context ini (dengan dan tanpa data perusahaan) dan lolos, jadi tidak ada key yang hilang
+  - **Total:** 58 file test, 668 test lolos
+
+---
+
+## [1.114.1] - 2026-10-28
+
+### Detail Versi 1.114.1
+
+#### ✨ Upload dan Hapus Logo Perusahaan
+
+- **Deskripsi:**
+  - **Tombol Edit di Logo:** Di kartu identitas **Settings › Company Profile**, Admin melihat ikon pensil di pojok kanan bawah logo, seperti foto profil di Facebook atau LinkedIn
+    - belum ada logo: klik ikon langsung membuka pemilih file;
+    - sudah ada logo: klik ikon membuka menu **Upload new logo** dan **Remove logo**
+  - **Sesuaikan Dulu (Adjust logo):** setelah file dipilih, muncul dialog dengan bingkai kotak 1:1 bersudut siku, sama dengan tampilan logo di kartu
+    - gambar bisa **digeser** (drag, juga sentuh di HP) dan **di-zoom** (slider, tombol −/+, scroll mouse atau pinch);
+    - dialog terbuka pada zoom yang memuat **seluruh gambar**, sehingga logo memanjang tidak terpotong; area kotak yang tidak tertutup gambar menjadi transparan (ditandai pola kotak-kotak);
+    - **Save** memotong gambar sesuai bingkai menjadi PNG 512×512 (transparansi tetap), **Cancel** membatalkan tanpa upload;
+    - GIF animasi menjadi gambar diam setelah disesuaikan
+  - **Upload:** hasil penyesuaian langsung tampil sebagai preview dengan indikator loading, lalu disimpan. Preview tetap tampil sampai logo dari server selesai dimuat, sehingga gambar tidak berkedip. Setelah itu muncul notifikasi "Company logo updated"
+  - **Validasi File:** sebelum dikirim, file dicek sesuai aturan BE: JPG, PNG, GIF atau WebP, maksimal 10 MB. File tanpa tipe dinilai dari ekstensinya. File yang tidak sesuai langsung ditolak dengan pesan yang jelas
+  - **Hapus Logo:** dengan konfirmasi "Remove company logo?", lalu kartu kembali menampilkan inisial perusahaan
+  - **Gagal:** logo kembali ke yang lama dan pesan dari BE ditampilkan (misalnya file rusak atau storage sedang bermasalah)
+  - **Hak Akses:** hanya Admin (permission `companies`); role lain tidak melihat tombol edit
+  - **Impact:** Admin bisa mengatur logo perusahaan sendiri, yang nantinya dipakai di template PDF quotation
+  - **Technical Notes:**
+    - `POST /internal/company-profile/logo` (multipart, field `file`; BE mengompres ke WebP dan menghapus logo lama setelah upload berhasil) dan `DELETE /internal/company-profile/logo`; keduanya mengembalikan data company terbaru
+    - `uploadCompanyLogo` (timeout 120 detik) dan `deleteCompanyLogo` di `lib/api/company-profile.ts`. Ketiga fungsi tulis company kini memakai satu pembaca response, `readCompanyResponse`, sehingga response yang bukan JSON (misalnya halaman error gateway) menghasilkan pesan yang jelas, bukan error parsing
+    - hook `useUploadCompanyLogo` dan `useDeleteCompanyLogo` (`lib/hooks/useMyCompany.ts`) memperbarui cache `GET /companies` dari response, tanpa request ulang
+    - validasi file di `components/admin/companyLogo.ts`; tombol, menu dan konfirmasi di `components/admin/CompanyIdentityCard.tsx`
+    - dialog penyesuaian `components/admin/LogoCropDialog.tsx` memakai dependency baru **`react-easy-crop`** 6.2.4 (MIT, plus `normalize-wheel`); hitungan potong (`cropDrawPlan`, `fitWholeZoom`) dan pembuatan PNG via canvas (`cropLogoImage`) di `components/admin/logoCrop.ts`
+    - **Butuh BE 1.151.0.** Deploy BE ke DEV sempat tertahan karena runner CI; merge ke `dev` setelah endpoint ini ada di DEV, dan rilis ke PROD setelah BE PROD diperbarui
+
+#### 🐛 Bug Fix Data Contoh Muncul Sesaat di Company Profile
+
+- **Deskripsi:**
+  - **Masalah:** Saat halaman **Settings › Company Profile** dimuat, kartu metrik sempat menampilkan angka contoh ("200 - 500" karyawan, "Est. Revenue 4,215", "24 Tools", "Series C Funding...") sebelum diganti data asli. Bila data profil gagal dimuat, angka contoh itu tetap tampil dan bisa disangka data perusahaan
+  - **Root Cause:** Komponen bersama `CompanyDetailStats` menampilkan data contoh setiap kali daftar metriknya kosong, termasuk selama data masih dimuat
+  - **Solusi:**
+    - selama dimuat, tampil skeleton 3 kartu metrik dengan ukuran yang sama;
+    - bila data profil gagal dimuat, baris metrik tidak ditampilkan (pesan error tetap muncul);
+    - halaman juga langsung mulai dalam keadaan loading, sehingga kartu About tidak sempat menampilkan teks "Company profile information is not available."
+  - **Impact:** Halaman hanya menampilkan data perusahaan yang sebenarnya
+  - **Technical Notes:** prop opsional `isLoading` dan `CompanyDetailStatsSkeleton` di `components/omnichannel/company/detail-company/`; data contoh tetap menjadi cadangan bagi pemakai lain komponen ini (Company 360), yang tidak berubah. `CompanyProfileClient` memulai `isLoading` dari `true` dan hanya merender baris metrik saat loading atau saat profil berhasil dimuat
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **16 Test Baru:**
+    - `components/admin/companyLogo.test.ts` (4): tipe yang diterima, SVG dan PDF ditolak, batas 10 MB, file tanpa tipe dinilai dari ekstensi;
+    - `components/admin/logoCrop.test.ts` (6): area di dalam gambar, zoom out pada logo lebar (gambar utuh di tengah, sisa transparan), area yang melewati satu sisi, area di luar gambar, zoom yang memuat seluruh gambar;
+    - `lib/api/company-profile.logo.test.ts` (6): upload multipart field `file`, pesan error BE diteruskan, halaman error gateway, hapus logo dengan DELETE, `updateCompanyGeneral` tetap mengembalikan data serta code dan details error, 401 menjadi UNAUTHORIZED
+  - **Total:** 52 file test, 618 test lolos (termasuk test dari 1.113.0 setelah merge dengan `dev`)
+
+---
+
+## [1.114.0] - 2026-10-28
+
+### Detail Versi 1.114.0
+
+#### ✨ Product Performance Menampilkan Jumlah Produk Terjual + Filter Periode
+
+- **Deskripsi:**
+  - **Sebelumnya:** Grafik **Product Performance** di Dashboard menampilkan nilai penjualan (Rp) 10 produk teratas, dengan filter berupa rentang tanggal saja
+  - **Jumlah Terjual:** Bar kini menampilkan **jumlah unit terjual** per produk dari deal Won (`quantity_sold`), untuk **4 produk** yang paling banyak terjual. Produk tanpa unit terjual tidak ditampilkan
+  - **Tooltip:** nama produk, jumlah unit terjual dan jumlah deal Won
+  - **Filter Periode:** pilihan **All time**, **This month** (default), **Last 3 months**, **Last 6 months**, **Last 1 year** dan **Custom range**
+    - All time tidak membatasi tanggal;
+    - Last 3 months, Last 6 months dan Last 1 year berakhir hari ini dan mencakup tepat periode itu;
+    - Custom range memakai pemilih rentang tanggal seperti sebelumnya, dan data baru dimuat setelah kedua tanggal dipilih
+  - **Impact:** Sales dan manajemen bisa melihat produk yang paling laku dari sisi jumlah, untuk periode yang dibutuhkan
+  - **Technical Notes:**
+    - data dari `GET /sales/dashboard/products`, field baru `quantity_sold` (BE DEV 1.149.0). `date_from` / `date_to` dihitung FE sesuai arahan BE; filter tanggal BE memakai tanggal deal ditutup
+    - FE mengurutkan dari `quantity_sold`. Menurut info BE, API kini juga mengurutkan dari jumlah terjual, tetapi spec DEV 1.149.0 masih menulis `total_value`, jadi urutan di FE menjamin hasilnya tetap benar
+    - `productRangeParams`, `productChartRows`, pilihan preset dan `PRODUCT_CHART_TOP` di `components/dashboard/productPerformance.ts`; `ProductTooltip` dan dropdown preset di `components/dashboard/DashboardClient.tsx`
+    - field `quantity_sold` ditambahkan ke tipe `ProductItem` (`lib/api/sales-dashboard.ts`)
+
+#### ✨ Detail Product Performance dengan Tabel Berhalaman
+
+- **Deskripsi:**
+  - **Tombol Detail:** Di kartu Product Performance ada tombol **Detail** yang membuka modal berisi seluruh produk yang terjual
+  - **Tabel:** per produk hanya **Product**, **Units Sold** (jumlah terjual) dan **Won Deals** (jumlah deal Won), dengan pagination 10 / 25 / 50 baris per halaman. Tanpa search maupun sort
+  - **Periode Sendiri:** modal punya pilihan periode sendiri (pilihan yang sama dengan kartu). Saat dibuka, modal mengikuti periode kartu saat itu; mengubah periode di modal tidak mengubah kartu. Ganti periode kembali ke halaman 1
+  - **Impact:** User bisa melihat performa semua produk, bukan hanya 4 teratas
+  - **Technical Notes:**
+    - pagination diminta ke BE dengan pola yang sama seperti list lain: param `page` dan `limit`, response `total`, `page`, `limit`, `total_pages`. **BE sedang menambahkan pagination ini**; sampai `total` dikirim, tabel menampilkan satu halaman berisi data yang dikembalikan BE
+    - `components/dashboard/ProductPerformanceDetailModal.tsx` (SuperTable, `manualPagination`, mode `pages`); data lewat `useProductPerformancePage` di `lib/hooks/useSalesDashboard.ts` (TanStack Query, key di bawah `sales-dashboard`, halaman sebelumnya tetap tampil selama halaman berikut dimuat)
+    - `productTableTotal` di `components/dashboard/productPerformance.ts`; field pagination opsional di `ProductPerformanceData`
+  - **Butuh BE:** `quantity_sold` (DEV 1.149.0) dan pagination endpoint ini. PROD BE (1.144.3) belum mengirim `quantity_sold`, sehingga grafik akan kosong bila versi ini naik ke PROD sebelum BE PROD diperbarui
+
+#### ✨ Logo dan Identitas Perusahaan di Company Profile
+
+- **Deskripsi:**
+  - **Kartu Identitas:** Halaman **Settings › Company Profile** kini punya kartu di bagian atas, tepat di bawah nama perusahaan, berisi **logo perusahaan**, nama, dan kontak: website (bisa diklik), email, telepon dan kota. Kontak yang kosong tidak ditampilkan
+  - **Tanpa Logo:** bila perusahaan belum punya logo, atau gambarnya gagal dimuat, tampil monogram inisial nama dengan warna brand. Bentuk hukum seperti PT, CV dan Tbk dilewati, misalnya "PT Solvera Global Teknologi" menjadi "SG"
+  - **Hak Akses:** logo dan kontak berasal dari `GET /companies`, yang hanya bisa dibaca Admin (permission `companies`). Role lain melihat monogram dan nama perusahaan
+  - **Belum Bisa Diubah:** logo hanya ditampilkan. Endpoint upload logo untuk tenant sedang disiapkan BE
+  - **Judul Halaman:** header halaman kini bertuliskan **Company Profile**, seperti halaman Settings lain, sehingga nama perusahaan tidak tampil dua kali
+  - **Impact:** Identitas perusahaan terlihat jelas di halaman profilnya, dan siap dipakai untuk template PDF quotation berikutnya
+  - **Technical Notes:**
+    - `components/admin/CompanyIdentityCard.tsx` (logo dengan `<img>` biasa karena host storage BE tidak ada di `images.remotePatterns`; fallback monogram saat logo kosong atau error; skeleton saat loading) dan helper `companyInitials`, `websiteHref`, `websiteLabel` di `components/admin/companyIdentity.ts`
+    - hook baru `useMyCompany` (`lib/hooks/useMyCompany.ts`, TanStack Query) dipakai bersama kartu identitas dan kartu **Pengaturan Quotation**, sehingga halaman tetap memanggil `GET /companies` satu kali. Setelah Pengaturan Quotation disimpan, cache diperbarui dengan response PATCH. Form Pengaturan Quotation tetap diisi sekali saat data datang, sehingga refetch di background tidak menimpa isian user
+    - field `logo_url` dan `logo_file_id` ditambahkan ke tipe `CompanyGeneral`
+    - jarak antar-kartu di atas halaman kini mengikuti jarak standar halaman
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **19 Test Baru:**
+    - `components/dashboard/productPerformance.test.ts` (10): daftar preset, All time tanpa tanggal, This month, Last 3/6 months dan Last 1 year, Custom range (lengkap dan belum lengkap), urutan berdasarkan jumlah terjual, produk tanpa unit terjual atau tanpa `quantity_sold`, 4 produk di kartu dan isi tooltip (tanpa nilai Rp), total baris tabel (dengan dan tanpa `total` dari BE);
+    - `lib/api/sales-dashboard.products.test.ts` (4): request `page` + `limit` dengan periode, All time tanpa tanggal, cache key di bawah `sales-dashboard`, key berbeda per periode/halaman/ukuran halaman;
+    - `components/admin/companyIdentity.test.ts` (5): inisial monogram (dua kata pertama, melewati PT/CV/Tbk, nama kosong), link website tanpa skema dan label website
+  - **Total:** 48 file test, 596 test lolos
+
+---
+
+## [1.113.0] - 2026-10-28
+
+### Detail Versi 1.113.0
+
+#### ✨ Export Recipient Failed di Statistik Broadcast WhatsApp
+
+- **Deskripsi:**
+  - **Sebelumnya:** Di modal **Broadcast Details & Statistics**, hanya kartu Sent, Delivered dan Read yang bisa di-export. Kartu Failed sengaja tidak bisa (keputusan 1.107.0)
+  - **Sekarang:** Kartu **Failed** juga bisa diklik untuk export ke **CSV** atau **Excel**, sama seperti kartu lain
+  - **Kolom Error Message:** File Failed berisi kolom yang sama dengan kartu lain ditambah **Error Message** di akhir, yaitu pesan error terakhir dari BE untuk recipient itu (kosong bila BE tidak mengirimnya). File Sent, Delivered dan Read tidak berubah
+  - **Nama File:** mengikuti pola yang sama, misalnya `Broadcast_Promo_Oktober_Failed_2026-10-28.xlsx`
+  - **Impact:** Tim bisa mengambil daftar recipient yang gagal beserta alasannya, untuk diperbaiki lalu dikirim ulang
+  - **Technical Notes:**
+    - data dari `GET /broadcasts/{id}/recipients?status=failed&is_limit=false`, endpoint yang sama dengan kartu lain. Param ini sudah ada di BE DEV (1.148.0) dan PROD (1.144.3)
+    - `EXPORTABLE_STATUSES` kini berisi `failed`, dan `recipientExportColumns(status)` di `components/whatsapp-marketing/broadcasting-wa/recipientExport.ts` menambah kolom Error Message khusus Failed
+    - kartu Failed di `ViewBroadcastStatsModal.tsx` memakai menu format dan indikator export yang sama dengan kartu lain
+
+#### 🎨 Warna Status Broadcast Konsisten
+
+- **Deskripsi:**
+  - **Masalah:** Di header modal **Broadcast Details & Statistics**, status broadcast selalu tampil abu-abu, sehingga broadcast yang sudah Sent terlihat seperti Draft. Di daftar Broadcasting WA, status **In Queue** juga tampil abu-abu
+  - **Root Cause:** Modal memakai chip polos tanpa warna, sedangkan pewarnaan status hanya ada di tabel daftar dan belum mengenal In Queue
+  - **Solusi:** Satu aturan warna dipakai di daftar dan di modal: Draft abu-abu, In Queue kuning, Sent hijau, Failed merah (Sending biru untuk data lama)
+  - **Impact:** Status broadcast terlihat sama di daftar dan di modal
+  - **Technical Notes:** `broadcastStatusChip` di `components/whatsapp-marketing/broadcasting-wa/broadcastStatus.ts`, dipakai `BroadcastingWATable.tsx` (menggantikan `getStatusChip`) dan `ViewBroadcastStatsModal.tsx`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **6 Test Baru:**
+    - `components/whatsapp-marketing/broadcasting-wa/recipientExport.test.ts` (2): kolom Error Message hanya di file Failed, dan kosong bila BE tidak mengirim pesan error;
+    - `components/whatsapp-marketing/broadcasting-wa/broadcastStatus.test.ts` (4): warna tiap status, huruf besar/kecil dan spasi, nilai lama, status tidak dikenal
+  - **Diubah:** test daftar kartu yang bisa di-export kini mengharapkan Failed ikut
+  - **Total:** 46 file test, 583 test lolos
+
+---
+
+## [1.112.2] - 2026-10-27
+
+### Detail Versi 1.112.2
+
+#### 🐛 Tag Expired & Hitung Mundur Hapus di Kartu Kanban dari API
+
+- **Deskripsi:**
+  - **Masalah:** tag Expired dan "Deleted in N days" di kartu dihitung FE dari expected close date + 30 hari. Hasilnya bisa berbeda dengan BE: tag Expired bisa muncul atau hilang sampai sehari lebih awal dibanding status di BE, dan deal yang expired sebelum migration BE `e2b6c8d4a917` tampil "Scheduled for deletion" padahal belum akan dihapus
+  - **Solusi:** kartu kini memakai data dari API:
+    - **Tag Expired** muncul bila `status === "expired"`;
+    - **Hitung mundur** memakai `days_until_deletion`, yaitu sisa hari sampai dihapus permanen, dihitung BE dari hari deal expired + 30 hari (WIB). `0` = "Deleted today", `1` = "Deleted tomorrow";
+    - label "Scheduled for deletion" dihapus, karena BE tidak pernah mengirim angka negatif
+  - **Tooltip** tag diperbarui: deal expired dihapus permanen 30 hari setelah menjadi expired, bukan setelah expected close date
+  - **Impact:** tag dan hitung mundur di kartu selalu sama dengan status dan jadwal hapus di BE
+  - **Catatan BE (menjawab catatan di 1.112.1):** BE 1.148.0 juga menolak close date lampau untuk deal open (400, `details.field = "expected_close_date"`) dengan pengecualian yang sama (tanggal tersimpan yang dikirim ulang tetap boleh), dan memajukan close date deal expired ke hari ini atau setelahnya membuat deal kembali active: flag expired dan jadwal hapus 30 hari di-reset, sehingga deal tidak lagi muncul di filter Expired
+  - **Technical Notes:**
+    - `isDealExpired`, `daysUntilDeletion` dan `EXPIRED_DEAL_RETENTION_DAYS` dihapus dari `lib/helper/transformPipeline.ts`;
+    - `mapPipelineDeal` / `mapBoardStages` tidak lagi menerima parameter `now`;
+    - field `status` dan `days_until_deletion` ditambahkan ke `PipelineAPIItem`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **Diubah:** `lib/helper/transformPipeline.test.ts`: `is_expired` mengikuti `status` dari API, dan `days_until_deletion` diteruskan apa adanya (kosong bila API tidak mengirimnya)
+
+---
+
+## [1.112.1] - 2026-10-27
+
+### Detail Versi 1.112.1
+
+#### 🎨 Close Date Deal Tidak Bisa Diisi Tanggal yang Sudah Lewat
+
+- **Deskripsi:**
+  - **Masalah:** Expected Close Date di Add Deal dan Update Pipeline bisa diisi tanggal yang sudah lewat, termasuk saat memperbarui deal yang sudah expired. Deal dengan tanggal lampau langsung (atau tetap) expired
+  - **Solusi:**
+    - kalender **Expected Close Date** hanya bisa memilih **hari ini dan seterusnya**; hari-hari sebelumnya nonaktif, di Add Deal maupun Update Pipeline untuk semua deal yang masih open;
+    - tanggal yang sudah tersimpan tetap boleh dipertahankan, sehingga deal expired masih bisa diedit (misalnya notes atau probability) tanpa harus mengubah close date-nya;
+    - validasi saat simpan sebagai pengaman, misalnya bila modal dibiarkan terbuka melewati tengah malam: "Pick a close date from today onward"
+  - **Tidak Berubah:** deal Won/Lost tetap terkunci seluruhnya
+  - **Impact:** Close date deal open tidak bisa dimundurkan ke tanggal yang sudah lewat
+  - **Catatan BE:**
+    - validasi close date lampau di BE akan ditambahkan oleh tim BE; sampai saat itu aturan ini baru dijaga FE;
+    - memajukan close date deal expired seharusnya membuat deal kembali active (flag expired dan jadwal hapus 30 hari di-reset). Perilaku ini belum tertulis di spec BE, jadi perlu dicek: deal yang tanggalnya sudah dimajukan tidak boleh lagi muncul di filter Expired
+  - **Technical Notes:**
+    - `isCloseDateAllowed` dan `PAST_CLOSE_DATE_MESSAGE` di `components/pipeline/dealCloseDate.ts`, dipakai `validateForm` di `AddDealModal.tsx`
+    - prop opsional baru `minDate` di komponen bersama `AppDatePicker` (`components/ui/app-datepicker.tsx`); pemakaian lain tidak berubah
+
+#### 🔧 Kanban Memuat 5 Deal per Kolom
+
+- **Deskripsi:**
+  - Board dan Load More memuat 5 deal per kolom per request (`BOARD_PAGE_SIZE` di `lib/api/pipelines.ts`), sesuai keputusan setelah testing. Entri 1.112.0 sudah disesuaikan
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **5 Test Baru** (`components/pipeline/dealCloseDate.test.ts`): hari ini dan setelahnya boleh, tanggal lampau ditolak, tanggal tersimpan deal expired tetap boleh, memindah deal expired ke tanggal lampau lain ditolak, tanggal kosong diserahkan ke validasi wajib isi
+  - **Diubah:** 3 test di `lib/api/pipelines.board.test.ts` kini mengharapkan 5 deal per kolom
+  - **Total:** 45 file test, 582 test lolos
+
+---
+
+## [1.112.0] - 2026-10-27
+
+### Detail Versi 1.112.0
+
+#### ⚡ Kanban Pipeline Dimuat per Kolom dari API Board
+
+- **Deskripsi:**
+  - **Masalah:** Kanban memuat **semua** deal perusahaan sekaligus lewat `GET /pipelines`, lalu search, filter tanggal, total per kolom, urutan probability dan "Load More" dikerjakan di browser. Semakin banyak deal, semakin berat board dibuka
+  - **Solusi:** Board kini memakai `GET /pipelines/board`. Satu request memuat semua kolom stage, masing-masing 5 deal pertama, jumlah deal (`count`) dan total nilai (`total_amount`) kolom itu, plus statistik. Setiap perubahan filter juga hanya satu request
+  - **Load More per Kolom:** "Load More (N remaining)" memuat 5 deal berikutnya dari `GET /pipelines/board/column` memakai cursor kolom itu dan filter yang sama dengan board di layar. Bila BE menolak cursor (filter sudah berubah), board dimuat ulang otomatis
+  - **Filter oleh API:**
+    - **Search** mencari nama contact, perusahaan, produk dan notes, dan berjalan 1 detik setelah berhenti mengetik;
+    - **Assigned To** dan **Date Range** (expected close date) juga disaring BE;
+    - **Status** baru (All / Active / Expired) disaring BE. Dengan Active atau Expired, kolom Won/Lost kosong karena deal yang sudah ditutup tidak pernah active atau expired. Status expired ditandai job BE tiap jam, jadi bisa berbeda sampai sekitar 1 jam dengan tag Expired di kartu, yang masih dihitung FE dari expected close date sampai BE menambah field baru;
+    - **filter stage** (multi-select) tetap di browser: semua kolom dimuat, kolom yang tidak dipilih tampil kosong dengan jumlah dan total 0
+  - **Header Kolom:** jumlah deal tampil di samping nama stage. Jumlah dan total Rp mencakup semua deal yang cocok dengan filter, bukan hanya yang sudah tampil
+  - **Urutan Kartu:** urutan di dalam kolom ditentukan BE, yaitu probability tertinggi lalu yang terakhir di-update.
+    - Drag di dalam kolom yang sama tidak mengubah apa pun dan tidak memanggil API (tidak ada urutan manual);
+    - drag ke kolom lain hanya mengganti stage, lalu board dimuat ulang diam-diam sehingga kartu masuk di posisi sesuai urutan
+  - **Stage Lain:** stage di luar enam stage bawaan (milik perusahaan, atau stage nonaktif yang masih punya deal) ikut tampil dengan warna kolom netral
+  - **Tidak Berubah:**
+    - kunci deal Won/Lost beserta konfirmasinya, badge probability dan stats cards;
+    - tag Expired dan hitung mundur penghapusan, yang masih dihitung dari expected close date + 30 hari;
+    - scope per role, refresh filter Assigned To, deep link `?deal=` dan skeleton modal
+  - **Impact:** Board terbuka dengan satu request kecil berapa pun jumlah deal, dan total per kolom tetap akurat
+  - **Technical Notes:**
+    - `fetchPipelineBoard`, `fetchPipelineBoardColumn`, `toBoardQuery` (key list diulang seperti yang dibaca FastAPI, nilai kosong dibuang) dan `isStaleCursorError` di `lib/api/pipelines.ts`
+    - store `lib/store/pipeline/index.ts`:
+      - semua filter dirakit dalam satu objek (`boardFiltersFrom`), termasuk `searchFilter` dan `dealStatusFilter` baru (param `status`);
+      - `boardFilters` menyimpan filter board yang sedang tampil, untuk dikirim ulang oleh Load More;
+      - `loadMoreDeals`, `refreshing` dan `loadingMoreStages`;
+      - response board lama yang datang terlambat dibuang (`boardRequestSeq`), begitu juga halaman Load More dari board sebelumnya
+    - `mapBoardStages` dan `mapPipelineDeal` di `lib/helper/transformPipeline.ts` menggantikan `transformPipelineResponse`; `StageUI` mendapat `count` dan `nextCursor`
+    - `moveDealToColumn` dan `stageNameAt` di `components/pipeline/pipeline-board/boardMoves.ts`
+    - dihapus dari `PipelineBoard.tsx`: `searchPipeline`, filter tanggal di browser, `computeStageTotals`, `visibleCounts` dan cabang `arrayMove`
+    - `PipelineClient` memuat ulang board sekali per perubahan search, Assigned To atau Date Range, tanpa request ganda saat halaman dibuka
+    - `GET /pipelines` tidak diubah dan masih dipakai form quotation
+    - **Butuh BE 1.147.0** (`/pipelines/board`). PROD BE (1.144.3) belum punya endpoint ini, jadi versi ini tidak boleh rilis ke PROD sebelum BE PROD naik
+    - BE 1.147.0 kini juga menolak memindahkan atau mengubah deal Won/Lost (`PATCH /pipelines/{id}/stage` dan `PUT /pipelines/{id}` → 400), sejalan dengan kunci di FE (1.110.0)
+
+#### ✨ Kartu yang Dipindah Menunjukkan Arah Pindahnya
+
+- **Deskripsi:**
+  - **Masalah:** Kolom diurutkan berdasarkan probability, sehingga kartu yang dipindah ke stage lain bisa langsung loncat ke atas atau ke bawah setelah board dimuat ulang. Bila posisinya berada di luar kartu yang sudah dimuat, kartu itu tiba-tiba hilang
+  - **Solusi:**
+    - **Saat dilepas:** kartu ditaruh di posisi tempat ia dilepas di kolom tujuan, tampil redup dengan spinner, dan tidak bisa di-drag sampai board baru masuk;
+    - **setelah board dimuat ulang:** kartu fade-out ke arah posisi barunya (ke atas atau ke bawah), lalu muncul di tempat barunya dengan fade-in singkat dan highlight selama 1,5 detik;
+    - **posisi di luar kartu yang dimuat:** kartu fade-out ke bawah, dan toast "Moved to …" menambahkan keterangan "Sorted further down by probability. Use Load More to see it.";
+    - **posisi tidak berubah:** hanya highlight
+  - **Bar Memuat:** bar tipis tampil di atas kolom setiap kali board dimuat ulang diam-diam (filter berubah, atau setelah kartu dipindah). Bar ini menggantikan spinner di kotak search
+  - **Catatan:**
+    - tidak ada request tambahan dan tidak ada scroll otomatis;
+    - user yang mengaktifkan *reduce motion* di OS tidak mendapat animasi geser, hanya highlight;
+    - bila simpan gagal, perilakunya sama seperti sebelumnya (pesan error lalu board dimuat ulang). Bila simpan berhasil tetapi board gagal dimuat ulang, kartu tetap di tempat dilepas
+  - **Impact:** User bisa melihat ke mana kartu yang baru dipindah, termasuk saat kartu turun ke bagian yang belum dimuat
+  - **Technical Notes:**
+    - `components/pipeline/pipeline-board/moveFeedback.ts`: `moveDirection` (up / down / same / gone), `moveFeedbackClass` (class tw-animate-css) dan `createMoveFeedback`, yang mengikuti satu kartu melalui tahap saving → exiting → entering. Pindah kartu yang lebih baru menghentikan yang lama, dan setiap jalan keluar membersihkan timer
+    - `PipelineBoard.tsx` menahan board di layar selama tahap saving dan exiting (`holdsBoard`), lalu menampilkan board terbaru dari store setelah fade-out
+    - `fetchPipeline` dan `updateStagePipeline` kini mengembalikan apakah board berhasil dimuat ulang, untuk membedakan "pindah berhasil" dari "board gagal dimuat ulang"
+    - `DealCard` mendapat prop `isSaving` dan `isHighlighted`; keyframe `board-progress` di `app/globals.css`
+
+#### 🐛 Bug Fix Halaman Error Saat Menggeser Kartu Antar Kolom
+
+- **Deskripsi:**
+  - **Masalah:** Menggeser kartu bolak-balik di dekat batas dua kolom bisa membuat halaman pipeline error dengan pesan "Maximum update depth exceeded". Error ini paling mudah terjadi pada kolom yang pendek
+  - **Root Cause:**
+    - Selama drag, kartu langsung dipindah ke setiap kolom yang dilewati sebagai preview. Setiap perpindahan mengubah isi kolom, dan karena semua kolom setinggi kolom tertinggi, tinggi kolom ikut berubah;
+    - dnd-kit lalu mengukur ulang dan memilih target berdasarkan kartu terdekat (`closestCenter`), yang kini berada di kolom sebelumnya, sehingga kartu dipindah balik. Begitu terus sampai React menghentikannya
+  - **Solusi:** Board tidak berubah selama drag. Kartu hanya mengikuti kursor, kolom di bawah kursor diberi sorotan, dan kartu baru dipindah saat dilepas, ke posisi tempat ia dilepas (dihitung sekali dari posisi kartu-kartu kolom tujuan, `dropIndex`). Kartu lain di kolom asal juga tidak lagi bergeser memberi ruang, karena urutan kartu ditentukan API
+  - **Impact:** Halaman tidak lagi error saat menggeser kartu. Membatalkan drag (Escape atau dilepas di luar kolom) juga tidak meninggalkan kartu di kolom yang salah
+  - **Technical Notes:** `onDragOver` di `PipelineBoard.tsx` hanya mencatat kolom di bawah kursor (`overStage`), dan `SortableContext` memakai strategi `keepInPlace`
+
+#### 🎨 Kolom yang Sedikit Isinya Bisa Menerima Kartu di Seluruh Tingginya
+
+- **Deskripsi:**
+  - **Masalah:** Untuk memindahkan kartu ke kolom yang hanya berisi sedikit deal, user harus scroll jauh ke atas dan mendekatkan kartu ke deal-deal di kolom itu
+  - **Root Cause:** Kolom tujuan dipilih dari kartu yang titik tengahnya paling dekat dengan kartu yang digeser. Kolom pendek hanya punya kartu di bagian atas, sehingga saat kartu digeser di bawah, kolom lain yang terpilih
+  - **Solusi:**
+    - kolom tujuan adalah kolom yang berada di bawah kursor, di sepanjang tingginya, termasuk area kosong di bawah kartu terakhir;
+    - semua kolom kini setinggi kolom tertinggi (tetap dibatasi tinggi layar), sehingga area kosong itu terlihat sebagai bagian kolom;
+    - kolom tujuan disorot selama kartu digeser di atasnya;
+    - scrollbar di dalam kolom disembunyikan. Kolom tetap bisa di-scroll dengan mouse wheel, touchpad atau keyboard
+  - **Impact:** Kartu bisa dilepas di bagian mana pun dari kolom tujuan tanpa scroll ke atas
+  - **Technical Notes:** `columnCollision` di `components/pipeline/pipeline-board/boardMoves.ts` (`pointerWithin` hanya pada kolom, cadangan `rectIntersection`); `ColumnDropZone` di `DroppableColumn.tsx` kini berupa flex row agar kolom di dalamnya ikut setinggi board; utility baru `scrollbar-hide` di `app/globals.css`. Class `custom-scrollbar` dan `scrollbar-hide` yang sebelumnya dipakai board tidak pernah didefinisikan (tidak berefek); scroll horizontal board tetap menampilkan scrollbar seperti sebelumnya
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **59 Test Baru:**
+    - `components/pipeline/pipeline-board/moveFeedback.test.ts` (14): arah pindah kartu, class animasi (termasuk reduce motion), urutan tahap dengan fake timer, pindah kartu yang lebih baru, batal, dan unmount;
+    - `lib/api/pipelines.board.test.ts` (7): query board dan Load More, key list diulang, nilai kosong dibuang, deteksi cursor yang ditolak;
+    - `lib/store/pipeline/pipelineStore.test.ts` (16): satu request dengan semua filter, filter Status (termasuk All dan Load More), hasil berhasil/tidaknya muat ulang board dan pindah stage, jumlah/total/cursor dari API, response lama dibuang, reload diam-diam tanpa skeleton, Load More (menambah deal, cursor baru, filter board yang sama, tanpa duplikat, kolom yang sudah habis, cursor ditolak → board dimuat ulang, halaman dari board lama dibuang, error lain);
+    - `components/pipeline/pipeline-board/boardMoves.test.ts` (15): posisi drop di kolom tujuan (atas, di antara kartu, bawah, kolom kosong), kolom tujuan dari posisi kursor (bukan kartu, di seluruh tinggi kolom pendek, cadangan saat kursor di antara kolom, di luar board), kolom dari id kartu, jumlah dan total ikut kartu, drag di kolom sendiri tidak mengubah apa pun;
+    - `lib/helper/transformPipeline.test.ts` (6): `mapBoardStages`, menggantikan 6 test pengelompokan dan urutan lama;
+    - `components/pipeline/pipeline-board/stageFilter.test.ts` (1): kolom yang dikosongkan berjumlah dan bertotal 0
+  - **Diubah:** 7 test store yang ada kini memakai endpoint board
+  - **Total:** 44 file test, 577 test lolos
+
+---
+
+## [1.111.0] - 2026-10-27
+
+### Detail Versi 1.111.0
+
+#### ✨ Produk Quotation Otomatis Terisi dari Pesanan Client
+
+- **Deskripsi:**
+  - **Isi Otomatis:** Saat memilih client di **Create Quotation**, daftar Products & Services langsung diisi dengan produk yang dipesan client, yaitu produk dari deal client tersebut yang berada di stage **Proposal**. Setiap baris berisi:
+    - produk dan qty sesuai deal;
+    - harga khusus client bila ada, selain itu harga katalog (tetap dihitung ulang oleh preview seperti biasa);
+    - catatan deal di kolom **Catatan**
+  - **Tetap Bisa Diedit:** Baris hasil isi otomatis adalah baris biasa. Produk, qty, catatan, diskon dan harga tetap bisa diubah, dan baris bisa dihapus atau ditambah
+  - **Konfirmasi Sebelum Mengganti:** Bila sudah ada baris yang dipilih produknya, misalnya sales menambah produk manual lalu memilih atau mengganti client, muncul konfirmasi "Ganti daftar produk?". **Ganti dengan pesanan** mengganti semua baris, sedangkan **Biarkan** mempertahankan baris yang ada. Bila belum ada produk yang dipilih, daftar langsung diisi tanpa konfirmasi
+  - **Catatan:**
+    - hanya untuk quotation baru; quotation draft yang dibuka ulang tidak berubah, dan mengosongkan client tidak menghapus baris;
+    - produk yang sudah diarsipkan tidak ikut diisi;
+    - kolom Catatan baris ikut tercetak di PDF quotation, jadi catatan deal juga terlihat oleh client. Sales bisa mengubah atau menghapusnya sebelum mengirim
+  - **Impact:** Sales tidak perlu lagi memasukkan produk satu per satu dari deal ke quotation
+  - **Technical Notes:**
+    - data dari `items` di `GET /quotations/lead`, yang berisi produk dari pipeline Proposal milik contact lead tersebut
+    - `rowsFromLeadOrder`, `orderFillAction` dan `seedUnitPrice` di `lib/utils/quotationRows.ts`; `newRow` dipindah ke file yang sama dari `QuotationFormClient`
+    - `handleClientDataChange` dan konfirmasi di `components/quotation/QuotationFormClient.tsx`; filter produk arsip (`isLeadItemOnSale`) dipakai bersama oleh pemilih produk
+    - pemilihan produk manual di `ProductsServicesTable.tsx` memakai `seedUnitPrice` yang sama untuk harga awal
+    - field `variant_values` dan `parent` ditambahkan ke tipe `QuotationLeadItem`, sesuai yang sudah dikirim BE
+
+#### 🐛 Bug Fix Keterangan Dropdown Tampil Seperti Error
+
+- **Deskripsi:**
+  - **Masalah:** Di Create Quotation, keterangan di bawah **Kanal Penjualan**, **Deal terkait** dan **Mata Uang** berwarna merah seperti pesan error, dan keterangan Deal terkait menimpa label "Kurs yang dipakai" di bawahnya
+  - **Root Cause:** Komponen bersama `AppSelect` selalu mewarnai keterangan dengan warna error, walaupun field tidak error. Selain itu tinggi pembungkusnya dikunci sesuai tinggi dropdown (misalnya 48px), sehingga label dan keterangan meluap ke baris berikutnya
+  - **Solusi:** Keterangan kini berwarna abu-abu dan baru merah saat field error, sama dengan `AppInput`. Tinggi hanya diterapkan ke dropdown, sehingga keterangan mendorong baris di bawahnya
+  - **Dampak ke Halaman Lain:**
+    - keterangan dropdown di Settings katalog (Bulk Price Update, Discount Policies, Promotions) dan dialog kirim quotation ikut berwarna abu-abu;
+    - pesan error dropdown di Add Deal, detail Lead dan pemilih produk quotation tetap merah, tetapi tidak lagi menimpa field di bawahnya
+  - **Impact:** User bisa membedakan keterangan biasa dari pesan error
+  - **Technical Notes:** `components/ui/app-select.tsx`
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **13 Test Baru** (`lib/utils/quotationRows.test.ts`):
+    - baris dari pesanan client: produk, qty, catatan, harga khusus atau katalog, varian, dan pesanan kosong (8);
+    - kapan daftar langsung diisi, meminta konfirmasi, atau dibiarkan (3);
+    - harga awal produk (2)
+  - **Total:** 41 file test, 524 test lolos
+
+---
+
+## [1.110.0] - 2026-10-27
+
+### Detail Versi 1.110.0
+
+#### 🔒 Deal Won & Lost Bersifat Final
+
+- **Deskripsi:**
+  - **Update Pipeline Hanya Bisa Dilihat:** Deal di stage **Closed - Won** atau **Closed - Lost** tetap bisa dibuka dari kanban, tetapi semua field dan tombol **Update** dinonaktifkan. Di bawah judul modal tampil keterangan "This deal is closed (…). You can view it, but it can no longer be edited or moved."
+  - **Tidak Bisa Dipindah Lagi:** Kartu Won/Lost tidak bisa digeser ke stage lain, termasuk dari Won ke Lost atau sebaliknya. Kartu tetap bisa diklik untuk melihat detailnya
+  - **Konfirmasi Sebelum Menjadi Won/Lost:**
+    - menggeser kartu ke kolom Won/Lost memunculkan konfirmasi "Move this deal to Closed - Won?" (atau Closed - Lost). **Cancel** mengembalikan kartu ke posisi semula tanpa memanggil API, dan **Yes, move it** menyimpan perpindahan;
+    - menyimpan form Add Deal atau Update Pipeline dengan Deal Stage Won/Lost memunculkan konfirmasi "Save this deal as Closed - Won?" sebelum data dikirim
+  - **Catatan:** Penguncian ini baru ada di frontend. Dokumentasi API DEV (1.145.0) tidak menyebut penolakan perubahan deal Won/Lost di `PATCH /pipelines/{id}/stage` maupun `PUT /pipelines/{id}`, jadi perlu diminta ke tim BE agar perubahan lewat API langsung juga ditolak
+  - **Impact:** Deal yang sudah ditutup tidak berubah tanpa sengaja, dan user diingatkan sebelum menutup sebuah deal
+  - **Technical Notes:**
+    - `CLOSED_STAGES` dan `isClosedStage` di `lib/helper/transformPipeline.ts`; penulisan seperti "Closed-Won" atau huruf kecil ikut dikenali, dan `isDealExpired` memakai fungsi yang sama
+    - prop `disabled` di `SortableDeal.tsx`; `requestStageMove` dan konfirmasi di `PipelineBoard.tsx`, dengan pengaman tambahan di `handleDragEnd` yang mengembalikan kartu bila asalnya stage tertutup
+    - `isClosedDeal` di `AddDealModal.tsx` dinilai dari stage deal yang tersimpan, bukan dari isi form; submit dipisah menjadi `handleSubmit` (validasi dan konfirmasi) dan `submitDeal`
+
+#### 🎨 UI/UX Enhancement: Tampilan Field Terkunci Seragam
+
+- **Deskripsi:**
+  - **Satu Gaya untuk Field Terkunci:** Semua field yang tidak bisa diubah di modal Add Deal dan Update Pipeline kini tampil sama dengan Product Name (input abu-abu)
+    - Update Pipeline: SKU, yang sebelumnya memakai tampilan autocomplete nonaktif yang berbeda, kini sama dengan Product Name, Client/Account dan Assign To yang terkunci;
+    - deal Won/Lost: Deal Stage, Expected Close Date (format "dd MMM yyyy"), Quantity dan Probability of Close Won memakai tampilan yang sama
+  - **Notes Tanpa Placeholder di Update Pipeline:** Notes di Update Pipeline tidak bisa diubah, jadi saat kosong tidak lagi menampilkan "Add any relevant notes here..." yang terkesan bisa diisi. Placeholder tetap ada di Add Deal
+  - **Impact:** User langsung bisa membedakan field yang bisa diisi dan yang hanya untuk dilihat
+  - **Technical Notes:** komponen `LockedField` di `components/pipeline/AddDealModal.tsx`; kontrol yang bisa diedit (autocomplete, select, date picker) hanya dirender saat field bisa diubah
+
+#### ✨ Kanban Sesuai Role User (melengkapi 1.108.0)
+
+- **Deskripsi:**
+  - **Belum Tercatat Sebelumnya:** Perubahan ini sudah masuk `dev` bersama 1.108.0, tetapi belum ada di CHANGELOG
+  - **Daftar Deal per Role:** **Admin dan Manager** melihat semua deal perusahaan. Role lain (Staff, Super Admin dan role custom) hanya melihat deal yang di-assign ke dirinya, dan filter Assigned To disembunyikan untuk mereka
+  - **Tanpa Kilasan Data:** Kanban baru dimuat setelah role user diketahui, sehingga Staff tidak sempat melihat deal milik orang lain
+  - **Add Deal untuk Staff:** Pilihan Client/Account hanya berisi lead yang di-assign ke dirinya
+  - **Assign To Terkunci:** Tampil sebagai input abu-abu berisi nama assignee, dengan keterangan "Only an Admin or Manager can change the assignee"
+  - **Super Admin Dikeluarkan:** Berbeda dengan yang tertulis di 1.108.0, Super Admin tidak lagi bisa mengganti Assign To atau melihat semua deal. Role ini ada, tetapi bukan untuk fitur ini, dan BE juga hanya mengizinkan Admin dan Manager (Super Admin yang mengganti assignee akan ditolak 403)
+  - **Catatan:** Sejak BE DEV 1.145.0, `GET /pipelines` juga dibatasi sesuai role di backend, termasuk statistiknya. Penyaringan di FE tetap dipertahankan sebagai pengaman tambahan
+  - **Technical Notes:**
+    - `scopeUserId` di `lib/store/pipeline/index.ts` dan `canSeeAllDeals` di `components/pipeline/dealAssignment.ts`; `PipelineClient` menunggu data auth sebelum fetch pertama
+    - 5 test (prioritas scope di store, lead untuk Staff, `canSeeAllDeals`) sudah termasuk dalam total test 1.109.0
+
+#### 🔄 Update Status Backend (dari 1.108.0 dan 1.109.0)
+
+- **Deskripsi:**
+  - **Assign To: Selesai di BE DEV (1.145.0).** `POST /pipelines` kini menerima `lead_id` (wajib) dan `assigned_to` (opsional, default PIC lead), dan `PUT /pipelines/{id}` menerima `assigned_to`. Aturan BE sama dengan FE:
+    - hanya Admin/Manager yang boleh mengganti PIC (selain itu 403);
+    - lead harus berstatus Contacted/Qualified, dan untuk role lain harus lead miliknya sendiri;
+    - **sinkron PIC:** mengganti PIC memindahkan lead dan semua deal open lain dari lead itu, dan PIC baru mendapat notifikasi;
+    - `assigned_to` yang dikirim ulang tanpa berubah tidak ditolak (dikonfirmasi BE), jadi FE aman selalu mengirimnya
+  - **Notifikasi 5 Hari Sebelum Expired dan 5 Hari Sebelum Dihapus: Selesai (dikonfirmasi BE).** Keduanya berjalan sebagai job di backend, sehingga tidak tercantum di dokumentasi API. Mengklik notifikasinya membuka deal terkait (fitur 1.109.0), selama BE mengirim `entity_type = "pipeline"` dan `entity_id` = id deal
+  - **Penghapusan Otomatis Deal Expired: Selesai (dikonfirmasi BE).** Deal expired dihapus 30 hari setelah `expected_close_date`, sesuai tag hitung mundur di kartu kanban (1.108.0). Proses ini juga berjalan sebagai job dan tidak tercantum di dokumentasi API
+  - **⚠️ Production:** API PROD masih 1.144.3 dan belum menerima `assigned_to` maupun `lead_id`. **Assign To (1.108.0) jangan dirilis ke production sebelum BE PROD diperbarui.** Job notifikasi dan penghapusan di PROD juga perlu dipastikan bersama deploy BE tersebut
+  - **Masih Perlu ke BE:** Penguncian deal Won/Lost di API (lihat fitur di atas)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **3 Test Baru:**
+    - stage Won/Lost dikenali sebagai final dengan berbagai penulisan, sedangkan stage terbuka atau kosong tidak (`lib/helper/transformPipeline.test.ts`, 2);
+    - Super Admin terkunci dari Assign To dan tidak melihat semua deal (`components/pipeline/dealAssignment.test.ts`, 1; test role lain disesuaikan)
+  - **Total:** 40 file test, 511 test lolos
+
+---
+
+## [1.109.1] - 2026-10-27
+
+### Detail Versi 1.109.1
+
+#### ✨ Assigned To di Form Lead Mengikuti Role
+
+- **Deskripsi:**
+  - **Dropdown Assigned To** di form Add Lead dan Update Lead kini meminta daftar user dengan
+    `GET /users?scope=lead_assignee`. Admin dan Manager melihat semua user, role lain (Staff dan
+    role custom) hanya dirinya sendiri, sama dengan aturan BE yang menolak assign ke user lain
+    (403)
+  - Picker user lain (Support Workspace, Omnichannel, task, agent group, Add Deal) tidak berubah
+  - **Butuh BE 1.146.0** (param `scope`). Di BE yang lebih lama param ini diabaikan dan semua
+    user tetap tampil
+  - **Impact:** Staff tidak lagi bisa memilih user lain lalu baru ditolak saat menyimpan
+  - **Technical Notes:** param opsional `scope` (tipe `UserListScope`) di `fetchUsers`
+    (`lib/api/users.ts`) dan `useUsers` (`lib/hooks/useUsers.ts`), ikut masuk `queryKey`
+
+#### 🐛 Bug Fix Pilihan Assigned To Harus Diklik Dua Kali
+
+- **Deskripsi:**
+  - **Masalah:** Di form Add Lead dan Update Lead, memilih user di dropdown Assigned To baru
+    berhasil pada klik kedua
+  - **Root Cause:** Saat tombol mouse ditekan, input kehilangan fokus dan form menampilkan error
+    validasi di bawahnya. Layout bergeser, sehingga saat tombol dilepas kursor sudah tidak di atas
+    pilihan dan klik pertama hilang
+  - **Solusi:** Pilihan dipilih saat `mousedown` dengan `preventDefault`, pola yang sama dengan
+    picker contact di Update Lead
+  - **Impact:** User langsung terpilih dengan sekali klik
+  - **Technical Notes:** `components/lead-management/add-lead-form.tsx` dan
+    `components/lead-management/lead-detail-modal.tsx`
+
+---
+
+## [1.109.0] - 2026-10-27
+
+### Detail Versi 1.109.0
+
+#### ✨ Notifikasi Deal Langsung Membuka Deal
+
+- **Deskripsi:**
+  - **Deep Link ke Deal:** Mengklik notifikasi deal, baik dari dropdown lonceng maupun halaman Notifications, kini membuka halaman Pipeline dan langsung menampilkan modal **Update Pipeline** untuk deal tersebut. Sebelumnya notifikasi hanya membuka halaman Pipeline tanpa membuka deal-nya
+  - **URL Bersih:** Setelah modal terbuka, parameter `?deal=` dihapus dari URL, sehingga refresh halaman atau menutup modal tidak membuka deal itu lagi
+  - **Catatan:** Bergantung pada BE mengirim `entity_type = "pipeline"` dan `entity_id` = id deal pada notifikasi deal. Notifikasi pengingat 5 hari sebelum expired dan sebelum dihapus (masih dikerjakan BE) akan ikut berfungsi bila memakai `entity_type` yang sama
+  - **Impact:** User bisa langsung menindaklanjuti deal dari notifikasi tanpa mencarinya di kanban
+  - **Technical Notes:**
+    - `getNotificationRoute` di `lib/api/notifications.ts` memetakan `pipeline` ke `/sales/pipeline?deal=<id>`, atau ke `/sales/pipeline` bila tidak ada id
+    - `PipelineClient` membaca `?deal` (`useSearchParams`) dan membuka modal setelah role user diketahui; halaman pipeline dibungkus `<Suspense>`
+
+#### ✨ Filter Stage Kanban Bisa Memilih Lebih dari Satu
+
+- **Deskripsi:**
+  - **Pilihan Ganda:** Filter stage di kanban kini bisa memilih beberapa stage sekaligus, misalnya Prospect, Qualified dan Proposal. Dropdown tetap terbuka saat memilih, dan **All** menghapus semua pilihan
+  - **Tampilan:** Kotak filter menampilkan chip berwarna untuk stage yang dipilih (maksimal 2, sisanya ditampilkan sebagai "+N")
+  - **Catatan:** Kolom stage yang tidak dipilih dikosongkan, bukan dihilangkan, sehingga tata letak board tidak berubah. Filter lain yang memakai dropdown sejenis (Assigned To, tanggal, status lead) tetap satu pilihan
+  - **Impact:** Sales bisa memantau beberapa tahap deal sekaligus tanpa berganti filter
+  - **Technical Notes:**
+    - komponen baru `components/pipeline/MultiSelectDealStage.tsx` (tampilan sama dengan `CustomDealStageSelect`, yang tidak diubah)
+    - logika penyaringan di `filterStagesBySelection` (`components/pipeline/pipeline-board/stageFilter.ts`)
+
+#### 🎨 UI/UX Enhancement: Loading Saat Membuka Modal Deal
+
+- **Deskripsi:**
+  - **Skeleton Loading:** Modal **Add Deal** dan **Update Pipeline** menampilkan skeleton berbentuk sama dengan form selama data pertama dimuat, sehingga tidak ada lompatan tata letak
+    - Update Pipeline: menunggu detail deal, sehingga form kosong tidak sempat terlihat sebelum datanya masuk;
+    - Add Deal: menunggu daftar SKU dan daftar leads pertama. Pencarian berikutnya tetap memakai indikator loading di field masing-masing
+  - **Selama Loading:** Judul modal tetap tampil, tombol Cancel tetap aktif, dan tombol simpan dinonaktifkan
+  - **Impact:** User tahu data sedang dimuat dan tidak menyimpan form yang belum lengkap
+  - **Technical Notes:** `DealFormSkeleton` dan `isInitialLoading` di `components/pipeline/AddDealModal.tsx`
+
+#### 🐛 Bug Fix Modal Update Pipeline Kosong Saat Deal Tidak Bisa Dibuka
+
+- **Deskripsi:**
+  - **Masalah:** Bila detail deal gagal dimuat, modal Update Pipeline tetap terbuka dengan form kosong
+  - **Root Cause:** Error saat memuat detail deal hanya menampilkan pesan, tanpa menutup modal
+  - **Solusi:** Modal kini ditutup dan menampilkan pesan "Deal not found or you no longer have access" (404) atau "Failed to load latest deal details." untuk error lain. Kasus ini terjadi misalnya saat membuka notifikasi untuk deal yang sudah dihapus, atau deal milik user lain bagi role Staff
+  - **Impact:** User tidak lagi melihat form kosong yang membingungkan
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **7 Test Baru:**
+    - URL tujuan notifikasi deal, dengan dan tanpa id, serta jenis notifikasi lain yang tidak berubah (`lib/api/notifications.route.test.ts`, 3);
+    - filter stage pilihan ganda: All, beberapa stage, kolom tidak hilang, dan penulisan nama stage (`components/pipeline/pipeline-board/stageFilter.test.ts`, 4)
+  - **Total:** 40 file test, 508 test lolos
+
+---
+
+## [1.108.0] - 2026-10-26
+
+### Detail Versi 1.108.0
+
+#### ✨ Fitur Assign To di Add Deal & Update Pipeline (FE siap, menunggu BE)
+
+- **Deskripsi:**
+  - **Client/Account dari Leads:** Pilihan Client/Account di form Add Deal kini diambil dari daftar **Leads** berstatus **Contacted** dan **Qualified** (keputusan BO), bukan dari daftar contact. Setiap pilihan adalah satu lead, dengan keterangan status dan assignee di bawah nama client (misalnya "Qualified · Assigned to Sari"), sehingga client yang punya beberapa lead tetap bisa dibedakan
+  - **Pencarian Client:** Menampilkan hingga 100 lead. Pencarian ke API hanya berjalan saat user mengetik, dengan debounce 1 detik setelah ketikan terakhir
+  - **Field Assign To (wajib):** Nonaktif sampai lead dipilih, lalu otomatis terisi assignee lead tersebut
+    - **Admin, Manager dan Super Admin** dapat mengganti assignee, baik saat Add Deal maupun Update Pipeline;
+    - role lain (Staff dan role custom) terkunci ke assignee lead saat Add Deal, dan ke assignee deal saat Update Pipeline
+  - **Update Pipeline:** Client/Account ditampilkan sebagai teks yang tidak bisa diubah, dan Assign To terisi assignee deal saat ini
+  - **Status: menunggu BE.** FE sudah mengirim `assigned_to` (Add dan Update) serta `lead_id` (Add), tetapi `POST /pipelines` dan `PUT /pipelines/{id}` di API DEV (1.144.3) belum menerima kedua field tersebut. Saat ini BE masih meng-assign deal ke user yang membuatnya. Sinkronisasi assignee ke lead juga akan dikerjakan BE. **Jangan dirilis ke production sebelum BE siap**
+  - **Impact:** Manager bisa langsung menentukan penanggung jawab deal sejak awal, dan deal selalu berasal dari lead yang sudah dihubungi atau terkualifikasi
+  - **Technical Notes:**
+    - `fetchDealLeads` di `lib/api/pipelines.ts` menyusun `lead_status=Contacted&lead_status=Qualified` secara manual (`URLSearchParams`), karena axios mengirim array sebagai `lead_status[]=` yang tidak dibaca FastAPI
+    - aturan role di `components/pipeline/dealAssignment.ts` (`DEAL_ASSIGNER_ROLES`); pencocokan nama role mengabaikan huruf besar/kecil, spasi dan garis bawah, sehingga `super_admin` dari BE ikut dikenali
+    - mapping lead ke pilihan dropdown di `components/pipeline/dealLeadOptions.ts`
+    - field `assigned_to` dan `lead_id` di `CreatePipelineRequest` dan `reqBody`
+
+#### ✨ Kanban Diurutkan Berdasarkan Probability of Close Won
+
+- **Deskripsi:**
+  - **Urutan per Kolom:** Kartu di setiap kolom kanban diurutkan dari Probability of Close Won terbesar ke terkecil, setiap kali data dimuat. Deal dengan nilai yang sama tetap mengikuti urutan dari API
+  - **Badge Persentase:** Setiap kartu menampilkan persentase probability di samping nominal, dengan warna hijau (80–100%), kuning (40–60%) dan abu-abu (0–20%)
+  - **Label Form:** "Probability of Close (%)" diganti menjadi "Probability of Close Won (%)"
+  - **Catatan:** Diurutkan di FE karena `GET /pipelines` tidak memiliki parameter sort. Menggeser kartu di dalam satu kolom tetap hanya berubah di layar dan kembali ke urutan probability saat data dimuat ulang
+  - **Impact:** Deal yang paling berpeluang menang selalu terlihat paling atas
+  - **Technical Notes:** sorting di `transformPipelineResponse` (`lib/helper/transformPipeline.ts`); badge di `components/pipeline/pipeline-board/DealCard.tsx`
+
+#### 🎨 UI/UX Enhancement: Penanda Deal Expired
+
+- **Deskripsi:**
+  - **Kartu Expired Transparan:** Deal yang masih di stage terbuka (Prospect sampai Proposal) dan sudah melewati `expected_close_date` ditampilkan transparan, lalu kembali jelas saat di-hover. Untuk saat ini status expired dihitung dari `expected_close_date`, bukan dari field `status` BE. Deal yang close hari ini belum dianggap expired, dan deal Closed - Won/Lost tidak pernah expired
+  - **Tag Hitung Mundur Penghapusan:** Kartu expired memiliki strip penuh di tepi atas kartu berisi sisa hari sebelum deal dihapus, yaitu **30 hari setelah `expected_close_date`**
+    - teks: "Expired · Deleted in N days", "Deleted tomorrow", "Deleted today", atau "Scheduled for deletion" bila tanggal hapus sudah lewat;
+    - warna kuning saat sisa lebih dari 7 hari, merah saat 7 hari atau kurang
+  - **Catatan:** Tag ini hanya tampilan. Proses penghapusan otomatis tidak tercantum di dokumentasi API, sehingga perlu dikonfirmasi ke BE
+  - **Impact:** Sales langsung tahu deal mana yang perlu ditindaklanjuti sebelum terhapus
+  - **Technical Notes:**
+    - `isDealExpired`, `daysUntilDeletion` dan `EXPIRED_DEAL_RETENTION_DAYS` di `lib/helper/transformPipeline.ts`
+    - field `is_expired` dan `days_until_deletion` di tipe `Deal`
+    - strip di `DealCard.tsx` (Card `overflow-hidden` dan `pt-0` agar strip menempel di tepi atas)
+
+#### 🐛 Bug Fix Filter Assigned To Tidak Ter-update
+
+- **Deskripsi:**
+  - **Masalah:** Setelah membuat deal untuk user yang belum punya deal, nama user tersebut baru muncul di filter Assigned To setelah halaman di-reload manual
+  - **Root Cause:** Daftar filter (`GET /pipelines/active-users`) hanya dimuat sekali saat halaman Pipeline dibuka
+  - **Solusi:** Daftar filter kini dimuat ulang setelah Add Deal, Update Deal, dan perpindahan stage berhasil. Pemuatan dilakukan tanpa loading global, sehingga board tidak menampilkan skeleton
+  - **Impact:** Filter selalu sesuai dengan data deal terbaru tanpa reload
+  - **Technical Notes:** opsi `isSilent` pada `fetchActiveUser` di `lib/store/pipeline/index.ts`
+
+#### ⏳ Menunggu Backend
+
+- **Deskripsi:**
+  - **Notifikasi 5 Hari Sebelum Expired:** Notifikasi ke user 5 hari sebelum deal melewati `expected_close_date`. Menunggu BE
+  - **Notifikasi 5 Hari Sebelum Dihapus:** Notifikasi ke user 5 hari sebelum deal expired dihapus (30 hari setelah `expected_close_date`). Menunggu BE
+  - **Assign To:** Menunggu BE menambahkan `assigned_to` di `POST` dan `PUT /pipelines`, `lead_id` di `POST /pipelines`, serta sinkronisasi assignee ke lead. FE sudah siap
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **27 Test Baru:**
+    - urutan kanban per kolom, status expired dan hitung mundur penghapusan (`lib/helper/transformPipeline.test.ts`, 13);
+    - filter Assigned To dimuat ulang setelah Add, Update dan pindah stage tanpa loading global (`lib/store/pipeline/pipelineStore.test.ts`, 4);
+    - mapping lead ke pilihan Client/Account (`components/pipeline/dealLeadOptions.test.ts`, 4);
+    - aturan role Assign To (`components/pipeline/dealAssignment.test.ts`, 3);
+    - parameter request daftar leads (`lib/api/pipelines.leads.test.ts`, 3)
+  - **Total:** 38 file test, 496 test lolos
+
+---
+
+## [1.107.3] - 2026-10-26
+
+### Detail Versi 1.107.3
+
+#### 🐛 Bug Fix Import History: Loading Berulang dan Progress Tidak Ter-update
+
+- **Deskripsi:**
+  - **Tanpa Loading Saat Auto-refresh:** Modal Import History (halaman Subscribers dan detail Mailing List) tidak lagi menampilkan loading setiap kali auto-refresh berjalan. Loading hanya muncul saat modal pertama dibuka, saat ganti halaman, atau saat mencari. Ikon tombol Refresh tetap berputar sebagai tanda data sedang diperbarui
+  - **Progress dan Status Live:** Angka Processed, Created, Skipped dan Failed serta status job (misalnya Processing → Completed) kini langsung berubah di tabel setiap auto-refresh, tanpa perlu menutup dan membuka ulang modal, dan tanpa posisi scroll berpindah
+  - **Pagination Bernomor:** Tabel kembali memakai nomor halaman (10/25/50/100 per halaman) seperti desain awal modal ini, menggantikan "muat lagi" saat di-scroll
+  - **Root Cause:**
+    - tabel menerima `isLoading || isFetching`, padahal `isFetching` menyala setiap kali polling berjalan (sudah ada sejak modal dibuat);
+    - sejak lazy pagination SuperTable (3 Sep 2026), `pagination: true` berarti infinite scroll. Mode ini hanya mengganti baris jika jumlah baris atau id baris pertama/terakhir berubah, sehingga progress job yang sama tidak pernah tampil. Auto-refresh juga hanya memuat ulang potongan data terakhir yang dimuat
+  - **Impact:** User bisa memantau proses import secara real time tanpa tabel berkedip, dan status di tabel selalu sesuai dengan daftar subscriber yang ikut diperbarui saat job selesai
+  - **Technical Notes:**
+    - `isLoading={isLoading}` dan `features.pagination: "pages"` di `components/email-marketing/subscribers/modals/ImportHistoryModal.tsx`
+    - mode `pages` membuat SuperTable menonaktifkan `useLazyRows`, sehingga baris langsung mengikuti data terbaru dari polling
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **2 Test Baru:**
+    - mode infinite scroll tetap menampilkan progress lama saat job yang sama di-polling (dokumentasi penyebab);
+    - mode halaman langsung menampilkan progress terbaru tanpa loading
+  - **Technical Notes:** `components/ui/super-table/hooks/useLazyRows.test.ts`
+
+---
+
 ## [1.107.2] - 2026-10-24
 
 ### Detail Versi 1.107.2

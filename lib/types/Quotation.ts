@@ -6,6 +6,7 @@
 // `formatRupiah`. Nothing in the web recomputes a total - the server does.
 
 import type { PriceListBrief } from './PriceList';
+import type { QuotationTemplateSnapshot } from './QuotationTemplate';
 
 export type DiscountType = 'percent' | 'amount';
 
@@ -40,7 +41,7 @@ export interface QuotationLineProduct {
    *
    * Without them the PDF's "variant values printed beside the name snapshot"
    * (I10) and the form's variant chip row (I8) have NO WIRE PATH for a saved
-   * quotation: `QuotationPdfDocument` reads `item.product?.custom_fields` from
+   * quotation: the PDF context (`lib/quotation/templateContext.ts`) reads `item.product?.custom_fields` from
    * exactly this object.
    */
   variant_values?: Record<string, unknown>;
@@ -284,6 +285,17 @@ export interface Quotation {
   exchange_rate_used?: string | null;
   exchange_rate_date?: string | null;
   promo_discount_total?: string | null;
+  /**
+   * The PDF template (API v1.152.0). `null` on a quotation made before
+   * templates existed, which then renders with the company default.
+   */
+  template_id?: string | null;
+  /**
+   * The template frozen when the quotation first left draft. Detail response
+   * only, null while draft / pending approval. When present it is what the
+   * PDF renders, so the customer's copy never changes with a later default.
+   */
+  template_snapshot?: QuotationTemplateSnapshot | null;
 }
 
 // ── Phase 4: approvals ─────────────────────────────────────────────────────
@@ -514,6 +526,8 @@ export interface QuotationDefaults {
    *  server resolves both, so no screen re-derives a grant from a role name. */
   can_approve?: boolean;
   can_view_margin?: boolean;
+  /** The company's default PDF template, already resolved (API v1.152.0). */
+  template_id?: string | null;
 }
 
 /** One line as the API accepts it (QuotationItemRequest, `extra="forbid"`). No `price`. */

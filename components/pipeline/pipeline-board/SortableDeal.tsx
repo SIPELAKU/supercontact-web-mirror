@@ -8,9 +8,11 @@ import React from "react";
 type SortableDealProps = {
   id: UniqueIdentifier;
   children: React.ReactNode;
+  /** A closed (Won/Lost) deal can't be dragged anywhere. */
+  disabled?: boolean;
 };
 
-function SortableDealComponent({ id, children }: SortableDealProps) {
+function SortableDealComponent({ id, children, disabled = false }: SortableDealProps) {
   const {
     attributes,
     listeners,
@@ -18,7 +20,7 @@ function SortableDealComponent({ id, children }: SortableDealProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id })
+  } = useSortable({ id, disabled })
 
   const style = {
     transform: CSS.Transform.toString(transform),

@@ -4,6 +4,8 @@
 import type {
   CampaignDetailResponse,
   CampaignsResponse,
+  CampaignSubscriber,
+  CampaignSubscribersQuery,
   CampaignSubscribersResponse,
   CreateCampaignData,
   UpdateCampaignData
@@ -331,23 +333,50 @@ export async function duplicateCampaigns(token: string, campaignIds: string[]): 
     }
   }
 
+/** One page of the subscribers table; filters and sort are sent only when set. */
 export async function fetchCampaignSubscribers(
   token: string,
   campaignId: string,
-  page: number = 1,
-  limit: number = 10,
-  search?: string
+  { page = 1, limit = 10, search, status, sortBy, sortOrder }: CampaignSubscribersQuery = {}
 ): Promise<CampaignSubscribersResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
-  if (search) {
-    queryParams.append('search', search);
+  if (search) queryParams.append('search', search);
+  if (status) queryParams.append('status', status);
+  if (sortBy) {
+    queryParams.append('sort_by', sortBy);
+    queryParams.append('sort_order', sortOrder ?? 'desc');
   }
+  return requestCampaignSubscribers(token, campaignId, queryParams);
+}
+
+/**
+ * Every subscriber a stats card counts, for its export: `status` is
+ * cumulative like the cards (Delivered also holds those who opened; Bounced
+ * also holds the failed), and `is_limit=false` returns the whole list.
+ */
+export async function fetchAllCampaignSubscribers(
+  token: string,
+  campaignId: string,
+  status: string
+): Promise<CampaignSubscriber[]> {
+  const queryParams = new URLSearchParams({ status, is_limit: 'false' });
+  // A whole list can take longer to build than one page.
+  const json = await requestCampaignSubscribers(token, campaignId, queryParams, 120_000);
+  return json.data?.contacts ?? [];
+}
+
+async function requestCampaignSubscribers(
+  token: string,
+  campaignId: string,
+  queryParams: URLSearchParams,
+  timeout?: number
+): Promise<CampaignSubscribersResponse> {
   const url = `${process.env.NEXT_PUBLIC_API_URL}/campaigns/${campaignId}/subscribers?${queryParams.toString()}`;
 
-  logger.info("Making GET request to fetch campaign subscribers", { url, campaignId, page, limit });
+  logger.info("Making GET request to fetch campaign subscribers", { url, campaignId });
 
   try {
     const res = await fetchWithTimeout(url, {
@@ -356,6 +385,7 @@ export async function fetchCampaignSubscribers(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
+      timeout,
     });
 
     let json;

@@ -5,6 +5,7 @@ import type { BroadcastRecipient } from '@/lib/types/whatsapp-marketing';
 import {
   EXPORTABLE_STATUSES,
   RECIPIENT_EXPORT_COLUMNS,
+  recipientExportColumns,
   recipientExportFileName,
   statusLabel,
 } from './recipientExport';
@@ -27,8 +28,25 @@ const recipient = (overrides: Partial<BroadcastRecipient> = {}): BroadcastRecipi
   }) as BroadcastRecipient;
 
 describe('recipient export', () => {
-  it('exports Sent, Delivered and Read - not Failed', () => {
-    expect(EXPORTABLE_STATUSES).toEqual(['sent', 'delivered', 'read']);
+  it('exports every card: Sent, Delivered, Read and Failed', () => {
+    expect(EXPORTABLE_STATUSES).toEqual(['sent', 'delivered', 'read', 'failed']);
+  });
+
+  it('adds why each one failed to the Failed file only', () => {
+    const failed = recipient({ status: 'failed', error_message: 'Invalid phone number' });
+
+    expect(toRows(recipientExportColumns('failed'), [failed])).toEqual([
+      ['Name', 'Phone Number', 'Status', 'Email', 'Company', 'Updated At', 'Error Message'],
+      ['Budi Santoso', '6281234567890', 'Failed', 'budi@example.com', 'PT Maju', '2026-10-24 09:30', 'Invalid phone number'],
+    ]);
+    for (const status of ['sent', 'delivered', 'read'] as const) {
+      expect(recipientExportColumns(status)).toBe(RECIPIENT_EXPORT_COLUMNS);
+    }
+  });
+
+  it('leaves the error empty when the API sent none', () => {
+    const row = toRows(recipientExportColumns('failed'), [recipient({ status: 'failed', error_message: undefined })])[1];
+    expect(row.at(-1)).toBe('');
   });
 
   it('starts with the recipients table columns in its order, then the extra details', () => {

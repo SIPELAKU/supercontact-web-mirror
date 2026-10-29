@@ -1,14 +1,34 @@
 // lib/types/whatsapp-marketing.ts
 
 export type WaRecipientType = 'subscribers' | 'whatsapp';
-// Matches the backend sort_by contract (unknown keys silently fall back to default)
-// The sort keys each list endpoint accepts (API 1.144.2). Unknown keys are
-// not rejected, they fall back to the default order - so the tables only
-// offer sorting on these columns and toApiSort only sends these.
+// The sort keys each list endpoint accepts (API 1.154.1; the same on PROD
+// 1.144.3). Unknown keys are not rejected, they fall back to the default
+// order - so the tables only offer sorting on these columns and toApiSort
+// only sends these.
 /** GET /recipients */
-export const WA_RECIPIENT_SORT_KEYS = ['name', 'email', 'company', 'created_at', 'updated_at'] as const;
+export const WA_RECIPIENT_SORT_KEYS = [
+  'name',
+  'email',
+  'phone_number',
+  'company',
+  'position',
+  'created_at',
+  'updated_at',
+] as const;
 /** GET /broadcasts */
-export const BROADCAST_SORT_KEYS = ['name', 'status', 'created_at'] as const;
+export const BROADCAST_SORT_KEYS = ['name', 'status', 'total_target', 'created_at'] as const;
+/** GET /broadcast-templates */
+export const BROADCAST_TEMPLATE_SORT_KEYS = [
+  'friendly_name',
+  'language',
+  'whatsapp_approval_status',
+  'created_at',
+  'updated_at',
+] as const;
+/** GET /broadcast-groups */
+export const BROADCAST_GROUP_SORT_KEYS = ['name', 'recipient_count', 'created_at'] as const;
+/** The `status` filter of GET /broadcasts. */
+export const BROADCAST_STATUSES = ['Draft', 'In Queue', 'Sent', 'Failed'] as const;
 /** GET /broadcasts/{id}/recipients */
 export const BROADCAST_RECIPIENT_SORT_KEYS = [
   'name',
@@ -23,6 +43,8 @@ export const BROADCAST_RECIPIENT_SORT_KEYS = [
 ] as const;
 
 export type WaRecipientSortBy = (typeof WA_RECIPIENT_SORT_KEYS)[number];
+export type BroadcastTemplateSortBy = (typeof BROADCAST_TEMPLATE_SORT_KEYS)[number];
+export type BroadcastGroupSortBy = (typeof BROADCAST_GROUP_SORT_KEYS)[number];
 export type WaRecipientSortOrder = 'asc' | 'desc';
 
 export interface WaRecipient {
@@ -102,6 +124,10 @@ export interface GroupBroadcast {
 export interface GroupBroadcastsParams {
   page?: number;
   limit?: number;
+  /** Matches the group name. */
+  search?: string;
+  sort_by?: BroadcastGroupSortBy;
+  sort_order?: 'asc' | 'desc';
 }
 
 export interface GroupBroadcastsResponse {
@@ -304,6 +330,23 @@ export type BroadcastTemplateApprovalStatus =
 
 export type BroadcastTemplateCategory = 'Marketing' | 'Utility' | 'Authentication';
 
+/** Every approval status, in the order a template moves through them; the list filter's options. */
+export const BROADCAST_TEMPLATE_APPROVAL_STATUSES: BroadcastTemplateApprovalStatus[] = [
+  'Not submitted',
+  'Received',
+  'Pending',
+  'Approved',
+  'Rejected',
+  'Paused',
+  'Disabled',
+];
+
+/** The languages a template is written in here; the create form and the list filter. */
+export const TEMPLATE_LANGUAGES = [
+  { label: 'English', value: 'en' },
+  { label: 'Indonesian', value: 'id' },
+];
+
 export type BroadcastChannel =
   | 'WhatsApp business initiated'
   | 'WhatsApp user initiated'
@@ -338,8 +381,14 @@ export interface BroadcastTemplateApprovalResponse {
 export interface BroadcastTemplatesParams {
   page?: number;
   limit?: number;
+  /** Matches the template name or its SID. */
   search?: string;
   account_id?: string;
+  status?: BroadcastTemplateApprovalStatus;
+  /** A template language code ("id", "en"). */
+  language?: string;
+  sort_by?: BroadcastTemplateSortBy;
+  sort_order?: 'asc' | 'desc';
 }
 
 export interface BroadcastTemplatesResponse {

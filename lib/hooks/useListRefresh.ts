@@ -14,6 +14,10 @@
 // from it (SuperTable's `restartKey`). And because the page does that, the
 // mutation hooks must not refetch the active batch as well - with several
 // batches loaded that was a second, wasted request - hence markListsStale.
+//
+// A list that polls (Import History) has the same problem on every tick: the
+// rows change in place, so a plain refetch never shows them. `reload` is the
+// polling version of the same cure.
 
 import { useMemo, useRef, useState } from 'react';
 import { useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
@@ -88,7 +92,17 @@ export function createListRefresher({
   /** For a modal that saved on its own (create, edit, import) and reports success. */
   const refreshAfterSave = () => run(() => refresh({ restart: true }));
 
-  return { run, refresh, refreshAfterSave };
+  /**
+   * For a list that polls, and its Refresh button: back to batch 1 with fresh
+   * rows, every time. With one batch loaded it is silent - the rows change
+   * once the new batch 1 has landed, with no skeleton. Scrolled further, the
+   * table moves back to batch 1 first and shows its skeleton until that batch
+   * arrives; the batches below it would only have gone stale.
+   */
+  const reload = () =>
+    getBatchIndex() > 0 ? run(() => refresh({ restart: true })) : refresh({ restart: true });
+
+  return { run, refresh, refreshAfterSave, reload };
 }
 
 /**
@@ -109,6 +123,9 @@ export function createListRefresher({
  *
  *   // a modal's onSuccess
  *   const handleSaved = () => listRefresh.refreshAfterSave();
+ *
+ *   // a polled list (see usePolling)
+ *   usePolling(listRefresh.reload, intervalMs);
  */
 export function useListRefresh({
   batchIndex,

@@ -29,6 +29,10 @@ export interface Deal {
   is_delete: boolean;
   wonDate?: string;
   lostDate?: string;
+  /** The API's `status === "expired"`. */
+  is_expired?: boolean;
+  /** Expired deals only: the API's `days_until_deletion` (0 = today). */
+  days_until_deletion?: number;
 }
 
 interface Stats {
@@ -61,7 +65,13 @@ export interface DealCardProps {
   lostDate?: string
   probability_of_close: number
   is_delete: boolean
+  is_expired?: boolean
+  days_until_deletion?: number
   stageName: string;
+  /** Just moved to another stage, waiting for the board to reload. */
+  isSaving?: boolean
+  /** Just moved: shown for a moment where it landed. */
+  isHighlighted?: boolean
 }
 
 export interface AddDealModalProps {

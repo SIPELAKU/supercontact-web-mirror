@@ -72,13 +72,83 @@ interface GetState {
 
     setSearchQuery: (val?: string) => void;
 
-    fetchQuotations: (params?: Partial<FetchQuotationParams>) => Promise<void>;
+    /**
+     * Loads one page of the list. An identical request already running is
+     * reused unless `force` is set (a refetch after a write must not get the
+     * answer of a request sent before it).
+     */
+    fetchQuotations: (
+        params?: Partial<FetchQuotationParams>,
+        options?: { force?: boolean }
+    ) => Promise<void>;
 
     setEditId: (val: string) => void;
 
     setPage: (page: number) => void;
     setLimit: (limit: number) => void;
 }
+
+/**
+ * The GET /quotations query for `params`, falling back to the store's own
+ * page, filters and search for anything the caller leaves out.
+ */
+export function buildQuotationListQuery(
+    params: Partial<FetchQuotationParams> | undefined,
+    state: Pick<GetState, "pagination" | "dateRangeFilter" | "statusFilter" | "searchQuery">
+): RequestBody {
+    const { pagination } = state;
+
+    const query: RequestBody = {
+        page: params?.page ?? pagination.page,
+        limit: params?.limit ?? pagination.limit,
+    };
+    // Explicit client values win, each on its own: the date-range
+    // filter can hand over only `from` ("sejak") or only `to`
+    // ("sampai"), and the Kedaluwarsa translation
+    // (quotationListFilterQuery) sends `date_to` alone. Requiring
+    // both used to drop such a filter silently.
+    if (params?.date_from || params?.date_to) {
+        if (params.date_from) query.date_from = params.date_from;
+        if (params.date_to) query.date_to = params.date_to;
+    } else {
+        const dateRange = params?.dateRange ?? state.dateRangeFilter;
+        if (dateRange && dateRange !== "all") {
+            const range = getDateRange(dateRange);
+            if (range) {
+                query.date_from = String(range.start);
+                query.date_to = String(range.end);
+            }
+        }
+    }
+
+    const status = params?.quotation_status ?? state.statusFilter;
+    if (status && status.trim() !== "" && status.trim() !== "all") {
+        // Both vocabularies are accepted server-side; send the
+        // canonical one so a bookmarked `Pending` still finds `sent`.
+        query.quotation_status = normalizeQuotationStatus(status.trim());
+    }
+
+    if (params?.sort_by) {
+        query.sort_by = params.sort_by;
+        query.sort_order = params.sort_order ?? "asc";
+    }
+
+    const search = params?.search ?? state.searchQuery;
+    if (search && search.trim() !== "") {
+        query.search = search;
+    }
+
+    return query;
+}
+
+// The list request in flight. Opening the page used to send the same request
+// up to four times (the screen's own mount fetch and the table's announced
+// state, each run twice by React Strict Mode in dev); an identical request is
+// now answered by the one already running. `listRequestSeq` makes the latest
+// request the only one whose answer is kept, so a slow older response (an
+// earlier search, say) can never overwrite a newer one.
+let listRequestSeq = 0;
+let listRequestInFlight: { key: string; promise: Promise<void> } | null = null;
 
 export const useGetQuotationstore = create<GetState>((set, get) => ({
     listQuotations: [],
@@ -114,74 +184,46 @@ export const useGetQuotationstore = create<GetState>((set, get) => ({
         pagination: { ...state.pagination, page: 1 }
     })),
 
-    fetchQuotations: async (params) => {
-        try {
-            set({ loading: true, error: null });
+    fetchQuotations: (params, options) => {
+        const query = buildQuotationListQuery(params, get());
+        const key = JSON.stringify(query);
+        if (!options?.force && listRequestInFlight?.key === key) return listRequestInFlight.promise;
 
-            const { pagination } = get();
+        const seq = ++listRequestSeq;
+        const isLatest = () => seq === listRequestSeq;
+        const promise = (async () => {
+            try {
+                set({ loading: true, error: null });
 
-            const query: RequestBody = {
-                page: params?.page ?? pagination.page,
-                limit: params?.limit ?? pagination.limit,
-            };
-            // Explicit client values win, each on its own: the date-range
-            // filter can hand over only `from` ("sejak") or only `to`
-            // ("sampai"), and the Kedaluwarsa translation
-            // (quotationListFilterQuery) sends `date_to` alone. Requiring
-            // both used to drop such a filter silently.
-            if (params?.date_from || params?.date_to) {
-                if (params.date_from) query.date_from = params.date_from;
-                if (params.date_to) query.date_to = params.date_to;
-            } else {
-                const dateRange = params?.dateRange ?? get().dateRangeFilter;
-                if (dateRange && dateRange !== "all") {
-                    const range = getDateRange(dateRange);
-                    if (range) {
-                        query.date_from = String(range.start);
-                        query.date_to = String(range.end);
-                    }
+                const res = await api.get("/quotations", {
+                    params: query,
+                });
+                if (!isLatest()) return;
+
+                const data = res.data.data;
+
+                set({
+                    listQuotations: data.quotations,
+                    pagination: {
+                        page: data.page,
+                        limit: query.limit,
+                        total: data.total,
+                        totalPages: data.total_pages,
+                    },
+                });
+            } catch (err) {
+                if (!isLatest()) return;
+                console.error(err);
+                set({ error: "Failed to fetch data" });
+            } finally {
+                if (isLatest()) {
+                    set({ loading: false });
+                    listRequestInFlight = null;
                 }
             }
-
-            const status = params?.quotation_status ?? get().statusFilter;
-            if (status && status.trim() !== "" && status.trim() !== "all") {
-                // Both vocabularies are accepted server-side; send the
-                // canonical one so a bookmarked `Pending` still finds `sent`.
-                query.quotation_status = normalizeQuotationStatus(status.trim());
-            }
-
-            if (params?.sort_by) {
-                query.sort_by = params.sort_by;
-                query.sort_order = params.sort_order ?? "asc";
-            }
-
-            const search = params?.search ?? get().searchQuery;
-            if (search && search.trim() !== "") {
-                query.search = search;
-            }
-
-            const res = await api.get("/quotations", {
-                params: query,
-            });
-
-            const data = res.data.data;
-
-            set({
-                listQuotations: data.quotations,
-                pagination: {
-                    page: data.page,
-                    limit: query.limit,
-                    total: data.total,
-                    totalPages: data.total_pages,
-                },
-            });
-
-        } catch (err) {
-            console.error(err);
-            set({ error: "Failed to fetch data" });
-        } finally {
-            set({ loading: false });
-        }
+        })();
+        listRequestInFlight = { key, promise };
+        return promise;
     },
 
     setPage: (page) => {

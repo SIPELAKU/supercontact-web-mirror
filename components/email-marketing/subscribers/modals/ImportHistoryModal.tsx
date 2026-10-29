@@ -6,7 +6,9 @@ import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw, History } from "lucide
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable } from "@/components/ui/super-table";
 import type { MRT_ColumnDef } from "@/components/ui/super-table/types";
-import { useBulkJobs, useActionBulkJob } from "@/lib/hooks/useSubscribers";
+import { useBulkJobs, useActionBulkJob, bulkJobsKey } from "@/lib/hooks/useSubscribers";
+import { useListRefresh } from "@/lib/hooks/useListRefresh";
+import { usePolling } from "@/lib/hooks/usePolling";
 import { BulkJob } from "@/lib/types/email-marketing";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
@@ -29,9 +31,13 @@ const INTERVAL_OPTIONS = [
   { value: 30000, label: "30 Second (Slow)" },
 ];
 
+// Rows per batch. The `limit` state and the table both start from it: when
+// they disagree the list is fetched twice on open, once per size.
+const BATCH_SIZE = 25;
+
 const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey, mailingListIds }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(BATCH_SIZE);
   const [search, setSearch] = useState("");
 
   const [refetchInterval, setRefetchInterval] = useState<number | false>(5000);
@@ -59,9 +65,31 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
     }
   };
 
+  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, mailingListIds);
+
+  // Every refresh - the auto-refresh tick and the Refresh button - starts the
+  // list over from batch 1 with fresh rows. The infinite-scroll table only
+  // replaces a batch when its length or first/last id changes, so a plain
+  // refetch would never show a job's progress moving, and batches scrolled in
+  // before the refresh would be stale anyway.
+  const listRefresh = useListRefresh({
+    batchIndex: page - 1,
+    firstBatchKey: bulkJobsKey(1, limit, search, targetFilter, mailingListIds),
+  });
   // Jangan lakukan polling sebelum client mounted untuk mencegah mismatch
-  const activeInterval = mounted ? refetchInterval : false;
-  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, activeInterval, mailingListIds);
+  usePolling(listRefresh.reload, mounted ? refetchInterval : false);
+
+  // Closed, the table is gone but the polling goes on, so the subscriber list
+  // still refreshes when a job completes (below). Watch the newest jobs then,
+  // unfiltered, not the batch that was last on screen. The table reopens with
+  // these same defaults, so reopening fetches once, not once per change.
+  useEffect(() => {
+    if (open) return;
+    setPage(1);
+    setLimit(BATCH_SIZE);
+    setSearch("");
+  }, [open]);
+
   const actionMutation = useActionBulkJob();
   const queryClient = useQueryClient();
   const handledJobsRef = React.useRef<Set<string>>(new Set());
@@ -95,6 +123,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
       {
         onSuccess: () => {
           notify.success(`Action ${action} triggered successfully.`);
+          // The job's new status only shows after a restart from batch 1.
+          void listRefresh.reload();
         },
         onError: (error: any) => {
           notify.error(`Failed to trigger action ${action}`, {
@@ -106,7 +136,9 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
   };
 
   const bulkJobs = data?.data?.items || [];
-  const totalCount = data?.data?.total || 0;
+  // Undefined while the next batch loads, so the table keeps the last total
+  // in its footer instead of flashing "0".
+  const totalCount = data?.data?.total;
 
   const columns = useMemo<MRT_ColumnDef<BulkJob>[]>(
     () => [
@@ -305,7 +337,12 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
           data={bulkJobs}
           columns={columns}
           rowCount={totalCount}
-          isLoading={isLoading || isFetching}
+          // The skeleton shows on the first load of a search, and when a
+          // refresh moves the table back up from a later batch. A refresh on
+          // batch 1 swaps the rows in place.
+          isLoading={isLoading || listRefresh.isRefreshing}
+          restartKey={listRefresh.restartKey}
+          initialState={{ pagination: { pageIndex: 0, pageSize: BATCH_SIZE } }}
           onRetry={() => refetch()}
           renderEmptyState={() => (
             <EmptyState
@@ -331,6 +368,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
             }
           }}
           features={{
+            // Infinite scroll. Polled progress stays current only because
+            // every refresh restarts it from batch 1 (listRefresh.reload).
             pagination: true,
             globalFilter: true,
             columnFilters: false,
@@ -344,8 +383,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <AppButton
                 variantStyle="outline"
-                onClick={() => refetch()}
-                startIcon={<RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />}
+                onClick={() => void listRefresh.reload()}
+                startIcon={<RefreshCw size={16} className={isFetching || listRefresh.isRefreshing ? "animate-spin" : ""} />}
               >
                 Refresh
               </AppButton>

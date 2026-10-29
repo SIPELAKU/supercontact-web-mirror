@@ -5,6 +5,7 @@
 // module scope, as in SuperTable's useTableExport: it is ~400 kB the page
 // should not pay for until someone actually exports.
 
+import { format } from 'date-fns';
 import type * as XLSXModule from 'xlsx';
 
 export type ExportFileFormat = 'csv' | 'excel';
@@ -13,6 +14,25 @@ export const EXPORT_FILE_EXTENSION: Record<ExportFileFormat, string> = {
   csv: 'csv',
   excel: 'xlsx',
 };
+
+/** "sent" -> "Sent": a status as file names, menus and messages show it. */
+export const statusLabel = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
+
+/**
+ * `<Prefix>_<name>_<Label>_<yyyy-MM-dd>.<ext>`, e.g.
+ * `Broadcast_Promo_Oktober_Sent_2026-10-24.xlsx`. The name keeps only letters
+ * and digits, so the file saves anywhere; nothing left = `Untitled`.
+ */
+export function exportFileName(
+  prefix: string,
+  name: string,
+  label: string,
+  fileFormat: ExportFileFormat,
+  date = new Date()
+): string {
+  const safeName = name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Untitled';
+  return `${prefix}_${safeName}_${label}_${format(date, 'yyyy-MM-dd')}.${EXPORT_FILE_EXTENSION[fileFormat]}`;
+}
 
 export interface ExportColumn<T> {
   header: string;

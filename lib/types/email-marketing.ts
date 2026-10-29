@@ -20,6 +20,34 @@ export interface CampaignSubscriber extends Subscriber {
   error_message: string | null;
 }
 
+/** The `sort_by` keys `GET /campaigns/{id}/subscribers` accepts; others fall back to its default order. */
+export const CAMPAIGN_SUBSCRIBER_SORT_KEYS = [
+  'name',
+  'email',
+  'phone_number',
+  'company',
+  'position',
+  'address',
+  'status',
+  'created_at',
+  'updated_at',
+] as const;
+export type CampaignSubscriberSortBy = (typeof CAMPAIGN_SUBSCRIBER_SORT_KEYS)[number];
+
+/**
+ * One request of a campaign's subscribers table, as a single object so a new
+ * filter is one more field, not one more positional argument down the chain.
+ * `status` is cumulative like the stats cards.
+ */
+export interface CampaignSubscribersQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: CampaignSubscriber['status'];
+  sortBy?: CampaignSubscriberSortBy;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface SubscribersResponse {
   success: boolean;
   data: {

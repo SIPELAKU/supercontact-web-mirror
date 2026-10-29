@@ -15,16 +15,28 @@ import type {
 // Fetchers
 // ---------------------------------------------------------------------------
 
-async function fetchBroadcastTemplates(
-  token: string,
-  params: BroadcastTemplatesParams
-): Promise<BroadcastTemplatesResponse> {
+/** The list query; filters and the sort are sent only when set. */
+export function broadcastTemplatesQuery(params: BroadcastTemplatesParams): URLSearchParams {
   const query = new URLSearchParams();
 
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
   if (params.search) query.set('search', params.search);
   if (params.account_id) query.set('account_id', params.account_id);
+  if (params.status) query.set('status', params.status);
+  if (params.language) query.set('language', params.language);
+  if (params.sort_by) {
+    query.set('sort_by', params.sort_by);
+    query.set('sort_order', params.sort_order ?? 'desc');
+  }
+  return query;
+}
+
+async function fetchBroadcastTemplates(
+  token: string,
+  params: BroadcastTemplatesParams
+): Promise<BroadcastTemplatesResponse> {
+  const query = broadcastTemplatesQuery(params);
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcast-templates?${query.toString()}`;
 

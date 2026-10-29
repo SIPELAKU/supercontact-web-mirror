@@ -20,6 +20,7 @@ import type {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Cookies from 'js-cookie';
 import { UpdateSubscriberData } from '@/lib/api/email-marketing/subscribers';
+import { markListsStale } from './useListRefresh';
 
 export function useSubscribers(
   page: number = 1,
@@ -42,15 +43,20 @@ export function useSubscribers(
   });
 }
 
-export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], refetchInterval: number | false = 5000, mailingListIds?: string[]) {
+export function bulkJobsKey(page: number, limit: number, search?: string, target?: string[], mailingListIds?: string[]) {
+  return ['bulkJobs', page, limit, search, target, mailingListIds] as const;
+}
+
+// No refetchInterval: the Import History modal polls with useListRefresh's
+// reload, which refetches batch 1 and restarts its lazy table.
+export function useBulkJobs(page: number = 1, limit: number = 10, search?: string, target?: string[], mailingListIds?: string[]) {
   return useQuery<BulkJobsResponse>({
-    queryKey: ['bulkJobs', page, limit, search, target, mailingListIds],
+    queryKey: bulkJobsKey(page, limit, search, target, mailingListIds),
     queryFn: () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return fetchBulkJobs(token, page, limit, search, target, mailingListIds);
     },
-    refetchInterval: refetchInterval,
   });
 }
 
@@ -64,7 +70,8 @@ export function useActionBulkJob() {
       return actionBulkJob(token, jobId, action);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bulkJobs'] });
+      // The Import History modal reloads its own list (useListRefresh).
+      markListsStale(queryClient, ['bulkJobs']);
       queryClient.invalidateQueries({ queryKey: ['subscribers'] });
     },
   });

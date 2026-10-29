@@ -9,6 +9,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.2] - 2026-10-29
+
+### Detail Versi 1.116.2
+
+#### 🐛 Save Pengaturan Web Widget Mematikan Shadow Mode
+
+- **Deskripsi:**
+  - **Masalah:** Di **Settings › Web Widget**, setiap klik **Save Settings** diam-diam mematikan **Shadow mode** (Bot Playground › Shadow review) dan izin aplikasi mobile (`allow_native_apps`, belum ada tombolnya di FE). Admin yang menyalakan Shadow mode lalu mengubah, misalnya, judul widget akan kehilangan Shadow mode tanpa pemberitahuan
+  - **Root Cause:** formulir pengaturan hanya mengirim field yang ada di formulir. Endpoint `PUT /accounts/{id}/web-widget-config` mengganti seluruh config, sehingga field yang tidak dikirim kembali ke nilai default BE (`false`). Field ini ada di BE DEV dan PROD, jadi bug ini juga terjadi di production
+  - **Perbaikan:** setiap penyimpanan config widget kini berangkat dari config yang tersimpan, lalu hanya field yang diubah yang ditimpa. Berlaku untuk Save Settings, tombol Shadow mode dan "apply config" di Bot Playground
+  - **Impact:** Shadow mode dan izin aplikasi mobile tetap seperti yang diatur, apa pun yang disimpan dari halaman ini
+  - **Technical Notes:**
+    - helper `widgetConfigPayload(stored, changes)` di `lib/utils/webWidgetConfig.ts`, dipakai `WebWidgetConfigPanel.tsx` dan `BotPlaygroundPanel.tsx` (menggantikan dua salinan `{ id, account_id, ...rest }`)
+    - tipe `WebWidgetConfig` ditambah `allow_native_apps`
+    - BE akan menambah pengaman serupa di sisinya (PUT hanya mengubah field yang dikirim)
+
+#### 🐛 Snippet Embed Web Widget Tidak Jalan di Website Klien
+
+- **Deskripsi:**
+  - **Masalah:** snippet di **Settings › Web Widget › Connection & Embed** berisi `data-api-url="/api/proxy"`, yaitu alamat relatif. Di website klien (WordPress, Shopify, HTML biasa) alamat itu mengarah ke domain klien sendiri, sehingga config widget gagal dimuat dan bubble chat tidak pernah muncul. Snippet juga tidak memuat `data-ws-url`, sehingga balasan agent tidak bisa masuk secara realtime. Widget di website SmartSales sendiri tidak terkena karena memakai alamat dari domain yang sama
+  - **Perbaikan:**
+    - snippet kini berisi alamat API lengkap, misalnya `data-api-url="https://prod-supersales.smartcore.id/api/v1"`, ditambah `data-ws-url="wss://prod-supersales.smartcore.id/api/v1"`;
+    - alamat diturunkan dari `NEXT_PUBLIC_WS_URL` (`wss://` → `https://`), yang sudah terisi di dev, staging dan prod. Nilai env tidak diubah, fitur lain yang memakainya (chat, notifikasi, inbox realtime, widget website marketing) tidak terpengaruh;
+    - bila environment tidak punya alamat absolut, halaman menampilkan peringatan dan snippet tidak dibuat, bukan snippet yang tidak akan jalan
+  - **Kenapa tidak lewat proxy FE:** proxy `/api/proxy` tidak meneruskan header `Origin`/`Referer`, sehingga BE menolak widget yang mengisi Allowed Domains
+  - **Impact:** klien yang memasang snippet di website mereka mendapatkan bubble chat yang tersambung dan balasan agent yang masuk tanpa refresh. Klien yang sudah terlanjur memasang snippet lama perlu menyalin snippet yang baru
+  - **Technical Notes:**
+    - helper `widgetEmbedUrls` di `lib/utils/widgetEmbed.ts`, dipakai `components/omnichannel/WebWidgetEmbedGuide.tsx`
+    - CORS endpoint publik widget di BE dev dan prod sudah dicek menerima domain luar
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **10 Test Baru:**
+    - `lib/utils/webWidgetConfig.test.ts` (4): field yang tidak ada di formulir (Shadow mode, aplikasi mobile) tetap terkirim, nilai yang diubah menang atas nilai tersimpan, `id`/`account_id` tidak ikut dikirim, tanpa config tersimpan hanya perubahan yang dikirim;
+    - `lib/utils/widgetEmbed.test.ts` (6): deploy kita (`/api/proxy` + `wss://`) menjadi https/wss, `ws://` lokal menjadi `http://`, API absolut dipakai apa adanya, WS mengikuti API bila kosong, garis miring dan spasi di akhir dibuang, tanpa alamat absolut tidak ada snippet
+  - **Total:** 63 file test, 703 test lolos
+
+---
+
+## [1.116.1] - 2026-10-29
+
+### Detail Versi 1.116.1
+
+#### 🎨 Import History Kembali ke Infinite Scroll
+
+- **Deskripsi:**
+  - **Infinite Scroll:** Modal Import History (halaman Subscribers dan detail Mailing List) kembali memakai infinite scroll seperti sebelum versi 1.107.3, menggantikan nomor halaman. Data dimuat 25 baris per potongan (bisa diganti 50 atau 100 lewat menu Baris). Potongan berikutnya dimuat saat tabel di-scroll ke bawah atau lewat tombol "Muat lebih banyak"
+  - **Auto-refresh Kembali ke Atas:** setiap kali auto-refresh berjalan, tabel dimuat ulang dari potongan pertama:
+    - bila user masih di potongan pertama, angka progress dan status job langsung berubah tanpa loading;
+    - bila user sudah scroll ke bawah, tabel kembali ke atas, menampilkan skeleton sebentar, lalu data terbaru;
+    - tombol **Refresh** dan aksi job (Stop, Continue, Rollback, Replay) bekerja dengan cara yang sama
+  - **Info Jumlah Data:** footer tabel menampilkan jumlah data yang sedang tampil dan totalnya, misalnya "Menampilkan 25 dari 120 impor". Bila semua sudah dimuat: "120 impor" dan "Semua impor sudah dimuat"
+  - **Auto-refresh Off:** pilihan "Off (Manual)" tetap ada bagi user yang tidak ingin tabel kembali ke atas saat sedang membaca
+  - **Alasan:** permintaan pimpinan: tetap infinite scroll seperti sebelumnya, tetapi saat auto-refresh berjalan kembali ke halaman 1, dengan info jumlah data yang tampil dan totalnya
+  - **Root Cause (kenapa versi 1.107.3 memakai nomor halaman):** infinite scroll SuperTable hanya mengganti satu potongan data jika jumlah barisnya atau id baris pertama/terakhirnya berubah, dan auto-refresh hanya memuat ulang potongan terakhir. Progress job yang sama tidak pernah tampil. Kini setiap refresh memulai ulang daftar dari potongan pertama, sehingga tidak ada potongan lama yang tertinggal
+  - **Impact:** User tetap bisa scroll riwayat import tanpa nomor halaman, sementara progress import terbaru selalu terlihat di atas
+  - **Technical Notes:**
+    - `reload()` baru di `lib/hooks/useListRefresh.ts` (modul yang sama dengan tabel WA Marketing): refetch potongan 1 lalu `restartKey`; skeleton hanya muncul bila tabel harus kembali dari potongan berikutnya
+    - `lib/hooks/usePolling.ts` menggantikan `refetchInterval` TanStack: tick dilewati selama tick sebelumnya belum selesai dan selama tab browser tidak aktif
+    - `useBulkJobs` tanpa `refetchInterval`, dengan key bersama `bulkJobsKey`. `useActionBulkJob` hanya menandai daftar basi (`markListsStale`) dan modal yang memuat ulang, sehingga 1 request per aksi
+    - saat modal ditutup, polling tetap berjalan (seperti sebelumnya) pada potongan pertama, sehingga daftar subscriber tetap diperbarui saat job selesai
+    - total di footer tidak lagi berkedip "0" saat potongan berikutnya dimuat (`rowCount` dibiarkan kosong selama loading)
+    - modal dan tabel memakai ukuran potongan awal yang sama (`BATCH_SIZE` 25, lewat `initialState`), dan saat modal ditutup ukuran potongan serta search kembali ke awal, sehingga membuka modal hanya mengirim 1 request daftar
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **9 Test Baru:**
+    - `lib/hooks/useListRefresh.test.ts` (+3): reload di potongan 1 tanpa loading (refetch lalu restart), reload dari potongan berikutnya (restart dulu, loading sampai potongan 1 tiba, 1 request), loading kembali mati saat refetch gagal;
+    - `lib/hooks/usePolling.test.ts` (5): tick per interval sampai dihentikan, Off tidak pernah tick, tick tidak menumpuk saat request lambat, berhenti selama tab tersembunyi, tick gagal tidak menghentikan polling;
+    - `components/ui/super-table/hooks/useLazyRows.test.ts` (+1): restart per polling menampilkan progress baru tanpa loading, dan restart dari potongan berikutnya tidak menyimpan baris lama selama loading lalu hanya menampilkan potongan 1 terbaru (menggantikan test mode halaman)
+  - **Total:** 61 file test, 693 test lolos
+
+---
+
 ## [1.116.0] - 2026-10-28
 
 ### Detail Versi 1.116.0

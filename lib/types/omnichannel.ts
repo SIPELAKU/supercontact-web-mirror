@@ -387,6 +387,10 @@ export interface WebWidgetConfig {
   greeting_message: string;
   brand_color: string;
   allowed_domains: string[];
+  /** Mobile apps send no Origin, so a set allowlist rejects them unless this
+   *  is on (BE B6). No UI yet - it only has to survive every save, see
+   *  lib/utils/webWidgetConfig.ts. */
+  allow_native_apps?: boolean;
   is_widget_enabled: boolean;
   auto_create_ticket: boolean;
   enable_ai_triage: boolean;

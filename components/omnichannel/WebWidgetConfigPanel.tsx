@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import type { SelectChangeEvent } from "@mui/material";
 import { AppInput } from "@/components/ui/app-input";
 import { AppButton } from "@/components/ui/app-button";
@@ -13,6 +13,7 @@ import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { QuickAction, UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
+import { isTitleListOnly } from "./answerBotHints";
 import QuickActionsBuilder from "./QuickActionsBuilder";
 
 interface WebWidgetConfigPanelProps {
@@ -600,11 +601,21 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
         <div className="border-t border-gray-100">
           <ToggleRow
             label="Use AI to compose an answer"
-            description="Let AI write a grounded reply from the matched articles instead of just linking them. Applies to the answer bot and to Knowledge Base steps in your conversation flows. When off, replies use article-based content only."
+            description="Let AI write a grounded reply from the matched articles. Applies to the answer bot and to Knowledge Base steps in your conversation flows. When off, the bot only sends a list of matching article titles."
             checked={form.answer_bot_use_llm}
             onChange={(checked) => setField("answer_bot_use_llm", checked)}
           />
         </div>
+
+        {isTitleListOnly(form) && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800">
+              AI writing is off, so visitors only get a list of matching article titles, not an
+              answer. Turn on <strong>Use AI to compose an answer</strong> to reply in full sentences.
+            </p>
+          </div>
+        )}
 
         <div className="border-t border-gray-100">
           <ToggleRow
@@ -697,9 +708,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_intro_text ?? ""}
                 onChange={(e) => setField("answer_bot_intro_text", e.target.value || null)}
-                placeholder="Here's what I found that might help:"
+                placeholder="Berikut artikel yang mungkin membantu:"
               />
-              <p className="text-xs text-gray-500">Optional line shown before an automated answer.</p>
+              <p className="text-xs text-gray-500">
+                Shown above the article list when AI doesn&apos;t write an answer. Leave blank for the
+                default text.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -709,7 +723,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_no_answer_text ?? ""}
                 onChange={(e) => setField("answer_bot_no_answer_text", e.target.value || null)}
-                placeholder="I'll connect you with a team member who can help."
+                placeholder="Kami akan menghubungkan Anda dengan tim kami yang bisa membantu."
               />
               <p className="text-xs text-gray-500">
                 Optional message when nothing confident enough is found. Leave blank to stay silent and let an agent reply.

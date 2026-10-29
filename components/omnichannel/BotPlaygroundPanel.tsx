@@ -54,6 +54,7 @@ import type {
 } from "@/lib/types/botPlayground";
 import type { UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
+import { isAiOffArticleList } from "./answerBotHints";
 
 interface BotPlaygroundPanelProps {
   accountId: string;
@@ -287,6 +288,12 @@ function ExchangeRow({
                 Attach to article
               </button>
             </div>
+            {isAiOffArticleList(result) && (
+              <p className="mt-1 text-[11px] text-amber-700">
+                AI answer is off for this test, so this is only the article list. Set &quot;AI
+                answer&quot; to On above to see a written answer.
+              </p>
+            )}
             {open && <ResultDetails result={result} />}
           </>
         ) : (

@@ -12,6 +12,7 @@ import { useWebWidgetConfig, useUpdateWebWidgetConfig } from "@/lib/hooks/useOmn
 import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { QuickAction, UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
+import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
 import QuickActionsBuilder from "./QuickActionsBuilder";
 
 interface WebWidgetConfigPanelProps {
@@ -186,7 +187,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       .filter(Boolean);
 
     try {
-      await updateMutation.mutateAsync({ ...form, allowed_domains });
+      // On top of the stored config, so fields this form doesn't show (Shadow
+      // mode, allow_native_apps) aren't reset to their defaults.
+      await updateMutation.mutateAsync(widgetConfigPayload(config, { ...form, allowed_domains }));
       notify.success("Settings Saved", { description: "Your Web Widget configuration has been updated." });
     } catch (error: any) {
       const message = handleError(error, "Update Web Widget Config");

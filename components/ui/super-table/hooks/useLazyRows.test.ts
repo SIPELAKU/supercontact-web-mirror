@@ -313,12 +313,34 @@ describe('useLazyRows: a polled list whose rows change in place (Import History)
     expect(progressOfJ2(after)).toBe('Processing 100/1000');
   });
 
-  it("pages (pagination: 'pages' → SuperTable passes enabled: false): the polled progress shows at once, no loading", () => {
+  it('lazy restarted on each poll from batch 1 (useListRefresh reload): the new progress shows, no loading', () => {
     const table = lazyTable();
-    table.render({ enabled: false, data: poll1, rowCount: 2 });
+    table.render({ data: poll1, rowCount: 2 });
 
-    const after = table.render({ data: poll2, rowCount: 2, isLoading: false });
+    // The refetched batch 1 lands first - same fingerprint, still the old
+    // progress - and the restart that follows files it again.
+    expect(progressOfJ2(table.render({ data: poll2 }))).toBe('Processing 100/1000');
+    const after = table.render({ resetToken: 'query-1|1' });
     expect(progressOfJ2(after)).toBe('Completed 1000/1000');
     expect(after.ids).toEqual(['j2', 'j1']);
+  });
+
+  it('lazy restarted from a later batch: nothing old is filed while loading, then only the new batch 1 shows', () => {
+    const server = fakeServer(['a', 'b', 'c', 'd', 'e', 'f', 'g']);
+    const table = lazyTable();
+    expect(scrollThrough(table, server, 2).ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
+
+    // reload restarts first with loading on; for one render the table is still
+    // at batch 2, then it moves to batch 1 while the parent holds batch 2's rows.
+    expect(table.render({ resetToken: 'query-1|1', isLoading: true }).ids).toEqual([]);
+    expect(table.render({ pageIndex: 0, isLoading: true }).ids).toEqual([]);
+
+    // A new job arrived meanwhile; the fresh batch 1 has it, nothing else.
+    server.duplicateToTop('new');
+    const after = table.render({ pageIndex: 0, data: server.page(0), rowCount: server.total, isLoading: false });
+    expect(after.ids).toEqual(['new', 'a', 'b']);
+    expect(after.loadedCount).toBe(3);
+    expect(after.knownTotal).toBe(8);
+    expect(after.hasMore).toBe(true);
   });
 });

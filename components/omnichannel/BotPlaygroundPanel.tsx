@@ -53,6 +53,7 @@ import type {
   ReadinessItem,
 } from "@/lib/types/botPlayground";
 import type { UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
+import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
 
 interface BotPlaygroundPanelProps {
   accountId: string;
@@ -597,11 +598,11 @@ function ApplyConfigDialog({
     if (!config) return;
     const picked = changes.filter((c) => selected.has(String(c.key)));
     if (picked.length === 0) return;
-    const { id: _id, account_id: _aid, ...rest } = config as any;
-    const payload: UpdateWebWidgetConfigRequest = { ...rest };
-    for (const c of picked) (payload as any)[c.key] = c.value;
+    const values = Object.fromEntries(
+      picked.map((c) => [c.key, c.value])
+    ) as Partial<UpdateWebWidgetConfigRequest>;
     try {
-      await updateMutation.mutateAsync(payload);
+      await updateMutation.mutateAsync(widgetConfigPayload(config, values));
       notify.success("Config applied", {
         description: "The tested settings are now the widget's stored config.",
       });
@@ -810,9 +811,8 @@ function ShadowTab({ accountId }: { accountId: string }) {
 
   const toggleShadow = async () => {
     if (!config) return;
-    const { id: _id, account_id: _aid, ...rest } = config as any;
     try {
-      await updateMutation.mutateAsync({ ...rest, answer_bot_shadow: !shadowOn });
+      await updateMutation.mutateAsync(widgetConfigPayload(config, { answer_bot_shadow: !shadowOn }));
       notify.success(!shadowOn ? "Shadow mode on" : "Shadow mode off", {
         description: !shadowOn
           ? "New visitor conversations will be answered silently, for your review only."

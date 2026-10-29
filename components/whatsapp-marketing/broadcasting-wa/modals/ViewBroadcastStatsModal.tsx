@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Download, FileSpreadsheet, FileText, RefreshCw, Users } from 'lucide-react';
+import { Download, RefreshCw, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
   Dialog,
@@ -17,14 +17,10 @@ import {
   CardContent,
   Chip,
   IconButton,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
-  Menu,
-  MenuItem,
   Tooltip
 } from '@mui/material';
 import { AppButton } from '@/components/ui/app-button';
+import { ExportFormatMenu } from '@/components/ui/export-format-menu';
 import { Spinner } from '@/components/ui/spinner';
 import {
   BROADCAST_RECIPIENT_SORT_KEYS,
@@ -45,11 +41,12 @@ import {
   useExportBroadcastRecipients,
 } from '@/lib/hooks/useBroadcasts';
 import {
-  RECIPIENT_EXPORT_COLUMNS,
+  recipientExportColumns,
   recipientExportFileName,
   statusLabel,
   type ExportableStatus,
 } from '../recipientExport';
+import { broadcastStatusChip } from '../broadcastStatus';
 import { EditButton } from '@/components/ui/app-action-buttons-table';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
 import MessagePreview from '../../templates/create/MessagePreview';
@@ -169,7 +166,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   // table below (is_limit=false returns the whole list). The API's status
   // filter is cumulative, like the cards: a recipient who has read the message
   // is under Sent and Delivered too, and the file's Status column shows how
-  // far each one got.
+  // far each one got. The Failed file also says why each one failed.
   const handleExport = async (status: ExportableStatus, fileFormat: ExportFileFormat) => {
     if (!activeBroadcast || exportRecipients.isPending) return;
     const label = statusLabel(status);
@@ -180,7 +177,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
         return;
       }
       const fileName = recipientExportFileName(activeBroadcast.name, status, fileFormat);
-      await downloadRows(fileName, RECIPIENT_EXPORT_COLUMNS, rows, fileFormat, label);
+      await downloadRows(fileName, recipientExportColumns(status), rows, fileFormat, label);
       notify.success(
         `Exported ${rows.length.toLocaleString()} recipient${rows.length === 1 ? '' : 's'}`,
         { description: `Saved as ${fileName}` }
@@ -257,7 +254,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
                 Created: {format(new Date(activeBroadcast.created_at), "dd MMM yyyy, HH:mm")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Status: <Chip label={activeBroadcast.status} size="small" variant="outlined" sx={{ ml: 1 }} />
+                Status: <Chip size="small" sx={{ ml: 1 }} {...broadcastStatusChip(activeBroadcast.status)} />
               </Typography>
             </Box>
 
@@ -295,30 +292,23 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
                 />
               </Grid>
               <Grid item xs={6}>
-                <StatCard label="Failed" value={stats.failed} color="error.main" />
+                <StatCard
+                  label="Failed"
+                  value={stats.failed}
+                  color="error.main"
+                  onExport={(anchor) => setExportMenu({ anchor, status: 'failed' })}
+                  exporting={exportingStatus === 'failed'}
+                  disabled={exportRecipients.isPending}
+                />
               </Grid>
             </Grid>
 
-            <Menu
-              anchorEl={exportMenu?.anchor}
-              open={!!exportMenu}
+            <ExportFormatMenu
+              anchorEl={exportMenu?.anchor ?? null}
+              title={`Export ${exportMenu ? statusLabel(exportMenu.status) : ''} recipients`}
               onClose={() => setExportMenu(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-              slotProps={{ paper: { sx: { minWidth: 200, borderRadius: 2 } } }}
-            >
-              <ListSubheader sx={{ lineHeight: '32px' }}>
-                Export {exportMenu ? statusLabel(exportMenu.status) : ''} recipients
-              </ListSubheader>
-              <MenuItem onClick={() => handleChooseFormat('csv')}>
-                <ListItemIcon><FileText size={16} /></ListItemIcon>
-                <ListItemText primary="CSV (.csv)" />
-              </MenuItem>
-              <MenuItem onClick={() => handleChooseFormat('excel')}>
-                <ListItemIcon><FileSpreadsheet size={16} /></ListItemIcon>
-                <ListItemText primary="Excel (.xlsx)" />
-              </MenuItem>
-            </Menu>
+              onChoose={handleChooseFormat}
+            />
 
             <Box sx={{ mt: 4 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Configuration</Typography>

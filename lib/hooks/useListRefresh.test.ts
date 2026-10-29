@@ -78,6 +78,42 @@ describe('createListRefresher', () => {
     await refresherFor(client, log, 0).refreshAfterSave();
     expect(log).toEqual(['writes 1', 'fetch {"page":1}', 'restart', 'writes 0']);
   });
+
+  it('reload on batch 1 (a poll): silent - refetches batch 1, then restarts, never loading', async () => {
+    const { client, log } = await setup();
+    const r = refresherFor(client, log, 0);
+    await r.reload();
+    expect(log).toEqual(['fetch {"page":1}', 'restart']);
+    expect(r.writes()).toBe(0);
+  });
+
+  it('reload from a later batch: back to batch 1 first, loading until it has landed, one request', async () => {
+    for (const batchIndex of [1, 2]) {
+      const { client, log } = await setup();
+      const r = refresherFor(client, log, batchIndex);
+      await r.reload();
+      expect(log).toEqual(['writes 1', 'restart', 'fetch {"page":1}', 'writes 0']);
+      expect(r.writes()).toBe(0);
+    }
+  });
+
+  it('reload from a later batch: loading goes off again when the refetch fails', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let down = false;
+    await client.fetchQuery({
+      queryKey: FIRST,
+      queryFn: async () => {
+        if (down) throw new Error('down');
+        return 'batch 1';
+      },
+    });
+    down = true;
+    const log: string[] = [];
+    const r = refresherFor(client, log, 2);
+    await r.reload();
+    expect(log).toEqual(['writes 1', 'restart', 'writes 0']);
+    expect(client.getQueryState(FIRST)?.status).toBe('error');
+  });
 });
 
 describe('markListsStale', () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import QuotationHeader from "@/components/quotation/QuotationHeader";
 import QuotationTable from "@/components/quotation/QuotationTable";
 import { useGetQuotationstore, Quotation, type FetchQuotationParams } from "@/lib/store/quotation";
@@ -45,15 +45,10 @@ export default function QuotationClient() {
     pagination,
   } = useGetQuotationstore();
 
-  // Initial fetch on mount - 25 is SuperTable's lazy batch, so the first
-  // "load more" asks for rows 26-50 rather than re-fetching 11-25.
-  useEffect(() => {
-    fetchQuotations({
-      limit: 25,
-      page: 1,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // No fetch of its own on mount: the lazy table announces its initial state
+  // (page 1, its batch of 25, and any search/filter/sort restored from the
+  // URL) through onStateChange, and that is the first request. A mount fetch
+  // here sent a second, unfiltered request for the same page.
 
   // The last query the table asked for. Refetches after an action (accept /
   // reject / delete / retry) replay it so the active status, search, date and
@@ -165,10 +160,13 @@ export default function QuotationClient() {
     router.push(`/sales/quotation/${quotation.id}`);
   };
 
+  // `force`: after a write the list must be read again, even when the same
+  // request is still running from before it.
   const refetchCurrentPage = useCallback(
     () =>
       fetchQuotations(
-        lastQueryRef.current ?? { page: pagination.page, limit: pagination.limit }
+        lastQueryRef.current ?? { page: pagination.page, limit: pagination.limit },
+        { force: true }
       ),
     [fetchQuotations, pagination.page, pagination.limit]
   );

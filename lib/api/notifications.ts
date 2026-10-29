@@ -82,7 +82,9 @@ export function getNotificationRoute(notif: NotificationData): string | null {
         case "ticket":
             return "/support/tickets";
         case "pipeline":
-            return "/sales/pipeline";
+            // Opens that deal's Update Pipeline modal: PipelineClient reads
+            // ?deal=<id>.
+            return notif.entity_id ? `/sales/pipeline?deal=${notif.entity_id}` : "/sales/pipeline";
         case "lead":
             return "/lead-management";
         default:

@@ -10,7 +10,7 @@
 //
 // `formatRupiah` hard-coded the `'Rp '` literal and rounded to WHOLE rupiah by
 // default, at 88 call sites across 20 files - including the customer-facing
-// `QuotationPdfDocument` and the public acceptance page. A quotation issued in
+// quotation PDF and the public acceptance page. A quotation issued in
 // USD therefore printed a USD 3.20 line as "Rp 3": the wrong symbol AND the
 // wrong number, on the two documents a customer actually reads.
 //

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { toApiSort } from './apiSort';
 import {
+  BROADCAST_GROUP_SORT_KEYS,
   BROADCAST_RECIPIENT_SORT_KEYS,
   BROADCAST_SORT_KEYS,
+  BROADCAST_TEMPLATE_SORT_KEYS,
   WA_RECIPIENT_SORT_KEYS,
 } from '@/lib/types/whatsapp-marketing';
 
@@ -21,8 +23,8 @@ describe('toApiSort', () => {
   });
 
   it('drops a column the endpoint cannot sort by (e.g. a stale sort restored from the URL)', () => {
-    expect(toApiSort([{ id: 'phone_number', desc: false }], WA_RECIPIENT_SORT_KEYS)).toEqual({});
-    expect(toApiSort([{ id: 'total_target', desc: true }], BROADCAST_SORT_KEYS)).toEqual({});
+    expect(toApiSort([{ id: 'types', desc: false }], BROADCAST_TEMPLATE_SORT_KEYS)).toEqual({});
+    expect(toApiSort([{ id: 'address', desc: true }], WA_RECIPIENT_SORT_KEYS)).toEqual({});
   });
 
   it('uses the first sorted column only - the APIs take one', () => {
@@ -38,15 +40,38 @@ describe('toApiSort', () => {
   });
 });
 
-// What each endpoint accepts, per the API docs (1.144.2). When the backend adds
-// a key, add it here and enable sorting on that column.
+// What each endpoint accepts, per the API docs (1.154.1, the same on PROD
+// 1.144.3). When the backend adds a key, add it here and enable sorting on
+// that column.
 describe('sort keys per endpoint', () => {
   it('GET /broadcasts', () => {
-    expect(BROADCAST_SORT_KEYS).toEqual(['name', 'status', 'created_at']);
+    expect(BROADCAST_SORT_KEYS).toEqual(['name', 'status', 'total_target', 'created_at']);
   });
 
   it('GET /recipients', () => {
-    expect(WA_RECIPIENT_SORT_KEYS).toEqual(['name', 'email', 'company', 'created_at', 'updated_at']);
+    expect(WA_RECIPIENT_SORT_KEYS).toEqual([
+      'name',
+      'email',
+      'phone_number',
+      'company',
+      'position',
+      'created_at',
+      'updated_at',
+    ]);
+  });
+
+  it('GET /broadcast-templates', () => {
+    expect(BROADCAST_TEMPLATE_SORT_KEYS).toEqual([
+      'friendly_name',
+      'language',
+      'whatsapp_approval_status',
+      'created_at',
+      'updated_at',
+    ]);
+  });
+
+  it('GET /broadcast-groups', () => {
+    expect(BROADCAST_GROUP_SORT_KEYS).toEqual(['name', 'recipient_count', 'created_at']);
   });
 
   it('GET /broadcasts/{id}/recipients', () => {

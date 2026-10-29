@@ -98,6 +98,13 @@ export interface DeviceSession {
   updated_at: string;
 }
 
+/**
+ * Narrows GET /users for a specific picker. "lead_assignee": every member
+ * for Admin / Manager, only the caller for every other role - the same rule
+ * the API enforces when a lead is created or updated.
+ */
+export type UserListScope = "lead_assignee";
+
 // ============================================
 // Functions
 // ============================================
@@ -108,7 +115,8 @@ export async function fetchUsers(
   limit: number = 10,
   search?: string,
   position?: string,
-  status?: string
+  status?: string,
+  scope?: UserListScope
 ): Promise<UserResponse> {
   const params = new URLSearchParams({
     page: (page || 1).toString(),
@@ -117,6 +125,7 @@ export async function fetchUsers(
   if (search) params.append("search", search);
   if (position) params.append("position", position);
   if (status) params.append("status", status);
+  if (scope) params.append("scope", scope);
 
   const res = await fetchWithTimeout(`${process.env.NEXT_PUBLIC_API_URL}/users?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

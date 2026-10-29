@@ -52,6 +52,9 @@ export interface QuotationLeadItem {
     unit?: { id: string; code: string; name: string; precision: number } | null;
     category?: { id: string; code: string; name: string } | null;
     custom_fields?: Record<string, unknown>;
+    /** A variant's axes and its family (`ProductItem`), so its line can name both. */
+    variant_values?: Record<string, unknown>;
+    parent?: { id: string; product_name: string; sku: string } | null;
     /**
      * Phase 2 (spec D6): what this customer would actually pay. `price` above
      * stays the LIVE catalogue row - showing one price in the picker and
@@ -116,7 +119,7 @@ export interface QuotationLeadsResponse {
 // Helpers
 // ============================================
 
-function toApiError(error: any, fallback: string): QuotationApiError {
+export function toApiError(error: any, fallback: string): QuotationApiError {
     const payload = error?.response?.data;
     if (payload && typeof payload === "object") {
         const message =
@@ -207,8 +210,8 @@ export async function fetchQuotationById(
 }
 
 /**
- * The company's quotation defaults (currency, tax basis, terms, discount cap).
- * Sellers never call GET /companies - this route is gated on `quotations`.
+ * The company's quotation defaults (currency, tax basis, terms, discount cap)
+ * and its default PDF template, resolved for the caller (gated on `quotations`).
  */
 export async function fetchQuotationDefaults(token: string): Promise<QuotationDefaults> {
     try {

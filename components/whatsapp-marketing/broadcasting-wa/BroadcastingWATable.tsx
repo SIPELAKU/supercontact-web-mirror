@@ -3,10 +3,11 @@
 import React, { useMemo } from "react";
 import { Box, Chip, Typography, Stack } from "@mui/material";
 import { SuperTable, MRT_ColumnDef, SuperTableState } from "@/components/ui/super-table";
-import { BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
+import { BROADCAST_STATUSES, BroadcastCampaign } from "@/lib/types/whatsapp-marketing";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Copy, Eye, Megaphone, Pencil, Plus, Trash2 } from "lucide-react";
+import { broadcastStatusChip } from "./broadcastStatus";
 
 interface BroadcastingWATableProps {
   broadcasts: BroadcastCampaign[];
@@ -26,19 +27,6 @@ interface BroadcastingWATableProps {
   renderTopLeftToolbar?: () => React.ReactNode;
   renderBulkActions?: (params: { selectedRows: BroadcastCampaign[]; clearSelection: () => void }) => React.ReactNode;
 }
-
-const getStatusChip = (status: string) => {
-  const statusLower = status.toLowerCase();
-  switch (statusLower) {
-    case 'draft': return <Chip label="Draft" color="default" size="small" />;
-    case 'sending': return <Chip label="Sending" color="primary" size="small" />;
-    case 'sent':
-    case 'done':
-    case 'completed': return <Chip label="Sent" color="success" size="small" />;
-    case 'failed': return <Chip label="Failed" color="error" size="small" />;
-    default: return <Chip label={status} size="small" />;
-  }
-};
 
 export default function BroadcastingWATable({
   broadcasts,
@@ -73,7 +61,7 @@ export default function BroadcastingWATable({
       id: "status",
       accessorKey: "status",
       header: "Status",
-      Cell: ({ row }) => getStatusChip(row.original.status),
+      Cell: ({ row }) => <Chip size="small" {...broadcastStatusChip(row.original.status)} />,
     },
     {
       id: "stats",
@@ -97,9 +85,6 @@ export default function BroadcastingWATable({
       accessorKey: "total_target",
       header: "Target",
       enableColumnFilter: false,
-      // Not one of GET /broadcasts' sort keys (BROADCAST_SORT_KEYS): the API
-      // would ignore it and keep its default order.
-      enableSorting: false,
       Cell: ({ cell }) => cell.getValue<number>(),
     },
     {
@@ -194,7 +179,8 @@ export default function BroadcastingWATable({
             id: "status",
             label: "Status",
             type: "select",
-            options: ["Draft", "Sending", "Sent", "Failed"].map((v) => ({
+            // The API's own statuses; "Sending" is not one, so it matched nothing.
+            options: BROADCAST_STATUSES.map((v) => ({
               value: v,
               label: v,
             })),

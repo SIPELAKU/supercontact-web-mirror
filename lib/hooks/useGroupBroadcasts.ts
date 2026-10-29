@@ -13,14 +13,25 @@ import type {
   DeleteGroupBroadcastsData,
 } from '@/lib/types/whatsapp-marketing';
 
-async function fetchGroupBroadcasts(
-  token: string,
-  params: GroupBroadcastsParams
-): Promise<GroupBroadcastsResponse> {
+/** The list query; search and the sort are sent only when set. */
+export function groupBroadcastsQuery(params: GroupBroadcastsParams): URLSearchParams {
   const query = new URLSearchParams();
 
   if (params.page) query.set('page', String(params.page));
   if (params.limit) query.set('limit', String(params.limit));
+  if (params.search) query.set('search', params.search);
+  if (params.sort_by) {
+    query.set('sort_by', params.sort_by);
+    query.set('sort_order', params.sort_order ?? 'desc');
+  }
+  return query;
+}
+
+async function fetchGroupBroadcasts(
+  token: string,
+  params: GroupBroadcastsParams
+): Promise<GroupBroadcastsResponse> {
+  const query = groupBroadcastsQuery(params);
 
   const url = `${process.env.NEXT_PUBLIC_API_URL}/broadcast-groups?${query.toString()}`;
 

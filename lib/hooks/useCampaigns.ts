@@ -8,10 +8,11 @@ import {
   fetchCampaignDetail,
   fetchCampaigns,
   fetchCampaignSubscribers,
+  fetchAllCampaignSubscribers,
   updateCampaign,
   duplicateCampaigns
 } from '../api';
-import type { CreateCampaignData, UpdateCampaignData } from '../types/email-marketing';
+import type { CampaignSubscribersQuery, CreateCampaignData, UpdateCampaignData } from '../types/email-marketing';
 import Cookies from 'js-cookie';
 
 // Fetch all campaigns
@@ -115,14 +116,26 @@ export function useDuplicateCampaigns() {
 }
 
 // Fetch campaign subscribers with status
-export function useCampaignSubscribers(campaignId: string, page: number = 1, limit: number = 10, search?: string) {
+// One page of the campaign's subscribers; every filter and the sort travel in `query`.
+export function useCampaignSubscribers(campaignId: string, query: CampaignSubscribersQuery = {}) {
   return useQuery({
-    queryKey: ['campaign-subscribers', campaignId, page, limit, search],
+    queryKey: ['campaign-subscribers', campaignId, query],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchCampaignSubscribers(token, campaignId, page, limit, search);
+      return fetchCampaignSubscribers(token, campaignId, query);
     },
     enabled: !!campaignId,
+  });
+}
+
+// Every subscriber a stats card counts, for its CSV/Excel export.
+export function useExportCampaignSubscribers() {
+  return useMutation({
+    mutationFn: async ({ campaignId, status }: { campaignId: string; status: string }) => {
+      const token = Cookies.get('access_token');
+      if (!token) throw new Error('No authentication token');
+      return fetchAllCampaignSubscribers(token, campaignId, status);
+    },
   });
 }

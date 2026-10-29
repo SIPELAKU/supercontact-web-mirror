@@ -49,9 +49,11 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
     const labelId = React.useId();
 
     return (
+      // `height` sizes the Select below, not this wrapper: a fixed-height
+      // wrapper let the label and helper text spill over the next row.
       <Box
         className={containerClassName}
-        sx={{ width: fullWidth ? "100%" : "auto", ...sx, height, borderRadius: rounded }}
+        sx={{ width: fullWidth ? "100%" : "auto", ...sx, borderRadius: rounded }}
       >
         {label && (
           <Typography
@@ -148,7 +150,8 @@ const AppSelect = React.forwardRef<HTMLDivElement, AppSelectProps>(
           <Typography
             variant="caption"
             sx={{
-              color: "error.main",
+              // Red only for an error; otherwise it is a hint, grey like AppInput's.
+              color: error ? "error.main" : "text.secondary",
               mt: 0.5,
               display: "block",
               fontSize: "0.75rem",

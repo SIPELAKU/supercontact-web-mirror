@@ -64,6 +64,18 @@ const nextConfig = {
   // still resolve instead of 404ing.
   async redirects() {
     return [
+      // www is never a second copy of the site - the apex is canonical (see
+      // middleware.ts). Vercel's domain setting 308s www today, but in early
+      // October 2026 www served pages with 200 and Google indexed www
+      // duplicates of blog articles. Redirecting here keeps www -> apex in
+      // force whatever the Vercel domain config becomes (the prod CI job also
+      // re-aliases www to each deployment).
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.smartsales.id' }],
+        destination: 'https://smartsales.id/:path*',
+        permanent: true,
+      },
       {
         source: '/data-intelligence/industry-leaders',
         destination: '/data-intelligence/companies?tab=discover',

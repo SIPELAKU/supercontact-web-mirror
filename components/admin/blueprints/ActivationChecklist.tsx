@@ -1,11 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, RefreshCw } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useActivationChecklist } from "@/lib/hooks/useIndustryBlueprints";
+import { useContentGaps } from "@/lib/hooks/useBotPlayground";
+import { useKbPermissions } from "@/lib/hooks/useKnowledge";
+import { usePermission } from "@/lib/hooks/usePermission";
+import KbPlaceholderFillForm from "@/components/knowledge/KbPlaceholderFillForm";
 import type { ChecklistItem, ChecklistKind } from "@/lib/types/IndustryBlueprint";
+import { notify } from "@/lib/notifications";
+import { canSkipKbFill, kbGapSignature, offersKbFill } from "./kbFillOffer";
+
+const KB_FILL_SKIPPED_KEY = "setup-cepat:kb-fill-skipped";
+
+const readSkipped = () => {
+    try {
+        return window.localStorage.getItem(KB_FILL_SKIPPED_KEY);
+    } catch {
+        return null;
+    }
+};
 
 /** Where a tenant actually goes to switch each thing on. A checklist that only
  *  names the problem makes someone hunt for the screen; naming the screen is
@@ -39,6 +56,82 @@ const DESTINATION: Record<ChecklistKind, { label: string; href: string }> = {
 };
 
 export default function ActivationChecklist() {
+    return (
+        <div className="flex flex-col gap-4">
+            <KbFillSection />
+            <ChecklistItems />
+        </div>
+    );
+}
+
+/** The blueprint's KB packs land with their own {{VARIABLES}} unfilled - the
+ *  company-data step only asks the blueprint's. An install lands on this tab,
+ *  so the gaps are offered here, for as long as any are left - unless skipped
+ *  while they all sit in drafts, which cannot be published with a gap anyway. */
+function KbFillSection() {
+    const { can } = usePermission();
+    const { canWrite } = useKbPermissions();
+    const canListGaps = can("omnichannel:setup");
+    const { data: gaps } = useContentGaps(canListGaps && canWrite);
+    const [skipped, setSkipped] = useState<string | null>(readSkipped);
+    const gapCount = gaps?.variables.length ?? 0;
+    if (!gaps || !offersKbFill({ canListGaps, canEditArticles: canWrite, gapCount })) return null;
+
+    const signature = kbGapSignature(gaps);
+    if (skipped === signature) return null;
+    const skippable = canSkipKbFill(gaps);
+
+    const skip = () => {
+        try {
+            window.localStorage.setItem(KB_FILL_SKIPPED_KEY, signature);
+        } catch {
+            // Storage blocked: the skip still holds until the page reloads.
+        }
+        setSkipped(signature);
+        notify.info("Isian dilewati", {
+            description:
+                "Artikel yang masih berisi {{…}} tidak bisa diterbitkan sampai isiannya dilengkapi.",
+        });
+    };
+
+    return (
+        <section className="flex flex-col gap-3 rounded-lg border p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+                <h3 className="text-sm font-medium">
+                    Isian artikel Knowledge Base ({gapCount} tanda kosong)
+                </h3>
+                <div className="flex flex-col items-end gap-1">
+                    <AppButton variantStyle="outline" color="gray" onClick={skip} disabled={!skippable}>
+                        Lewati dulu
+                    </AppButton>
+                    {!skippable && (
+                        <p className="max-w-xs text-right text-xs text-muted-foreground">
+                            Tidak bisa dilewati: ada artikel yang sudah terbit dengan isian kosong.
+                            Isi dulu, atau jadikan artikelnya Draft.
+                        </p>
+                    )}
+                </div>
+            </div>
+            <KbPlaceholderFillForm
+                intro={
+                    <>
+                        Artikel dari blueprint masih memuat tanda seperti{" "}
+                        <code className="rounded bg-muted px-1">{"{{ALAMAT_PUSAT}}"}</code> yang
+                        tidak ditanyakan di langkah data perusahaan, dan answer bot akan
+                        membacakannya apa adanya. Isi nilainya di sini. Artikelnya dipasang
+                        sebagai <strong>Draft</strong>: setelah lengkap, terbitkan di{" "}
+                        <Link href="/knowledge-base" className="text-primary underline">
+                            Knowledge Base
+                        </Link>{" "}
+                        supaya bisa dibaca answer bot.
+                    </>
+                }
+            />
+        </section>
+    );
+}
+
+function ChecklistItems() {
     const { data, isLoading, isError, refetch, isFetching } = useActivationChecklist();
     const checklist = data?.data;
 

@@ -38,6 +38,12 @@ import { MarkdownEditor } from "./MarkdownEditor";
 import { KbStatusBadge } from "./KbStatusBadge";
 import { ArticleVersionHistoryDrawer } from "./ArticleVersionHistoryDrawer";
 import { ArticleFlagsPanel } from "./ArticleFlagsPanel";
+import { UnfilledPlaceholdersDialog } from "./UnfilledPlaceholdersDialog";
+import {
+  placeholderRejection,
+  unfilledPlaceholders,
+  type ArticleWithPlaceholders,
+} from "@/lib/utils/kbPlaceholders";
 
 interface KnowledgeArticleEditorClientProps {
   articleId?: string;
@@ -66,6 +72,9 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
   const [isPublic, setIsPublic] = useState(true);
   const [showVersions, setShowVersions] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  // Publish sends the SAVED article, so it is the saved body that may not
+  // still carry a {{…}} placeholder (the answer bot would read it out).
+  const [blockedPublish, setBlockedPublish] = useState<ArticleWithPlaceholders[]>([]);
 
   const { data: sections = [] } = useKbSections(categoryId || undefined);
 
@@ -174,6 +183,11 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
       await fn();
       notify.success(success);
     } catch (err) {
+      const blocked = placeholderRejection(err);
+      if (blocked.length > 0) {
+        setBlockedPublish(blocked);
+        return;
+      }
       notify.error("Error", { description: getErrorMessage(err, "Action failed") });
     }
   };
@@ -276,7 +290,14 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
               color="success"
               startIcon={<Send size={16} />}
               disabled={statusChanging}
-              onClick={() => runStatus(() => publishMutation.mutateAsync(articleId!), "Article published")}
+              onClick={() => {
+                const left = unfilledPlaceholders(article?.body);
+                if (left.length > 0) {
+                  setBlockedPublish([{ id: articleId!, title: article?.title || title, placeholders: left }]);
+                  return;
+                }
+                runStatus(() => publishMutation.mutateAsync(articleId!), "Article published");
+              }}
             >
               Publish
             </AppButton>
@@ -504,6 +525,7 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
         />
       )}
       {confirmationPopup}
+      <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} />
     </div>
   );
 }

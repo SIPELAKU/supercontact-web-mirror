@@ -87,7 +87,18 @@ export interface BotPlaygroundAskResponse {
   sales: PlaygroundSalesReport;
   effective_config: PlaygroundEffectiveConfig;
   warnings: string[];
+  /** Why the AI wrote no answer (BE-7); null when it did. Absent on an older BE. */
+  fallback_reason?: PlaygroundFallbackReason | null;
 }
+
+export type PlaygroundFallbackReason =
+  | "llm_off"
+  | "llm_not_configured"
+  | "llm_refused"
+  | "llm_error"
+  | "guardrail"
+  // A value this FE does not know yet still gets shown, as the raw code.
+  | (string & {});
 
 // ---------- Fase B: tenant test set ----------
 export type BotTestExpectation = "answered" | "article" | "no_answer";
@@ -188,7 +199,9 @@ export interface ContentGapVariable {
   label: string;
   example: string;
   context: string;
-  articles: { id: string; title: string }[];
+  /** `status` once the BE reports it per article (drafts included); until
+   *  then only published articles are listed. */
+  articles: { id: string; title: string; status?: string }[];
 }
 
 export interface ContentGapsResponse {

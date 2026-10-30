@@ -32,7 +32,14 @@ import {
   useKbArticles,
   useKbPermissions,
   useKbSections,
+  useLoadKbArticles,
 } from "@/lib/hooks/useKnowledge";
+import {
+  articlesWithPlaceholders,
+  placeholderRejection,
+  type ArticleWithPlaceholders,
+} from "@/lib/utils/kbPlaceholders";
+import { UnfilledPlaceholdersDialog } from "./UnfilledPlaceholdersDialog";
 import type {
   KbArticleStatus,
   KbArticleSummary,
@@ -174,6 +181,12 @@ export default function KnowledgeArticleListClient() {
   const clearTableSelection = useCallback(() => setSelectionEpoch((n) => n + 1), []);
   const [report, setReport] = useState<KbBulkStatusReport | null>(null);
   const [bulkError, setBulkError] = useState<string | null>(null);
+  // Drafts that still carry a {{…}} placeholder are not published at all: the
+  // answer bot would read the placeholder out to visitors. The list rows have
+  // no body, so the selected drafts are loaded and checked first.
+  const loadArticles = useLoadKbArticles();
+  const [checkingPublish, setCheckingPublish] = useState(false);
+  const [blockedPublish, setBlockedPublish] = useState<ArticleWithPlaceholders[]>([]);
 
   // Changing a page-owned filter sends the table back to the first batch AND
   // clears its selection - SuperTable does both off this key, so the page no
@@ -207,6 +220,13 @@ export default function KnowledgeArticleListClient() {
       setReport(res);
       clearTableSelection?.();
     } catch (err) {
+      // "Terbitkan semua draft" is not checked here first, so the API's own
+      // refusal is what reaches the placeholder dialog.
+      const blocked = placeholderRejection(err);
+      if (blocked.length > 0) {
+        setBlockedPublish(blocked);
+        return;
+      }
       // The API layer throws the PARSED BODY for 4xx/5xx (not an Error), and a
       // bare Error("UNAUTHORIZED") for 401. An `instanceof Error` check drops
       // the server's reason on every 403 and prints the raw sentinel on expiry,
@@ -217,6 +237,25 @@ export default function KnowledgeArticleListClient() {
           : getErrorMessage(err, "Gagal mengubah status artikel.")
       );
     }
+  }
+
+  async function publishSelected(ids: string[]) {
+    setReport(null);
+    setBulkError(null);
+    setCheckingPublish(true);
+    try {
+      const blocked = articlesWithPlaceholders(await loadArticles(ids));
+      if (blocked.length > 0) {
+        setBlockedPublish(blocked);
+        return;
+      }
+    } catch (err) {
+      setBulkError(getErrorMessage(err, "Gagal memeriksa isi artikel sebelum diterbitkan."));
+      return;
+    } finally {
+      setCheckingPublish(false);
+    }
+    await runBulk({ status: "published", article_ids: ids });
   }
 
   const columns = useMemo<MRT_ColumnDef<KbArticleSummary>[]>(
@@ -433,10 +472,8 @@ export default function KnowledgeArticleListClient() {
                   count={eligible.publish.length}
                   icon={<Send size={16} />}
                   primary
-                  busy={bulkStatus.isPending}
-                  onClick={() =>
-                    runBulk({ status: "published", article_ids: eligible.publish })
-                  }
+                  busy={bulkStatus.isPending || checkingPublish}
+                  onClick={() => void publishSelected(eligible.publish)}
                 />
                 <BulkAction
                   label="Jadikan draft"
@@ -582,6 +619,7 @@ export default function KnowledgeArticleListClient() {
       />
 
       {confirmationPopup}
+      <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} />
     </div>
   );
 }

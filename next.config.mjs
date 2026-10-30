@@ -13,6 +13,11 @@ const nextConfig = {
   // the full barrel module when a component imports from the package root.
   experimental: {
     optimizePackageImports: ['@mui/icons-material', 'lucide-react'],
+    // The /api/proxy rewrite below cuts a request off after 30s by default
+    // ("socket hang up"), while the API keeps going and saves anyway - the
+    // Setup Cepat "Apply values" (fill-placeholders) call took longer than
+    // that. Only matters where BACKEND_URL turns the rewrite on.
+    proxyTimeout: 120_000,
   },
 
   // 3. Image optimization settings

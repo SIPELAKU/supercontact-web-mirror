@@ -22,6 +22,8 @@
  * isolation) is preserved verbatim.
  */
 
+import { splitLinks } from "../../lib/utils/linkify";
+
 interface QuickAction {
   id: string;
   label: string;
@@ -792,6 +794,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .msg.inbound { align-self: flex-start; background: #fff; border: 1px solid #E5E7EB; color: #111827; }
         .msg.outbound { align-self: flex-end; background: ${brand}; color: #fff; }
         .msg.failed { opacity: .85; }
+        .msg-text a { color: inherit; text-decoration: underline; word-break: break-all; }
         .msg .att-image { display: block; margin-top: 6px; }
         .msg .att-image img { max-width: 100%; border-radius: 8px; display: block; }
         .msg .att-file { display: inline-block; margin-top: 6px; font-size: 12px; text-decoration: underline; color: inherit; word-break: break-all; }
@@ -1510,6 +1513,24 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       }
     }
 
+    /** Message text with its http(s) URLs as links (the answer bot's article
+     *  links, a URL an agent pastes). Built node by node - the text is never
+     *  parsed as HTML, so "<b>" still shows as "<b>". */
+    private appendMessageText(el: HTMLElement, content: string) {
+      for (const piece of splitLinks(content)) {
+        if (piece.kind === "text") {
+          el.appendChild(document.createTextNode(piece.text));
+          continue;
+        }
+        const a = document.createElement("a");
+        a.href = piece.href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer nofollow";
+        a.textContent = piece.text;
+        el.appendChild(a);
+      }
+    }
+
     private buildAttachmentEl(att: WidgetAttachment): HTMLElement | null {
       const url = (att.media_url || "").trim();
       if (!url) return null;
@@ -1558,7 +1579,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         if (m.content) {
           const text = document.createElement("div");
           text.className = "msg-text";
-          text.textContent = m.content;
+          this.appendMessageText(text, m.content);
           el.appendChild(text);
         }
 

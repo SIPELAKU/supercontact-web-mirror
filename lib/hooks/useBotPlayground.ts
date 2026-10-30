@@ -195,7 +195,8 @@ export function useAttachQuestionToArticle(accountId?: string) {
 import { getContentGaps } from "@/lib/api/bot-playground";
 import { fillKbPlaceholders } from "@/lib/api/knowledge";
 
-export function useContentGaps() {
+/** `enabled: false` for a user without omnichannel:setup - the endpoint would refuse. */
+export function useContentGaps(enabled = true) {
   const { token } = useAuth();
   return useQuery({
     queryKey: ["bot-playground", "content-gaps"],
@@ -203,7 +204,7 @@ export function useContentGaps() {
       if (!token) throw new Error("No authentication token");
       return getContentGaps(token);
     },
-    enabled: !!token,
+    enabled: !!token && enabled,
     retry: 1,
     refetchOnWindowFocus: false,
   });

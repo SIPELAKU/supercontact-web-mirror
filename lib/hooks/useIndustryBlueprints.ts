@@ -88,6 +88,10 @@ export function useInstallBlueprint() {
                 "units",
                 "price-lists",
                 "custom-field-definitions",
+                // KB packs: the new articles, and the placeholders they still
+                // carry (Content Gaps, offered on the "Selesai" step).
+                "knowledge",
+                "bot-playground",
             ].forEach((key) =>
                 queryClient.invalidateQueries({ queryKey: [key] })
             );

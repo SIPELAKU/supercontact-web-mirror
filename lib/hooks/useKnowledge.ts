@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { usePermission } from "./usePermission";
@@ -208,6 +209,34 @@ export function useKbArticles(params: KbArticleListParams = {}) {
     refetchOnWindowFocus: false,
     enabled: !!token,
   });
+}
+
+/** Loads several articles' full bodies, fresh, a few at a time - for checks the
+ *  list rows cannot answer (they carry no body). Each lands in the same cache
+ *  entry useKbArticle reads. */
+export function useLoadKbArticles() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useCallback(
+    async (ids: string[]): Promise<KbArticle[]> => {
+      if (!token) throw new Error("No authentication token");
+      const loaded: KbArticle[] = [];
+      for (let i = 0; i < ids.length; i += 6) {
+        const batch = await Promise.all(
+          ids.slice(i, i + 6).map((id) =>
+            qc.fetchQuery({
+              queryKey: [KB, "article", id],
+              queryFn: () => fetchKbArticle(token, id),
+              staleTime: 0,
+            })
+          )
+        );
+        loaded.push(...batch);
+      }
+      return loaded;
+    },
+    [qc, token]
+  );
 }
 
 export function useKbArticle(id?: string) {

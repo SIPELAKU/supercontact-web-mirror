@@ -9,6 +9,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.5] - 2026-10-30
+
+### Detail Versi 1.116.5
+
+FE disiapkan lebih dulu untuk pekerjaan BE yang sedang berjalan (BE-9, BE-10, BE-6, BE-7), supaya bisa langsung dites begitu BE naik ke DEV. Selama BE belum mengirim datanya, tampilan tetap sama seperti sebelumnya.
+
+#### ✨ Setup Cepat: Data untuk Artikel Knowledge Base Ditanyakan Sejak Awal
+
+- **Deskripsi:**
+  - **Masalah:** form **Isi data perusahaan** hanya menanyakan data milik blueprint. Data yang dipakai paket artikel Knowledge Base (alamat, link Google Maps, daftar cabang, dan seterusnya, ±80 untuk paket marketing) tidak pernah ditanyakan, sehingga tertinggal sebagai `{{…}}` di artikel
+  - **Perbaikan:** bila modul Knowledge Base dicentang dan BE mengirim daftar data paket KB, langkah **Isi data & modul** menampilkan bagian lipat **"Data untuk artikel Knowledge Base (opsional)"** dengan hitungan "X dari N terisi". Nilainya ikut terkirim bersama data perusahaan saat pratinjau dan pemasangan
+  - Data yang sudah ditanyakan blueprint (misalnya nama toko) tidak ditanyakan dua kali
+  - **Impact:** artikel KB dari Setup Cepat bisa langsung terisi lengkap, tanpa harus melengkapinya setelah install
+  - **Technical Notes:**
+    - membaca `kb_variables` (`{key, label, example}[]`) dari detail blueprint (`GET /industry-blueprints/{id}`), yang diminta di BE-9 langkah 2(a); tanpa field itu, bagian ini tidak tampil
+    - `extraKbVariables` dan `filledCount` di `components/admin/blueprints/kbVariables.ts`; tampilan di `components/admin/blueprints/KbVariablesSection.tsx`
+
+#### 🛡️ Penolakan Terbit dari Server Memakai Modal Isian Kosong
+
+- **Deskripsi:**
+  - **Masalah:** tombol **Terbitkan semua draft** di Knowledge Base belum diperiksa FE, karena FE tidak memuat isi semua draft. Artikel ber-`{{…}}` masih bisa terbit lewat tombol ini
+  - **Perbaikan:** bila server menolak menerbitkan karena masih ada isian kosong (BE-10), daftar artikel dan halaman edit menampilkan modal **"Artikel belum bisa diterbitkan"** yang sama (daftar artikel, tanda yang tersisa, link Edit), bukan pesan error biasa
+  - **Technical Notes:**
+    - `placeholderRejection` di `lib/utils/kbPlaceholders.ts` membaca respons **422 `VALIDATION_ERROR`** yang dikirim BE 1.156.0: satu artikel `error.details = { article_id, title, placeholders }`, massal (`bulk-status` / `bulk-publish`) `error.details = { articles: [ … ] }`. Bentuk kontrak awal (`id`, `reason: "unfilled_placeholders"`) tetap diterima. Error lain, termasuk 422 validasi biasa (details berupa list), tetap tampil seperti sebelumnya
+    - celah "Terbitkan semua draft" baru tertutup setelah BE-10 aktif
+
+#### ✨ Link di Pesan Web Widget Bisa Diklik
+
+- **Deskripsi:**
+  - **Masalah:** widget menampilkan pesan sebagai teks biasa, sehingga link artikel dari answer bot (BE-6) dan link yang dikirim agent tampil sebagai teks panjang yang tidak bisa diklik
+  - **Perbaikan:** alamat `http://` dan `https://` di pesan widget menjadi link yang terbuka di tab baru. Tanda baca di akhir kalimat tidak ikut menjadi bagian link
+  - **Keamanan:** hanya `http`/`https` yang menjadi link (`javascript:`, `data:` dan sejenisnya tetap teks), dan pesan tidak pernah dibaca sebagai HTML (`<b>tes</b>` tetap tampil apa adanya)
+  - **Technical Notes:**
+    - `splitLinks` di `lib/utils/linkify.ts` (tanpa import, ikut dibundel ke `public/widget.js`); `appendMessageText` di `widget/src/widget.ts` membangun node teks dan `<a rel="noopener noreferrer nofollow">`
+    - memakai loop `RegExp.exec` (bukan `matchAll`) karena bundel widget menargetkan ES2018
+
+#### ✨ Bot Playground: Alasan AI Tidak Menjawab
+
+- **Deskripsi:**
+  - **Masalah:** saat AI tidak menulis jawaban, Playground hanya memberi peringatan umum, sehingga admin tidak tahu apakah AI mati, belum terhubung, menolak, gagal, atau ditahan aturan artikel
+  - **Perbaikan:** di bawah jawaban pada tab **Tester** muncul satu kalimat alasan dan langkah yang perlu diambil, sesuai `fallback_reason` dari BE (BE-7). Alasan yang belum dikenal FE tetap ditampilkan dengan kodenya
+  - **Technical Notes:**
+    - `fallbackReasonHint` di `components/omnichannel/answerBotHints.ts`; tidak tampil bila AI menjawab, bila BE belum mengirim field ini, atau bila petunjuk "AI answer is off" dari 1.116.3 sudah menjelaskannya
+
+#### 💄 Panel Isian: Tanda Milik Kolom Disorot di Potongan Artikel
+
+- **Deskripsi:**
+  - **Masalah:** potongan artikel di bawah tiap kolom panel isian (Checklist Aktivasi dan Content Gaps) sering memuat tanda lain yang bersebelahan. Contoh: kolom `JAM_MINGGU` menampilkan "Sabtu: {{JAM_SABTU}} - Minggu: {{JAM_MINGGU}}", sehingga terlihat seperti kolom itu mengisi `JAM_SABTU`
+  - **Perbaikan:** tanda milik kolom itu sendiri dicetak tebal biru; tanda lain tetap teks abu-abu biasa
+  - **Technical Notes:**
+    - `splitOwnPlaceholder` di `lib/utils/kbPlaceholders.ts`, dipakai `KbPlaceholderFillForm`; kunci dicocokkan tanpa peduli huruf besar/kecil dan spasi di dalam kurung, sama seperti `fill-placeholders`
+
+#### 🔧 Dev Proxy: Batas Tunggu Request Dinaikkan ke 120 Detik
+
+- **Deskripsi:**
+  - **Masalah:** saat dites lokal, **Apply values** di panel isian Setup Cepat membalas "Internal Server Error", padahal nilainya tersimpan. Proxy `/api/proxy` (rewrite Next.js, aktif bila `BACKEND_URL` diisi) memutus request setelah 30 detik (`socket hang up`), sementara API masih bekerja
+  - **Perbaikan:** batas tunggu proxy dinaikkan menjadi 120 detik
+  - **Technical Notes:**
+    - `experimental.proxyTimeout: 120_000` di `next.config.mjs`; hanya berlaku saat rewrite `/api/proxy` aktif (`BACKEND_URL` diisi)
+    - penyebab utamanya API yang lambat (> 30 detik untuk beberapa artikel). Dicatat untuk BE sebagai BE-13; error 500 install blueprint (BE-12) kemungkinan penyebabnya sama
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **28 Test Baru:**
+    - `components/admin/blueprints/kbVariables.test.ts` (6): tanpa `kb_variables` tidak ada bagian tambahan; data yang sudah ditanyakan blueprint dibuang, urutan tetap; kunci ganda ditanyakan sekali; kunci dibandingkan persis (huruf besar/kecil); entri tanpa kunci dilewati; hitungan terisi mengabaikan spasi
+    - `lib/utils/kbPlaceholders.test.ts` (+9): tanda milik kolom disorot, tanda tetangga tidak; semua kemunculan, huruf besar/kecil dan spasi; kunci yang merupakan awalan kunci lain tidak ikut; tanda yang terpotong tidak disorot; penolakan server dibaca menjadi daftar artikel; bentuk 422 massal BE (`article_id`) terbaca; bentuk 422 satu artikel terbaca; error lain (termasuk 422 validasi biasa) diabaikan; entri tanpa id atau tanpa tanda dibuang
+    - `lib/utils/linkify.test.ts` (8): teks tanpa link; link di antara teks dengan baris baru; tanda baca dan kurung penutup di luar link; kurung milik URL tetap; beberapa link dengan query; skema selain http(s) tetap teks; HTML tetap teks; "https://" saja bukan link
+    - `components/omnichannel/answerBotHints.test.ts` (+5): setiap alasan punya kalimat sendiri; tidak tampil bila AI menjawab atau BE belum mengirim alasan; tidak dobel dengan petunjuk AI mati; AI mati di jawaban lain tetap dijelaskan; alasan baru tampil dengan kodenya
+  - **Mutation check:** 13/13 mutasi tertangkap
+  - **Total:** 69 file test, 759 test lolos; `tsc` bersih
+
+---
+
+## [1.116.4] - 2026-10-29
+
+### Detail Versi 1.116.4
+
+#### 🐛 Setup Cepat: Isian Artikel Knowledge Base yang Tertinggal Kosong
+
+- **Deskripsi:**
+  - **Masalah:** blueprint di **Settings › Setup Cepat** hanya menanyakan data milik blueprint itu sendiri (nama toko, jam operasional, WhatsApp dan email CS, dan seterusnya). Padahal 8 blueprint (E-commerce, Hospitality & Travel, Kesehatan & Klinik, Otomotif & Bengkel, Pendidikan & Kursus, Properti, SaaS & Software, Manufaktur) juga memasang paket Knowledge Base marketing yang punya 65–84 isian sendiri, misalnya `{{ALAMAT_PUSAT}}`, `{{URL_MAPS}}` dan `{{DAFTAR_CABANG}}`. Isian itu tidak pernah ditanyakan, sehingga artikelnya tertinggal dengan tanda `{{…}}` mentah, dan answer bot bisa membacakannya ke pengunjung (contoh: "Cabang utama kami di {{ALAMAT_PUSAT}}")
+  - **Perbaikan:** tab **Checklist Aktivasi** di Setup Cepat (yang otomatis terbuka setelah install) kini menampilkan panel **"Isian artikel Knowledge Base (N tanda kosong)"** selama masih ada tanda yang belum diisi:
+    - daftar semua tanda yang masih kosong, lengkap dengan label, contoh isian, potongan kalimat dan artikel yang memakainya;
+    - nilai yang diisi langsung diterapkan ke semua artikel yang memakainya, dan panel hilang begitu semua tanda terisi;
+    - pengingat bahwa artikel dari blueprint dipasang sebagai **Draft** dan perlu diterbitkan di Knowledge Base agar dibaca answer bot
+  - **Impact:** admin bisa melengkapi data artikel tepat setelah Setup Cepat, tanpa harus menemukan sendiri tab Content Gaps di Bot Playground
+  - **Technical Notes:**
+    - form isian dipindahkan ke komponen bersama `components/knowledge/KbPlaceholderFillForm.tsx`, dipakai tab **Content Gaps** di Bot Playground (tampilan tidak berubah) dan tab Checklist Aktivasi Setup Cepat
+    - memakai endpoint yang sudah ada: `GET /bot-playground/content-gaps` dan `POST /knowledge/articles/fill-placeholders`
+    - panel hanya tampil bila masih ada tanda kosong dan user punya izin `omnichannel:setup` serta izin menulis artikel (`offersKbFill` di `components/admin/blueprints/kbFillOffer.ts`); tanpa izin, daftar tanda tidak diminta ke API
+    - setelah install, cache Knowledge Base dan Content Gaps ikut diperbarui
+    - perbaikan menyeluruh ada di BE: menanyakan isian paket KB di langkah data perusahaan dan melaporkan isian yang kosong di hasil install
+
+#### 🐛 Setup Cepat: Knowledge Base yang Terhapus Tidak Bisa Dipasang Ulang
+
+- **Deskripsi:**
+  - **Masalah:** di langkah **Pratinjau**, tombol **"Pasang 0 item"** nonaktif bila semua modul lain sudah terpasang, walaupun Knowledge Base (misalnya setelah kategorinya dihapus) masih perlu dipasang ulang
+  - **Root Cause:** pratinjau BE tidak menjalankan installer Knowledge Base, sehingga modul ini selalu dihitung 0 item. FE menonaktifkan tombol bila total item 0
+  - **Perbaikan:** tombol tetap aktif bila modul Knowledge Base dipilih, dengan label **"Pasang Knowledge Base"** bila tidak ada item lain yang baru. Aman, karena install Knowledge Base melewati artikel yang sudah ada
+  - **Technical Notes:** `previewCanInstall` dan `installButtonLabel` di `components/admin/blueprints/previewInstall.ts`
+
+#### 🛡️ Artikel Berisi Isian Kosong Tidak Bisa Diterbitkan
+
+- **Deskripsi:**
+  - **Masalah:** artikel yang masih berisi tanda `{{…}}` bisa diterbitkan, lalu answer bot membacakannya apa adanya ke pengunjung
+  - **Perbaikan:**
+    - **Knowledge Base › Terbitkan (N):** isi artikel yang dicentang diperiksa dulu. Bila ada yang masih berisi `{{…}}`, **tidak ada satu pun yang diterbitkan**, dan muncul modal **"Artikel belum bisa diterbitkan"** berisi daftar artikel, tanda yang tersisa, dan tautan **Edit** ke masing-masing;
+    - **Halaman edit artikel › Publish:** versi yang tersimpan diperiksa dengan cara yang sama, karena versi itulah yang diterbitkan;
+    - tanda huruf besar (`{{ALAMAT_PUSAT}}`) dan huruf kecil (`{{company_name}}`) sama-sama dihitung
+  - **Technical Notes:**
+    - `unfilledPlaceholders` dan `articlesWithPlaceholders` di `lib/utils/kbPlaceholders.ts`; modal `components/knowledge/UnfilledPlaceholdersDialog.tsx`
+    - daftar artikel tidak membawa isi, jadi artikel yang dicentang dimuat dulu lewat `useLoadKbArticles` (`lib/hooks/useKnowledge.ts`, selalu data terbaru, 6 artikel sekaligus)
+    - ini pengaman di FE; BE diminta menambahkan penolakan yang sama di API
+
+#### ✨ "Lewati Dulu" untuk Isian Artikel Knowledge Base
+
+- **Deskripsi:**
+  - Panel isian di **Checklist Aktivasi** kini punya tombol **Lewati dulu**. Panel disembunyikan sampai daftar tanda kosong berubah (misalnya setelah memasang blueprint lain); pilihan ini disimpan di browser
+  - Tombol hanya aktif bila **semua** artikel yang masih berisi tanda kosong berstatus **Draft**, karena artikel itu tidak dibaca answer bot dan tidak bisa diterbitkan sebelum diisi. Bila ada yang sudah terbit, tombol nonaktif dengan keterangan *"Tidak bisa dilewati: ada artikel yang sudah terbit dengan isian kosong"*
+  - **Catatan:** saat ini BE baru melaporkan tanda dari artikel Published, jadi tombol ini selalu nonaktif sampai BE juga melaporkan artikel Draft beserta statusnya
+  - **Technical Notes:** `canSkipKbFill` dan `kbGapSignature` di `components/admin/blueprints/kbFillOffer.ts`; artikel tanpa status dianggap sudah terbit
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **23 Test Baru:**
+    - `lib/utils/kbPlaceholders.test.ts` (8): nilai isian dikirim setelah di-trim dan isian kosong tidak dikirim; tanda huruf besar dan kecil ditemukan sekali dan berurutan, artikel bersih/kosong tidak punya tanda, kurung yang bukan tanda tidak dihitung, hanya artikel bertanda yang diblokir;
+    - `components/admin/blueprints/kbFillOffer.test.ts` (9): panel tampil bila masih ada tanda kosong dan izinnya lengkap; "Lewati dulu" aktif hanya bila semua artikel bertanda masih Draft (nonaktif bila ada yang terbit, statusnya tidak diketahui, atau daftarnya kosong); tanda yang sama dengan urutan berbeda dianggap sama, tanda baru mengubahnya;
+    - `components/admin/blueprints/previewInstall.test.ts` (6): tombol aktif bila ada item baru atau modul Knowledge Base dipilih, nonaktif bila keduanya tidak ada; label menghitung item, menyebut Knowledge Base, atau tetap "Pasang 0 item"
+  - **Total:** 67 file test, 731 test lolos
+
+---
+
 ## [1.116.3] - 2026-10-29
 
 ### Detail Versi 1.116.3

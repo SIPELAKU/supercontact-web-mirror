@@ -24,6 +24,9 @@ import type {
     BlueprintSummary,
 } from "@/lib/types/IndustryBlueprint";
 import { BEHAVIOUR_MODULES, moduleLabel } from "./moduleLabels";
+import { installButtonLabel, previewCanInstall } from "./previewInstall";
+import { extraKbVariables } from "./kbVariables";
+import KbVariablesSection from "./KbVariablesSection";
 
 type Step = "industry" | "details" | "preview" | "done";
 
@@ -100,6 +103,7 @@ export default function BlueprintWizard({
     }, [detail, variables]);
 
     const declaredModules = useMemo(() => moduleNames(detail?.modules), [detail]);
+    const kbFields = useMemo(() => extraKbVariables(detail), [detail]);
 
     /** Ticked and disabled while `products` is ticked: it comes along regardless. */
     const lockedByProducts = (key: string) =>
@@ -292,6 +296,14 @@ export default function BlueprintWizard({
                         </div>
                     </section>
 
+                    {modules.has("knowledge_base") && kbFields.length > 0 && (
+                        <KbVariablesSection
+                            fields={kbFields}
+                            values={variables}
+                            onChange={(key, value) => setVariables({ ...variables, [key]: value })}
+                        />
+                    )}
+
                     {missingVariables.length > 0 && (
                         <div className="flex gap-2 rounded-lg border-l-4 border-l-amber-500 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -347,10 +359,10 @@ export default function BlueprintWizard({
                         </AppButton>
                         <AppButton
                             onClick={runInstall}
-                            disabled={install.isPending || preview.totals.created === 0}
+                            disabled={install.isPending || !previewCanInstall(preview)}
                         >
                             <Sparkles className="mr-1.5 h-4 w-4" />
-                            Pasang {preview.totals.created} item
+                            {installButtonLabel(preview)}
                         </AppButton>
                     </div>
                 </div>

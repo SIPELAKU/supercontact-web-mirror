@@ -23,6 +23,9 @@ export interface BlueprintSummary {
 
 export interface BlueprintDetail extends BlueprintSummary {
     variables: BlueprintVariable[];
+    /** The {{VARIABLES}} of the KB packs this blueprint installs (BE-9). Sent
+     *  in the same `variables` payload; absent on a BE that does not list them. */
+    kb_variables?: BlueprintVariable[];
 }
 
 export interface ModuleReport {

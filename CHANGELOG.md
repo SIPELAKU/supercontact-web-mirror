@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact:** admin langsung tahu kenapa bot hanya mengirim daftar judul dan cara memperbaikinya, tanpa harus menelusuri sendiri
   - **Technical Notes:** `isTitleListOnly` dan `isAiOffArticleList` di `components/omnichannel/answerBotHints.ts`, dipakai `WebWidgetConfigPanel.tsx` dan `BotPlaygroundPanel.tsx`. Pembuka bawaan daftar artikel masih berbahasa Inggris dari BE; perbaikannya di BE
 
+#### 🔍 Redirect www.smartsales.id ke Apex di Aplikasi
+
+- **Deskripsi:**
+  - **Masalah:** pengalihan www.smartsales.id → smartsales.id hanya diatur di pengaturan domain Vercel, sementara deploy prod meng-alias ulang www ke setiap deployment. Awal Oktober 2026 www sempat menyajikan halaman dengan status 200, sehingga Google mengindeks salinan www artikel blog (`sla-follow-up-leads` ganda, `mql-vs-sql` hanya versi www)
+  - **Perbaikan:** redirect permanen (308) berbasis host di `next.config.mjs`: semua path di www.smartsales.id dialihkan ke path yang sama di smartsales.id, query string ikut
+  - **Impact:** www tidak bisa lagi menjadi salinan kedua situs, apa pun pengaturan domain Vercel-nya; Google mengonsolidasikan indeks ke apex
+  - **Technical Notes:** aturan `has: [{ type: 'host', value: 'www.smartsales.id' }]` di `redirects()`; apex, staging, dan dev tidak terpengaruh (diuji dengan matcher rute Next 14.2.5)
+
 #### 🧪 Testing
 
 - **Deskripsi:**

@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.3] - 2026-10-29
+
+### Detail Versi 1.116.3
+
+#### 🎨 Peringatan Saat Answer Bot Berjalan Tanpa AI
+
+- **Deskripsi:**
+  - **Masalah:** answer bot Web Widget yang aktif tanpa AI hanya mengirim daftar judul artikel (dengan pembuka bahasa Inggris "Here are some articles that might help:"), bukan jawaban. Pilihan **"Use AI to compose an answer"** mati secara bawaan, dan halaman pengaturan tidak memberi tahu akibatnya, sehingga bot terlihat seperti rusak. Hal yang sama membingungkan saat tes di Bot Playground dengan pilihan "AI answer: Follow config"
+  - **Perbaikan:**
+    - **Settings › Web Widget › AI Answer Bot:** kotak peringatan kuning muncul saat answer bot aktif tetapi AI mati: pengunjung hanya mendapat daftar judul artikel;
+    - penjelasan pilihan "Use AI to compose an answer" kini menyebut bahwa tanpa AI bot hanya mengirim daftar judul artikel;
+    - **Bot Playground › Tester:** bila hasil tes berupa daftar artikel karena AI mati untuk tes itu, muncul petunjuk untuk mengubah "AI answer" ke On;
+    - contoh isian **Intro Text** dan **No-Answer Text** kini berbahasa Indonesia, sama seperti Greeting dan Closing Reply. Keterangan Intro Text diperbaiki: teks ini tampil di atas daftar artikel saat AI tidak menulis jawaban, bukan sebelum setiap jawaban otomatis
+  - **Impact:** admin langsung tahu kenapa bot hanya mengirim daftar judul dan cara memperbaikinya, tanpa harus menelusuri sendiri
+  - **Technical Notes:** `isTitleListOnly` dan `isAiOffArticleList` di `components/omnichannel/answerBotHints.ts`, dipakai `WebWidgetConfigPanel.tsx` dan `BotPlaygroundPanel.tsx`. Pembuka bawaan daftar artikel masih berbahasa Inggris dari BE; perbaikannya di BE
+
+#### 🔍 Redirect www.smartsales.id ke Apex di Aplikasi
+
+- **Deskripsi:**
+  - **Masalah:** pengalihan www.smartsales.id → smartsales.id hanya diatur di pengaturan domain Vercel, sementara deploy prod meng-alias ulang www ke setiap deployment. Awal Oktober 2026 www sempat menyajikan halaman dengan status 200, sehingga Google mengindeks salinan www artikel blog (`sla-follow-up-leads` ganda, `mql-vs-sql` hanya versi www)
+  - **Perbaikan:** redirect permanen (308) berbasis host di `next.config.mjs`: semua path di www.smartsales.id dialihkan ke path yang sama di smartsales.id, query string ikut
+  - **Impact:** www tidak bisa lagi menjadi salinan kedua situs, apa pun pengaturan domain Vercel-nya; Google mengonsolidasikan indeks ke apex
+  - **Technical Notes:** aturan `has: [{ type: 'host', value: 'www.smartsales.id' }]` di `redirects()`; apex, staging, dan dev tidak terpengaruh (diuji dengan matcher rute Next 14.2.5)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **5 Test Baru:** `components/omnichannel/answerBotHints.test.ts`: peringatan pengaturan hanya saat answer bot aktif dan AI mati; petunjuk Playground hanya untuk daftar artikel dari tes dengan AI mati, bukan saat AI menolak menjawab atau untuk jenis balasan lain
+  - **Total:** 64 file test, 708 test lolos
+
+---
+
 ## [1.116.2] - 2026-10-29
 
 ### Detail Versi 1.116.2

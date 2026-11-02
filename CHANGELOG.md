@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.7] - 2026-11-02
+
+### Detail Versi 1.116.7
+
+#### 🐛 Menu Settings Terpotong (CSAT Surveys dkk. Tidak Terlihat)
+
+- **Deskripsi:**
+  - **Masalah:** sub-menu kelompok di sidebar Settings dibatasi tinggi tetap 384px (`max-h-96`) dan sisanya dipotong tanpa scroll. Batas itu hanya muat ±10 item, sedangkan kelompok **Support** punya 14 dan **Sales** ±14. Akibatnya admin hanya melihat Support sampai "Automation"; **CSAT Surveys, QA Scorecards, Canned Replies, dan Agents** tidak terlihat walau izinnya ada dan halamannya bisa dibuka lewat URL. Item terbawah Sales juga terpotong
+  - **Perbaikan:** tinggi sub-menu sekarang mengikuti isinya, berapa pun jumlah itemnya; animasi buka/tutup tetap ada
+  - **Technical Notes:**
+    - `components/settings/SettingsGroup.tsx`: `max-h-96`/`max-h-0` diganti grid `grid-rows-[1fr]`/`grid-rows-[0fr]` dengan pembungkus `min-h-0 overflow-hidden`
+    - `components/layout/Sidebar.tsx` (sidebar utama) punya pola yang sama; kelompoknya maksimal 7 item jadi belum terpotong, tapi ikut diperbaiki agar tidak terulang saat menu bertambah
+    - tidak perlu perubahan BE
+
+---
+
 ## [1.116.6] - 2026-11-02
 
 ### Detail Versi 1.116.6

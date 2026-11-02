@@ -34,16 +34,20 @@ export default function SettingsGroup({ section, isOpen, onToggle, isSectionActi
         <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
 
+      {/* Grid rows 0fr -> 1fr animates to the list's own height. A fixed
+          max-height cap clipped long groups (Support, Sales) mid-list. */}
       <div
         id={submenuId}
         className={cn(
-          "ml-6 space-y-0.5 overflow-hidden transition-all duration-200",
-          isOpen ? "mt-1 max-h-96 opacity-100" : "max-h-0 opacity-0",
+          "ml-6 grid transition-all duration-200",
+          isOpen ? "mt-1 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >
-        {section.children?.map((item) => (
-          <SettingsMenuItem key={item.id} item={item} isActive={item.path === activeItemPath} />
-        ))}
+        <div className="min-h-0 space-y-0.5 overflow-hidden">
+          {section.children?.map((item) => (
+            <SettingsMenuItem key={item.id} item={item} isActive={item.path === activeItemPath} />
+          ))}
+        </div>
       </div>
     </div>
   );

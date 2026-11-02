@@ -9,6 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.116.6] - 2026-11-02
+
+### Detail Versi 1.116.6
+
+#### ✨ Knowledge Base: Halaman Isi Placeholder
+
+- **Deskripsi:**
+  - **Masalah:** isian `{{…}}` yang tertinggal di artikel (dari paket Setup Cepat) hanya bisa diisi lewat Bot Playground › Content Gaps atau panel di Checklist Aktivasi. Dari halaman Knowledge Base sendiri tidak ada jalan ke sana
+  - **Perbaikan:** kotak peringatan kuning di bawah kotak "Terbitkan semua draft": "N artikel masih berisi isian kosong… dan belum bisa diterbitkan", dengan tombol **Lengkapi isian (N)**. N = jumlah artikel yang masih berisi `{{…}}`; kotak hilang kalau sudah tidak ada. Tombol membuka halaman `/knowledge-base/placeholders` (tombol back ke Knowledge Base, seperti halaman Categories) dengan dua tampilan:
+    - **By placeholder:** form yang sama dengan Content Gaps; satu nilai diterapkan ke semua artikel yang memakai tanda itu
+    - **By article:** daftar artikel yang masih berisi `{{…}}`, status, tanda yang tersisa, dan link Edit
+  - **Technical Notes:**
+    - memakai ulang `KbPlaceholderFillForm` dan `GET /bot-playground/content-gaps`; tidak perlu perubahan BE
+    - tampil untuk user dengan izin `omnichannel:setup` (membaca Content Gaps) dan `knowledge:publish` (menyimpan isian). Tanpa izin itu tombol tidak tampil, dan halamannya menampilkan keterangan izin
+
+#### ✨ Knowledge Base: Tag "Ready to publish" di Daftar Artikel
+
+- **Deskripsi:**
+  - **Masalah:** dari daftar artikel tidak terlihat draft mana yang sudah bisa diterbitkan dan mana yang masih berisi `{{…}}`. Admin baru tahu saat menekan Terbitkan dan muncul modal penolakan
+  - **Perbaikan:** di kolom Status, di samping badge status:
+    - draft tanpa `{{…}}`: tag hijau **Ready to publish**
+    - artikel yang masih berisi `{{…}}`: tag kuning **N placeholders left**
+  - **Technical Notes:**
+    - dihitung dari Content Gaps (`articlesFromGaps`, `publishReadiness` di `lib/utils/kbPlaceholders.ts`), karena daftar artikel tidak memuat isi artikel. Setelah isian diterapkan, tag ikut diperbarui
+    - Content Gaps memeriksa body; BE saat publish juga memeriksa judul dan excerpt. Tanda yang hanya ada di judul atau excerpt tidak terlihat di tag, tapi tetap ditolak saat publish dan memunculkan modal yang sudah ada
+    - tag tidak tampil tanpa izin `omnichannel:setup`
+
+#### 💄 Modal "Artikel belum bisa diterbitkan" di Halaman Edit Artikel
+
+- **Deskripsi:**
+  - **Masalah:** saat Publish ditolak di halaman edit artikel, modal menampilkan tombol **Edit** yang mengarah ke halaman yang sedang dibuka
+  - **Perbaikan:** di halaman edit, tombol Edit tidak ditampilkan dan petunjuknya menjadi "Ganti tandanya di Body dengan isi sebenarnya, Save, lalu Publish lagi". Di daftar artikel, modal tetap dengan tombol Edit
+  - **Technical Notes:**
+    - prop `inEditor` di `UnfilledPlaceholdersDialog`
+
+#### 🎨 Import History: Progress dalam Persen, Tanpa Menu "Baris"
+
+- **Deskripsi:**
+  - **Masalah:** arahan boss di rapat 29 Okt untuk Import History (Email Marketing › Subscribers): *"kalau masih diolah saya cuma perlu tahu ini sudah berapa persen"* dan *"enggak perlu… rows per page, jadi jangan ada"*. Kolom Progress hanya berisi "Processed: 400 / 1000", dan footer masih punya menu **Baris: 25 ▾**
+  - **Perbaikan:**
+    - kolom Progress berisi bar kecil + persen + jumlah baris (`████░░░░ 40%  400 / 1000`). Bar hijau saat 100%. Persen naik sendiri setiap auto-refresh. Job tanpa baris menampilkan "—"
+    - menu **Baris** tidak ada lagi di Import History; ukuran muatan tetap 25
+  - **Technical Notes:**
+    - `importProgressPercent` di `components/email-marketing/subscribers/modals/importProgress.ts`: dibulatkan ke bawah (100% hanya jika semua baris selesai) dan dibatasi 0-100
+    - SuperTable: footer infinite scroll tidak menampilkan menu Baris bila `features.pageSizeOptions` hanya berisi satu ukuran. Saat ini hanya Import History yang begitu, jadi tabel lain tidak berubah
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **10 Test Baru:**
+    - `lib/utils/kbPlaceholders.test.ts` (+6): daftar per artikel dari Content Gaps; tanda ganda dihitung sekali; data kosong; draft bersih "ready"; jumlah tanda per artikel (1 dan 2); tanpa tag untuk artikel Published yang bersih, Archived, atau saat Content Gaps belum termuat
+    - `components/email-marketing/subscribers/modals/importProgress.test.ts` (4): persen dari processed/total; dibulatkan ke bawah; dibatasi 0-100; tanpa baris atau angka kosong menjadi "—"
+  - **Mutation check:** 5/5 mutasi tertangkap (helper KB)
+  - **Total:** 70 file test, 769 test lolos; `tsc` bersih
+
+---
+
 ## [1.116.5] - 2026-10-30
 
 ### Detail Versi 1.116.5

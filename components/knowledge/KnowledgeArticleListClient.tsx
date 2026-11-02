@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   Archive,
   BookOpen,
   CheckCircle2,
   FileEdit,
   LayoutTemplate,
   Loader2,
+  PencilLine,
   Plus,
   Send,
   Settings2,
@@ -34,9 +36,12 @@ import {
   useKbSections,
   useLoadKbArticles,
 } from "@/lib/hooks/useKnowledge";
+import { useContentGaps } from "@/lib/hooks/useBotPlayground";
 import {
+  articlesFromGaps,
   articlesWithPlaceholders,
   placeholderRejection,
+  publishReadiness,
   type ArticleWithPlaceholders,
 } from "@/lib/utils/kbPlaceholders";
 import { UnfilledPlaceholdersDialog } from "./UnfilledPlaceholdersDialog";
@@ -46,7 +51,7 @@ import type {
   KbBulkStatusReport,
   KbBulkStatusRequest,
 } from "@/lib/types/knowledge";
-import { KbStatusBadge } from "./KbStatusBadge";
+import { KbReadinessTag, KbStatusBadge } from "./KbStatusBadge";
 
 /** One lazy batch. The list used to fetch a flat 200 - the API's hard cap -
  *  and tell the user "daftar dibatasi 200 artikel" when a knowledge base
@@ -120,6 +125,16 @@ export default function KnowledgeArticleListClient() {
   // the whole selection UI and then get a 403 from every button. Gate on what
   // the API actually checks.
   const canPublish = can("knowledge:publish");
+  // Which articles still carry a {{placeholder}} comes from Content Gaps (the
+  // list has no bodies), which is gated on omnichannel:setup. Without it the
+  // tags and the fill button stay hidden rather than guess.
+  const canSeeGaps = can("omnichannel:setup");
+  const { data: gaps } = useContentGaps(canSeeGaps);
+  const gapsById = useMemo(
+    () => (gaps ? new Map(articlesFromGaps(gaps).map((a) => [a.id, a])) : undefined),
+    [gaps]
+  );
+  const gapArticleCount = gapsById?.size ?? 0;
 
   const [status, setStatus] = useState<KbArticleStatus | "">("");
   const [sectionId, setSectionId] = useState<string>("");
@@ -277,7 +292,12 @@ export default function KnowledgeArticleListClient() {
       {
         accessorKey: "status",
         header: "Status",
-        Cell: ({ row }) => <KbStatusBadge status={row.original.status} />,
+        Cell: ({ row }) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <KbStatusBadge status={row.original.status} />
+            <KbReadinessTag readiness={publishReadiness(row.original, gapsById)} />
+          </div>
+        ),
       },
       {
         accessorKey: "section_id",
@@ -328,7 +348,7 @@ export default function KnowledgeArticleListClient() {
         ),
       },
     ],
-    [sectionName]
+    [sectionName, gapsById]
   );
 
   const sectionOptions = useMemo(
@@ -549,6 +569,25 @@ export default function KnowledgeArticleListClient() {
               </AppButton>
             )}
           </div>
+        </div>
+      )}
+
+      {canPublish && gapArticleCount > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-2 text-sm text-amber-800">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            <span>
+              <span className="font-semibold">{gapArticleCount}</span> artikel masih berisi isian
+              kosong seperti {"{{ALAMAT_PUSAT}}"} dan belum bisa diterbitkan.
+            </span>
+          </div>
+          <AppButton
+            variantStyle="outline"
+            startIcon={<PencilLine size={16} />}
+            onClick={() => router.push("/knowledge-base/placeholders")}
+          >
+            Lengkapi isian ({gapArticleCount})
+          </AppButton>
         </div>
       )}
 

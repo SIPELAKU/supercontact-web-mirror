@@ -64,6 +64,40 @@ export function articlesWithPlaceholders(
     .filter((a) => a.placeholders.length > 0);
 }
 
+export interface ArticleGap extends ArticleWithPlaceholders {
+  status?: string;
+}
+
+/** Content Gaps turned around: one entry per article with every placeholder
+ *  still in it, in the order the API lists them. The article list has no
+ *  bodies, so this is how it knows which drafts are ready to publish. */
+export function articlesFromGaps(
+  gaps: { variables: { key: string; articles: { id: string; title: string; status?: string }[] }[] } | undefined
+): ArticleGap[] {
+  const byId = new Map<string, ArticleGap>();
+  for (const variable of gaps?.variables ?? []) {
+    for (const a of variable.articles) {
+      const entry = byId.get(a.id) ?? { id: a.id, title: a.title, status: a.status, placeholders: [] };
+      if (!entry.placeholders.includes(variable.key)) entry.placeholders.push(variable.key);
+      byId.set(a.id, entry);
+    }
+  }
+  return [...byId.values()];
+}
+
+/** The tag beside an article's status in the list: "ready" for a draft with
+ *  nothing left to fill, the number of placeholders left for one that still
+ *  has some, null when there is nothing to say (archived, or gaps unknown). */
+export function publishReadiness(
+  article: { id: string; status: string },
+  gapsById: Map<string, ArticleGap> | undefined
+): "ready" | number | null {
+  if (!gapsById || article.status === "archived") return null;
+  const gap = gapsById.get(article.id);
+  if (gap) return gap.placeholders.length;
+  return article.status === "draft" ? "ready" : null;
+}
+
 type RejectedArticle = { id?: unknown; article_id?: unknown; title?: unknown; placeholders?: unknown };
 
 /** The articles in the API's refusal to publish placeholders (BE-10, a 422

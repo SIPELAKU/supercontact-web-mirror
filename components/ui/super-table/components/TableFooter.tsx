@@ -117,39 +117,45 @@ export function TableFooter({
           )
         )}
 
-        <AppButton
-          variantStyle="text"
-          color="gray"
-          endIcon={<ChevronDown size={14} />}
-          onClick={(e) => setSizeAnchor(e.currentTarget)}
-          aria-haspopup="menu"
-          aria-expanded={Boolean(sizeAnchor)}
-          aria-label={`Baris per muatan: ${pageSize}`}
-          sx={{ flexShrink: 0 }}
-        >
-          <span className="hidden sm:inline">Baris:&nbsp;</span>
-          {pageSize}
-        </AppButton>
-        <Menu
-          anchorEl={sizeAnchor}
-          open={Boolean(sizeAnchor)}
-          onClose={() => setSizeAnchor(null)}
-          slotProps={{ paper: { sx: { borderRadius: 2 } } }}
-        >
-          {pageSizeOptions.map((size) => (
-            <MenuItem
-              key={size}
-              dense
-              selected={size === pageSize}
-              onClick={() => {
-                onPageSizeChange(size);
-                setSizeAnchor(null);
-              }}
+        {/* A menu with one choice is no choice: a table that fixes its batch
+            size (features.pageSizeOptions with a single entry) gets no menu. */}
+        {pageSizeOptions.length > 1 && (
+          <>
+            <AppButton
+              variantStyle="text"
+              color="gray"
+              endIcon={<ChevronDown size={14} />}
+              onClick={(e) => setSizeAnchor(e.currentTarget)}
+              aria-haspopup="menu"
+              aria-expanded={Boolean(sizeAnchor)}
+              aria-label={`Baris per muatan: ${pageSize}`}
+              sx={{ flexShrink: 0 }}
             >
-              <ListItemText primary={`${size} per muatan`} />
-            </MenuItem>
-          ))}
-        </Menu>
+              <span className="hidden sm:inline">Baris:&nbsp;</span>
+              {pageSize}
+            </AppButton>
+            <Menu
+              anchorEl={sizeAnchor}
+              open={Boolean(sizeAnchor)}
+              onClose={() => setSizeAnchor(null)}
+              slotProps={{ paper: { sx: { borderRadius: 2 } } }}
+            >
+              {pageSizeOptions.map((size) => (
+                <MenuItem
+                  key={size}
+                  dense
+                  selected={size === pageSize}
+                  onClick={() => {
+                    onPageSizeChange(size);
+                    setSizeAnchor(null);
+                  }}
+                >
+                  <ListItemText primary={`${size} per muatan`} />
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
+        )}
       </Box>
     </Box>
   );

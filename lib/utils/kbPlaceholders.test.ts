@@ -3,10 +3,69 @@ import { describe, expect, it } from 'vitest';
 import {
   articlesWithPlaceholders,
   placeholderPayload,
+  articlesFromGaps,
   placeholderRejection,
+  publishReadiness,
   splitOwnPlaceholder,
   unfilledPlaceholders,
 } from './kbPlaceholders';
+
+describe('articlesFromGaps', () => {
+  const gaps = {
+    variables: [
+      { key: 'ALAMAT_PUSAT', articles: [{ id: 'a1', title: 'Lokasi', status: 'draft' }] },
+      {
+        key: 'URL_MAPS',
+        articles: [
+          { id: 'a1', title: 'Lokasi', status: 'draft' },
+          { id: 'a2', title: 'Cabang', status: 'published' },
+        ],
+      },
+    ],
+  };
+
+  it('one entry per article, with every placeholder left in it', () => {
+    expect(articlesFromGaps(gaps)).toEqual([
+      { id: 'a1', title: 'Lokasi', status: 'draft', placeholders: ['ALAMAT_PUSAT', 'URL_MAPS'] },
+      { id: 'a2', title: 'Cabang', status: 'published', placeholders: ['URL_MAPS'] },
+    ]);
+  });
+
+  it('a key listed twice for the same article counts once', () => {
+    const dup = { variables: [{ key: 'X', articles: [{ id: 'a1', title: 't' }, { id: 'a1', title: 't' }] }] };
+    expect(articlesFromGaps(dup)[0].placeholders).toEqual(['X']);
+  });
+
+  it('no gaps, or not loaded: no articles', () => {
+    expect(articlesFromGaps({ variables: [] })).toEqual([]);
+    expect(articlesFromGaps(undefined)).toEqual([]);
+  });
+});
+
+describe('publishReadiness', () => {
+  const gapsById = new Map(articlesFromGaps({
+    variables: [
+      { key: 'ALAMAT_PUSAT', articles: [{ id: 'a1', title: 'Lokasi', status: 'draft' }, { id: 'a2', title: 'Peta', status: 'draft' }] },
+      { key: 'URL_MAPS', articles: [{ id: 'a2', title: 'Peta', status: 'draft' }] },
+    ],
+  }).map((a) => [a.id, a]));
+
+  it('a draft with nothing left to fill is ready', () => {
+    expect(publishReadiness({ id: 'a9', status: 'draft' }, gapsById)).toBe('ready');
+  });
+
+  it('an article with placeholders left reports how many, whatever its status', () => {
+    expect(publishReadiness({ id: 'a1', status: 'draft' }, gapsById)).toBe(1);
+    expect(publishReadiness({ id: 'a1', status: 'published' }, gapsById)).toBe(1);
+    expect(publishReadiness({ id: 'a2', status: 'draft' }, gapsById)).toBe(2);
+  });
+
+  it('nothing to say for a clean published article, an archived one, or unknown gaps', () => {
+    expect(publishReadiness({ id: 'a9', status: 'published' }, gapsById)).toBeNull();
+    expect(publishReadiness({ id: 'a1', status: 'archived' }, gapsById)).toBeNull();
+    expect(publishReadiness({ id: 'a9', status: 'draft' }, undefined)).toBeNull();
+  });
+});
 
 describe('splitOwnPlaceholder', () => {
   const context = 'Sabtu: {{JAM_SABTU}} - Minggu & hari libur nasional: {{JAM_MINGGU}} - Pesan';

@@ -525,7 +525,7 @@ export default function KnowledgeArticleEditorClient({ articleId }: KnowledgeArt
         />
       )}
       {confirmationPopup}
-      <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} />
+      <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} inEditor />
     </div>
   );
 }

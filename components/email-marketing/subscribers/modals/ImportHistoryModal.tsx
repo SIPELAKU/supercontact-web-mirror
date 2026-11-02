@@ -14,6 +14,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
 import { useQueryClient } from "@tanstack/react-query";
+import { importProgressPercent } from "./importProgress";
 
 interface ImportHistoryModalProps {
   open: boolean;
@@ -183,11 +184,29 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
         header: "Progress",
         Cell: ({ row }) => {
           const { total_rows, processed_rows, created_rows, skipped_rows, failed_rows } = row.original;
+          const percent = importProgressPercent(processed_rows, total_rows);
           return (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, fontSize: "0.875rem" }}>
-              <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
-                Processed: {processed_rows} / {total_rows}
-              </Typography>
+              <div className="flex items-center gap-2">
+                <div
+                  className="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-gray-200"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={percent ?? undefined}
+                >
+                  <div
+                    className={`h-full rounded-full transition-all ${percent === 100 ? "bg-green-500" : "bg-blue-500"}`}
+                    style={{ width: `${percent ?? 0}%` }}
+                  />
+                </div>
+                <span className="text-xs font-semibold tabular-nums text-gray-700">
+                  {percent === null ? "—" : `${percent}%`}
+                </span>
+                <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+                  {processed_rows} / {total_rows}
+                </Typography>
+              </div>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <span className="text-green-600">Created: {created_rows}</span>
                 <span className="text-gray-500">Skipped: {skipped_rows}</span>
@@ -371,6 +390,9 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
             // Infinite scroll. Polled progress stays current only because
             // every refresh restarts it from batch 1 (listRefresh.reload).
             pagination: true,
+            // One fixed batch size, so no "Baris" menu (boss, 29 Oct meeting:
+            // no rows-per-page here).
+            pageSizeOptions: [BATCH_SIZE],
             globalFilter: true,
             columnFilters: false,
             sorting: false,

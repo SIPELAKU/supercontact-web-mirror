@@ -9,6 +9,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.0] - 2026-11-02
+
+### Detail Versi 1.117.0
+
+#### ✨ Widget: 👍/👎 di Bawah Jawaban Bot
+
+- **Deskripsi:**
+  - **Masalah:** pengunjung hanya bisa menilai jawaban bot lewat kartu "Apakah ini membantu?", yang hanya muncul satu kali untuk jawaban terbaru. Jawaban lain tidak bisa dinilai, jadi kolom Helpful / Not helpful di Knowledge Base jarang bertambah
+  - **Perbaikan:** jawaban bot yang ditandai BE (`answer_feedback`) mendapat tombol 👍 👎 kecil, rata kiri, di bawah bubble-nya:
+    - klik 👍 atau 👎: kedua tombol terkunci, jempol yang dipilih berwarna tema, dan muncul "Terima kasih atas masukannya" ("Thanks for your feedback" untuk `data-locale="en"`). Vote bersifat final
+    - 👎 hanya menghitung: tidak ada pertanyaan atau tawaran agen, dan bot tidak membalas
+    - setelah halaman di-refresh, bubble yang sudah dinilai tetap terkunci (vote dibaca dari server)
+    - kalau gagal mengirim, tombol aktif lagi dengan teks "Gagal mengirim — ketuk untuk coba lagi"
+  - **Impact:** setiap jawaban bot bisa dinilai, dan nilainya menambah Helpful / Not helpful pada artikel yang dikutip. Dashboard tidak perlu diubah
+  - **Technical Notes:**
+    - `fromServer()` menyalin `answer_feedback` (dari frame WS `message` dan riwayat `GET /public/widget/conversation`); vote dikirim ke `POST /public/widget/answers/{deflection_id}/vote` `{ helpful }`
+    - tombol mengikuti vote yang **tersimpan di server** (`vote` di response), bukan yang diklik
+    - state klien (sedang mengirim, gagal, vote dari response) disimpan per `deflection_id` di luar daftar pesan, karena resync saat WebSocket tersambung ulang membangun ulang semua pesan
+    - kartu lama "Apakah ini membantu?" tidak diubah dan tetap tampil berdampingan
+    - butuh BE 1.156.4; dengan BE lama tombol tidak muncul, tidak ada yang rusak
+
+#### ✨ Widget: Tombol "Bicara dengan agen" di Balasan No-Answer
+
+- **Deskripsi:**
+  - **Masalah:** kalau bot tidak menemukan jawaban, pengunjung hanya mendapat "Maaf, kami belum memahami…" tanpa jalan ke agen, kecuali tahu menu ⋮
+  - **Perbaikan:** bubble no-answer yang ditandai BE (`offer_agent: true`) mendapat tombol kecil **Bicara dengan agen** ("Talk to an agent" untuk EN). Klik → widget mengirim "Saya ingin berbicara dengan agen", BE menyerahkan chat ke tim, bot membalas konfirmasi lalu diam sampai agen mengambil chat. Setelah itu **semua** tombol tersebut hilang, termasuk di bubble no-answer yang lebih lama dan yang datang kemudian
+  - **Technical Notes:**
+    - tombol memakai `onHandoff()` (sama dengan tombol di layar awal), bukan `onTalkToHuman()`: fungsi itu menjawab kartu lama bila masih aktif, sehingga bot tidak ikut diam
+    - flag `agentRequested` diset oleh tombol ini, tombol "Bicara dengan agen" di layar awal, dan menu ⋮; direset oleh "Mulai ulang"
+    - setelah reload, BE sudah mengirim `offer_agent: false` untuk semua pesan bila pengunjung sudah minta agen, ada agen yang memegang chat, atau chat tidak open
+    - tanpa endpoint baru; butuh BE 1.156.6 untuk field `offer_agent` (BE 1.156.5 sudah mengenali pesan permintaan agen)
+
+#### ✨ Widget: Nama & Email Wajib Sebelum Mulai Chat
+
+- **Deskripsi:**
+  - **Masalah:** chat dimulai secara anonim, jadi kontak dan tiket tercatat sebagai "Website Visitor" tanpa email, dan agen tidak bisa membalas lewat email
+  - **Perbaikan:** saat widget dibuka tanpa sesi chat, layar pertama adalah form **Nama** + **Email** ("Sebelum mulai, isi data Anda" / tombol **Mulai chat**). Composer, quick action, dan tombol agen baru tersedia setelah form valid:
+    - nama wajib (maks. 120 karakter); email harus punya satu `@`, titik di domain, tanpa spasi (maks. 254). Pesan error tampil di bawah kolomnya
+    - form belum memanggil server; nama dan email dikirim bersama pesan pertama ke `/public/widget/start`
+    - kalau `/start` menolak nama/email (400), pengunjung kembali ke form dengan pesan error; pesan yang tadi diketik disimpan dan langsung dikirim setelah form diperbaiki
+    - form hanya muncul sekali per sesi: pesan berikutnya dan refresh halaman (sesi masih ada) langsung ke chat
+    - "Mulai ulang" mengosongkan form dan menanyakannya lagi untuk chat baru
+  - **Impact:** kontak dan tiket dari widget memakai nama dan email pengunjung
+  - **Technical Notes:**
+    - view baru `prechat` di samping `home` / `chat`; composer dilepas dari DOM selama form tampil
+    - nama/email hanya disimpan di memori widget (tidak di localStorage); setelah `/start` berhasil, sesi yang membawanya
+    - sesi kedaluwarsa (401) lalu pengunjung mengirim lagi tanpa data di memori: pesan disimpan dan form muncul dulu
+    - aturan form di `lib/utils/preChat.ts` (`preChatErrors`, `startIdentityError`, `landingView`), tanpa import, ikut ter-bundle ke widget
+    - **urutan rilis:** BE 1.156.6 menolak `/start` tanpa nama/email, jadi widget ini harus sudah ter-deploy **sebelum atau bersamaan** dengan BE 1.156.6 di setiap environment. Widget ini aman dengan BE lama, karena `visitor_name` / `visitor_email` sudah diterima sejak dulu (opsional)
+    - string baru: `answerHelpfulAria`, `answerNotHelpfulAria`, `answerThanks`, `noAnswerTalkToAgent`, `preChatTitle`, `preChatName`, `preChatEmail`, `preChatSubmit`, `preChatNameError`, `preChatEmailError` (ID dan EN, bisa di-override lewat `config.strings`)
+
+#### 🧪 Testing
+
+- **Deskripsi:**
+  - **28 Test Baru:**
+    - `lib/utils/answerFeedback.test.ts` (17): membaca `answer_feedback`; status tombol 👍/👎 (aktif, terkunci saat mengirim, terkunci dengan vote server atau vote dari response, aktif lagi setelah gagal, error lama hilang saat server punya vote); vote kedua dan klik ganda ditolak; vote dari response dipakai; tombol agen hanya untuk `offer_agent === true` dan hilang setelah minta agen
+    - `lib/utils/preChat.test.ts` (11): validasi email (format, spasi, panjang); error nama/email terpisah dan batas 120 karakter; pesan 400 `/start` dipetakan ke kolom, error lain tidak; layar pertama form → home/chat → chat bila ada sesi
+  - **Mutation check:** 17/17 mutasi tertangkap
+  - **Smoke test bundle** (`public/widget.js` di jsdom, fetch dan WebSocket palsu, 17 cek): form tampil pertama dan composer belum ada; error kosong / email salah; form valid membuka home tanpa request; `/start` membawa nama + email; 400 email kembali ke form dan pesan dikirim ulang dengan email baru; tombol agen hanya di bubble no-answer, mengirim pesan handoff, lalu hilang termasuk untuk bubble berikutnya; "Mulai ulang" mengosongkan form dan chat baru membawa data baru
+  - **Total:** 72 file test, 797 test lolos; `tsc` bersih; `npm run build:widget` OK
+
+---
+
 ## [1.116.7] - 2026-11-02
 
 ### Detail Versi 1.116.7

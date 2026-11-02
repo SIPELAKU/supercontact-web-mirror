@@ -26,8 +26,9 @@ import { splitLinks } from "../../lib/utils/linkify";
 import {
   answerVoteView,
   canSubmitVote,
+  agentOfferMessageId,
   readAnswerFeedback,
-  showsAgentOffer,
+  readDismissedOffers,
   storedVote,
   type AnswerFeedback,
   type AnswerVoteUi,
@@ -149,8 +150,10 @@ interface WidgetStrings {
   answerHelpfulAria: string;
   answerNotHelpfulAria: string;
   answerThanks: string;
-  // "Talk to an agent" under a no-answer reply (offer_agent):
-  noAnswerTalkToAgent: string;
+  // "Talk to an agent?" card under the newest no-answer reply (offer_agent):
+  agentOfferQuestion: string;
+  agentOfferYes: string;
+  agentOfferNo: string;
   // Required name + email form before the first message:
   preChatTitle: string;
   preChatName: string;
@@ -202,7 +205,9 @@ const STRINGS_EN: WidgetStrings = {
   answerHelpfulAria: "This answer helped",
   answerNotHelpfulAria: "This answer didn't help",
   answerThanks: "Thanks for your feedback",
-  noAnswerTalkToAgent: "Talk to an agent",
+  agentOfferQuestion: "Would you like to talk to one of our agents?",
+  agentOfferYes: "Yes, connect me",
+  agentOfferNo: "No, thanks",
   preChatTitle: "Before we start, tell us about you",
   preChatName: "Name",
   preChatEmail: "Email",
@@ -253,7 +258,9 @@ const STRINGS_ID: WidgetStrings = {
   answerHelpfulAria: "Jawaban ini membantu",
   answerNotHelpfulAria: "Jawaban ini tidak membantu",
   answerThanks: "Terima kasih atas masukannya",
-  noAnswerTalkToAgent: "Bicara dengan agen",
+  agentOfferQuestion: "Mau dihubungkan dengan agen kami?",
+  agentOfferYes: "Ya, hubungkan",
+  agentOfferNo: "Tidak",
   preChatTitle: "Sebelum mulai, isi data Anda",
   preChatName: "Nama",
   preChatEmail: "Email",
@@ -283,6 +290,9 @@ function resolveStrings(
 interface StoredSession {
   visitor_token: string;
   conversation_id: string;
+  // Ids of the no-answer replies whose "talk to an agent?" card the visitor
+  // answered "No" to, so a reload doesn't bring them back.
+  dismissed_agent_offers?: string[];
 }
 
 interface WidgetAttachment {
@@ -618,9 +628,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // A first message waiting for the form: kept when /start refused the
     // details, or when a send needs a new chat and no details are known yet.
     private pendingStart: WidgetMessage | null = null;
-    // Set once the visitor asked for an agent (a no-answer "Talk to an agent"
-    // button or the menu): hides every "Talk to an agent" button.
+    // Set once the visitor asked for an agent (the no-answer card's "Yes" or
+    // the menu): no "talk to an agent?" card shows after that.
     private agentRequested = false;
+    // No-answer replies whose card the visitor answered "No" to; persisted
+    // with the session (dismissed_agent_offers) so they stay closed on reload.
+    private dismissedOffers = new Set<string>(readDismissedOffers(this.session?.dismissed_agent_offers));
     // Sticky "you're connected with an agent" system line, set when /start
     // returns assigned:true. Held as a flag (not a message) so it survives a
     // history resync, which rebuilds this.messages from server state.
@@ -920,9 +933,6 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .answer-err { font-size: 11px; color: #DC2626; }
 
         /* ---- "Talk to an agent" under a no-answer reply ---- */
-        .agent-offer { align-self: flex-start; margin: -4px 0 0 2px; }
-        .agent-offer-btn { background: #fff; color: ${brand}; border: 1px solid ${brand}; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; line-height: 1.2; }
-        .agent-offer-btn:hover { background: ${brand}; color: #fff; }
 
         /* ---- Pre-chat name + email form ---- */
         .prechat-form { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 16px; background: #fff; display: flex; flex-direction: column; }
@@ -1829,6 +1839,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
       }
 
+      const agentOfferId = agentOfferMessageId(this.messages, this.agentRequested, this.dismissedOffers);
       for (const m of this.messages) {
         const el = document.createElement("div");
         el.className = `msg ${m.direction}${m.status === "failed" ? " failed" : ""}`;
@@ -1866,9 +1877,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         if (m.direction === "inbound" && m.answer_feedback) {
           this.bodyEl.appendChild(this.buildAnswerVote(m.answer_feedback));
         }
-        // "Talk to an agent" right under a no-answer reply the backend marked.
-        if (m.direction === "inbound" && showsAgentOffer(m.offer_agent, this.agentRequested)) {
-          this.bodyEl.appendChild(this.buildAgentOffer());
+        // "Talk to an agent?" card right under the newest no-answer reply.
+        if (m.id && m.id === agentOfferId) {
+          this.bodyEl.appendChild(this.buildAgentOffer(m.id));
         }
       }
 
@@ -2173,19 +2184,48 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       return row;
     }
 
-    // Uses the same handoff as the menu (onHandoff, NOT onTalkToHuman: that one
-    // would answer a live deflection card instead, and the bot wouldn't go
-    // quiet). onHandoff sets agentRequested, which hides every such button.
-    private buildAgentOffer(): HTMLElement {
-      const row = document.createElement("div");
-      row.className = "agent-offer";
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "agent-offer-btn";
-      btn.textContent = this.strings.noAnswerTalkToAgent;
-      btn.onclick = () => this.onHandoff();
-      row.appendChild(btn);
-      return row;
+    // Same look as the "Was this helpful?" card. "Yes" uses the same handoff
+    // as the menu (onHandoff, NOT onTalkToHuman: that one would answer a live
+    // deflection card instead, and the bot wouldn't go quiet); onHandoff sets
+    // agentRequested, which removes the card. "No" only closes this card,
+    // with no request: the bot keeps answering.
+    private buildAgentOffer(messageId: string): HTMLElement {
+      const box = document.createElement("div");
+      box.className = "deflect";
+
+      const q = document.createElement("div");
+      q.className = "deflect-q";
+      q.textContent = this.strings.agentOfferQuestion;
+      box.appendChild(q);
+
+      const actions = document.createElement("div");
+      actions.className = "deflect-actions";
+
+      const yesBtn = document.createElement("button");
+      yesBtn.type = "button";
+      yesBtn.className = "deflect-btn yes";
+      yesBtn.textContent = this.strings.agentOfferYes;
+      yesBtn.onclick = () => this.onHandoff();
+
+      const noBtn = document.createElement("button");
+      noBtn.type = "button";
+      noBtn.className = "deflect-btn human";
+      noBtn.textContent = this.strings.agentOfferNo;
+      noBtn.onclick = () => this.dismissAgentOffer(messageId);
+
+      actions.appendChild(yesBtn);
+      actions.appendChild(noBtn);
+      box.appendChild(actions);
+      return box;
+    }
+
+    private dismissAgentOffer(messageId: string) {
+      this.dismissedOffers.add(messageId);
+      if (this.session) {
+        this.session = { ...this.session, dismissed_agent_offers: [...this.dismissedOffers] };
+        setSession(this.session);
+      }
+      this.renderMessages();
     }
 
     // POST 👍/👎 for one bot answer. The vote is final: the server keeps the
@@ -2299,6 +2339,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.deflection = null;
       this.answerVotes = new Map();
       this.agentRequested = false;
+      this.dismissedOffers = new Set();
       // A fresh chat asks for the details again, like the first one.
       this.visitor = null;
       this.preChatFieldErrors = null;

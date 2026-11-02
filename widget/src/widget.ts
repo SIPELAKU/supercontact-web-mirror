@@ -23,6 +23,23 @@
  */
 
 import { splitLinks } from "../../lib/utils/linkify";
+import {
+  answerVoteView,
+  canSubmitVote,
+  readAnswerFeedback,
+  showsAgentOffer,
+  storedVote,
+  type AnswerFeedback,
+  type AnswerVoteUi,
+} from "../../lib/utils/answerFeedback";
+import {
+  PRE_CHAT_EMAIL_MAX,
+  PRE_CHAT_NAME_MAX,
+  landingView,
+  preChatErrors,
+  startIdentityError,
+  type PreChatErrors,
+} from "../../lib/utils/preChat";
 
 interface QuickAction {
   id: string;
@@ -128,6 +145,19 @@ interface WidgetStrings {
   deflectHelpful: string;
   deflectConnecting: string;
   deflectRetry: string;
+  // 👍/👎 under each bot answer that carries answer_feedback:
+  answerHelpfulAria: string;
+  answerNotHelpfulAria: string;
+  answerThanks: string;
+  // "Talk to an agent" under a no-answer reply (offer_agent):
+  noAnswerTalkToAgent: string;
+  // Required name + email form before the first message:
+  preChatTitle: string;
+  preChatName: string;
+  preChatEmail: string;
+  preChatSubmit: string;
+  preChatNameError: string;
+  preChatEmailError: string;
 }
 
 const STRINGS_EN: WidgetStrings = {
@@ -169,6 +199,16 @@ const STRINGS_EN: WidgetStrings = {
   deflectHelpful: "Glad that helped!",
   deflectConnecting: "Connecting you to our team…",
   deflectRetry: "Couldn't send — tap to retry",
+  answerHelpfulAria: "This answer helped",
+  answerNotHelpfulAria: "This answer didn't help",
+  answerThanks: "Thanks for your feedback",
+  noAnswerTalkToAgent: "Talk to an agent",
+  preChatTitle: "Before we start, tell us about you",
+  preChatName: "Name",
+  preChatEmail: "Email",
+  preChatSubmit: "Start chat",
+  preChatNameError: "Name is required",
+  preChatEmailError: "Please enter a valid email",
 };
 
 const STRINGS_ID: WidgetStrings = {
@@ -210,6 +250,16 @@ const STRINGS_ID: WidgetStrings = {
   deflectHelpful: "Senang bisa membantu!",
   deflectConnecting: "Menghubungkan Anda dengan tim kami…",
   deflectRetry: "Gagal mengirim — ketuk untuk coba lagi",
+  answerHelpfulAria: "Jawaban ini membantu",
+  answerNotHelpfulAria: "Jawaban ini tidak membantu",
+  answerThanks: "Terima kasih atas masukannya",
+  noAnswerTalkToAgent: "Bicara dengan agen",
+  preChatTitle: "Sebelum mulai, isi data Anda",
+  preChatName: "Nama",
+  preChatEmail: "Email",
+  preChatSubmit: "Mulai chat",
+  preChatNameError: "Nama wajib diisi",
+  preChatEmailError: "Email tidak valid",
 };
 
 // Base pack selected by locale (default Indonesian - the product's tenants
@@ -256,6 +306,10 @@ interface WidgetMessage {
   // SAME /start payload (queue + originating quick-action). Anonymous start:
   // no visitor_name/visitor_email captured up-front anymore.
   startCtx?: { target_queue_id?: string | null; action_id?: string | null };
+  // Present only on a bot answer the visitor can rate with 👍/👎.
+  answer_feedback?: AnswerFeedback | null;
+  // True on a no-answer reply: show "Talk to an agent" under it.
+  offer_agent?: boolean;
 }
 
 // Client-only state for a single Answer-Bot deflection (Phase 7B.2), built from
@@ -303,6 +357,10 @@ interface ServerMessage {
   sent_at?: string;
   media_url?: string | null;
   attachments?: WidgetAttachment[] | null;
+  // Set by the backend on a bot answer from the KB; null/absent = no 👍/👎.
+  answer_feedback?: { deflection_id?: string; vote?: "helpful" | "not_helpful" | null } | null;
+  // Set by the backend on a no-answer reply; false once an agent was asked for.
+  offer_agent?: boolean;
 }
 
 // ---- Inline icon set (static, trusted SVG - no user data interpolated) ----
@@ -324,6 +382,10 @@ const IC_SHIELD =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
 const IC_SEND =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+const IC_THUMB_UP =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>';
+const IC_THUMB_DOWN =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>';
 const IC_PAPERCLIP =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
 
@@ -498,6 +560,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       sent_at: m.sent_at,
       media_url: m.media_url ?? null,
       attachments: m.attachments || [],
+      answer_feedback: readAnswerFeedback(m.answer_feedback),
+      offer_agent: m.offer_agent === true,
       status: "sent",
     };
   }
@@ -544,8 +608,19 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private titleFlashTimer: number | null = null;
     private originalTitle = "";
 
-    // View state machine: "home" (assistant landing) or "chat" (thread).
-    private view: "home" | "chat" = "home";
+    // View state machine: "prechat" (required name + email form, shown first
+    // while there's no session), "home" (assistant landing) or "chat" (thread).
+    private view: "prechat" | "home" | "chat" = "home";
+    // Name + email from the pre-chat form, sent with the first message
+    // (/start). Memory only; once /start succeeds the session carries them.
+    private visitor: { name: string; email: string } | null = null;
+    private preChatFieldErrors: PreChatErrors | null = null;
+    // A first message waiting for the form: kept when /start refused the
+    // details, or when a send needs a new chat and no details are known yet.
+    private pendingStart: WidgetMessage | null = null;
+    // Set once the visitor asked for an agent (a no-answer "Talk to an agent"
+    // button or the menu): hides every "Talk to an agent" button.
+    private agentRequested = false;
     // Sticky "you're connected with an agent" system line, set when /start
     // returns assigned:true. Held as a flag (not a message) so it survives a
     // history resync, which rebuilds this.messages from server state.
@@ -554,6 +629,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // Active Answer-Bot deflection (Phase 7B.2), or null when there's none to
     // show. Only ONE is live at a time; a new bot_suggestion replaces it.
     private deflection: DeflectionState | null = null;
+    // 👍/👎 state per answer (keyed by deflection_id). Held outside the
+    // messages, like agentConnected, because a resync rebuilds this.messages.
+    private answerVotes = new Map<string, AnswerVoteUi>();
 
     // ---- Agent-typing indicator (feature 1) ----
     // Transient "Support is typing…" state, driven by WS "agent_typing" frames.
@@ -598,6 +676,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private formEl!: HTMLFormElement;
     private homeViewEl!: HTMLDivElement;
     private chatViewEl!: HTMLDivElement;
+    private preChatViewEl!: HTMLDivElement;
+    private preChatNameEl!: HTMLInputElement;
+    private preChatEmailEl!: HTMLInputElement;
+    private preChatNameErrEl!: HTMLDivElement;
+    private preChatEmailErrEl!: HTMLDivElement;
     private homeComposerSlot!: HTMLDivElement;
     private chatComposerSlot!: HTMLDivElement;
     private menuEl!: HTMLDivElement;
@@ -658,10 +741,18 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         await this.resyncHistory();
         this.connectSocket();
       } else {
-        // No session: the home screen is the landing surface when enabled,
-        // otherwise fall back to an (empty) chat thread + composer.
-        this.setView(this.config.show_home_screen ? "home" : "chat");
+        // No session: the name + email form first, then the home screen when
+        // enabled, otherwise an (empty) chat thread + composer.
+        this.setView(this.landing());
       }
+    }
+
+    private landing(): "prechat" | "home" | "chat" {
+      return landingView({
+        hasSession: !!this.session,
+        hasVisitor: !!this.visitor,
+        showHomeScreen: !!this.config!.show_home_screen,
+      });
     }
 
     private online(): boolean {
@@ -816,6 +907,36 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .deflect-btn:disabled { opacity: .55; cursor: default; }
         .deflect-err { font-size: 11px; color: #DC2626; margin-top: 8px; }
 
+        /* ---- 👍/👎 under a bot answer ---- */
+        .answer-vote { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 0 2px; }
+        .vote-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0; border: 1px solid #E5E7EB; border-radius: 8px; background: #fff; color: #6B7280; cursor: pointer; }
+        .vote-btn span { display: inline-flex; }
+        .vote-btn svg { width: 14px; height: 14px; }
+        .vote-btn:hover:not(:disabled) { color: ${brand}; border-color: ${brand}; }
+        .vote-btn.selected { color: ${brand}; border-color: ${brand}; }
+        .vote-btn:disabled { cursor: default; }
+        .vote-btn:disabled:not(.selected) { opacity: .5; }
+        .answer-thanks { font-size: 11px; color: #6B7280; }
+        .answer-err { font-size: 11px; color: #DC2626; }
+
+        /* ---- "Talk to an agent" under a no-answer reply ---- */
+        .agent-offer { align-self: flex-start; margin: -4px 0 0 2px; }
+        .agent-offer-btn { background: #fff; color: ${brand}; border: 1px solid ${brand}; border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; line-height: 1.2; }
+        .agent-offer-btn:hover { background: ${brand}; color: #fff; }
+
+        /* ---- Pre-chat name + email form ---- */
+        .prechat-form { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 16px; background: #fff; display: flex; flex-direction: column; }
+        .prechat-title { font-size: 16px; font-weight: 700; color: #0F172A; line-height: 1.3; margin-bottom: 16px; }
+        .prechat-field { display: block; margin-bottom: 12px; }
+        .prechat-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+        /* 16px so iOS Safari doesn't zoom the page on focus, like the composer. */
+        .prechat-field input { width: 100%; border: 1px solid #E5E7EB; border-radius: 10px; padding: 9px 12px; font-size: 16px; outline: none; color: #111827; background: #fff; }
+        .prechat-field input:focus { border-color: ${brand}; }
+        .prechat-field input[aria-invalid="true"] { border-color: #DC2626; }
+        .prechat-err { display: none; font-size: 11px; color: #DC2626; margin-top: 4px; }
+        .prechat-err.show { display: block; }
+        .prechat-submit { margin-top: 4px; width: 100%; background: ${brand}; color: #fff; border: none; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
         /* ---- Composer (shared between views, re-parented on view switch) ---- */
         .composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #E5E7EB; background: #fff; }
         /* 16px (not 13px) so iOS Safari doesn't zoom the page on focus (item 2 a11y). */
@@ -925,8 +1046,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // Shared composer, built once and re-parented between the two views.
       this.formEl = this.buildForm();
 
+      this.preChatViewEl = this.buildPreChatView();
       this.homeViewEl = this.buildHomeView();
       this.chatViewEl = this.buildChatView();
+      this.panelEl.appendChild(this.preChatViewEl);
       this.panelEl.appendChild(this.homeViewEl);
       this.panelEl.appendChild(this.chatViewEl);
 
@@ -1034,6 +1157,121 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
       header.appendChild(actions);
       return header;
+    }
+
+    // Required name + email form, the first screen while there's no session.
+    // Built once; values and errors are refreshed by fillPreChat().
+    private buildPreChatView(): HTMLDivElement {
+      const view = document.createElement("div");
+      view.className = "view prechat";
+
+      const form = document.createElement("form");
+      form.className = "prechat-form";
+      form.noValidate = true; // our own messages, not the browser's bubbles
+
+      const title = document.createElement("div");
+      title.className = "prechat-title";
+      title.textContent = this.strings.preChatTitle;
+      form.appendChild(title);
+
+      const field = (
+        label: string,
+        type: string,
+        autocomplete: string,
+        maxLength: number,
+        errorText: string,
+      ): [HTMLInputElement, HTMLDivElement] => {
+        const wrap = document.createElement("label");
+        wrap.className = "prechat-field";
+        const caption = document.createElement("span");
+        caption.className = "prechat-label";
+        caption.textContent = label;
+        wrap.appendChild(caption);
+        const input = document.createElement("input");
+        input.type = type;
+        input.setAttribute("autocomplete", autocomplete);
+        input.maxLength = maxLength;
+        input.required = true;
+        wrap.appendChild(input);
+        const err = document.createElement("div");
+        err.className = "prechat-err";
+        err.setAttribute("role", "alert");
+        err.textContent = errorText;
+        wrap.appendChild(err);
+        form.appendChild(wrap);
+        return [input, err];
+      };
+      [this.preChatNameEl, this.preChatNameErrEl] = field(
+        this.strings.preChatName,
+        "text",
+        "name",
+        PRE_CHAT_NAME_MAX,
+        this.strings.preChatNameError,
+      );
+      [this.preChatEmailEl, this.preChatEmailErrEl] = field(
+        this.strings.preChatEmail,
+        "email",
+        "email",
+        PRE_CHAT_EMAIL_MAX,
+        this.strings.preChatEmailError,
+      );
+
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.className = "prechat-submit";
+      submit.textContent = this.strings.preChatSubmit;
+      form.appendChild(submit);
+
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        this.submitPreChat();
+      };
+      view.appendChild(form);
+      return view;
+    }
+
+    private fillPreChat() {
+      if (this.visitor) {
+        this.preChatNameEl.value = this.visitor.name;
+        this.preChatEmailEl.value = this.visitor.email;
+      }
+      const errors = this.preChatFieldErrors;
+      this.preChatNameErrEl.classList.toggle("show", !!errors?.name);
+      this.preChatEmailErrEl.classList.toggle("show", !!errors?.email);
+      this.preChatNameEl.setAttribute("aria-invalid", String(!!errors?.name));
+      this.preChatEmailEl.setAttribute("aria-invalid", String(!!errors?.email));
+    }
+
+    // Valid details are only kept here; they reach the server with the first
+    // message (/start). A message waiting for them is sent right away.
+    private submitPreChat() {
+      const name = this.preChatNameEl.value;
+      const email = this.preChatEmailEl.value;
+      this.preChatFieldErrors = preChatErrors(name, email);
+      if (this.preChatFieldErrors) {
+        this.fillPreChat();
+        (this.preChatFieldErrors.name ? this.preChatNameEl : this.preChatEmailEl).focus();
+        return;
+      }
+      this.visitor = { name: name.trim(), email: email.trim() };
+      const pending = this.pendingStart;
+      this.pendingStart = null;
+      if (pending) {
+        this.setView("chat");
+        void this.attemptSend(pending);
+      } else {
+        this.setView(this.landing());
+      }
+    }
+
+    // Back to the form with the first message kept, e.g. /start refused the
+    // name/email (400) or a new chat must start and no details are known.
+    private askVisitorDetails(msg: WidgetMessage, errors: PreChatErrors | null) {
+      msg.status = "failed";
+      this.pendingStart = msg;
+      this.preChatFieldErrors = errors;
+      this.renderMessages();
+      this.setView("prechat");
     }
 
     private buildHomeView(): HTMLDivElement {
@@ -1195,9 +1433,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     }
 
     private buildForm(): HTMLFormElement {
-      // Anonymous start: no mandatory pre-chat name/email form. The backend
-      // creates the contact from the first message; the first send never
-      // blocks on identity capture.
+      // The message composer. Name + email are asked before it by the
+      // pre-chat view (buildPreChatView) and sent with the first message.
       const form = document.createElement("form");
       form.className = "composer";
 
@@ -1317,6 +1554,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     }
 
     private onHandoff() {
+      // The backend recognises this message, hands the chat to the team and
+      // the bot stays quiet; every "Talk to an agent" button goes away.
+      this.agentRequested = true;
       void this.sendVisitorMessage(
         this.strings.talkToHuman,
         this.config!.handoff_queue_id ?? null,
@@ -1335,6 +1575,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.closeMenu();
       const d = this.deflection;
       if (d && d.state !== "helpful" && d.state !== "escalated") {
+        this.agentRequested = true;
         void this.submitDeflection(d, false);
       } else {
         this.onHandoff();
@@ -1342,6 +1583,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     }
 
     private async attemptSend(msg: WidgetMessage, sendBtn?: HTMLButtonElement) {
+      // A new chat needs the visitor's name + email (/start refuses one
+      // without them), e.g. after an expired session was cleared.
+      if (!this.session && !this.visitor) {
+        this.askVisitorDetails(msg, null);
+        return;
+      }
       msg.status = "sending";
       this.renderMessages();
       if (sendBtn) sendBtn.disabled = true;
@@ -1354,8 +1601,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             body: JSON.stringify({
               widget_key: widgetKey,
               message: msg.content,
-              // Anonymous start: visitor_name/visitor_email omitted - backend
-              // creates the contact. Routing fields added for quick-action/handoff.
+              // From the pre-chat form; the contact and any ticket use them.
+              visitor_name: this.visitor?.name,
+              visitor_email: this.visitor?.email,
+              // Routing fields for a quick-action/handoff first message.
               target_queue_id: msg.startCtx?.target_queue_id ?? undefined,
               action_id: msg.startCtx?.action_id ?? undefined,
               page_url: window.location.href,
@@ -1380,6 +1629,14 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
         msg.status = "sent";
       } catch (e) {
+        // /start refused the name/email (400): nothing was created, so send
+        // the visitor back to the form; the message goes once it's fixed.
+        const err = e as { status?: number; message?: string };
+        const identity = this.session ? null : startIdentityError(err?.status, err?.message);
+        if (identity) {
+          this.askVisitorDetails(msg, identity);
+          return;
+        }
         console.error("[SmartSales Widget] send failed", e);
         msg.status = "failed";
         // Expired/revoked token on an authenticated send: purge it (item 4).
@@ -1604,6 +1861,15 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
 
         this.bodyEl.appendChild(el);
+
+        // 👍/👎 right under the bot answer the backend marked as rateable.
+        if (m.direction === "inbound" && m.answer_feedback) {
+          this.bodyEl.appendChild(this.buildAnswerVote(m.answer_feedback));
+        }
+        // "Talk to an agent" right under a no-answer reply the backend marked.
+        if (m.direction === "inbound" && showsAgentOffer(m.offer_agent, this.agentRequested)) {
+          this.bodyEl.appendChild(this.buildAgentOffer());
+        }
       }
 
       // Answer-Bot deflection control / resolution note (Phase 7B.2), rendered
@@ -1867,6 +2133,93 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       }
     }
 
+    // 👍/👎 row for one bot answer, derived from the server's vote plus the
+    // client-only state in this.answerVotes so it survives any re-render.
+    private buildAnswerVote(feedback: AnswerFeedback): HTMLElement {
+      const id = feedback.deflectionId;
+      const view = answerVoteView(feedback, this.answerVotes.get(id));
+      const row = document.createElement("div");
+      row.className = "answer-vote";
+
+      const options: Array<[boolean, string, string]> = [
+        [true, IC_THUMB_UP, this.strings.answerHelpfulAria],
+        [false, IC_THUMB_DOWN, this.strings.answerNotHelpfulAria],
+      ];
+      for (const [helpful, icon, label] of options) {
+        const selected = view.vote === (helpful ? "helpful" : "not_helpful");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `vote-btn${selected ? " selected" : ""}`;
+        btn.setAttribute("aria-label", label);
+        btn.setAttribute("aria-pressed", String(selected));
+        btn.title = label;
+        btn.appendChild(svgEl(icon));
+        btn.disabled = view.locked;
+        btn.onclick = () => void this.submitAnswerVote(id, helpful);
+        row.appendChild(btn);
+      }
+
+      if (view.vote) {
+        const thanks = document.createElement("span");
+        thanks.className = "answer-thanks";
+        thanks.textContent = this.strings.answerThanks;
+        row.appendChild(thanks);
+      } else if (view.error) {
+        const err = document.createElement("span");
+        err.className = "answer-err";
+        err.textContent = this.strings.deflectRetry;
+        row.appendChild(err);
+      }
+      return row;
+    }
+
+    // Uses the same handoff as the menu (onHandoff, NOT onTalkToHuman: that one
+    // would answer a live deflection card instead, and the bot wouldn't go
+    // quiet). onHandoff sets agentRequested, which hides every such button.
+    private buildAgentOffer(): HTMLElement {
+      const row = document.createElement("div");
+      row.className = "agent-offer";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "agent-offer-btn";
+      btn.textContent = this.strings.noAnswerTalkToAgent;
+      btn.onclick = () => this.onHandoff();
+      row.appendChild(btn);
+      return row;
+    }
+
+    // POST 👍/👎 for one bot answer. The vote is final: the server keeps the
+    // first one and returns it, so the stored vote (not the click) is shown.
+    // A vote only counts; it never brings in an agent.
+    private async submitAnswerVote(deflectionId: string, helpful: boolean) {
+      const feedback = this.messages.find(
+        (m) => m.answer_feedback?.deflectionId === deflectionId,
+      )?.answer_feedback;
+      if (!feedback || !canSubmitVote(feedback, this.answerVotes.get(deflectionId))) return;
+      if (!this.session) {
+        this.answerVotes.set(deflectionId, { state: "error" });
+        this.renderMessages();
+        return;
+      }
+
+      this.answerVotes.set(deflectionId, { state: "submitting" });
+      this.renderMessages();
+      try {
+        const res = await apiFetch(`/public/widget/answers/${encodeURIComponent(deflectionId)}/vote`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+          body: JSON.stringify({ helpful }),
+        });
+        this.answerVotes.set(deflectionId, { vote: storedVote(res, helpful) });
+      } catch (e) {
+        console.error("[SmartSales Widget] answer vote failed", e);
+        // Expired/revoked token: purge it so a reload starts fresh (item 4).
+        if ((e as { status?: number })?.status === 401) this.clearSession();
+        this.answerVotes.set(deflectionId, { state: "error" }); // buttons usable again
+      }
+      this.renderMessages();
+    }
+
     // Re-fetch full history and reconcile (item 3). Server state is
     // authoritative for everything persisted; we keep only local outbound
     // messages that are still in-flight or failed (not yet on the server),
@@ -1944,6 +2297,14 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.serverIds = new Set();
       this.agentConnected = false;
       this.deflection = null;
+      this.answerVotes = new Map();
+      this.agentRequested = false;
+      // A fresh chat asks for the details again, like the first one.
+      this.visitor = null;
+      this.preChatFieldErrors = null;
+      this.pendingStart = null;
+      this.preChatNameEl.value = "";
+      this.preChatEmailEl.value = "";
       this.reconnectAttempts = 0;
       this.clearAgentTyping();
       this.upload = null;
@@ -1952,7 +2313,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // Allow the next conversation to reconnect normally.
       this.stoppedReconnect = false;
       this.renderMessages();
-      this.setView(this.config!.show_home_screen ? "home" : "chat");
+      this.setView(this.landing());
     }
 
     private connectSocket() {
@@ -2087,13 +2448,20 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.menuEl.classList.remove("open");
     }
 
-    private setView(v: "home" | "chat") {
+    private setView(v: "prechat" | "home" | "chat") {
       this.view = v;
+      this.preChatViewEl.style.display = v === "prechat" ? "flex" : "none";
       this.homeViewEl.style.display = v === "home" ? "flex" : "none";
       this.chatViewEl.style.display = v === "chat" ? "flex" : "none";
-      // Re-parent the shared composer into the active view's slot.
-      const slot = v === "home" ? this.homeComposerSlot : this.chatComposerSlot;
-      slot.appendChild(this.formEl);
+      // Re-parent the shared composer into the active view's slot. The
+      // pre-chat view has none: nothing can be sent before the form.
+      if (v === "prechat") {
+        this.formEl.remove();
+        this.fillPreChat();
+      } else {
+        const slot = v === "home" ? this.homeComposerSlot : this.chatComposerSlot;
+        slot.appendChild(this.formEl);
+      }
       // Back affordance only makes sense returning from chat to a home screen
       // (its own CSS restricts it to mobile full-screen).
       this.backBtn.classList.toggle("show", v === "chat" && !!this.config!.show_home_screen);
@@ -2110,8 +2478,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       if (!this.isOpen) this.closeMenu();
       if (this.isOpen) {
         this.clearUnread();
-        // a11y (item 2): move focus into the composer when the panel opens.
-        const input = this.formEl?.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null;
+        // a11y (item 2): move focus into the composer (or the pre-chat form's
+        // name field) when the panel opens.
+        const input =
+          this.view === "prechat"
+            ? this.preChatNameEl
+            : (this.formEl?.querySelector('textarea[name="message"]') as HTMLTextAreaElement | null);
         if (input) window.setTimeout(() => input.focus(), 0);
       }
     }

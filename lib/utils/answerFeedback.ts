@@ -56,10 +56,25 @@ export function canSubmitVote(feedback: AnswerFeedback, ui?: AnswerVoteUi): bool
   return !answerVoteView(feedback, ui).locked;
 }
 
-// "Talk to an agent" under a no-answer reply: only when the backend marked
-// the bubble, and gone everywhere once the visitor has asked for an agent.
-export function showsAgentOffer(offerAgent: unknown, agentRequested: boolean): boolean {
-  return offerAgent === true && !agentRequested;
+// The no-answer reply that gets the "talk to an agent?" card, or null. Only
+// the newest message, so older no-answer replies don't stack cards; only when
+// the backend marked it; never once the visitor asked for an agent or said no
+// to this particular offer.
+export function agentOfferMessageId(
+  messages: ReadonlyArray<{ id?: string; direction: string; offer_agent?: boolean }>,
+  agentRequested: boolean,
+  dismissed: ReadonlySet<string>,
+): string | null {
+  if (agentRequested) return null;
+  const last = messages[messages.length - 1];
+  if (!last || last.direction !== "inbound" || last.offer_agent !== true || !last.id) return null;
+  return dismissed.has(last.id) ? null : last.id;
+}
+
+// Offers the visitor said no to, as stored with the session. Anything that
+// isn't a list of ids (an older session, a hand-edited value) counts as none.
+export function readDismissedOffers(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === "string" && id !== "") : [];
 }
 
 // The server returns the vote it stored (an earlier vote wins over this

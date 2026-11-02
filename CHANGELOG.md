@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.1] - 2026-11-02
+
+### Detail Versi 1.117.1
+
+#### 💄 Widget: Kartu "Mau dihubungkan dengan agen kami?" di Balasan No-Answer
+
+- **Deskripsi:**
+  - **Masalah:** tawaran agen saat bot tidak menemukan jawaban (1.117.0) hanya berupa tombol kecil **Bicara dengan agen**, tidak bisa ditolak, dan muncul di bawah **setiap** balasan no-answer, termasuk yang lama
+  - **Perbaikan:** tombol diganti kartu dengan desain yang sama seperti kartu "Apakah ini membantu?":
+    - teks **"Mau dihubungkan dengan agen kami?"** dengan tombol **Ya, hubungkan** (warna tema) dan **Tidak** (bergaris). Untuk `data-locale="en"`: "Would you like to talk to one of our agents?" / **Yes, connect me** / **No, thanks**
+    - **Ya, hubungkan**: sama seperti tombol lama. Widget mengirim "Saya ingin berbicara dengan agen", BE menyerahkan chat ke tim, bot membalas konfirmasi lalu diam, dan kartu hilang
+    - **Tidak**: kartu ditutup tanpa request ke server; pengunjung lanjut bertanya dan bot tetap menjawab. Pilihan ini diingat di browser, jadi kartu itu tidak muncul lagi setelah halaman di-refresh
+    - kartu hanya tampil di bawah balasan no-answer **yang paling baru** dan hilang begitu ada pesan baru. Kalau bot kembali tidak menemukan jawaban, kartu baru muncul di balasan itu
+  - **Technical Notes:**
+    - `showsAgentOffer()` diganti `agentOfferMessageId(messages, agentRequested, dismissed)` di `lib/utils/answerFeedback.ts`: kartu hanya untuk pesan terakhir di thread, yang dari sisi bot, ber-`offer_agent: true`, punya id, belum ditolak, dan pengunjung belum minta agen
+    - id balasan yang ditolak disimpan di sesi widget (`dismissed_agent_offers` di localStorage, dibaca lewat `readDismissedOffers()`); terhapus bersama sesi saat "Mulai ulang" atau token kedaluwarsa
+    - memakai ulang class `.deflect*`; CSS `.agent-offer*` dan string `noAnswerTalkToAgent` dihapus, diganti `agentOfferQuestion` / `agentOfferYes` / `agentOfferNo`
+    - tanpa perubahan BE
+  - **🧪 Testing:** 7 tes baru menggantikan 3 tes lama (`answerFeedback.test.ts`, 21 tes); 6/6 mutasi tertangkap; seluruh suite 72 file / 801 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
 ## [1.117.0] - 2026-11-02
 
 ### Detail Versi 1.117.0

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  agentOfferMessageId,
   answerVoteView,
   canSubmitVote,
   readAnswerFeedback,
-  showsAgentOffer,
+  readDismissedOffers,
   storedVote,
 } from "./answerFeedback";
 
@@ -85,19 +86,51 @@ describe("canSubmitVote", () => {
   });
 });
 
-describe("showsAgentOffer", () => {
-  it("shows the button on a bubble the backend marked", () => {
-    expect(showsAgentOffer(true, false)).toBe(true);
+describe("agentOfferMessageId", () => {
+  const noAnswer = { id: "m2", direction: "inbound", offer_agent: true };
+  const question = { id: "m1", direction: "outbound" };
+  const none = new Set<string>();
+
+  it("puts the card under the newest message when the backend marked it", () => {
+    expect(agentOfferMessageId([question, noAnswer], false, none)).toBe("m2");
+  });
+
+  it("drops it from an older no-answer once anything newer arrives", () => {
+    const followUp = { id: "m3", direction: "outbound" };
+    expect(agentOfferMessageId([noAnswer, followUp], false, none)).toBeNull();
+    const answer = { id: "m4", direction: "inbound", offer_agent: false };
+    expect(agentOfferMessageId([noAnswer, followUp, answer], false, none)).toBeNull();
   });
 
   it("hides it once the visitor asked for an agent", () => {
-    expect(showsAgentOffer(true, true)).toBe(false);
+    expect(agentOfferMessageId([question, noAnswer], true, none)).toBeNull();
   });
 
-  it("hides it on any other bubble", () => {
-    expect(showsAgentOffer(false, false)).toBe(false);
-    expect(showsAgentOffer(undefined, false)).toBe(false);
-    expect(showsAgentOffer("true", false)).toBe(false);
+  it("hides the offer the visitor said no to, not a later one", () => {
+    const dismissed = new Set(["m2"]);
+    expect(agentOfferMessageId([question, noAnswer], false, dismissed)).toBeNull();
+    const later = { id: "m5", direction: "inbound", offer_agent: true };
+    expect(agentOfferMessageId([question, noAnswer, question, later], false, dismissed)).toBe("m5");
+  });
+
+  it("no card on an unmarked, id-less or empty thread", () => {
+    expect(agentOfferMessageId([{ id: "m6", direction: "inbound" }], false, none)).toBeNull();
+    expect(agentOfferMessageId([{ direction: "inbound", offer_agent: true }], false, none)).toBeNull();
+    expect(agentOfferMessageId([], false, none)).toBeNull();
+    // Only a bot/team bubble, never the visitor's own message.
+    expect(agentOfferMessageId([{ id: "m7", direction: "outbound", offer_agent: true }], false, none)).toBeNull();
+  });
+});
+
+describe("readDismissedOffers", () => {
+  it("keeps the stored ids", () => {
+    expect(readDismissedOffers(["m2", "m5"])).toEqual(["m2", "m5"]);
+  });
+
+  it("an older session or a broken value counts as none", () => {
+    expect(readDismissedOffers(undefined)).toEqual([]);
+    expect(readDismissedOffers("m2")).toEqual([]);
+    expect(readDismissedOffers(["m2", 7, "", null])).toEqual(["m2"]);
   });
 });
 

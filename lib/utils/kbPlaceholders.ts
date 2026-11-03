@@ -1,6 +1,6 @@
 // lib/utils/kbPlaceholders.ts
 //
-// Raw template placeholders ({{ALAMAT_PUSAT}}, {{company_name}}) left in
+// Raw template placeholders ({{ALAMAT_PUSAT}}, {{NAMA_PERUSAHAAN}}) left in
 // Knowledge Base articles. A blank stays visible in the text rather than
 // disappearing, and the answer bot reads a published article out as it is -
 // so these decide what gets filled, and what may not be published yet.
@@ -17,7 +17,8 @@ export function placeholderPayload(values: Record<string, string>): Record<strin
 }
 
 /** Every distinct placeholder still in a text, in order of first use. Upper and
- *  lower case both count: blueprint variables are lower case ({{company_name}}). */
+ *  lower case both count: template names are HURUF_BESAR since BE 1.160.0, but
+ *  an article installed before it can still hold {{nama_perusahaan}}. */
 export function unfilledPlaceholders(text?: string | null): string[] {
   const found: string[] = [];
   for (const match of (text ?? "").matchAll(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g)) {
@@ -109,24 +110,34 @@ type GapsForArticle = {
 };
 
 /** The placeholders still left in one article, each with the label and
- *  example Content Gaps carries - the fields of the "Isi placeholder" dialog. */
+ *  example Content Gaps carries - the fields of the "Isi placeholder" dialog.
+ *  Names are HURUF_BESAR (BE 1.160.0): an older article's {{alamat_pusat}} and
+ *  a newer {{ALAMAT_PUSAT}} are one field, keyed upper case - fill-placeholders
+ *  matches either case. */
 export function articlePlaceholderFields(gaps: GapsForArticle | undefined, articleId: string): PlaceholderField[] {
   const fields: PlaceholderField[] = [];
   for (const v of gaps?.variables ?? []) {
-    if (fields.some((f) => f.key === v.key)) continue;
-    if (v.articles.some((a) => a.id === articleId)) {
-      fields.push({ key: v.key, label: v.label ?? "", example: v.example ?? "" });
+    if (!v.articles.some((a) => a.id === articleId)) continue;
+    const key = v.key.toUpperCase();
+    const known = fields.find((f) => f.key === key);
+    if (!known) {
+      fields.push({ key, label: v.label ?? "", example: v.example ?? "" });
+      continue;
     }
+    // The same name twice: keep whichever copy says what it is.
+    if (!known.label && v.label) known.label = v.label;
+    if (!known.example && v.example) known.example = v.example;
   }
   return fields;
 }
 
-/** How many OTHER articles carry at least one of these placeholders: what
- *  "apply to the other articles too" would also change. */
+/** How many OTHER articles carry at least one of these placeholders (in
+ *  either case): what "apply to the other articles too" would also change. */
 export function otherArticlesSharing(gaps: GapsForArticle | undefined, articleId: string, keys: string[]): number {
+  const wanted = new Set(keys.map((k) => k.toUpperCase()));
   const others = new Set<string>();
   for (const v of gaps?.variables ?? []) {
-    if (!keys.includes(v.key)) continue;
+    if (!wanted.has(v.key.toUpperCase())) continue;
     for (const a of v.articles) if (a.id !== articleId) others.add(a.id);
   }
   return others.size;

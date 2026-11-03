@@ -226,7 +226,7 @@ describe('articlePlaceholderFields', () => {
   it("one field per placeholder left in that article, with its label and example", () => {
     expect(articlePlaceholderFields(gaps, 'a1')).toEqual([
       { key: 'ALAMAT_PUSAT', label: 'Alamat pusat', example: 'Jl. Sudirman 1' },
-      { key: 'company_name', label: '', example: '' },
+      { key: 'COMPANY_NAME', label: '', example: '' },
     ]);
     expect(articlePlaceholderFields(gaps, 'a2').map((f) => f.key)).toEqual(['ALAMAT_PUSAT', 'URL_MAPS']);
   });
@@ -239,6 +239,40 @@ describe('articlePlaceholderFields', () => {
   it('a key listed twice counts once', () => {
     const dup = { variables: [{ key: 'X', articles: [{ id: 'a1' }] }, { key: 'X', articles: [{ id: 'a1' }] }] };
     expect(articlePlaceholderFields(dup, 'a1')).toHaveLength(1);
+  });
+
+  it('the same name in two cases (an older install) is one upper-case field, keeping the label', () => {
+    const mixed = {
+      variables: [
+        { key: 'alamat_pusat', articles: [{ id: 'a1' }] },
+        { key: 'ALAMAT_PUSAT', label: 'Alamat kantor/outlet utama', example: 'Jl. Melati 12', articles: [{ id: 'a1' }, { id: 'a2' }] },
+      ],
+    };
+    expect(articlePlaceholderFields(mixed, 'a1')).toEqual([
+      { key: 'ALAMAT_PUSAT', label: 'Alamat kantor/outlet utama', example: 'Jl. Melati 12' },
+    ]);
+  });
+
+  it('the label of the first copy is kept when it has one', () => {
+    const mixed = {
+      variables: [
+        { key: 'URL_MAPS', label: 'Link Google Maps', example: 'https://maps.app.goo.gl/x', articles: [{ id: 'a1' }] },
+        { key: 'url_maps', label: 'Url Maps', example: 'other', articles: [{ id: 'a1' }] },
+      ],
+    };
+    expect(articlePlaceholderFields(mixed, 'a1')).toEqual([
+      { key: 'URL_MAPS', label: 'Link Google Maps', example: 'https://maps.app.goo.gl/x' },
+    ]);
+  });
+
+  it('a copy in another article only does not add a field', () => {
+    const mixed = {
+      variables: [
+        { key: 'ALAMAT_PUSAT', articles: [{ id: 'a1' }] },
+        { key: 'alamat_pusat', label: 'Alamat', articles: [{ id: 'a2' }] },
+      ],
+    };
+    expect(articlePlaceholderFields(mixed, 'a1')).toEqual([{ key: 'ALAMAT_PUSAT', label: '', example: '' }]);
   });
 });
 
@@ -259,6 +293,17 @@ describe('otherArticlesSharing', () => {
     expect(otherArticlesSharing(gaps, 'a1', ['ALAMAT_PUSAT'])).toBe(2);
     expect(otherArticlesSharing(gaps, 'a5', ['JAM_BUKA'])).toBe(0);
     expect(otherArticlesSharing(undefined, 'a1', ['ALAMAT_PUSAT'])).toBe(0);
+  });
+
+  it('either case counts: an older {{alamat_pusat}} article is filled by ALAMAT_PUSAT too', () => {
+    const mixed = {
+      variables: [
+        { key: 'ALAMAT_PUSAT', articles: [{ id: 'a1' }, { id: 'a2' }] },
+        { key: 'alamat_pusat', articles: [{ id: 'a3' }] },
+      ],
+    };
+    expect(otherArticlesSharing(mixed, 'a1', ['ALAMAT_PUSAT'])).toBe(2);
+    expect(otherArticlesSharing(mixed, 'a1', ['alamat_pusat'])).toBe(2);
   });
 });
 

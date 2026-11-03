@@ -24,6 +24,13 @@
 
 import { splitLinks } from "../../lib/utils/linkify";
 import {
+  dayKey,
+  dayLabel,
+  formatMessageTime,
+  parseMessageTime,
+  type WidgetLocale,
+} from "../../lib/utils/widgetTime";
+import {
   answerVoteView,
   canSubmitVote,
   agentOfferMessageId,
@@ -150,6 +157,10 @@ interface WidgetStrings {
   answerHelpfulAria: string;
   answerNotHelpfulAria: string;
   answerThanks: string;
+  // Time under each bubble + day separators:
+  timeToday: string;
+  timeYesterday: string;
+  timeSending: string;
   // "Talk to an agent?" card under the newest no-answer reply (offer_agent):
   agentOfferQuestion: string;
   agentOfferYes: string;
@@ -205,6 +216,9 @@ const STRINGS_EN: WidgetStrings = {
   answerHelpfulAria: "This answer helped",
   answerNotHelpfulAria: "This answer didn't help",
   answerThanks: "Thanks for your feedback",
+  timeToday: "Today",
+  timeYesterday: "Yesterday",
+  timeSending: "Sending…",
   agentOfferQuestion: "Would you like to talk to one of our agents?",
   agentOfferYes: "Yes, connect me",
   agentOfferNo: "No, thanks",
@@ -258,6 +272,9 @@ const STRINGS_ID: WidgetStrings = {
   answerHelpfulAria: "Jawaban ini membantu",
   answerNotHelpfulAria: "Jawaban ini tidak membantu",
   answerThanks: "Terima kasih atas masukannya",
+  timeToday: "Hari ini",
+  timeYesterday: "Kemarin",
+  timeSending: "Mengirim…",
   agentOfferQuestion: "Mau dihubungkan dengan agen kami?",
   agentOfferYes: "Ya, hubungkan",
   agentOfferNo: "Tidak",
@@ -603,6 +620,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private shadow: ShadowRoot;
     private config: WidgetConfig | null = null;
     private strings: WidgetStrings = resolveStrings(localeAttr);
+    // Same precedence as the strings: formats the bubble times and dates.
+    private locale: WidgetLocale = localeAttr === "en" ? "en" : "id";
     private session: StoredSession | null = getSession();
     private ws: WebSocket | null = null;
     private pingTimer: number | null = null;
@@ -739,6 +758,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
       // Precedence: backend config.locale (future) > data-locale attr > "id".
       this.strings = resolveStrings(this.config.locale || localeAttr, this.config.strings);
+      this.locale = (this.config.locale || localeAttr) === "en" ? "en" : "id";
 
       this.render();
 
@@ -898,6 +918,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .msg.inbound { align-self: flex-start; background: #fff; border: 1px solid #E5E7EB; color: #111827; }
         .msg.outbound { align-self: flex-end; background: ${brand}; color: #fff; }
         .msg.failed { opacity: .85; }
+        .msg-time { font-size: 10.5px; line-height: 1.2; color: #9CA3AF; margin-top: -5px; padding: 0 4px; }
+        .msg-time.inbound { align-self: flex-start; }
+        .msg-time.outbound { align-self: flex-end; }
+        .day-sep { align-self: center; font-size: 11px; font-weight: 600; color: #9CA3AF; margin: 4px 0 0; }
         .msg-text a { color: inherit; text-decoration: underline; word-break: break-all; }
         .msg .att-image { display: block; margin-top: 6px; }
         .msg .att-image img { max-width: 100%; border-radius: 8px; display: block; }
@@ -1638,6 +1662,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           });
         }
         msg.status = "sent";
+        // Shown under the bubble until a resync brings the stored time.
+        if (!msg.sent_at) msg.sent_at = new Date().toISOString();
       } catch (e) {
         // /start refused the name/email (400): nothing was created, so send
         // the visitor back to the form; the message goes once it's fixed.
@@ -1840,7 +1866,24 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       }
 
       const agentOfferId = agentOfferMessageId(this.messages, this.agentRequested, this.dismissedOffers);
+      // A day separator above the first message of each day ("Hari ini",
+      // "Kemarin", "2 Nov 2026"); a message still being sent has no time yet
+      // and never opens a new day.
+      const now = new Date();
+      let lastDay = "";
       for (const m of this.messages) {
+        const sentAt = parseMessageTime(m.sent_at);
+        if (sentAt && dayKey(sentAt) !== lastDay) {
+          lastDay = dayKey(sentAt);
+          const sep = document.createElement("div");
+          sep.className = "day-sep";
+          sep.textContent = dayLabel(sentAt, now, this.locale, {
+            today: this.strings.timeToday,
+            yesterday: this.strings.timeYesterday,
+          });
+          this.bodyEl.appendChild(sep);
+        }
+
         const el = document.createElement("div");
         el.className = `msg ${m.direction}${m.status === "failed" ? " failed" : ""}`;
 
@@ -1872,6 +1915,16 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
 
         this.bodyEl.appendChild(el);
+
+        // Time right under the bubble ("Mengirim…" while it goes out; a
+        // failed one shows its retry link instead).
+        if (m.status === "sending" || (m.status !== "failed" && sentAt)) {
+          const time = document.createElement("div");
+          time.className = `msg-time ${m.direction}`;
+          time.textContent =
+            m.status === "sending" ? this.strings.timeSending : formatMessageTime(sentAt!, this.locale);
+          this.bodyEl.appendChild(time);
+        }
 
         // 👍/👎 right under the bot answer the backend marked as rateable.
         if (m.direction === "inbound" && m.answer_feedback) {
@@ -2391,6 +2444,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             if (data.id && this.serverIds.has(data.id)) return;
             if (data.id) this.serverIds.add(data.id);
             const msg = fromServer(data);
+            // Older backends send no sent_at on a live frame: the moment it
+            // arrived is the closest stand-in (a resync replaces it with the
+            // stored time).
+            if (!msg.sent_at) msg.sent_at = new Date().toISOString();
             // An actual agent message supersedes the "typing…" hint.
             if (msg.direction === "inbound") this.clearAgentTyping();
             this.messages.push(msg);

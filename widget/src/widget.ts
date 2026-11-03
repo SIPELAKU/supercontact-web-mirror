@@ -24,6 +24,19 @@
 
 import { splitLinks } from "../../lib/utils/linkify";
 import {
+  afterAgentOutcome,
+  agentAnsweredSince,
+  agentRequestLine,
+  agentRequestMark,
+  canRequestAgent,
+  readAgentAssigned,
+  readAgentRequestOutcome,
+  showsAgentCards,
+  type AgentRequestSource,
+  type AgentRequestUi,
+} from "../../lib/utils/agentRequest";
+import { deflectionCardPlacement, readCardMessageId } from "../../lib/utils/deflectionCard";
+import {
   dayKey,
   dayLabel,
   formatMessageTime,
@@ -147,10 +160,9 @@ interface WidgetStrings {
   menu: string;
   menuTalkToHuman: string;
   // Answer-Bot deflection control (Phase 7B.2):
-  deflectQuestion: string;
-  deflectYes: string;
-  deflectTalkHuman: string;
-  deflectHelpful: string;
+  // True-deflection card ("for more details, talk to an agent?"); its
+  // buttons reuse agentOfferYes / agentOfferNo:
+  agentCardQuestion: string;
   deflectConnecting: string;
   deflectRetry: string;
   // 👍/👎 under each bot answer that carries answer_feedback:
@@ -207,10 +219,7 @@ const STRINGS_EN: WidgetStrings = {
   back: "Back",
   menu: "More options",
   menuTalkToHuman: "Talk to a human",
-  deflectQuestion: "Was this helpful?",
-  deflectYes: "Yes, thanks",
-  deflectTalkHuman: "Talk to a human",
-  deflectHelpful: "Glad that helped!",
+  agentCardQuestion: "For more details, you can talk to one of our agents. Connect now?",
   deflectConnecting: "Connecting you to our team…",
   deflectRetry: "Couldn't send — tap to retry",
   answerHelpfulAria: "This answer helped",
@@ -263,10 +272,7 @@ const STRINGS_ID: WidgetStrings = {
   back: "Kembali",
   menu: "Opsi lainnya",
   menuTalkToHuman: "Bicara dengan agen",
-  deflectQuestion: "Apakah ini membantu?",
-  deflectYes: "Ya, terima kasih",
-  deflectTalkHuman: "Bicara dengan agen",
-  deflectHelpful: "Senang bisa membantu!",
+  agentCardQuestion: "Untuk informasi lebih lengkap, Anda bisa berbicara dengan agen kami. Mau dihubungkan?",
   deflectConnecting: "Menghubungkan Anda dengan tim kami…",
   deflectRetry: "Gagal mengirim — ketuk untuk coba lagi",
   answerHelpfulAria: "Jawaban ini membantu",
@@ -310,6 +316,10 @@ interface StoredSession {
   // Ids of the no-answer replies whose "talk to an agent?" card the visitor
   // answered "No" to, so a reload doesn't bring them back.
   dismissed_agent_offers?: string[];
+  // The newest stored message when a request for an agent went through (null:
+  // nothing stored yet). A team message after it means an agent answered, so
+  // "Menghubungkan…" goes - after a reload too. Absent: no request yet.
+  agent_request_mark?: string | null;
 }
 
 interface WidgetAttachment {
@@ -332,27 +342,25 @@ interface WidgetMessage {
   // Routing context captured at conversation start so a retry re-POSTs the
   // SAME /start payload (queue + originating quick-action). Anonymous start:
   // no visitor_name/visitor_email captured up-front anymore.
-  startCtx?: { target_queue_id?: string | null; action_id?: string | null };
+  startCtx?: { target_queue_id?: string | null; action_id?: string | null; request_agent?: boolean };
   // Present only on a bot answer the visitor can rate with 👍/👎.
   answer_feedback?: AnswerFeedback | null;
   // True on a no-answer reply: show "Talk to an agent" under it.
   offer_agent?: boolean;
 }
 
-// Client-only state for a single Answer-Bot deflection (Phase 7B.2), built from
-// a WS "bot_suggestion" frame and never persisted. `articles` holds TITLES ONLY:
-// the backend contract carries no URLs, so they're rendered as plain-text
-// context (never invented links). The bot's actual answer has already arrived
-// as a normal OUTBOUND message bubble, so the frame's `answer` field is
-// deliberately not re-rendered here. Lifecycle is per-deflection: a new
-// bot_suggestion replaces this wholesale (a fresh "open" control); a resolved
-// deflection ("helpful"/"escalated") shows a note and never re-arms.
+// Client-only state for the true-deflection card (Phase 7B.2), built from a WS
+// "bot_suggestion" frame or a replayed pending_deflection, never persisted. The
+// bot's answer itself arrived as a normal message; the card sits under it
+// (`messageId`) and offers an agent. The backend decides when a card comes
+// (first answer and follow-ups, at most once every 5 minutes); a new one
+// replaces this wholesale. "Yes" goes through requestAgent; "No" declines.
 interface DeflectionState {
   id: string;
-  articles: { title: string }[];
-  // open --click--> submitting --success--> (helpful | escalated)
-  //                            --failure--> error (retryable, buttons re-enabled)
-  state: "open" | "submitting" | "helpful" | "escalated" | "error";
+  /** The bot answer the card belongs to (BE 1.157.0); absent on older ones. */
+  messageId?: string;
+  // open --"No"--> declined (gone at once; the POST runs in the background)
+  state: "open" | "declined";
   // Provenance of THIS card. "live": armed by a bot_suggestion WS frame the
   // socket actually received. "resync": replayed from the resync endpoint's
   // pending_deflection field. Only resync-sourced cards are auto-cleared when a
@@ -368,6 +376,7 @@ interface DeflectionState {
 // never delivered (Phase 7B.2 true-deflection fix).
 interface PendingDeflection {
   deflection_id?: string | null;
+  message_id?: string | null;
   articles?: Array<{ title?: string | null }> | null;
   answer?: string | null;
 }
@@ -647,9 +656,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // A first message waiting for the form: kept when /start refused the
     // details, or when a send needs a new chat and no details are known yet.
     private pendingStart: WidgetMessage | null = null;
-    // Set once the visitor asked for an agent (the no-answer card's "Yes" or
-    // the menu): no "talk to an agent?" card shows after that.
-    private agentRequested = false;
+    // Asking for a person, from any control or typed (BE request_agent):
+    // idle -> submitting -> requested, or failed (retry). While submitting and
+    // once requested the agent cards are gone and the thread ends with
+    // "Menghubungkan Anda dengan tim kami…".
+    private agentRequest: AgentRequestUi = { state: "idle" };
     // No-answer replies whose card the visitor answered "No" to; persisted
     // with the session (dismissed_agent_offers) so they stay closed on reload.
     private dismissedOffers = new Set<string>(readDismissedOffers(this.session?.dismissed_agent_offers));
@@ -929,20 +940,17 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .retry { display: block; margin-top: 6px; background: none; border: none; padding: 0; cursor: pointer; font-size: 11px; font-weight: 600; color: #FCA5A5; text-align: left; }
         .msg.inbound .retry { color: #DC2626; }
         .sys-line { align-self: center; max-width: 92%; text-align: center; font-size: 11px; color: #6B7280; background: #EEF2F7; padding: 4px 12px; border-radius: 999px; margin: 2px auto; }
+        .agent-retry { border: none; cursor: pointer; color: #DC2626; background: #FEF2F2; font-family: inherit; }
 
         /* ---- Answer-Bot deflection control (Phase 7B.2) ---- */
         .deflect { align-self: stretch; margin: 2px 0; padding: 10px 12px; border: 1px solid #E9EDF3; border-radius: 12px; background: #fff; }
         .deflect-q { font-size: 12px; font-weight: 700; color: #111827; }
-        .deflect-articles { list-style: none; margin: 8px 0 0; padding: 0; }
-        .deflect-articles li { position: relative; font-size: 12px; color: #6B7280; line-height: 1.45; padding-left: 14px; }
-        .deflect-articles li::before { content: "•"; position: absolute; left: 3px; color: #C0C7D2; }
         .deflect-actions { display: flex; gap: 8px; margin-top: 10px; }
         .deflect-btn { flex: 1 1 0; border-radius: 9px; padding: 8px 10px; font-size: 12px; font-weight: 700; cursor: pointer; line-height: 1.2; }
         .deflect-btn.yes { background: ${brand}; color: #fff; border: 1.5px solid ${brand}; }
         .deflect-btn.human { background: #fff; color: ${brand}; border: 1.5px solid ${brand}; }
         .deflect-btn.human:hover { background: ${brand}; color: #fff; }
         .deflect-btn:disabled { opacity: .55; cursor: default; }
-        .deflect-err { font-size: 11px; color: #DC2626; margin-top: 8px; }
 
         /* ---- 👍/👎 under a bot answer ---- */
         .answer-vote { align-self: flex-start; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 0 2px; }
@@ -1441,7 +1449,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       btn.type = "button";
       btn.className = "handoff-btn";
       btn.textContent = (this.config!.handoff_label || "").trim() || this.strings.handoffDefault;
-      btn.onclick = () => this.onHandoff();
+      btn.onclick = () => void this.requestAgent("home");
       box.appendChild(btn);
 
       return box;
@@ -1565,6 +1573,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       targetQueueId: string | null,
       actionId: string | null,
       sendBtn?: HTMLButtonElement,
+      requestAgent = false,
     ) {
       const msg: WidgetMessage = {
         direction: "outbound",
@@ -1573,7 +1582,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         status: "sending",
         // Routing context is only meaningful for the first message (/start);
         // held so a retry re-POSTs the SAME start payload.
-        startCtx: this.session ? undefined : { target_queue_id: targetQueueId, action_id: actionId },
+        startCtx: this.session
+          ? undefined
+          : { target_queue_id: targetQueueId, action_id: actionId, request_agent: requestAgent || undefined },
       };
       this.messages.push(msg);
       if (this.view !== "chat") this.setView("chat");
@@ -1587,33 +1598,63 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       void this.sendVisitorMessage(content, a.target_queue_id ?? null, a.id ?? null);
     }
 
-    private onHandoff() {
-      // The backend recognises this message, hands the chat to the team and
-      // the bot stays quiet; every "Talk to an agent" button goes away.
-      this.agentRequested = true;
-      void this.sendVisitorMessage(
-        this.strings.talkToHuman,
-        this.config!.handoff_queue_id ?? null,
-        null,
-      );
+    // Every "talk to an agent" control ends here, so they all behave the same:
+    // POST /request-agent, no bubble on the visitor's behalf, no bot reply, and
+    // the note "Menghubungkan Anda dengan tim kami…". The backend creates the
+    // ticket once, notifies, routes, escalates any open card and quiets the
+    // bot. Without a chat yet (the Home button) the request opens one: /start
+    // with request_agent, so the bot never answers that first message.
+    private async requestAgent(source: AgentRequestSource, deflectionId?: string) {
+      if (!canRequestAgent(this.agentRequest)) return;
+      if (!this.session) {
+        void this.sendVisitorMessage(
+          this.strings.talkToHuman,
+          this.config!.handoff_queue_id ?? null,
+          null,
+          undefined,
+          true,
+        );
+        return;
+      }
+      this.agentRequest = { state: "submitting", source };
+      // From the Home screen of an existing chat: show the thread, where the
+      // "Menghubungkan…" line appears.
+      if (this.view !== "chat") this.setView("chat");
+      this.renderMessages();
+      try {
+        const res = await apiFetch(`/public/widget/request-agent`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${this.session.visitor_token}` },
+          body: JSON.stringify(deflectionId ? { source, deflection_id: deflectionId } : { source }),
+        });
+        this.agentRequest = { state: "requested" };
+        this.rememberAgentRequestMark();
+        // An online agent took it at once: "Anda terhubung dengan agen".
+        if (readAgentAssigned(res)) this.agentConnected = true;
+      } catch (e) {
+        console.error("[SmartSales Widget] request agent failed", e);
+        // Expired/revoked token: purge it so a reload starts fresh (item 4).
+        if ((e as { status?: number })?.status === 401) this.clearSession();
+        this.agentRequest = { state: "failed", source };
+      }
+      this.renderMessages();
     }
 
-    // Chat-view overflow-menu "Talk to a human" (Phase 7B.2 defense-in-depth):
-    // an always-available escape hatch so a visitor is never stranded after a
-    // confident deflection - even if the escalation card wasn't rendered. If an
-    // unresolved deflection is live, ESCALATE that (POST helpful=false, exactly
-    // like the card's own "Talk to a human"; submitDeflection already no-ops a
-    // mid-flight "submitting" one, so this can't double-escalate). Otherwise, or
-    // once the deflection is already resolved, fall back to the normal handoff.
+    // Once a request went through, note where the thread stood (only the first
+    // time: a resync or a WS echo later must not move it past an agent's
+    // answer). Stored with the session, so it survives a reload.
+    private rememberAgentRequestMark() {
+      if (this.agentRequest.state !== "requested" || !this.session) return;
+      if (this.session.agent_request_mark !== undefined) return;
+      this.session = { ...this.session, agent_request_mark: agentRequestMark(this.messages) };
+      setSession(this.session);
+    }
+
+    // Chat-view overflow-menu "Talk to a human": always there, so a visitor is
+    // never stranded even when no card is on screen.
     private onTalkToHuman() {
       this.closeMenu();
-      const d = this.deflection;
-      if (d && d.state !== "helpful" && d.state !== "escalated") {
-        this.agentRequested = true;
-        void this.submitDeflection(d, false);
-      } else {
-        this.onHandoff();
-      }
+      void this.requestAgent("menu");
     }
 
     private async attemptSend(msg: WidgetMessage, sendBtn?: HTMLButtonElement) {
@@ -1641,6 +1682,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
               // Routing fields for a quick-action/handoff first message.
               target_queue_id: msg.startCtx?.target_queue_id ?? undefined,
               action_id: msg.startCtx?.action_id ?? undefined,
+              // The Home button: this first message IS the request for an agent.
+              request_agent: msg.startCtx?.request_agent || undefined,
               page_url: window.location.href,
             }),
           });
@@ -1653,13 +1696,28 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           this.stoppedReconnect = false;
           // /start now reports whether an agent was assigned immediately.
           if (result.assigned) this.agentConnected = true;
+          // An opening message that asked for an agent (Home button, or typed):
+          // handed over, or failed with a retry like any other control.
+          this.agentRequest = afterAgentOutcome(
+            this.agentRequest,
+            readAgentRequestOutcome(result),
+            msg.startCtx?.request_agent ? "home" : "typed",
+          );
+          this.rememberAgentRequestMark();
           this.connectSocket();
         } else {
-          await apiFetch(`/public/widget/messages`, {
+          const res = await apiFetch(`/public/widget/messages`, {
             method: "POST",
             headers: { Authorization: `Bearer ${this.session.visitor_token}` },
             body: JSON.stringify({ content: msg.content, client_message_id: msg.client_message_id }),
           });
+          // The stored time for the bubble (BE 1.157.0).
+          if (typeof res?.sent_at === "string") msg.sent_at = res.sent_at;
+          // A typed request for an agent ("admin dong") is handed over by the
+          // backend; a failed hand-over gets the same retry as the buttons.
+          this.agentRequest = afterAgentOutcome(this.agentRequest, readAgentRequestOutcome(res), "typed");
+          this.rememberAgentRequestMark();
+          if (readAgentAssigned(res)) this.agentConnected = true;
         }
         msg.status = "sent";
         // Shown under the bubble until a resync brings the stored time.
@@ -1865,7 +1923,18 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         }
       }
 
-      const agentOfferId = agentOfferMessageId(this.messages, this.agentRequested, this.dismissedOffers);
+      // At most one card, under the newest bot answer: the deflection card for
+      // a KB answer, the no-answer card for a miss (never both on one reply).
+      const cardPlacement = deflectionCardPlacement(
+        this.messages,
+        this.deflection?.state === "open" ? this.deflection : null,
+        showsAgentCards(this.agentRequest),
+      );
+      const agentOfferId = agentOfferMessageId(
+        this.messages,
+        !showsAgentCards(this.agentRequest),
+        this.dismissedOffers,
+      );
       // A day separator above the first message of each day ("Hari ini",
       // "Kemarin", "2 Nov 2026"); a message still being sent has no time yet
       // and never opens a new day.
@@ -1934,20 +2003,30 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         if (m.id && m.id === agentOfferId) {
           this.bodyEl.appendChild(this.buildAgentOffer(m.id));
         }
+        // "For more details, talk to an agent?" right under the answer it
+        // belongs to.
+        if (m.id && cardPlacement && cardPlacement !== "bottom" && cardPlacement.under === m.id) {
+          const card = this.buildDeflection();
+          if (card) this.bodyEl.appendChild(card);
+        }
       }
 
-      // Answer-Bot deflection control / resolution note (Phase 7B.2), rendered
-      // right under the latest bot answer bubble. Rebuilt from this.deflection
-      // on every render so its disabled/resolved state survives message churn.
-      const deflectEl = this.buildDeflection();
-      if (deflectEl) this.bodyEl.appendChild(deflectEl);
+      // Older backend without message_id: the card at the bottom instead.
+      if (cardPlacement === "bottom") {
+        const card = this.buildDeflection();
+        if (card) this.bodyEl.appendChild(card);
+      }
 
-      // Sticky "connected with an agent" system line (assigned:true from /start).
+      // Sticky "connected with an agent" system line (assigned:true from /start);
+      // until then, the state of a request for an agent.
       if (this.agentConnected) {
         const sys = document.createElement("div");
         sys.className = "sys-line";
         sys.textContent = this.strings.connectedAgent;
         this.bodyEl.appendChild(sys);
+      } else {
+        const requestLine = this.buildAgentRequestLine();
+        if (requestLine) this.bodyEl.appendChild(requestLine);
       }
 
       // Pending / failed upload row (feature 3), rendered like a visitor bubble.
@@ -2025,10 +2104,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // from a WS "bot_suggestion" frame. A new deflection ALWAYS replaces any
     // prior one with a fresh "open" control, so a previously-resolved note is
     // superseded. Titles are kept as plain text only (contract carries no URLs).
-    private onBotSuggestion(
-      deflectionId?: string,
-      articles?: Array<{ title?: string | null }> | null,
-    ) {
+    private onBotSuggestion(deflectionId?: string, messageId?: unknown) {
       const id = (deflectionId || "").trim();
       if (!id) return; // malformed frame - nothing actionable
       // De-dupe by deflection_id: if we're ALREADY showing this exact deflection
@@ -2037,11 +2113,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // just-resolved state back to "open". A genuinely NEW deflection has a new
       // id and still replaces the old one wholesale (below).
       if (this.deflection && this.deflection.id === id) return;
-      const titles = (articles || [])
-        .map((a) => (a && typeof a.title === "string" ? a.title.trim() : ""))
-        .filter((t) => t.length > 0)
-        .map((title) => ({ title }));
-      this.deflection = { id, articles: titles, state: "open", source: "live" };
+      this.deflection = { id, messageId: readCardMessageId(messageId), state: "open", source: "live" };
       // Mirror the "message" frame's behavior: just re-render (don't yank the
       // visitor's view). It renders into the chat thread, which they're already
       // in after sending the message that produced this suggestion.
@@ -2067,11 +2139,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         // Same deflection already on screen: do not touch (guards in-flight /
         // resolved state, and avoids a redundant rebuild for an unchanged card).
         if (this.deflection && this.deflection.id === id) return;
-        const titles = (pending!.articles || [])
-          .map((a) => (a && typeof a.title === "string" ? a.title.trim() : ""))
-          .filter((t) => t.length > 0)
-          .map((title) => ({ title }));
-        this.deflection = { id, articles: titles, state: "open", source: "resync" };
+        this.deflection = {
+          id,
+          messageId: readCardMessageId(pending!.message_id),
+          state: "open",
+          source: "resync",
+        };
       } else if (this.deflection && this.deflection.source === "resync") {
         // No pending deflection server-side and our card came from a resync
         // (incl. one we already resolved) -> it's done; drop it.
@@ -2079,42 +2152,21 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       }
     }
 
-    // Build the deflection element for the CURRENT this.deflection state, or
-    // null when there's none. Fully derived from state so a re-render (e.g. a
-    // new agent message arriving mid-flight) faithfully rebuilds the control,
-    // including its disabled/resolved/error appearance.
+    // The true-deflection card: "Untuk informasi lebih lengkap, Anda bisa
+    // berbicara dengan agen kami. Mau dihubungkan?" with the same look and
+    // buttons as the no-answer card. "Yes" asks for an agent like every other
+    // control; "No" just closes it.
     private buildDeflection(): HTMLElement | null {
       const d = this.deflection;
-      if (!d) return null;
-
-      // Resolved: a subtle centered note replaces the control. It persists (no
-      // buttons) until a NEW bot_suggestion arrives and re-arms a fresh control.
-      if (d.state === "helpful" || d.state === "escalated") {
-        const note = document.createElement("div");
-        note.className = "sys-line";
-        note.textContent =
-          d.state === "helpful" ? this.strings.deflectHelpful : this.strings.deflectConnecting;
-        return note;
-      }
+      if (!d || d.state !== "open") return null;
 
       const box = document.createElement("div");
       box.className = "deflect";
 
       const q = document.createElement("div");
       q.className = "deflect-q";
-      q.textContent = this.strings.deflectQuestion;
+      q.textContent = this.strings.agentCardQuestion;
       box.appendChild(q);
-
-      if (d.articles.length) {
-        const list = document.createElement("ul");
-        list.className = "deflect-articles";
-        for (const a of d.articles) {
-          const li = document.createElement("li");
-          li.textContent = a.title; // plain text - no link is provided
-          list.appendChild(li);
-        }
-        box.appendChild(list);
-      }
 
       const actions = document.createElement("div");
       actions.className = "deflect-actions";
@@ -2122,78 +2174,61 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       const yesBtn = document.createElement("button");
       yesBtn.type = "button";
       yesBtn.className = "deflect-btn yes";
-      yesBtn.textContent = this.strings.deflectYes;
+      yesBtn.textContent = this.strings.agentOfferYes;
+      yesBtn.onclick = () => void this.requestAgent("deflection", d.id);
 
-      const humanBtn = document.createElement("button");
-      humanBtn.type = "button";
-      humanBtn.className = "deflect-btn human";
-      humanBtn.textContent = this.strings.deflectTalkHuman;
-
-      // Double-click / one-submission guard: while a POST is in flight both
-      // buttons are disabled. Because it's derived from d.state, the disabled
-      // look survives any re-render that happens during the request.
-      if (d.state === "submitting") {
-        yesBtn.disabled = true;
-        humanBtn.disabled = true;
-      }
-      yesBtn.onclick = () => void this.submitDeflection(d, true);
-      humanBtn.onclick = () => void this.submitDeflection(d, false);
+      const noBtn = document.createElement("button");
+      noBtn.type = "button";
+      noBtn.className = "deflect-btn human";
+      noBtn.textContent = this.strings.agentOfferNo;
+      noBtn.onclick = () => void this.declineDeflection(d);
 
       actions.appendChild(yesBtn);
-      actions.appendChild(humanBtn);
+      actions.appendChild(noBtn);
       box.appendChild(actions);
-
-      // Failed POST: keep the (re-enabled) buttons and show a small retry hint.
-      if (d.state === "error") {
-        const err = document.createElement("div");
-        err.className = "deflect-err";
-        err.textContent = this.strings.deflectRetry;
-        box.appendChild(err);
-      }
-
       return box;
     }
 
-    // POST the visitor's verdict for a deflection, reusing the widget's existing
-    // Bearer visitor-token auth (identical to the /messages send). helpful:true
-    // marks it deflected; helpful:false makes the BACKEND escalate to a human
-    // (creates the ticket + notifies an agent) - so we do NOT also fire
-    // onHandoff(), which would double-escalate; the "Connecting you..." note
-    // simply mirrors the handoff UX. Never auto-escalates: only a real click.
-    private async submitDeflection(d: DeflectionState, helpful: boolean) {
-      // Guard: act only on the still-active deflection, and only from an
-      // actionable state (open, or error-after-retry). This is what enforces
-      // "one submission per deflection" and swallows double-clicks.
-      if (this.deflection !== d) return;
-      if (d.state !== "open" && d.state !== "error") return;
-      if (!this.session) {
-        d.state = "error";
-        this.renderMessages();
-        return;
+    // "Menghubungkan Anda dengan tim kami…" while asking and once handed over;
+    // after a failure, a retry link that asks again for the same source.
+    private buildAgentRequestLine(): HTMLElement | null {
+      const answered = agentAnsweredSince(this.messages, this.session?.agent_request_mark);
+      const line = agentRequestLine(this.agentRequest, answered);
+      if (!line) return null;
+      if (line === "connecting") {
+        const note = document.createElement("div");
+        note.className = "sys-line";
+        note.textContent = this.strings.deflectConnecting;
+        return note;
       }
+      const failed = this.agentRequest as Extract<AgentRequestUi, { state: "failed" }>;
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "sys-line agent-retry";
+      retry.textContent = this.strings.deflectRetry;
+      retry.onclick = () => void this.requestAgent(failed.source);
+      return retry;
+    }
 
-      d.state = "submitting";
+    // "No" on the card: it closes at once and nothing else happens for the
+    // visitor. In the background the backend records it (outcome deflected,
+    // no article vote - Q-3.4), so a reload does not bring the card back. A
+    // failed POST is only logged: to the visitor the card is simply gone.
+    private async declineDeflection(d: DeflectionState) {
+      if (this.deflection !== d || d.state !== "open") return;
+      d.state = "declined";
       this.renderMessages();
+      if (!this.session) return;
       try {
         await apiFetch(`/public/widget/deflection/${encodeURIComponent(d.id)}/feedback`, {
           method: "POST",
           headers: { Authorization: `Bearer ${this.session.visitor_token}` },
-          body: JSON.stringify({ helpful }),
+          body: JSON.stringify({ helpful: true }),
         });
-        // A new bot_suggestion could have replaced this.deflection mid-flight;
-        // only reflect the resolution if this is still the active one.
-        if (this.deflection === d) {
-          d.state = helpful ? "helpful" : "escalated";
-          this.renderMessages();
-        }
       } catch (e) {
-        console.error("[SmartSales Widget] deflection feedback failed", e);
+        console.error("[SmartSales Widget] declining the agent card failed", e);
         // Expired/revoked token: purge it so a reload starts fresh (item 4).
         if ((e as { status?: number })?.status === 401) this.clearSession();
-        if (this.deflection === d) {
-          d.state = "error"; // re-enables the buttons + shows the retry hint
-          this.renderMessages();
-        }
       }
     }
 
@@ -2237,11 +2272,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       return row;
     }
 
-    // Same look as the "Was this helpful?" card. "Yes" uses the same handoff
-    // as the menu (onHandoff, NOT onTalkToHuman: that one would answer a live
-    // deflection card instead, and the bot wouldn't go quiet); onHandoff sets
-    // agentRequested, which removes the card. "No" only closes this card,
-    // with no request: the bot keeps answering.
+    // Same look as the "Was this helpful?" card. "Yes" goes through
+    // requestAgent like every other agent control. "No" only closes this
+    // card, with no request: the bot keeps answering.
     private buildAgentOffer(messageId: string): HTMLElement {
       const box = document.createElement("div");
       box.className = "deflect";
@@ -2258,7 +2291,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       yesBtn.type = "button";
       yesBtn.className = "deflect-btn yes";
       yesBtn.textContent = this.strings.agentOfferYes;
-      yesBtn.onclick = () => this.onHandoff();
+      yesBtn.onclick = () => void this.requestAgent("no_answer");
 
       const noBtn = document.createElement("button");
       noBtn.type = "button";
@@ -2342,6 +2375,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         this.reconcilePendingDeflection(
           (conv.pending_deflection as PendingDeflection | null | undefined) ?? null,
         );
+        // After a reload: the chat already waits for an agent.
+        if (conv.agent_requested === true) {
+          this.agentRequest = { state: "requested" };
+          this.rememberAgentRequestMark();
+        }
         this.renderMessages();
       } catch (e) {
         // A 401 means the visitor token expired/was revoked: purge it so a
@@ -2360,6 +2398,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.serverIds = new Set();
       this.stoppedReconnect = true;
       this.agentConnected = false;
+      // The next send opens a new chat, which has asked for nobody yet.
+      this.agentRequest = { state: "idle" };
       this.refreshComposerState(); // no token -> attach unusable
     }
 
@@ -2391,7 +2431,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.agentConnected = false;
       this.deflection = null;
       this.answerVotes = new Map();
-      this.agentRequested = false;
+      this.agentRequest = { state: "idle" };
       this.dismissedOffers = new Set();
       // A fresh chat asks for the details again, like the first one.
       this.visitor = null;
@@ -2421,6 +2461,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             type?: string;
             // Phase 7B.2 "bot_suggestion" frame fields (see onBotSuggestion).
             deflection_id?: string;
+            // The bot answer the card belongs to (BE 1.157.0).
+            message_id?: string;
             articles?: Array<{ title?: string | null }> | null;
             answer?: string | null;
             conversation_id?: string;
@@ -2430,13 +2472,21 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           // team bubble); this companion frame only arms the "Was this helpful?"
           // escalation control beneath it. Handled BEFORE the "message" branch.
           if (data.type === "bot_suggestion") {
-            this.onBotSuggestion(data.deflection_id, data.articles);
+            this.onBotSuggestion(data.deflection_id, data.message_id);
             return;
           }
           // Agent-typing indicator (feature 1): a support agent is typing. Show
           // the transient "Support is typing…" row; it self-hides ~4s later.
           if (data.type === "agent_typing") {
             this.showAgentTyping();
+            return;
+          }
+          // The backend handed the chat over: a button here, another tab, or
+          // a typed request ("admin dong").
+          if (data.type === "agent_requested") {
+            this.agentRequest = { state: "requested" };
+            this.rememberAgentRequestMark();
+            this.renderMessages();
             return;
           }
           if (data.type === "message") {

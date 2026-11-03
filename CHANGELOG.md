@@ -9,6 +9,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.11] - 2026-11-03
+
+### Detail Versi 1.117.11
+
+#### 💄 Settings › Web Widget: Tombol Save Settings Selalu Terlihat
+
+- **Deskripsi:**
+  - **Masalah:** form Web Widget sangat panjang, dan tombol **Save Settings** hanya ada di paling bawah. Setelah mengubah setting di bagian atas, admin harus scroll jauh ke bawah untuk menyimpan.
+  - **Perbaikan:** tombol **Save Settings** ada di bar yang **menempel di bagian bawah layar** selama form Web Widget masih terlihat. Setelah form habis (bagian Bot Playground dan Embed Guide di bawahnya), bar kembali di posisi aslinya di akhir form.
+  - **Technical Notes:**
+    - `sticky bottom-0` di footer form `WebWidgetConfigPanel`, dengan latar putih dan garis atas supaya isi form di belakangnya tidak terbaca tembus. `-mx-6 -mb-6` mengikuti padding kartu di halaman `settings/web-widget`
+    - Menempel di kolom isi Settings yang ter-scroll sendiri di desktop (1.117.10). Di bawah 1024px tombol tetap di akhir form seperti sebelumnya
+  - **🧪 Testing:** `tsc` bersih. Perlu dicek manual di browser
+
+---
+
+## [1.117.10] - 2026-11-03
+
+### Detail Versi 1.117.10
+
+#### 💄 Settings: Hanya Isi Halaman yang Ter-scroll, Kedua Sidebar Tetap di Tempat
+
+- **Deskripsi:**
+  - **Masalah:** di halaman Settings (misalnya Settings › General › Company) ada dua sidebar: menu utama dan menu Settings. Saat isi halaman di-scroll, menu Settings dan topbar ikut naik dan hilang dari layar. BO ingin hanya isi halaman yang ter-scroll.
+  - **Perbaikan:**
+    - Di layar desktop (≥ 1024px), area Settings setinggi layar di bawah topbar, dan **hanya kolom isi yang ter-scroll**. Menu utama, menu Settings, dan topbar tetap di tempat.
+    - Menu Settings yang panjang punya scroll sendiri.
+    - Saat pindah ke halaman Settings lain, isi halaman mulai dari atas lagi.
+    - Tablet dan HP tidak berubah: menu Settings tetap berupa laci (drawer), dan halaman ter-scroll seperti biasa.
+  - **Technical Notes:**
+    - Penyebab: sidebar Settings sudah `sticky`, tapi pembungkus kolom konten di `AuthenticatedLayout` memakai `overflow-x-hidden`, yang menjadikannya scroll container sehingga `sticky` di dalamnya tidak berfungsi. Layout utama sengaja tidak diubah, karena akan mengubah perilaku topbar dan elemen menempel di semua halaman
+    - `SettingsLayout`: `lg:h-[calc(100vh-52px)] lg:overflow-hidden` (52px = tinggi topbar); `SettingsContent`: `lg:overflow-y-auto` + reset scroll ke atas saat `pathname` berubah; `SettingsSidebar`: `lg:static lg:h-full`
+    - Sudah dicek: tidak ada halaman di bawah `/settings` yang bergantung pada scroll jendela atau tinggi `100vh`
+  - **🧪 Testing:** `tsc` bersih; seluruh suite tetap lolos. Perlu dicek manual di browser (lihat tes di bawah)
+
+---
+
+## [1.117.9] - 2026-11-03
+
+### Detail Versi 1.117.9
+
+#### 🐛 Widget: "Menghubungkan Anda dengan tim kami…" Hilang Setelah Agen Menjawab
+
+- **Deskripsi:**
+  - **Masalah:** setelah pengunjung minta agen (1.117.7), catatan *"Menghubungkan Anda dengan tim kami…"* tetap ada di bawah chat walaupun agen sudah membalas, sehingga pengunjung mengira masih menunggu.
+  - **Perbaikan:**
+    - Catatan **hilang begitu ada balasan tim setelah permintaan agen**. Setelah permintaan berhasil, bot dan flow sudah diam, jadi balasan tim berikutnya adalah agen.
+    - Tetap hilang **setelah refresh**: widget mengingat titik permintaan bersama sesi chat di browser.
+    - Tidak berubah: catatan tampil selama permintaan dikirim dan sampai agen membalas; tombol coba lagi saat gagal; catatan "terhubung dengan agen" saat agen langsung ditugaskan; kartu tawaran agen tetap tidak muncul lagi.
+  - **Technical Notes:**
+    - Pesan ke widget tidak membawa info pengirim (agen/bot/sistem). Satu-satunya pesan otomatis yang masih bisa datang setelah permintaan adalah peringatan idle *"Masih di sana?"* (default setelah 30 menit sepi), dan pesan itu juga menghilangkan catatan. Kalau perlu dibedakan, BE perlu menambah `sender_type` di pesan; aturan di FE tinggal diganti
+    - Titik permintaan = id pesan tersimpan terbaru saat permintaan berhasil (`agent_request_mark` di sesi `localStorage`, diisi sekali per chat; `null` = belum ada pesan). Dicatat dari `POST /request-agent`, `/start`, `POST /messages`, WS `agent_requested`, dan resync. Sesi lama tanpa titik memakai posisi saat resync
+    - Helper tanpa import di `lib/utils/agentRequest.ts`: `agentRequestMark`, `agentAnsweredSince`; `agentRequestLine` menerima `agentAnswered`
+  - **🧪 Testing:** 8 tes baru (`agentRequest.test.ts`); 8/8 mutasi tertangkap; seluruh suite 78 file / 867 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.8] - 2026-11-03
+
+### Detail Versi 1.117.8
+
+#### 💄 Widget: Kartu True Deflection Jadi "Mau Dihubungkan?" + Tidak Lagi Menumpuk
+
+- **Deskripsi:**
+  - **Masalah:**
+    - saat setting **Hold the ticket until the visitor asks** menyala, kartu di bawah jawaban bot bertanya *"Apakah ini membantu?"* dengan daftar judul artikel dan tombol **Ya, terima kasih / Bicara dengan agen**, padahal yang ingin ditawarkan adalah bicara dengan agen;
+    - kartu selalu digambar di **paling bawah chat** dan bertahan sampai dijawab. Kalau pengunjung tidak memilih lalu bertanya lagi, kartu lama tetap ada dan **menumpuk** dengan kartu berikutnya (misalnya kartu no-answer "Mau dihubungkan?").
+  - **Perbaikan:**
+    - Kartu baru, dengan desain dan tombol yang sama seperti kartu no-answer: *"Untuk informasi lebih lengkap, Anda bisa berbicara dengan agen kami. Mau dihubungkan?"* [**Ya, hubungkan**] [**Tidak**] (EN: *"For more details, you can talk to one of our agents. Connect now?"* / **Yes, connect me** / **No, thanks**). Tanpa daftar judul artikel.
+    - **Ya, hubungkan** → minta agen dengan cara yang sama seperti tombol lain (1.117.7): catatan "Menghubungkan Anda dengan tim kami…".
+    - **Tidak** → kartu **langsung hilang tanpa catatan apa pun**; bot tetap menjawab. Setelah refresh kartu tidak muncul lagi.
+    - Kartu ditaruh **tepat di bawah jawaban** yang bersangkutan dan **hanya selama jawaban itu pesan terbaru**. Begitu ada pesan baru, kartu itu hilang walaupun belum dijawab. Jadi **paling banyak satu kartu** yang tampil (kartu ini untuk jawaban KB, kartu no-answer untuk jawaban yang tidak ketemu).
+    - Kapan kartu muncul lagi (pertanyaan lanjutan, paling cepat 5 menit sekali) ditentukan BE (BE-3.1, 1.157.0).
+    - Dashboard: deskripsi setting **Hold the ticket until the visitor asks** diperbarui sesuai perilaku baru: kartu "talk to an agent? Yes / No", maksimal sekali per 5 menit, dan notifikasi agen baru dikirim saat pengunjung minta agen.
+  - **Technical Notes:**
+    - `message_id` dari frame `bot_suggestion` dan dari `pending_deflection` (replay setelah refresh) dipakai untuk menempatkan kartu; dengan BE lama tanpa `message_id`, kartu tetap di bawah selama pesan terakhir dari bot. Aturan penempatan ada di helper tanpa import `lib/utils/deflectionCard.ts` (`deflectionCardPlacement`, `readCardMessageId`)
+    - "Tidak" mengirim `POST /deflection/{id}/feedback { helpful: true }` di belakang layar (outcome `deflected`, tanpa vote artikel sejak BE 1.157.0, Q-3.4). Gagal hanya dicatat di console. 👍/👎 di bawah jawaban tetap aktif
+    - `submitDeflection`, state `helpful`/`escalated`/`submitting`/`error`, string `deflectQuestion`/`deflectYes`/`deflectTalkHuman`/`deflectHelpful`, serta CSS `.deflect-articles` dan `.deflect-err` dihapus; string baru `agentCardQuestion`
+  - **🧪 Testing:** 6 tes baru (`deflectionCard.test.ts`); 5/5 mutasi tertangkap; seluruh suite 78 file / 859 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
+## [1.117.7] - 2026-11-03
+
+### Detail Versi 1.117.7
+
+#### 🐛 Widget: Semua Cara "Hubungkan ke Agen" Kini Sama
+
+- **Deskripsi:**
+  - **Masalah:** ada beberapa cara meminta agen di widget, dan hasilnya berbeda-beda:
+    - kartu no-answer → **Ya, hubungkan**, tombol **Bicara dengan agen** di layar Home, dan menu ⋮ mengirim teks *"Saya ingin berbicara dengan agen"* atas nama pengunjung. Sejak BE 1.157.0 bot tidak lagi membalas "Baik, kami hubungkan…", sehingga pengunjung **tidak melihat konfirmasi apa pun**;
+    - hanya kartu true deflection → **Bicara dengan agen** yang menampilkan catatan *"Menghubungkan Anda dengan tim kami…"*;
+    - permintaan yang **diketik** pengunjung ("admin dong") juga tanpa konfirmasi.
+  - **Perbaikan:** semua jalur kini memakai satu cara, seperti kartu true deflection:
+    - kartu no-answer → Ya, tombol Home, menu ⋮, dan kartu deflection → Bicara dengan agen: **tanpa bubble teks** atas nama pengunjung. Langsung muncul catatan **"Menghubungkan Anda dengan tim kami…"** (EN *"Connecting you to our team…"*), dan semua kartu agen hilang;
+    - permintaan yang **diketik** pengunjung: bubble pesannya tetap tampil (dia yang mengetik), lalu muncul catatan yang sama. Tidak ada kartu "Mau dihubungkan?";
+    - **gagal** → catatan merah *"Gagal mengirim — ketuk untuk coba lagi"*; ketuk untuk meminta lagi. Kartu agen muncul kembali;
+    - setelah halaman di-refresh, catatan tetap tampil;
+    - kalau saat itu ada agen online yang langsung ditugaskan ke chat, catatannya langsung *"Anda terhubung dengan agen"*. Kalau agen baru mengambil chat **belakangan** di Workspace, catatan tetap "Menghubungkan…", karena BE belum mengirim sinyal penugasan ke widget.
+  - **Technical Notes:**
+    - satu fungsi widget `requestAgent(source, deflectionId?)` → `POST /public/widget/request-agent { source, deflection_id? }` (BE 1.157.0, BE-4.1) untuk `deflection`, `no_answer`, `menu`, `home`. Tanpa chat (tombol Home sebelum chat dimulai): `/start` dengan `request_agent: true`, sehingga bot tidak menjawab pesan pertama itu
+    - response `POST /messages` (`agent_request.outcome` escalated/failed) dan `/start` (`agent_requested`, `agent_request`) dibaca untuk permintaan yang diketik. Coba lagi setelah gagal memakai `request-agent` dengan source yang sama (`typed`/`home`). Frame WS baru `agent_requested` dan `agent_requested` di `GET /conversation` (setelah refresh) ditangani
+    - `sent_at` dari response `POST /messages` dipakai untuk jam bubble pesan pengunjung (menggantikan jam lokal dari 1.117.3)
+    - status permintaan di helper tanpa import `lib/utils/agentRequest.ts` (`canRequestAgent`, `showsAgentCards`, `agentRequestLine`, `readAgentRequestOutcome`, `afterAgentOutcome`); `onHandoff()` dan cabang `submitDeflection(d, false)` dihapus. "Ya, terima kasih" di kartu deflection tidak berubah (diganti di FE-3.1)
+    - `assigned` dari response `request-agent` dan `agent_request.assigned` dari `POST /messages` (helper `readAgentAssigned`) menyalakan catatan "Anda terhubung dengan agen"
+    - FE tidak mendeteksi teks sendiri; deteksi permintaan agen hanya di BE
+  - **🧪 Testing:** 11 tes baru (`agentRequest.test.ts`); 10/10 mutasi tertangkap; seluruh suite 77 file / 853 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
 ## [1.117.6] - 2026-11-03
 
 ### Detail Versi 1.117.6

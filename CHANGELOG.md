@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.3] - 2026-11-03
+
+### Detail Versi 1.117.3
+
+#### ✨ Widget: Jam di Setiap Bubble Chat + Pemisah Tanggal
+
+- **Deskripsi:**
+  - **Masalah:** bubble chat di widget tidak menampilkan waktu sama sekali, sehingga pengunjung tidak tahu kapan sebuah pesan dikirim atau dibalas, terutama saat membuka lagi chat dari hari sebelumnya
+  - **Perbaikan:**
+    - Jam kecil abu-abu **di bawah setiap bubble**: rata kanan untuk pesan pengunjung, rata kiri untuk balasan tim/bot. Format mengikuti bahasa widget: `10.12` (ID) / `10:12 AM` (EN), dalam zona waktu browser pengunjung.
+    - **Pemisah tanggal** di atas pesan pertama setiap hari: *Hari ini* / *Kemarin* / *1 Nov 2026* (EN: *Today* / *Yesterday* / *Nov 1, 2026*).
+    - Pesan pengunjung yang sedang dikirim menampilkan *Mengirim…* (EN *Sending…*). Pesan yang gagal tetap hanya menampilkan link coba lagi.
+    - Bubble sapaan awal, catatan sistem, dan kartu (👍/👎, tawaran agen, deflection) tidak diberi jam.
+  - **Technical Notes:**
+    - helper tanpa import `lib/utils/widgetTime.ts` (`parseMessageTime`, `formatMessageTime`, `dayKey`, `dayLabel`), di-bundle ke widget seperti `answerFeedback.ts`
+    - sumber waktu: `sent_at` dari server (riwayat `GET /public/widget/conversation`). Frame WebSocket `message` belum membawa `sent_at` (BE-5.1), jadi untuk sementara dipakai jam saat frame diterima. Pesan pengunjung memakai jam saat terkirim. Keduanya diganti waktu dari server saat resync
+    - bahasa jam dan tanggal mengikuti urutan yang sama dengan teks widget: `config.locale` → `data-locale` → ID
+    - tanpa perubahan BE (BE-5.1 hanya membuat jam pesan live lebih akurat)
+  - **🧪 Testing:** 8 tes baru (`widgetTime.test.ts`); 5/6 mutasi tertangkap (sisanya mutasi ekuivalen: `+1` bulan di `dayKey` yang hanya dipakai untuk membandingkan); seluruh suite 74 file / 816 tes lolos; `tsc` bersih; `npm run build:widget` berhasil
+
+---
+
 ## [1.117.2] - 2026-11-03
 
 ### Detail Versi 1.117.2

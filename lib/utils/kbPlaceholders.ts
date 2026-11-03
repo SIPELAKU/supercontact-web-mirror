@@ -98,6 +98,73 @@ export function publishReadiness(
   return article.status === "draft" ? "ready" : null;
 }
 
+export interface PlaceholderField {
+  key: string;
+  label: string;
+  example: string;
+}
+
+type GapsForArticle = {
+  variables: { key: string; label?: string; example?: string; articles: { id: string }[] }[];
+};
+
+/** The placeholders still left in one article, each with the label and
+ *  example Content Gaps carries - the fields of the "Isi placeholder" dialog. */
+export function articlePlaceholderFields(gaps: GapsForArticle | undefined, articleId: string): PlaceholderField[] {
+  const fields: PlaceholderField[] = [];
+  for (const v of gaps?.variables ?? []) {
+    if (fields.some((f) => f.key === v.key)) continue;
+    if (v.articles.some((a) => a.id === articleId)) {
+      fields.push({ key: v.key, label: v.label ?? "", example: v.example ?? "" });
+    }
+  }
+  return fields;
+}
+
+/** How many OTHER articles carry at least one of these placeholders: what
+ *  "apply to the other articles too" would also change. */
+export function otherArticlesSharing(gaps: GapsForArticle | undefined, articleId: string, keys: string[]): number {
+  const others = new Set<string>();
+  for (const v of gaps?.variables ?? []) {
+    if (!keys.includes(v.key)) continue;
+    for (const a of v.articles) if (a.id !== articleId) others.add(a.id);
+  }
+  return others.size;
+}
+
+/** Where in this article a placeholder sits, for the dialog: the first of the
+ *  title, excerpt and body that holds it (the API fills all three), cut to a
+ *  window around it. null when it is in none of them. */
+export function placeholderSnippet(
+  article: { title?: string | null; excerpt?: string | null; body?: string | null },
+  key: string,
+  radius = 60
+): { where: "title" | "excerpt" | "body"; text: string } | null {
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const token = new RegExp(`\\{\\{\\s*${escaped}\\s*\\}\\}`, "i");
+  for (const where of ["title", "excerpt", "body"] as const) {
+    const text = article[where] ?? "";
+    const match = token.exec(text);
+    if (!match) continue;
+    const start = Math.max(0, match.index - radius);
+    const end = Math.min(text.length, match.index + match[0].length + radius);
+    const window = text.slice(start, end).split(/\s+/).join(" ").trim();
+    return { where, text: `${start > 0 ? "…" : ""}${window}${end < text.length ? "…" : ""}` };
+  }
+  return null;
+}
+
+/** The fill-placeholders body for the dialog: only this article, unless the
+ *  user chose to apply the values to every article carrying them. */
+export function articleFillRequest(
+  values: Record<string, string>,
+  articleId: string,
+  applyToOthers: boolean
+): { values: Record<string, string>; articleIds?: string[] } {
+  const payload = placeholderPayload(values);
+  return applyToOthers ? { values: payload } : { values: payload, articleIds: [articleId] };
+}
+
 type RejectedArticle = { id?: unknown; article_id?: unknown; title?: unknown; placeholders?: unknown };
 
 /** The articles in the API's refusal to publish placeholders (BE-10, a 422

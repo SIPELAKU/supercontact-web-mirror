@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  articleFillRequest,
+  articlePlaceholderFields,
   articlesWithPlaceholders,
+  otherArticlesSharing,
+  placeholderSnippet,
   placeholderPayload,
   articlesFromGaps,
   placeholderRejection,
@@ -207,5 +211,97 @@ describe('placeholderRejection', () => {
       articles: [{ title: 'no id', placeholders: ['X'] }, { id: 'a3', title: 'empty', placeholders: [] }, { id: 'a4', title: 'ok', placeholders: ['Y'] }],
     });
     expect(placeholderRejection(err).map((a) => a.id)).toEqual(['a4']);
+  });
+});
+
+describe('articlePlaceholderFields', () => {
+  const gaps = {
+    variables: [
+      { key: 'ALAMAT_PUSAT', label: 'Alamat pusat', example: 'Jl. Sudirman 1', articles: [{ id: 'a1' }, { id: 'a2' }] },
+      { key: 'URL_MAPS', label: 'Link Maps', example: '', articles: [{ id: 'a2' }] },
+      { key: 'company_name', articles: [{ id: 'a1' }] },
+    ],
+  };
+
+  it("one field per placeholder left in that article, with its label and example", () => {
+    expect(articlePlaceholderFields(gaps, 'a1')).toEqual([
+      { key: 'ALAMAT_PUSAT', label: 'Alamat pusat', example: 'Jl. Sudirman 1' },
+      { key: 'company_name', label: '', example: '' },
+    ]);
+    expect(articlePlaceholderFields(gaps, 'a2').map((f) => f.key)).toEqual(['ALAMAT_PUSAT', 'URL_MAPS']);
+  });
+
+  it('an article with nothing left, or gaps not loaded: no fields', () => {
+    expect(articlePlaceholderFields(gaps, 'a9')).toEqual([]);
+    expect(articlePlaceholderFields(undefined, 'a1')).toEqual([]);
+  });
+
+  it('a key listed twice counts once', () => {
+    const dup = { variables: [{ key: 'X', articles: [{ id: 'a1' }] }, { key: 'X', articles: [{ id: 'a1' }] }] };
+    expect(articlePlaceholderFields(dup, 'a1')).toHaveLength(1);
+  });
+});
+
+describe('otherArticlesSharing', () => {
+  const gaps = {
+    variables: [
+      { key: 'ALAMAT_PUSAT', articles: [{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }] },
+      { key: 'URL_MAPS', articles: [{ id: 'a1' }, { id: 'a2' }, { id: 'a4' }] },
+      { key: 'JAM_BUKA', articles: [{ id: 'a5' }] },
+    ],
+  };
+
+  it("counts each other article once, across all of this article's placeholders", () => {
+    expect(otherArticlesSharing(gaps, 'a1', ['ALAMAT_PUSAT', 'URL_MAPS'])).toBe(3);
+  });
+
+  it('only the given placeholders count', () => {
+    expect(otherArticlesSharing(gaps, 'a1', ['ALAMAT_PUSAT'])).toBe(2);
+    expect(otherArticlesSharing(gaps, 'a5', ['JAM_BUKA'])).toBe(0);
+    expect(otherArticlesSharing(undefined, 'a1', ['ALAMAT_PUSAT'])).toBe(0);
+  });
+});
+
+describe('placeholderSnippet', () => {
+  it('a window of the body around the placeholder, whitespace tidied', () => {
+    const body = 'Kunjungi toko kami.\n\nCabang utama kami di {{ALAMAT_PUSAT}}, buka setiap hari.';
+    expect(placeholderSnippet({ body }, 'ALAMAT_PUSAT', 12)).toEqual({
+      where: 'body',
+      text: '…ama kami di {{ALAMAT_PUSAT}}, buka setia…',
+    });
+    // Line breaks and runs of spaces inside the window read as one space.
+    expect(placeholderSnippet({ body: 'Alamat:\n\n  {{ALAMAT_PUSAT}}' }, 'ALAMAT_PUSAT')?.text).toBe(
+      'Alamat: {{ALAMAT_PUSAT}}',
+    );
+  });
+
+  it('title first, then excerpt, then body; any case, inner spaces', () => {
+    const article = { title: 'Belanja di {{ company_name }}', excerpt: 'Tentang {{COMPANY_NAME}}', body: 'Isi {{company_name}}' };
+    expect(placeholderSnippet(article, 'company_name')).toEqual({ where: 'title', text: 'Belanja di {{ company_name }}' });
+    expect(placeholderSnippet({ excerpt: 'Tentang {{COMPANY_NAME}}', body: 'x' }, 'company_name')?.where).toBe('excerpt');
+  });
+
+  it('a key that is a prefix of another does not match it', () => {
+    expect(placeholderSnippet({ body: 'Ongkir {{ETA_JAWA_TIMUR}}' }, 'ETA_JAWA')).toBeNull();
+  });
+
+  it('not in the article (or no text): null', () => {
+    expect(placeholderSnippet({ title: 'Lokasi', excerpt: null, body: 'Jl. Sudirman' }, 'ALAMAT_PUSAT')).toBeNull();
+    expect(placeholderSnippet({}, 'ALAMAT_PUSAT')).toBeNull();
+  });
+});
+
+describe('articleFillRequest', () => {
+  it('only this article by default, blanks left out', () => {
+    expect(articleFillRequest({ ALAMAT_PUSAT: ' Jl. Sudirman 1 ', URL_MAPS: '' }, 'a1', false)).toEqual({
+      values: { ALAMAT_PUSAT: 'Jl. Sudirman 1' },
+      articleIds: ['a1'],
+    });
+  });
+
+  it('every article carrying the placeholders when the user asks for it', () => {
+    expect(articleFillRequest({ ALAMAT_PUSAT: 'Jl. Sudirman 1' }, 'a1', true)).toEqual({
+      values: { ALAMAT_PUSAT: 'Jl. Sudirman 1' },
+    });
   });
 });

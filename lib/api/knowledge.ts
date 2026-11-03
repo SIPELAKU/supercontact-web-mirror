@@ -335,14 +335,18 @@ export async function attachQuestionToKbArticle(
   return handle<KbArticle>(res, "Failed to attach the question to the article");
 }
 
+// `articleIds` limits the fill to those articles (BE 1.157.0); without it the
+// values go into every article that carries the placeholders. Title and
+// excerpt are filled along with the body.
 export async function fillKbPlaceholders(
   token: string,
   values: Record<string, string>,
+  articleIds?: string[],
 ): Promise<{ articles_updated: number; variables_applied: string[]; articles_remaining: number }> {
   const res = await fetchWithTimeout(`${API_BASE}/articles/fill-placeholders`, {
     method: "POST",
     headers: jsonHeaders(token),
-    body: JSON.stringify({ values }),
+    body: JSON.stringify(articleIds ? { values, article_ids: articleIds } : { values }),
   });
   return handle(res, "Failed to fill placeholders");
 }

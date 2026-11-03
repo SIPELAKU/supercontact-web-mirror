@@ -98,7 +98,7 @@ function KbFillSection() {
         <section className="flex flex-col gap-3 rounded-lg border p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
                 <h3 className="text-sm font-medium">
-                    Isian artikel Knowledge Base ({gapCount} tanda kosong)
+                    Lengkapi data artikel Knowledge Base ({gapCount} belum diisi)
                 </h3>
                 <div className="flex flex-col items-end gap-1">
                     <AppButton variantStyle="outline" color="gray" onClick={skip} disabled={!skippable}>
@@ -115,10 +115,11 @@ function KbFillSection() {
             <KbPlaceholderFillForm
                 intro={
                     <>
-                        Artikel dari blueprint masih memuat tanda seperti{" "}
-                        <code className="rounded bg-muted px-1">{"{{ALAMAT_PUSAT}}"}</code> yang
-                        tidak ditanyakan di langkah data perusahaan, dan answer bot akan
-                        membacakannya apa adanya. Isi nilainya di sini. Artikelnya dipasang
+                        Data perusahaan dari langkah pemasangan sudah terisi di artikel. Yang
+                        tersisa adalah data khusus artikel, seperti{" "}
+                        <code className="rounded bg-muted px-1">{"{{ALAMAT_PUSAT}}"}</code>. Isi
+                        sekali di sini, dan semua artikel yang memakainya ikut terisi. Selama
+                        masih kosong, tandanya tetap terlihat di artikel. Artikelnya dipasang
                         sebagai <strong>Draft</strong>: setelah lengkap, terbitkan di{" "}
                         <Link href="/knowledge-base" className="text-primary underline">
                             Knowledge Base

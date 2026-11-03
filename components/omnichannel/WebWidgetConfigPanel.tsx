@@ -13,6 +13,7 @@ import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { QuickAction, UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
+import { widgetDefaultText, type WidgetTextKey } from "@/lib/utils/widgetDefaultTexts";
 import { isTitleListOnly } from "./answerBotHints";
 import QuickActionsBuilder from "./QuickActionsBuilder";
 
@@ -176,6 +177,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
     key: K,
     value: UpdateWebWidgetConfigRequest[K]
   ) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  // Placeholder = what the bot sends when the field is blank, in the language
+  // picked above (the unsaved choice, so switching it previews right away).
+  const defaultText = (key: WidgetTextKey) =>
+    widgetDefaultText(key, form.default_locale, config?.default_texts);
 
   const setQuickActions = (quick_actions: QuickAction[]) =>
     setForm((prev) => ({ ...prev, quick_actions }));
@@ -526,12 +532,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.idle_warn_text ?? ""}
                 onChange={(e) => setField("idle_warn_text", e.target.value || null)}
-                placeholder="Masih di sana? Chat ini akan kami tutup bila tidak ada balasan."
+                placeholder={defaultText("idle_warn")}
               />
               <p className="text-xs text-gray-500">
-                Wajib diisi. Dikosongkan berarti fitur ini tidak berjalan sama
-                sekali — menutup chat tanpa pernah bertanya terbaca seperti chat
-                yang hilang.
+                Boleh dikosongkan: bot memakai teks bawaan yang tampil samar di
+                kolom, dalam bahasa widget.
               </p>
             </div>
 
@@ -677,7 +682,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_greeting_text ?? ""}
                 onChange={(e) => setField("answer_bot_greeting_text", e.target.value || null)}
-                placeholder="Hai! 👋 Ada yang bisa kami bantu?"
+                placeholder={defaultText("greeting")}
               />
               <p className="text-xs text-gray-500">
                 Sent when a visitor opens with just a greeting (&quot;halo&quot;, &quot;selamat pagi&quot;).
@@ -692,7 +697,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_closing_text ?? ""}
                 onChange={(e) => setField("answer_bot_closing_text", e.target.value || null)}
-                placeholder="Baik, terima kasih! Tim kami akan menindaklanjuti secepatnya."
+                placeholder={defaultText("closing")}
               />
               <p className="text-xs text-gray-500">
                 Sent when a visitor wraps up (&quot;sudah cukup&quot;, &quot;terima kasih&quot;,
@@ -708,11 +713,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_intro_text ?? ""}
                 onChange={(e) => setField("answer_bot_intro_text", e.target.value || null)}
-                placeholder="Berikut artikel yang mungkin membantu:"
+                placeholder={defaultText("intro")}
               />
               <p className="text-xs text-gray-500">
                 Shown above the article list when AI doesn&apos;t write an answer. Leave blank for the
-                default text.
+                default in the widget&apos;s language.
               </p>
             </div>
 
@@ -723,10 +728,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_no_answer_text ?? ""}
                 onChange={(e) => setField("answer_bot_no_answer_text", e.target.value || null)}
-                placeholder="Kami akan menghubungkan Anda dengan tim kami yang bisa membantu."
+                placeholder={defaultText("no_answer")}
               />
               <p className="text-xs text-gray-500">
-                Optional message when nothing confident enough is found. Leave blank to stay silent and let an agent reply.
+                Sent when the bot finds no answer. Leave blank for the default in the widget&apos;s
+                language (the text shown in the field).
               </p>
             </div>
           </>

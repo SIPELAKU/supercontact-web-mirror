@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.2] - 2026-11-03
+
+### Detail Versi 1.117.2
+
+#### 💄 Settings › Web Widget: Placeholder Teks Bot = Teks Bawaan BE
+
+- **Deskripsi:**
+  - **Masalah:** placeholder kolom teks bot berbeda dari teks yang benar-benar dikirim bot saat kolom dikosongkan. Contohnya No-Answer Text menampilkan *"Kami akan menghubungkan Anda dengan tim kami…"*, padahal bot mengirim *"Maaf, kami belum memahami maksud pertanyaan Anda. 🙏 Boleh dijelaskan dengan kalimat lain?"*. Dua teks bantuan juga sudah salah:
+    - No-Answer: *"Leave blank to stay silent"*;
+    - Pesan "masih di sana?": *"Wajib diisi. Dikosongkan berarti fitur ini tidak berjalan"*.
+
+    Keduanya keliru karena BE sekarang memakai teks bawaan bila kolom kosong.
+  - **Perbaikan:**
+    - Placeholder **No-Answer Text**, **Greeting Reply**, **Closing Reply**, **Intro Text**, dan **Pesan "masih di sana?"** kini sama persis dengan teks bawaan BE.
+    - Placeholder mengikuti pilihan **Widget Language**: English → teks EN; Bahasa Indonesia / Automatic → teks ID. Berubah langsung saat bahasa diganti, sebelum Save.
+    - Teks bantuan No-Answer, Intro, dan Pesan "masih di sana?" diperbarui: kolom boleh dikosongkan, dan bot memakai teks yang tampil samar di kolom.
+  - **Technical Notes:**
+    - teks bawaan di `lib/utils/widgetDefaultTexts.ts` (`widgetDefaultText`), disalin dari `answer_bot_service.resolve_*` di BE (1.156.6)
+    - kalau BE mengirim `default_texts` di `GET web-widget-config` (BE-7.1), teks dari server dipakai dan salinan FE hanya cadangan per teks
+    - `default_texts` adalah output baca-saja: dibuang dari body `PUT` (`widgetConfigPayload`) dan dari tipe `UpdateWebWidgetConfigRequest`
+    - tanpa perubahan perilaku bot
+  - **🧪 Testing:** 7 tes baru (`widgetDefaultTexts.test.ts` 6, `webWidgetConfig.test.ts` 1); 5/5 mutasi tertangkap; seluruh suite 73 file / 808 tes lolos; `tsc` bersih
+
+---
+
 ## [1.117.1] - 2026-11-02
 
 ### Detail Versi 1.117.1

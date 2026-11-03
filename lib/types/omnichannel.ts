@@ -440,16 +440,19 @@ export interface WebWidgetConfig {
   auto_close_idle_enabled: boolean;
   idle_warn_minutes: number;
   idle_close_minutes: number;
-  /** Empty disables the whole cycle - closing a chat that was never asked
-   *  reads as the chat vanishing. */
+  /** null = the backend's locale default ("Masih di sana? …"); the cycle
+   *  still runs. */
   idle_warn_text: string | null;
+  /** Read-only: what the bot sends when a text field above is blank, per
+   *  language (BE-7.1). Absent on older backends - see widgetDefaultTexts.ts. */
+  default_texts?: Partial<Record<"id" | "en", Partial<Record<string, string>>>> | null;
   // i18n: admin-configurable widget language. null/undefined = "Automatic"
   // (the widget uses its embed data-locale attribute or its own default);
   // otherwise one of the shipped string-pack locales ("id" | "en").
   default_locale?: string | null;
 }
 
-export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;
+export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id' | 'default_texts'>;
 
 export interface CreateConversationRequest {
   account_id: string;

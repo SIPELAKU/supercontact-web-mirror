@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.118.0] - 2026-11-03
+
+### Detail Versi 1.118.0
+
+#### ✨ Setup Cepat: Data Diisi Sekali (Data Perusahaan di Depan, Data Artikel Setelah Pemasangan)
+
+- **Deskripsi:**
+  - **Masalah:** form **Setup Cepat › Isi data perusahaan** dan artikel Knowledge Base dari blueprint memakai nama variabel yang berbeda untuk data yang sama. Contohnya, form menanyakan `company_name` dan `email_cs`, sedangkan artikel marketing memakai `NAMA_BRAND` dan `EMAIL_CS`. Akibatnya data yang sudah diisi di form diminta lagi di halaman Fill placeholders. Selain itu, data artikel bisa diisi di dua tempat: di depan (bagian opsional) dan di belakang (Checklist Aktivasi).
+  - **Perbaikan** (bersama BE 1.160.0, yang menyeragamkan semua nama menjadi HURUF_BESAR dengan satu nama per data):
+    - Form memakai nama baku dari BE. E-commerce kini 7 kolom (nomor WA tidak lagi ditanya dua kali), dan isiannya langsung mengisi artikel support **dan** marketing.
+    - **Nama toko/perusahaan wajib diisi.** Kolomnya bertanda `*`, tombol **Lihat pratinjau** nonaktif selama kosong dengan keterangan "Isi Nama toko/perusahaan dulu", dan kolom yang ditinggalkan kosong menampilkan "Wajib diisi". Peringatan kuning "N data belum diisi" kini hanya menghitung kolom opsional.
+    - **Satuan tampil di samping kolom angka** ("hari", "hari kerja", "bulan"), sehingga yang diisi cukup angkanya, misalnya `7` untuk batas retur. Kolom angka memunculkan keyboard angka di HP.
+    - **Data artikel hanya diisi di satu tempat: setelah pemasangan.** Bagian lipat "Data untuk artikel Knowledge Base (opsional)" (1.116.5) dihapus dari wizard. Dengan bagian itu, data yang dikosongkan di depan diminta lagi di Checklist Aktivasi, sehingga user merasa mengisi dua kali. Sekarang:
+      - **depan** (Pasang Paket Industri): hanya data perusahaan. Keterangannya menyebut bahwa data khusus artikel diisi setelah pemasangan;
+      - **belakang** (Checklist Aktivasi, terbuka otomatis setelah install): panel **"Lengkapi data artikel Knowledge Base (N belum diisi)"**. Teksnya menjelaskan bahwa data perusahaan sudah terisi dan yang tersisa adalah data khusus artikel, cukup diisi sekali untuk semua artikel. Kalimat lama "tidak ditanyakan di langkah data perusahaan" dihapus;
+      - halaman Fill placeholders di Knowledge Base tetap tersedia untuk melengkapi nanti.
+  - **Technical Notes:**
+    - `BlueprintVariable` mendapat `type`, `unit`, dan `required` (opsional, BE lama tetap jalan). Komponen baru `BlueprintVariableField` untuk kolom form data perusahaan
+    - Helper `missingRequired` dan `blankOptional` di `components/admin/blueprints/blueprintVariables.ts`
+    - Dihapus karena tidak dipakai lagi: `KbVariablesSection.tsx`, `kbVariables.ts` (`extraKbVariables`, `filledCount`) beserta tesnya, dan field `kb_variables` di tipe `BlueprintDetail`. BE tetap mengirim `kb_variables` (1.160.0), tapi FE sengaja tidak memakainya
+    - Variabel Flow Studio (`{{contact_name}}`, `{{company_name}}`) dan variabel macro saat dipakai tidak tersentuh
+  - **🧪 Testing:** 3 tes baru (`blueprintVariables.test.ts`), 10 tes `kbVariables.test.ts` ikut terhapus bersama helper-nya; 4/4 mutasi tertangkap; seluruh suite 78 file / 864 tes lolos; `tsc` bersih
+
+---
+
 ## [1.117.11] - 2026-11-03
 
 ### Detail Versi 1.117.11

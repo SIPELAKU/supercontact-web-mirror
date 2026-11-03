@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.118.1] - 2026-11-03
+
+### Detail Versi 1.118.1
+
+#### 🐛 Knowledge Base: Modal "Isi placeholder" Tidak Menampilkan Variabel yang Sama Dua Kali
+
+- **Deskripsi:**
+  - **Masalah:** sejak BE 1.160.0 semua nama variabel template memakai HURUF_BESAR. Artikel yang dipasang sebelum itu bisa masih berisi nama huruf kecil, misalnya `{{alamat_pusat}}`, sementara artikel baru berisi `{{ALAMAT_PUSAT}}`. Di modal **Isi placeholder** per artikel (menu ⋮ di tabel artikel), keduanya bisa muncul sebagai dua kolom terpisah, dan hitungan "dipakai juga di N artikel lain" tidak menghitung artikel dengan nama berhuruf lain.
+  - **Perbaikan:**
+    - Satu data = **satu kolom**, dengan nama HURUF_BESAR, walaupun di artikel tertulis dengan huruf berbeda. Label dan contohnya diambil dari baris yang punya label.
+    - Hitungan "dipakai juga di N artikel lain" menghitung kedua bentuk huruf. Mengisi `ALAMAT_PUSAT` juga mengisi `{{alamat_pusat}}`, karena `fill-placeholders` di BE tidak membedakan huruf besar/kecil.
+    - Di tenant baru tidak ada perubahan yang terlihat. Ini pengaman untuk tenant yang memasang blueprint sebelum BE 1.160.0, sampai script perapian BE (BE-8.6) dijalankan.
+  - **Technical Notes:**
+    - `articlePlaceholderFields` dan `otherArticlesSharing` di `lib/utils/kbPlaceholders.ts` membandingkan nama dengan `toUpperCase()`. Content Gaps di BE 1.160.0 sudah mengelompokkan per nama HURUF BESAR; FE ikut menyamakan supaya tetap benar dengan data campuran
+    - Komentar yang masih menyebut "variabel blueprint huruf kecil" diperbarui
+  - **🧪 Testing:** 4 tes baru + 1 tes disesuaikan (`kbPlaceholders.test.ts`); 7/7 mutasi tertangkap; seluruh suite 78 file / 868 tes lolos; `tsc` bersih
+
+---
+
 ## [1.118.0] - 2026-11-03
 
 ### Detail Versi 1.118.0

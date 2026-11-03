@@ -214,14 +214,16 @@ export function useFillPlaceholders(accountId?: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (values: Record<string, string>) => {
+    mutationFn: ({ values, articleIds }: { values: Record<string, string>; articleIds?: string[] }) => {
       if (!token) throw new Error("No authentication token");
-      return fillKbPlaceholders(token, values);
+      return fillKbPlaceholders(token, values, articleIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bot-playground", "content-gaps"] });
       queryClient.invalidateQueries({ queryKey: keys.readiness(accountId) });
       queryClient.invalidateQueries({ queryKey: ["knowledge", "articles"] });
+      // An open article shows the filled title/excerpt/body, not the old ones.
+      queryClient.invalidateQueries({ queryKey: ["knowledge", "article"] });
     },
   });
 }

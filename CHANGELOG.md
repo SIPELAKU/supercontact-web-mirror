@@ -9,6 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.5] - 2026-11-03
+
+### Detail Versi 1.117.5
+
+#### ✨ Knowledge Base: Isi Placeholder per Artikel dari Daftar
+
+- **Deskripsi:**
+  - **Masalah:** artikel dengan tag kuning "N placeholders left" hanya bisa dibereskan dengan membuka editornya, atau lewat halaman Fill placeholders yang mengisi tanda itu di **semua** artikel sekaligus
+  - **Perbaikan:**
+    - Tabel artikel kini punya **menu aksi ⋮** di kolom paling kanan, **sama seperti tabel lain** (prop standar `rowActions` SuperTable). Isinya **Edit** dan, untuk artikel yang masih punya `{{…}}`, **Isi placeholder (N)**. Tag kuning "N placeholders left" di kolom Status juga bisa diklik. Keduanya membuka modal, bukan halaman artikel.
+    - Kolom aksi **menempel di kanan**, jadi tetap terlihat walau tabel di-scroll ke samping.
+    - Modal **"Isi placeholder — <judul>"**:
+      - satu kolom per tanda yang tersisa di artikel itu, dengan label dan contohnya;
+      - potongan kalimat **dari artikel ini** tempat tanda dipakai (Judul / Ringkasan / Isi), dengan tanda yang sedang diisi ditandai biru;
+      - kolom boleh dikosongkan; tanda yang kosong tetap tertinggal;
+      - checkbox **"Terapkan juga ke N artikel lain yang memakai tanda yang sama"** (default mati). Tanpa centang, hanya artikel ini yang diubah.
+    - Setelah **Simpan**: toast (dengan sisa tanda kalau masih ada), modal tertutup, dan tabel **kembali ke batch pertama dan ke paling atas**. Tag dan kotak kuning ikut ter-refresh.
+    - Gagal menyimpan → pesan error di dalam modal; isian tidak hilang.
+  - **Technical Notes:**
+    - `POST /knowledge/articles/fill-placeholders` kini dikirim dengan `article_ids` (BE 1.157.0, BE-6.1). BE juga mengisi judul dan excerpt (Q-6.2). `fillKbPlaceholders(token, values, articleIds?)`; `useFillPlaceholders` kini menerima `{ values, articleIds? }` dan ikut me-refresh detail artikel
+    - helper di `lib/utils/kbPlaceholders.ts`: `articlePlaceholderFields`, `otherArticlesSharing`, `placeholderSnippet`, `articleFillRequest`; modal `components/knowledge/KbArticlePlaceholderDialog.tsx`; `KbReadinessTag` mendapat prop `onFill`
+    - aksi "Isi placeholder" dan tag yang bisa diklik hanya untuk user dengan `omnichannel:setup` (baca Content Gaps) **dan** `knowledge:publish` (mengisi)
+    - opsi baru SuperTable `features.stickyRowActions` (default **mati**): kolom aksi baris di-pin ke kanan (`enableColumnPinning` material-react-table v3) hanya untuk kolom itu, sehingga menu kolom lain tidak mendapat opsi "Pin". Header kolom yang di-pin tetap biru seperti header lain
+    - SuperTable: perubahan `restartKey` kini juga menggulir tabel ke paling atas. Daftar memang dimuat ulang dari batch pertama, jadi posisi scroll lama tidak berlaku lagi. Ini berlaku juga untuk tabel lain yang memakai `restartKey` (WA Marketing, Import History)
+  - **🧪 Testing:** 11 tes baru (`kbPlaceholders.test.ts`); 10/10 mutasi tertangkap; seluruh suite 75 file / 832 tes lolos; `tsc` bersih
+
+---
+
+## [1.117.4] - 2026-11-03
+
+### Detail Versi 1.117.4
+
+#### 💄 Knowledge Base: Pilihan Kolom Tabel Artikel Diingat
+
+- **Deskripsi:**
+  - **Masalah:** tabel artikel Knowledge Base sebenarnya sudah punya menu show/hide kolom (ikon **View options** di kanan atas tabel → **Columns**, bawaan SuperTable), tapi:
+    - pilihan kolom hilang setiap kali halaman di-refresh;
+    - kolom **Title**, satu-satunya jalan masuk ke artikel, ikut bisa disembunyikan.
+  - **Perbaikan:**
+    - kolom yang disembunyikan/ditampilkan lewat **View options › Columns** kini **diingat di browser** untuk tabel ini;
+    - **Title** tidak bisa disembunyikan (tidak muncul di daftar Columns).
+  - **Technical Notes:**
+    - opsi baru SuperTable `features.rememberColumnVisibility` (default **mati**, butuh `tableId`), menyimpan `columnVisibility` di localStorage `st_cv_<tableId>`. Tabel lain tidak berubah sampai opsinya dinyalakan
+    - pilihan dibaca **setelah mount** (render server dan render pertama di browser sama), dan baru disimpan setelah dibaca, sehingga keadaan awal "semua tampil" tidak menimpa pilihan yang tersimpan
+    - isi localStorage yang rusak atau bukan peta kolom → diabaikan (`readColumnVisibility` di `components/ui/super-table/hooks/columnVisibilityStorage.ts`)
+    - kolom Title memakai `enableHiding: false`
+  - **🧪 Testing:** 5 tes baru (`columnVisibilityStorage.test.ts`); 4/5 mutasi tertangkap (sisanya ekuivalen: cek `!raw` yang hasilnya sama dengan cek sesudahnya); seluruh suite 75 file / 821 tes lolos; `tsc` bersih
+
+---
+
 ## [1.117.3] - 2026-11-03
 
 ### Detail Versi 1.117.3

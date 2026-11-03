@@ -33,7 +33,7 @@ export default function KbPlaceholderFillForm({ accountId, intro }: KbPlaceholde
     const payload = placeholderPayload(values);
     if (Object.keys(payload).length === 0) return;
     try {
-      const report = await fillMutation.mutateAsync(payload);
+      const report = await fillMutation.mutateAsync({ values: payload });
       notify.success(
         `${report.variables_applied.length} nilai diterapkan ke ${report.articles_updated} artikel`,
         {

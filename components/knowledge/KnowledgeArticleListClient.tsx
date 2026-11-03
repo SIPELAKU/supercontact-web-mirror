@@ -52,6 +52,7 @@ import type {
   KbBulkStatusRequest,
 } from "@/lib/types/knowledge";
 import { KbReadinessTag, KbStatusBadge } from "./KbStatusBadge";
+import { KbArticlePlaceholderDialog } from "./KbArticlePlaceholderDialog";
 
 /** One lazy batch. The list used to fetch a flat 200 - the API's hard cap -
  *  and tell the user "daftar dibatasi 200 artikel" when a knowledge base
@@ -135,6 +136,12 @@ export default function KnowledgeArticleListClient() {
     [gaps]
   );
   const gapArticleCount = gapsById?.size ?? 0;
+  // Fill one article's placeholders from the list (Content Gaps to read them,
+  // knowledge:publish to write them).
+  const canFill = canSeeGaps && canPublish;
+  const [fillTarget, setFillTarget] = useState<{ id: string; title: string } | null>(null);
+  // Bumped after a fill: the list starts over from the first batch, at the top.
+  const [restartEpoch, setRestartEpoch] = useState(0);
 
   const [status, setStatus] = useState<KbArticleStatus | "">("");
   const [sectionId, setSectionId] = useState<string>("");
@@ -278,6 +285,8 @@ export default function KnowledgeArticleListClient() {
       {
         accessorKey: "title",
         header: "Title",
+        // The way into each article: never hidden from the Columns menu.
+        enableHiding: false,
         Cell: ({ row }) => (
           <div>
             <div className="font-semibold">{row.original.title}</div>
@@ -295,7 +304,14 @@ export default function KnowledgeArticleListClient() {
         Cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-1.5">
             <KbStatusBadge status={row.original.status} />
-            <KbReadinessTag readiness={publishReadiness(row.original, gapsById)} />
+            <KbReadinessTag
+              readiness={publishReadiness(row.original, gapsById)}
+              onFill={
+                canFill
+                  ? () => setFillTarget({ id: row.original.id, title: row.original.title })
+                  : undefined
+              }
+            />
           </div>
         ),
       },
@@ -613,6 +629,7 @@ export default function KnowledgeArticleListClient() {
         // above), so this tells SuperTable to go back to the first batch and
         // drop its selection when either moves.
         resetPageKey={filterKey}
+        restartKey={restartEpoch}
         clearSelectionKey={selectionEpoch}
         onStateChange={(state) => {
           setSearch(state.globalFilter);
@@ -626,6 +643,23 @@ export default function KnowledgeArticleListClient() {
           href: (row) => `/knowledge-base/articles/${row.id}`,
         }}
         onRowClick={(row) => router.push(`/knowledge-base/articles/${row.id}`)}
+        // The same ⋮ menu as every other table, pinned right so it stays in
+        // view however far the columns are scrolled.
+        rowActions={[
+          {
+            id: "edit",
+            label: "Edit",
+            icon: <FileEdit size={16} />,
+            onClick: (row) => router.push(`/knowledge-base/articles/${row.id}`),
+          },
+          {
+            id: "fill-placeholders",
+            label: (row) => `Isi placeholder (${publishReadiness(row, gapsById)})`,
+            icon: <PencilLine size={16} />,
+            hidden: (row) => !canFill || typeof publishReadiness(row, gapsById) !== "number",
+            onClick: (row) => setFillTarget({ id: row.id, title: row.title }),
+          },
+        ]}
         renderEmptyState={({ hasActiveFilters, hasSearch }) => (
           <EmptyState
             icon={BookOpen}
@@ -654,11 +688,24 @@ export default function KnowledgeArticleListClient() {
           rowSelection: canPublish ? "multi" : "none",
           urlSync: true,
           pageSizeOptions: [BATCH_SIZE, 100, 200],
+          // View options › Columns: hide/show columns, remembered per browser.
+          columnVisibility: true,
+          rememberColumnVisibility: true,
+          stickyRowActions: true,
         }}
       />
 
       {confirmationPopup}
       <UnfilledPlaceholdersDialog articles={blockedPublish} onClose={() => setBlockedPublish([])} />
+      <KbArticlePlaceholderDialog
+        article={fillTarget}
+        gaps={gaps}
+        onClose={() => setFillTarget(null)}
+        onSaved={() => {
+          setFillTarget(null);
+          setRestartEpoch((n) => n + 1);
+        }}
+      />
     </div>
   );
 }

@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.117.6] - 2026-11-03
+
+### Detail Versi 1.117.6
+
+#### ✨ Knowledge Base › Categories: Pilih & Hapus Banyak Kategori Sekaligus
+
+- **Deskripsi:**
+  - **Masalah:** kategori hanya bisa dihapus satu per satu. Konfirmasinya juga tidak menyebut bahwa **semua section dan artikel di dalamnya ikut terhapus permanen**, termasuk artikel Published yang dipakai answer bot
+  - **Perbaikan:**
+    - Checkbox di setiap kategori, plus **Pilih semua** di kotak biru di atas daftar (bisa setengah tercentang kalau baru sebagian yang dipilih). Klik checkbox tidak membuka/menutup kategori.
+    - Begitu ada yang dipilih: **"N kategori dipilih"** + tombol merah **Hapus (N)** + **Batal pilih**.
+    - Konfirmasi **"Hapus N kategori?"** menyebut dampaknya: jumlah section, artikel, dan artikel Published yang ikut terhapus, serta nama tiap kategori dengan jumlah artikelnya. Tombolnya **Hapus permanen**.
+    - Berhasil: toast *"N kategori dihapus (M artikel)"*, pilihan dikosongkan. Gagal: toast error *"Tidak ada kategori yang dihapus"* (semua atau tidak sama sekali di BE).
+    - Konfirmasi hapus **satu** kategori (ikon 🗑) kini juga menyebut jumlah section dan artikel yang ikut terhapus.
+    - Setiap kategori kini menampilkan jumlah artikel di samping jumlah section.
+  - **Technical Notes:**
+    - `POST /knowledge/categories/bulk-delete { category_ids }` (BE 1.157.0, BE-2.1) → `bulkDeleteKbCategories`, `useBulkDeleteKbCategories`; jumlah dari `section_count` / `article_count` / `published_article_count` di `GET /knowledge/categories`. Dengan BE lama (tanpa jumlah), konfirmasi tetap memperingatkan tanpa angka, tidak menampilkan nol yang salah
+    - hapus satuan maupun massal kini me-refresh kategori, section, daftar & detail artikel, Content Gaps, dan **config Web Widget**. BE membuang id kategori yang dihapus dari quick action widget (Q-2.2)
+    - logika pilihan dan dampak di `lib/utils/kbCategories.ts` (`selectAllState`, `toggleAll`, `toggleOne`, `keepExisting`, `deleteImpact`)
+    - hanya untuk user dengan izin kelola KB (`canManage`), sama seperti tombol hapus satuan
+  - **🧪 Testing:** 10 tes baru (`kbCategories.test.ts`); 9/9 mutasi tertangkap; seluruh suite 76 file / 842 tes lolos; `tsc` bersih
+
+---
+
 ## [1.117.5] - 2026-11-03
 
 ### Detail Versi 1.117.5

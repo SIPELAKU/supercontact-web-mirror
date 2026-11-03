@@ -8,6 +8,7 @@
 import { fetchWithTimeout } from "./api-client";
 import type {
   KbCategory,
+  KbCategoryBulkDeleteReport,
   KbSection,
   KbArticle,
   KbArticleSummary,
@@ -107,6 +108,20 @@ export async function deleteKbCategory(token: string, id: string): Promise<void>
     headers: authHeaders(token),
   });
   await handle<unknown>(res, "Failed to delete category");
+}
+
+// All or nothing: one unknown or foreign id fails the whole request and
+// nothing is deleted. Sections and articles go with their category.
+export async function bulkDeleteKbCategories(
+  token: string,
+  categoryIds: string[],
+): Promise<KbCategoryBulkDeleteReport> {
+  const res = await fetchWithTimeout(`${API_BASE}/categories/bulk-delete`, {
+    method: "POST",
+    headers: jsonHeaders(token),
+    body: JSON.stringify({ category_ids: categoryIds }),
+  });
+  return handle<KbCategoryBulkDeleteReport>(res, "Failed to delete categories");
 }
 
 // ---- Sections ----------------------------------------------------------------

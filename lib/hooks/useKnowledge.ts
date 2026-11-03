@@ -9,6 +9,7 @@ import {
   createKbCategory,
   updateKbCategory,
   deleteKbCategory,
+  bulkDeleteKbCategories,
   fetchKbSections,
   createKbSection,
   updateKbSection,
@@ -125,6 +126,19 @@ export function useUpdateKbCategory() {
   });
 }
 
+// What deleting categories touches: the categories and sections themselves,
+// the articles that went with them (list, open editors, the placeholder
+// tags), and the web widget config, whose quick actions the API strips of the
+// deleted category ids.
+function invalidateAfterCategoryDelete(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: [KB, "categories"] });
+  qc.invalidateQueries({ queryKey: [KB, "sections"] });
+  qc.invalidateQueries({ queryKey: [KB, "articles"] });
+  qc.invalidateQueries({ queryKey: [KB, "article"] });
+  qc.invalidateQueries({ queryKey: ["bot-playground", "content-gaps"] });
+  qc.invalidateQueries({ queryKey: ["omnichannels", "web-widget-config"] });
+}
+
 export function useDeleteKbCategory() {
   const { token } = useAuth();
   const qc = useQueryClient();
@@ -133,10 +147,19 @@ export function useDeleteKbCategory() {
       if (!token) throw new Error("No authentication token");
       return deleteKbCategory(token, id);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [KB, "categories"] });
-      qc.invalidateQueries({ queryKey: [KB, "sections"] });
+    onSuccess: () => invalidateAfterCategoryDelete(qc),
+  });
+}
+
+export function useBulkDeleteKbCategories() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      if (!token) throw new Error("No authentication token");
+      return bulkDeleteKbCategories(token, ids);
     },
+    onSuccess: () => invalidateAfterCategoryDelete(qc),
   });
 }
 

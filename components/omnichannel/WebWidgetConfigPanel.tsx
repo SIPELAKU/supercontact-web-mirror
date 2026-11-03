@@ -625,7 +625,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
         <div className="border-t border-gray-100">
           <ToggleRow
             label="Hold the ticket until the visitor asks (true deflection)"
-            description="When AI gives a confident answer, no ticket is created yet - the visitor gets a 'Was this helpful? / Talk to a human' choice, and a ticket is only opened if they escalate. Off = a ticket is always created alongside the bot's answer."
+            description="When the bot answers from the Knowledge Base, no ticket is created and agents are not notified yet. The visitor sees 'For more details, talk to an agent? Yes / No' under the answer, at most once every 5 minutes; a ticket is opened and agents are notified only when they choose Yes or ask for an agent. Off = a ticket is always created alongside the bot's answer and every message notifies agents."
             checked={form.answer_bot_deflect ?? false}
             onChange={(checked) => setField("answer_bot_deflect", checked)}
             disabled={!form.answer_bot_enabled || !form.answer_bot_use_llm}
@@ -762,7 +762,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
         />
       </div>
 
-      <div className="flex justify-end">
+      {/* Stays at the bottom of the screen while the form is in view, so a
+          long form saves without scrolling to its end. -mx-6/-mb-6 span the
+          card's p-6 (settings/web-widget page). Sticks inside the settings
+          content column, which scrolls on its own on desktop (SettingsLayout). */}
+      <div className="sticky bottom-0 z-10 -mx-6 -mb-6 flex justify-end rounded-b-2xl border-t border-gray-200 bg-white/95 px-6 py-3 backdrop-blur">
         <AppButton type="submit" disabled={updateMutation.isPending} variantStyle="primary">
           {updateMutation.isPending ? (
             <>

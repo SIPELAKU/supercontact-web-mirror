@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.118.2] - 2026-11-04
+
+### Detail Versi 1.118.2
+
+#### 💄 Workspace: Email Pengunjung Web Widget Tampil di Panel Customer
+
+- **Deskripsi:**
+  - **Masalah:** untuk chat Web Widget, bagian **Customer** di panel kanan Workspace hanya menampilkan **Visitor: widget-xxxx**, yaitu ID acak yang dibuat setiap chat baru. Email yang diisi pengunjung di form sebelum chat tidak terlihat. Selama chat masih dilayani bot, belum ada kontak yang bisa dibuka, jadi agen tidak punya cara melihat email itu. Selain itu, tombol **View full profile** hanya membaca data daftar percakapan yang diperbarui tiap 30 detik, sehingga tombol baru muncul hingga 30 detik setelah chat terhubung ke kontak.
+  - **Perbaikan:**
+    - Chat Web Widget menampilkan baris **Email** (ikon amplop) di bawah baris Visitor. Isinya "—" kalau pengunjung tidak punya email. Baris Visitor tetap ada, begitu juga teks di header thread. Channel lain tidak berubah.
+    - **View full profile** membaca kontak dari detail percakapan, yang diambil ulang setiap ada pembaruan WebSocket. Begitu BE menautkan chat ke kontak (pengunjung minta agen, agen membalas, atau chat di-assign), tombol langsung muncul tanpa menunggu daftar diperbarui.
+    - Chat yang baru diambil dari antrean (claim) langsung membawa email dan kontaknya ke panel.
+  - **Technical Notes:**
+    - butuh API v1.161.0 (`external_contact_email` di `GET /omnichannels/inbox` dan `GET /omnichannels/conversations/{id}`; `contact_id` di detail). Dengan API lama nilainya tidak ada, baris Email menampilkan "—", dan tidak ada yang rusak
+    - tipe `Conversation` mendapat `contact_id` dan `external_contact_email`; `ConversationListItem` mendapat `external_contact_email`
+    - helper `visitorEmail` dan `profileContactId` di `components/support/workspace/workspaceHelpers.ts` memilih detail percakapan dulu, baru baris daftar
+    - `claimedToListItem` di `WorkspaceClient.tsx` ikut membawa `contact_id` dan `external_contact_email`
+  - **🧪 Testing:** 7 tes baru (`workspaceHelpers.test.ts`); 4/4 mutasi tertangkap; seluruh suite 79 file / 875 tes lolos; `tsc` bersih; build OK
+
+---
+
 ## [1.118.1] - 2026-11-03
 
 ### Detail Versi 1.118.1

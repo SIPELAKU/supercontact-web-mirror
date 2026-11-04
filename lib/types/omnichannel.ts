@@ -47,8 +47,13 @@ export interface Conversation {
   channel_type: ChannelType;
   contact_name?: string;
   contact_identifier?: string;
+  // Null while a web-widget chat is still handled by the bot; set once a
+  // person takes part (API v1.161.0), announced by a WS "contact_linked".
+  contact_id?: string | null;
   external_contact_name?: string;
   external_contact_identifier?: string;
+  // Email typed into the widget's pre-chat form (API v1.161.0).
+  external_contact_email?: string | null;
   subject?: string;
   status: ConversationStatus;
   priority?: ConversationPriority;
@@ -120,6 +125,8 @@ export interface ConversationListItem {
   channel_type: ChannelType;
   external_contact_identifier?: string;
   external_contact_name?: string;
+  // Email typed into the widget's pre-chat form (API v1.161.0).
+  external_contact_email?: string | null;
   status: ConversationStatus;
   priority?: ConversationPriority;
   last_message_at?: string;

@@ -47,9 +47,11 @@ function claimedToListItem(c: ConversationWithMessages): ConversationListItem {
   return {
     id: c.id,
     account_id: c.account_id,
+    contact_id: c.contact_id,
     channel_type: c.channel_type,
     external_contact_identifier: c.external_contact_identifier,
     external_contact_name: c.external_contact_name,
+    external_contact_email: c.external_contact_email,
     status: c.status,
     priority: c.priority,
     last_message_at: c.last_message_at,

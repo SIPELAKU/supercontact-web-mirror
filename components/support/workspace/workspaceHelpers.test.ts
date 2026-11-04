@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { profileContactId, visitorEmail } from "./workspaceHelpers";
+import { assigneeId, profileContactId, visitorEmail } from "./workspaceHelpers";
+
+describe("assigneeId", () => {
+  it("a staff reply (ASG-1) shows from the refetched detail before the queue row polls", () => {
+    expect(assigneeId({ assigned_user_id: "a" }, { assigned_user_id: null })).toBe("a");
+  });
+
+  it("an unassign in the detail wins over a stale row", () => {
+    expect(assigneeId({ assigned_user_id: null }, { assigned_user_id: "a" })).toBeNull();
+  });
+
+  it("falls back to the row while the detail is loading or lacks the field", () => {
+    expect(assigneeId(undefined, { assigned_user_id: "a" })).toBe("a");
+    expect(assigneeId({}, { assigned_user_id: "a" })).toBe("a");
+    expect(assigneeId(undefined, {})).toBeNull();
+  });
+});
 
 describe("visitorEmail", () => {
   it("prefers the fetched detail over the queue row", () => {

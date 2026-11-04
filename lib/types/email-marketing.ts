@@ -269,12 +269,17 @@ export interface Contact {
 }
 
 // Bulk Jobs types
+// One background import job, the same shape for Subscribers, Contacts and
+// Recipients (`GET /{subscribers|contacts|recipients}/bulk`).
 export interface BulkJob {
   id: string;
   target: string;
-  status: 'Queued for Processing' | 'Processing' | 'Completed' | 'Failed' | 'Stopped' | 'Rolled Back' | 'Queued for Rollback' | 'Rollback Processing';
+  // `Uploading`: a Contact/Recipient file is still being sent in parts; nothing
+  // is processed until the last part arrives.
+  status: 'Uploading' | 'Queued for Processing' | 'Processing' | 'Completed' | 'Failed' | 'Stopped' | 'Rolled Back' | 'Queued for Rollback' | 'Rollback Processing';
   file_name: string;
   mailing_list_ids: string[];
+  broadcast_group_ids?: string[];
   total_rows: number;
   processed_rows: number;
   created_rows: number;

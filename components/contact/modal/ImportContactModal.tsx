@@ -7,6 +7,8 @@ import { Loader2, Upload, FileSpreadsheet, Download, ArrowLeft, ArrowRight, Plus
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
+import { sendImportPart } from "@/lib/api/import-jobs";
+import { describeUploadError, uploadImportJob } from "@/lib/utils/importJobUpload";
 
 interface ImportContactModalProps {
   open: boolean;
@@ -253,50 +255,35 @@ const ImportContactModal: React.FC<ImportContactModalProps> = ({
       return;
     }
 
+    // Locks the Import button (disabled while isLoading) until every part is
+    // sent, so the file cannot go out twice (FE-3).
     setIsLoading(true);
-    const token = await getToken();
 
     try {
-      const res = await fetch("/api/proxy/contacts/bulk", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ contacts: validContacts }),
-      });
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
 
-      if (!res.ok) {
-        const text = await res.text();
-        let errorMessage = text;
-        try {
-          const resJson = JSON.parse(text);
-          if (resJson?.error?.details && Array.isArray(resJson.error.details)) {
-            const uniqueErrors = Array.from(
-              new Set(
-                resJson.error.details.map(
-                  (d: any) => `${d.field}: ${d.message}`
-                )
-              )
-            );
-            errorMessage = uniqueErrors.join(", ");
-          } else if (resJson?.error?.message) {
-            errorMessage = resJson.error.message;
-          }
-        } catch { }
-        throw new Error(errorMessage || "Failed to upload contacts");
-      }
+      // One file = ONE background job, sent in parts of 10,000 rows
+      // (API v1.162.0). Rows are created by the job, not by this request.
+      await uploadImportJob({
+        rows: validContacts,
+        rowsKey: "contacts",
+        startBody: file?.name ? { file_name: file.name } : {},
+        send: (path, body) => sendImportPart(token, "contacts", path, body),
+      });
 
       const skipped = previewData.length - validContacts.length;
       if (skipped > 0) {
         notify.warning(`${skipped} row(s) skipped due to missing name`);
       }
-      notify.success(`Successfully imported ${validContacts.length} contacts`);
+      notify.success("Contact import started", {
+        description: `${validContacts.length} rows are being imported in the background. Track the progress in Import History.`,
+      });
       handleClose();
       onSuccess();
     } catch (error: any) {
       notify.error("Failed to upload contacts to server.", {
-        description: error.message,
+        description: describeUploadError(error),
         duration: 10000,
       });
     } finally {

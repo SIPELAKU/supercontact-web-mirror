@@ -145,34 +145,6 @@ export interface GroupBroadcastsResponse {
     details?: Record<string, unknown>;
   };
 }
-export interface BulkCreateWaRecipientData {
-  target: 'recipient' | 'broadcast_group';
-  new_contacts: Array<{
-    name: string;
-    email?: string;
-    phone_number?: string;
-    position?: string;
-    company?: string;
-    address?: string;
-    custom_fields?: Record<string, unknown>;
-    [key: string]: any;
-  }>;
-  broadcast_group_ids?: string[];
-}
-
-export interface BulkCreateWaRecipientResponse {
-  success: boolean;
-  data?: {
-    recipient_count: number;
-    recipients: WaRecipient[];
-  };
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-}
-
 export interface CreateGroupBroadcastData {
   name: string;
 }

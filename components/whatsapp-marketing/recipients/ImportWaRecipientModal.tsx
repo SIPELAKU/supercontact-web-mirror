@@ -7,7 +7,8 @@ import { Loader2, Upload, FileSpreadsheet, Download, ArrowLeft, ArrowRight, Plus
 import { notify } from "@/lib/notifications";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
-import { useBulkCreateWaRecipients } from "@/lib/hooks/useWaRecipients";
+import { sendImportPart } from "@/lib/api/import-jobs";
+import { describeUploadError, uploadImportJob } from "@/lib/utils/importJobUpload";
 import type { WaRecipientType } from "@/lib/types/whatsapp-marketing";
 
 interface ImportWaRecipientModalProps {
@@ -59,7 +60,6 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
   broadcastGroupId,
 }) => {
   const { getToken } = useAuth();
-  const bulkCreateMutation = useBulkCreateWaRecipients();
 
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -78,7 +78,7 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
   const [showAddField, setShowAddField] = useState(false);
   const [newFieldName, setNewFieldName] = useState("");
 
-  const isLoading = bulkCreateMutation.isPending;
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -265,25 +265,42 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
       return;
     }
 
+    // Locks the Import button (disabled while isLoading) until every part is
+    // sent, so the file cannot go out twice (FE-4).
+    setIsLoading(true);
     try {
-      await bulkCreateMutation.mutateAsync({
-        target: target,
-        new_contacts: validRecipients,
-        ...(target === 'broadcast_group' && broadcastGroupId && { broadcast_group_ids: [broadcastGroupId] })
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+
+      // One file = ONE background job, sent in parts of 10,000 rows
+      // (API v1.162.0). Rows are created by the job, not by this request.
+      await uploadImportJob({
+        rows: validRecipients,
+        rowsKey: "new_contacts",
+        startBody: {
+          target,
+          ...(file?.name ? { file_name: file.name } : {}),
+          ...(target === 'broadcast_group' && broadcastGroupId ? { broadcast_group_ids: [broadcastGroupId] } : {}),
+        },
+        send: (path, body) => sendImportPart(token, "recipients", path, body),
       });
 
       const skipped = previewData.length - validRecipients.length;
       if (skipped > 0) {
         notify.warning(`${skipped} row(s) skipped due to missing Name or Phone Number`);
       }
-      notify.success(`Successfully imported ${validRecipients.length} recipients`);
+      notify.success("Recipient import started", {
+        description: `${validRecipients.length} rows are being imported in the background. Track the progress in Import History.`,
+      });
       handleClose();
       onSuccess();
     } catch (error: any) {
       notify.error("Failed to upload recipients to server.", {
-        description: error.message,
+        description: describeUploadError(error),
         duration: 10000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -71,6 +71,9 @@ export interface Conversation {
   archived_at?: string | null;
   reopened_at?: string | null;
   assigned_at?: string | null;
+  // Since API v1.163.0 (ASG-1) a web-widget chat also gets its owner from the
+  // staff member who first replies, not only from assign/queue/routing.
+  assigned_user_id?: string | null;
   first_response_at?: string | null;
   last_agent_response_at?: string | null;
   last_customer_message_at?: string | null;

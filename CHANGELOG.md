@@ -9,6 +9,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.123.0] - 2026-11-04
+
+### Detail Versi 1.123.0
+
+#### ✨ Web Widget: Teks Bawaan Mengikuti Bahasa Widget (FE-7.2)
+
+- **Deskripsi:**
+  - **Masalah:** API mengisi Home Headline, Home Subtext, Handoff Label, Response Time Label, dan Greeting Message dengan teks Inggris saat widget dibuat, sehingga widget berbahasa Indonesia tampil campur Inggris. Sejak API v1.163.0 (BE-7.2) kolom-kolom itu disimpan **kosong** dan teks Inggris lama dibersihkan. Widget versi lama menyembunyikan label waktu balas dan gelembung sapaan kalau kolomnya kosong, jadi keduanya **hilang** di DEV. Placeholder di Settings juga menyesatkan (*Hi there 👋*, *How can we help you today?*).
+  - **Perbaikan:**
+    - Kolom kosong = **teks bawaan sesuai bahasa widget**, kolom berisi = tulisan tenant di semua bahasa:
+
+      | Kolom | Bahasa Indonesia | English |
+      |---|---|---|
+      | Home Headline | Ada yang bisa kami bantu? | How can we help? |
+      | Home Subtext | Greeting Message tenant, kalau tidak: Pilih opsi di bawah atau kirim pesan kepada kami. | … Choose an option below or send us a message. |
+      | Handoff Label | Bicara dengan agen | Talk to a human |
+      | Response Time Label | Biasanya langsung membalas | Usually replies instantly |
+      | Greeting Message (gelembung sapaan) | Halo! Ada yang bisa kami bantu? | Hi! How can we help? |
+
+    - Label waktu balas di header (*Online · …*) dan gelembung sapaan pertama di chat **selalu tampil** lagi.
+    - **Settings › Web Widget:** placeholder kelima kolom sama persis dengan yang tampil di widget dan langsung berganti saat Widget Language diganti, sebelum Save. Placeholder Home Subtext mengikuti Greeting Message kalau terisi. Setiap kolom diberi teks bantuan *Leave blank for the default in the widget's language*. Form tidak lagi mengisi teks Inggris otomatis, dan Greeting Message boleh kosong.
+    - Pilihan Widget Language **"Automatic (visitor/browser)"** diganti menjadi *"Automatic (embed code, default Indonesian)"*: widget memang tidak membaca bahasa browser, melainkan `data-locale` di kode embed dengan default Bahasa Indonesia.
+  - **Technical Notes:**
+    - satu sumber teks: `lib/utils/widgetHomeTexts.ts` (`WIDGET_HOME_TEXTS`, `widgetLocale`, `widgetText`, `widgetHomeSubtext`), dibundel ke `widget/src/widget.ts` dan dipakai placeholder Settings. String `homeHeadline` / `homeSubtext` / `handoffDefault` dihapus dari paket bahasa widget
+    - teks Inggris sama dengan yang dulu disimpan API, jadi widget berbahasa Inggris tampil seperti sebelumnya
+    - kalau tenant mengosongkan Response Time Label atau Greeting Message, teks bawaan yang tampil. Keduanya tidak bisa disembunyikan lagi (keputusan 4 Nov)
+
+#### 🐛 Workspace: Assignee Langsung Ikut Pemilik Chat (ASG-1)
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.163.0 (ASG-1), chat widget otomatis jadi milik staff yang pertama membalas. Panel kanan Workspace membaca pemilik dari baris daftar (polling 30 detik), bukan dari detail percakapan. Balasan dari Workspace sendiri sudah me-refresh daftar, tapi balasan dari tempat lain (drawer percakapan di detail kontak, atau agen lain lewat WebSocket) hanya me-refresh detail, sehingga kolom **Assignee** bisa tertinggal sampai daftar ter-polling.
+  - **Perbaikan:** Assignee dan agen default QA review membaca pemilik dari detail percakapan lebih dulu. Unassign (null) di detail juga langsung tampil.
+  - **Technical Notes:** helper `assigneeId` di `workspaceHelpers.ts`, pola yang sama dengan `profileContactId`. Tipe `Conversation` mendapat `assigned_user_id`
+
+- **🧪 Testing:** 9 tes baru (`widgetHomeTexts.test.ts` 6, `workspaceHelpers.test.ts` 3); 7/7 mutasi tertangkap; seluruh suite 85 file / 923 tes lolos; `tsc` bersih; `build:widget` OK
+
+---
+
+## [1.122.0] - 2026-11-04
+
+### Detail Versi 1.122.0
+
+#### ✨ Import Contact & Recipient Memakai Job di Background (FE-3, FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** Import Contact dan Import Recipient mengirim seluruh isi file dalam satu request yang diproses langsung. File besar rawan timeout, tidak ada progres, dan import tidak bisa di-stop atau di-rollback. Sejak API v1.162.0 kedua import berjalan sebagai job di background, seperti Subscribers, dan format response-nya berubah, sehingga toast *"Successfully imported N contacts"* tidak benar lagi (data baru muncul setelah job selesai).
+  - **Perbaikan:**
+    - File dikirim **bertahap, 10.000 baris per kiriman**, tapi **satu file tetap satu job**: kiriman pertama membuat job, sisanya ditambahkan ke job yang sama (`/{job_id}/rows`), dan kiriman terakhir menandai `finished: true`. Satu file = satu baris di riwayat dan rollback sekali klik.
+    - Tombol **Import** terkunci selama pengiriman, sehingga file tidak bisa terkirim dua kali.
+    - Setelah terkirim, toast *Contact/Recipient import started* muncul dan **Import History terbuka otomatis**.
+    - Kalau pengiriman gagal di tengah (misalnya kiriman 2 dari 3), pesannya *"Upload stopped at part 2 of 3. Nothing was imported. Please import the file again."* Selama status Uploading belum ada data yang dibuat, dan API menghapus job yang tidak selesai dikirim setelah 30 menit tanpa progres (cron tiap 15 menit). Kalau API menolak di kiriman pertama, error validasinya tampil per field seperti sebelumnya.
+    - Import Recipient dari halaman **detail Group Broadcasting** memakai alur yang sama (`target: broadcast_group`).
+
+#### ✨ Import History di Contacts, Recipients, dan Detail Group (FE-5)
+
+- **Deskripsi:**
+  - **Perbaikan:**
+    - Tombol **Import History** di halaman **Contacts**, **Recipients**, dan **detail Group Broadcasting**, dengan tabel, status, progres, auto-refresh, dan tombol aksi (Stop / Continue / Rollback / Replay) yang sama persis dengan Subscribers.
+    - Riwayat Recipients menampilkan import ke Recipients **dan** ke Group (keputusan user), karena API tidak bisa menyaring per group. Riwayat di detail Group menampilkan import ke semua group.
+    - Status baru **Uploading**: tanpa tombol aksi, dengan tooltip bahwa job yang tidak selesai dikirim akan terhapus otomatis dalam sekitar 45 menit.
+    - Riwayat **hanya di-polling saat modal terbuka**, dan baru diminta saat modal dibuka (permintaan user 4 Nov). Sebelumnya polling tetap berjalan di belakang setelah modal ditutup, termasuk di Subscribers dan Mailing List.
+    - Saat job **selesai atau di-rollback**, list modul itu ikut diperbarui (Contacts, Recipients, anggota Group, Subscribers/Mailing List). Kalau job selesai saat modal tertutup, list diperbarui begitu modal dibuka lagi. Job yang sudah selesai sebelum modal pertama kali dibuka **tidak** memicu reload, sehingga tabel tidak meloncat ke atas.
+
+#### 🔧 Riwayat Subscribers Hanya Job Subscriber (FE-6)
+
+- **Deskripsi:**
+  - Riwayat import di halaman Subscribers sekarang memakai `target: subscriber` saja, tidak lagi `subscriber` + `contact`. Import Contact punya riwayat sendiri di halaman Contacts.
+
+- **Technical Notes:**
+  - `lib/api/import-jobs.ts`: satu API untuk ketiga modul (`fetchImportJobs`, `actionImportJob`, `sendImportPart`), menggantikan `fetchBulkJobs` / `actionBulkJob` yang khusus Subscribers
+  - `lib/hooks/useImportJobs.ts`: `useImportJobs(module, query)`, `useImportJobAction(module)`, `importJobsKey`, menggantikan `useBulkJobs` / `useActionBulkJob` / `bulkJobsKey`
+  - `lib/utils/importJobUpload.ts`: `uploadImportJob` (potongan, `/rows`, `finished`), `ImportUploadError` (part ke berapa + detail validasi), `describeUploadError`
+  - `ImportHistoryModal` dipindah ke `components/import-history/` (bersama `importProgress`), dengan prop `module` dan `onDataChanged`. `usePolling` dan `useImportJobs` (`enabled`) hanya aktif saat `open`. Invalidasi khusus Subscribers dipindah ke halaman pemanggil. Helper baru `finishedJobs.ts` (`freshlyFinishedJobs`): snapshot pertama hanya mencatat, perubahan berikutnya ke Completed / Rolled Back dilaporkan sekali
+  - tipe `BulkJob`: status `Uploading` + `broadcast_group_ids`
+  - `useBulkCreateWaRecipients` dan tipe `BulkCreateWaRecipient*` dihapus (tidak terpakai). Tes alur Recipients memodelkan import sebagai job yang selesai lalu me-restart list
+- **🧪 Testing:** 12 tes baru (`importJobUpload.test.ts` 8, `finishedJobs.test.ts` 4); tes alur Recipients disesuaikan; 11/11 mutasi tertangkap; seluruh suite 84 file / 914 tes lolos; `tsc` bersih
+
+---
+
 ## [1.121.1] - 2026-11-04
 
 ### Detail Versi 1.121.1

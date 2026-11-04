@@ -14,6 +14,12 @@ import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { QuickAction, UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
 import { widgetDefaultText, type WidgetTextKey } from "@/lib/utils/widgetDefaultTexts";
+import {
+  WIDGET_HOME_TEXTS,
+  widgetHomeSubtext,
+  widgetLocale,
+  type WidgetHomeTextKey,
+} from "@/lib/utils/widgetHomeTexts";
 import { isTitleListOnly } from "./answerBotHints";
 import QuickActionsBuilder from "./QuickActionsBuilder";
 
@@ -24,9 +30,13 @@ interface WebWidgetConfigPanelProps {
 // Sensible defaults so an existing widget whose stored config predates these
 // fields still renders (the backend may omit them on GET). Every key here maps
 // to a real WebWidgetConfig field that round-trips on PUT.
+//
+// Greeting Message, Home Headline / Subtext, Response Time Label and Handoff
+// Label default to "" (FE-7.2, API v1.163.0): empty = the widget's own text in
+// the widget language (lib/utils/widgetHomeTexts.ts), shown as placeholders.
 const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   title: "Chat with us",
-  greeting_message: "Hi! How can we help?",
+  greeting_message: "",
   brand_color: "#5479EE",
   allowed_domains: [],
   is_widget_enabled: true,
@@ -38,19 +48,19 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   bot_name: "Support Assistant",
   bot_avatar_url: null,
   // Home screen
-  home_headline: "Hi there 👋",
-  home_subtext: "How can we help you today?",
+  home_headline: "",
+  home_subtext: "",
   show_home_screen: true,
   // Quick actions
   quick_actions: [],
   // Widget language (null = automatic: use embed data-locale / widget default)
   default_locale: null,
   // Presence & response time
-  response_time_label: "Usually replies instantly",
+  response_time_label: "",
   show_presence: true,
   // Human handoff
   enable_human_handoff: true,
-  handoff_label: "Talk to a human",
+  handoff_label: "",
   handoff_queue_id: null,
   // Privacy
   privacy_footer_text: null,
@@ -182,6 +192,10 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
   // picked above (the unsaved choice, so switching it previews right away).
   const defaultText = (key: WidgetTextKey) =>
     widgetDefaultText(key, form.default_locale, config?.default_texts);
+  // Same for the widget's own texts (FE-7.2): what the widget shows when the
+  // field is blank. Home Subtext falls back to the Greeting Message first.
+  const homeLocale = widgetLocale(form.default_locale);
+  const homeDefault = (key: WidgetHomeTextKey) => WIDGET_HOME_TEXTS[homeLocale][key];
 
   const setQuickActions = (quick_actions: QuickAction[]) =>
     setForm((prev) => ({ ...prev, quick_actions }));
@@ -288,9 +302,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
           isBgWhite
           value={form.greeting_message}
           onChange={(e) => setField("greeting_message", e.target.value)}
-          placeholder="Hi! How can we help?"
+          placeholder={homeDefault("greeting_message")}
         />
-        <p className="text-xs text-gray-500">Shown to visitors before they send their first message.</p>
+        <p className="text-xs text-gray-500">
+          Shown to visitors before they send their first message. Leave blank for the default in the widget&apos;s
+          language.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -345,7 +362,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             onChange={(e) => setField("default_locale", e.target.value || null)}
             className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
           >
-            <option value="">Automatic (visitor/browser)</option>
+            {/* The widget never reads the browser language: embed data-locale,
+                else Indonesian. */}
+            <option value="">Automatic (embed code, default Indonesian)</option>
             <option value="id">Bahasa Indonesia</option>
             <option value="en">English</option>
           </select>
@@ -376,9 +395,10 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               isBgWhite
               value={form.home_headline}
               onChange={(e) => setField("home_headline", e.target.value)}
-              placeholder="Hi there 👋"
+              placeholder={homeDefault("home_headline")}
               disabled={!form.show_home_screen}
             />
+            <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Home Subtext</label>
@@ -387,9 +407,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               isBgWhite
               value={form.home_subtext}
               onChange={(e) => setField("home_subtext", e.target.value)}
-              placeholder="How can we help you today?"
+              placeholder={widgetHomeSubtext("", form.greeting_message, homeLocale)}
               disabled={!form.show_home_screen}
             />
+            <p className="text-xs text-gray-500">
+              Leave blank to show the Greeting Message, or the default in the widget&apos;s language.
+            </p>
           </div>
         </div>
       </Section>
@@ -424,8 +447,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             isBgWhite
             value={form.response_time_label}
             onChange={(e) => setField("response_time_label", e.target.value)}
-            placeholder="Usually replies instantly"
+            placeholder={homeDefault("response_time_label")}
           />
+          <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
         </div>
         <div className="border-t border-gray-100">
           <ToggleRow
@@ -459,8 +483,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.handoff_label}
                 onChange={(e) => setField("handoff_label", e.target.value)}
-                placeholder="Talk to a human"
+                placeholder={homeDefault("handoff_label")}
               />
+              <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Handoff Queue</label>

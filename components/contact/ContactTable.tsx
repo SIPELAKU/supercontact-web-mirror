@@ -13,7 +13,7 @@ import { SuperTable } from "@/components/ui/super-table";
 import type { SuperTableState } from "@/components/ui/super-table";
 import { contactColumns } from "./columns";
 import { AppButton } from "@/components/ui/app-button";
-import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Tag, Users, Pencil, Copy } from "lucide-react";
+import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Download, Trash2, Save, Tag, Users, Pencil, Copy, History } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
@@ -43,6 +43,7 @@ interface ContactTableProps {
 
   onOpenAdd: () => void;
   onOpenImport: () => void;
+  onOpenImportHistory: () => void;
   onSuccess?: () => void;
 }
 
@@ -64,6 +65,7 @@ export const ContactTable = ({
   onDeleteAll,
   onOpenAdd,
   onOpenImport,
+  onOpenImportHistory,
   isDuplicating,
   onSuccess,
 }: ContactTableProps) => {
@@ -254,6 +256,14 @@ export const ContactTable = ({
             {/* Desktop */}
             <div className="hidden md:flex gap-2">
               <AppButton
+                onClick={onOpenImportHistory}
+                variantStyle="outline"
+                color="primary"
+                startIcon={<History size={16} />}
+              >
+                Import History
+              </AppButton>
+              <AppButton
                 onClick={onOpenImport}
                 variantStyle="outline"
                 color="primary"
@@ -272,6 +282,13 @@ export const ContactTable = ({
 
             {/* Mobile - icon only */}
             <div className="flex md:hidden gap-2">
+              <button
+                onClick={onOpenImportHistory}
+                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                title="Import History"
+              >
+                <History size={16} />
+              </button>
               <button
                 onClick={onOpenImport}
                 className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"

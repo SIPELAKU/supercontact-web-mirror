@@ -44,6 +44,7 @@ import {
   formatRelativeTime,
   visitorEmail,
   profileContactId,
+  assigneeId,
 } from "./workspaceHelpers";
 
 // Icon + human label for the customer's channel identifier row.
@@ -99,6 +100,7 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
   const isWebWidget = channelType === "web_widget";
   const email = visitorEmail(conversation, selectedItem);
   const contactId = profileContactId(conversation, selectedItem);
+  const ownerId = assigneeId(conversation, selectedItem);
 
   // CRM organization the contact belongs to (Support Desk Phase 1/2). Prefer
   // the freshly-fetched conversation, fall back to the selected list-item.
@@ -154,7 +156,7 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
           <PriorityControl conversationId={conversationId} priority={conversation?.priority} />
           <AssigneeControl
             conversationId={conversationId}
-            currentUserId={selectedItem.assigned_user_id ?? undefined}
+            currentUserId={ownerId ?? undefined}
             currentUserFullname={conversation?.assigned_user_fullname}
           />
           <TagsControl conversationId={conversationId} tags={conversation?.tags || []} />
@@ -193,9 +195,9 @@ export function WorkspaceContextPanel({ selectedItem, conversation, onSelectConv
           defaultSubjectId={conversationId}
           lockSubject
           defaultAgent={
-            selectedItem.assigned_user_id
+            ownerId
               ? {
-                  id: selectedItem.assigned_user_id,
+                  id: ownerId,
                   name: conversation?.assigned_user_fullname || "Assigned agent",
                 }
               : null

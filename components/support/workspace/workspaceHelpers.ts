@@ -76,6 +76,18 @@ export function profileContactId(
   return conversation?.contact_id || item.contact_id || null;
 }
 
+// Owner of the conversation. The detail wins even when it says "nobody"
+// (null): an unassign must show at once too. Only a detail without the field
+// (not loaded yet) falls back to the queue row. Since ASG-1 a staff reply sets
+// the owner of a widget chat, and the reply refetches the detail, not the row.
+export function assigneeId(
+  conversation: Pick<Conversation, "assigned_user_id"> | undefined,
+  item: Pick<ConversationListItem, "assigned_user_id">,
+): string | null {
+  if (conversation && conversation.assigned_user_id !== undefined) return conversation.assigned_user_id;
+  return item.assigned_user_id ?? null;
+}
+
 // Compact "2m / 5h / 3d / 12 Aug" relative time for the queue rows.
 export function formatRelativeTime(iso?: string | null): string {
   if (!iso) return "";

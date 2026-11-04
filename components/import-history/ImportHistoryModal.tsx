@@ -6,22 +6,29 @@ import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw, History } from "lucide
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable } from "@/components/ui/super-table";
 import type { MRT_ColumnDef } from "@/components/ui/super-table/types";
-import { useBulkJobs, useActionBulkJob, bulkJobsKey } from "@/lib/hooks/useSubscribers";
+import { useImportJobs, useImportJobAction, importJobsKey } from "@/lib/hooks/useImportJobs";
 import { useListRefresh } from "@/lib/hooks/useListRefresh";
 import { usePolling } from "@/lib/hooks/usePolling";
 import { BulkJob } from "@/lib/types/email-marketing";
+import type { ImportModule } from "@/lib/api/import-jobs";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
-import { useQueryClient } from "@tanstack/react-query";
 import { importProgressPercent } from "./importProgress";
+import { freshlyFinishedJobs } from "./finishedJobs";
 
+// Background import jobs of one module (Subscribers, Contacts, Recipients),
+// all served by the same `/{module}/bulk` API shape (FE-5).
 interface ImportHistoryModalProps {
   open: boolean;
   onClose: () => void;
+  module: ImportModule;
   targetFilter: string[];
   storageKey: string;
   mailingListIds?: string[];
+  // A job completed or was rolled back while this page was open: refresh the
+  // module's own list. Jobs already finished when it opened do not count.
+  onDataChanged?: () => void;
 }
 
 const INTERVAL_OPTIONS = [
@@ -36,7 +43,15 @@ const INTERVAL_OPTIONS = [
 // they disagree the list is fetched twice on open, once per size.
 const BATCH_SIZE = 25;
 
-const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, targetFilter, storageKey, mailingListIds }) => {
+const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
+  open,
+  onClose,
+  module,
+  targetFilter,
+  storageKey,
+  mailingListIds,
+  onDataChanged,
+}) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(BATCH_SIZE);
   const [search, setSearch] = useState("");
@@ -66,7 +81,9 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
     }
   };
 
-  const { data, isLoading, isFetching, refetch } = useBulkJobs(page, limit, search, targetFilter, mailingListIds);
+  const query = { page, limit, search, target: targetFilter, mailingListIds };
+  // Not fetched at all while closed, so opening a page costs no history request.
+  const { data, isLoading, isFetching, refetch } = useImportJobs(module, query, { enabled: open });
 
   // Every refresh - the auto-refresh tick and the Refresh button - starts the
   // list over from batch 1 with fresh rows. The infinite-scroll table only
@@ -75,15 +92,16 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
   // before the refresh would be stale anyway.
   const listRefresh = useListRefresh({
     batchIndex: page - 1,
-    firstBatchKey: bulkJobsKey(1, limit, search, targetFilter, mailingListIds),
+    firstBatchKey: importJobsKey(module, { ...query, page: 1 }),
   });
-  // Jangan lakukan polling sebelum client mounted untuk mencegah mismatch
-  usePolling(listRefresh.reload, mounted ? refetchInterval : false);
+  // Polls only while the modal is open (user request 2026-11-04: no requests
+  // in the background). A job that finishes while it is closed still refreshes
+  // the page's list - on the next open, when the fresh snapshot reports it
+  // (finishedRef keeps what was already seen). Not before mount: hydration.
+  usePolling(listRefresh.reload, mounted && open ? refetchInterval : false);
 
-  // Closed, the table is gone but the polling goes on, so the subscriber list
-  // still refreshes when a job completes (below). Watch the newest jobs then,
-  // unfiltered, not the batch that was last on screen. The table reopens with
-  // these same defaults, so reopening fetches once, not once per change.
+  // Closed: reset to the defaults the table reopens with, so reopening
+  // fetches once, not once per change.
   useEffect(() => {
     if (open) return;
     setPage(1);
@@ -91,32 +109,20 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
     setSearch("");
   }, [open]);
 
-  const actionMutation = useActionBulkJob();
-  const queryClient = useQueryClient();
-  const handledJobsRef = React.useRef<Set<string>>(new Set());
+  const actionMutation = useImportJobAction(module);
+  // null until the first snapshot, which only seeds (see finishedJobs.ts).
+  const finishedRef = React.useRef<Set<string> | null>(null);
+  const onDataChangedRef = React.useRef(onDataChanged);
+  onDataChangedRef.current = onDataChanged;
 
-  // Refetch subscribers/mailing lists when a job completes
+  // Refresh the module's list when a job completes or is rolled back.
   useEffect(() => {
-    if (data?.data?.items) {
-      let shouldInvalidate = false;
-      data.data.items.forEach((job) => {
-        if (job.status === "Completed" && !handledJobsRef.current.has(job.id)) {
-          handledJobsRef.current.add(job.id);
-          shouldInvalidate = true;
-        }
-      });
-
-      if (shouldInvalidate) {
-        queryClient.invalidateQueries({ queryKey: ["subscribers"] });
-        queryClient.invalidateQueries({ queryKey: ["mailing-lists"] });
-        if (mailingListIds && mailingListIds.length > 0) {
-          mailingListIds.forEach((id) => {
-            queryClient.invalidateQueries({ queryKey: ["mailing-list", id] });
-          });
-        }
-      }
-    }
-  }, [data, queryClient, mailingListIds]);
+    const items = data?.data?.items;
+    if (!items) return;
+    const { finished, seen } = freshlyFinishedJobs(finishedRef.current, items);
+    finishedRef.current = seen;
+    if (finished.length > 0) onDataChangedRef.current?.();
+  }, [data]);
 
   const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
     actionMutation.mutate(
@@ -156,6 +162,21 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({ open, onClose, 
         Cell: ({ cell }) => {
           const status = cell.getValue<string>();
           let color: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default";
+
+          if (status === "Uploading") {
+            // Nothing is processed until the last part arrives; an upload that
+            // never finishes is deleted by the API's recovery cron (30 min
+            // without progress, checked every 15).
+            return (
+              <Tooltip
+                title="Still uploading. If the upload does not finish, this job is removed automatically within about 45 minutes."
+                arrow
+                placement="top"
+              >
+                <Chip label={status} color="info" size="small" variant="outlined" />
+              </Tooltip>
+            );
+          }
 
           switch (status) {
             case "Queued for Processing":

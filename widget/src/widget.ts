@@ -23,6 +23,7 @@
  */
 
 import { splitLinks } from "../../lib/utils/linkify";
+import { widgetHomeSubtext, widgetText } from "../../lib/utils/widgetHomeTexts";
 import {
   afterAgentOutcome,
   agentAnsweredSince,
@@ -147,11 +148,8 @@ interface WidgetStrings {
   uploadFailed: string;
   // Support Assistant chrome:
   greetingHi: string;
-  homeHeadline: string;
-  homeSubtext: string;
   needMoreHelp: string;
   teamHere: string;
-  handoffDefault: string;
   connectedAgent: string;
   talkToHuman: string;
   helpWithPrefix: string;
@@ -207,11 +205,8 @@ const STRINGS_EN: WidgetStrings = {
   fileTooLarge: "File is too large (max 10MB)",
   uploadFailed: "Upload failed — tap to retry",
   greetingHi: "Hi there! 👋",
-  homeHeadline: "How can we help?",
-  homeSubtext: "Choose an option below or send us a message.",
   needMoreHelp: "Need more help?",
   teamHere: "Our team is here for you",
-  handoffDefault: "Talk to a human",
   connectedAgent: "You're connected with an agent",
   talkToHuman: "I'd like to talk to a human",
   helpWithPrefix: "I'd like help with: ",
@@ -260,11 +255,8 @@ const STRINGS_ID: WidgetStrings = {
   fileTooLarge: "Berkas terlalu besar (maks 10MB)",
   uploadFailed: "Gagal mengunggah — ketuk untuk coba lagi",
   greetingHi: "Halo! 👋",
-  homeHeadline: "Ada yang bisa kami bantu?",
-  homeSubtext: "Pilih opsi di bawah atau kirim pesan kepada kami.",
   needMoreHelp: "Butuh bantuan lain?",
   teamHere: "Tim kami siap membantu Anda",
-  handoffDefault: "Bicara dengan agen",
   connectedAgent: "Anda terhubung dengan agen",
   talkToHuman: "Saya ingin berbicara dengan agen",
   helpWithPrefix: "Saya butuh bantuan tentang: ",
@@ -1145,8 +1137,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       status.appendChild(dot);
       const statusText = document.createElement("span");
       const word = online ? this.strings.online : this.strings.offlineShort;
-      const rt = (this.config!.response_time_label || "").trim();
-      statusText.textContent = rt ? `${word} · ${rt}` : word;
+      // Empty = the default for the widget language (FE-7.2), so a label
+      // always shows; the API stores these fields empty since v1.163.0.
+      const rt = widgetText(this.config!.response_time_label, "response_time_label", this.locale);
+      statusText.textContent = `${word} · ${rt}`;
       status.appendChild(statusText);
       titleWrap.appendChild(status);
       header.appendChild(titleWrap);
@@ -1330,15 +1324,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
       const headline = document.createElement("div");
       headline.className = "home-headline";
-      headline.textContent = (this.config!.home_headline || "").trim() || this.strings.homeHeadline;
+      headline.textContent = widgetText(this.config!.home_headline, "home_headline", this.locale);
       scroll.appendChild(headline);
 
       const sub = document.createElement("div");
       sub.className = "home-sub";
-      sub.textContent =
-        (this.config!.home_subtext || "").trim() ||
-        (this.config!.greeting_message || "").trim() ||
-        this.strings.homeSubtext;
+      sub.textContent = widgetHomeSubtext(this.config!.home_subtext, this.config!.greeting_message, this.locale);
       scroll.appendChild(sub);
 
       const actions = this.config!.quick_actions || [];
@@ -1448,7 +1439,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "handoff-btn";
-      btn.textContent = (this.config!.handoff_label || "").trim() || this.strings.handoffDefault;
+      btn.textContent = widgetText(this.config!.handoff_label, "handoff_label", this.locale);
       btn.onclick = () => void this.requestAgent("home");
       box.appendChild(btn);
 
@@ -1914,7 +1905,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // for the no-home-screen path). Only while the thread has no messages,
       // so it never duplicates real server-persisted content.
       if (this.view === "chat" && this.messages.length === 0) {
-        const greeting = (this.config!.greeting_message || "").trim();
+        // Empty = the default greeting for the widget language (FE-7.2).
+        const greeting = widgetText(this.config!.greeting_message, "greeting_message", this.locale);
         if (greeting) {
           const g = document.createElement("div");
           g.className = "msg inbound";

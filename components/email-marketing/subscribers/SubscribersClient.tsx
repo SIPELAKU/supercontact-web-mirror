@@ -17,7 +17,7 @@ import SubscribersTable from '@/components/email-marketing/subscribers/Subscribe
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
 import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
-import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
+import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import PageHeader from '@/components/ui/page-header';
 import { AppButton } from '@/components/ui/app-button';
 import { useSubscribers, useDeleteSubscriber, useBulkDeleteSubscribers, useDeleteAllSubscribers, useDuplicateSubscribers } from '@/lib/hooks/useSubscribers';
@@ -289,8 +289,12 @@ export default function SubscribersClient() {
       <ImportHistoryModal
         open={isHistoryModalOpen}
         onClose={() => setHistoryModalOpen(false)}
-        targetFilter={["subscriber", "contact"]}
+        module="subscribers"
+        // Subscriber jobs only (FE-6): Contact imports have their own history
+        // on the Contacts page since API v1.162.0.
+        targetFilter={["subscriber"]}
         storageKey="import_interval_subscriber"
+        onDataChanged={() => queryClient.invalidateQueries({ queryKey: ['subscribers'] })}
       />
       {selectedSubscriber && (
         <EditSubscriberModal

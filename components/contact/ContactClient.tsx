@@ -6,6 +6,7 @@ import AddContactModal from "@/components/contact/modal/AddContactModal";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import { Contact } from "@/lib/models/types";
 import ImportContactModal from "@/components/contact/modal/ImportContactModal";
+import ImportHistoryModal from "@/components/import-history/ImportHistoryModal";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
@@ -54,6 +55,7 @@ export const ContactClient = () => {
     const [openDelete, setOpenDelete] = useState(false);
     const [openDeleteMultiple, setOpenDeleteMultiple] = useState(false);
     const [openImport, setOpenImport] = useState(false);
+    const [openImportHistory, setOpenImportHistory] = useState(false);
     const [confirmAllOpen, setConfirmAllOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<Contact | null>(null);
     const [bulkDeleteContacts, setBulkDeleteContacts] = useState<Contact[]>([]);
@@ -425,6 +427,7 @@ export const ContactClient = () => {
                     onDeleteAll={() => setConfirmAllOpen(true)}
                     onOpenAdd={() => setOpenAdd(true)}
                     onOpenImport={() => setOpenImport(true)}
+                    onOpenImportHistory={() => setOpenImportHistory(true)}
                     isDuplicating={duplicateMutation.isPending}
                     // The bulk-tag dialog's only refresh hook. This list is a
                     // raw fetch into useState, not React Query, so the
@@ -473,7 +476,18 @@ export const ContactClient = () => {
             <ImportContactModal
                 open={openImport}
                 onClose={() => setOpenImport(false)}
-                onSuccess={restartList}
+                // The import runs as a background job (FE-3): nothing to
+                // reload yet, so hand over to Import History, which refreshes
+                // this list when the job completes.
+                onSuccess={() => setOpenImportHistory(true)}
+            />
+            <ImportHistoryModal
+                open={openImportHistory}
+                onClose={() => setOpenImportHistory(false)}
+                module="contacts"
+                targetFilter={["contact"]}
+                storageKey="import_interval_contact"
+                onDataChanged={restartList}
             />
 
             {/* Delete All Confirmation */}

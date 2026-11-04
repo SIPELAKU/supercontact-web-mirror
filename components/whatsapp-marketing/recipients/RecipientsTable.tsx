@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Box, Stack, IconButton, Tooltip } from '@mui/material';
-import { Copy, MessageSquare, Pencil, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { Copy, History, MessageSquare, Pencil, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 
 import { SuperTable } from '@/components/ui/super-table';
@@ -22,6 +22,7 @@ interface RecipientsTableProps {
   restartKey?: number;
   onAdd: () => void;
   onImport: () => void;
+  onImportHistory: () => void;
   onEdit: (recipient: WaRecipient) => void;
   onDeleteRequest: (ids: string[]) => void;
   onDeleteAll?: () => void;
@@ -41,6 +42,7 @@ const RecipientsTable = ({
   restartKey,
   onAdd,
   onImport,
+  onImportHistory,
   onEdit,
   onDeleteRequest,
   onDeleteAll,
@@ -135,6 +137,14 @@ const RecipientsTable = ({
             <div className="hidden md:flex gap-2">
               <AppButton
                 variantStyle="outline"
+                onClick={onImportHistory}
+                startIcon={<History size={16} />}
+                color="primary"
+              >
+                Import History
+              </AppButton>
+              <AppButton
+                variantStyle="outline"
                 onClick={onImport}
                 startIcon={<Upload size={16} />}
                 color="primary"
@@ -152,6 +162,13 @@ const RecipientsTable = ({
 
             {/* Mobile */}
             <div className="flex md:hidden gap-2">
+              <button
+                onClick={onImportHistory}
+                className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"
+                title="Import History"
+              >
+                <History size={16} />
+              </button>
               <button
                 onClick={onImport}
                 className="flex items-center justify-center w-9 h-9 rounded-md border border-[#5479EE] text-[#5479EE] hover:bg-blue-50 transition-colors"

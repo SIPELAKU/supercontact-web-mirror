@@ -13,6 +13,8 @@ import { handleError } from "@/lib/utils/errorHandler";
 import ContactCommercialFields, {
   type ContactCommercialValues,
 } from "@/components/contact/ContactCommercialFields";
+import { useCreateContact, contactSavedToast } from "@/lib/hooks/useCreateContact";
+import { DuplicateContactDialog } from "@/components/contact/modal/DuplicateContactDialog";
 
 interface InputProps {
   label: string;
@@ -89,6 +91,15 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
   // component so the two cannot drift.
   const [commercial, setCommercial] = useState<ContactCommercialValues>(EMPTY_COMMERCIAL);
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
+
+  // BE-1.3: a merge into an existing contact is not a new contact, so it gets
+  // its own toast.
+  const createFlow = useCreateContact((result) => {
+    onSuccess();
+    onClose();
+    const toast = contactSavedToast(result.kind);
+    notify.success(toast.title, { description: toast.description });
+  });
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -199,53 +210,24 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     };
 
     try {
-      const token = await getToken();
-      if (!token) {
-        notify.error("Authentication required", {
-          description: "Please log in again",
-        });
-        return;
-      }
+      // A saved or merged contact goes to onContactSaved; a duplicate opens
+      // DuplicateContactDialog and keeps this form open behind it.
+      const result = await createFlow.submit({ ...payload });
 
-      const res = await fetch("/api/proxy/contacts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-      let result: any = {};
-      try {
-        result = JSON.parse(text);
-      } catch {
-        result = {};
-      }
-
-      if (!res.ok) {
-        const message = result?.error?.message ?? "Failed to add contact";
-        const details = result?.error?.details
-          ?.map((e: any) => {
-            const label = fieldLabels[e.field] || e.field;
-            return `• ${label}: ${e.message}`;
-          })
-          .join("\n");
+      if (result.kind === "error") {
+        const details = Array.isArray(result.details)
+          ? result.details
+              .map((e: any) => {
+                const label = fieldLabels[e.field] || e.field;
+                return `• ${label}: ${e.message}`;
+              })
+              .join("\n")
+          : "";
 
         notify.error("Error", {
-          description: details || message,
+          description: details || result.message,
         });
-        setIsLoading(false);
-        return;
       }
-
-      onSuccess();
-      onClose();
-
-      notify.success("Contact added!", {
-        description: "Contact has been added successfully",
-      });
     } catch (err) {
       const message = handleError(err, "Adding contact")
       notify.error("Error", {
@@ -383,6 +365,13 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
         confirmText="Discard"
         cancelText="Cancel"
         variant="discard"
+      />
+
+      <DuplicateContactDialog
+        duplicate={createFlow.duplicate}
+        isResolving={createFlow.isResolving}
+        onCancel={createFlow.cancelDuplicate}
+        onResolve={createFlow.resolve}
       />
     </>
   );

@@ -3,6 +3,7 @@
 import { Contact } from "@/lib/models/types";
 import { MRT_ColumnDef } from "@/components/ui/super-table";
 import { tagChipStyle } from "@/lib/utils/contactTags";
+import { contactSourceLabel } from "@/lib/constants/contact-source";
 
 export const contactColumns: MRT_ColumnDef<Contact>[] = [
   {
@@ -122,5 +123,19 @@ export const contactColumns: MRT_ColumnDef<Contact>[] = [
         </div>
       );
     },
+  },
+  // BE-1.1. Filtered from the toolbar; GET /contacts cannot sort by it.
+  {
+    id: "source",
+    accessorFn: (row) => contactSourceLabel(row.source),
+    header: "Source",
+    size: 150,
+    enableColumnFilter: false,
+    enableSorting: false,
+    Cell: ({ row }) => (
+      <span className={row.original.source ? "text-gray-900" : "text-gray-400"}>
+        {contactSourceLabel(row.original.source)}
+      </span>
+    ),
   },
 ];

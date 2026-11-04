@@ -88,6 +88,11 @@ export interface Contact {
   customer_type?: CustomerTypeBrief | null,
   region?: RegionBrief | null,
   tags?: ContactTagBrief[],
+  // Latest channel that brought the contact in (lib/constants/contact-source.ts);
+  // null on contacts created before API v1.158.0. `source_updated_at` (IMP-9)
+  // is set when a later channel replaced it.
+  source?: string | null,
+  source_updated_at?: string | null,
   conversations?: {
     id: string;
     channel_type: "whatsapp" | "sms" | "email" | "web_widget";

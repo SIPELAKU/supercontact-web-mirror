@@ -4,7 +4,37 @@
 import { useAuth } from "@/lib/context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ContactResponse, fetchContacts } from "../api";
-import { deleteContact, deleteMultipleContacts, deleteAllContacts, duplicateContacts } from "../api/contacts";
+import {
+  deleteContact,
+  deleteMultipleContacts,
+  deleteAllContacts,
+  duplicateContacts,
+  fetchContactConversations,
+} from "../api/contacts";
+import type { ContactConversationListResponse, ContactConversationQuery } from "../types/omnichannel";
+
+// Key prefix of one contact's conversation table, also used to refresh it
+// after a reply from the drawer.
+export const contactConversationsKey = (contactId: string) => ["contact-conversations", contactId];
+
+// Every conversation of one contact (BE-1.2), one page at a time.
+export function useContactConversations(contactId: string, query: ContactConversationQuery) {
+  const { getToken } = useAuth();
+  return useQuery<ContactConversationListResponse, Error>({
+    queryKey: [...contactConversationsKey(contactId), query],
+    queryFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+      return fetchContactConversations(token, contactId, query);
+    },
+    // Keep the rows on screen while the next page or filter loads - but only
+    // this contact's rows, never the previous contact's.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === contactId ? previous : undefined,
+    staleTime: 1000 * 30,
+    enabled: !!contactId,
+  });
+}
 
 // Fetch all contacts with optional search
 export function useContacts(search?: string, include_all?: boolean) {

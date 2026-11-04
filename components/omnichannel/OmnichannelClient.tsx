@@ -27,6 +27,8 @@ import { ConfirmationPopup } from "../ui/confirmation-popup";
 import ContactListSidebar, { ContactListChannelFilter } from "./ContactListSidebar";
 import ConversationPanel from "./ConversationPanel";
 import ConversationDetailSidebar from "./ConversationDetailSidebar";
+import { DuplicateContactDialog } from "@/components/contact/modal/DuplicateContactDialog";
+import { useCreateContact, contactSavedToast } from "@/lib/hooks/useCreateContact";
 
 export default function OmnichannelClient() {
     const router = useRouter();
@@ -256,6 +258,21 @@ export default function OmnichannelClient() {
         }
     }, [filteredContacts, pendingDeepLinkConversationId, searchTerm]);
 
+    const createContactFlow = useCreateContact((result) => {
+        const toast = contactSavedToast(result.kind);
+        notify.success(toast.title, { description: toast.description });
+        setIsNewContactOpen(false);
+        setNewContact({
+            name: "",
+            email: "",
+            phone_number: "",
+            company: "",
+            position: "",
+            address: "",
+        });
+        refetchContacts();
+    });
+
     const handleCreateContact = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newContact.name) {
@@ -265,32 +282,13 @@ export default function OmnichannelClient() {
 
         setIsSubmittingContact(true);
         try {
-            const token = await getToken();
-            const res = await fetch("/api/proxy/contacts", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(newContact),
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw errorData || new Error("Failed to create contact");
+            // BE-1.1: tells the API where the contact came from. Add Contact
+            // sends nothing and the API records `manual`. A duplicate (BE-1.3)
+            // opens DuplicateContactDialog; a save goes to onContactSaved.
+            const result = await createContactFlow.submit({ ...newContact, source: "omnichannel" });
+            if (result.kind === "error") {
+                notify.error("Error", { description: result.message });
             }
-
-            notify.success("Contact created successfully");
-            setIsNewContactOpen(false);
-            setNewContact({
-                name: "",
-                email: "",
-                phone_number: "",
-                company: "",
-                position: "",
-                address: "",
-            });
-            refetchContacts();
         } catch (error) {
             notify.error("Error", {
                 description: handleError(error, "Create Contact"),
@@ -581,6 +579,13 @@ export default function OmnichannelClient() {
                 confirmText="Delete"
                 cancelText="Cancel"
                 variant="danger"
+            />
+
+            <DuplicateContactDialog
+                duplicate={createContactFlow.duplicate}
+                isResolving={createContactFlow.isResolving}
+                onCancel={createContactFlow.cancelDuplicate}
+                onResolve={createContactFlow.resolve}
             />
         </div>
     );

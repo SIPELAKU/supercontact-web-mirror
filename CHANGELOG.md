@@ -9,6 +9,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.121.1] - 2026-11-04
+
+### Detail Versi 1.121.1
+
+#### 🔒 Leads: Data Kontak Tidak Bisa Diubah dari Form Lead
+
+- **Deskripsi:**
+  - **Masalah:** form **Add Lead** dan **Detail Lead** (update) membiarkan user mengubah email, phone, dan company, serta di form update juga nama/kontak lead. Padahal API (`POST /leads`, `PUT /leads/{id}`) tidak menyimpan field-field itu; lead hanya menyimpan `contact_id`. Perubahannya hilang tanpa pesan, dan yang tampil tetap data kontak. Form Add Lead juga mewajibkan email, phone (minimal 10 digit), dan company, sehingga kontak tanpa phone tidak bisa dijadikan lead walaupun data itu tidak dipakai.
+  - **Perbaikan (permintaan BO):**
+    - **Add Lead:** Name tetap untuk mencari dan memilih kontak (wajib). **Email, Phone Number, dan Company terkunci** (abu-abu), terisi otomatis dari kontak yang dipilih, dengan teks *From the contact. Edit it in Contacts.* Sebelum kontak dipilih, field tampil *Select a contact first*.
+    - **Detail Lead (update):** **Name, Email, Phone Number, dan Company terkunci**, sehingga kontak lead tidak bisa diganti lagi.
+    - Email, phone, dan company **tidak lagi wajib** (keputusan user): lead tetap bisa dibuat untuk kontak yang datanya belum lengkap. Field yang kosong tampil "-".
+    - Placeholder pencarian di Add Lead menjadi *Search existing contacts*, tanpa "or enter new name", karena lead memang harus memakai kontak yang sudah ada.
+  - **Technical Notes:**
+    - komponen bersama `components/lead-management/LockedContactField.tsx` (+ `LOCKED_FIELD_LABELS`), dengan gaya yang sama seperti `LockedField` di form Deal
+    - `CreateLeadData` sekarang hanya `contact_id` (wajib) + field lead; `UpdateLeadData` tanpa field kontak dan tanpa `contact_id`. Body request tidak lagi mengirim name/email/phone/company yang selama ini diabaikan API
+    - `lead-detail-modal.tsx`: pencarian kontak yang tidak terpakai lagi dihapus (`useContacts`, debounce, `ContactPickerDialog`, autocomplete, tema MUI)
+  - **🧪 Testing:** manual (form, tanpa tes DOM); `tsc` bersih; seluruh suite 82 file / 902 tes tetap lolos
+
+---
+
+## [1.121.0] - 2026-11-04
+
+### Detail Versi 1.121.0
+
+#### ✨ Add Contact & Omnichannel: Dialog Kontak Duplikat
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.158.0 (BE-1.3), `POST /contacts` menolak kontak yang emailnya atau nomor HP-nya sudah dipakai kontak lain dengan **409** `DUPLICATE_CONTACT`, dan meminta user memilih. Web menampilkan 409 itu sebagai toast error, sehingga user tidak bisa melanjutkan. Selain itu, saat kontak lama hanya dilengkapi (nama + email sama, tanpa field yang bentrok), web tetap menampilkan *Contact added!*, padahal tidak ada kontak baru.
+  - **Perbaikan:**
+    - 409 membuka dialog **Contact already exists** yang berisi alasannya (nama + email sama / email sama dengan nama lain / nomor HP sama) dan data kontak lama (nama, email, HP, source, tanggal dibuat).
+    - Setiap field yang bentrok tampil sebagai baris **Existing / New** dengan pilihan. Tidak ada yang terpilih dari awal; tombol **Merge into existing** baru aktif setelah semua baris dipilih, supaya tidak ada data yang tertimpa tanpa disadari. Tipe Pelanggan dan Wilayah tampil sebagai nama, bukan ID.
+    - **Merge into existing** mengirim ulang data form dengan pilihan tadi. Tidak ada pilihan membuat kontak terpisah, supaya tidak ada kontak dobel. Ini keputusan produk, walaupun API masih menerima `create_new`.
+    - Kalau kontak lama berubah sejak dialog dibuka (API membalas 409 lagi), dialog memuat data terbaru, pilihan dikosongkan, dan muncul peringatan *The existing contact has changed*.
+    - **Cancel** menutup dialog tanpa menyimpan apa pun. Form tetap terbuka dengan isinya.
+    - Kontak lama yang dilengkapi tampil sebagai *Contact already exists — Empty fields of the existing contact were filled in*, bukan *Contact added!*.
+    - Berlaku di **Add Contact** (Contacts) dan form kontak baru di **Omnichannel**.
+  - **Technical Notes:**
+    - `lib/utils/contactDuplicate.ts`: `readCreateContactResponse` memilah jawaban API (`created` / `merged` / `duplicate` / `error`), plus `missingDuplicateChoices` dan label field/nilai
+    - `createContact` di `lib/api/contacts.ts` tidak melempar error untuk jawaban API; hook bersama `useCreateContact` (`lib/hooks/useCreateContact.ts`) menyimpan body untuk dikirim ulang dengan `duplicate_resolution: {contact_id, keep}`
+    - komponen `components/contact/modal/DuplicateContactDialog.tsx` dipakai kedua form
+    - AddContactModal: detail error yang berbentuk objek tidak lagi membuat `.map` crash, dan tombol tidak tertahan loading saat token hilang
+  - **🧪 Testing:** 12 tes baru (`contactDuplicate.test.ts`); 7/7 mutasi tertangkap; seluruh suite 82 file / 902 tes lolos; `tsc` bersih
+
+#### 🐛 Contacts: Perubahan pada Kontak yang Sudah Tampil Tidak Muncul di Tabel
+
+- **Deskripsi:**
+  - **Masalah:** setelah merge ke kontak lama, misalnya HP Budi dilengkapi, tabel Contacts tetap menampilkan nilai lama ("-") sampai halaman di-reload. Hal yang sama terjadi setelah **Edit** kontak. Ditemukan saat tes FE-1.3, tapi bug ini sudah ada sebelumnya.
+  - **Root Cause:** tabel Contacts memuat data bertahap (lazy) dan hanya mengganti satu batch kalau jumlah baris atau ID baris pertama/terakhirnya berubah (`useLazyRows`). Perubahan pada kontak yang sudah tampil tidak mengubah keduanya, sehingga data baru dari API diabaikan. Ini celah SuperTable yang sama dengan yang dulu diperbaiki di tabel WA Marketing (1.106.2).
+  - **Perbaikan:** setelah setiap perubahan (Add/merge, Edit, Delete, Delete All, Duplicate, Tag, Import), batch pertama diambil ulang lebih dulu, lalu tabel dimulai ulang dari situ lewat `restartKey`. Akibatnya tabel kembali ke atas setelah menyimpan.
+  - **Technical Notes:** `restartList` (menggantikan `reloadCurrentPage`) dan state `listVersion` di `ContactClient.tsx`, diteruskan sebagai `restartKey` lewat `ContactTable`. Urutannya fetch dulu baru restart, sama seperti `useListRefresh`, supaya restart memakai data yang segar
+  - **🧪 Testing:** manual (komponen, tanpa tes DOM)
+
+---
+
+## [1.120.0] - 2026-11-04
+
+### Detail Versi 1.120.0
+
+#### ✨ Detail Kontak: Tab Conversations Jadi Tabel Semua Percakapan
+
+- **Deskripsi:**
+  - **Masalah:** tab **Conversations** di detail kontak hanya menampilkan **satu percakapan per channel**, tanpa tanggal. Kontak yang chat lewat widget berkali-kali (misalnya 3 chat widget + 1 WhatsApp) hanya terlihat satu percakapan widget, sehingga riwayat lain tidak bisa dibuka dari halaman kontak.
+  - **Perbaikan:**
+    - Tab Conversations menjadi **tabel semua percakapan** kontak di semua channel, termasuk yang Solved/Closed/Archived. Kolomnya: Channel, Account, Status, First message, Messages, Agent, Created, Last message.
+    - Urutan default **terbaru di atas**. Kolom **Created** bisa dibalik jadi terlama; kolom lain tidak bisa diurutkan karena API hanya mendukung urutan ini.
+    - Ada filter **Channel** dan paging bernomor (10/25/50 per halaman).
+    - Percakapan widget yang masuk ke kontak ini lewat email ketikan pengunjung (`identity_verified: false`) diberi badge **Email not verified**, dengan tooltip penjelasan.
+    - **Klik baris** membuka **drawer di kanan**: riwayat chat lengkap dan kotak balas, dengan realtime seperti di Workspace. Setelah membalas, kolom Last message dan Messages di tabel ikut diperbarui.
+    - Kalau user tidak punya akses membuka percakapan (`can_open_conversation: false`), baris tetap tampil tapi tidak bisa diklik, dan muncul keterangan *You don't have access to open conversations*.
+    - Tombol **Start conversation** tetap ada (di atas tabel dan di tampilan kosong) untuk memulai chat WhatsApp/SMS/Email baru, dengan form yang sama seperti sebelumnya.
+    - Tab **WhatsApp tidak berubah**.
+  - **Technical Notes:**
+    - API v1.158.0 (BE-1.2): `GET /contacts/{id}/conversations?page&limit&channel_type&sort` (`created_at_desc` / `created_at_asc`); `fetchContactConversations` di `lib/api/contacts.ts`, `useContactConversations` + `contactConversationsKey` di `lib/hooks/useContacts.ts`; tipe `ContactConversationItem` / `ContactConversationListResponse` di `lib/types/omnichannel.ts`
+    - `nextContactConversationQuery` (`components/contact/detail/sections/contactConversations.ts`) memetakan state tabel ke query API: filter, urutan, atau jumlah baris baru kembali ke halaman 1; state yang sama tidak memicu request ulang
+    - drawer `ContactConversationDrawer.tsx` memakai `MessageList`, `MessageInput`, `useConversation`, dan `useOmnichannelRealtime` yang sudah ada
+    - `StartConversationPanel` di `ContactChannelChat.tsx` diekspor dan mendapat prop `startOpen` / `onCancel` untuk dialog
+    - label channel dan warna status memakai `CHANNEL_META` / `STATUS_META` Workspace, jadi sama dengan Workspace
+  - **🧪 Testing:** 9 tes baru (`contactConversations.test.ts`); 7/7 mutasi tertangkap; seluruh suite 81 file / 891 tes lolos; `tsc` bersih; lint bersih
+
+#### 🐛 Start Conversation: Gagal Tanpa Pesan, dan Akun SMS Ikut Ditawarkan
+
+- **Deskripsi:**
+  - **Masalah:** saat **Send** di form Start conversation ditolak API, layar tidak menampilkan apa-apa, sehingga terlihat seperti tombol tidak berfungsi. Ditemukan saat tes FE-1.2, tapi bug ini sudah ada di tab lama (juga di tab WhatsApp).
+  - **Root Cause:**
+    - `handleError` hanya menulis error ke console dan mengembalikan pesannya. Form memanggilnya tanpa toast, jadi penolakan seperti *Selected contact has no WhatsApp phone number* (kontak dari widget biasanya hanya punya email) tidak pernah terlihat.
+    - Pilihan **Send from** ikut menawarkan akun SMS, padahal `POST /omnichannels/conversations` hanya bisa memulai percakapan dengan kontak lewat WhatsApp atau Email. Untuk SMS, API selalu membalas 400 *Conversation creation with contact is unsupported for this channel*.
+  - **Perbaikan:**
+    - Penolakan API tampil sebagai toast merah *Failed to start the conversation* dengan pesan dari API.
+    - Pilihan **Send from** hanya berisi akun WhatsApp dan Email. Teks tampilan kosong ikut disesuaikan: *WhatsApp or email account*.
+  - **Technical Notes:** `StartConversationPanel` di `ContactChannelChat.tsx`, yang dipakai tab Conversations dan tab WhatsApp
+  - **🧪 Testing:** manual (komponen, tanpa tes DOM)
+
+---
+
+## [1.119.0] - 2026-11-04
+
+### Detail Versi 1.119.0
+
+#### ✨ Contacts: Kolom dan Filter Source
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.158.0 (BE-1.1) setiap kontak menyimpan `source`, yaitu channel yang membawanya masuk (Manual, Web Widget, WhatsApp, Import, dll.). Web belum menampilkannya, jadi tim tidak bisa melihat atau menyaring dari mana kontak datang, misalnya untuk memeriksa kontak yang menumpuk dari chat widget.
+  - **Perbaikan:**
+    - Tabel **Contacts** mendapat kolom **Source** setelah Tags. Kontak tanpa source (dibuat sebelum v1.158.0) tampil **Unknown** dengan warna abu-abu. Kolom ini tidak bisa diurutkan karena API belum mendukung urutan per source.
+    - Toolbar mendapat filter **Source** (pilih banyak), sejajar Tipe Pelanggan, Wilayah, dan Tag. Pilihannya 14 source + Unknown. Beberapa pilihan digabung **OR**: Web Widget + WhatsApp menampilkan kontak dari salah satu channel itu. Filter ikut tersimpan di URL.
+    - **Detail kontak** (Contact Details) mendapat baris **Source** di bawah Wilayah. Kalau API mengirim `source_updated_at` (IMP-9, belum rilis), tanggalnya ikut tampil: *Web Widget · updated 04 Nov 2026*.
+    - Form kontak baru di **Omnichannel** mengirim `source: "omnichannel"`. Add Contact di halaman Contacts tidak mengirim apa-apa, dan API mencatatnya `manual`.
+  - **Technical Notes:**
+    - label, pilihan filter, dan helper ada di satu file `lib/constants/contact-source.ts` (`contactSourceLabel`, `CONTACT_SOURCE_OPTIONS`, `contactSourceQuery`). Nilai yang belum dikenal build ini tampil apa adanya
+    - `GET /contacts?source=web_widget,whatsapp`: dipisah koma, `unknown` untuk kontak tanpa source. `contactSourceQuery` membaca array dari filter maupun satu string dari URL (urlSync mengembalikan satu pilihan sebagai string)
+    - `source` adalah channel **terakhir**, bukan asal pertama: setelah IMP-9, chat widget yang cocok ke kontak lama lewat email mengubahnya jadi `web_widget`
+    - tipe `Contact` mendapat `source` dan `source_updated_at`
+  - **🧪 Testing:** 7 tes baru (`contact-source.test.ts`); 6/6 mutasi tertangkap; seluruh suite 80 file / 882 tes lolos; `tsc` bersih; build dilewati (dev server sedang jalan di port 3100)
+
+#### 🐛 Contacts: Reload dengan Filter Aktif Menampilkan Data Tanpa Filter
+
+- **Deskripsi:**
+  - **Masalah:** saat halaman Contacts di-reload dengan filter di URL (misalnya `?f=source:unknown`), tabel sempat menampilkan data yang benar lalu berganti ke semua kontak, padahal chip filter masih aktif. Ditemukan saat tes Source, tapi bug ini sudah ada sebelumnya dan juga mengenai filter Tipe Pelanggan, Wilayah, Tag, dan pencarian dari URL.
+  - **Root Cause:** saat halaman dibuka, `ContactClient` memuat data dengan setelan bawaannya (tanpa filter), sementara SuperTable meminta data dengan filter yang dipulihkan dari URL. Dua request berjalan bersamaan dan yang selesai terakhir menang. Request tanpa filter lebih lambat karena menghitung total semua kontak, sehingga sering selesai belakangan dan menimpa hasil yang difilter.
+  - **Perbaikan:** hanya jawaban request terbaru yang mengisi tabel. Jawaban request lama, termasuk error dan status loading-nya, diabaikan.
+  - **Impact:** setelah reload, tabel menampilkan data sesuai filter di URL.
+  - **Technical Notes:** penghitung request (`requestSeqRef`) di `loadData`, pola yang sama dengan `boardRequestSeq` (pipeline) dan `listRequestSeq` (quotation)
+  - **🧪 Testing:** tidak ada tes otomatis (komponen dengan `fetch` langsung, repo belum punya tes DOM); dicek manual dengan reload `?f=source:unknown`
+
+---
+
 ## [1.118.2] - 2026-11-04
 
 ### Detail Versi 1.118.2

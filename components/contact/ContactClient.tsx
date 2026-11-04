@@ -16,15 +16,18 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { notify } from "@/lib/notifications";
 import type { SuperTableState } from "@/components/ui/super-table";
+import { contactSourceQuery } from "@/lib/constants/contact-source";
 
 /**
- * The three server-backed contact filters Phase 3 added (spec A0.1 / E8).
- * `tag_ids` is a LIST because the filter is an AND across ids.
+ * The server-backed contact filters: the three Phase 3 added (spec A0.1 / E8)
+ * plus `source` (BE-1.1). `tag_ids` is a LIST because the filter is an AND
+ * across ids; `source` is one comma-joined string the API ORs.
  */
 interface ContactFilters {
     customer_type_id?: string;
     region_id?: string;
     tag_ids?: string[];
+    source?: string;
 }
 
 // Printable columns for PDF print
@@ -74,11 +77,18 @@ export const ContactClient = () => {
     // and the third is a LIST of ids, and a ref-per-filter would not tell us
     // "did anything change" in one comparison.
     const currentFiltersRef = useRef<ContactFilters>({});
+    // Only the newest request may fill the table. On a reload with filters in
+    // the URL the mount load (no filters) and the table's announced state
+    // (with them) race; the unfiltered answer, slower because of its COUNT,
+    // used to land last and replace the filtered rows under a still-active
+    // filter chip.
+    const requestSeqRef = useRef(0);
     const filtersKey = (filters: ContactFilters) =>
         [
             filters.customer_type_id ?? "",
             filters.region_id ?? "",
             (filters.tag_ids ?? []).join(","),
+            filters.source ?? "",
         ].join("|");
 
     const loadData = useCallback(async (
@@ -89,6 +99,8 @@ export const ContactClient = () => {
         sortOrder?: "asc" | "desc",
         filters?: ContactFilters,
     ) => {
+        const requestId = ++requestSeqRef.current;
+        const isLatest = () => requestId === requestSeqRef.current;
         setLoading(true);
         setError(null);
         try {
@@ -115,6 +127,7 @@ export const ContactClient = () => {
             if (filters?.customer_type_id) params.set("customer_type_id", filters.customer_type_id);
             if (filters?.region_id) params.set("region_id", filters.region_id);
             for (const tagId of filters?.tag_ids ?? []) params.append("tag_ids", tagId);
+            if (filters?.source) params.set("source", filters.source);
 
             const res = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/contacts?${params.toString()}`,
@@ -126,6 +139,7 @@ export const ContactClient = () => {
                 },
             );
             const json = await res.json();
+            if (!isLatest()) return;
             const contacts = Array.isArray(json.data)
                 ? json.data
                 : Array.isArray(json.data?.contacts)
@@ -138,10 +152,11 @@ export const ContactClient = () => {
             if (typeof total === "number") setTotalCount(total);
             setDataContact(contacts);
         } catch (err: any) {
+            if (!isLatest()) return;
             setError(err.message || "Failed to load contacts");
             setDataContact([]);
         } finally {
-            setLoading(false);
+            if (isLatest()) setLoading(false);
         }
     }, [getToken]);
 
@@ -178,6 +193,7 @@ export const ContactClient = () => {
             customer_type_id: (raw.customer_type_id as string) || undefined,
             region_id: (raw.region_id as string) || undefined,
             tag_ids: tagIds && tagIds.length > 0 ? tagIds : undefined,
+            source: contactSourceQuery(raw.source),
         };
 
         const searchChanged = newSearch !== currentSearchRef.current;
@@ -247,16 +263,25 @@ export const ContactClient = () => {
         }
     }, [getToken]);
 
-    // --- Reload helper ---
-    const reloadCurrentPage = useCallback(() => {
-        loadData(
-            currentPageRef.current,
+    // --- Reload after a write ---
+    // The table loads in lazy batches and only replaces a batch when its row
+    // count or first/last id changes (useLazyRows' fingerprint), so an
+    // in-place change - an edit, or a duplicate merged into an existing
+    // contact - never showed until a hard reload. After every write the first
+    // batch is fetched, and only THEN the table restarts from it, so the
+    // restart commits the fresh rows (same pattern as useListRefresh).
+    const [listVersion, setListVersion] = useState(0);
+    const restartList = useCallback(async () => {
+        currentPageRef.current = 0;
+        await loadData(
+            0,
             currentPageSizeRef.current,
             currentSearchRef.current,
             currentSortByRef.current,
             currentSortOrderRef.current,
             currentFiltersRef.current,
         );
+        setListVersion((v) => v + 1);
     }, [loadData]);
 
     // --- Handlers ---
@@ -287,7 +312,7 @@ export const ContactClient = () => {
         if (!selectedItem) return;
         try {
             await deleteMutation.mutateAsync(selectedItem.id);
-            reloadCurrentPage();
+            restartList();
             setOpenDelete(false);
             notify.success("Contact deleted!");
         } catch (err: any) {
@@ -335,14 +360,14 @@ export const ContactClient = () => {
             );
         }
 
-        reloadCurrentPage();
+        restartList();
     };
 
     const handleConfirmDeleteAll = async () => {
         try {
             await deleteAllMutation.mutateAsync();
             setConfirmAllOpen(false);
-            reloadCurrentPage();
+            restartList();
         } catch (error) {
             console.error("Failed to delete all contacts:", error);
         }
@@ -354,7 +379,7 @@ export const ContactClient = () => {
             await duplicateMutation.mutateAsync(ids);
             notify.success(`${contacts.length} contact(s) duplicated successfully.`);
             clearSelection?.();
-            reloadCurrentPage();
+            restartList();
         } catch (err: any) {
             notify.error(err.message || "Failed to duplicate contact(s).");
         }
@@ -389,6 +414,7 @@ export const ContactClient = () => {
                         )
                     }
                     rowCount={totalCount}
+                    restartKey={listVersion}
                     onStateChange={handleStateChange}
                     onExportRequest={handleExportRequest}
                     onEdit={handleEdit}
@@ -405,7 +431,7 @@ export const ContactClient = () => {
                     // mutation's cache invalidation cannot reach it - without
                     // this the tag chips and the tag filter stay stale until a
                     // hard reload.
-                    onSuccess={reloadCurrentPage}
+                    onSuccess={restartList}
                 />
             </div>
 
@@ -413,13 +439,13 @@ export const ContactClient = () => {
             <AddContactModal
                 open={openAdd}
                 onClose={() => setOpenAdd(false)}
-                onSuccess={reloadCurrentPage}
+                onSuccess={restartList}
             />
             <EditContactModal
                 open={openEdit}
                 initialData={selectedItem}
                 onClose={() => setOpenEdit(false)}
-                onSuccess={reloadCurrentPage}
+                onSuccess={restartList}
             />
             <ConfirmationPopup
                 isOpen={openDelete}
@@ -447,7 +473,7 @@ export const ContactClient = () => {
             <ImportContactModal
                 open={openImport}
                 onClose={() => setOpenImport(false)}
-                onSuccess={reloadCurrentPage}
+                onSuccess={restartList}
             />
 
             {/* Delete All Confirmation */}

@@ -17,6 +17,7 @@ import { Eye, X, Mail, Phone, Building2, MapPin, Briefcase, Calendar, Plus, Down
 import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Chip, Divider, Stack } from "@mui/material";
 import { SaveAsModal } from "@/components/modal/SaveAsModal";
+import { CONTACT_SOURCE_OPTIONS } from "@/lib/constants/contact-source";
 
 interface ContactTableProps {
   data: Contact[];
@@ -25,6 +26,9 @@ interface ContactTableProps {
   errorMessage?: string;
   onRetry?: () => void;
   rowCount: number;
+  // Bumped by ContactClient after a write, once the fresh first batch is in:
+  // restarts the lazy list so an in-place change (edit, merge) shows.
+  restartKey?: number;
 
   onStateChange?: (state: SuperTableState) => void;
   onExportRequest?: (params: { format: 'csv' | 'excel'; currentState: SuperTableState }) => Promise<Contact[]> | Contact[];
@@ -49,6 +53,7 @@ export const ContactTable = ({
   errorMessage,
   onRetry,
   rowCount,
+  restartKey,
   onStateChange,
   onExportRequest,
   onEdit,
@@ -101,6 +106,8 @@ export const ContactTable = ({
       ...(tagOptions.length > 0
         ? [{ id: "tag_ids", label: "Tag", type: "multiselect" as const, options: tagOptions }]
         : []),
+      // BE-1.1: a fixed vocabulary, so always offered. OR across picks.
+      { id: "source", label: "Source", type: "multiselect" as const, options: CONTACT_SOURCE_OPTIONS },
     ];
   }, [customerTypes, regionTree, tagPage]);
 
@@ -175,6 +182,7 @@ export const ContactTable = ({
         errorMessage={errorMessage}
         onRetry={onRetry}
         rowCount={rowCount}
+        restartKey={restartKey}
         renderEmptyState={() => (
           <EmptyState
             icon={Users}

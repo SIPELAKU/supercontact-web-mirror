@@ -9,15 +9,10 @@ import { fetchWithTimeout } from "./api-client";
 // Types
 // ============================================
 
+// POST /leads takes the contact by id only; its name, email, phone and
+// company are the contact's own and are edited in Contacts.
 export interface CreateLeadData {
-  // For existing contact
-  contact_id?: string;
-
-  // For new contact (required if contact_id not provided)
-  name?: string;
-  email?: string;
-  phone_number?: string;
-  company?: string;
+  contact_id: string;
 
   // Lead specific fields (always required)
   industry: string;
@@ -35,12 +30,9 @@ export interface CreateLeadData {
   notes: string;
 }
 
+// A lead's contact is fixed once created (BO request 2026-11-04), so no
+// contact fields here.
 export interface UpdateLeadData {
-  contact_id?: string;
-  name?: string;
-  email?: string;
-  phone_number?: string;
-  company?: string;
   industry: string;
   company_size: string;
   office_location: string;

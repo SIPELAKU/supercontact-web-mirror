@@ -144,6 +144,45 @@ export interface ConversationListItem {
   organization_name?: string | null;
 }
 
+// One row of GET /contacts/{id}/conversations (API v1.158.0, BE-1.2): every
+// conversation of a contact across channels, including Solved/Closed/Archived.
+// Previews only; the full history is GET /omnichannels/conversations/{id}.
+export interface ContactConversationItem {
+  id: string;
+  channel_type: ChannelType;
+  account_name?: string | null;
+  status: ConversationStatus;
+  subject?: string | null;
+  first_message_preview?: string | null;
+  last_message_preview?: string | null;
+  message_count: number;
+  assigned_user_fullname?: string | null;
+  created_at: string;
+  last_message_at?: string | null;
+  // false for a widget chat attached to this contact by the email the visitor
+  // typed (BE-1.4) - nobody proved the visitor owns that address.
+  identity_verified: boolean;
+}
+
+export type ContactConversationSort = "created_at_desc" | "created_at_asc";
+
+export interface ContactConversationQuery {
+  page: number;
+  limit: number;
+  channel_type?: ChannelType;
+  sort?: ContactConversationSort;
+}
+
+export interface ContactConversationListResponse {
+  items: ContactConversationItem[];
+  total: number;
+  page: number;
+  limit: number;
+  // Response-level, not per row: whether the caller may open the full
+  // history (needs omnichannel access).
+  can_open_conversation: boolean;
+}
+
 // Query params for GET /omnichannels/inbox. Every field is optional; omitted
 // keys are dropped from the querystring rather than sent empty.
 export interface ConversationInboxFilters {

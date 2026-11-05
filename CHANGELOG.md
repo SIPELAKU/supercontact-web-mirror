@@ -9,6 +9,238 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.126.4] - 2026-11-05
+
+### Detail Versi 1.126.4
+
+#### 🔧 Tabel Penerima Broadcast WA: Filter Dikirim sebagai Satu Objek
+
+- **Deskripsi:**
+  - **Masalah:** filter tabel *Recipients Status* (modal statistik broadcast) disambungkan satu per satu sebagai parameter berurutan: `useBroadcastRecipients(id, page, limit, search, status, sortBy, sortOrder)` → `fetchBroadcastRecipients(token, id, page, limit, search, status, sortBy, sortOrder)`, 8 parameter yang urutannya mudah tertukar. Satu filter baru berarti mengubah 3 file di 4 tempat. Rencana ini disepakati 25 Okt dan dikerjakan atas permintaan developer.
+  - **Perbaikan:**
+    - Modal menyimpan `state.filters` tabel apa adanya. Hook dan API menerima satu objek query `{ page, limit, search, sortBy, sortOrder, filters }`.
+    - Setiap filter yang terisi dikirim dengan id-nya sebagai query param (`status=read`). Filter baru cukup satu baris di `filters` tabel, ditambah dukungan API; tidak perlu parameter baru di hook atau API.
+    - Tampilan dan request tidak berubah: tetap `page`, `limit`, `is_limit=true`, `search`, `status`, `sort_by`, `sort_order`.
+  - **Technical Notes:**
+    - `lib/utils/filterParams.ts` (murni, bisa dipakai tabel lain): `activeFilters` (filter kosong dibuang, multiselect digabung koma, urutan kunci tetap supaya cache key stabil) dan `appendFilterParams`
+    - tipe `BroadcastRecipientsQuery` (`lib/types/whatsapp-marketing.ts`); query key hook berisi objek query dengan filter yang terisi saja
+    - id filter harus sama dengan nama query param API. Filter yang nilainya objek (misalnya rentang tanggal) tidak punya bentuk umum dan perlu dipetakan dulu
+    - export CSV/Excel di kartu statistik (`fetchAllBroadcastRecipients`) tidak berubah
+
+- **🧪 Testing:** 7 tes baru `filterParams.test.ts` + 1 tes API (filter generik); tes API dan tes reload lama diubah ke objek query dan tetap lolos; mutasi 10/10 (1 setara, `append` vs `set`); 94 file / 1001 tes lolos; tsc bersih
+
+---
+
+## [1.126.3] - 2026-11-05
+
+### Detail Versi 1.126.3
+
+#### 🐛 Import Recipient & Subscribers: CSV Dibaca Apa Adanya (permintaan developer)
+
+- **Deskripsi:**
+  - **Masalah:** bug baca CSV yang diperbaiki untuk Contact di 1.126.2 juga ada di import **Recipient** (WhatsApp Marketing) dan **Subscribers** (Email Marketing): nomor HP `0812…` kehilangan 0 dan tersimpan sebagai `+812…` (broadcast WA ke nomor yang salah), dan huruf non-ASCII dari CSV UTF-8 rusak (`José` → `JosÃ©`).
+  - **Perbaikan:** kedua modal memakai `importFileReadArgs` yang sama dengan Contact: `.csv` dibaca sebagai teks UTF-8 (kalau sah) dengan semua sel tetap teks; CSV non-UTF-8 dan `.xlsx` seperti sebelumnya. Alur kirim dan tampilan kedua modal tidak berubah.
+  - **Catatan ruang lingkup:** pengecualian dari aturan "Contact saja", atas permintaan developer 5 Nov. Import Companies (Data Intelligence, masih disembunyikan) membaca CSV dengan cara lama dan tidak diubah.
+
+#### 🔧 Langkah Check: Label Kelompok Duplikat yang Digabung Otomatis (FE-6)
+
+- **Deskripsi:**
+  - **Masalah:** kelompok yang barisnya saling melengkapi (misalnya satu baris punya Position, baris lain punya Address) diberi label *Identical, kept once*, padahal barisnya tidak sama.
+  - **Perbaikan:** label menjadi **Same contact, merged automatically**, teks dialog *"No value in these rows contradicts another, so they are merged into one row automatically."*, dan tombolnya selalu **Merge into one row** (sebelumnya *Keep once*). Cara menggabung tidak berubah.
+
+- **🧪 Testing:** tidak ada logika baru (helper sama dengan 1.126.2, sudah dikunci tes); 93 file / 993 tes lolos; tsc bersih. Simulasi merge dengan branch FE-9 (`git merge-tree`): hanya `CHANGELOG.md` yang konflik
+
+---
+
+## [1.126.2] - 2026-11-05
+
+### Detail Versi 1.126.2
+
+#### 🐛 Import Contact: CSV Dibaca Apa Adanya (UTF-8, Nol di Depan Nomor HP)
+
+- **Deskripsi:**
+  - **Masalah:**
+    - **Nomor HP kehilangan 0 di depan.** SheetJS mengubah sel CSV yang berupa angka menjadi number, jadi `081234567890` terbaca `81234567890`, lalu API menyimpannya sebagai `+81234567890` (nomor Jepang). Akibatnya juga, duplikat di dalam file antara `0812…` dan `+62 812…` tidak terdeteksi. Bug ini sudah ada sebelum branch ini.
+    - **Huruf non-ASCII rusak.** CSV tanpa BOM dibaca sebagai Windows-1252, jadi file UTF-8 (Google Sheets, kebanyakan editor) membuat `tökö` menjadi `tÃ¶kÃ¶`. Nama atau alamat seperti `José` ikut tersimpan rusak tanpa error. Pada email, satu alamat rusak membuat **seluruh part** ditolak 422 (`Invalid email format: budi@tÃ¶kÃ¶.com`).
+  - **Perbaikan:**
+    - File `.csv` dibaca sebagai teks UTF-8 kalau isinya UTF-8 yang sah, dan semua sel tetap teks (`raw: true`). CSV yang bukan UTF-8 (Excel lama, "CSV (Comma delimited)") tetap dibaca seperti sebelumnya, juga dengan semua sel sebagai teks. File `.xlsx`/`.xls` tidak berubah.
+    - Aturan email (`isImportEmail`) mengikuti email-validator untuk karakter non-ASCII: di domain hanya huruf dan tanda gabung (bukan di awal), jadi `¶` dan simbol lain ditolak; di bagian lokal karakter kontrol/format (zero-width space dan sejenisnya) dan tanda gabung di awal ditolak. Baris seperti ini sekarang muncul sebagai invalid di langkah Check, bukan menggagalkan import. Angka non-ASCII di domain juga ditolak (API menerima sebagian, menolak sebagian), karena lebih ketat hanya menandai baris invalid.
+  - **Technical Notes:**
+    - `lib/utils/importFileRead.ts` (murni): `decodeUtf8`, `importFileReadArgs(fileName, bytes)` → argumen `XLSX.read`; dipakai `ImportContactModal.parseFile`
+    - Recipient dan Subscribers membaca CSV dengan cara lama dan punya bug yang sama; tidak diubah (aturan ruang lingkup), dicatat di `TUGAS_FE_2026-11-05.md`
+
+- **🧪 Testing:** 5 tes baru `importFileRead.test.ts`; 12 contoh email baru. **49 contoh email dicocokkan langsung ke `EmailStr` API** (pydantic 2.12.5 + email-validator 2.3.0 di `.venv` BE): 0 beda. Mutasi: aturan email 7/7, pembacaan file 5/5; 93 file / 993 tes lolos; tsc bersih
+
+---
+
+## [1.126.1] - 2026-11-05
+
+### Detail Versi 1.126.1
+
+#### 🔧 Widget Progres: Import yang Selesai Tidak Lagi Menampilkan Bar (FE-1)
+
+- **Deskripsi:**
+  - **Masalah:** kartu import yang sudah selesai tetap menampilkan bar progres dan `12 / 12`, sehingga tidak jelas apakah import masih berjalan, apalagi saat informasi dari API datang terlambat (job menunggu worker).
+  - **Perbaikan:** begitu semua bagian file selesai, bar diganti keterangan:
+    - semua Completed: ikon centang hijau, **Import completed** · N rows;
+    - berakhir lain: ikon silang abu-abu, **Import failed** / **Import stopped** / **Import rolled back**, atau **Import ended: Failed, Stopped** kalau bagiannya berakhir berbeda.
+    - Baris di bawahnya tetap hitungan *Created · Updated · Skipped · Failed*. Selama berjalan atau menunggu jawaban duplikat, kartu tetap seperti sebelumnya.
+  - **Technical Notes:** `importDockCard` mendapat `headline` (null selama berjalan); status berakhir pindah dari `summary` ke `headline`
+
+- **🧪 Testing:** tes `importJobState.test.ts` diperbarui (+1 tes); 5/5 mutasi tertangkap; tsc bersih
+
+---
+
+## [1.126.0] - 2026-11-05
+
+### Detail Versi 1.126.0
+
+#### ✨ Import Contact: Menjawab Baris yang Bentrok (FE-3, FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** sejak API v1.164.0, import Contact berhenti (`Waiting for Review`) di baris yang cocok dengan kontak lama tapi datanya berbeda. Web hanya bisa Stop atau Rollback (1.125.1), belum bisa menjawab barisnya.
+  - **Perbaikan:**
+    - Dialog **Duplicate contact found — row N**:
+      - baris dari file (nama · email · nomor, nama file, "row N of total");
+      - kontak lama (`ExistingContactSummary`);
+      - tabel pilihan per field yang bentrok (`ConflictChoiceTable`, Existing / New, tanpa pilihan awal);
+      - daftar *Also filled in* untuk field kosong yang ikut terisi.
+    - Tombol:
+      - **Skip**: kontak tidak berubah.
+      - **Replace all**: semua nilai dari file.
+      - **Update selected**: per field. Aktif setelah semua field dipilih.
+      - Setelah dijawab, import lanjut ke baris berikutnya.
+    - Dibuka dari:
+      - **kartu merah widget progres**: part pertama yang menunggu;
+      - tombol **Review** di Import History Contacts, di samping Stop dan Rollback.
+    - Jawaban yang sudah didahului tab atau user lain (409): toast *"This row was already answered"* dan job dimuat ulang. Kontak yang berubah selama job menunggu (422 `missing`): pesan merah yang menyebut field-nya, tinggal Replace all atau Skip.
+    - Menutup dialog tidak menjawab apa pun; job tetap menunggu.
+    - Nomor baris dihitung dari baris yang **dikirim** ke job itu (setelah langkah Check dan pemotongan per 2.000), jadi isi baris ikut ditampilkan supaya mudah dicari di file.
+  - **Technical Notes:**
+    - `lib/utils/importDuplicate.ts` (murni): `readPendingDuplicate`, `importDuplicateAnswer`, `canSubmitImportDuplicate`, `fillableValues`, `readImportDuplicateError`
+    - tipe `ImportPendingDuplicate` (`lib/utils/contactDuplicate.ts`); `BulkJob.pending_duplicate`
+    - API `answerImportDuplicate` (`POST /{module}/bulk/{job_id}/duplicate-resolution`) + hook `useAnswerImportDuplicate`: job baru langsung masuk cache widget, daftar Import History ditandai stale
+    - `importJobActions` mendapat `review` (`ImportHistoryAction`); kartu widget mendapat `openLabel`. Dialog widget tertutup sendiri kalau baris dijawab di tempat lain, supaya tidak muncul lagi saat job berhenti di baris berikutnya
+
+- **🧪 Testing:** 11 tes baru (`importDuplicate.test.ts`, bentuk data dari API v1.164.0) + tes tombol Review; 15/15 mutasi tertangkap; 92 file / 987 tes lolos; tsc bersih
+
+---
+
+## [1.125.2] - 2026-11-05
+
+### Detail Versi 1.125.2
+
+#### 🐛 Import Contact: Kiriman 2.000 Baris dan Aturan Email Mengikuti API (FE-5, FE-6)
+
+- **Deskripsi:**
+  - **Ukuran kiriman (FE-5 + FE-9):**
+    - **Masalah:** `kontak_10000.csv` dibalas **413** oleh nginx DEV (batas body 1 MiB, 10.000 kontak ±1,08 MB), dan BE mencatat kiriman 10.000 baris dibalas **502** karena memori API.
+    - **Perbaikan:** Contact kini mengikuti `IMPORT_CHUNK_SIZE` = **2.000 baris** per job (keputusan user, menggantikan 1.000 baris yang sempat dipasang khusus Contact). File 10.000 baris = 5 job, 25.000 baris = 13 job `(Part i/13)`. Baris `IMPORT_CHUNK_SIZE` sama persis dengan branch FE-9 (`fix/import-chunk-2000`), jadi tidak konflik saat digabung.
+  - **Aturan email (FE-6, hasil BE-7):**
+    - **Masalah:** satu email yang ditolak API membuat **seluruh kiriman** ditolak 422. Pola lama meloloskan `a@toko.local`, `a@toko.test`, `a..b@mail.com`, `.a@mail.com`, dan `a.@mail.com`, yang ditolak `EmailStr` API.
+    - **Perbaikan:** `isImportEmail` menyalin aturan email-validator 2.3.0 (di balik `EmailStr`, tanpa cek DNS): maksimal 254 karakter; bagian lokal tanpa titik di awal/akhir/berurutan dan hanya karakter yang diizinkan; domain wajib bertitik, label tanpa tanda hubung di awal/akhir dan maksimal 63 karakter, TLD diakhiri huruf; domain khusus `arpa`, `invalid`, `local`, `localhost`, `onion`, `test` ditolak. Domain unicode tetap diterima. Celah 2 dan 3 BE-7 (nomor HP tanpa angka, kunci nomor HP) ternyata sudah benar di 1.124.0.
+  - **Technical Notes:**
+    - `lib/utils/contactImportRules.ts`: `isImportEmail` menggantikan `EMAIL_PATTERN`
+    - `CONTACT_IMPORT_PART_ROWS` dihapus; `uploadImportParts` memakai `chunkSize` default
+
+- **🧪 Testing:** 3 tes email baru (37 contoh, termasuk semua contoh BE-7); tes `uploadImportParts` disesuaikan ke 2.000 baris; 16/16 mutasi email tertangkap; 91 file / 976 tes lolos; tsc bersih
+
+---
+
+## [1.125.1] - 2026-11-05
+
+### Detail Versi 1.125.1
+
+#### 🔧 Import History & Widget Mengikuti API v1.164.0 (sebagian FE-4)
+
+- **Deskripsi:**
+  - **Masalah:** API DEV v1.164.1 sudah menghentikan import Contact di baris yang bentrok dengan kontak lama (`Waiting for Review`) dan mengisi field kosong kontak lama secara otomatis (`updated_rows`). Di web, job yang menunggu tampil dengan chip abu-abu **tanpa tombol apa pun**, jadi tidak bisa di-Stop atau di-Rollback (Q-8). Kontak yang diubah import juga tidak terhitung di mana pun.
+  - **Perbaikan:**
+    - Import History: status `Waiting for Review` tampil sebagai chip **merah** dengan tooltip, dan mendapat tombol **Stop** dan **Rollback**. Continue setelah Stop menanyakan baris yang sama lagi (perilaku API).
+    - Import History **Contacts**: hitungan **Updated: N** di samping Created/Skipped/Failed (Q-2, termasuk pengisian otomatis). Recipient dan Subscribers tidak berubah.
+    - Widget progres: *Updated N* ikut di ringkasan kartu, hanya kalau ada.
+    - Tombol **Review** (menjawab baris) belum ada, karena ikut FE-3.
+  - **Technical Notes:**
+    - `importJobActions(status)` (murni, `components/import-history/importJobState.ts`) menentukan tombol per status; `ImportHistoryModal` merender dari daftar itu dan `ACTION_BUTTONS`. Tombol untuk status lain sama persis dengan sebelumnya (dikunci tes)
+    - tipe `BulkJob` mendapat `updated_rows?`; `importDockCard` mendapat `updated`
+
+- **🧪 Testing:** 3 tes baru (`importJobState.test.ts`), termasuk tombol semua status lama; 8/8 mutasi tertangkap; 91 file / 973 tes lolos; tsc bersih
+
+---
+
+## [1.125.0] - 2026-11-05
+
+### Detail Versi 1.125.0
+
+#### ✨ Widget Progres Import di Pojok Kanan Bawah (FE-1)
+
+- **Deskripsi:**
+  - **Masalah:** progres import Contact hanya terlihat di modal Import History. Setelah modal ditutup atau pindah halaman, user tidak tahu import sudah sampai mana.
+  - **Perbaikan:**
+    - Setelah Import Contact dimulai, file itu tampil sebagai **kartu di pojok kanan bawah, di semua halaman yang butuh login**: nama file, bar progres, `processed / total`, dan *Created · Skipped* (plus *Failed* kalau ada).
+    - Satu file = **satu kartu**, juga kalau file dipecah jadi beberapa bagian (FE-5): progres dan hitungannya dijumlahkan, dengan keterangan *"3 parts"*.
+    - Warna bar: **hijau** selama berjalan dan saat semua bagian Completed, **abu-abu** kalau berakhir dengan cara lain (Failed, Stopped, Rolled Back, statusnya disebut). Status `Waiting for Review` (BE-1, API v1.164.0) sudah disiapkan: bar **merah** dan **titik merah** berisi jumlah bagian yang menunggu.
+    - Klik kartu membuka **Import History** modul itu. **×** hanya berhenti memantau; import tetap berjalan di server.
+    - Kartu **disembunyikan selama Import History modul yang sama terbuka**, karena modal sudah menampilkan hal yang sama.
+    - Kartu tetap ada setelah **reload** atau pindah halaman (localStorage `smartsales_import_watch`, maksimal 5 file).
+    - Kalau job yang dipantau selesai (Completed / Rolled Back) saat halaman Contacts terbuka, **daftar kontak dimuat ulang**.
+  - **Polling:** hanya selama ada job yang dipantau dan **masih bergerak** (Uploading, Queued, Processing, Waiting for Review, rollback). Interval mengikuti pilihan Auto-refresh di Import History Contacts (`import_interval_contact`); kalau Off, 5 detik. Tidak polling saat tab browser tidak aktif dan saat Import History modul itu terbuka (modal sudah polling). Setelah semua job selesai atau ditutup, **tidak ada request lagi**. Job yang sudah tidak ada di API (404/403) otomatis berhenti dipantau.
+  - **Technical Notes:**
+    - `lib/store/importWatch.ts` (zustand + persist): daftar `{ id, module, fileName, jobIds }`, `historyOpen[module]`, `dataVersion[module]`
+    - `lib/hooks/useWatchedImportJobs.ts`: `useQueries` per job + `usePolling`; job selesai dideteksi dengan `freshlyFinishedJobs` yang sudah ada
+    - `components/import-history/importJobState.ts` (murni): `ACTIVE_IMPORT_STATUSES`, `isActiveImportJob`, `importDockCard`, `dockIntervalMs`
+    - `ImportProgressDock` (dipasang sekali di `AuthenticatedLayout`) + `ImportProgressCard`. Dock tidak tahu soal Contact: modul diambil dari `IMPORT_HISTORY_CONFIG` (`components/import-history/importModules.ts`, sekarang hanya `contacts`)
+    - API: `fetchImportJob` (`GET /{module}/bulk/{job_id}`); error dari `readResponse` kini membawa `status`
+    - `ImportHistoryModal` hanya melapor `historyOpen` saat terbuka. Tampilan dan perilakunya di Recipient/Subscribers tidak berubah
+    - tipe `BulkJob.status` mendapat `"Waiting for Review"`
+
+- **🧪 Testing:** 11 tes baru (`importJobState.test.ts` 7, `importWatch.test.ts` 4); 12/12 mutasi tertangkap
+
+---
+
+## [1.124.0] - 2026-11-05
+
+### Detail Versi 1.124.0
+
+#### ✨ Import Contact: Langkah Check Sebelum Import (FE-6, permintaan BO)
+
+- **Deskripsi:**
+  - **Masalah:** isi file langsung dikirim. Baris yang sama di dalam file (email atau nomor HP sama) dan baris yang ditolak API baru ketahuan setelah import, dan baris tanpa nama hilang tanpa alasan yang jelas.
+  - **Perbaikan:** langkah baru **Check** di antara Map Columns dan Preview, sepenuhnya di browser (tanpa request):
+    - **Duplikat di dalam file**: baris dengan email sama (huruf besar/kecil diabaikan) **atau** nomor HP sama (format diabaikan, `0812…` = `+62812…`) dikelompokkan, juga berantai (A–B email sama, B–C nomor sama → satu kelompok). Kelompok yang isinya sama persis selesai otomatis (*Identical, kept once*). Kelompok yang berbeda dibuka lewat **Resolve**: dialog *Duplicate rows in file* dengan satu kolom per baris, pilih nilai per field yang berbeda, lalu **Merge into one row**, atau **Remove all rows**. Pilihan tidak terisi dari awal, dan masih bisa diubah lewat **Change** sampai Import.
+    - **Baris tidak valid** (aturan disalin dari API v1.163.3): nama wajib dan 3–255 karakter, format email, karakter dan panjang nomor HP, Company 3–255, Position maks. 255, Address min. 6. Daftarnya tampil dengan alasan per baris (*Show*), dan baris itu tidak dikirim.
+    - **Baris tanpa email dan tanpa nomor HP** dilewati **tanpa peringatan**, tapi dicatat: info abu-abu di Check dan toast setelah import (keputusan user 5 Nov). Baris dengan email saja atau nomor saja tetap dikirim.
+    - Tombol **Preview** baru aktif setelah semua kelompok yang butuh pilihan selesai. Preview menampilkan **persis** baris yang akan dikirim.
+    - Di Map Columns, kolom **Email atau Phone Number** kini wajib dipetakan (tanpa keduanya semua baris akan dilewati).
+  - **Technical Notes:**
+    - `lib/utils/contactImportRules.ts` (murni): `CONTACT_IMPORT_RULES` (satu daftar untuk validasi dan petunjuk template), `normalizeImportPhone` (salinan `normalize_phone_number_unchecked`), `validateContactImportRow`, `hasContactInfo`, `contactIdentity`, `contactCompareValue`, `suggestContactField` (dipindah dari modal tanpa perubahan), `CONTACT_FILE_RULES`
+    - `lib/utils/importFileDuplicates.ts` (murni, tidak tahu soal Contact): `checkImportFile`, `findDuplicateGroups` (union-find), `differingFields`, `mergeGroup`, `isGroupResolved`, `groupStatus`, `fileCheckSummary`, `applyFileResolutions`
+    - komponen: `ImportCheckStep`, `FileDuplicateDialog`. `AppDialog` mendapat prop opsional `zIndex` supaya dialog tampil di atas modal import (`z-9999`); dialog lain tidak berubah
+    - beberapa kolom yang dipetakan ke Name kini digabung tanpa spasi berlebih kalau salah satunya kosong
+
+#### ✨ Import Contact: Template Dibuat Otomatis (FE-7, permintaan BO)
+
+- **Deskripsi:**
+  - **Masalah:** Download Template mengunduh file statis dengan kolom *Phone* dan satu contoh, tanpa penjelasan format.
+  - **Perbaikan:** template `contacts_import_template.xlsx` dibuat saat diklik, dengan sheet **Contacts** (kolom Name, Email, Phone Number, Company, Position, Address, langsung terpetakan otomatis, plus 3 contoh yang lolos Check) dan sheet **Guide** (wajib atau tidak, format, dan contoh per kolom, plus aturan per baris: email atau nomor minimal satu, kontak sama kalau email atau nomor sama).
+  - **Technical Notes:** `lib/utils/importTemplate.ts` (`importTemplateSheets` murni + `downloadImportTemplate`, memakai `columnWidths` dari `exportRows`), dibangun dari `CONTACT_IMPORT_RULES`, sehingga petunjuk dan validasi tidak bisa berbeda. `public/documents/template_contacts.xlsx` dihapus (tidak dipakai di tempat lain). Template Recipient dan Subscriber tidak berubah
+
+#### 🔧 Import Contact Dikirim Seperti Subscriber (FE-5, arahan BE untuk BUG-7)
+
+- **Deskripsi:**
+  - **Perubahan:** setiap potongan 10.000 baris kini **job sendiri** (`POST /contacts/bulk`, `finished: true`), bernama `<file> (Part i/n)` di Import History, seperti Subscribers. Contact tidak lagi memakai `/contacts/bulk/{job_id}/rows`. Ini mengubah keputusan "satu file = satu job" (1.122.0) **untuk Contact saja**: rollback per bagian.
+  - Kalau satu bagian gagal, pesan menyebut bagian yang sudah masuk, misalnya *"Part 2 of 3 failed: … Part 1 was imported and is in Import History. Import the remaining rows again."*, dan bagian yang sudah masuk tetap dipantau.
+  - **Technical Notes:** ditambah `uploadImportParts`, `partFileName`, `ImportPartsError` (`lib/utils/importJobUpload.ts`) dan `startImportJob` (`lib/api/import-jobs.ts`). `uploadImportJob` / `sendImportPart` (cara `/rows`) **tidak diubah** dan tetap dipakai Import Recipient
+
+#### ♻️ Komponen Duplikat Bisa Dipakai Ulang (FE-2)
+
+- **Deskripsi:** dialog *Contact already exists* (Add Contact, Omnichannel) disusun ulang dari `ConflictChoiceTable` (kolom sebanyak sumber), `ExistingContactSummary`, dan hook `useDuplicateChoices`, yang juga dipakai dialog duplikat di file (FE-6) dan nanti dialog duplikat saat import (FE-3). **Tidak ada perubahan perilaku**: body `keep` ke API tetap sama.
+  - **Technical Notes:** `components/contact/duplicates/`, `lib/hooks/useDuplicateChoices.ts`; `missingChoices` dan `DUPLICATE_SOURCES` di `lib/utils/contactDuplicate.ts`
+
+- **🧪 Testing:** 36 tes baru (`importJobParts.test.ts` 7, `contactImportRules.test.ts` 11, `importFileDuplicates.test.ts` 14, `importTemplate.test.ts` 4), termasuk isi file tes manual `kontak_validasi_17.csv`; semua mutasi tertangkap (FE-5 6/6, aturan 16/16, duplikat 16/16), tes union-find mencakup baris yang menyambung dua kelompok dan baris berulang dengan email + nomor sama; tes `uploadImportJob` lama lolos tanpa diubah; seluruh suite 91 file / 970 tes lolos; `tsc` bersih
+
+---
+
 ## [1.123.1] - 2026-11-05
 
 ### Detail Versi 1.123.1

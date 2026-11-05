@@ -33,6 +33,21 @@ export interface DuplicateContactDetails {
   conflicts: DuplicateConflict[];
 }
 
+/**
+ * The row a Contact import job waits on (`pending_duplicate`, API 1.164.0,
+ * BE-3): the same details as the 409 above, plus the row itself. Only rows
+ * with a conflict pause; blanks alone are filled in without asking (Q-1).
+ */
+export interface ImportPendingDuplicate extends DuplicateContactDetails {
+  // 1-based among the rows this job was SENT (after the file check and the
+  // split into parts), not the row number in the user's file.
+  row_number: number;
+  // The row as the API read it, e.g. { name, email, phone_number, company }.
+  incoming: Record<string, unknown>;
+  // Blank on the existing contact, filled in by Replace and Update.
+  fillable_fields: string[];
+}
+
 export type DuplicateChoice = "existing" | "incoming";
 
 // The API also takes `{ create_new: true }`; the web never sends it (no
@@ -68,13 +83,27 @@ export function readCreateContactResponse(status: number, json: any): CreateCont
   };
 }
 
+/** Fields with no choice yet, in their order; any number of sources. */
+export function missingChoices(fields: string[], chosen: Record<string, string>): string[] {
+  return fields.filter((field) => !chosen[field]);
+}
+
 /** Conflicting fields the user has not chosen for yet (Merge stays disabled). */
 export function missingDuplicateChoices(
   conflicts: DuplicateConflict[],
   keep: Record<string, DuplicateChoice>,
 ): string[] {
-  return conflicts.map((c) => c.field).filter((field) => !keep[field]);
+  return missingChoices(
+    conflicts.map((c) => c.field),
+    keep,
+  );
 }
+
+/** The two columns of a database duplicate, keyed as the API's `keep` values. */
+export const DUPLICATE_SOURCES: { key: DuplicateChoice; label: string }[] = [
+  { key: "existing", label: "Existing" },
+  { key: "incoming", label: "New" },
+];
 
 export function duplicateReasonText(reason: DuplicateReason): string {
   switch (reason) {

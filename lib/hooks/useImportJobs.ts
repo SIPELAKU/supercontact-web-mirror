@@ -5,13 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/context/AuthContext";
 import {
   actionImportJob,
+  answerImportDuplicate,
   fetchImportJobs,
   type ImportJobAction,
   type ImportJobsQuery,
   type ImportModule,
 } from "@/lib/api/import-jobs";
-import type { BulkJobsResponse } from "@/lib/types/email-marketing";
+import type { BulkJob, BulkJobsResponse } from "@/lib/types/email-marketing";
+import type { ImportDuplicateAnswer } from "@/lib/utils/importDuplicate";
 import { markListsStale } from "./useListRefresh";
+import { importJobKey } from "./useWatchedImportJobs";
 
 export const importJobsKey = (module: ImportModule, query: ImportJobsQuery) =>
   ["importJobs", module, query.page, query.limit, query.search, query.target, query.mailingListIds] as const;
@@ -46,5 +49,25 @@ export function useImportJobAction(module: ImportModule) {
     },
     // The Import History modal reloads its own list (useListRefresh).
     onSuccess: () => markListsStale(queryClient, ["importJobs", module]),
+  });
+}
+
+/**
+ * Answers the row a Contact job waits on (FE-3). The import dock gets the
+ * job's new state at once; Import History lists are marked stale.
+ */
+export function useAnswerImportDuplicate(module: ImportModule) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ jobId, answer }: { jobId: string; answer: ImportDuplicateAnswer }) => {
+      const token = await getToken();
+      if (!token) throw new Error("No authentication token");
+      return answerImportDuplicate(token, module, jobId, answer);
+    },
+    onSuccess: (job: BulkJob) => {
+      if (job?.id) queryClient.setQueryData(importJobKey(module, job.id), job);
+      markListsStale(queryClient, ["importJobs", module]);
+    },
   });
 }

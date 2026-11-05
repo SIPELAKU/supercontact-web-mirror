@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { useMemo } from "react";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { AppButton } from "@/components/ui/app-button";
-import { contactSourceLabel } from "@/lib/constants/contact-source";
+import { ConflictChoiceTable } from "@/components/contact/duplicates/ConflictChoiceTable";
+import { ExistingContactSummary } from "@/components/contact/duplicates/ExistingContactSummary";
+import { useDuplicateChoices } from "@/lib/hooks/useDuplicateChoices";
 import {
-  duplicateFieldLabel,
+  DUPLICATE_SOURCES,
   duplicateReasonText,
   duplicateValueText,
-  missingDuplicateChoices,
   type DuplicateChoice,
   type DuplicateContactDetails,
   type DuplicateResolution,
@@ -33,15 +33,18 @@ export const DuplicateContactDialog = ({
   onCancel,
   onResolve,
 }: DuplicateContactDialogProps) => {
+  const conflicts = useMemo(() => duplicate?.conflicts ?? [], [duplicate]);
+  const fields = useMemo(() => conflicts.map((c) => c.field), [conflicts]);
   // No choice is preselected (user decision): Merge stays disabled until every
   // conflicting field has one, so nothing is overwritten unseen.
-  const [keep, setKeep] = useState<Record<string, DuplicateChoice>>({});
-  useEffect(() => setKeep({}), [duplicate]);
+  const { chosen: keep, choose, missing } = useDuplicateChoices<DuplicateChoice>(fields, duplicate);
 
   if (!duplicate) return null;
-  const { existing_contact: existing, conflicts, reason } = duplicate;
-  const missing = missingDuplicateChoices(conflicts, keep);
-  const existingSummary = [existing.email, existing.phone_number].filter(Boolean).join(" · ");
+  const { existing_contact: existing, reason } = duplicate;
+  const valueOf = (field: string, side: string) => {
+    const conflict = conflicts.find((c) => c.field === field);
+    return conflict ? duplicateValueText(conflict, side as DuplicateChoice) : "-";
+  };
 
   return (
     <AppDialog
@@ -66,15 +69,7 @@ export const DuplicateContactDialog = ({
       }
     >
       <div className="flex flex-col gap-4 text-sm">
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Existing contact</p>
-          <p className="mt-1 font-semibold text-gray-900">{existing.name || "-"}</p>
-          {existingSummary && <p className="text-gray-700">{existingSummary}</p>}
-          <p className="mt-1 text-xs text-gray-500">
-            {contactSourceLabel(existing.source)}
-            {existing.created_at ? ` · created ${format(new Date(existing.created_at), "dd MMM yyyy")}` : ""}
-          </p>
-        </div>
+        <ExistingContactSummary contact={existing} />
 
         {conflicts.length > 0 ? (
           <div>
@@ -82,41 +77,14 @@ export const DuplicateContactDialog = ({
               Choose which value to keep for each field. Empty fields of the existing contact are filled in
               automatically.
             </p>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="w-full text-left">
-                <thead className="bg-[#EEF2FD] text-xs text-gray-600">
-                  <tr>
-                    <th className="px-3 py-2 font-semibold">Field</th>
-                    <th className="px-3 py-2 font-semibold">Existing</th>
-                    <th className="px-3 py-2 font-semibold">New</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {conflicts.map((conflict) => (
-                    <tr key={conflict.field} className="border-t border-gray-100 align-top">
-                      <td className="px-3 py-2 font-medium text-gray-900">
-                        {duplicateFieldLabel(conflict.field)}
-                      </td>
-                      {(["existing", "incoming"] as const).map((side) => (
-                        <td key={side} className="px-3 py-2">
-                          <label className="flex cursor-pointer items-start gap-2">
-                            <input
-                              type="radio"
-                              name={`keep-${conflict.field}`}
-                              className="mt-0.5 accent-[#5479EE]"
-                              checked={keep[conflict.field] === side}
-                              disabled={isResolving}
-                              onChange={() => setKeep((prev) => ({ ...prev, [conflict.field]: side }))}
-                            />
-                            <span className="break-all text-gray-900">{duplicateValueText(conflict, side)}</span>
-                          </label>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ConflictChoiceTable
+              fields={fields}
+              sources={DUPLICATE_SOURCES}
+              valueOf={valueOf}
+              chosen={keep}
+              onChoose={(field, side) => choose(field, side as DuplicateChoice)}
+              disabled={isResolving}
+            />
             {missing.length > 0 && (
               <p className="mt-2 text-xs text-gray-500">
                 Choose a value for every field to merge ({missing.length} left).

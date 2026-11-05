@@ -5,10 +5,12 @@
 // List, detail actions (stop / continue / rollback / replay) and, for Contacts
 // and Recipients (API v1.162.0, IMP-2/3), the upload: the first POST creates
 // the job with the first part, every next part goes to `/{job_id}/rows`, and
-// `finished: true` on the last one queues it.
+// `finished: true` on the last one queues it. Contacts (FE-5) instead send
+// every part as a job of its own with `startImportJob`.
 
 import { fetchWithTimeout } from "./api-client";
-import type { BulkJobsResponse } from "@/lib/types/email-marketing";
+import type { BulkJob, BulkJobsResponse } from "@/lib/types/email-marketing";
+import type { ImportDuplicateAnswer } from "@/lib/utils/importDuplicate";
 
 export type ImportModule = "subscribers" | "contacts" | "recipients";
 export type ImportJobAction = "stop" | "continue" | "rollback" | "replay";
@@ -28,6 +30,7 @@ async function readResponse(res: Response, fallback: string) {
   if (res.status === 401) throw new Error("UNAUTHORIZED");
   if (!res.ok || !json || json.success === false) {
     const error: any = new Error(json?.error?.message || `${fallback} (${res.status})`);
+    error.status = res.status;
     if (json?.error?.details) error.details = json.error.details;
     throw error;
   }
@@ -48,6 +51,15 @@ export async function fetchImportJobs(
     headers: { Authorization: `Bearer ${token}` },
   });
   return readResponse(res, "Failed to load import history");
+}
+
+/** One job with its progress (`GET /{module}/bulk/{job_id}`), for the import dock (FE-1). */
+export async function fetchImportJob(token: string, module: ImportModule, jobId: string): Promise<BulkJob> {
+  const res = await fetchWithTimeout(`${jobsUrl(module)}/${jobId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await readResponse(res, "Failed to load the import job");
+  return json.data;
 }
 
 export async function actionImportJob(
@@ -82,5 +94,37 @@ export async function sendImportPart(
     timeout: 120_000,
   });
   const json = await readResponse(res, "Failed to upload the file");
+  return json.data;
+}
+
+/**
+ * Creates one complete job (`POST /{module}/bulk`), the way Subscribers are
+ * imported: the body holds its rows and `finished: true` (FE-5, Contacts).
+ */
+export function startImportJob(
+  token: string,
+  module: Exclude<ImportModule, "subscribers">,
+  body: Record<string, unknown>,
+): Promise<{ job_id: string; status: string; total_rows: number }> {
+  return sendImportPart(token, module, "", body);
+}
+
+/**
+ * Answers the row a Contact job waits on (FE-3, API 1.164.0, BE-4); the job
+ * then goes on. 409 = not waiting on that row any more, 422 with
+ * `details.missing` = a conflict has no choice. Answers the job.
+ */
+export async function answerImportDuplicate(
+  token: string,
+  module: ImportModule,
+  jobId: string,
+  answer: ImportDuplicateAnswer,
+): Promise<BulkJob> {
+  const res = await fetchWithTimeout(`${jobsUrl(module)}/${jobId}/duplicate-resolution`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(answer),
+  });
+  const json = await readResponse(res, "Failed to answer the duplicate");
   return json.data;
 }

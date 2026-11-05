@@ -78,7 +78,7 @@ export async function sendImportPart(
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
-    // A 10,000-row part can take a while to store.
+    // A part of IMPORT_CHUNK_SIZE rows can take a while to store.
     timeout: 120_000,
   });
   const json = await readResponse(res, "Failed to upload the file");

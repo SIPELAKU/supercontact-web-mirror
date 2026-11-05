@@ -7,7 +7,10 @@
 // one the upload never finished is deleted by the API's recovery cron after
 // 30 minutes without progress (it runs every 15).
 
-export const IMPORT_CHUNK_SIZE = 10_000;
+// Rows per request, for Contacts, Recipients and Subscribers (FE-9). 10,000
+// rows was answered 502 on DEV, likely the API running out of memory
+// (TUGAS_BE_2026-11-05 BUG-7); 2,000 until the API has more room.
+export const IMPORT_CHUNK_SIZE = 2_000;
 
 export function chunkRows<T>(rows: T[], size: number = IMPORT_CHUNK_SIZE): T[][] {
   const chunks: T[][] = [];

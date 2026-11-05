@@ -272,7 +272,7 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
       const token = await getToken();
       if (!token) throw new Error("No authentication token");
 
-      // One file = ONE background job, sent in parts of 10,000 rows
+      // One file = ONE background job, sent in parts of IMPORT_CHUNK_SIZE rows
       // (API v1.162.0). Rows are created by the job, not by this request.
       await uploadImportJob({
         rows: validRecipients,

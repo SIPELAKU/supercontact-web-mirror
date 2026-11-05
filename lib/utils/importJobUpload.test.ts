@@ -18,6 +18,11 @@ describe("chunkRows", () => {
     expect(chunkRows(rows(5), 2).map((c) => c.length)).toEqual([2, 2, 1]);
     expect(chunkRows([], 2)).toEqual([]);
   });
+
+  it("by default sends 2,000 rows per part, for every module (FE-9)", () => {
+    expect(chunkRows(rows(4_500)).map((c) => c.length)).toEqual([2_000, 2_000, 500]);
+    expect(chunkRows(rows(2_000)).map((c) => c.length)).toEqual([2_000]);
+  });
 });
 
 describe("uploadImportJob", () => {

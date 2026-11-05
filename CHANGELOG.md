@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.123.1] - 2026-11-05
+
+### Detail Versi 1.123.1
+
+#### 🐛 Import Dikirim per 2.000 Baris (FE-9)
+
+- **Deskripsi:**
+  - **Masalah:** kiriman 10.000 baris dibalas **502** di DEV (file 33.333 baris, 5 Nov), sehingga file besar gagal di kiriman pertama. Kiriman 5.000 baris lolos. Dugaan BE: memori API hampir penuh (`TUGAS_BE_2026-11-05.md` bagian 1). Selain itu, nginx DEV menolak body di atas 1 MiB (413), dan 10.000 kontak ±1,08 MB.
+  - **Perbaikan:** semua import mengirim **2.000 baris per kiriman** (keputusan user 5 Nov, sementara sampai memori API dinaikkan):
+    - **Contact** dan **Recipient**: tetap satu job per file, dikirim per 2.000 baris (`/rows`).
+    - **Subscribers**: satu job per 2.000 baris, `"<file> (Part i/n)"` di Import History. Pesan biru di Preview muncul untuk file di atas 2.000 baris dan menyebut *2,000 rows*.
+  - **Technical Notes:**
+    - `IMPORT_CHUNK_SIZE` (`lib/utils/importJobUpload.ts`) dari `10_000` ke `2_000`, satu angka untuk ketiga modul
+    - `ImportSubscriberModal` memakai `chunkRows()` + `IMPORT_CHUNK_SIZE`, bukan `CHUNK_SIZE = 10000` sendiri
+    - komentar yang menyebut 10,000 diperbarui (`ImportWaRecipientModal`, `lib/api/import-jobs.ts`). Komentar di `ImportContactModal` ikut diganti di branch FE-5 (`feat/contact-import-check`), supaya kedua branch tidak konflik
+
+- **🧪 Testing:** 1 tes baru (`chunkRows` default: 4.500 → 2.000 + 2.000 + 500); tes `uploadImportJob` lama tetap lolos tanpa diubah; 85 file / 924 tes lolos; tsc bersih
+
+---
+
 ## [1.123.0] - 2026-11-04
 
 ### Detail Versi 1.123.0

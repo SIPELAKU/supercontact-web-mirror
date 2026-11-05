@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.127.0] - 2026-11-05
+
+### Detail Versi 1.127.0
+
+#### ✨ Chat Langsung di Pesan Terbaru, Pesan Lama Dimuat saat Scroll (FE-8)
+
+- **Deskripsi:**
+  - **Masalah:**
+    - Setiap kali daftar pesan berubah, layar digeser **pelan-pelan** ke bawah (`scrollIntoView({ behavior: "smooth" })`). Gambar yang selesai dimuat setelahnya menambah tinggi chat, jadi layar berhenti di tengah, bukan di pesan terbaru.
+    - Pesan baru selalu menarik layar ke bawah, walaupun staff sedang membaca pesan lama.
+    - Hanya 50 pesan terbaru (halaman 1) yang bisa dilihat.
+  - **Perbaikan (`MessageList`, berlaku di semua tempat yang memakainya):**
+    - Chat dibuka **langsung di pesan terbaru, tanpa animasi**, dan tetap di bawah saat gambar selesai dimuat.
+    - Pesan baru: kalau staff sedang di bawah (jarak < 120px), layar ikut turun dengan halus. Kalau sedang membaca pesan lama, layar **tidak** ditarik; muncul tombol **New messages ↓**.
+    - Staff mengirim balasan dari Workspace: selalu turun ke pesan terbaru (sinyal dari composer, bukan tebakan; balasan bot AI tidak dihitung). Tempat lain tanpa sinyal ini menganggap setiap pesan keluar sebagai balasan staff.
+  - **Perbaikan (Workspace):**
+    - Scroll sampai atas memuat 50 pesan sebelumnya (spinner kecil di atas). **Posisi layar tidak meloncat**: pesan yang sedang dibaca tetap di tempatnya.
+    - Semua pesan termuat: tulisan **Beginning of conversation**, tidak ada request lagi. Gagal memuat: *Couldn't load older messages. Try again*.
+    - Pesan lama yang sudah dimuat tidak hilang saat WebSocket memuat ulang halaman 1, termasuk pesan yang bergeser keluar dari halaman 1 karena ada pesan baru. Pesan dobel (halaman yang bergeser) dibuang berdasarkan `id`.
+    - Pindah chat: pesan lama chat sebelumnya dibuang, chat baru dibuka di pesan terbaru.
+  - **Technical Notes:**
+    - `lib/utils/conversationMessages.ts` (murni): `mergeConversationMessages`, `hasOlderMessages`, `isNearBottom`, `messageListSnapshot`, `messageScrollAction` (jump / keep / follow / notify / none), `CONVERSATION_PAGE_SIZE = 50`
+    - `fetchConversation(token, id, { page, limit })`: parameter opsional; `useConversation` kini mengirim `limit=50` secara eksplisit supaya ukuran halamannya sama dengan halaman lama. Tipe `ConversationWithMessages.total_messages`
+    - `lib/hooks/useOlderMessages.ts`: `useOlderMessages` (halaman 2, 3, …; reset per percakapan; jawaban untuk percakapan sebelumnya diabaikan) dan `useConversationMessages` (gabungan + pesan yang sudah tampil)
+    - `MessageList`: props opsional `onLoadOlder`, `hasOlder`, `isLoadingOlder`, `loadOlderFailed`, `replySentKey`; `useLayoutEffect` + `ResizeObserver` + `IntersectionObserver`. `WorkspaceComposer` mendapat `onReplySent`
+    - Muat pesan lama baru aktif di Workspace. ConversationPanel, ConversationView, TicketConversationPanel, ContactChannelChat, dan ContactConversationDrawer mendapat perilaku scroll baru, tapi tetap hanya halaman 1
+
+- **🧪 Testing:** 13 tes baru (`conversationMessages.test.ts`); 13/14 mutasi tertangkap (1 setara); 86 file / 936 tes lolos; tsc bersih. API dicek di `origin/dev` v1.164.1: `page` ≥ 1, `limit` ≤ 100, halaman 1 = terbaru, `total_messages`
+
+---
+
 ## [1.126.4] - 2026-11-05
 
 ### Detail Versi 1.126.4

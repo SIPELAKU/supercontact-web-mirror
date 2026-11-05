@@ -9,6 +9,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { sendImportPart } from "@/lib/api/import-jobs";
 import { describeUploadError, uploadImportJob } from "@/lib/utils/importJobUpload";
+import { importFileReadArgs } from "@/lib/utils/importFileRead";
 import type { WaRecipientType } from "@/lib/types/whatsapp-marketing";
 
 interface ImportWaRecipientModalProps {
@@ -164,7 +165,10 @@ const ImportWaRecipientModal: React.FC<ImportWaRecipientModalProps> = ({
       // actually picks a file, and a static import put ~400 kB of SheetJS
       // into the first load of every page that can open this modal.
       const XLSX = await import("xlsx");
-      const workbook = XLSX.read(data);
+      // A CSV is read as UTF-8 text with every cell kept as text, so
+      // "0812…" keeps its 0 and "José" stays readable (importFileRead.ts).
+      const { data: input, options } = importFileReadArgs(file.name, data);
+      const workbook = XLSX.read(input, options);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });

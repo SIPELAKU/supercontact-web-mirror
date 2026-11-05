@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { importFileReadArgs } from "@/lib/utils/importFileRead";
 import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X, Download } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
@@ -159,7 +160,10 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
       // actually picks a file, and a static import put ~400 kB of SheetJS
       // into the first load of every page that can open this modal.
       const XLSX = await import("xlsx");
-      const workbook = XLSX.read(data);
+      // A CSV is read as UTF-8 text with every cell kept as text, so
+      // "0812…" keeps its 0 and "José" stays readable (importFileRead.ts).
+      const { data: input, options } = importFileReadArgs(file.name, data);
+      const workbook = XLSX.read(input, options);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });

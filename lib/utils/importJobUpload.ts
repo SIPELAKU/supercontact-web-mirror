@@ -1,6 +1,10 @@
 // lib/utils/importJobUpload.ts
 //
-// Sends one Contact/Recipient import file as ONE background job in parts
+// Two ways to send an import file of more than IMPORT_CHUNK_SIZE rows:
+// - `uploadImportJob` (Recipients): ONE job, sent in parts (below);
+// - `uploadImportParts` (Contacts, FE-5): one job per part, like Subscribers.
+//
+// `uploadImportJob` sends the file as ONE background job in parts
 // (API v1.162.0, IMP-3): the first POST creates the job with the first part,
 // every next part goes to `/{job_id}/rows`, and only the last one carries
 // `finished: true`. A job stays `Uploading` - nothing processed - until then;
@@ -74,13 +78,92 @@ export async function uploadImportJob<T>({
  * message.
  */
 export function describeUploadError(error: unknown): string {
+  if (error instanceof ImportPartsError && error.part > 1) {
+    const done = error.part - 1;
+    return (
+      `Part ${error.part} of ${error.totalParts} failed: ${apiReason(error)}. ` +
+      `${importedPartsText(done)} imported and ${done === 1 ? "is" : "are"} in Import History. ` +
+      `Import the remaining rows again.`
+    );
+  }
   if (error instanceof ImportUploadError && error.part > 1) {
     return `Upload stopped at part ${error.part} of ${error.totalParts}. Nothing was imported. Please import the file again.`;
   }
+  return apiReason(error);
+}
+
+/** The API's validation errors, one per field + message, or its message. */
+function apiReason(error: unknown): string {
   const details = error instanceof ImportUploadError ? error.details : undefined;
   if (Array.isArray(details) && details.length > 0) {
     const lines = new Set(details.map((d: any) => (d?.field ? `${d.field}: ${d.message}` : String(d?.message ?? d))));
     return Array.from(lines).join(", ");
   }
   return error instanceof Error ? error.message : "Upload failed";
+}
+
+// --- One job per part (FE-5, 2026-11-05) ------------------------------------
+//
+// Contacts are sent the way Subscribers are: every part of up to `chunkSize`
+// rows (IMPORT_CHUNK_SIZE by default) is a job of its own, created and queued
+// by one POST (`finished: true`), and named "<file> (Part i/n)" in Import
+// History. A failed part therefore leaves the parts before it imported, and
+// each part is rolled back on its own.
+// Recipients still use `uploadImportJob` above.
+
+/** "<file>" for a single part, "<file> (Part i/n)" otherwise (`index` 0-based). */
+export function partFileName(fileName: string, index: number, total: number): string {
+  return total > 1 ? `${fileName} (Part ${index + 1}/${total})` : fileName;
+}
+
+/** A part failed; `jobIds` are the parts before it, already imported. */
+export class ImportPartsError extends ImportUploadError {
+  constructor(
+    message: string,
+    part: number,
+    totalParts: number,
+    readonly jobIds: string[],
+    details?: unknown,
+  ) {
+    super(message, part, totalParts, details);
+    this.name = "ImportPartsError";
+  }
+}
+
+export interface UploadImportPartsOptions<T> {
+  rows: T[];
+  // Body key of the rows, e.g. `contacts`.
+  rowsKey: string;
+  // Shown in Import History; parts get " (Part i/n)".
+  fileName?: string;
+  // POSTs one complete job and answers its id.
+  send: (body: Record<string, unknown>) => Promise<{ job_id: string }>;
+  chunkSize?: number;
+}
+
+export async function uploadImportParts<T>({
+  rows,
+  rowsKey,
+  fileName,
+  send,
+  chunkSize = IMPORT_CHUNK_SIZE,
+}: UploadImportPartsOptions<T>): Promise<{ jobIds: string[] }> {
+  const chunks = chunkRows(rows, chunkSize);
+  const jobIds: string[] = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const body: Record<string, unknown> = { [rowsKey]: chunks[i], finished: true };
+    if (fileName) body.file_name = partFileName(fileName, i, chunks.length);
+    try {
+      const res = await send(body);
+      jobIds.push(res.job_id);
+    } catch (error: any) {
+      throw new ImportPartsError(error?.message || "Upload failed", i + 1, chunks.length, [...jobIds], error?.details);
+    }
+  }
+  return { jobIds };
+}
+
+function importedPartsText(count: number): string {
+  return count === 1 ? "Part 1 was" : `Parts 1–${count} were`;
 }

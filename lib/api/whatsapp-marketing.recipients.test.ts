@@ -59,7 +59,7 @@ describe('broadcast recipients API', () => {
   it('table: still paginates with is_limit=true', async () => {
     vi.stubGlobal('fetch', respond(200, page([])));
 
-    await fetchBroadcastRecipients('token', 'b1', 2, 5, 'budi', 'read');
+    await fetchBroadcastRecipients('token', 'b1', { page: 2, limit: 5, search: 'budi', filters: { status: 'read' } });
 
     const params = requested[0].searchParams;
     expect(params.get('page')).toBe('2');
@@ -72,7 +72,7 @@ describe('broadcast recipients API', () => {
   it('table: sends the sort as sort_by / sort_order', async () => {
     vi.stubGlobal('fetch', respond(200, page([])));
 
-    await fetchBroadcastRecipients('token', 'b1', 1, 5, undefined, undefined, 'status', 'desc');
+    await fetchBroadcastRecipients('token', 'b1', { page: 1, limit: 5, sortBy: 'status', sortOrder: 'desc' });
 
     const params = requested[0].searchParams;
     expect(params.get('sort_by')).toBe('status');
@@ -82,10 +82,24 @@ describe('broadcast recipients API', () => {
   it('table: no sort chosen sends neither, so the API keeps its default order', async () => {
     vi.stubGlobal('fetch', respond(200, page([])));
 
-    await fetchBroadcastRecipients('token', 'b1', 1, 5);
+    await fetchBroadcastRecipients('token', 'b1', { page: 1, limit: 5 });
 
     const params = requested[0].searchParams;
     expect(params.has('sort_by')).toBe(false);
     expect(params.has('sort_order')).toBe(false);
+  });
+
+  it('table: every filter that is set goes out under its id; unset ones do not', async () => {
+    vi.stubGlobal('fetch', respond(200, page([])));
+
+    // "status: ''" is the table's cleared filter; a future filter needs no new parameter.
+    await fetchBroadcastRecipients('token', 'b1', { filters: { status: '', channel: ['wa', 'sms'] } });
+
+    const params = requested[0].searchParams;
+    expect(params.has('status')).toBe(false);
+    expect(params.get('channel')).toBe('wa,sms');
+    // Defaults when the table has not said yet.
+    expect(params.get('page')).toBe('1');
+    expect(params.get('limit')).toBe('10');
   });
 });

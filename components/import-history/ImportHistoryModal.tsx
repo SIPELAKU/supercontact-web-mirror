@@ -2,13 +2,14 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography, Box, Stack, Chip, Tooltip, MenuItem, Select } from "@mui/material";
-import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw, History } from "lucide-react";
+import { X, RefreshCw, StopCircle, PlayCircle, RotateCcw, History, UserCheck } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SuperTable } from "@/components/ui/super-table";
 import type { MRT_ColumnDef } from "@/components/ui/super-table/types";
 import { useImportJobs, useImportJobAction, importJobsKey } from "@/lib/hooks/useImportJobs";
 import { useListRefresh } from "@/lib/hooks/useListRefresh";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useImportWatch } from "@/lib/store/importWatch";
 import { BulkJob } from "@/lib/types/email-marketing";
 import type { ImportModule } from "@/lib/api/import-jobs";
 import { AppButton } from "@/components/ui/app-button";
@@ -16,6 +17,9 @@ import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
 import { importProgressPercent } from "./importProgress";
 import { freshlyFinishedJobs } from "./finishedJobs";
+import type { ImportJobAction } from "@/lib/api/import-jobs";
+import { importJobActions, type ImportHistoryAction } from "./importJobState";
+import { ImportDuplicateDialog } from "./ImportDuplicateDialog";
 
 // Background import jobs of one module (Subscribers, Contacts, Recipients),
 // all served by the same `/{module}/bulk` API shape (FE-5).
@@ -42,6 +46,15 @@ const INTERVAL_OPTIONS = [
 // Rows per batch. The `limit` state and the table both start from it: when
 // they disagree the list is fetched twice on open, once per size.
 const BATCH_SIZE = 25;
+
+// Which buttons a job gets is decided by `importJobActions`.
+const ACTION_BUTTONS: Record<ImportHistoryAction, { icon: React.ReactNode; tooltip: string; color: string }> = {
+  review: { icon: <UserCheck size={18} />, tooltip: "Review duplicate", color: "#dc2626" },
+  stop: { icon: <StopCircle size={18} />, tooltip: "Stop Job", color: "#ef4444" },
+  continue: { icon: <PlayCircle size={18} />, tooltip: "Continue Job", color: "#3b82f6" },
+  rollback: { icon: <RotateCcw size={18} />, tooltip: "Rollback Job", color: "#eab308" },
+  replay: { icon: <RefreshCw size={18} />, tooltip: "Replay Job", color: "#10b981" },
+};
 
 const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
   open,
@@ -100,6 +113,15 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
   // (finishedRef keeps what was already seen). Not before mount: hydration.
   usePolling(listRefresh.reload, mounted && open ? refetchInterval : false);
 
+  // The import dock (FE-1) hides this module's cards while it is open. Only
+  // an open modal reports, so a closed one on the same page changes nothing.
+  const setHistoryOpen = useImportWatch((state) => state.setHistoryOpen);
+  useEffect(() => {
+    if (!open) return;
+    setHistoryOpen(module, true);
+    return () => setHistoryOpen(module, false);
+  }, [open, module, setHistoryOpen]);
+
   // Closed: reset to the defaults the table reopens with, so reopening
   // fetches once, not once per change.
   useEffect(() => {
@@ -124,7 +146,12 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
     if (finished.length > 0) onDataChangedRef.current?.();
   }, [data]);
 
-  const handleAction = (jobId: string, action: 'stop' | 'continue' | 'rollback' | 'replay') => {
+  // The Contact job whose paused row is being answered (FE-3). A snapshot:
+  // polling may reload the list meanwhile; an answer that comes too late is
+  // a 409, which the dialog handles.
+  const [reviewJob, setReviewJob] = useState<BulkJob | null>(null);
+
+  const handleAction = (jobId: string, action: ImportJobAction) => {
     actionMutation.mutate(
       { jobId, action },
       {
@@ -178,6 +205,19 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
             );
           }
 
+          if (status === "Waiting for Review") {
+            // Contacts only (API 1.164.0): paused until the row is answered.
+            return (
+              <Tooltip
+                title="Paused at a row that matches an existing contact with different data."
+                arrow
+                placement="top"
+              >
+                <Chip label={status} color="error" size="small" variant="outlined" />
+              </Tooltip>
+            );
+          }
+
           switch (status) {
             case "Queued for Processing":
             case "Queued for Rollback":
@@ -204,7 +244,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
         id: "progress",
         header: "Progress",
         Cell: ({ row }) => {
-          const { total_rows, processed_rows, created_rows, skipped_rows, failed_rows } = row.original;
+          const { total_rows, processed_rows, created_rows, updated_rows, skipped_rows, failed_rows } = row.original;
           const percent = importProgressPercent(processed_rows, total_rows);
           return (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, fontSize: "0.875rem" }}>
@@ -230,6 +270,8 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
               </div>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <span className="text-green-600">Created: {created_rows}</span>
+                {/* Only a Contact import changes existing rows (API 1.164.0). */}
+                {module === "contacts" && <span className="text-blue-600">Updated: {updated_rows ?? 0}</span>}
                 <span className="text-gray-500">Skipped: {skipped_rows}</span>
                 <span className="text-red-600">Failed: {failed_rows}</span>
               </Box>
@@ -309,40 +351,30 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
         header: "Actions",
         Cell: ({ row }) => {
           const job = row.original;
-          const status = job.status;
-
-          const renderButton = (action: 'stop' | 'continue' | 'rollback' | 'replay', icon: React.ReactNode, tooltip: string, color: string) => (
-            <Tooltip title={tooltip} placement="top" arrow>
-              <IconButton
-                size="small"
-                onClick={() => handleAction(job.id, action)}
-                disabled={actionMutation.isPending}
-                sx={{ color }}
-              >
-                {icon}
-              </IconButton>
-            </Tooltip>
-          );
 
           return (
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              {(status === 'Queued for Processing' || status === 'Processing') &&
-                renderButton('stop', <StopCircle size={18} />, 'Stop Job', '#ef4444')}
-
-              {status === 'Stopped' &&
-                renderButton('continue', <PlayCircle size={18} />, 'Continue Job', '#3b82f6')}
-
-              {(status === 'Stopped' || status === 'Completed') &&
-                renderButton('rollback', <RotateCcw size={18} />, 'Rollback Job', '#eab308')}
-
-              {(status === 'Failed' || status === 'Rolled Back') &&
-                renderButton('replay', <RefreshCw size={18} />, 'Replay Job', '#10b981')}
+              {importJobActions(job.status).map((action) => {
+                const { icon, tooltip, color } = ACTION_BUTTONS[action];
+                return (
+                  <Tooltip key={action} title={tooltip} placement="top" arrow>
+                    <IconButton
+                      size="small"
+                      onClick={() => (action === "review" ? setReviewJob(job) : handleAction(job.id, action))}
+                      disabled={actionMutation.isPending}
+                      sx={{ color }}
+                    >
+                      {icon}
+                    </IconButton>
+                  </Tooltip>
+                );
+              })}
             </Box>
           );
         },
       },
     ],
-    [actionMutation.isPending]
+    [actionMutation.isPending, module]
   );
 
   return (
@@ -457,6 +489,13 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
           )}
         />
       </DialogContent>
+
+      <ImportDuplicateDialog
+        module={module}
+        job={reviewJob}
+        onClose={() => setReviewJob(null)}
+        onAnswered={() => void listRefresh.reload()}
+      />
     </Dialog>
   );
 };

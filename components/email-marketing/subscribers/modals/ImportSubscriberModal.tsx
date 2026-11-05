@@ -2,12 +2,14 @@
 
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { importFileReadArgs } from "@/lib/utils/importFileRead";
 import { Loader2, Upload, FileSpreadsheet, ArrowLeft, ArrowRight, Plus, X, Download } from "lucide-react";
 import { notify } from "@/lib/notifications";
 import { ApiErrorDisplay } from "@/components/ui/api-error-display";
 import { AppButton } from "@/components/ui/app-button";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import { AppDialog } from "@/components/ui/app-dialog";
+import { chunkRows, IMPORT_CHUNK_SIZE } from "@/lib/utils/importJobUpload";
 
 interface ImportSubscriberModalProps {
   open: boolean;
@@ -158,7 +160,10 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
       // actually picks a file, and a static import put ~400 kB of SheetJS
       // into the first load of every page that can open this modal.
       const XLSX = await import("xlsx");
-      const workbook = XLSX.read(data);
+      // A CSV is read as UTF-8 text with every cell kept as text, so
+      // "0812…" keeps its 0 and "José" stays readable (importFileRead.ts).
+      const { data: input, options } = importFileReadArgs(file.name, data);
+      const workbook = XLSX.read(input, options);
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
@@ -306,11 +311,9 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
     const token = await getToken();
 
     try {
-      const CHUNK_SIZE = 10000;
-      const chunks = [];
-      for (let i = 0; i < validSubscribers.length; i += CHUNK_SIZE) {
-        chunks.push(validSubscribers.slice(i, i + CHUNK_SIZE));
-      }
+      // Every part is a job of its own, "<file> (Part i/n)"; the part size is
+      // shared with Contacts and Recipients (FE-9).
+      const chunks = chunkRows(validSubscribers);
 
       let totalCreated = 0;
       let totalSkipped = 0;
@@ -720,11 +723,11 @@ const ImportSubscriberModal: React.FC<ImportSubscriberModalProps> = ({
                     )}
                   </div>
 
-                  {previewSummary.valid > 10000 && (
+                  {previewSummary.valid > IMPORT_CHUNK_SIZE && (
                     <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-start gap-2">
                       <div className="w-5 h-5 shrink-0 mt-0.5">ℹ️</div>
                       <p>
-                        Since your data contains more than 10,000 rows, it will be automatically split into multiple batches to ensure a stable import process. You will see multiple entries in the Import History.
+                        Since your data contains more than {IMPORT_CHUNK_SIZE.toLocaleString("en-US")} rows, it will be automatically split into multiple batches to ensure a stable import process. You will see multiple entries in the Import History.
                       </p>
                     </div>
                   )}

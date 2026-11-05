@@ -243,6 +243,20 @@ export interface BroadcastRecipient extends WaRecipient {
   error_message?: string;
 }
 
+/**
+ * One page of a broadcast's recipients table. `filters` is the table's
+ * `state.filters` as is: each filter id is the API's query param (today only
+ * `status`), so a new filter needs no new parameter here.
+ */
+export interface BroadcastRecipientsQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
+}
+
 export interface BroadcastRecipientsResponse {
   success: boolean;
   data: {

@@ -7,6 +7,8 @@ import EditContactModal from "@/components/contact/modal/EditContactModal";
 import { Contact } from "@/lib/models/types";
 import ImportContactModal from "@/components/contact/modal/ImportContactModal";
 import ImportHistoryModal from "@/components/import-history/ImportHistoryModal";
+import { IMPORT_HISTORY_CONFIG } from "@/components/import-history/importModules";
+import { useImportWatch } from "@/lib/store/importWatch";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
@@ -286,6 +288,16 @@ export const ContactClient = () => {
         setListVersion((v) => v + 1);
     }, [loadData]);
 
+    // The import dock (FE-1) saw a followed import finish while this page is
+    // open: show its rows. Not on mount; the page loads its list itself.
+    const importDataVersion = useImportWatch((state) => state.dataVersion.contacts ?? 0);
+    const seenImportVersion = useRef(importDataVersion);
+    useEffect(() => {
+        if (importDataVersion === seenImportVersion.current) return;
+        seenImportVersion.current = importDataVersion;
+        restartList();
+    }, [importDataVersion, restartList]);
+
     // --- Handlers ---
     const handleEdit = (item: Contact) => {
         setSelectedItem(item);
@@ -485,8 +497,8 @@ export const ContactClient = () => {
                 open={openImportHistory}
                 onClose={() => setOpenImportHistory(false)}
                 module="contacts"
-                targetFilter={["contact"]}
-                storageKey="import_interval_contact"
+                targetFilter={IMPORT_HISTORY_CONFIG.contacts!.targetFilter}
+                storageKey={IMPORT_HISTORY_CONFIG.contacts!.storageKey}
                 onDataChanged={restartList}
             />
 

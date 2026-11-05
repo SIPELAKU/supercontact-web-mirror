@@ -107,7 +107,10 @@ export interface Message {
 }
 
 export interface ConversationWithMessages extends Conversation {
+  // One page: the newest by default, oldest first (see fetchConversation).
   messages: Message[];
+  // Every message of the conversation, not only this page (API 1.163.4).
+  total_messages?: number;
   assigned_user_fullname?: string;
   tags: ConversationTag[];
   notes: ConversationNote[];

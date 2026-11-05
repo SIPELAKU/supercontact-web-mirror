@@ -548,8 +548,21 @@ export async function createConversation(token: string, data: CreateConversation
 }
 
 // Conversations
-export async function fetchConversation(token: string, conversationId: string): Promise<ConversationWithMessages> {
-  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}`, {
+/**
+ * One conversation with one page of its messages. Page 1 (the default) is the
+ * newest messages, page 2 the ones before them; each page is oldest first and
+ * `total_messages` counts them all (API 1.163.4, FE-8).
+ */
+export async function fetchConversation(
+  token: string,
+  conversationId: string,
+  { page, limit }: { page?: number; limit?: number } = {},
+): Promise<ConversationWithMessages> {
+  const params = new URLSearchParams();
+  if (page !== undefined) params.set("page", String(page));
+  if (limit !== undefined) params.set("limit", String(limit));
+  const query = params.toString();
+  const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}${query ? `?${query}` : ""}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 

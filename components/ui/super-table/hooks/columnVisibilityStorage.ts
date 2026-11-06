@@ -1,13 +1,34 @@
 // components/ui/super-table/hooks/columnVisibilityStorage.ts
 //
-// `features.rememberColumnVisibility`: the columns a user hid or showed through
-// the View options › Columns menu are kept in this browser, per table, so a
-// reload doesn't bring every column back.
+// The columns a user hid or showed through the View options › Columns menu are
+// kept in this browser, per table, so a reload doesn't bring every column back.
+// On for every table with a `tableId` and that menu; a table can opt out with
+// `features.rememberColumnVisibility: false`.
 
 import type { MRT_VisibilityState } from "material-react-table";
+import type { SuperTableFeatures } from "../types";
+
+export function remembersColumns(
+  features: Pick<SuperTableFeatures, "columnVisibility" | "rememberColumnVisibility"> | undefined,
+  tableId: string | undefined,
+): boolean {
+  return Boolean(tableId) && features?.columnVisibility !== false && features?.rememberColumnVisibility !== false;
+}
 
 export function columnVisibilityKey(tableId: string): string {
   return `st_cv_${tableId}`;
+}
+
+// No choice (every column at its default) leaves no key behind, so a table
+// nobody changed adds nothing to the browser's storage.
+export function saveColumnVisibility(
+  storage: Pick<Storage, "setItem" | "removeItem">,
+  tableId: string,
+  visibility: MRT_VisibilityState,
+): void {
+  const key = columnVisibilityKey(tableId);
+  if (Object.keys(visibility).length === 0) storage.removeItem(key);
+  else storage.setItem(key, JSON.stringify(visibility));
 }
 
 // What was stored, or {} for nothing / anything that isn't a column → boolean

@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.128.0] - 2026-11-06
+
+### Detail Versi 1.128.0
+
+#### ✨ Pilihan Kolom Tersimpan di Semua Tabel (T4)
+
+- **Deskripsi:**
+  - **Masalah:** kolom yang disembunyikan lewat **View options › Columns** kembali tampil semua setelah halaman di-refresh. Fitur simpannya sudah ada, tapi baru dipakai tabel Knowledge Articles.
+  - **Perbaikan:** pilihan kolom kini tersimpan di browser untuk semua tabel yang punya menu kolom (61 tabel), terpisah per tabel. Tabel bisa memilih tidak ikut dengan `features.rememberColumnVisibility: false`.
+  - **Perilaku yang perlu diketahui:**
+    - Pilihan tersimpan **per browser, bukan per user**, dan tetap ada setelah logout, sama seperti Knowledge Articles sebelumnya.
+    - Kolom yang disembunyikan bisa terlihat sekejap saat halaman dimuat, karena pilihannya baru dibaca setelah halaman tampil di browser.
+  - **Technical Notes:**
+    - `columnVisibilityStorage.ts`: `remembersColumns` (butuh `tableId`, menu kolom aktif, dan tidak `false`) dan `saveColumnVisibility`
+    - Tabel yang pilihannya masih kosong tidak menulis key `st_cv_*`, jadi tabel yang tidak pernah diubah tidak menambah isi localStorage
+    - Tabel dengan `columnVisibility: false` tidak membaca atau menulis pilihan
+    - Baris `rememberColumnVisibility: true` di Knowledge Articles dihapus karena sudah menjadi bawaan
+
+- **🧪 Testing:** 8 tes baru (`columnVisibilityStorage.test.ts`); 7/7 mutasi tertangkap; 95 file / 1023 tes lolos; tsc bersih; build OK.
+
+---
+
+## [1.127.1] - 2026-11-06
+
+### Detail Versi 1.127.1
+
+#### 🐛 Tombol Save di Web Widget Menempel ke Dasar Layar (T3)
+
+- **Deskripsi:**
+  - **Masalah:** di `/settings/web-widget`, bar **Save Settings** berhenti 32px di atas dasar layar, dan isi form masih terlihat di bawahnya.
+  - **Root Cause:** posisi `sticky` dihitung setelah dikurangi padding kolom yang di-scroll (`md:p-8` di `SettingsContent`).
+  - **Perbaikan:** `lg:-bottom-8` pada bar, hanya di layar `lg` ke atas karena di bawah ukuran itu yang di-scroll adalah halamannya. Padding `SettingsContent` tidak diubah karena dipakai semua halaman Settings.
+  - **Impact:** berlaku selama form terlihat di layar. Di akhir form, bar berhenti di tepi bawah kartu form lalu ikut ter-scroll, karena di bawahnya masih ada kartu lain.
+
+- **🧪 Testing:** CSS saja, tanpa tes unit. Diukur di Chrome headless dengan tiruan struktur yang sama: celah 32px menjadi 0px saat form terlihat. Halaman aslinya menunggu tes manual.
+
+---
+
 ## [1.127.0] - 2026-11-05
 
 ### Detail Versi 1.127.0

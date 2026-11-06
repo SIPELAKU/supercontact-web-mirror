@@ -790,8 +790,10 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
       {/* Stays at the bottom of the screen while the form is in view, so a
           long form saves without scrolling to its end. -mx-6/-mb-6 span the
           card's p-6 (settings/web-widget page). Sticks inside the settings
-          content column, which scrolls on its own on desktop (SettingsLayout). */}
-      <div className="sticky bottom-0 z-10 -mx-6 -mb-6 flex justify-end rounded-b-2xl border-t border-gray-200 bg-white/95 px-6 py-3 backdrop-blur">
+          content column, which scrolls on its own on desktop (SettingsLayout);
+          sticky stops at that column's padding (md:p-8), so lg:-bottom-8 goes
+          past it to the screen's edge. */}
+      <div className="sticky bottom-0 lg:-bottom-8 z-10 -mx-6 -mb-6 flex justify-end rounded-b-2xl border-t border-gray-200 bg-white/95 px-6 py-3 backdrop-blur">
         <AppButton type="submit" disabled={updateMutation.isPending} variantStyle="primary">
           {updateMutation.isPending ? (
             <>

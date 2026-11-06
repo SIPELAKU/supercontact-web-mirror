@@ -33,7 +33,7 @@ export interface SuperTableFeatures {
   /**
    * Ingat pilihan kolom (View options › Columns) di browser ini, per tabel,
    * supaya tidak kembali tampil semua setelah refresh. Butuh `tableId`.
-   * @default false
+   * @default true
    */
   rememberColumnVisibility?: boolean;
   /** 

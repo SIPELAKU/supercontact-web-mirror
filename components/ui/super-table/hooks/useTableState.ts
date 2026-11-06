@@ -6,7 +6,7 @@ import {
   MRT_RowSelectionState,
 } from 'material-react-table';
 import { SuperTableFilterValues, SuperTableProps, SuperTableState } from '../types';
-import { columnVisibilityKey, readColumnVisibility } from './columnVisibilityStorage';
+import { columnVisibilityKey, readColumnVisibility, remembersColumns, saveColumnVisibility } from './columnVisibilityStorage';
 
 export function useTableState<TData extends object>(
   props: Pick<
@@ -54,11 +54,11 @@ export function useTableState<TData extends object>(
     props.initialState?.columnVisibility ?? {}
   );
 
-  // features.rememberColumnVisibility: the Columns menu choice survives a
-  // reload, in this browser, per tableId. Read after mount so the server
-  // render and the first client render agree; saved only once it has been
-  // read, so the initial "all visible" never overwrites the stored choice.
-  const rememberColumns = !!(props.features?.rememberColumnVisibility && props.tableId);
+  // The Columns menu choice survives a reload, in this browser, per tableId.
+  // Read after mount so the server render and the first client render agree;
+  // saved only once it has been read, so the initial "all visible" never
+  // overwrites the stored choice.
+  const rememberColumns = remembersColumns(props.features, props.tableId);
   const [columnsRestored, setColumnsRestored] = useState(false);
   useEffect(() => {
     if (!rememberColumns) return;
@@ -73,7 +73,7 @@ export function useTableState<TData extends object>(
   useEffect(() => {
     if (!rememberColumns || !columnsRestored) return;
     try {
-      window.localStorage.setItem(columnVisibilityKey(props.tableId!), JSON.stringify(columnVisibility));
+      saveColumnVisibility(window.localStorage, props.tableId!, columnVisibility);
     } catch {
       /* storage unavailable - the choice lasts until the page is left */
     }

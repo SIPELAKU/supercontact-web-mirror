@@ -690,7 +690,6 @@ export default function KnowledgeArticleListClient() {
           pageSizeOptions: [BATCH_SIZE, 100, 200],
           // View options › Columns: hide/show columns, remembered per browser.
           columnVisibility: true,
-          rememberColumnVisibility: true,
           stickyRowActions: true,
         }}
       />

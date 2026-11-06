@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.128.1] - 2026-11-06
+
+### Detail Versi 1.128.1
+
+#### 🐛 Header Kolom Actions Tidak Terpotong
+
+- **Deskripsi:**
+  - **Masalah:** teks **Actions** di header tabel terpotong di tepi kanan, di tabel yang memakai `rowActions` (Contacts, Subscribers, dan lainnya).
+  - **Root Cause:** kolom `mrt-row-actions` dibuat selebar 56px, cukup untuk satu tombol ⋮, tapi teks header butuh 52px ditambah padding 24px. Teksnya keluar 8px dari sel.
+  - **Perbaikan:** kolom aksi di `SuperTable` kini 80px untuk semua tabel, sama seperti tabel yang memakai `renderRowActions`.
+  - **Impact:** kolom aksi tabel `rowActions` melebar 24px.
+
+- **🧪 Testing:** tanpa tes unit karena hanya ukuran kolom. Diukur di Chrome headless dengan data tiruan: di Contacts dan Subscribers, teks kini berakhir 16px sebelum tepi sel, sebelumnya 8px melewati tepi sel. tsc bersih; 96 file / 1043 tes lolos.
+
+---
+
 ## [1.128.0] - 2026-11-06
 
 ### Detail Versi 1.128.0

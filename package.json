@@ -1,6 +1,6 @@
 {
   "name": "sales-management",
-  "version": "1.116.3",
+  "version": "1.130.1",
   "private": true,
   "scripts": {
     "test": "vitest run",

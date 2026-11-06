@@ -12,18 +12,17 @@ import { useQueries } from "@tanstack/react-query";
 import { useAuth } from "@/lib/context/AuthContext";
 import { fetchImportJob, type ImportModule } from "@/lib/api/import-jobs";
 import type { BulkJob } from "@/lib/types/email-marketing";
-import { useImportWatch } from "@/lib/store/importWatch";
+import { useImportWatch, watchedView } from "@/lib/store/importWatch";
 import { usePolling } from "./usePolling";
 import { dockIntervalMs, isActiveImportJob } from "@/components/import-history/importJobState";
 import { freshlyFinishedJobs } from "@/components/import-history/finishedJobs";
-import { IMPORT_HISTORY_CONFIG } from "@/components/import-history/importModules";
+import { IMPORT_VIEWS, type ImportView } from "@/lib/utils/importModules";
 
 export const importJobKey = (module: ImportModule, jobId: string) => ["importJob", module, jobId] as const;
 
-function savedInterval(module: ImportModule): number {
-  const key = IMPORT_HISTORY_CONFIG[module]?.storageKey;
+function savedInterval(view: ImportView): number {
   try {
-    return dockIntervalMs(key ? localStorage.getItem(key) : null);
+    return dockIntervalMs(localStorage.getItem(IMPORT_VIEWS[view].history.storageKey));
   } catch {
     return dockIntervalMs(null);
   }
@@ -38,7 +37,7 @@ export function useWatchedImportJobs(): Record<string, BulkJob> {
   const markDataChanged = useImportWatch((state) => state.markDataChanged);
 
   const followed = useMemo(
-    () => watched.flatMap((item) => item.jobIds.map((jobId) => ({ module: item.module, jobId }))),
+    () => watched.flatMap((item) => item.jobIds.map((jobId) => ({ module: item.module, view: watchedView(item), jobId }))),
     [watched],
   );
 
@@ -84,7 +83,7 @@ export function useWatchedImportJobs(): Record<string, BulkJob> {
     return !historyOpen[module] && (!job || isActiveImportJob(job)) ? [index] : [];
   });
   const intervalMs =
-    moving.length > 0 ? Math.min(...moving.map((index) => savedInterval(followed[index].module))) : false;
+    moving.length > 0 ? Math.min(...moving.map((index) => savedInterval(followed[index].view))) : false;
   usePolling(() => Promise.all(moving.map((index) => queries[index].refetch())), intervalMs);
 
   // A followed job completed or was rolled back: its module's page refreshes

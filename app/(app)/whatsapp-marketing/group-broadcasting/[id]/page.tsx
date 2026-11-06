@@ -18,7 +18,8 @@ import { ArrowLeft, Upload, Plus, Eye, Send, Users, History } from 'lucide-react
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
-import ImportWaRecipientModal from '@/components/whatsapp-marketing/recipients/ImportWaRecipientModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
 import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import ViewBroadcastCampaignStatsModal from '@/components/whatsapp-marketing/group-broadcasting/modals/ViewBroadcastCampaignStatsModal';
 import { useQueryClient } from '@tanstack/react-query';
@@ -94,6 +95,7 @@ const GroupBroadcastDetailPage = () => {
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['group-broadcast-detail', broadcastGroupId] });
     };
+    useImportDataChanged('recipients', handleSuccess);
 
     const recipientColumns = useMemo<MRT_ColumnDef<WaRecipient>[]>(
         () => [
@@ -352,25 +354,20 @@ const GroupBroadcastDetailPage = () => {
                 broadcastGroupId={broadcastGroupId}
             />
 
-            <ImportWaRecipientModal
+            <ImportFileModal
+                view="broadcast_group"
+                groupIds={[broadcastGroupId]}
                 open={isImportModalOpen}
-                recipientType="whatsapp"
                 onClose={() => setImportModalOpen(false)}
                 // A background job (FE-4): track it in Import History, which
                 // refreshes the members when it completes.
                 onSuccess={() => setImportHistoryOpen(true)}
-                target="broadcast_group"
-                broadcastGroupId={broadcastGroupId}
             />
 
             <ImportHistoryModal
                 open={isImportHistoryOpen}
                 onClose={() => setImportHistoryOpen(false)}
-                module="recipients"
-                // GET /recipients/bulk cannot filter by group, so this lists
-                // the imports into every group.
-                targetFilter={['broadcast_group']}
-                storageKey="import_interval_broadcast_group"
+                view="broadcast_group"
                 onDataChanged={handleSuccess}
             />
 

@@ -11,13 +11,23 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ImportModule } from "@/lib/api/import-jobs";
+import type { ImportView } from "@/lib/utils/importModules";
 
 export interface WatchedImport {
   // The first part's job id: unique, and stable across reloads.
   id: string;
   module: ImportModule;
+  // Which page imported it, so Import History opens the view that lists it.
+  view?: ImportView;
+  // The mailing list or group it went into.
+  groupIds?: string[];
   fileName: string;
   jobIds: string[];
+}
+
+/** Entries saved before `view` existed can only be Contacts. */
+export function watchedView(item: Pick<WatchedImport, "view">): ImportView {
+  return item.view ?? "contacts";
 }
 
 // Older entries are dropped beyond this, so a forgotten × never piles up.

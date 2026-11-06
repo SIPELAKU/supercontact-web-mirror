@@ -51,8 +51,6 @@ export interface AppDialogProps {
   dividers?: boolean;
   /** Padding on the content area. @default true */
   contentPadding?: boolean;
-  /** Stacking order, for a dialog opened above a modal that is not MUI (e.g. z-9999). @default MUI's 1300 */
-  zIndex?: number;
 }
 
 export function AppDialog({
@@ -70,7 +68,6 @@ export function AppDialog({
   hideHeader = false,
   dividers = true,
   contentPadding = true,
-  zIndex,
 }: AppDialogProps) {
   const [maximised, setMaximised] = React.useState(fullScreen);
 
@@ -90,7 +87,6 @@ export function AppDialog({
       maxWidth={maxWidth}
       fullWidth={fullWidth}
       fullScreen={isFullScreen}
-      sx={zIndex === undefined ? undefined : { zIndex }}
       PaperProps={{
         sx: isFullScreen
           ? { borderRadius: 0 }

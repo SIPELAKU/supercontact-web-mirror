@@ -6,10 +6,11 @@ import {
   hasContactInfo,
   isImportEmail,
   normalizeImportPhone,
-  validateContactImportRow,
-} from "./contactImportRules";
+  validateImportRow,
+  CONTACT_IMPORT_RULES,
+} from "./importRules";
 
-const messages = (row: Record<string, string>) => validateContactImportRow(row).map((i) => i.message);
+const messages = (row: Record<string, string>) => validateImportRow(row, CONTACT_IMPORT_RULES).map((i) => i.message);
 
 describe("normalizeImportPhone (copy of the API's normalize_phone_number_unchecked)", () => {
   it("formats Indonesian and international numbers like the API", () => {
@@ -43,7 +44,7 @@ describe("hasContactInfo", () => {
   });
 });
 
-describe("validateContactImportRow", () => {
+describe("validateImportRow", () => {
   const ok = { name: "Budi Santoso", email: "budi@example.com" };
 
   it("a row with a name and an email or phone passes", () => {
@@ -110,7 +111,7 @@ describe("CONTACT_IMPORT_TEMPLATE", () => {
   it("every sample row passes the check, so the template is never rejected", () => {
     for (const sample of CONTACT_IMPORT_TEMPLATE.samples) {
       expect(hasContactInfo(sample)).toBe(true);
-      expect(validateContactImportRow(sample)).toEqual([]);
+      expect(validateImportRow(sample, CONTACT_IMPORT_RULES)).toEqual([]);
     }
   });
 });

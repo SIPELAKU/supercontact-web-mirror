@@ -1,5 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { decodeUtf8, importFileReadArgs } from "./importFileRead";
+import { decodeUtf8, importFileReadArgs, mapFileRows } from "./importFileRead";
+
+describe("mapFileRows", () => {
+  const mappings = [
+    { excelColumn: "First", apiField: "name" },
+    { excelColumn: "Last", apiField: "name" },
+    { excelColumn: "Mail", apiField: "email" },
+    { excelColumn: "Note", apiField: null },
+  ];
+
+  it("fills the mapped fields, trimmed, and leaves skipped columns out", () => {
+    expect(mapFileRows([{ First: " Budi ", Last: "Santoso", Mail: " b@x.com ", Note: "no" }], mappings)).toEqual([
+      { name: "Budi Santoso", email: "b@x.com" },
+    ]);
+  });
+
+  it("joins the columns mapped to Name, skipping empty ones", () => {
+    expect(mapFileRows([{ First: "", Last: "Santoso", Mail: "" }], mappings)).toEqual([{ name: "Santoso", email: "" }]);
+  });
+
+  it("a row with no name still has one, empty, so the check can report it", () => {
+    expect(mapFileRows([{ Mail: "b@x.com" }], mappings)).toEqual([{ name: "", email: "b@x.com" }]);
+  });
+});
 
 const bytes = (...parts: (string | number[])[]) => {
   const chunks = parts.map((part) => (typeof part === "string" ? new TextEncoder().encode(part) : Uint8Array.from(part)));

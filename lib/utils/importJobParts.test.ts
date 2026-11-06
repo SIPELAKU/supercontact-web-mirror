@@ -41,6 +41,19 @@ describe("uploadImportParts", () => {
     expect(bodies[1].contacts[0]).toEqual({ name: "Row 2001" });
   });
 
+  it("every part of one file carries the same import_group_id, another file another", async () => {
+    const first = recorder();
+    await uploadImportParts({ rows: rows(5), rowsKey: "new_contacts", send: first.send, chunkSize: 2 });
+    const ids = new Set(first.bodies.map((b) => b.import_group_id));
+    expect(first.bodies).toHaveLength(3);
+    expect(ids.size).toBe(1);
+    expect([...ids][0]).toMatch(/^[0-9a-f-]{36}$/);
+
+    const second = recorder();
+    await uploadImportParts({ rows: rows(1), rowsKey: "new_contacts", send: second.send });
+    expect(ids.has(second.bodies[0].import_group_id)).toBe(false);
+  });
+
   it("one part keeps the plain file name; no name sends no file_name", async () => {
     const named = recorder();
     await uploadImportParts({ rows: rows(3), rowsKey: "contacts", fileName: "a.xlsx", send: named.send });

@@ -16,7 +16,8 @@ import { History, MoreVertical, Plus, Trash2, Upload } from 'lucide-react';
 import SubscribersTable from '@/components/email-marketing/subscribers/SubscribersTable';
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
 import EditSubscriberModal from '@/components/email-marketing/subscribers/modals/EditSubscriberModal';
-import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
 import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import PageHeader from '@/components/ui/page-header';
 import { AppButton } from '@/components/ui/app-button';
@@ -28,6 +29,7 @@ import { EXPORT_MAX_PAGES, EXPORT_PAGE_SIZE } from '@/lib/constants/export';
 
 export default function SubscribersClient() {
   const queryClient = useQueryClient();
+  useImportDataChanged('subscribers', () => queryClient.invalidateQueries({ queryKey: ['subscribers'] }));
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -285,15 +287,11 @@ export default function SubscribersClient() {
       />
 
       <AddSubscriberModal open={isAddModalOpen} onClose={handleCloseModals} onSuccess={handleSuccess} />
-      <ImportSubscriberModal open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleImportSuccess} />
+      <ImportFileModal view="subscribers" open={isImportModalOpen} onClose={handleCloseModals} onSuccess={handleImportSuccess} />
       <ImportHistoryModal
         open={isHistoryModalOpen}
         onClose={() => setHistoryModalOpen(false)}
-        module="subscribers"
-        // Subscriber jobs only (FE-6): Contact imports have their own history
-        // on the Contacts page since API v1.162.0.
-        targetFilter={["subscriber"]}
-        storageKey="import_interval_subscriber"
+        view="subscribers"
         onDataChanged={() => queryClient.invalidateQueries({ queryKey: ['subscribers'] })}
       />
       {selectedSubscriber && (

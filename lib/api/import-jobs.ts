@@ -2,11 +2,8 @@
 //
 // Background import jobs, one API shape for three modules:
 //   /subscribers/bulk, /contacts/bulk, /recipients/bulk
-// List, detail actions (stop / continue / rollback / replay) and, for Contacts
-// and Recipients (API v1.162.0, IMP-2/3), the upload: the first POST creates
-// the job with the first part, every next part goes to `/{job_id}/rows`, and
-// `finished: true` on the last one queues it. Contacts (FE-5) instead send
-// every part as a job of its own with `startImportJob`.
+// List, detail actions (stop / continue / rollback / replay) and the upload:
+// every part of a file is a job of its own (`startImportJob`).
 
 import { fetchWithTimeout } from "./api-client";
 import type { BulkJob, BulkJobsResponse } from "@/lib/types/email-marketing";
@@ -76,17 +73,13 @@ export async function actionImportJob(
   return readResponse(res, `Failed to ${action} the import job`);
 }
 
-/**
- * One upload request: `""` starts the job, `/{job_id}/rows` adds a part.
- * Answers `{ job_id, status, total_rows }`.
- */
-export async function sendImportPart(
+/** Creates one complete job (`POST /{module}/bulk`): the body holds its rows. */
+export async function startImportJob(
   token: string,
-  module: Exclude<ImportModule, "subscribers">,
-  path: string,
+  module: ImportModule,
   body: Record<string, unknown>,
-): Promise<{ job_id: string; status: string; total_rows: number }> {
-  const res = await fetchWithTimeout(`${jobsUrl(module)}${path}`, {
+): Promise<{ job_id: string }> {
+  const res = await fetchWithTimeout(jobsUrl(module), {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
@@ -98,19 +91,7 @@ export async function sendImportPart(
 }
 
 /**
- * Creates one complete job (`POST /{module}/bulk`), the way Subscribers are
- * imported: the body holds its rows and `finished: true` (FE-5, Contacts).
- */
-export function startImportJob(
-  token: string,
-  module: Exclude<ImportModule, "subscribers">,
-  body: Record<string, unknown>,
-): Promise<{ job_id: string; status: string; total_rows: number }> {
-  return sendImportPart(token, module, "", body);
-}
-
-/**
- * Answers the row a Contact job waits on (FE-3, API 1.164.0, BE-4); the job
+ * Answers the row a job waits on (FE-3, T2.8, API 1.165.0); the job
  * then goes on. 409 = not waiting on that row any more, 422 with
  * `details.missing` = a conflict has no choice. Answers the job.
  */

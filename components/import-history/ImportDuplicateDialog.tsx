@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppDialog } from "@/components/ui/app-dialog";
 import { AppButton } from "@/components/ui/app-button";
@@ -23,11 +23,13 @@ import {
 import {
   canSubmitImportDuplicate,
   fillableValues,
+  importDuplicateActionLabel,
   importDuplicateAnswer,
   readImportDuplicateError,
   readPendingDuplicate,
   type ImportDuplicateAction,
 } from "@/lib/utils/importDuplicate";
+import { importModuleNoun } from "@/lib/utils/importModules";
 
 interface ImportDuplicateDialogProps {
   module: ImportModule;
@@ -38,15 +40,10 @@ interface ImportDuplicateDialogProps {
   onAnswered?: () => void;
 }
 
-const BUTTON_LABEL: Record<ImportDuplicateAction, string> = {
-  skip: "Skip",
-  replace: "Replace all",
-  update: "Update selected",
-};
-
-// FE-3: the row a Contact import paused on, matching an existing contact
-// with different data. Skip keeps the contact as it is, Replace all takes the
-// file's values, Update selected takes a choice per field. Opened from the
+// FE-3, T1, T2.8: the row an import paused on, matching an existing contact
+// with different data. Skip keeps the contact as it is, Replace takes the
+// file's values, Update selected takes a choice per field. The checkbox gives
+// Skip or Replace to every later conflict in the file. Opened from the
 // import dock and from Import History (Review). Closing leaves the job waiting.
 export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: ImportDuplicateDialogProps) => {
   const queryClient = useQueryClient();
@@ -60,6 +57,9 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
   const [sending, setSending] = useState<ImportDuplicateAction | null>(null);
   // Conflicts the API found that the dialog did not show (422).
   const [changedFields, setChangedFields] = useState<string[]>([]);
+  // Starts unticked for every row: it answers more than the row on screen.
+  const [applyToAll, setApplyToAll] = useState(false);
+  useEffect(() => setApplyToAll(false), [resetKey]);
 
   if (!job || !pending) return null;
   const busy = sending !== null;
@@ -79,10 +79,14 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
   const send = (action: ImportDuplicateAction) => {
     setSending(action);
     answer.mutate(
-      { jobId: job.id, answer: importDuplicateAnswer(pending.row_number, action, keep) },
+      { jobId: job.id, answer: importDuplicateAnswer(pending.row_number, action, keep, applyToAll) },
       {
         onSuccess: () => {
-          notify.success("Answer saved", { description: "The import continues with the next row." });
+          notify.success("Answer saved", {
+            description: applyToAll
+              ? "The remaining duplicates in this file get the same answer."
+              : "The import continues with the next row.",
+          });
           onAnswered?.();
           close();
         },
@@ -113,7 +117,7 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
       disabled={busy || disabled}
       isLoading={sending === action}
     >
-      {BUTTON_LABEL[action]}
+      {importDuplicateActionLabel(action, applyToAll)}
     </AppButton>
   );
 
@@ -121,14 +125,25 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
     <AppDialog
       open
       onClose={() => !busy && close()}
-      title={`Duplicate contact found — row ${pending.row_number.toLocaleString()}`}
+      title={`Duplicate ${importModuleNoun(module)} found — row ${pending.row_number.toLocaleString()}`}
       description={duplicateReasonText(pending.reason)}
       maxWidth="md"
       actions={
-        <div className="flex w-full flex-wrap justify-end gap-2">
-          {actionButton("skip", "outline")}
-          {actionButton("replace", "outline")}
-          {actionButton("update", "primary", !canSubmitImportDuplicate("update", pending, keep))}
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-700">
+            <input
+              type="checkbox"
+              checked={applyToAll}
+              onChange={(e) => setApplyToAll(e.target.checked)}
+              disabled={busy}
+            />
+            Apply to all remaining duplicates in this file
+          </label>
+          <div className="flex flex-wrap justify-end gap-2">
+            {actionButton("skip", "outline")}
+            {actionButton("replace", "outline")}
+            {actionButton("update", "primary", applyToAll || !canSubmitImportDuplicate("update", pending, keep))}
+          </div>
         </div>
       }
     >
@@ -147,8 +162,8 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
 
         <div>
           <p className="mb-2 text-gray-700">
-            For <b>Update selected</b>, choose which value to keep for each field. <b>Replace all</b> takes every
-            value from the file; <b>Skip</b> leaves the contact as it is.
+            For <b>Update selected</b>, choose which value to keep for each field. <b>Replace</b> takes every value
+            from the file; <b>Skip</b> leaves the contact as it is.
           </p>
           <ConflictChoiceTable
             fields={fields}
@@ -167,7 +182,7 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
 
         {filled.length > 0 && (
           <div>
-            <p className="text-gray-700">Also filled in by Replace all and Update selected (empty on the contact):</p>
+            <p className="text-gray-700">Also filled in by Replace and Update selected (empty on the contact):</p>
             <ul className="mt-1 list-disc pl-5 text-gray-900">
               {filled.map(({ field, value }) => (
                 <li key={field}>
@@ -181,7 +196,7 @@ export const ImportDuplicateDialog = ({ module, job, onClose, onAnswered }: Impo
         {changedFields.length > 0 && (
           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
             The contact changed while the import waited:{" "}
-            {changedFields.map(duplicateFieldLabel).join(", ")} now differ too. Use Replace all or Skip.
+            {changedFields.map(duplicateFieldLabel).join(", ")} now differ too. Use Replace or Skip.
           </p>
         )}
       </div>

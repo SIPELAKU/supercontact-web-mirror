@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addWatchedImport, dropWatchedJob, MAX_WATCHED_IMPORTS, type WatchedImport } from "./importWatch";
+import { addWatchedImport, dropWatchedJob, MAX_WATCHED_IMPORTS, watchedView, type WatchedImport } from "./importWatch";
 
 const entry = (jobIds: string[], fileName = "kontak.csv") => ({ module: "contacts" as const, fileName, jobIds });
 
@@ -23,6 +23,24 @@ describe("addWatchedImport", () => {
     for (let i = 0; i < MAX_WATCHED_IMPORTS + 2; i++) list = addWatchedImport(list, entry([`job-${i}`]));
     expect(list).toHaveLength(MAX_WATCHED_IMPORTS);
     expect(list[0].id).toBe(`job-${MAX_WATCHED_IMPORTS + 1}`);
+  });
+});
+
+describe("watchedView", () => {
+  it("keeps the view and groups of the page that imported", () => {
+    const list = addWatchedImport([], {
+      module: "recipients",
+      view: "broadcast_group",
+      groupIds: ["g1"],
+      fileName: "a.csv",
+      jobIds: ["a"],
+    });
+    expect(list[0]).toMatchObject({ view: "broadcast_group", groupIds: ["g1"] });
+    expect(watchedView(list[0])).toBe("broadcast_group");
+  });
+
+  it("an entry saved before views existed is a Contacts import", () => {
+    expect(watchedView({})).toBe("contacts");
   });
 });
 

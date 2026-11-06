@@ -3,6 +3,7 @@ import type { BulkJob } from "@/lib/types/email-marketing";
 import {
   canSubmitImportDuplicate,
   fillableValues,
+  importDuplicateActionLabel,
   importDuplicateAnswer,
   readImportDuplicateError,
   readPendingDuplicate,
@@ -135,5 +136,36 @@ describe("readImportDuplicateError", () => {
       message: "Bad",
     });
     expect(readImportDuplicateError(null)).toEqual({ kind: "other", message: "Failed to answer the duplicate" });
+  });
+});
+
+describe("importDuplicateActionLabel", () => {
+  it("says all only when the checkbox is ticked", () => {
+    expect(importDuplicateActionLabel("skip", false)).toBe("Skip");
+    expect(importDuplicateActionLabel("replace", false)).toBe("Replace");
+    expect(importDuplicateActionLabel("skip", true)).toBe("Skip all");
+    expect(importDuplicateActionLabel("replace", true)).toBe("Replace all");
+  });
+
+  it("Update selected always answers this row alone", () => {
+    expect(importDuplicateActionLabel("update", false)).toBe("Update selected");
+    expect(importDuplicateActionLabel("update", true)).toBe("Update selected");
+  });
+});
+
+describe("importDuplicateAnswer with apply to all (T1)", () => {
+  it("skip and replace carry it when ticked", () => {
+    expect(importDuplicateAnswer(4, "skip", {}, true)).toEqual({ row_number: 4, action: "skip", apply_to_all: true });
+    expect(importDuplicateAnswer(4, "replace", {}, true)).toEqual({ row_number: 4, action: "replace", apply_to_all: true });
+  });
+
+  it("not ticked: the field is left out, the row alone is answered", () => {
+    expect(importDuplicateAnswer(4, "skip")).toEqual({ row_number: 4, action: "skip" });
+    expect(importDuplicateAnswer(4, "replace", {}, false)).not.toHaveProperty("apply_to_all");
+  });
+
+  it("update never sends it: the API answers 422", () => {
+    const answer = importDuplicateAnswer(4, "update", { phone_number: "incoming" }, true);
+    expect(answer).toEqual({ row_number: 4, action: "update", keep: { phone_number: "incoming" } });
   });
 });

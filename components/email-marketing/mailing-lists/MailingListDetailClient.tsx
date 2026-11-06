@@ -8,7 +8,8 @@ import Cookies from 'js-cookie';
 import { Eye, History, Mail, Trash2, Upload, UserPlus } from 'lucide-react';
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
-import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
 import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
@@ -50,6 +51,12 @@ export default function MailingListDetailClient() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const listId = String(params.id);
+  const refreshListData = () => {
+    queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+    queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
+    queryClient.invalidateQueries({ queryKey: ['mailing-list', listId] });
+  };
+  useImportDataChanged('subscribers', refreshListData);
 
   const [activeTab, setActiveTab] = useState<ListTab>(() => {
     const fromUrl = searchParams.get('tab') as ListTab | null;
@@ -453,7 +460,9 @@ export default function MailingListDetailClient() {
         target="mailing_list"
       />
 
-      <ImportSubscriberModal
+      <ImportFileModal
+        view="mailing_list"
+        groupIds={[listId]}
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
         // The import runs in the background; History polls the job and
@@ -462,21 +471,14 @@ export default function MailingListDetailClient() {
           setShowImportModal(false);
           setShowImportHistoryModal(true);
         }}
-        mailingListIds={[listId]}
       />
 
       <ImportHistoryModal
         open={showImportHistoryModal}
         onClose={() => setShowImportHistoryModal(false)}
-        module="subscribers"
-        targetFilter={['mailing_list']}
-        storageKey="import_interval_mailing_list"
+        view="mailing_list"
         mailingListIds={[listId]}
-        onDataChanged={() => {
-          queryClient.invalidateQueries({ queryKey: ['subscribers'] });
-          queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
-          queryClient.invalidateQueries({ queryKey: ['mailing-list', listId] });
-        }}
+        onDataChanged={refreshListData}
       />
 
       <ConfirmationPopup

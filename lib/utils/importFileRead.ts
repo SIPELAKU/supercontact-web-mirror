@@ -11,6 +11,31 @@
 //   "CSV (Comma delimited)") still goes in as bytes, read as before.
 // An .xlsx/.xls file goes in unchanged: its cells carry their own types.
 
+export interface ColumnMapping {
+  excelColumn: string;
+  // The field the column fills; null = the column is skipped.
+  apiField: string | null;
+}
+
+/**
+ * The file's rows as fields, trimmed. Several columns mapped to Name are joined,
+ * skipping empty ones; every row has a `name`, even an empty one.
+ */
+export function mapFileRows(
+  rows: Record<string, unknown>[],
+  mappings: ColumnMapping[],
+): Record<string, string | undefined>[] {
+  return rows.map((row) => {
+    const mapped: Record<string, string | undefined> = { name: "" };
+    for (const { excelColumn, apiField } of mappings) {
+      if (!apiField || row[excelColumn] === undefined) continue;
+      const value = String(row[excelColumn] || "").trim();
+      mapped[apiField] = apiField === "name" ? [mapped.name, value].filter(Boolean).join(" ") : value;
+    }
+    return mapped;
+  });
+}
+
 export interface ImportFileReadArgs {
   data: string | ArrayBuffer;
   options: { type?: "string"; raw?: boolean };

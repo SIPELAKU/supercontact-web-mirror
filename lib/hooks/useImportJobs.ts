@@ -53,7 +53,7 @@ export function useImportJobAction(module: ImportModule) {
 }
 
 /**
- * Answers the row a Contact job waits on (FE-3). The import dock gets the
+ * Answers the row a job waits on (FE-3, T2.8). The import dock gets the
  * job's new state at once; Import History lists are marked stale.
  */
 export function useAnswerImportDuplicate(module: ImportModule) {
@@ -65,9 +65,12 @@ export function useAnswerImportDuplicate(module: ImportModule) {
       if (!token) throw new Error("No authentication token");
       return answerImportDuplicate(token, module, jobId, answer);
     },
-    onSuccess: (job: BulkJob) => {
+    onSuccess: (job: BulkJob, { answer }) => {
       if (job?.id) queryClient.setQueryData(importJobKey(module, job.id), job);
       markListsStale(queryClient, ["importJobs", module]);
+      // The API answered the file's other waiting parts too (T1): no red card
+      // should offer one of them until the next poll.
+      if (answer.apply_to_all) void queryClient.invalidateQueries({ queryKey: ["importJob", module] });
     },
   });
 }

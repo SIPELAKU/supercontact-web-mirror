@@ -199,8 +199,9 @@ export function useTableConfig<TData extends object>(
     displayColumnDefOptions: {
       'mrt-row-actions': {
         // MRT turns `size` into a hard min-width. Six 26px IconButtons forced
-        // ~176px; one kebab needs ~56.
-        size: props.rowActions ? 56 : 80,
+        // ~176px. 80 fits the "Actions" header (52px text + 24px padding); a
+        // lone kebab's 56 pushed the header past the cell and got it clipped.
+        size: 80,
         grow: false,
       },
       'mrt-row-select': {

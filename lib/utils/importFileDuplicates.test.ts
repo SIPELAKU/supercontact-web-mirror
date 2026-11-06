@@ -10,7 +10,7 @@ import {
   mergeGroup,
   type FileRow,
 } from "./importFileDuplicates";
-import { CONTACT_FILE_RULES as CONTACT_RULES, contactCompareValue } from "./contactImportRules";
+import { CONTACT_FILE_RULES as CONTACT_RULES, contactCompareValue } from "./importRules";
 
 const COLUMNS = ["name", "email", "phone_number", "company", "position", "address"];
 const csv = (lines: string[]): FileRow[] =>

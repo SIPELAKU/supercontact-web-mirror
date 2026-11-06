@@ -2,25 +2,25 @@
 
 import { useEffect, useState } from "react";
 import type { ImportModule } from "@/lib/api/import-jobs";
-import { useImportWatch } from "@/lib/store/importWatch";
+import { useImportWatch, watchedView, type WatchedImport } from "@/lib/store/importWatch";
 import { useWatchedImportJobs } from "@/lib/hooks/useWatchedImportJobs";
 import ImportHistoryModal from "./ImportHistoryModal";
 import { ImportDuplicateDialog } from "./ImportDuplicateDialog";
 import { ImportProgressCard } from "./ImportProgressCard";
 import { importDockCard } from "./importJobState";
-import { IMPORT_HISTORY_CONFIG } from "./importModules";
+import { IMPORT_VIEWS } from "@/lib/utils/importModules";
 
 // FE-1: the imports being followed, bottom right on every signed-in page,
 // so a long import stays visible after Import History is closed. Mounted
-// once in AuthenticatedLayout. Knows nothing about Contacts: modules come
-// from the followed entries and IMPORT_HISTORY_CONFIG.
+// once in AuthenticatedLayout. Knows no module: each followed entry says which
+// view it came from, and IMPORT_VIEWS says how that view opens Import History.
 export const ImportProgressDock = () => {
   const watched = useImportWatch((state) => state.watched);
   const historyOpen = useImportWatch((state) => state.historyOpen);
   const unwatch = useImportWatch((state) => state.unwatch);
   const markDataChanged = useImportWatch((state) => state.markDataChanged);
   const jobs = useWatchedImportJobs();
-  const [historyModule, setHistoryModule] = useState<ImportModule | null>(null);
+  const [historyItem, setHistoryItem] = useState<WatchedImport | null>(null);
   // The part whose paused row is being answered (FE-3), read live from `jobs`.
   const [review, setReview] = useState<{ module: ImportModule; jobId: string } | null>(null);
   // Answered elsewhere (another tab or user): close for good, so the dialog
@@ -36,7 +36,7 @@ export const ImportProgressDock = () => {
 
   // Hidden while that module's Import History is open: it shows the same.
   const visible = watched.filter((item) => !historyOpen[item.module]);
-  const historyConfig = historyModule ? IMPORT_HISTORY_CONFIG[historyModule] : undefined;
+  const historyConfig = historyItem ? IMPORT_VIEWS[watchedView(historyItem)] : undefined;
 
   return (
     <>
@@ -57,7 +57,7 @@ export const ImportProgressDock = () => {
                 )}
                 openLabel={waitingId ? "Review the duplicate" : "Open Import History"}
                 onOpen={() =>
-                  waitingId ? setReview({ module: item.module, jobId: waitingId }) : setHistoryModule(item.module)
+                  waitingId ? setReview({ module: item.module, jobId: waitingId }) : setHistoryItem(item)
                 }
                 onClose={() => unwatch(item.id)}
               />
@@ -66,14 +66,13 @@ export const ImportProgressDock = () => {
         </div>
       )}
 
-      {historyModule && historyConfig && (
+      {historyItem && historyConfig && (
         <ImportHistoryModal
           open
-          onClose={() => setHistoryModule(null)}
-          module={historyModule}
-          targetFilter={historyConfig.targetFilter}
-          storageKey={historyConfig.storageKey}
-          onDataChanged={() => markDataChanged(historyModule)}
+          onClose={() => setHistoryItem(null)}
+          view={historyConfig.view}
+          mailingListIds={historyConfig.view === "mailing_list" ? historyItem.groupIds : undefined}
+          onDataChanged={() => markDataChanged(historyConfig.module)}
         />
       )}
 

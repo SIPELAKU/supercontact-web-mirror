@@ -11,7 +11,7 @@ import { useListRefresh } from "@/lib/hooks/useListRefresh";
 import { usePolling } from "@/lib/hooks/usePolling";
 import { useImportWatch } from "@/lib/store/importWatch";
 import { BulkJob } from "@/lib/types/email-marketing";
-import type { ImportModule } from "@/lib/api/import-jobs";
+import { IMPORT_VIEWS, type ImportView } from "@/lib/utils/importModules";
 import { AppButton } from "@/components/ui/app-button";
 import { format } from "date-fns";
 import { notify } from "@/lib/notifications";
@@ -26,9 +26,8 @@ import { ImportDuplicateDialog } from "./ImportDuplicateDialog";
 interface ImportHistoryModalProps {
   open: boolean;
   onClose: () => void;
-  module: ImportModule;
-  targetFilter: string[];
-  storageKey: string;
+  // Which imports it lists, and under which title (IMPORT_VIEWS).
+  view: ImportView;
   mailingListIds?: string[];
   // A job completed or was rolled back while this page was open: refresh the
   // module's own list. Jobs already finished when it opened do not count.
@@ -59,12 +58,12 @@ const ACTION_BUTTONS: Record<ImportHistoryAction, { icon: React.ReactNode; toolt
 const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
   open,
   onClose,
-  module,
-  targetFilter,
-  storageKey,
+  view,
   mailingListIds,
   onDataChanged,
 }) => {
+  const { module, history } = IMPORT_VIEWS[view];
+  const { targetFilter, storageKey } = history;
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(BATCH_SIZE);
   const [search, setSearch] = useState("");
@@ -146,7 +145,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
     if (finished.length > 0) onDataChangedRef.current?.();
   }, [data]);
 
-  // The Contact job whose paused row is being answered (FE-3). A snapshot:
+  // The job whose paused row is being answered (FE-3). A snapshot:
   // polling may reload the list meanwhile; an answer that comes too late is
   // a 409, which the dialog handles.
   const [reviewJob, setReviewJob] = useState<BulkJob | null>(null);
@@ -206,7 +205,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
           }
 
           if (status === "Waiting for Review") {
-            // Contacts only (API 1.164.0): paused until the row is answered.
+            // Paused until the row is answered.
             return (
               <Tooltip
                 title="Paused at a row that matches an existing contact with different data."
@@ -270,8 +269,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
               </div>
               <Box sx={{ display: "flex", gap: 1 }}>
                 <span className="text-green-600">Created: {created_rows}</span>
-                {/* Only a Contact import changes existing rows (API 1.164.0). */}
-                {module === "contacts" && <span className="text-blue-600">Updated: {updated_rows ?? 0}</span>}
+                <span className="text-blue-600">Updated: {updated_rows ?? 0}</span>
                 <span className="text-gray-500">Skipped: {skipped_rows}</span>
                 <span className="text-red-600">Failed: {failed_rows}</span>
               </Box>
@@ -374,7 +372,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
         },
       },
     ],
-    [actionMutation.isPending, module]
+    [actionMutation.isPending]
   );
 
   return (
@@ -390,7 +388,7 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 3 }}>
         <Box>
           <Typography variant="h6" fontWeight="bold" color="primary">
-            Import History
+            Import History: {history.label}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Track your background bulk import processes.

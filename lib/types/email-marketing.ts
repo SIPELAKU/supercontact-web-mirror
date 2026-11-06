@@ -276,8 +276,8 @@ export interface BulkJob {
   target: string;
   // `Uploading`: a Contact/Recipient file is still being sent in parts; nothing
   // is processed until the last part arrives.
-  // `Waiting for Review`: a Contact import paused at a row that conflicts with
-  // an existing contact (BE-1, API 1.164.0). It can be stopped or rolled back.
+  // `Waiting for Review`: an import paused at a row that conflicts with an
+  // existing contact (API 1.165.0). It can be stopped or rolled back.
   status: 'Uploading' | 'Queued for Processing' | 'Processing' | 'Waiting for Review' | 'Completed' | 'Failed' | 'Stopped' | 'Rolled Back' | 'Queued for Rollback' | 'Rollback Processing';
   file_name: string;
   mailing_list_ids: string[];
@@ -287,12 +287,16 @@ export interface BulkJob {
   created_rows: number;
   skipped_rows: number;
   failed_rows: number;
-  // Existing contacts the import changed (API 1.164.0): blanks filled in
-  // automatically, or a Replace/Update answer. Always 0 outside Contacts.
+  // Existing contacts the import changed (API 1.165.0): blanks filled in
+  // automatically, or a Replace/Update answer.
   updated_rows?: number;
-  // The row a `Waiting for Review` job waits on (Contacts, API 1.164.0); read
-  // it with `readPendingDuplicate` (lib/utils/importDuplicate.ts).
+  // The row a `Waiting for Review` job waits on (API 1.165.0); read it with
+  // `readPendingDuplicate` (lib/utils/importDuplicate.ts).
   pending_duplicate?: Record<string, unknown> | null;
+  // Shared by every part of one file (API 1.165.0).
+  import_group_id?: string | null;
+  // "Apply to all" was answered: later conflicts in the file take this.
+  duplicate_policy?: "skip" | "replace" | null;
   error_summary: string | null;
   messages?: string[];
   started_at: string | null;

@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import AddContactModal from "@/components/contact/modal/AddContactModal";
 import EditContactModal from "@/components/contact/modal/EditContactModal";
 import { Contact } from "@/lib/models/types";
-import ImportContactModal from "@/components/contact/modal/ImportContactModal";
+import { ImportFileModal } from "@/components/import-history/ImportFileModal";
 import ImportHistoryModal from "@/components/import-history/ImportHistoryModal";
-import { IMPORT_HISTORY_CONFIG } from "@/components/import-history/importModules";
-import { useImportWatch } from "@/lib/store/importWatch";
+import { useImportDataChanged } from "@/lib/hooks/useImportDataChanged";
 import { useReactToPrint } from "react-to-print";
 import { PrintableTable } from "@/components/ui/printable-table";
 import PageHeader from "@/components/ui/page-header";
@@ -290,13 +289,7 @@ export const ContactClient = () => {
 
     // The import dock (FE-1) saw a followed import finish while this page is
     // open: show its rows. Not on mount; the page loads its list itself.
-    const importDataVersion = useImportWatch((state) => state.dataVersion.contacts ?? 0);
-    const seenImportVersion = useRef(importDataVersion);
-    useEffect(() => {
-        if (importDataVersion === seenImportVersion.current) return;
-        seenImportVersion.current = importDataVersion;
-        restartList();
-    }, [importDataVersion, restartList]);
+    useImportDataChanged("contacts", restartList);
 
     // --- Handlers ---
     const handleEdit = (item: Contact) => {
@@ -485,7 +478,8 @@ export const ContactClient = () => {
                 variant="danger"
                 isLoading={isBulkDeleting}
             />
-            <ImportContactModal
+            <ImportFileModal
+                view="contacts"
                 open={openImport}
                 onClose={() => setOpenImport(false)}
                 // The import runs as a background job (FE-3): nothing to
@@ -496,9 +490,7 @@ export const ContactClient = () => {
             <ImportHistoryModal
                 open={openImportHistory}
                 onClose={() => setOpenImportHistory(false)}
-                module="contacts"
-                targetFilter={IMPORT_HISTORY_CONFIG.contacts!.targetFilter}
-                storageKey={IMPORT_HISTORY_CONFIG.contacts!.storageKey}
+                view="contacts"
                 onDataChanged={restartList}
             />
 

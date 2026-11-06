@@ -1,15 +1,10 @@
 // lib/utils/importJobUpload.ts
 //
-// Two ways to send an import file of more than IMPORT_CHUNK_SIZE rows:
-// - `uploadImportJob` (Recipients): ONE job, sent in parts (below);
-// - `uploadImportParts` (Contacts, FE-5): one job per part, like Subscribers.
-//
-// `uploadImportJob` sends the file as ONE background job in parts
-// (API v1.162.0, IMP-3): the first POST creates the job with the first part,
-// every next part goes to `/{job_id}/rows`, and only the last one carries
-// `finished: true`. A job stays `Uploading` - nothing processed - until then;
-// one the upload never finished is deleted by the API's recovery cron after
-// 30 minutes without progress (it runs every 15).
+// Sends an import file in parts of up to IMPORT_CHUNK_SIZE rows: every part is
+// a job of its own, created and queued by one POST (`finished: true`), and
+// named "<file> (Part i/n)" in Import History. A failed part therefore leaves
+// the parts before it imported, and each part is rolled back on its own. All
+// parts share one `import_group_id`, so "apply to all" reaches the whole file.
 
 // Rows per request, for Contacts, Recipients and Subscribers (FE-9). 10,000
 // rows was answered 502 on DEV, likely the API running out of memory
@@ -20,56 +15,6 @@ export function chunkRows<T>(rows: T[], size: number = IMPORT_CHUNK_SIZE): T[][]
   const chunks: T[][] = [];
   for (let i = 0; i < rows.length; i += size) chunks.push(rows.slice(i, i + size));
   return chunks;
-}
-
-/**
- * A part failed. `part` is 1-based; nothing has been imported either way.
- * `details` keeps the API's validation errors (`[{field, message}]`).
- */
-export class ImportUploadError extends Error {
-  constructor(
-    message: string,
-    readonly part: number,
-    readonly totalParts: number,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "ImportUploadError";
-  }
-}
-
-export interface UploadImportJobOptions<T> {
-  rows: T[];
-  // Body key of the rows: `contacts` (Contacts) or `new_contacts` (Recipients).
-  rowsKey: string;
-  // Sent with the first part only, e.g. file_name, target, broadcast_group_ids.
-  startBody: Record<string, unknown>;
-  // POSTs `body` to the module's `/bulk` + `path` and answers the job id.
-  send: (path: string, body: Record<string, unknown>) => Promise<{ job_id: string }>;
-  chunkSize?: number;
-}
-
-export async function uploadImportJob<T>({
-  rows,
-  rowsKey,
-  startBody,
-  send,
-  chunkSize = IMPORT_CHUNK_SIZE,
-}: UploadImportJobOptions<T>): Promise<{ jobId: string; parts: number }> {
-  const chunks = chunkRows(rows, chunkSize);
-  const total = chunks.length;
-  let jobId = "";
-
-  for (let i = 0; i < total; i++) {
-    const body = { [rowsKey]: chunks[i], finished: i === total - 1 };
-    try {
-      const res = i === 0 ? await send("", { ...startBody, ...body }) : await send(`/${jobId}/rows`, body);
-      if (i === 0) jobId = res.job_id;
-    } catch (error: any) {
-      throw new ImportUploadError(error?.message || "Upload failed", i + 1, total, error?.details);
-    }
-  }
-  return { jobId, parts: total };
 }
 
 /**
@@ -86,15 +31,12 @@ export function describeUploadError(error: unknown): string {
       `Import the remaining rows again.`
     );
   }
-  if (error instanceof ImportUploadError && error.part > 1) {
-    return `Upload stopped at part ${error.part} of ${error.totalParts}. Nothing was imported. Please import the file again.`;
-  }
   return apiReason(error);
 }
 
 /** The API's validation errors, one per field + message, or its message. */
 function apiReason(error: unknown): string {
-  const details = error instanceof ImportUploadError ? error.details : undefined;
+  const details = error instanceof ImportPartsError ? error.details : undefined;
   if (Array.isArray(details) && details.length > 0) {
     const lines = new Set(details.map((d: any) => (d?.field ? `${d.field}: ${d.message}` : String(d?.message ?? d))));
     return Array.from(lines).join(", ");
@@ -102,37 +44,31 @@ function apiReason(error: unknown): string {
   return error instanceof Error ? error.message : "Upload failed";
 }
 
-// --- One job per part (FE-5, 2026-11-05) ------------------------------------
-//
-// Contacts are sent the way Subscribers are: every part of up to `chunkSize`
-// rows (IMPORT_CHUNK_SIZE by default) is a job of its own, created and queued
-// by one POST (`finished: true`), and named "<file> (Part i/n)" in Import
-// History. A failed part therefore leaves the parts before it imported, and
-// each part is rolled back on its own.
-// Recipients still use `uploadImportJob` above.
-
 /** "<file>" for a single part, "<file> (Part i/n)" otherwise (`index` 0-based). */
 export function partFileName(fileName: string, index: number, total: number): string {
   return total > 1 ? `${fileName} (Part ${index + 1}/${total})` : fileName;
 }
 
-/** A part failed; `jobIds` are the parts before it, already imported. */
-export class ImportPartsError extends ImportUploadError {
+/**
+ * A part failed. `part` is 1-based; `jobIds` are the parts before it, already
+ * imported. `details` keeps the API's validation errors (`[{field, message}]`).
+ */
+export class ImportPartsError extends Error {
   constructor(
     message: string,
-    part: number,
-    totalParts: number,
+    readonly part: number,
+    readonly totalParts: number,
     readonly jobIds: string[],
-    details?: unknown,
+    readonly details?: unknown,
   ) {
-    super(message, part, totalParts, details);
+    super(message);
     this.name = "ImportPartsError";
   }
 }
 
 export interface UploadImportPartsOptions<T> {
   rows: T[];
-  // Body key of the rows, e.g. `contacts`.
+  // Body key of the rows: `contacts` or `new_contacts`.
   rowsKey: string;
   // Shown in Import History; parts get " (Part i/n)".
   fileName?: string;
@@ -150,9 +86,10 @@ export async function uploadImportParts<T>({
 }: UploadImportPartsOptions<T>): Promise<{ jobIds: string[] }> {
   const chunks = chunkRows(rows, chunkSize);
   const jobIds: string[] = [];
+  const importGroupId = crypto.randomUUID();
 
   for (let i = 0; i < chunks.length; i++) {
-    const body: Record<string, unknown> = { [rowsKey]: chunks[i], finished: true };
+    const body: Record<string, unknown> = { [rowsKey]: chunks[i], finished: true, import_group_id: importGroupId };
     if (fileName) body.file_name = partFileName(fileName, i, chunks.length);
     try {
       const res = await send(body);

@@ -17,7 +17,8 @@ import {
 import { useListRefresh } from '@/lib/hooks/useListRefresh';
 import RecipientsTable from './RecipientsTable';
 import AddRecipientModal from './AddRecipientModal';
-import ImportWaRecipientModal from './ImportWaRecipientModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
 import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import {
   WA_RECIPIENT_SORT_KEYS,
@@ -70,6 +71,7 @@ export default function RecipientsClient() {
     batchIndex: page - 1,
     firstBatchKey: waRecipientsKey({ ...listParams, page: 1 }),
   });
+  useImportDataChanged('recipients', () => void listRefresh.refreshAfterSave());
 
   // Handlers
   const handleOpenAddModal = () => setAddModalOpen(true);
@@ -208,9 +210,9 @@ export default function RecipientsClient() {
         onSuccess={handleSuccess}
       />
 
-      <ImportWaRecipientModal
+      <ImportFileModal
+        view="recipients"
         open={isImportModalOpen}
-        recipientType="whatsapp"
         onClose={handleCloseModals}
         onSuccess={handleImportStarted}
       />
@@ -218,11 +220,7 @@ export default function RecipientsClient() {
       <ImportHistoryModal
         open={isImportHistoryOpen}
         onClose={() => setImportHistoryOpen(false)}
-        module="recipients"
-        // Imports from a Group's detail page too (user decision 2026-11-04):
-        // GET /recipients/bulk cannot filter by group.
-        targetFilter={['recipient', 'broadcast_group']}
-        storageKey="import_interval_recipient"
+        view="recipients"
         onDataChanged={() => void listRefresh.refreshAfterSave()}
       />
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GUIDE_HEADER, importTemplateSheets } from "./importTemplate";
-import { CONTACT_IMPORT_RULES, CONTACT_IMPORT_TEMPLATE, suggestContactField } from "./contactImportRules";
+import { CONTACT_IMPORT_RULES, CONTACT_IMPORT_TEMPLATE, suggestContactField } from "./importRules";
 
 describe("importTemplateSheets", () => {
   const config = {

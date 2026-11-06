@@ -21,8 +21,6 @@ interface FileDuplicateDialogProps {
   resolution?: GroupResolution;
   onResolve: (resolution: GroupResolution) => void;
   onClose: () => void;
-  // Above the modal that opens it.
-  zIndex?: number;
 }
 
 const rowLabel = (index: number) => `Row ${index + 1}`;
@@ -36,7 +34,6 @@ export const FileDuplicateDialog = ({
   resolution,
   onResolve,
   onClose,
-  zIndex,
 }: FileDuplicateDialogProps) => {
   const fields = useMemo(() => group?.differing ?? [], [group]);
   const sources = useMemo(
@@ -70,7 +67,6 @@ export const FileDuplicateDialog = ({
       title={`Duplicate rows in file — ${group.rows.map((i) => i + 1).join(", ")}`}
       description="These rows have the same email or phone number, so they are one contact."
       maxWidth="md"
-      zIndex={zIndex}
       actions={
         <div className="flex w-full flex-wrap justify-between gap-2">
           <AppButton variantStyle="outline" color="danger" onClick={() => onResolve({ action: "remove" })}>

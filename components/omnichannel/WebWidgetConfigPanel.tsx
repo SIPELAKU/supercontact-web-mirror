@@ -369,7 +369,8 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             <option value="en">English</option>
           </select>
           <p className="text-xs text-gray-500">
-            Automatic uses the language set on your embed code, or falls back to the widget default.
+            Automatic uses the language set on your embed code, or falls back to the widget default. This changes the
+            widget&apos;s buttons and default messages, not your articles: they stay in the language they were written in.
           </p>
         </div>
       </div>

@@ -1,10 +1,13 @@
 // lib/utils/importDuplicate.ts
 //
-// Answering the row a Contact import paused on (FE-3, API 1.164.0, BE-4):
-// `POST /contacts/bulk/{job_id}/duplicate-resolution`
+// Answering the row an import paused on (FE-3, T1, T2.8, API 1.165.0):
+// `POST /{module}/bulk/{job_id}/duplicate-resolution`
 //   { row_number, action: "skip" }                  data unchanged
 //   { row_number, action: "replace" }               every conflict takes the file's value
 //   { row_number, action: "update", keep }          one choice per conflict
+//   { ..., apply_to_all: true }                     skip or replace only: the same
+//                                                   answer for every later conflict
+//                                                   in the file, all its parts
 // Replace and Update also fill the existing contact's blank fields. The job
 // then goes on to the next row.
 
@@ -21,6 +24,7 @@ export interface ImportDuplicateAnswer {
   row_number: number;
   action: ImportDuplicateAction;
   keep?: Record<string, DuplicateChoice>;
+  apply_to_all?: boolean;
 }
 
 /** The row a job waits on, or null when it waits on nothing readable. */
@@ -36,13 +40,26 @@ export function readPendingDuplicate(job: Pick<BulkJob, "status" | "pending_dupl
   } as ImportPendingDuplicate;
 }
 
-/** The request body; `keep` is sent for Update only. */
+/**
+ * The request body; `keep` is sent for Update only, and so is never
+ * `apply_to_all`, which the API refuses there (a choice per field cannot hold
+ * for rows not seen yet).
+ */
 export function importDuplicateAnswer(
   rowNumber: number,
   action: ImportDuplicateAction,
   keep: Record<string, DuplicateChoice> = {},
+  applyToAll = false,
 ): ImportDuplicateAnswer {
-  return action === "update" ? { row_number: rowNumber, action, keep } : { row_number: rowNumber, action };
+  if (action === "update") return { row_number: rowNumber, action, keep };
+  return applyToAll ? { row_number: rowNumber, action, apply_to_all: true } : { row_number: rowNumber, action };
+}
+
+/** "all" only when the answer really covers the rest of the file. */
+export function importDuplicateActionLabel(action: ImportDuplicateAction, applyToAll: boolean): string {
+  if (action === "update") return "Update selected";
+  const label = action === "skip" ? "Skip" : "Replace";
+  return applyToAll ? `${label} all` : label;
 }
 
 /** Skip and Replace need no choice; Update needs one for every conflict. */

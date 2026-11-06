@@ -9,6 +9,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.130.1] - 2026-11-06
+
+### Detail Versi 1.130.1
+
+#### 🎨 Judul Import History dan Keterangan Widget Language
+
+- **Deskripsi:**
+  - **Import History:** judul kini menyebut modulnya: *Import History: Contacts*, *Subscribers*, *Mailing Lists*, *Recipients*, atau *Groups*, supaya tidak tertukar. Judul yang sama dipakai saat dibuka dari widget progres.
+  - **Settings › Web Widget › Widget Language:** keterangan kini menjelaskan bahwa pilihan ini mengubah tombol dan pesan bawaan widget, bukan artikel. Artikel tetap dalam bahasa saat ditulis.
+  - **Dialog duplikat:** tombol mengikuti checkbox. Tidak dicentang: **Skip** dan **Replace**, hanya untuk baris ini. Dicentang: **Skip all** dan **Replace all**.
+  - **Technical Notes:** `ImportHistoryModal` kini menerima prop `view`, menggantikan `module`, `targetFilter`, dan `storageKey`. `IMPORT_VIEWS[view].history.label`. `importDuplicateActionLabel`. `job_id` di respons `POST /{module}/bulk` kini wajib, karena API v1.165.0 selalu mengirimnya.
+
+- **🧪 Testing:** 3 tes baru, 1 tes toleransi `job_id` dihapus; 4/4 mutasi tertangkap; 96 file / 1050 tes lolos; tsc bersih. Judul dan tombol dicek di Chrome headless dengan API tiruan.
+
+---
+
+## [1.130.0] - 2026-11-06
+
+### Detail Versi 1.130.0
+
+#### ✨ "Terapkan ke Semua" dan Dialog Duplikat di Semua Modul (T1, T2.8)
+
+- **Deskripsi:**
+  - **Masalah:** import berhenti di setiap baris yang bentrok, jadi file dengan banyak bentrok harus dijawab satu per satu. Di Subscribers dan Recipients, baris yang cocok dengan kontak lama dilewati diam-diam.
+  - **Perbaikan:**
+    - Checkbox **Apply to all remaining duplicates in this file** di dialog duplikat: **Skip all** dan **Replace all** berlaku untuk semua sisa baris bentrok di file itu, termasuk semua bagian `(Part i/n)`. **Update selected** nonaktif saat checkbox dicentang.
+    - Checkbox kembali kosong untuk setiap baris baru.
+    - Status `Waiting for Review`, tombol Review, dan dialog duplikat kini berlaku di Subscribers dan Recipients. Judul dialog mengikuti modul.
+    - Hitungan **Updated** tampil di Import History semua modul.
+    - Widget progres Subscribers dan Mailing List aktif, karena API kini mengembalikan `job_id`.
+  - **Technical Notes:**
+    - `importDuplicateAnswer` mengirim `apply_to_all: true` hanya untuk `skip` dan `replace`
+    - `uploadImportParts` membuat satu `import_group_id` per file dan mengirimnya di setiap bagian
+    - Setelah "apply to all", kartu bagian lain langsung dimuat ulang, supaya tidak menawarkan baris yang sudah terjawab
+    - `BulkJob`: `import_group_id`, `duplicate_policy`
+  - **Rilis:** butuh API v1.165.0. Di API yang lebih lama, checkbox diabaikan sehingga dialog tetap muncul lagi.
+
+- **🧪 Testing:** 5 tes baru; 7/7 mutasi tertangkap; 96 file / 1048 tes lolos; tsc bersih. Lolos tes manual terhadap DEV v1.165.0.
+
+---
+
+## [1.129.0] - 2026-11-06
+
+### Detail Versi 1.129.0
+
+#### ✨ Satu Alur Import untuk Contacts, Subscribers, dan Recipients (T2)
+
+- **Deskripsi:**
+  - **Masalah:** ketiga modul punya modal import sendiri (sekitar 2.100 baris) dengan perilaku berbeda. Hanya Contact yang punya langkah Check, template dari aturan yang sama, dan widget progres. Di Subscribers, duplikat dalam file dilewati diam-diam. Di Subscribers dan Recipients, satu email tidak valid bisa menggagalkan satu bagian file.
+  - **Perbaikan:**
+    - Satu komponen `ImportFileModal` untuk kelima halaman: Contacts, Subscribers, Detail Mailing List, Recipients, dan Detail Group. Yang berbeda hanya pengaturan di `IMPORT_VIEWS`.
+    - Langkah **Check** berjalan di semua modul: duplikat dalam file harus diselesaikan, dan baris tidak valid ditandai lalu tidak dikirim.
+    - **Kolom wajib:** Contact butuh nama dan email atau nomor HP, Subscribers butuh nama dan email, Recipients butuh nama dan nomor HP.
+    - **Template** dari aturan yang sama untuk ketiga modul. Recipients sebelumnya belum punya template.
+    - **Subscribers** kini menawarkan kolom Position, Company, dan Address seperti modul lain.
+    - **Widget progres** ikut memantau Recipients dan Detail Group. Kartu membuka Import History di tampilan halaman asal import.
+    - Modal memakai `AppDialog`: tombol Esc, fokus keyboard, dan footer yang selalu terlihat. Modal tidak bisa ditutup selama upload berjalan.
+    - Kalau bagian file berikutnya gagal, wizard kembali ke langkah awal. Sebelumnya wizard terbuka lagi di Preview, sehingga file yang sama bisa terkirim ulang.
+  - **Perubahan perilaku:**
+    - **Recipients:** file besar kini beberapa job `(Part i/n)`, bukan satu job, dan rollback dilakukan per bagian.
+    - **Subscribers:** duplikat dalam file dilihat dari email atau nomor HP, bukan email saja, dan muncul di langkah Check.
+    - **Contact:** tampilan modal sedikit lebih lebar, dan di pilihan Maps To, Company tampil sebelum Position.
+  - **Menunggu API:**
+    - Widget progres untuk Subscribers dan Detail Mailing List, setelah API `POST /subscribers/bulk` mengembalikan `job_id` (selesai di 1.130.0).
+    - Dialog duplikat terhadap kontak lama untuk Subscribers dan Recipients (T2.8).
+  - **Technical Notes:**
+    - `lib/utils/importModules.ts`: `IMPORT_VIEWS`, `importJobBody`, `missingMappings`, `importFieldOptions`
+    - `lib/utils/importRules.ts` (dari `contactImportRules.ts`): aturan field bersama, kolom wajib per modul, tiga template
+    - `components/import-history/`: `ImportFileModal`, `ImportUploadStep`, `ImportMappingStep`, `ImportPreviewStep`. `ImportCheckStep` dan `FileDuplicateDialog` dipindah ke sini
+    - `mapFileRows` di `importFileRead.ts`, `useImportDataChanged`, `watchedView` (data lama di localStorage dianggap Contacts)
+    - Dihapus: `ImportContactModal`, `ImportSubscriberModal`, `ImportWaRecipientModal`, `uploadImportJob`, `sendImportPart`, `ImportUploadError`, `components/import-history/importModules.ts`, prop `zIndex` di `AppDialog`
+    - API `/recipients/bulk/{job_id}/rows` tidak lagi dipakai web
+
+- **🧪 Testing:** 20 tes baru bersih (tes untuk fungsi yang dihapus ikut dihapus); 21/21 mutasi tertangkap; 96 file / 1043 tes lolos; tsc bersih; lint file baru bersih. Alur modal kelima halaman dijalankan di Chrome headless dengan API tiruan. Contact dan Recipients lolos tes manual; Subscribers menunggu. Build menunggu dev server dimatikan.
+
+---
+
 ## [1.128.0] - 2026-11-06
 
 ### Detail Versi 1.128.0

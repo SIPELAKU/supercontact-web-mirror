@@ -123,7 +123,7 @@ export type ImportHistoryAction = ImportJobAction | "review";
 
 /**
  * The buttons Import History offers for a job, in display order, matching the
- * API's rules. `Waiting for Review` (Contacts, API 1.164.0) can be answered,
+ * API's rules. `Waiting for Review` (API 1.165.0) can be answered,
  * stopped (Continue then asks the same row again) or rolled back.
  */
 export function importJobActions(status: string): ImportHistoryAction[] {

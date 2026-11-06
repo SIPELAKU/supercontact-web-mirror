@@ -1,13 +1,18 @@
-// lib/utils/contactImportRules.ts
+// lib/utils/importRules.ts
 //
-// What a Contact import row must look like, checked in the browser before
-// anything is sent (FE-6), and the downloadable template built from the same
-// rules (FE-7), so the guide can never say something the check does not do.
+// What an import row must look like, checked in the browser before anything is
+// sent (FE-6), and the downloadable template built from the same rules (FE-7),
+// so the guide can never say something the check does not do. Contacts,
+// Subscribers and Recipients are rows of the same contact table: their fields
+// follow the same rules, and only which ones are required differs (T2).
 //
-// Copied from the API (v1.163.3), which stays the final judge:
-// - `ContactBulkRequest` in app/schemas/contact_schema.py (lengths, email);
+// Copied from the API (v1.164.2), which stays the final judge:
+// - `ContactBulkRequest`, `SubscriberBaseRequest`, `RecipientBaseRequest`
+//   (lengths, email);
 // - `normalize_phone_number_unchecked` in app/utils/number.py (phone);
-// - `identity_key` in app/utils/contact_identity.py (who is the same person).
+// - `identity_key` in app/utils/contact_identity.py (who is the same person);
+// - `_validate_manual_subscriber_payload` and
+//   `_validate_manual_recipient_payload` (name + email, name + phone).
 // Values arrive here already trimmed by the import modal.
 
 import type { ImportFileRules } from "./importFileDuplicates";
@@ -114,25 +119,22 @@ export function normalizeImportPhone(phone: string): string {
   return `+${compact}`;
 }
 
-export const CONTACT_IMPORT_RULES: ImportFieldRule[] = [
+const IMPORT_FIELDS: Omit<ImportFieldRule, "required">[] = [
   {
     field: "name",
     column: "Name",
-    required: "Yes",
     format: "3–255 characters",
     check: lengthBetween("Name", 3, 255),
   },
   {
     field: "email",
     column: "Email",
-    required: "Email or Phone Number",
     format: "An email address, e.g. budi@example.com",
     check: (value) => (isImportEmail(value) ? null : "Invalid email"),
   },
   {
     field: "phone_number",
     column: "Phone Number",
-    required: "Email or Phone Number",
     format: "Digits, spaces, '+', '-' and parentheses, at most 30 characters. 0812… is read as +62812…",
     check: (value) => {
       if (length(value) > 30) return "Invalid phone number: at most 30 characters";
@@ -147,31 +149,52 @@ export const CONTACT_IMPORT_RULES: ImportFieldRule[] = [
   {
     field: "company",
     column: "Company",
-    required: "No",
     format: "3–255 characters",
     check: lengthBetween("Company", 3, 255),
   },
   {
     field: "position",
     column: "Position",
-    required: "No",
     format: "At most 255 characters",
     check: (value) => (length(value) > 255 ? "Position is too long" : null),
   },
   {
     field: "address",
     column: "Address",
-    required: "No",
     format: "At least 6 characters",
     check: (value) => (length(value) < 6 ? "Address must be at least 6 characters" : null),
   },
 ];
 
+/** The fields with what each module requires; a field left out is optional. */
+const importRules = (required: Record<string, string>): ImportFieldRule[] =>
+  IMPORT_FIELDS.map((field) => ({ ...field, required: required[field.field] ?? "No" }));
+
+export const CONTACT_IMPORT_RULES = importRules({
+  name: "Yes",
+  email: "Email or Phone Number",
+  phone_number: "Email or Phone Number",
+});
+export const SUBSCRIBER_IMPORT_RULES = importRules({ name: "Yes", email: "Yes" });
+export const RECIPIENT_IMPORT_RULES = importRules({ name: "Yes", phone_number: "Yes" });
+
 // Rules for the whole row, shown under the columns in the template guide.
+const SAME_CONTACT_NOTE = "Rows with the same email or phone number are the same contact.";
+const CUSTOM_FIELDS_NOTE = "Other columns can be mapped to custom fields.";
 export const CONTACT_IMPORT_ROW_NOTES = [
   "Fill in Email or Phone Number (at least one). Rows with neither are skipped.",
-  "Rows with the same email or phone number are the same contact.",
-  "Other columns can be mapped to custom fields.",
+  SAME_CONTACT_NOTE,
+  CUSTOM_FIELDS_NOTE,
+];
+const SUBSCRIBER_IMPORT_ROW_NOTES = [
+  "Fill in Name and Email on every row. Other rows are not imported.",
+  SAME_CONTACT_NOTE,
+  CUSTOM_FIELDS_NOTE,
+];
+const RECIPIENT_IMPORT_ROW_NOTES = [
+  "Fill in Name and Phone Number on every row. Other rows are not imported.",
+  SAME_CONTACT_NOTE,
+  CUSTOM_FIELDS_NOTE,
 ];
 
 const filled = (row: ImportRow, field: string) => Boolean(row[field]?.trim());
@@ -186,9 +209,9 @@ export function hasContactInfo(row: ImportRow): boolean {
 }
 
 /** Every rule the row breaks; empty = the row can be imported. */
-export function validateContactImportRow(row: ImportRow): RowIssue[] {
+export function validateImportRow(row: ImportRow, rules: ImportFieldRule[]): RowIssue[] {
   const issues: RowIssue[] = [];
-  for (const rule of CONTACT_IMPORT_RULES) {
+  for (const rule of rules) {
     const value = row[rule.field]?.trim() ?? "";
     if (!value) {
       if (rule.required === "Yes") issues.push({ field: rule.field, message: `${rule.column} is required` });
@@ -250,13 +273,21 @@ export function suggestContactField(header: string): string | null {
   return null;
 }
 
-/** The Contact rules in the shape the file check (importFileDuplicates) takes. */
-export const CONTACT_FILE_RULES: ImportFileRules<ImportRow> = {
-  isImportable: hasContactInfo,
-  validate: validateContactImportRow,
+/** A module's rules in the shape the file check (importFileDuplicates) takes. */
+const fileRules = (
+  rules: ImportFieldRule[],
+  isImportable: ImportFileRules<ImportRow>["isImportable"] = () => true,
+): ImportFileRules<ImportRow> => ({
+  isImportable,
+  validate: (row) => validateImportRow(row, rules),
   identityOf: contactIdentity,
   compareValue: contactCompareValue,
-};
+});
+
+export const CONTACT_FILE_RULES = fileRules(CONTACT_IMPORT_RULES, hasContactInfo);
+// Their identity column is required, so a row without it is invalid, not skipped.
+export const SUBSCRIBER_FILE_RULES = fileRules(SUBSCRIBER_IMPORT_RULES);
+export const RECIPIENT_FILE_RULES = fileRules(RECIPIENT_IMPORT_RULES);
 
 // FE-7: the downloadable template. Its sample rows must pass the check above
 // (a test keeps them honest).
@@ -290,5 +321,41 @@ export const CONTACT_IMPORT_TEMPLATE = {
       position: "",
       address: "Jl. Diponegoro 45, Bandung",
     },
+  ] satisfies ImportRow[],
+};
+
+export const SUBSCRIBER_IMPORT_TEMPLATE = {
+  fileName: "subscribers_import_template.xlsx",
+  sheetName: "Subscribers",
+  rules: SUBSCRIBER_IMPORT_RULES,
+  notes: SUBSCRIBER_IMPORT_ROW_NOTES,
+  samples: [
+    {
+      name: "Budi Santoso",
+      email: "budi.santoso@example.com",
+      phone_number: "081234567890",
+      company: "PT Maju Jaya",
+      position: "Purchasing Manager",
+      address: "Jl. Sudirman No. 1, Jakarta",
+    },
+    { name: "Siti Rahma", email: "siti.rahma@example.com", phone_number: "", company: "", position: "", address: "" },
+  ] satisfies ImportRow[],
+};
+
+export const RECIPIENT_IMPORT_TEMPLATE = {
+  fileName: "recipients_import_template.xlsx",
+  sheetName: "Recipients",
+  rules: RECIPIENT_IMPORT_RULES,
+  notes: RECIPIENT_IMPORT_ROW_NOTES,
+  samples: [
+    {
+      name: "Budi Santoso",
+      email: "budi.santoso@example.com",
+      phone_number: "081234567890",
+      company: "PT Maju Jaya",
+      position: "Purchasing Manager",
+      address: "Jl. Sudirman No. 1, Jakarta",
+    },
+    { name: "Andi Wijaya", email: "", phone_number: "+62 813-5555-0101", company: "", position: "", address: "" },
   ] satisfies ImportRow[],
 };

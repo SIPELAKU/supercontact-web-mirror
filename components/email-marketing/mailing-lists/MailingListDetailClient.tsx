@@ -2,13 +2,15 @@
 
 import { useCallback, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, CircularProgress } from '@mui/material';
 import Cookies from 'js-cookie';
 import { Eye, History, Mail, Trash2, Upload, UserPlus } from 'lucide-react';
 
 import AddSubscriberModal from '@/components/email-marketing/subscribers/modals/AddSubscriberModal';
-import ImportSubscriberModal from '@/components/email-marketing/subscribers/modals/ImportSubscriberModal';
-import ImportHistoryModal from '@/components/email-marketing/subscribers/modals/ImportHistoryModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
+import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import { SubscriberPreviewPopup } from '@/components/email-marketing/subscribers/SubscriberPreviewPopup';
 import ViewCampaignStatsModal from '@/components/email-marketing/campaigns/modals/ViewCampaignStatsModal';
 import { AppButton } from '@/components/ui/app-button';
@@ -47,7 +49,14 @@ export default function MailingListDetailClient() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const listId = String(params.id);
+  const refreshListData = () => {
+    queryClient.invalidateQueries({ queryKey: ['subscribers'] });
+    queryClient.invalidateQueries({ queryKey: ['mailing-lists'] });
+    queryClient.invalidateQueries({ queryKey: ['mailing-list', listId] });
+  };
+  useImportDataChanged('subscribers', refreshListData);
 
   const [activeTab, setActiveTab] = useState<ListTab>(() => {
     const fromUrl = searchParams.get('tab') as ListTab | null;
@@ -451,7 +460,9 @@ export default function MailingListDetailClient() {
         target="mailing_list"
       />
 
-      <ImportSubscriberModal
+      <ImportFileModal
+        view="mailing_list"
+        groupIds={[listId]}
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
         // The import runs in the background; History polls the job and
@@ -460,15 +471,14 @@ export default function MailingListDetailClient() {
           setShowImportModal(false);
           setShowImportHistoryModal(true);
         }}
-        mailingListIds={[listId]}
       />
 
       <ImportHistoryModal
         open={showImportHistoryModal}
         onClose={() => setShowImportHistoryModal(false)}
-        targetFilter={['mailing_list']}
-        storageKey="import_interval_mailing_list"
+        view="mailing_list"
         mailingListIds={[listId]}
+        onDataChanged={refreshListData}
       />
 
       <ConfirmationPopup

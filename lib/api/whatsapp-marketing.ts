@@ -4,8 +4,10 @@
 import type {
   BroadcastsResponse,
   BroadcastCampaign,
+  BroadcastRecipientsQuery,
 } from '../types/whatsapp-marketing';
 import { logger } from "../utils/logger";
+import { appendFilterParams } from "../utils/filterParams";
 import { fetchWithTimeout } from "./api-client";
 
 // ============================================
@@ -326,17 +328,13 @@ export async function duplicateBroadcast(
 }
 
 /**
- * Fetch recipients for a specific broadcast with their status
+ * One page of a broadcast's recipients, with their status. The table's
+ * filters go out as they are (`status=read`, ...): see lib/utils/filterParams.ts.
  */
 export async function fetchBroadcastRecipients(
   token: string,
   id: string,
-  page: number = 1,
-  limit: number = 10,
-  search?: string,
-  status?: string,
-  sortBy?: string,
-  sortOrder?: 'asc' | 'desc'
+  { page = 1, limit = 10, search, sortBy, sortOrder, filters }: BroadcastRecipientsQuery = {}
 ): Promise<import('../types/whatsapp-marketing').BroadcastRecipientsResponse> {
   const queryParams = new URLSearchParams({
     page: page.toString(),
@@ -350,9 +348,7 @@ export async function fetchBroadcastRecipients(
     queryParams.append('search', search);
   }
 
-  if (status) {
-    queryParams.append('status', status);
-  }
+  appendFilterParams(queryParams, filters);
 
   // Same sort_by/sort_order contract as the broadcasts list. Without a sort
   // the API keeps its own order (newest contact first).

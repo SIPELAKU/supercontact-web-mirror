@@ -47,8 +47,13 @@ export interface Conversation {
   channel_type: ChannelType;
   contact_name?: string;
   contact_identifier?: string;
+  // Null while a web-widget chat is still handled by the bot; set once a
+  // person takes part (API v1.161.0), announced by a WS "contact_linked".
+  contact_id?: string | null;
   external_contact_name?: string;
   external_contact_identifier?: string;
+  // Email typed into the widget's pre-chat form (API v1.161.0).
+  external_contact_email?: string | null;
   subject?: string;
   status: ConversationStatus;
   priority?: ConversationPriority;
@@ -66,6 +71,9 @@ export interface Conversation {
   archived_at?: string | null;
   reopened_at?: string | null;
   assigned_at?: string | null;
+  // Since API v1.163.0 (ASG-1) a web-widget chat also gets its owner from the
+  // staff member who first replies, not only from assign/queue/routing.
+  assigned_user_id?: string | null;
   first_response_at?: string | null;
   last_agent_response_at?: string | null;
   last_customer_message_at?: string | null;
@@ -99,7 +107,10 @@ export interface Message {
 }
 
 export interface ConversationWithMessages extends Conversation {
+  // One page: the newest by default, oldest first (see fetchConversation).
   messages: Message[];
+  // Every message of the conversation, not only this page (API 1.163.4).
+  total_messages?: number;
   assigned_user_fullname?: string;
   tags: ConversationTag[];
   notes: ConversationNote[];
@@ -120,6 +131,8 @@ export interface ConversationListItem {
   channel_type: ChannelType;
   external_contact_identifier?: string;
   external_contact_name?: string;
+  // Email typed into the widget's pre-chat form (API v1.161.0).
+  external_contact_email?: string | null;
   status: ConversationStatus;
   priority?: ConversationPriority;
   last_message_at?: string;
@@ -135,6 +148,45 @@ export interface ConversationListItem {
   // Phase 1/2). `null`/absent when the contact isn't linked to a company.
   crm_company_id?: string | null;
   organization_name?: string | null;
+}
+
+// One row of GET /contacts/{id}/conversations (API v1.158.0, BE-1.2): every
+// conversation of a contact across channels, including Solved/Closed/Archived.
+// Previews only; the full history is GET /omnichannels/conversations/{id}.
+export interface ContactConversationItem {
+  id: string;
+  channel_type: ChannelType;
+  account_name?: string | null;
+  status: ConversationStatus;
+  subject?: string | null;
+  first_message_preview?: string | null;
+  last_message_preview?: string | null;
+  message_count: number;
+  assigned_user_fullname?: string | null;
+  created_at: string;
+  last_message_at?: string | null;
+  // false for a widget chat attached to this contact by the email the visitor
+  // typed (BE-1.4) - nobody proved the visitor owns that address.
+  identity_verified: boolean;
+}
+
+export type ContactConversationSort = "created_at_desc" | "created_at_asc";
+
+export interface ContactConversationQuery {
+  page: number;
+  limit: number;
+  channel_type?: ChannelType;
+  sort?: ContactConversationSort;
+}
+
+export interface ContactConversationListResponse {
+  items: ContactConversationItem[];
+  total: number;
+  page: number;
+  limit: number;
+  // Response-level, not per row: whether the caller may open the full
+  // history (needs omnichannel access).
+  can_open_conversation: boolean;
 }
 
 // Query params for GET /omnichannels/inbox. Every field is optional; omitted
@@ -440,16 +492,19 @@ export interface WebWidgetConfig {
   auto_close_idle_enabled: boolean;
   idle_warn_minutes: number;
   idle_close_minutes: number;
-  /** Empty disables the whole cycle - closing a chat that was never asked
-   *  reads as the chat vanishing. */
+  /** null = the backend's locale default ("Masih di sana? …"); the cycle
+   *  still runs. */
   idle_warn_text: string | null;
+  /** Read-only: what the bot sends when a text field above is blank, per
+   *  language (BE-7.1). Absent on older backends - see widgetDefaultTexts.ts. */
+  default_texts?: Partial<Record<"id" | "en", Partial<Record<string, string>>>> | null;
   // i18n: admin-configurable widget language. null/undefined = "Automatic"
   // (the widget uses its embed data-locale attribute or its own default);
   // otherwise one of the shipped string-pack locales ("id" | "en").
   default_locale?: string | null;
 }
 
-export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id'>;
+export type UpdateWebWidgetConfigRequest = Omit<WebWidgetConfig, 'id' | 'account_id' | 'default_texts'>;
 
 export interface CreateConversationRequest {
   account_id: string;

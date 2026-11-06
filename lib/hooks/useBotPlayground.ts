@@ -195,7 +195,8 @@ export function useAttachQuestionToArticle(accountId?: string) {
 import { getContentGaps } from "@/lib/api/bot-playground";
 import { fillKbPlaceholders } from "@/lib/api/knowledge";
 
-export function useContentGaps() {
+/** `enabled: false` for a user without omnichannel:setup - the endpoint would refuse. */
+export function useContentGaps(enabled = true) {
   const { token } = useAuth();
   return useQuery({
     queryKey: ["bot-playground", "content-gaps"],
@@ -203,7 +204,7 @@ export function useContentGaps() {
       if (!token) throw new Error("No authentication token");
       return getContentGaps(token);
     },
-    enabled: !!token,
+    enabled: !!token && enabled,
     retry: 1,
     refetchOnWindowFocus: false,
   });
@@ -213,14 +214,16 @@ export function useFillPlaceholders(accountId?: string) {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (values: Record<string, string>) => {
+    mutationFn: ({ values, articleIds }: { values: Record<string, string>; articleIds?: string[] }) => {
       if (!token) throw new Error("No authentication token");
-      return fillKbPlaceholders(token, values);
+      return fillKbPlaceholders(token, values, articleIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bot-playground", "content-gaps"] });
       queryClient.invalidateQueries({ queryKey: keys.readiness(accountId) });
       queryClient.invalidateQueries({ queryKey: ["knowledge", "articles"] });
+      // An open article shows the filled title/excerpt/body, not the old ones.
+      queryClient.invalidateQueries({ queryKey: ["knowledge", "article"] });
     },
   });
 }

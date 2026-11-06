@@ -13,6 +13,13 @@ import { useBusinessHours } from "@/lib/hooks/useBusinessHours";
 import { useConversationQueues } from "@/lib/hooks/useAgents";
 import type { QuickAction, UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
+import { widgetDefaultText, type WidgetTextKey } from "@/lib/utils/widgetDefaultTexts";
+import {
+  WIDGET_HOME_TEXTS,
+  widgetHomeSubtext,
+  widgetLocale,
+  type WidgetHomeTextKey,
+} from "@/lib/utils/widgetHomeTexts";
 import { isTitleListOnly } from "./answerBotHints";
 import QuickActionsBuilder from "./QuickActionsBuilder";
 
@@ -23,9 +30,13 @@ interface WebWidgetConfigPanelProps {
 // Sensible defaults so an existing widget whose stored config predates these
 // fields still renders (the backend may omit them on GET). Every key here maps
 // to a real WebWidgetConfig field that round-trips on PUT.
+//
+// Greeting Message, Home Headline / Subtext, Response Time Label and Handoff
+// Label default to "" (FE-7.2, API v1.163.0): empty = the widget's own text in
+// the widget language (lib/utils/widgetHomeTexts.ts), shown as placeholders.
 const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   title: "Chat with us",
-  greeting_message: "Hi! How can we help?",
+  greeting_message: "",
   brand_color: "#5479EE",
   allowed_domains: [],
   is_widget_enabled: true,
@@ -37,19 +48,19 @@ const DEFAULT_FORM: UpdateWebWidgetConfigRequest = {
   bot_name: "Support Assistant",
   bot_avatar_url: null,
   // Home screen
-  home_headline: "Hi there 👋",
-  home_subtext: "How can we help you today?",
+  home_headline: "",
+  home_subtext: "",
   show_home_screen: true,
   // Quick actions
   quick_actions: [],
   // Widget language (null = automatic: use embed data-locale / widget default)
   default_locale: null,
   // Presence & response time
-  response_time_label: "Usually replies instantly",
+  response_time_label: "",
   show_presence: true,
   // Human handoff
   enable_human_handoff: true,
-  handoff_label: "Talk to a human",
+  handoff_label: "",
   handoff_queue_id: null,
   // Privacy
   privacy_footer_text: null,
@@ -177,6 +188,15 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
     value: UpdateWebWidgetConfigRequest[K]
   ) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  // Placeholder = what the bot sends when the field is blank, in the language
+  // picked above (the unsaved choice, so switching it previews right away).
+  const defaultText = (key: WidgetTextKey) =>
+    widgetDefaultText(key, form.default_locale, config?.default_texts);
+  // Same for the widget's own texts (FE-7.2): what the widget shows when the
+  // field is blank. Home Subtext falls back to the Greeting Message first.
+  const homeLocale = widgetLocale(form.default_locale);
+  const homeDefault = (key: WidgetHomeTextKey) => WIDGET_HOME_TEXTS[homeLocale][key];
+
   const setQuickActions = (quick_actions: QuickAction[]) =>
     setForm((prev) => ({ ...prev, quick_actions }));
 
@@ -282,9 +302,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
           isBgWhite
           value={form.greeting_message}
           onChange={(e) => setField("greeting_message", e.target.value)}
-          placeholder="Hi! How can we help?"
+          placeholder={homeDefault("greeting_message")}
         />
-        <p className="text-xs text-gray-500">Shown to visitors before they send their first message.</p>
+        <p className="text-xs text-gray-500">
+          Shown to visitors before they send their first message. Leave blank for the default in the widget&apos;s
+          language.
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -339,12 +362,15 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             onChange={(e) => setField("default_locale", e.target.value || null)}
             className="w-full h-10 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700"
           >
-            <option value="">Automatic (visitor/browser)</option>
+            {/* The widget never reads the browser language: embed data-locale,
+                else Indonesian. */}
+            <option value="">Automatic (embed code, default Indonesian)</option>
             <option value="id">Bahasa Indonesia</option>
             <option value="en">English</option>
           </select>
           <p className="text-xs text-gray-500">
-            Automatic uses the language set on your embed code, or falls back to the widget default.
+            Automatic uses the language set on your embed code, or falls back to the widget default. This changes the
+            widget&apos;s buttons and default messages, not your articles: they stay in the language they were written in.
           </p>
         </div>
       </div>
@@ -370,9 +396,10 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               isBgWhite
               value={form.home_headline}
               onChange={(e) => setField("home_headline", e.target.value)}
-              placeholder="Hi there 👋"
+              placeholder={homeDefault("home_headline")}
               disabled={!form.show_home_screen}
             />
+            <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Home Subtext</label>
@@ -381,9 +408,12 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               isBgWhite
               value={form.home_subtext}
               onChange={(e) => setField("home_subtext", e.target.value)}
-              placeholder="How can we help you today?"
+              placeholder={widgetHomeSubtext("", form.greeting_message, homeLocale)}
               disabled={!form.show_home_screen}
             />
+            <p className="text-xs text-gray-500">
+              Leave blank to show the Greeting Message, or the default in the widget&apos;s language.
+            </p>
           </div>
         </div>
       </Section>
@@ -418,8 +448,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
             isBgWhite
             value={form.response_time_label}
             onChange={(e) => setField("response_time_label", e.target.value)}
-            placeholder="Usually replies instantly"
+            placeholder={homeDefault("response_time_label")}
           />
+          <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
         </div>
         <div className="border-t border-gray-100">
           <ToggleRow
@@ -453,8 +484,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.handoff_label}
                 onChange={(e) => setField("handoff_label", e.target.value)}
-                placeholder="Talk to a human"
+                placeholder={homeDefault("handoff_label")}
               />
+              <p className="text-xs text-gray-500">Leave blank for the default in the widget&apos;s language.</p>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Handoff Queue</label>
@@ -526,12 +558,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.idle_warn_text ?? ""}
                 onChange={(e) => setField("idle_warn_text", e.target.value || null)}
-                placeholder="Masih di sana? Chat ini akan kami tutup bila tidak ada balasan."
+                placeholder={defaultText("idle_warn")}
               />
               <p className="text-xs text-gray-500">
-                Wajib diisi. Dikosongkan berarti fitur ini tidak berjalan sama
-                sekali — menutup chat tanpa pernah bertanya terbaca seperti chat
-                yang hilang.
+                Boleh dikosongkan: bot memakai teks bawaan yang tampil samar di
+                kolom, dalam bahasa widget.
               </p>
             </div>
 
@@ -620,7 +651,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
         <div className="border-t border-gray-100">
           <ToggleRow
             label="Hold the ticket until the visitor asks (true deflection)"
-            description="When AI gives a confident answer, no ticket is created yet - the visitor gets a 'Was this helpful? / Talk to a human' choice, and a ticket is only opened if they escalate. Off = a ticket is always created alongside the bot's answer."
+            description="When the bot answers from the Knowledge Base, no ticket is created and agents are not notified yet. The visitor sees 'For more details, talk to an agent? Yes / No' under the answer, at most once every 5 minutes; a ticket is opened and agents are notified only when they choose Yes or ask for an agent. Off = a ticket is always created alongside the bot's answer and every message notifies agents."
             checked={form.answer_bot_deflect ?? false}
             onChange={(checked) => setField("answer_bot_deflect", checked)}
             disabled={!form.answer_bot_enabled || !form.answer_bot_use_llm}
@@ -677,7 +708,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_greeting_text ?? ""}
                 onChange={(e) => setField("answer_bot_greeting_text", e.target.value || null)}
-                placeholder="Hai! 👋 Ada yang bisa kami bantu?"
+                placeholder={defaultText("greeting")}
               />
               <p className="text-xs text-gray-500">
                 Sent when a visitor opens with just a greeting (&quot;halo&quot;, &quot;selamat pagi&quot;).
@@ -692,7 +723,7 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_closing_text ?? ""}
                 onChange={(e) => setField("answer_bot_closing_text", e.target.value || null)}
-                placeholder="Baik, terima kasih! Tim kami akan menindaklanjuti secepatnya."
+                placeholder={defaultText("closing")}
               />
               <p className="text-xs text-gray-500">
                 Sent when a visitor wraps up (&quot;sudah cukup&quot;, &quot;terima kasih&quot;,
@@ -708,11 +739,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_intro_text ?? ""}
                 onChange={(e) => setField("answer_bot_intro_text", e.target.value || null)}
-                placeholder="Berikut artikel yang mungkin membantu:"
+                placeholder={defaultText("intro")}
               />
               <p className="text-xs text-gray-500">
                 Shown above the article list when AI doesn&apos;t write an answer. Leave blank for the
-                default text.
+                default in the widget&apos;s language.
               </p>
             </div>
 
@@ -723,10 +754,11 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
                 isBgWhite
                 value={form.answer_bot_no_answer_text ?? ""}
                 onChange={(e) => setField("answer_bot_no_answer_text", e.target.value || null)}
-                placeholder="Kami akan menghubungkan Anda dengan tim kami yang bisa membantu."
+                placeholder={defaultText("no_answer")}
               />
               <p className="text-xs text-gray-500">
-                Optional message when nothing confident enough is found. Leave blank to stay silent and let an agent reply.
+                Sent when the bot finds no answer. Leave blank for the default in the widget&apos;s
+                language (the text shown in the field).
               </p>
             </div>
           </>
@@ -756,7 +788,13 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
         />
       </div>
 
-      <div className="flex justify-end">
+      {/* Stays at the bottom of the screen while the form is in view, so a
+          long form saves without scrolling to its end. -mx-6/-mb-6 span the
+          card's p-6 (settings/web-widget page). Sticks inside the settings
+          content column, which scrolls on its own on desktop (SettingsLayout);
+          sticky stops at that column's padding (md:p-8), so lg:-bottom-8 goes
+          past it to the screen's edge. */}
+      <div className="sticky bottom-0 lg:-bottom-8 z-10 -mx-6 -mb-6 flex justify-end rounded-b-2xl border-t border-gray-200 bg-white/95 px-6 py-3 backdrop-blur">
         <AppButton type="submit" disabled={updateMutation.isPending} variantStyle="primary">
           {updateMutation.isPending ? (
             <>

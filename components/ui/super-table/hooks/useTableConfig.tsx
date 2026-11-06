@@ -81,6 +81,7 @@ export function useTableConfig<TData extends object>(
     inlineEditing = false,
     maxHeight = '70vh',
     stickyHeader = true,
+    stickyRowActions = false,
 
     // Filtering Defaults
     facetedValues = true,
@@ -198,8 +199,9 @@ export function useTableConfig<TData extends object>(
     displayColumnDefOptions: {
       'mrt-row-actions': {
         // MRT turns `size` into a hard min-width. Six 26px IconButtons forced
-        // ~176px; one kebab needs ~56.
-        size: props.rowActions ? 56 : 80,
+        // ~176px. 80 fits the "Actions" header (52px text + 24px padding); a
+        // lone kebab's 56 pushed the header past the cell and got it clipped.
+        size: 80,
         grow: false,
       },
       'mrt-row-select': {
@@ -348,6 +350,19 @@ export function useTableConfig<TData extends object>(
   if (props.renderRowActions || props.rowActions || inlineEditing === 'row') {
     mrtConfig.enableRowActions = true;
     mrtConfig.positionActionsColumn = 'last';
+
+    // features.stickyRowActions: the actions stay in view however far the
+    // table is scrolled sideways - the actions column is pinned right. Only
+    // that column: every other column opts out, so no "Pin" item shows up in
+    // the column menus.
+    if (stickyRowActions) {
+      mrtConfig.enableColumnPinning = true;
+      mrtConfig.defaultColumn = { ...mrtConfig.defaultColumn, enablePinning: false };
+      mrtConfig.initialState = {
+        ...mrtConfig.initialState,
+        columnPinning: { left: [], right: ['mrt-row-actions'] },
+      };
+    }
 
     mrtConfig.renderRowActions = ({ row, table }) => {
       const isEditing = inlineEditing === 'row' && table.getState().editingRow?.id === row.id;
@@ -617,6 +632,11 @@ export function useTableConfig<TData extends object>(
       backgroundColor: theme.palette.mode === 'dark'
         ? theme.palette.grey[900]
         : '#EEF2FD', // Standard background odoo-like blueish white
+      // A pinned header cell paints MRT's white base colour over its own
+      // background (a :before layer); keep it the same blue as the others.
+      '&[data-pinned="true"]:before': {
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[900] : '#EEF2FD',
+      },
       color: theme.palette.text.secondary,
       py: 2, // Spacing yang nyaman (Comfortable density padding override base)
       borderBottom: `1px solid ${theme.palette.divider}`,

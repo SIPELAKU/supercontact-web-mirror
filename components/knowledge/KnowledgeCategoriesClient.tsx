@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { AppButton } from "@/components/ui/app-button";
 import { AppInput } from "@/components/ui/app-input";
@@ -27,12 +28,88 @@ import {
   useCreateKbCategory,
   useUpdateKbCategory,
   useDeleteKbCategory,
+  useBulkDeleteKbCategories,
   useCreateKbSection,
   useUpdateKbSection,
   useDeleteKbSection,
   useKbPermissions,
 } from "@/lib/hooks/useKnowledge";
 import type { KbCategory, KbSection } from "@/lib/types/knowledge";
+import {
+  deleteImpact,
+  keepExisting,
+  selectAllState,
+  toggleAll,
+  toggleOne,
+  type DeleteImpact,
+} from "@/lib/utils/kbCategories";
+
+const SHOWN_IN_CONFIRM = 8;
+
+/** What goes with the deleted categories, spelled out for the confirm dialog. */
+function DeleteImpactText({ impact }: { impact: DeleteImpact }) {
+  const shown = impact.categories.slice(0, SHOWN_IN_CONFIRM);
+  const more = impact.categories.length - shown.length;
+  return (
+    <div className="flex flex-col gap-2">
+      {impact.countsKnown ? (
+        <p>
+          Ikut terhapus permanen: <strong>{impact.sections} section</strong> dan{" "}
+          <strong>{impact.articles} artikel</strong>
+          {impact.published > 0 && (
+            <>
+              {" "}
+              (<strong>{impact.published} di antaranya Published</strong> dan dipakai answer bot)
+            </>
+          )}
+          . Tindakan ini tidak bisa dibatalkan.
+        </p>
+      ) : (
+        <p>
+          Semua section dan artikel di dalamnya ikut terhapus permanen. Tindakan ini tidak bisa
+          dibatalkan.
+        </p>
+      )}
+      {impact.categories.length > 1 && (
+        <p className="text-gray-500">
+          {shown
+            .map((c) => (c.articles === null ? c.name : `${c.name} (${c.articles} artikel)`))
+            .join(" · ")}
+          {more > 0 && ` · +${more} lainnya`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** A checkbox that can also show "some picked". */
+function SelectBox({
+  state,
+  onChange,
+  label,
+  disabled,
+}: {
+  state: "none" | "some" | "all";
+  onChange: () => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = state === "some";
+  }, [state]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={state === "all"}
+      onChange={onChange}
+      disabled={disabled}
+      aria-label={label}
+      className="h-4 w-4 shrink-0 cursor-pointer accent-[#5479EE]"
+    />
+  );
+}
 
 type CategoryForm = {
   id?: string;
@@ -70,6 +147,7 @@ export default function KnowledgeCategoriesClient() {
   const createCategory = useCreateKbCategory();
   const updateCategory = useUpdateKbCategory();
   const deleteCategory = useDeleteKbCategory();
+  const bulkDelete = useBulkDeleteKbCategories();
   const createSection = useCreateKbSection();
   const updateSection = useUpdateKbSection();
   const deleteSection = useDeleteKbSection();
@@ -77,6 +155,13 @@ export default function KnowledgeCategoriesClient() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [categoryForm, setCategoryForm] = useState<CategoryForm | null>(null);
   const [sectionForm, setSectionForm] = useState<SectionForm | null>(null);
+
+  // Categories picked for "delete several at once". A pick whose category is
+  // gone (deleted, here or in another tab) quietly drops out.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const allIds = useMemo(() => categories.map((c) => c.id), [categories]);
+  const selected = useMemo(() => keepExisting(picked, allIds), [picked, allIds]);
+  const allState = selectAllState(selected, allIds);
 
   const sectionsByCategory = useMemo(() => {
     const map = new Map<string, KbSection[]>();
@@ -139,15 +224,41 @@ export default function KnowledgeCategoriesClient() {
   const removeCategory = (c: KbCategory) => {
     confirm({
       variant: "danger",
-      title: "Delete category",
-      description: `Delete "${c.name}"? Its sections may be affected. This cannot be undone.`,
-      confirmText: "Delete",
+      title: `Hapus kategori "${c.name}"?`,
+      description: <DeleteImpactText impact={deleteImpact(categories, new Set([c.id]))} />,
+      confirmText: "Hapus permanen",
       onConfirm: async () => {
         try {
           await deleteCategory.mutateAsync(c.id);
-          notify.success("Category deleted");
+          setPicked((prev) => keepExisting(prev, allIds.filter((id) => id !== c.id)));
+          notify.success("Kategori dihapus");
         } catch (err) {
           notify.error("Error", { description: getErrorMessage(err, "Failed to delete category") });
+        }
+      },
+    });
+  };
+
+  // All or nothing on the API side: one failure and nothing is deleted.
+  const removeSelected = () => {
+    const ids = allIds.filter((id) => selected.has(id));
+    if (ids.length === 0) return;
+    confirm({
+      variant: "danger",
+      title: `Hapus ${ids.length} kategori?`,
+      description: <DeleteImpactText impact={deleteImpact(categories, selected)} />,
+      confirmText: "Hapus permanen",
+      onConfirm: async () => {
+        try {
+          const report = await bulkDelete.mutateAsync(ids);
+          setPicked(new Set());
+          notify.success(
+            `${report.deleted_categories} kategori dihapus (${report.deleted_articles} artikel)`
+          );
+        } catch (err) {
+          notify.error("Gagal menghapus kategori", {
+            description: `${getErrorMessage(err, "Failed to delete categories")} Tidak ada kategori yang dihapus.`,
+          });
         }
       },
     });
@@ -260,12 +371,61 @@ export default function KnowledgeCategoriesClient() {
         />
       ) : (
         <div className="space-y-3">
+          {canManage && (
+            <div className="flex flex-col gap-3 rounded-xl border border-[#C7D5F8] bg-[#F5F8FF] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <label className="flex cursor-pointer items-center gap-3 text-sm text-gray-700">
+                <SelectBox
+                  state={allState}
+                  onChange={() => setPicked(toggleAll(selected, allIds))}
+                  label="Pilih semua kategori"
+                  disabled={bulkDelete.isPending}
+                />
+                {selected.size > 0 ? (
+                  <span>
+                    <span className="font-semibold">{selected.size}</span> kategori dipilih
+                  </span>
+                ) : (
+                  <span>Pilih semua</span>
+                )}
+              </label>
+              {selected.size > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <AppButton
+                    variantStyle="danger"
+                    startIcon={
+                      bulkDelete.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />
+                    }
+                    disabled={bulkDelete.isPending}
+                    onClick={removeSelected}
+                  >
+                    Hapus ({selected.size})
+                  </AppButton>
+                  <AppButton
+                    variantStyle="outline"
+                    startIcon={<X size={16} />}
+                    disabled={bulkDelete.isPending}
+                    onClick={() => setPicked(new Set())}
+                  >
+                    Batal pilih
+                  </AppButton>
+                </div>
+              )}
+            </div>
+          )}
           {categories.map((c) => {
             const catSections = sectionsByCategory.get(c.id) ?? [];
             const isOpen = expanded[c.id];
             return (
               <div key={c.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
                 <div className="flex items-center gap-3 px-4 py-3">
+                  {canManage && (
+                    <SelectBox
+                      state={selected.has(c.id) ? "all" : "none"}
+                      onChange={() => setPicked(toggleOne(selected, c.id))}
+                      label={`Pilih kategori ${c.name}`}
+                      disabled={bulkDelete.isPending}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => toggle(c.id)}
@@ -290,7 +450,10 @@ export default function KnowledgeCategoriesClient() {
                       <p className="mt-0.5 line-clamp-1 text-[12px] text-gray-400">{c.description}</p>
                     )}
                   </div>
-                  <span className="text-[12px] text-gray-400">{catSections.length} sections</span>
+                  <span className="text-[12px] text-gray-400">
+                    {catSections.length} sections
+                    {typeof c.article_count === "number" && ` · ${c.article_count} articles`}
+                  </span>
                   {canManage && (
                     <div className="flex items-center gap-1">
                       <button

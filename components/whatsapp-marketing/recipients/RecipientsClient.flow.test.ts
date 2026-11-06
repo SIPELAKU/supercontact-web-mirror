@@ -65,7 +65,6 @@ vi.mock('js-cookie', () => ({ default: { get: () => 'test-token' } }));
 
 import { useLazyRows } from '@/components/ui/super-table/hooks/useLazyRows';
 import {
-  useBulkCreateWaRecipients,
   useBulkDeleteWaRecipients,
   useCreateWaRecipient,
   useDeleteAllWaRecipients,
@@ -123,10 +122,6 @@ function fakeBackend(count: number) {
       });
     }
     if (method === 'POST' && path === '/recipients') return ok(add(body.new_contact.name));
-    if (method === 'POST' && path === '/recipients/bulk') {
-      (body.new_contacts as { name: string }[]).forEach((c) => add(c.name));
-      return ok({ total: body.new_contacts.length });
-    }
     if (method === 'POST' && path === '/recipients/duplicate') {
       (body.recipient_ids as string[]).forEach((id) => add(`${db.find((r) => r.id === id)!.name} (copy)`));
       return ok({ total: body.recipient_ids.length, created: true });
@@ -156,6 +151,9 @@ function fakeBackend(count: number) {
     failures,
     handle,
     firstBatch: () => sorted().slice(0, PAGE_SIZE).map(({ id, name }) => ({ id, name })),
+    // What a finished import job did server-side (API v1.162.0 imports run
+    // as background jobs, not in the request).
+    addRows: (names: string[]) => names.forEach(add),
     total: () => db.length,
   };
 }
@@ -309,7 +307,6 @@ async function openRecipientsPage() {
   const m = {
     create: new MutationObserver(client, useCreateWaRecipient() as unknown as AnyMutation),
     update: new MutationObserver(client, useUpdateWaRecipient() as unknown as AnyMutation),
-    bulkCreate: new MutationObserver(client, useBulkCreateWaRecipients() as unknown as AnyMutation),
     remove: new MutationObserver(client, useDeleteWaRecipient() as unknown as AnyMutation),
     bulkRemove: new MutationObserver(client, useBulkDeleteWaRecipients() as unknown as AnyMutation),
     removeAll: new MutationObserver(client, useDeleteAllWaRecipients() as unknown as AnyMutation),
@@ -317,7 +314,7 @@ async function openRecipientsPage() {
   };
   /* eslint-enable react-hooks/rules-of-hooks */
 
-  // A modal (Add, Edit, Import): save, then onSuccess on success only.
+  // A modal (Add, Edit): save, then onSuccess on success only.
   const modalSave = async (run: () => Promise<unknown>) => {
     try {
       await run();
@@ -348,8 +345,12 @@ async function openRecipientsPage() {
     add: (name: string) =>
       modalSave(() => m.create.mutate({ target: 'recipient', type_request: 'manual', new_contact: { name } })),
     edit: (id: string, name: string) => modalSave(() => m.update.mutate({ id, data: { name } })),
-    importRows: (names: string[]) =>
-      modalSave(() => m.bulkCreate.mutate({ target: 'recipient', new_contacts: names.map((name) => ({ name })) })),
+    // An import job finished: Import History's onDataChanged restarts the
+    // list exactly like a modal save (RecipientsClient).
+    importJobCompleted: async (names: string[]) => {
+      backend.addRows(names);
+      void listRefresh.refreshAfterSave();
+    },
     duplicate: (ids: string[]) =>
       listRefresh.run(async () => {
         try {
@@ -401,7 +402,7 @@ describe('WA Recipients: end to end', () => {
       ['delete three (bulk)', (p) => p.confirmDelete(['r5', 'r4', 'r3'])],
       ['add (modal)', (p) => p.add('New person')],
       ['edit (modal)', (p) => p.edit('r5', 'Renamed')],
-      ['import (modal)', (p) => p.importRows(['Imported A', 'Imported B'])],
+      ['import job completed (Import History)', (p) => p.importJobCompleted(['Imported A', 'Imported B'])],
     ];
     for (const [label, act] of actions) {
       for (const batches of [1, 2]) {

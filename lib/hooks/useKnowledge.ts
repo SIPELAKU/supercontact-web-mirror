@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 import { usePermission } from "./usePermission";
@@ -8,6 +9,7 @@ import {
   createKbCategory,
   updateKbCategory,
   deleteKbCategory,
+  bulkDeleteKbCategories,
   fetchKbSections,
   createKbSection,
   updateKbSection,
@@ -124,6 +126,19 @@ export function useUpdateKbCategory() {
   });
 }
 
+// What deleting categories touches: the categories and sections themselves,
+// the articles that went with them (list, open editors, the placeholder
+// tags), and the web widget config, whose quick actions the API strips of the
+// deleted category ids.
+function invalidateAfterCategoryDelete(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: [KB, "categories"] });
+  qc.invalidateQueries({ queryKey: [KB, "sections"] });
+  qc.invalidateQueries({ queryKey: [KB, "articles"] });
+  qc.invalidateQueries({ queryKey: [KB, "article"] });
+  qc.invalidateQueries({ queryKey: ["bot-playground", "content-gaps"] });
+  qc.invalidateQueries({ queryKey: ["omnichannels", "web-widget-config"] });
+}
+
 export function useDeleteKbCategory() {
   const { token } = useAuth();
   const qc = useQueryClient();
@@ -132,10 +147,19 @@ export function useDeleteKbCategory() {
       if (!token) throw new Error("No authentication token");
       return deleteKbCategory(token, id);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: [KB, "categories"] });
-      qc.invalidateQueries({ queryKey: [KB, "sections"] });
+    onSuccess: () => invalidateAfterCategoryDelete(qc),
+  });
+}
+
+export function useBulkDeleteKbCategories() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => {
+      if (!token) throw new Error("No authentication token");
+      return bulkDeleteKbCategories(token, ids);
     },
+    onSuccess: () => invalidateAfterCategoryDelete(qc),
   });
 }
 
@@ -208,6 +232,34 @@ export function useKbArticles(params: KbArticleListParams = {}) {
     refetchOnWindowFocus: false,
     enabled: !!token,
   });
+}
+
+/** Loads several articles' full bodies, fresh, a few at a time - for checks the
+ *  list rows cannot answer (they carry no body). Each lands in the same cache
+ *  entry useKbArticle reads. */
+export function useLoadKbArticles() {
+  const { token } = useAuth();
+  const qc = useQueryClient();
+  return useCallback(
+    async (ids: string[]): Promise<KbArticle[]> => {
+      if (!token) throw new Error("No authentication token");
+      const loaded: KbArticle[] = [];
+      for (let i = 0; i < ids.length; i += 6) {
+        const batch = await Promise.all(
+          ids.slice(i, i + 6).map((id) =>
+            qc.fetchQuery({
+              queryKey: [KB, "article", id],
+              queryFn: () => fetchKbArticle(token, id),
+              staleTime: 0,
+            })
+          )
+        );
+        loaded.push(...batch);
+      }
+      return loaded;
+    },
+    [qc, token]
+  );
 }
 
 export function useKbArticle(id?: string) {

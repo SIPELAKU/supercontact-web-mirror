@@ -30,6 +30,12 @@ export interface SuperTableFeatures {
    * @default true 
    */
   columnVisibility?: boolean;
+  /**
+   * Ingat pilihan kolom (View options › Columns) di browser ini, per tabel,
+   * supaya tidak kembali tampil semua setelah refresh. Butuh `tableId`.
+   * @default true
+   */
+  rememberColumnVisibility?: boolean;
   /** 
    * Aktifkan drag-and-drop kolom untuk mengurutkan (reorder).
    * @default true 
@@ -219,6 +225,13 @@ export interface SuperTableFeatures {
    * @default true 
    */
   stickyHeader?: boolean;
+  /**
+   * Kolom aksi baris (`rowActions` / `renderRowActions`) menempel di kanan,
+   * sehingga tetap terlihat walau tabel di-scroll ke samping. Hanya kolom aksi
+   * yang di-pin; menu kolom lain tidak mendapat opsi "Pin".
+   * @default false
+   */
+  stickyRowActions?: boolean;
   /** 
    * Kepadatan tampilan baris secara standar.
    * @default 'comfortable' 

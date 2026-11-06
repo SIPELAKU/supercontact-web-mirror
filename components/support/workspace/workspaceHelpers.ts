@@ -6,6 +6,8 @@
 
 import {
   ChannelType,
+  Conversation,
+  ConversationListItem,
   ConversationStatus,
   ConversationPriority,
   ConversationSlaSummary,
@@ -51,6 +53,39 @@ export function avatarColor(seed?: string | null): string {
     hash |= 0;
   }
   return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+// The panel gets two copies of the selected conversation: the queue row (the
+// list polls every 30s) and the fetched detail (refetched on every WS update).
+// Both helpers prefer the detail, so a change pushed over WS shows at once.
+
+// Email from the web widget's pre-chat form; null when there is none.
+export function visitorEmail(
+  conversation: Pick<Conversation, "external_contact_email"> | undefined,
+  item: Pick<ConversationListItem, "external_contact_email">,
+): string | null {
+  return (conversation?.external_contact_email || item.external_contact_email || "").trim() || null;
+}
+
+// Contact behind "View full profile". A bot-only widget chat has none until a
+// person takes part; the WS "contact_linked" update refetches the detail first.
+export function profileContactId(
+  conversation: Pick<Conversation, "contact_id"> | undefined,
+  item: Pick<ConversationListItem, "contact_id">,
+): string | null {
+  return conversation?.contact_id || item.contact_id || null;
+}
+
+// Owner of the conversation. The detail wins even when it says "nobody"
+// (null): an unassign must show at once too. Only a detail without the field
+// (not loaded yet) falls back to the queue row. Since ASG-1 a staff reply sets
+// the owner of a widget chat, and the reply refetches the detail, not the row.
+export function assigneeId(
+  conversation: Pick<Conversation, "assigned_user_id"> | undefined,
+  item: Pick<ConversationListItem, "assigned_user_id">,
+): string | null {
+  if (conversation && conversation.assigned_user_id !== undefined) return conversation.assigned_user_id;
+  return item.assigned_user_id ?? null;
 }
 
 // Compact "2m / 5h / 3d / 12 Aug" relative time for the queue rows.

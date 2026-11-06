@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { notify } from '@/lib/notifications';
 import { downloadRows, type ExportFileFormat } from '@/lib/utils/exportRows';
 import { SuperTable, MRT_ColumnDef } from '@/components/ui/super-table';
+import type { SuperTableFilterValues } from '@/components/ui/super-table/types';
 import {
   broadcastRecipientsKey,
   reloadBroadcastStats,
@@ -64,7 +65,8 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
     pageIndex: 0,
     pageSize: 5,
     globalFilter: "",
-    status: "",
+    // The table's filters as they are; each id is the API's query param.
+    filters: {} as SuperTableFilterValues,
     sorting: [] as { id: string; desc: boolean }[],
   });
   // Server-side sorting, same sort_by/sort_order contract as the broadcasts
@@ -76,15 +78,14 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
   const { data: detailResponse, isLoading: isLoadingDetail, isFetching: isFetchingDetail } = useBroadcastDetail(broadcast?.id || '');
   const detailData = detailResponse?.data;
 
-  const { data: recipientsResponse, isLoading, refetch } = useBroadcastRecipients(
-    broadcast?.id || '',
-    tableState.pageIndex + 1,
-    tableState.pageSize,
-    tableState.globalFilter,
-    tableState.status || undefined,
+  const { data: recipientsResponse, isLoading, refetch } = useBroadcastRecipients(broadcast?.id || '', {
+    page: tableState.pageIndex + 1,
+    limit: tableState.pageSize,
+    search: tableState.globalFilter,
     sortBy,
-    sortOrder
-  );
+    sortOrder,
+    filters: tableState.filters,
+  });
 
   const exportRecipients = useExportBroadcastRecipients();
   const exportingStatus = exportRecipients.isPending ? exportRecipients.variables?.status : undefined;
@@ -374,7 +375,7 @@ export default function ViewBroadcastStatsModal({ open, onClose, broadcast }: Vi
                   pageIndex: state.pagination.pageIndex,
                   pageSize: state.pagination.pageSize,
                   globalFilter: state.globalFilter || "",
-                  status: (state.filters.status as string) || "",
+                  filters: state.filters,
                   sorting: state.sorting || [],
                 });
               }}

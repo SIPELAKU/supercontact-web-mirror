@@ -146,28 +146,6 @@ async function bulkDeleteRecipients(
   return json;
 }
 
-async function bulkCreateRecipients(
-  token: string,
-  data: import('@/lib/types/whatsapp-marketing').BulkCreateWaRecipientData
-): Promise<import('@/lib/types/whatsapp-marketing').BulkCreateWaRecipientResponse> {
-  const res = await fetchWithTimeout(
-    `${process.env.NEXT_PUBLIC_API_URL}/recipients/bulk`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  const json = await res.json();
-  if (res.status === 401) throw new Error('UNAUTHORIZED');
-  if (!res.ok || !json.success) throw buildErrorFromJson(json, 'Failed to bulk create recipients');
-  return json;
-}
-
 async function duplicateRecipients(
   token: string,
   ids: string[],
@@ -285,23 +263,6 @@ export function useBulkDeleteWaRecipients() {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
       return bulkDeleteRecipients(token, ids);
-    },
-    onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
-  });
-}
-
-export function useBulkCreateWaRecipients() {
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    import('@/lib/types/whatsapp-marketing').BulkCreateWaRecipientResponse,
-    Error,
-    import('@/lib/types/whatsapp-marketing').BulkCreateWaRecipientData
-  >({
-    mutationFn: (data) => {
-      const token = Cookies.get('access_token');
-      if (!token) throw new Error('No authentication token');
-      return bulkCreateRecipients(token, data);
     },
     onSuccess: () => markListsStale(queryClient, ['wa-recipients']),
   });

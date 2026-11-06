@@ -67,7 +67,8 @@ export default function SettingsSidebar() {
     <>
       <aside
         className={cn(
-          "fixed lg:sticky top-0 lg:top-[52px] left-0 z-40 h-screen lg:h-[calc(100vh-52px)] w-[260px] shrink-0",
+          // lg: a plain column, as tall as SettingsLayout; scrolls on its own.
+          "fixed lg:static top-0 left-0 z-40 h-screen lg:h-full w-[260px] shrink-0",
           "bg-white border-r border-border overflow-y-auto transition-transform duration-300",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}

@@ -13,6 +13,8 @@ import {
   fetchBroadcastDetail,
   duplicateBroadcast
 } from '../api/whatsapp-marketing';
+import type { BroadcastRecipientsQuery } from '../types/whatsapp-marketing';
+import { activeFilters } from '../utils/filterParams';
 import Cookies from 'js-cookie';
 
 export const broadcastsKey = (
@@ -118,23 +120,18 @@ export function useDuplicateBroadcast() {
 export const broadcastRecipientsKey = (id: string) => ['broadcast-recipients', id] as const;
 
 /**
- * Fetch recipients for a specific broadcast
+ * One page of a broadcast's recipients. The key holds only the filters that
+ * are set, so "no status" and `status: ""` share one cache entry.
  */
-export function useBroadcastRecipients(
-  id: string,
-  page: number = 1,
-  limit: number = 10,
-  search?: string,
-  status?: string,
-  sortBy?: string,
-  sortOrder?: 'asc' | 'desc'
-) {
+export function useBroadcastRecipients(id: string, query: BroadcastRecipientsQuery = {}) {
+  const { page = 1, limit = 10, search, sortBy, sortOrder } = query;
+  const filters = activeFilters(query.filters);
   return useQuery({
-    queryKey: [...broadcastRecipientsKey(id), page, limit, search, status, sortBy, sortOrder],
+    queryKey: [...broadcastRecipientsKey(id), { page, limit, search, sortBy, sortOrder, filters }],
     queryFn: async () => {
       const token = Cookies.get('access_token');
       if (!token) throw new Error('No authentication token');
-      return fetchBroadcastRecipients(token, id, page, limit, search, status, sortBy, sortOrder);
+      return fetchBroadcastRecipients(token, id, { page, limit, search, sortBy, sortOrder, filters });
     },
     enabled: !!id,
   });

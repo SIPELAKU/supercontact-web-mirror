@@ -26,6 +26,8 @@ interface WorkspaceComposerProps {
   conversationId: string;
   contactFirstName?: string;
   disabled?: boolean;
+  // A reply (not an internal note) was sent: the thread scrolls to it (FE-8).
+  onReplySent?: () => void;
 }
 
 // Composer with Reply (public) vs Internal note tabs, distinct styling per
@@ -36,6 +38,7 @@ export function WorkspaceComposer({
   conversationId,
   contactFirstName,
   disabled,
+  onReplySent,
 }: WorkspaceComposerProps) {
   const [mode, setMode] = useState<ComposerMode>("reply");
   const [text, setText] = useState("");
@@ -227,6 +230,7 @@ export function WorkspaceComposer({
     try {
       if (mode === "reply") {
         await sendMessage.mutateAsync({ conversationId, content });
+        onReplySent?.();
         // Sent - drop the saved draft so it doesn't reappear. Mark the last
         // saved body empty first so the autosave effect won't re-PUT the text
         // as it clears.

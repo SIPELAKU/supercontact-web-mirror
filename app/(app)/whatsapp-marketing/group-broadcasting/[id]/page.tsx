@@ -14,11 +14,13 @@ import {
 } from '@mui/material';
 import { AppTabs } from '@/components/ui/app-tabs';
 import { format } from 'date-fns';
-import { ArrowLeft, Upload, Plus, Eye, Send, Users } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, Eye, Send, Users, History } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import AddRecipientModal from '@/components/whatsapp-marketing/recipients/AddRecipientModal';
-import ImportWaRecipientModal from '@/components/whatsapp-marketing/recipients/ImportWaRecipientModal';
+import { ImportFileModal } from '@/components/import-history/ImportFileModal';
+import { useImportDataChanged } from '@/lib/hooks/useImportDataChanged';
+import ImportHistoryModal from '@/components/import-history/ImportHistoryModal';
 import ViewBroadcastCampaignStatsModal from '@/components/whatsapp-marketing/group-broadcasting/modals/ViewBroadcastCampaignStatsModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { BroadcastCampaign, WaRecipient } from '@/lib/types/whatsapp-marketing';
@@ -50,6 +52,7 @@ const GroupBroadcastDetailPage = () => {
     const queryClient = useQueryClient();
     const [isAddRecipientModalOpen, setAddRecipientModalOpen] = useState(false);
     const [isImportModalOpen, setImportModalOpen] = useState(false);
+    const [isImportHistoryOpen, setImportHistoryOpen] = useState(false);
     const [isViewModalOpen, setViewModalOpen] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState<BroadcastCampaign | null>(null);
 
@@ -92,6 +95,7 @@ const GroupBroadcastDetailPage = () => {
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['group-broadcast-detail', broadcastGroupId] });
     };
+    useImportDataChanged('recipients', handleSuccess);
 
     const recipientColumns = useMemo<MRT_ColumnDef<WaRecipient>[]>(
         () => [
@@ -249,6 +253,14 @@ const GroupBroadcastDetailPage = () => {
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 <AppButton
                                     variantStyle="outline"
+                                    onClick={() => setImportHistoryOpen(true)}
+                                    startIcon={<History size={16} />}
+                                    color="primary"
+                                >
+                                    Import History
+                                </AppButton>
+                                <AppButton
+                                    variantStyle="outline"
                                     onClick={() => setImportModalOpen(true)}
                                     startIcon={<Upload size={16} />}
                                     color="primary"
@@ -342,13 +354,21 @@ const GroupBroadcastDetailPage = () => {
                 broadcastGroupId={broadcastGroupId}
             />
 
-            <ImportWaRecipientModal
+            <ImportFileModal
+                view="broadcast_group"
+                groupIds={[broadcastGroupId]}
                 open={isImportModalOpen}
-                recipientType="whatsapp"
                 onClose={() => setImportModalOpen(false)}
-                onSuccess={handleSuccess}
-                target="broadcast_group"
-                broadcastGroupId={broadcastGroupId}
+                // A background job (FE-4): track it in Import History, which
+                // refreshes the members when it completes.
+                onSuccess={() => setImportHistoryOpen(true)}
+            />
+
+            <ImportHistoryModal
+                open={isImportHistoryOpen}
+                onClose={() => setImportHistoryOpen(false)}
+                view="broadcast_group"
+                onDataChanged={handleSuccess}
             />
 
             <ViewBroadcastCampaignStatsModal

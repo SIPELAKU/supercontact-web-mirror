@@ -25,6 +25,7 @@ import { AppTextarea } from "../ui/app-textarea";
 import { Spinner } from "../ui/spinner";
 import { ConfirmationPopup } from "@/components/ui/confirmation-popup";
 import ContactPickerDialog from "./ContactPickerDialog";
+import { LockedContactField, LOCKED_FIELD_LABELS } from "./LockedContactField";
 import { useActiveSalesChannels } from "@/lib/hooks/useCommercialContext";
 
 // MUI Theme for consistent styling
@@ -241,24 +242,9 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!selectedContactId) newErrors.name = "Please search or select from the list";
-
-    // Email validation: simple check as backend handles validation
-    const emailRegex = /^[^\s@]+@[^\s@]+$/;
-    if (!form.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!emailRegex.test(form.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    // Phone validation: numbers and optional leading +, min 10 digits
-    const phoneRegex = /^\+?\d{10,}$/;
-    if (!form.phone_number.trim()) {
-      newErrors.phone_number = "Phone number is required";
-    } else if (!phoneRegex.test(form.phone_number)) {
-      newErrors.phone_number = "Phone number must be at least 10 digits (optional + prefix)";
-    }
-
-    if (!form.company.trim()) newErrors.company = "Company is required";
+    // Email, phone and company are the contact's own, shown read-only and not
+    // stored on the lead, so they are not required here (user decision
+    // 2026-11-04): a contact without a phone can still become a lead.
     if (!form.industry) newErrors.industry = "Industry is required";
     if (!form.companySize) newErrors.companySize = "Company size is required";
     if (!form.officeLocation.trim()) newErrors.officeLocation = "Office location is required";
@@ -286,14 +272,8 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
 
       // Create lead with all data in one request
       const leadData: CreateLeadData = {
-        // Contact details (always include these as requested)
-        name: form.name,
-        email: form.email,
-        phone_number: form.phone_number,
-        company: form.company,
-
-        // Conditional contact_id
-        ...(selectedContactId ? { contact_id: selectedContactId } : {}),
+        // The API takes the contact by id; validateForm requires one.
+        contact_id: selectedContactId,
 
         // Lead specific fields
         industry: form.industry,
@@ -436,65 +416,22 @@ export default function AddLeadForm({ onSave }: AddLeadFormProps) {
                         )}
                       </Paper>
                     )}
-                    placeholder="Search existing contacts or enter new name"
+                    placeholder="Search existing contacts"
                     error={!!errors.name}
                     helperText={errors.name || "Search by name, email, or company"}
                   />
                 </div>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Email</Label>
-                  <AppInput
-                    type="email"
-                    placeholder="Enter email address"
-                    value={form.email}
-                    onChange={(e) => updateField("email", e.target.value)}
-                    error={!!errors.email}
-                    className="border-gray-300"
-                    autoComplete="off"
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
+                {/* Email, phone and company come from the picked contact and
+                    are read-only (BO request 2026-11-04). */}
+                {(["email", "phone_number", "company"] as const).map((key) => (
+                  <LockedContactField
+                    key={key}
+                    label={LOCKED_FIELD_LABELS[key]}
+                    value={selectedContactId ? form[key] || "-" : ""}
+                    placeholder="Select a contact first"
                   />
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
-                  <AppInput
-                    type="text"
-                    placeholder="Enter phone number"
-                    value={form.phone_number}
-                    onChange={(e) => updateField("phone_number", e.target.value)}
-                    error={!!errors.phone_number}
-                    className="border-gray-300"
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                  />
-                  {errors.phone_number && <p className="text-red-500 text-xs mt-1">{errors.phone_number}</p>}
-                </div>
-
-                {/* Company */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Company
-                  </Label>
-                  <AppInput
-                    type="text"
-                    placeholder="Enter company name"
-                    value={form.company}
-                    onChange={(e) => updateField("company", e.target.value)}
-                    error={!!errors.company}
-                    className="border-gray-300"
-                    isBgWhite
-                    height="48px"
-                    rounded="8px"
-                  />
-                  {errors.company && <p className="text-red-500 text-xs mt-1">{errors.company}</p>}
-                </div>
+                ))}
 
                 {/* Industry */}
                 <div className="space-y-2">

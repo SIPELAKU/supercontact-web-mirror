@@ -39,6 +39,11 @@ describe('widgetConfigPayload', () => {
     expect(body).not.toHaveProperty('account_id');
   });
 
+  it("leaves out default_texts: read-only server output, never written back", () => {
+    const withDefaults = { ...stored, default_texts: { id: { no_answer: 'Maaf…' } } } as WebWidgetConfig;
+    expect(widgetConfigPayload(withDefaults, {})).not.toHaveProperty('default_texts');
+  });
+
   it('no stored config yet: just the changes', () => {
     const changes: Partial<UpdateWebWidgetConfigRequest> = { title: 'Only this' };
     expect(widgetConfigPayload(undefined, changes)).toEqual({ title: 'Only this' });

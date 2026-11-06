@@ -16,6 +16,17 @@ export interface KbCategory {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+  /** What deleting it takes along (BE 1.157.0); absent on older backends. */
+  section_count?: number;
+  article_count?: number;
+  published_article_count?: number;
+}
+
+/** POST /knowledge/categories/bulk-delete: what was removed in one go. */
+export interface KbCategoryBulkDeleteReport {
+  deleted_categories: number;
+  deleted_sections: number;
+  deleted_articles: number;
 }
 
 export interface KbSection {

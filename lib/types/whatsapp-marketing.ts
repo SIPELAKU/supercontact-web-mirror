@@ -145,34 +145,6 @@ export interface GroupBroadcastsResponse {
     details?: Record<string, unknown>;
   };
 }
-export interface BulkCreateWaRecipientData {
-  target: 'recipient' | 'broadcast_group';
-  new_contacts: Array<{
-    name: string;
-    email?: string;
-    phone_number?: string;
-    position?: string;
-    company?: string;
-    address?: string;
-    custom_fields?: Record<string, unknown>;
-    [key: string]: any;
-  }>;
-  broadcast_group_ids?: string[];
-}
-
-export interface BulkCreateWaRecipientResponse {
-  success: boolean;
-  data?: {
-    recipient_count: number;
-    recipients: WaRecipient[];
-  };
-  error?: {
-    code: string;
-    message: string;
-    details?: Record<string, unknown>;
-  };
-}
-
 export interface CreateGroupBroadcastData {
   name: string;
 }
@@ -269,6 +241,20 @@ export interface BroadcastRecipient extends WaRecipient {
   delivered_at?: string;
   read_at?: string;
   error_message?: string;
+}
+
+/**
+ * One page of a broadcast's recipients table. `filters` is the table's
+ * `state.filters` as is: each filter id is the API's query param (today only
+ * `status`), so a new filter needs no new parameter here.
+ */
+export interface BroadcastRecipientsQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
 }
 
 export interface BroadcastRecipientsResponse {

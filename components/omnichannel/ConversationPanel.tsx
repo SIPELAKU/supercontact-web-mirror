@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { CircularProgress } from "@mui/material";
 import { ChannelType, ConversationWithMessages, OmnichannelContact } from "@/lib/types/omnichannel";
 import MessageList from "./MessageList";
+import { WidgetReplyGate } from "./WidgetReplyGate";
+import { useWidgetReply } from "@/lib/hooks/useOmnichannel";
 import { ConversationTypingIndicator } from "./TypingIndicator";
 import ConversationHeader from "./ConversationHeader";
 import WhatsAppComposer from "./WhatsAppComposer";
@@ -96,6 +98,7 @@ export default function ConversationPanel({
     whatsapp,
     email,
 }: ConversationPanelProps) {
+    const widgetReply = useWidgetReply(activeConversationId, chatMode);
     return (
         <div
             className={cn(
@@ -193,7 +196,13 @@ export default function ConversationPanel({
                     {/* Input Area */}
                     {(activeConversationId || isChannelSelected) && (
                         <div className="p-4 bg-white border-t border-gray-100">
-                            {chatMode === "email" ? (
+                            {widgetReply.state !== "open" && activeConversationId ? (
+                                <WidgetReplyGate
+                                    conversationId={activeConversationId}
+                                    state={widgetReply.state}
+                                    ownerName={widgetReply.ownerName}
+                                />
+                            ) : chatMode === "email" ? (
                                 <EmailComposer
                                     {...email}
                                     toValue={selectedContact.email || ""}

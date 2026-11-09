@@ -30,7 +30,10 @@ import {
   agentRequestLine,
   agentRequestMark,
   canRequestAgent,
-  readAgentAssigned,
+  connectedAgentLine,
+  msUntilAgentBusy,
+  readAgentName,
+  readAgentRequestedAt,
   readAgentRequestOutcome,
   showsAgentCards,
   type AgentRequestSource,
@@ -151,6 +154,9 @@ interface WidgetStrings {
   needMoreHelp: string;
   teamHere: string;
   connectedAgent: string;
+  connectedAgentNamed: string;
+  agentBusy: string;
+  agentOffline: string;
   talkToHuman: string;
   helpWithPrefix: string;
   startOver: string;
@@ -208,6 +214,9 @@ const STRINGS_EN: WidgetStrings = {
   needMoreHelp: "Need more help?",
   teamHere: "Our team is here for you",
   connectedAgent: "You're connected with an agent",
+  connectedAgentNamed: "You're connected with {name}",
+  agentBusy: "Our team is still busy. We'll reply here as soon as we can.",
+  agentOffline: "Our team is offline right now. We'll get back to you soon.",
   talkToHuman: "I'd like to talk to a human",
   helpWithPrefix: "I'd like help with: ",
   startOver: "Start over",
@@ -258,6 +267,9 @@ const STRINGS_ID: WidgetStrings = {
   needMoreHelp: "Butuh bantuan lain?",
   teamHere: "Tim kami siap membantu Anda",
   connectedAgent: "Anda terhubung dengan agen",
+  connectedAgentNamed: "Anda terhubung dengan {name}",
+  agentBusy: "Tim kami masih sibuk. Kami akan membalas di sini secepatnya.",
+  agentOffline: "Tim kami sedang offline. Kami akan segera menghubungi Anda.",
   talkToHuman: "Saya ingin berbicara dengan agen",
   helpWithPrefix: "Saya butuh bantuan tentang: ",
   startOver: "Mulai ulang",
@@ -339,6 +351,8 @@ interface WidgetMessage {
   answer_feedback?: AnswerFeedback | null;
   // True on a no-answer reply: show "Talk to an agent" under it.
   offer_agent?: boolean;
+  // The quick action tapped in an ongoing chat, so a retry sends it again.
+  actionId?: string | null;
 }
 
 // Client-only state for the true-deflection card (Phase 7B.2), built from a WS
@@ -656,10 +670,16 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // No-answer replies whose card the visitor answered "No" to; persisted
     // with the session (dismissed_agent_offers) so they stay closed on reload.
     private dismissedOffers = new Set<string>(readDismissedOffers(this.session?.dismissed_agent_offers));
-    // Sticky "you're connected with an agent" system line, set when /start
-    // returns assigned:true. Held as a flag (not a message) so it survives a
-    // history resync, which rebuilds this.messages from server state.
+    // Sticky "you're connected with an agent" system line, set when an agent
+    // clicks Accept (WS agent_connected, or GET /conversation after a reload).
+    // Held as a flag (not a message) so it survives a history resync, which
+    // rebuilds this.messages from server state.
     private agentConnected = false;
+    private agentName: string | null = null;
+    // When the visitor asked for an agent: after 5 minutes with no Accept the
+    // line says the team is busy (W5).
+    private agentRequestedAt: string | null = null;
+    private agentBusyTimer: number | null = null;
     private menuOpen = false;
     // Active Answer-Bot deflection (Phase 7B.2), or null when there's none to
     // show. Only ONE is live at a time; a new bot_suggestion replaces it.
@@ -1576,6 +1596,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         startCtx: this.session
           ? undefined
           : { target_queue_id: targetQueueId, action_id: actionId, request_agent: requestAgent || undefined },
+        actionId: this.session ? actionId : undefined,
       };
       this.messages.push(msg);
       if (this.view !== "chat") this.setView("chat");
@@ -1618,10 +1639,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           headers: { Authorization: `Bearer ${this.session.visitor_token}` },
           body: JSON.stringify(deflectionId ? { source, deflection_id: deflectionId } : { source }),
         });
-        this.agentRequest = { state: "requested" };
+        this.agentRequest = afterAgentOutcome(this.agentRequest, readAgentRequestOutcome(res) ?? "escalated", source);
+        this.agentRequestedAt = readAgentRequestedAt(res) ?? this.agentRequestedAt;
         this.rememberAgentRequestMark();
-        // An online agent took it at once: "Anda terhubung dengan agen".
-        if (readAgentAssigned(res)) this.agentConnected = true;
       } catch (e) {
         console.error("[SmartSales Widget] request agent failed", e);
         // Expired/revoked token: purge it so a reload starts fresh (item 4).
@@ -1636,6 +1656,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // answer). Stored with the session, so it survives a reload.
     private rememberAgentRequestMark() {
       if (this.agentRequest.state !== "requested" || !this.session) return;
+      // No time from the server (an older frame): count from now.
+      this.agentRequestedAt = this.agentRequestedAt ?? new Date().toISOString();
       if (this.session.agent_request_mark !== undefined) return;
       this.session = { ...this.session, agent_request_mark: agentRequestMark(this.messages) };
       setSession(this.session);
@@ -1685,8 +1707,6 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           // flag (e.g. from an earlier expired-token purge) - clear it before
           // (re)connecting so the fresh conversation keeps full WS resilience.
           this.stoppedReconnect = false;
-          // /start now reports whether an agent was assigned immediately.
-          if (result.assigned) this.agentConnected = true;
           // An opening message that asked for an agent (Home button, or typed):
           // handed over, or failed with a retry like any other control.
           this.agentRequest = afterAgentOutcome(
@@ -1694,21 +1714,27 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             readAgentRequestOutcome(result),
             msg.startCtx?.request_agent ? "home" : "typed",
           );
+          this.agentRequestedAt = readAgentRequestedAt(result) ?? this.agentRequestedAt;
           this.rememberAgentRequestMark();
           this.connectSocket();
         } else {
           const res = await apiFetch(`/public/widget/messages`, {
             method: "POST",
             headers: { Authorization: `Bearer ${this.session.visitor_token}` },
-            body: JSON.stringify({ content: msg.content, client_message_id: msg.client_message_id }),
+            body: JSON.stringify({
+              content: msg.content,
+              client_message_id: msg.client_message_id,
+              // A quick action tapped in an ongoing chat: its KB categories and queue.
+              ...(msg.actionId ? { action_id: msg.actionId } : {}),
+            }),
           });
           // The stored time for the bubble (BE 1.157.0).
           if (typeof res?.sent_at === "string") msg.sent_at = res.sent_at;
           // A typed request for an agent ("admin dong") is handed over by the
           // backend; a failed hand-over gets the same retry as the buttons.
           this.agentRequest = afterAgentOutcome(this.agentRequest, readAgentRequestOutcome(res), "typed");
+          this.agentRequestedAt = readAgentRequestedAt(res) ?? this.agentRequestedAt;
           this.rememberAgentRequestMark();
-          if (readAgentAssigned(res)) this.agentConnected = true;
         }
         msg.status = "sent";
         // Shown under the bubble until a resync brings the stored time.
@@ -2014,7 +2040,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       if (this.agentConnected) {
         const sys = document.createElement("div");
         sys.className = "sys-line";
-        sys.textContent = this.strings.connectedAgent;
+        sys.textContent = connectedAgentLine(this.strings.connectedAgentNamed, this.strings.connectedAgent, this.agentName);
         this.bodyEl.appendChild(sys);
       } else {
         const requestLine = this.buildAgentRequestLine();
@@ -2181,16 +2207,22 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       return box;
     }
 
-    // "Menghubungkan Anda dengan tim kami…" while asking and once handed over;
+    // "Menghubungkan Anda dengan tim kami…" while asking and once handed over,
+    // the busy text after 5 minutes, the offline text outside business hours;
     // after a failure, a retry link that asks again for the same source.
     private buildAgentRequestLine(): HTMLElement | null {
       const answered = agentAnsweredSince(this.messages, this.session?.agent_request_mark);
-      const line = agentRequestLine(this.agentRequest, answered);
+      const line = agentRequestLine(this.agentRequest, answered, this.agentRequestedAt);
       if (!line) return null;
-      if (line === "connecting") {
+      if (line !== "failed") {
+        if (line === "connecting") this.armAgentBusyTimer();
         const note = document.createElement("div");
         note.className = "sys-line";
-        note.textContent = this.strings.deflectConnecting;
+        note.textContent = {
+          connecting: this.strings.deflectConnecting,
+          busy: this.strings.agentBusy,
+          offline: this.strings.agentOffline,
+        }[line];
         return note;
       }
       const failed = this.agentRequest as Extract<AgentRequestUi, { state: "failed" }>;
@@ -2200,6 +2232,28 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       retry.textContent = this.strings.deflectRetry;
       retry.onclick = () => void this.requestAgent(failed.source);
       return retry;
+    }
+
+    // Re-renders when the wait passes 5 minutes, so the line changes by itself.
+    private armAgentBusyTimer() {
+      if (this.agentBusyTimer !== null || !this.agentRequestedAt) return;
+      this.agentBusyTimer = window.setTimeout(() => {
+        this.agentBusyTimer = null;
+        this.renderMessages();
+      }, msUntilAgentBusy(this.agentRequestedAt));
+    }
+
+    private forgetAgentRequest() {
+      if (this.agentBusyTimer !== null) window.clearTimeout(this.agentBusyTimer);
+      this.agentBusyTimer = null;
+      this.agentRequestedAt = null;
+      this.agentName = null;
+      this.agentConnected = false;
+    }
+
+    private markAgentConnected(agent: unknown) {
+      this.agentConnected = true;
+      this.agentName = readAgentName(agent);
     }
 
     // "No" on the card: it closes at once and nothing else happens for the
@@ -2367,11 +2421,13 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         this.reconcilePendingDeflection(
           (conv.pending_deflection as PendingDeflection | null | undefined) ?? null,
         );
-        // After a reload: the chat already waits for an agent.
-        if (conv.agent_requested === true) {
+        // After a reload: the chat already waits for an agent, or has one.
+        this.agentRequestedAt = readAgentRequestedAt(conv) ?? this.agentRequestedAt;
+        if (conv.agent_requested === true && this.agentRequest.state !== "offline") {
           this.agentRequest = { state: "requested" };
           this.rememberAgentRequestMark();
         }
+        if (conv.agent) this.markAgentConnected(conv.agent);
         this.renderMessages();
       } catch (e) {
         // A 401 means the visitor token expired/was revoked: purge it so a
@@ -2389,7 +2445,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.session = null;
       this.serverIds = new Set();
       this.stoppedReconnect = true;
-      this.agentConnected = false;
+      this.forgetAgentRequest();
       // The next send opens a new chat, which has asked for nobody yet.
       this.agentRequest = { state: "idle" };
       this.refreshComposerState(); // no token -> attach unusable
@@ -2420,7 +2476,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.session = null;
       this.messages = [];
       this.serverIds = new Set();
-      this.agentConnected = false;
+      this.forgetAgentRequest();
       this.deflection = null;
       this.answerVotes = new Map();
       this.agentRequest = { state: "idle" };
@@ -2455,6 +2511,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             deflection_id?: string;
             // The bot answer the card belongs to (BE 1.157.0).
             message_id?: string;
+            agent?: unknown;
+            agent_requested_at?: string;
             articles?: Array<{ title?: string | null }> | null;
             answer?: string | null;
             conversation_id?: string;
@@ -2476,8 +2534,15 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           // The backend handed the chat over: a button here, another tab, or
           // a typed request ("admin dong").
           if (data.type === "agent_requested") {
-            this.agentRequest = { state: "requested" };
+            this.agentRequestedAt = readAgentRequestedAt(data) ?? this.agentRequestedAt;
+            if (this.agentRequest.state !== "offline") this.agentRequest = { state: "requested" };
             this.rememberAgentRequestMark();
+            this.renderMessages();
+            return;
+          }
+          // An agent clicked Accept in the Workspace.
+          if (data.type === "agent_connected") {
+            this.markAgentConnected(data.agent);
             this.renderMessages();
             return;
           }

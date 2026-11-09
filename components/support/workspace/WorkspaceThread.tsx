@@ -141,6 +141,7 @@ export function WorkspaceThread({
 
       <WorkspaceComposer
         conversationId={conversationId}
+        channelType={channelType}
         contactFirstName={name.split(" ")[0]}
         onReplySent={() => setReplySentKey((key) => key + 1)}
       />

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
+import type { ChannelType } from "@/lib/types/omnichannel";
+import { widgetReplyState, type WidgetReplyState } from "@/lib/utils/widgetReplyGate";
 import {
   Account,
   Conversation,
@@ -43,6 +45,7 @@ import {
   sendMessage,
   uploadMedia,
   assignConversation,
+  acceptConversation,
   setConversationTags,
   createConversationNote,
   fetchConversationTags,
@@ -454,6 +457,44 @@ export function useMarkAsRead() {
       queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
     },
   });
+}
+
+/** Takes an unowned web widget chat (W5). Refreshed either way: on a 409 the
+ *  chat now shows who holds it. */
+export function useAcceptConversation() {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, string>({
+    mutationFn: (conversationId) => {
+      if (!token) throw new Error('No authentication token');
+      return acceptConversation(token, conversationId);
+    },
+    // Returned so the button keeps spinning until the chat shows its new owner.
+    onSettled: (_data, _error, conversationId) => {
+      queryClient.invalidateQueries({ queryKey: ['omnichannels', 'inbox'] });
+      return queryClient.invalidateQueries({ queryKey: ['omnichannels', 'conversations', conversationId] });
+    },
+  });
+}
+
+/** Whether this agent may reply to the chat. Only a web widget chat is loaded
+ *  for this. If it cannot be loaded the box stays usable: the API has the last
+ *  word, and an agent must not be locked out by a failed request. */
+export function useWidgetReply(conversationId: string | null | undefined, channelType?: ChannelType | null) {
+  const { userProfile } = useAuth();
+  const isWidget = channelType === 'web_widget' && Boolean(conversationId);
+  const { data, isError } = useConversation(isWidget ? (conversationId as string) : '');
+  const state: WidgetReplyState = !isWidget || (isError && !data)
+    ? 'open'
+    : widgetReplyState({
+        channelType,
+        loaded: Boolean(data && userProfile),
+        assignedUserId: data?.assigned_user_id,
+        currentUserId: userProfile?.id,
+      });
+
+  return { state, ownerName: data?.assigned_user_fullname ?? null };
 }
 
 export function useAssignConversation() {

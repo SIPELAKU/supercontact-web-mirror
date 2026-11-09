@@ -11,19 +11,22 @@ import {
   useConversationDraft,
   useSaveConversationDraft,
   useDeleteConversationDraft,
+  useWidgetReply,
 } from "@/lib/hooks/useOmnichannel";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useAgentTypingSignal } from "@/lib/hooks/useConversationTyping";
-import { CannedReply } from "@/lib/types/omnichannel";
+import { CannedReply, type ChannelType } from "@/lib/types/omnichannel";
 import { notify } from "@/lib/notifications";
 import { handleError } from "@/lib/utils/errorHandler";
 import { KbSearchPopover } from "@/components/knowledge/KbSearchPopover";
 import { CopilotLauncher } from "@/components/support/copilot/CopilotDrawer";
+import { WidgetReplyGate } from "@/components/omnichannel/WidgetReplyGate";
 
 type ComposerMode = "reply" | "note";
 
 interface WorkspaceComposerProps {
   conversationId: string;
+  channelType?: ChannelType;
   contactFirstName?: string;
   disabled?: boolean;
   // A reply (not an internal note) was sent: the thread scrolls to it (FE-8).
@@ -36,12 +39,15 @@ interface WorkspaceComposerProps {
 // toolbar buttons are rendered but DISABLED - see the per-button TODOs.
 export function WorkspaceComposer({
   conversationId,
+  channelType,
   contactFirstName,
   disabled,
   onReplySent,
 }: WorkspaceComposerProps) {
   const [mode, setMode] = useState<ComposerMode>("reply");
   const [text, setText] = useState("");
+  // Only the Reply tab waits for Accept: a note never reaches the customer.
+  const widgetReply = useWidgetReply(conversationId, channelType);
 
   const sendMessage = useSendMessage();
   const addNote = useCreateConversationNote();
@@ -330,7 +336,10 @@ export function WorkspaceComposer({
         </button>
       </div>
 
-      {/* Input box - blue framing for reply, amber for note */}
+      {mode === "reply" && widgetReply.state !== "open" ? (
+        <WidgetReplyGate conversationId={conversationId} state={widgetReply.state} ownerName={widgetReply.ownerName} />
+      ) : (
+      /* Input box - blue framing for reply, amber for note */
       <div
         className={cn(
           "overflow-hidden rounded-xl border-[1.5px] transition-colors",
@@ -469,6 +478,7 @@ export function WorkspaceComposer({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

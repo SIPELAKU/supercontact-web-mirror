@@ -95,6 +95,8 @@ interface WidgetConfig {
   home_headline?: string | null;
   home_subtext?: string | null;
   show_home_screen?: boolean;
+  // Absent until the API sends it, and that means shown.
+  show_powered_by?: boolean;
   quick_actions?: QuickAction[] | null;
   response_time_label?: string | null;
   show_presence?: boolean;
@@ -736,6 +738,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private preChatEmailEl!: HTMLInputElement;
     private preChatNameErrEl!: HTMLDivElement;
     private preChatEmailErrEl!: HTMLDivElement;
+    private poweredByEl: HTMLAnchorElement | null = null;
     private homeComposerSlot!: HTMLDivElement;
     private chatComposerSlot!: HTMLDivElement;
     private menuEl!: HTMLDivElement;
@@ -991,6 +994,9 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .prechat-err.show { display: block; }
         .prechat-submit { margin-top: 4px; width: 100%; background: ${brand}; color: #fff; border: none; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
 
+        .powered-by { display: block; padding: 0 12px 8px; background: #fff; text-align: center; font-size: 11px; color: #9CA3AF; text-decoration: none; }
+        .powered-by:hover { text-decoration: underline; }
+
         /* ---- Composer (shared between views, re-parented on view switch) ---- */
         .composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #E5E7EB; background: #fff; }
         /* 16px (not 13px) so iOS Safari doesn't zoom the page on focus (item 2 a11y). */
@@ -1099,6 +1105,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
       // Shared composer, built once and re-parented between the two views.
       this.formEl = this.buildForm();
+      this.poweredByEl = this.buildPoweredBy();
 
       this.preChatViewEl = this.buildPreChatView();
       this.homeViewEl = this.buildHomeView();
@@ -2653,6 +2660,17 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.menuEl.classList.remove("open");
     }
 
+    private buildPoweredBy(): HTMLAnchorElement | null {
+      if (this.config!.show_powered_by === false) return null;
+      const link = document.createElement("a");
+      link.className = "powered-by";
+      link.href = "https://smartsales.id";
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Powered by SmartSales";
+      return link;
+    }
+
     private setView(v: "prechat" | "home" | "chat") {
       this.view = v;
       this.preChatViewEl.style.display = v === "prechat" ? "flex" : "none";
@@ -2662,10 +2680,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // pre-chat view has none: nothing can be sent before the form.
       if (v === "prechat") {
         this.formEl.remove();
+        this.poweredByEl?.remove();
         this.fillPreChat();
       } else {
         const slot = v === "home" ? this.homeComposerSlot : this.chatComposerSlot;
         slot.appendChild(this.formEl);
+        if (this.poweredByEl) slot.appendChild(this.poweredByEl);
       }
       // Back affordance only makes sense returning from chat to a home screen
       // (its own CSS restricts it to mobile full-screen).

@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.132.0] - 2026-11-09
+
+### Detail Versi 1.132.0
+
+#### ✨ Survei CSAT Bahasa Indonesia dan "Powered by SmartSales" di Widget (Prioritas 4: W9, W11)
+
+- **Deskripsi:**
+  - **Masalah:** halaman survei CSAT yang dibaca pelanggan masih berbahasa Inggris, dan widget gratis belum menyebut SmartSales.
+  - **Perbaikan:**
+    - **Survei CSAT:** semua teks berbahasa Indonesia tanpa pilihan bahasa, termasuk label wajah, daftar alasan, layar terima kasih, link kedaluwarsa, dan judul tab. Kode alasan yang dikirim ke API tidak berubah.
+    - **Widget:** teks kecil "Powered by SmartSales" di bawah kolom ketik, membuka smartsales.id di tab baru.
+  - **Technical Notes:**
+    - `components/csat/CsatSurveyClient.tsx`, `app/(survey)/csat/[token]/page.tsx`
+    - `widget/src/widget.ts`: `buildPoweredBy`. Teks disembunyikan kalau config mengirim `show_powered_by: false`
+    - Toggle di Settings menyusul setelah field `show_powered_by` tersedia di API
+  - **Rilis:** tidak perlu API baru.
+
+- **🧪 Testing:** Perubahan teks dan tampilan, jadi tidak ada tes helper baru (semua 1064 Vitest lulus), tsc dan lint bersih. Chrome dengan API mock: 21 cek lulus untuk semua layar survei dan posisi teks di widget. Belum dites dengan data survei asli.
+
+---
+
 ## [1.131.0] - 2026-11-09
 
 ### Detail Versi 1.131.0

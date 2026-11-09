@@ -39,6 +39,7 @@ import {
   type AgentRequestSource,
   type AgentRequestUi,
 } from "../../lib/utils/agentRequest";
+import { isConversationEndedError, isEndedStatus, readVisitorIdentity } from "../../lib/utils/widgetChatEnded";
 import { deflectionCardPlacement, readCardMessageId } from "../../lib/utils/deflectionCard";
 import {
   dayKey,
@@ -159,6 +160,8 @@ interface WidgetStrings {
   connectedAgentNamed: string;
   agentBusy: string;
   agentOffline: string;
+  chatEnded: string;
+  startNewChat: string;
   talkToHuman: string;
   helpWithPrefix: string;
   startOver: string;
@@ -219,6 +222,8 @@ const STRINGS_EN: WidgetStrings = {
   connectedAgentNamed: "You're connected with {name}",
   agentBusy: "Our team is still busy. We'll reply here as soon as we can.",
   agentOffline: "Our team is offline right now. We'll get back to you soon.",
+  chatEnded: "This chat has ended. Thank you!",
+  startNewChat: "Start a new chat",
   talkToHuman: "I'd like to talk to a human",
   helpWithPrefix: "I'd like help with: ",
   startOver: "Start over",
@@ -272,6 +277,8 @@ const STRINGS_ID: WidgetStrings = {
   connectedAgentNamed: "Anda terhubung dengan {name}",
   agentBusy: "Tim kami masih sibuk. Kami akan membalas di sini secepatnya.",
   agentOffline: "Tim kami sedang offline. Kami akan segera menghubungi Anda.",
+  chatEnded: "Chat ini sudah selesai. Terima kasih!",
+  startNewChat: "Mulai chat baru",
   talkToHuman: "Saya ingin berbicara dengan agen",
   helpWithPrefix: "Saya butuh bantuan tentang: ",
   startOver: "Mulai ulang",
@@ -625,8 +632,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     if (!res.ok) {
       const err = new Error(json?.error?.message || json?.message || "Request failed") as Error & {
         status?: number;
+        code?: string;
       };
       err.status = res.status; // lets callers detect a 401 for token cleanup (item 4)
+      err.code = json?.error?.code; // e.g. CONVERSATION_ENDED
       throw err;
     }
     return json?.data ?? json;
@@ -739,6 +748,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private preChatNameErrEl!: HTMLDivElement;
     private preChatEmailErrEl!: HTMLDivElement;
     private poweredByEl: HTMLAnchorElement | null = null;
+    // The chat is Solved, Closed or Archived (W2): "Mulai chat baru" replaces
+    // the composer. Set from the socket, a resync, or a refused send.
+    private chatEnded = false;
+    private endedBarEl!: HTMLDivElement;
     private homeComposerSlot!: HTMLDivElement;
     private chatComposerSlot!: HTMLDivElement;
     private menuEl!: HTMLDivElement;
@@ -996,6 +1009,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
 
         .powered-by { display: block; padding: 0 12px 8px; background: #fff; text-align: center; font-size: 11px; color: #9CA3AF; text-decoration: none; }
         .powered-by:hover { text-decoration: underline; }
+        .ended-bar { padding: 10px 12px; border-top: 1px solid #E5E7EB; background: #fff; }
 
         /* ---- Composer (shared between views, re-parented on view switch) ---- */
         .composer { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid #E5E7EB; background: #fff; }
@@ -1106,6 +1120,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // Shared composer, built once and re-parented between the two views.
       this.formEl = this.buildForm();
       this.poweredByEl = this.buildPoweredBy();
+      this.endedBarEl = this.buildEndedBar();
 
       this.preChatViewEl = this.buildPreChatView();
       this.homeViewEl = this.buildHomeView();
@@ -1593,6 +1608,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       sendBtn?: HTMLButtonElement,
       requestAgent = false,
     ) {
+      // Home-screen buttons stay usable after the chat ended: they open a new one.
+      if (this.chatEnded) this.clearChat();
       const msg: WidgetMessage = {
         direction: "outbound",
         content,
@@ -1624,6 +1641,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // bot. Without a chat yet (the Home button) the request opens one: /start
     // with request_agent, so the bot never answers that first message.
     private async requestAgent(source: AgentRequestSource, deflectionId?: string) {
+      if (this.chatEnded) this.clearChat();
       if (!canRequestAgent(this.agentRequest)) return;
       if (!this.session) {
         void this.sendVisitorMessage(
@@ -1653,7 +1671,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         console.error("[SmartSales Widget] request agent failed", e);
         // Expired/revoked token: purge it so a reload starts fresh (item 4).
         if ((e as { status?: number })?.status === 401) this.clearSession();
-        this.agentRequest = { state: "failed", source };
+        this.agentRequest = isConversationEndedError(e) ? { state: "idle" } : { state: "failed", source };
+        if (isConversationEndedError(e)) this.setChatEnded(true);
       }
       this.renderMessages();
     }
@@ -1753,6 +1772,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         const identity = this.session ? null : startIdentityError(err?.status, err?.message);
         if (identity) {
           this.askVisitorDetails(msg, identity);
+          return;
+        }
+        // Ended in another tab or before the socket said so: not a failed send.
+        if (isConversationEndedError(e)) {
+          this.setChatEnded(true);
           return;
         }
         console.error("[SmartSales Widget] send failed", e);
@@ -1877,6 +1901,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         if (this.view !== "chat") this.setView("chat");
         this.renderMessages();
       } catch (e) {
+        if (isConversationEndedError(e)) {
+          this.setChatEnded(true);
+          this.renderMessages();
+          return;
+        }
         console.error("[SmartSales Widget] upload failed", e);
         if ((e as { status?: number })?.status === 401) this.clearSession();
         up.state = "error";
@@ -1952,12 +1981,12 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       // a KB answer, the no-answer card for a miss (never both on one reply).
       const cardPlacement = deflectionCardPlacement(
         this.messages,
-        this.deflection?.state === "open" ? this.deflection : null,
+        this.deflection?.state === "open" && !this.chatEnded ? this.deflection : null,
         showsAgentCards(this.agentRequest),
       );
       const agentOfferId = agentOfferMessageId(
         this.messages,
-        !showsAgentCards(this.agentRequest),
+        !showsAgentCards(this.agentRequest) || this.chatEnded,
         this.dismissedOffers,
       );
       // A day separator above the first message of each day ("Hari ini",
@@ -2042,9 +2071,14 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         if (card) this.bodyEl.appendChild(card);
       }
 
-      // Sticky "connected with an agent" system line (assigned:true from /start);
-      // until then, the state of a request for an agent.
-      if (this.agentConnected) {
+      // How the chat stands: over; connected to an agent; or, until then, the
+      // state of a request for an agent.
+      if (this.chatEnded) {
+        const sys = document.createElement("div");
+        sys.className = "sys-line";
+        sys.textContent = this.strings.chatEnded;
+        this.bodyEl.appendChild(sys);
+      } else if (this.agentConnected) {
         const sys = document.createElement("div");
         sys.className = "sys-line";
         sys.textContent = connectedAgentLine(this.strings.connectedAgentNamed, this.strings.connectedAgent, this.agentName);
@@ -2279,6 +2313,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           body: JSON.stringify({ helpful: true }),
         });
       } catch (e) {
+        if (isConversationEndedError(e)) {
+          this.setChatEnded(true);
+          this.renderMessages();
+          return;
+        }
         console.error("[SmartSales Widget] declining the agent card failed", e);
         // Expired/revoked token: purge it so a reload starts fresh (item 4).
         if ((e as { status?: number })?.status === 401) this.clearSession();
@@ -2435,6 +2474,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           this.rememberAgentRequestMark();
         }
         if (conv.agent) this.markAgentConnected(conv.agent);
+        this.visitor = readVisitorIdentity(conv.visitor) ?? this.visitor;
+        if (typeof conv.status === "string") this.setChatEnded(isEndedStatus(conv.status));
         this.renderMessages();
       } catch (e) {
         // A 401 means the visitor token expired/was revoked: purge it so a
@@ -2455,6 +2496,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.forgetAgentRequest();
       // The next send opens a new chat, which has asked for nobody yet.
       this.agentRequest = { state: "idle" };
+      this.setChatEnded(false);
       this.refreshComposerState(); // no token -> attach unusable
     }
 
@@ -2462,6 +2504,27 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // down and return to the landing surface.
     private resetAll() {
       this.closeMenu();
+      this.clearChat();
+      // A fresh chat asks for the details again, like the first one.
+      this.visitor = null;
+      this.preChatFieldErrors = null;
+      this.pendingStart = null;
+      this.preChatNameEl.value = "";
+      this.preChatEmailEl.value = "";
+      this.renderMessages();
+      this.setView(this.landing());
+    }
+
+    // "Mulai chat baru": the old chat leaves the screen, the visitor's details
+    // stay, so the next message opens a chat without the form.
+    private startNewChat() {
+      this.clearChat();
+      this.renderMessages();
+      this.setView(this.visitor ? "chat" : this.landing());
+    }
+
+    // Closes the current chat on this device; who the visitor is stays.
+    private clearChat() {
       this.stoppedReconnect = true;
       if (this.reconnectTimer) {
         window.clearTimeout(this.reconnectTimer);
@@ -2488,21 +2551,28 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.answerVotes = new Map();
       this.agentRequest = { state: "idle" };
       this.dismissedOffers = new Set();
-      // A fresh chat asks for the details again, like the first one.
-      this.visitor = null;
-      this.preChatFieldErrors = null;
-      this.pendingStart = null;
-      this.preChatNameEl.value = "";
-      this.preChatEmailEl.value = "";
       this.reconnectAttempts = 0;
       this.clearAgentTyping();
       this.upload = null;
       this.uploadErrorText = null;
+      this.setChatEnded(false);
       this.refreshComposerState(); // session gone -> attach unusable again
       // Allow the next conversation to reconnect normally.
       this.stoppedReconnect = false;
-      this.renderMessages();
-      this.setView(this.landing());
+    }
+
+    private setChatEnded(ended: boolean) {
+      this.chatEnded = ended;
+      if (ended) {
+        // Nothing more can be delivered here, so no retry links.
+        this.messages = this.messages.filter(
+          (m) => !(m.direction === "outbound" && (m.status === "sending" || m.status === "failed")),
+        );
+        this.upload = null;
+        this.uploadErrorText = null;
+        this.clearAgentTyping();
+      }
+      this.placeComposer();
     }
 
     private connectSocket() {
@@ -2544,6 +2614,17 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             this.agentRequestedAt = readAgentRequestedAt(data) ?? this.agentRequestedAt;
             if (this.agentRequest.state !== "offline") this.agentRequest = { state: "requested" };
             this.rememberAgentRequestMark();
+            this.renderMessages();
+            return;
+          }
+          // Solved, Closed or Archived, by an agent or the auto-close.
+          if (data.type === "conversation_ended") {
+            this.setChatEnded(true);
+            this.renderMessages();
+            return;
+          }
+          if (data.type === "conversation_reopened") {
+            this.setChatEnded(false);
             this.renderMessages();
             return;
           }
@@ -2660,6 +2741,31 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.menuEl.classList.remove("open");
     }
 
+    // Re-parents the shared composer (or, once the chat ended, the new-chat
+    // button) into the active view's slot. The pre-chat view has none: nothing
+    // can be sent before the form.
+    private placeComposer() {
+      this.formEl.remove();
+      this.endedBarEl.remove();
+      this.poweredByEl?.remove();
+      if (this.view === "prechat") return;
+      const slot = this.view === "home" ? this.homeComposerSlot : this.chatComposerSlot;
+      slot.appendChild(this.chatEnded ? this.endedBarEl : this.formEl);
+      if (this.poweredByEl) slot.appendChild(this.poweredByEl);
+    }
+
+    private buildEndedBar(): HTMLDivElement {
+      const bar = document.createElement("div");
+      bar.className = "ended-bar";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "prechat-submit";
+      button.textContent = this.strings.startNewChat;
+      button.onclick = () => this.startNewChat();
+      bar.appendChild(button);
+      return bar;
+    }
+
     private buildPoweredBy(): HTMLAnchorElement | null {
       if (this.config!.show_powered_by === false) return null;
       const link = document.createElement("a");
@@ -2676,17 +2782,8 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       this.preChatViewEl.style.display = v === "prechat" ? "flex" : "none";
       this.homeViewEl.style.display = v === "home" ? "flex" : "none";
       this.chatViewEl.style.display = v === "chat" ? "flex" : "none";
-      // Re-parent the shared composer into the active view's slot. The
-      // pre-chat view has none: nothing can be sent before the form.
-      if (v === "prechat") {
-        this.formEl.remove();
-        this.poweredByEl?.remove();
-        this.fillPreChat();
-      } else {
-        const slot = v === "home" ? this.homeComposerSlot : this.chatComposerSlot;
-        slot.appendChild(this.formEl);
-        if (this.poweredByEl) slot.appendChild(this.poweredByEl);
-      }
+      this.placeComposer();
+      if (v === "prechat") this.fillPreChat();
       // Back affordance only makes sense returning from chat to a home screen
       // (its own CSS restricts it to mobile full-screen).
       this.backBtn.classList.toggle("show", v === "chat" && !!this.config!.show_home_screen);

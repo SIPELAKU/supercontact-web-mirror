@@ -9,11 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.133.0] - 2026-11-09
+
+### Detail Versi 1.133.0
+
+#### ✨ Chat Widget yang Selesai dan Tombol Mulai Chat Baru
+
+- **Deskripsi:**
+  - **Masalah:** pelanggan tidak tahu chat sudah selesai. Pesan yang dikirim setelah Solved bisa tidak dibalas siapa pun, dan chat Closed hanya menampilkan "Gagal — ketuk untuk mencoba lagi".
+  - **Perbaikan:**
+    - Saat chat menjadi Solved, Closed, atau Archived, widget menampilkan "Chat ini sudah selesai. Terima kasih!" dan kolom ketik diganti tombol **Mulai chat baru**. Kartu tawaran agen disembunyikan. Survei CSAT tetap muncul di chat lama.
+    - Tampilan yang sama muncul setelah reload, dan saat pesan ditolak karena chat sudah selesai (misalnya dari tab lain). Pesan itu tidak ditandai gagal.
+    - **Mulai chat baru:** riwayat lama hilang dari layar, dan pesan pertama membuat chat baru tanpa form nama dan email. Kalau data pelanggan tidak tersedia, form tampil seperti biasa.
+    - Kalau agen membuka kembali chat, kolom ketik kembali.
+    - Tombol di layar Home dan menu "Bicara dengan agen" pada chat yang selesai membuka chat baru.
+  - **Technical Notes:**
+    - `lib/utils/widgetChatEnded.ts`: `isEndedStatus`, `isConversationEndedError`, `readVisitorIdentity`
+    - `widget/src/widget.ts`: `setChatEnded`, `placeComposer`, `startNewChat`, `clearChat` (dipisah dari `resetAll`); `apiFetch` membawa `error.code`
+    - Frame WS baru `conversation_ended` dan `conversation_reopened`, error 409 `CONVERSATION_ENDED`, dan field `visitor` di `GET /public/widget/conversation`
+  - **Rilis:** naik bersamaan dengan API chat selesai.
+
+- **🧪 Testing:** Vitest 6 tes pada helper ini (semua 1070 lulus), 11 dari 12 mutasi tertangkap (satu sisanya hanya pengaman tipe TypeScript dan tidak mengubah hasil), tsc dan lint bersih. Chrome dengan API mock: 34 cek lulus. Belum dites dengan API asli dan belum dites manual.
+
+---
+
 ## [1.132.0] - 2026-11-09
 
 ### Detail Versi 1.132.0
 
-#### ✨ Survei CSAT Bahasa Indonesia dan "Powered by SmartSales" di Widget (Prioritas 4: W9, W11)
+#### ✨ Survei CSAT Bahasa Indonesia dan "Powered by SmartSales" di Widget
 
 - **Deskripsi:**
   - **Masalah:** halaman survei CSAT yang dibaca pelanggan masih berbahasa Inggris, dan widget gratis belum menyebut SmartSales.
@@ -34,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Detail Versi 1.131.0
 
-#### ✨ Agen Mengambil Chat Widget dengan Accept (Prioritas 1: W1, W5, W6, W8)
+#### ✨ Agen Mengambil Chat Widget dengan Accept
 
 - **Deskripsi:**
   - **Masalah:** agen tiba-tiba mendapat chat tanpa tahu, pelanggan tiba-tiba melihat "Anda terhubung dengan agen" walaupun belum ada yang membalas, dan quick action langsung masuk ke agen setiap kali bot tidak yakin.
@@ -46,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `lib/utils/widgetReplyGate.ts` (`widgetReplyState`), `WidgetReplyGate.tsx`, `useWidgetReply`, `useAcceptConversation`, `acceptConversation`
     - `lib/utils/agentRequest.ts`: `msUntilAgentBusy`, `readAgentRequestedAt`, `readAgentName`, `connectedAgentLine`, status `offline`. `readAgentAssigned` dihapus
     - Frame WS baru `agent_connected`
-  - **Rilis:** harus naik bersamaan dengan API Prioritas 1. Tanpa API ini, tombol Accept gagal.
+  - **Rilis:** harus naik bersamaan dengan API Accept. Tanpa API ini, tombol Accept gagal.
 
 - **🧪 Testing:** Vitest 33 tes pada helper ini (semua 1064 lulus), 21 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 24 cek lulus di Workspace dan widget, ditambah 4 skenario chat yang lambat dimuat (kolom balas tidak muncul sesaat). Belum dites dengan API asli, dan tombol Accept di halaman Omnichannel serta detail kontak belum dicek di browser.
 

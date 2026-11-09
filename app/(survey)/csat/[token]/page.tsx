@@ -4,7 +4,7 @@ import CsatSurveyClient from "@/components/csat/CsatSurveyClient";
 // A per-survey token link is a private, single-use customer survey - never
 // search content. noindex/nofollow (there is no robots.ts allow for /csat/).
 export const metadata: Metadata = {
-  title: "Customer Satisfaction Survey",
+  title: "Survei Kepuasan Pelanggan",
   robots: { index: false, follow: false },
 };
 

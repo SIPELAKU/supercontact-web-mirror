@@ -5,11 +5,13 @@
 // authority. States handled:
 //   loading                        -> spinner
 //   pending | sent                 -> the rating form
-//   already_answered | answered    -> "You've already responded"
+//   already_answered | answered    -> "Anda sudah mengisi survei ini"
 //   expired  (status or 410)       -> neutral "no longer valid"
 //   invalid  (404)                 -> neutral "no longer valid" (NO tenant leak)
 //   transient error                -> generic retry
-//   submit success                 -> "Thank you!"
+//   submit success                 -> "Terima kasih!"
+//
+// The customer reads this page, so its text is Indonesian only.
 
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
@@ -23,22 +25,22 @@ import { CsatApiError } from "@/lib/api/csat-public";
 
 // 1..5 faces (😠 -> 😍). Kept simple + language-neutral; labels aid a11y.
 const FACES: { value: number; emoji: string; label: string }[] = [
-  { value: 1, emoji: "😠", label: "Very unhappy" },
-  { value: 2, emoji: "😕", label: "Unhappy" },
-  { value: 3, emoji: "😐", label: "Neutral" },
-  { value: 4, emoji: "🙂", label: "Happy" },
-  { value: 5, emoji: "😍", label: "Very happy" },
+  { value: 1, emoji: "😠", label: "Sangat tidak puas" },
+  { value: 2, emoji: "😕", label: "Tidak puas" },
+  { value: 3, emoji: "😐", label: "Biasa saja" },
+  { value: 4, emoji: "🙂", label: "Puas" },
+  { value: 5, emoji: "😍", label: "Sangat puas" },
 ];
 
 // Optional, generic reason codes (backend accepts any string; empty = skip).
 const REASON_OPTIONS: { value: string; label: string }[] = [
-  { value: "resolved_quickly", label: "My issue was resolved quickly" },
-  { value: "helpful_agent", label: "The agent was helpful" },
-  { value: "knowledgeable", label: "The agent was knowledgeable" },
-  { value: "slow_response", label: "The response was too slow" },
-  { value: "not_resolved", label: "My issue was not resolved" },
-  { value: "hard_to_reach", label: "It was hard to reach support" },
-  { value: "other", label: "Other" },
+  { value: "resolved_quickly", label: "Masalah saya cepat selesai" },
+  { value: "helpful_agent", label: "Agen sangat membantu" },
+  { value: "knowledgeable", label: "Agen menguasai masalahnya" },
+  { value: "slow_response", label: "Respons terlalu lambat" },
+  { value: "not_resolved", label: "Masalah saya belum selesai" },
+  { value: "hard_to_reach", label: "Tim dukungan sulit dihubungi" },
+  { value: "other", label: "Lainnya" },
 ];
 
 const COMMENT_MAX = 1000;
@@ -61,11 +63,11 @@ function InvalidState() {
         <Link2Off size={34} />
       </div>
       <h1 className="mb-2 text-center text-xl font-bold text-gray-900">
-        This survey link is no longer valid
+        Link survei ini sudah tidak berlaku
       </h1>
       <p className="text-center text-sm leading-relaxed text-gray-500">
-        The link may have expired or already been used. You can safely close this
-        page.
+        Link mungkin sudah kedaluwarsa atau sudah digunakan. Anda bisa menutup
+        halaman ini.
       </p>
     </Card>
   );
@@ -86,7 +88,7 @@ export default function CsatSurveyClient() {
   // though the initial GET succeeded (someone answered in another tab, etc.).
   const [terminal, setTerminal] = useState<null | "answered" | "invalid">(null);
 
-  const companyName = data?.company_display_name?.trim() || "our team";
+  const companyName = data?.company_display_name?.trim() || "tim kami";
 
   const isTerminalError =
     error instanceof CsatApiError && (error.status === 404 || error.status === 410);
@@ -122,7 +124,7 @@ export default function CsatSurveyClient() {
       <Card>
         <div className="flex flex-col items-center justify-center gap-3 py-8">
           <CircularProgress size={30} thickness={4} sx={{ color: "#4F46E5" }} />
-          <p className="animate-pulse text-sm text-gray-500">Loading survey...</p>
+          <p className="animate-pulse text-sm text-gray-500">Memuat survei...</p>
         </div>
       </Card>
     );
@@ -139,10 +141,10 @@ export default function CsatSurveyClient() {
     return (
       <Card>
         <h1 className="mb-2 text-center text-xl font-bold text-gray-900">
-          Something went wrong
+          Terjadi kesalahan
         </h1>
         <p className="text-center text-sm leading-relaxed text-gray-500">
-          We couldn&apos;t load this survey right now. Please try again in a moment.
+          Survei belum bisa dimuat. Silakan coba lagi beberapa saat lagi.
         </p>
       </Card>
     );
@@ -154,10 +156,10 @@ export default function CsatSurveyClient() {
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 text-green-500">
           <CheckCircle2 size={36} />
         </div>
-        <h1 className="mb-2 text-center text-xl font-bold text-gray-900">Thank you!</h1>
+        <h1 className="mb-2 text-center text-xl font-bold text-gray-900">Terima kasih!</h1>
         <p className="text-center text-sm leading-relaxed text-gray-500">
-          Your feedback has been shared with {companyName}. We appreciate you taking
-          the time.
+          Masukan Anda sudah diterima oleh {companyName}. Terima kasih sudah
+          meluangkan waktu.
         </p>
       </Card>
     );
@@ -170,11 +172,11 @@ export default function CsatSurveyClient() {
           <CheckCircle2 size={34} />
         </div>
         <h1 className="mb-2 text-center text-xl font-bold text-gray-900">
-          You&apos;ve already responded
+          Anda sudah mengisi survei ini
         </h1>
         <p className="text-center text-sm leading-relaxed text-gray-500">
-          Thanks - we&apos;ve already recorded your feedback for this survey. You can
-          safely close this page.
+          Terima kasih, masukan Anda untuk survei ini sudah kami catat. Anda bisa
+          menutup halaman ini.
         </p>
       </Card>
     );
@@ -189,18 +191,18 @@ export default function CsatSurveyClient() {
           <MessageSquareHeart size={30} />
         </div>
         <h1 className="text-xl font-bold text-gray-900">
-          How was your experience with {companyName}?
+          Bagaimana pengalaman Anda dengan {companyName}?
         </h1>
         {data.agent_name && (
           <p className="mt-1 text-sm text-gray-500">
-            You were helped by {data.agent_name}
+            Anda dibantu oleh {data.agent_name}
           </p>
         )}
       </div>
 
       {/* 1..5 faces */}
       <fieldset className="mb-6">
-        <legend className="sr-only">Rate your experience from 1 to 5</legend>
+        <legend className="sr-only">Beri nilai pengalaman Anda dari 1 sampai 5</legend>
         <div className="flex items-center justify-center gap-2 sm:gap-3">
           {FACES.map((face) => {
             const selected = rating === face.value;
@@ -234,8 +236,8 @@ export default function CsatSurveyClient() {
       <div className="mb-4">
         <AppSelect
           isBgWhite
-          label="What stood out? (optional)"
-          placeholder="Select a reason"
+          label="Apa yang paling berkesan? (opsional)"
+          placeholder="Pilih alasan"
           value={reasonCode}
           onChange={(e) => setReasonCode(String(e.target.value))}
           options={REASON_OPTIONS}
@@ -246,9 +248,9 @@ export default function CsatSurveyClient() {
       <div className="mb-6">
         <AppTextarea
           isBgWhite
-          label="Anything else? (optional)"
+          label="Ada tambahan lain? (opsional)"
           rows={4}
-          placeholder="Tell us more about your experience"
+          placeholder="Ceritakan pengalaman Anda"
           value={comment}
           onChange={(e) => setComment(e.target.value.slice(0, COMMENT_MAX))}
           inputProps={{ maxLength: COMMENT_MAX }}
@@ -262,7 +264,7 @@ export default function CsatSurveyClient() {
         !(submit.error instanceof CsatApiError &&
           [404, 409, 410].includes(submit.error.status)) && (
           <p className="mb-3 text-center text-sm text-red-500">
-            We couldn&apos;t submit your response. Please try again.
+            Masukan Anda belum terkirim. Silakan coba lagi.
           </p>
         )}
 
@@ -272,7 +274,7 @@ export default function CsatSurveyClient() {
         disabled={rating < 1 || submit.isPending}
         isLoading={submit.isPending}
       >
-        Submit feedback
+        Kirim masukan
       </AppButton>
     </Card>
   );

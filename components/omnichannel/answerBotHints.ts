@@ -30,6 +30,22 @@ const FALLBACK_REASON: Record<string, string> = {
   guardrail: "The AI's answer was held back because it broke an article's rules.",
 };
 
+/** Playground: how the bot read a follow-up question. Empty when its first
+ *  search was strong, or when the API does not report it. */
+export function followUpRows(
+  result: Pick<BotPlaygroundAskResponse, "topik_sama" | "cari" | "alasan_tanya_balik">
+): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  if (typeof result.topik_sama === "boolean") {
+    rows.push({ label: "Same topic as before", value: result.topik_sama ? "Yes" : "No" });
+  }
+  const searched = result.cari?.trim();
+  if (searched) rows.push({ label: "Searched for", value: searched });
+  const reason = result.alasan_tanya_balik?.trim();
+  if (reason) rows.push({ label: "Asked back because", value: reason });
+  return rows;
+}
+
 /** Playground: why the AI wrote no answer, from the API's `fallback_reason`
  *  (BE-7). null when it did answer, when the API does not say, and for AI off
  *  on an article list - isAiOffArticleList already explains that one. */

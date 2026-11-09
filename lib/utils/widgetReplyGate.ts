@@ -6,24 +6,28 @@
 // affected.
 
 import type { ChannelType } from "@/lib/types/omnichannel";
+import { isEndedStatus } from "./widgetChatEnded";
 
 // `open`: the reply box. `needs_accept`: the Accept button. `taken`: another
-// agent holds the chat. `loading`: not known yet, so neither is offered.
-export type WidgetReplyState = "open" | "needs_accept" | "taken" | "loading";
+// agent holds the chat. `ended`: over with no owner, so nothing to accept.
+// `loading`: not known yet, so nothing is offered.
+export type WidgetReplyState = "open" | "needs_accept" | "taken" | "ended" | "loading";
 
 export function widgetReplyState({
   channelType,
   loaded = true,
+  status,
   assignedUserId,
   currentUserId,
 }: {
   channelType?: ChannelType | null;
   loaded?: boolean;
+  status?: string | null;
   assignedUserId?: string | null;
   currentUserId?: string | null;
 }): WidgetReplyState {
   if (channelType !== "web_widget") return "open";
   if (!loaded) return "loading";
-  if (!assignedUserId) return "needs_accept";
+  if (!assignedUserId) return isEndedStatus(status) ? "ended" : "needs_accept";
   return assignedUserId === currentUserId ? "open" : "taken";
 }

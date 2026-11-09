@@ -23,6 +23,7 @@ import {
     useDeflectionsSummary,
 } from "@/lib/hooks/useSupportAnalytics";
 import { SupportAnalyticsParams } from "@/lib/api/support-analytics";
+import { resolvedWithoutAgentView } from "@/lib/utils/deflectionReport";
 import { ChartEmptyState, DASH, formatMinutes } from "./shared";
 
 const SOLVED_COLOR = "#16a34a"; // app's existing success green (CVD-checked against #5479EE)
@@ -50,6 +51,7 @@ export function ConversationsTab({ params }: { params: SupportAnalyticsParams })
     const points = trendData?.data?.points ?? [];
     const sla = slaData?.data;
     const deflections = deflectionsData?.data;
+    const resolvedWithoutAgent = resolvedWithoutAgentView(deflections);
 
     const byChannel = (summary?.by_channel ?? []).map((c) => ({
         ...c,
@@ -224,14 +226,21 @@ export function ConversationsTab({ params }: { params: SupportAnalyticsParams })
                 <Grid item xs={12} md={6}>
                     <ChartCard title="Answer Bot Deflections">
                         <Box className="flex flex-col gap-4 py-2">
-                            <div className="flex items-baseline gap-2">
-                                <Bot size={22} className="text-gray-400 self-center" />
-                                <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
-                                    {(deflections?.deflection_rate_pct ?? 0).toFixed(1)}%
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                                    deflection rate
-                                </Typography>
+                            <div className="flex flex-col gap-0.5">
+                                <div className="flex items-baseline gap-2">
+                                    <Bot size={22} className="text-gray-400 self-center" />
+                                    <Typography variant="h4" sx={{ fontWeight: 700, color: "text.primary" }}>
+                                        {resolvedWithoutAgent?.pct ?? `${(deflections?.deflection_rate_pct ?? 0).toFixed(1)}%`}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                                        {resolvedWithoutAgent ? "Selesai tanpa agen" : "deflection rate"}
+                                    </Typography>
+                                </div>
+                                {resolvedWithoutAgent && (
+                                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                                        {resolvedWithoutAgent.caption}
+                                    </Typography>
+                                )}
                             </div>
                             <div className="flex flex-col gap-2 text-sm">
                                 <div className="flex justify-between">

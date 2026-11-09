@@ -101,6 +101,10 @@ export interface DeflectionsSummary {
     escalated: number;
     deflection_rate_pct: number;
     used_llm_count: number;
+    /** Per ended chat the bot answered; absent until the API sends them. */
+    resolved_without_agent?: number | null;
+    ended_bot_chats?: number | null;
+    resolved_without_agent_pct?: number | null;
 }
 
 function buildQuery(params: SupportAnalyticsParams): string {

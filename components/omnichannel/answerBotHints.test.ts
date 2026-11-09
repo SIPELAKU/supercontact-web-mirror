@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BotPlaygroundAskResponse, PlaygroundEffectiveConfig } from '@/lib/types/botPlayground';
-import { fallbackReasonHint, isAiOffArticleList, isTitleListOnly } from './answerBotHints';
+import { fallbackReasonHint, followUpRows, isAiOffArticleList, isTitleListOnly } from './answerBotHints';
+
+describe('followUpRows (Why this answer)', () => {
+  it('shows how a follow-up was read', () => {
+    expect(followUpRows({ topik_sama: true, cari: ' refund barang ', alasan_tanya_balik: ' dua artikel mirip ' })).toEqual([
+      { label: 'Same topic as before', value: 'Yes' },
+      { label: 'Searched for', value: 'refund barang' },
+      { label: 'Asked back because', value: 'dua artikel mirip' },
+    ]);
+  });
+
+  it('a new topic is reported too', () => {
+    expect(followUpRows({ topik_sama: false })).toEqual([{ label: 'Same topic as before', value: 'No' }]);
+  });
+
+  it('shows nothing when the API does not report it', () => {
+    expect(followUpRows({})).toEqual([]);
+    expect(followUpRows({ topik_sama: null, cari: '  ', alasan_tanya_balik: null })).toEqual([]);
+  });
+});
 
 describe('isTitleListOnly (settings warning)', () => {
   it('answer bot on, AI off: warn - visitors only get article titles', () => {

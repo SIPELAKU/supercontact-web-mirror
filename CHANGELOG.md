@@ -9,6 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.135.0] - 2026-11-09
+
+### Detail Versi 1.135.0
+
+#### ✨ Angka "Selesai tanpa agen" di Laporan Bot
+
+- **Deskripsi:**
+  - **Masalah:** angka deflection dihitung per jawaban bot dan hanya naik kalau pelanggan menekan "Tidak" pada kartu, jadi terlihat lebih rendah dari kenyataan.
+  - **Perbaikan:** kartu "Answer Bot Deflections" menampilkan persentase **Selesai tanpa agen** dan jumlah chatnya, misalnya "80 dari 100 chat". Dihitung API per chat yang sudah berakhir. Selama API belum mengirim angkanya, kartu tetap menampilkan deflection rate lama.
+  - **Technical Notes:**
+    - `lib/utils/deflectionReport.ts`: `resolvedWithoutAgentView`
+    - `components/support/analytics/ConversationsTab.tsx`, `lib/api/support-analytics.ts`
+    - Field baru dari API: `resolved_without_agent`, `ended_bot_chats`, `resolved_without_agent_pct`. Nama field masih usulan
+  - **Rilis:** aman naik sebelum API, karena field-nya tambahan.
+
+#### 🐛 Penyesuaian dengan API 1.167.0
+
+- **Deskripsi:**
+  - Chat web widget yang sudah selesai dan tidak punya pemilik menampilkan "This chat has ended.", bukan tombol Accept yang pasti gagal.
+  - Kalau chat ternyata sudah selesai saat Accept diklik, pesannya "This chat has already ended.", bukan "Another agent accepted this chat first."
+  - Bot Playground mengenal sumber balasan baru: "Asked back" dan "AI reply, no article".
+  - Pesan otomatis "Masih di sana?" tidak lagi menghilangkan baris "Menghubungkan…" atau "Tim kami masih sibuk". Baris itu baru hilang setelah API menyatakan agen memegang chat.
+
+#### 💄 Keterangan Business Hours di Pengaturan Widget
+
+- **Deskripsi:** pengaturan Web Widget menjelaskan bahwa jadwal Business Hours menentukan kapan tim dianggap tersedia.
+
+- **🧪 Testing:** Vitest 4 tes pada helper ini (semua 1079 lulus, berkurang karena helper lama dihapus), 7 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 6 cek lulus untuk kartu laporan, 28 cek Accept dan widget, 4 cek chat selesai, dan 6 cek pesan "Masih di sana?". Belum dites dengan API asli dan belum dites manual.
+
+---
+
+## [1.134.0] - 2026-11-09
+
+### Detail Versi 1.134.0
+
+#### ✨ Pilihan Bantuan Saat Bot Tidak Punya Jawaban
+
+- **Deskripsi:**
+  - **Masalah:** saat bot tidak menemukan jawaban, pelanggan hanya mendapat teks "belum menemukan jawabannya" tanpa pilihan lanjutan.
+  - **Perbaikan:**
+    - **Widget:** di bawah balasan itu muncul "Mungkin maksud Anda:" berisi artikel terdekat dan tombol quick action. Klik artikel mengirim judulnya sebagai pertanyaan, klik tombol berlaku seperti quick action di layar Home. Pilihan hilang setelah ada pesan baru, tetap ada setelah reload, dan tidak tampil saat agen sudah diminta atau chat selesai. Kartu tawaran agen tetap di bawahnya.
+    - **Bot Playground:** "Why this answer" menampilkan apakah pertanyaan dianggap satu topik dengan sebelumnya, kata yang dicari, dan alasan bot bertanya balik.
+  - **Technical Notes:**
+    - `lib/utils/noAnswerSuggestions.ts`: `readSuggestions`, `latestSuggestions`. Paling banyak 3 artikel dan 4 tombol
+    - `widget/src/widget.ts`: `buildSuggestions`
+    - `components/omnichannel/answerBotHints.ts`: `followUpRows`
+    - Field baru dari API: `suggestions` pada pesan, `topik_sama`, `cari`, `alasan_tanya_balik` pada respons Playground. Selama API belum mengirim, tampilan tidak berubah
+  - **Rilis:** aman naik sebelum API, karena field-nya tambahan.
+
+- **🧪 Testing:** Vitest untuk helper ini dan semua 1083 tes lulus, 17 mutasi tertangkap, tsc dan lint bersih. Chrome dengan API mock: 16 cek lulus untuk pilihan di widget. Tampilan di Bot Playground belum dicek di browser. Belum dites dengan API asli dan belum dites manual.
+
+---
+
 ## [1.133.0] - 2026-11-09
 
 ### Detail Versi 1.133.0
@@ -46,8 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Widget:** teks kecil "Powered by SmartSales" di bawah kolom ketik, membuka smartsales.id di tab baru.
   - **Technical Notes:**
     - `components/csat/CsatSurveyClient.tsx`, `app/(survey)/csat/[token]/page.tsx`
-    - `widget/src/widget.ts`: `buildPoweredBy`. Teks disembunyikan kalau config mengirim `show_powered_by: false`
-    - Toggle di Settings menyusul setelah field `show_powered_by` tersedia di API
+    - `widget/src/widget.ts`: `buildPoweredBy`
   - **Rilis:** tidak perlu API baru.
 
 - **🧪 Testing:** Perubahan teks dan tampilan, jadi tidak ada tes helper baru (semua 1064 Vitest lulus), tsc dan lint bersih. Chrome dengan API mock: 21 cek lulus untuk semua layar survei dan posisi teks di widget. Belum dites dengan data survei asli.

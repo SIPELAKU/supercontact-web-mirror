@@ -33,20 +33,18 @@ export function showsAgentCards(ui: AgentRequestUi): boolean {
 }
 
 /** The line under the thread: "connecting" while sending and once handed
- *  over until an agent answers, "busy" after 5 minutes of that, "offline"
- *  outside business hours, "failed" with a retry, nothing otherwise. */
+ *  over, "busy" after 5 minutes of that, "offline" outside business hours,
+ *  "failed" with a retry, nothing otherwise. The widget stops showing it once
+ *  the API says an agent has the chat; a message alone proves nothing, as the
+ *  idle "still there?" warning looks the same as an agent's reply. */
 export function agentRequestLine(
   ui: AgentRequestUi,
-  agentAnswered = false,
   requestedAt?: string | null,
   now: number = Date.now(),
 ): "connecting" | "busy" | "offline" | "failed" | null {
   if (ui.state === "submitting") return "connecting";
-  if (ui.state === "requested") {
-    if (agentAnswered) return null;
-    return msUntilAgentBusy(requestedAt, now) === 0 ? "busy" : "connecting";
-  }
-  if (ui.state === "offline") return agentAnswered ? null : "offline";
+  if (ui.state === "requested") return msUntilAgentBusy(requestedAt, now) === 0 ? "busy" : "connecting";
+  if (ui.state === "offline") return "offline";
   if (ui.state === "failed") return "failed";
   return null;
 }
@@ -57,32 +55,6 @@ export function msUntilAgentBusy(requestedAt: string | null | undefined, now: nu
   const at = requestedAt ? Date.parse(requestedAt) : NaN;
   if (Number.isNaN(at)) return AGENT_BUSY_AFTER_MS;
   return Math.max(0, at + AGENT_BUSY_AFTER_MS - now);
-}
-
-/** Where the thread stood when a request for an agent went through: the id of
- *  the newest stored message, or null while nothing is stored yet. Kept with
- *  the session so a reload still knows what came after it. */
-export function agentRequestMark(messages: ReadonlyArray<{ id?: string }>): string | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const id = messages[i].id;
-    if (id) return id;
-  }
-  return null;
-}
-
-/** A team message (UI "inbound", stored) came after the mark. Once a request
- *  goes through the bot and flows stay quiet, so that is an agent - the one
- *  exception the widget cannot tell apart is the idle "still there?" warning
- *  (messages carry no sender). No mark, or one no longer in the thread, counts
- *  as not answered: "Menghubungkan…" stays. */
-export function agentAnsweredSince(
-  messages: ReadonlyArray<{ id?: string; direction: string }>,
-  mark: string | null | undefined,
-): boolean {
-  if (mark === undefined) return false;
-  const start = mark === null ? 0 : messages.findIndex((m) => m.id === mark) + 1;
-  if (mark !== null && start === 0) return false;
-  return messages.slice(start).some((m) => m.direction === "inbound" && !!m.id);
 }
 
 export type AgentRequestOutcome = "escalated" | "offline" | "failed";

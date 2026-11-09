@@ -662,7 +662,8 @@ export async function assignConversation(token: string, conversationId: string, 
   return json.data || json;
 }
 
-/** Takes an unowned web widget chat (W5). 409: another agent was first. */
+/** Takes an unowned web widget chat. 409 with `code` CONVERSATION_TAKEN: another
+ *  agent was first; CONVERSATION_ENDED: the chat is over. */
 export async function acceptConversation(token: string, conversationId: string): Promise<void> {
   const res = await fetchWithTimeout(`${API_BASE}/conversations/${conversationId}/accept`, {
     method: 'POST',
@@ -675,8 +676,12 @@ export async function acceptConversation(token: string, conversationId: string):
   }
 
   if (!res.ok) {
-    const error = new Error(json?.error?.message || 'Failed to accept the chat') as Error & { status?: number };
+    const error = new Error(json?.error?.message || 'Failed to accept the chat') as Error & {
+      status?: number;
+      code?: string;
+    };
     error.status = res.status;
+    error.code = json?.error?.code;
     throw error;
   }
 }

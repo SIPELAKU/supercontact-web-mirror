@@ -339,6 +339,9 @@ const WebWidgetConfigPanel: React.FC<WebWidgetConfigPanelProps> = ({ accountId }
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500">
+            This schedule decides when your team counts as available. Outside these hours, visitors who ask for an agent are told the team is offline.
+          </p>
         </div>
 
         <div className="space-y-2">

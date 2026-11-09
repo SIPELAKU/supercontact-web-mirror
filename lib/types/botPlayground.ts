@@ -71,7 +71,7 @@ export interface PlaygroundEffectiveConfig {
   is_widget_enabled: boolean;
 }
 
-export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting" | "contact_ack" | "closing";
+export type PlaygroundReplySource = "llm" | "articles" | "no_answer_text" | "silence" | "greeting" | "contact_ack" | "closing" | "clarify" | "llm_no_article";
 
 export interface BotPlaygroundAskResponse {
   reply_text: string;
@@ -89,6 +89,10 @@ export interface BotPlaygroundAskResponse {
   warnings: string[];
   /** Why the AI wrote no answer (BE-7); null when it did. Absent on an older BE. */
   fallback_reason?: PlaygroundFallbackReason | null;
+  /** How the bot read a follow-up, only when its first search was weak. */
+  topik_sama?: boolean | null;
+  cari?: string | null;
+  alasan_tanya_balik?: string | null;
 }
 
 export type PlaygroundFallbackReason =

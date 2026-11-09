@@ -26,9 +26,7 @@ import { splitLinks } from "../../lib/utils/linkify";
 import { widgetHomeSubtext, widgetText } from "../../lib/utils/widgetHomeTexts";
 import {
   afterAgentOutcome,
-  agentAnsweredSince,
   agentRequestLine,
-  agentRequestMark,
   canRequestAgent,
   connectedAgentLine,
   msUntilAgentBusy,
@@ -58,6 +56,7 @@ import {
   type AnswerFeedback,
   type AnswerVoteUi,
 } from "../../lib/utils/answerFeedback";
+import { latestSuggestions, readSuggestions, type NoAnswerSuggestions } from "../../lib/utils/noAnswerSuggestions";
 import {
   PRE_CHAT_EMAIL_MAX,
   PRE_CHAT_NAME_MAX,
@@ -96,8 +95,6 @@ interface WidgetConfig {
   home_headline?: string | null;
   home_subtext?: string | null;
   show_home_screen?: boolean;
-  // Absent until the API sends it, and that means shown.
-  show_powered_by?: boolean;
   quick_actions?: QuickAction[] | null;
   response_time_label?: string | null;
   show_presence?: boolean;
@@ -186,6 +183,7 @@ interface WidgetStrings {
   agentOfferQuestion: string;
   agentOfferYes: string;
   agentOfferNo: string;
+  suggestionsTitle: string;
   // Required name + email form before the first message:
   preChatTitle: string;
   preChatName: string;
@@ -242,6 +240,7 @@ const STRINGS_EN: WidgetStrings = {
   agentOfferQuestion: "Would you like to talk to one of our agents?",
   agentOfferYes: "Yes, connect me",
   agentOfferNo: "No, thanks",
+  suggestionsTitle: "Did you mean:",
   preChatTitle: "Before we start, tell us about you",
   preChatName: "Name",
   preChatEmail: "Email",
@@ -297,6 +296,7 @@ const STRINGS_ID: WidgetStrings = {
   agentOfferQuestion: "Mau dihubungkan dengan agen kami?",
   agentOfferYes: "Ya, hubungkan",
   agentOfferNo: "Tidak",
+  suggestionsTitle: "Mungkin maksud Anda:",
   preChatTitle: "Sebelum mulai, isi data Anda",
   preChatName: "Nama",
   preChatEmail: "Email",
@@ -329,10 +329,6 @@ interface StoredSession {
   // Ids of the no-answer replies whose "talk to an agent?" card the visitor
   // answered "No" to, so a reload doesn't bring them back.
   dismissed_agent_offers?: string[];
-  // The newest stored message when a request for an agent went through (null:
-  // nothing stored yet). A team message after it means an agent answered, so
-  // "Menghubungkan…" goes - after a reload too. Absent: no request yet.
-  agent_request_mark?: string | null;
 }
 
 interface WidgetAttachment {
@@ -360,6 +356,8 @@ interface WidgetMessage {
   answer_feedback?: AnswerFeedback | null;
   // True on a no-answer reply: show "Talk to an agent" under it.
   offer_agent?: boolean;
+  // On a no-answer reply: articles and quick actions to choose from.
+  suggestions?: NoAnswerSuggestions | null;
   // The quick action tapped in an ongoing chat, so a retry sends it again.
   actionId?: string | null;
 }
@@ -412,6 +410,8 @@ interface ServerMessage {
   answer_feedback?: { deflection_id?: string; vote?: "helpful" | "not_helpful" | null } | null;
   // Set by the backend on a no-answer reply; false once an agent was asked for.
   offer_agent?: boolean;
+  // On a no-answer reply: { articles: [{ id, title }], quick_actions: [{ id, label }] }.
+  suggestions?: unknown;
 }
 
 // ---- Inline icon set (static, trusted SVG - no user data interpolated) ----
@@ -613,6 +613,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       attachments: m.attachments || [],
       answer_feedback: readAnswerFeedback(m.answer_feedback),
       offer_agent: m.offer_agent === true,
+      suggestions: readSuggestions(m.suggestions),
       status: "sent",
     };
   }
@@ -747,7 +748,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private preChatEmailEl!: HTMLInputElement;
     private preChatNameErrEl!: HTMLDivElement;
     private preChatEmailErrEl!: HTMLDivElement;
-    private poweredByEl: HTMLAnchorElement | null = null;
+    private poweredByEl!: HTMLAnchorElement;
     // The chat is Solved, Closed or Archived (W2): "Mulai chat baru" replaces
     // the composer. Set from the socket, a resync, or a refused send.
     private chatEnded = false;
@@ -971,6 +972,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         .agent-retry { border: none; cursor: pointer; color: #DC2626; background: #FEF2F2; font-family: inherit; }
 
         /* ---- Answer-Bot deflection control (Phase 7B.2) ---- */
+        .suggest { align-self: stretch; margin: 2px 0; }
+        .suggest-q { margin-bottom: 6px; font-size: 12px; color: #6B7280; }
+        .suggest-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .suggest-chip { max-width: 100%; padding: 6px 10px; border: 1.5px solid ${brand}; border-radius: 999px; background: #fff; color: ${brand}; font-size: 12px; font-weight: 600; line-height: 1.2; text-align: left; cursor: pointer; }
+        .suggest-chip:hover { background: ${brand}; color: #fff; }
         .deflect { align-self: stretch; margin: 2px 0; padding: 10px 12px; border: 1px solid #E9EDF3; border-radius: 12px; background: #fff; }
         .deflect-q { font-size: 12px; font-weight: 700; color: #111827; }
         .deflect-actions { display: flex; gap: 8px; margin-top: 10px; }
@@ -1666,7 +1672,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         });
         this.agentRequest = afterAgentOutcome(this.agentRequest, readAgentRequestOutcome(res) ?? "escalated", source);
         this.agentRequestedAt = readAgentRequestedAt(res) ?? this.agentRequestedAt;
-        this.rememberAgentRequestMark();
+        this.rememberAgentRequestTime();
       } catch (e) {
         console.error("[SmartSales Widget] request agent failed", e);
         // Expired/revoked token: purge it so a reload starts fresh (item 4).
@@ -1680,13 +1686,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // Once a request went through, note where the thread stood (only the first
     // time: a resync or a WS echo later must not move it past an agent's
     // answer). Stored with the session, so it survives a reload.
-    private rememberAgentRequestMark() {
+    private rememberAgentRequestTime() {
       if (this.agentRequest.state !== "requested" || !this.session) return;
       // No time from the server (an older frame): count from now.
       this.agentRequestedAt = this.agentRequestedAt ?? new Date().toISOString();
-      if (this.session.agent_request_mark !== undefined) return;
-      this.session = { ...this.session, agent_request_mark: agentRequestMark(this.messages) };
-      setSession(this.session);
     }
 
     // Chat-view overflow-menu "Talk to a human": always there, so a visitor is
@@ -1741,7 +1744,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             msg.startCtx?.request_agent ? "home" : "typed",
           );
           this.agentRequestedAt = readAgentRequestedAt(result) ?? this.agentRequestedAt;
-          this.rememberAgentRequestMark();
+          this.rememberAgentRequestTime();
           this.connectSocket();
         } else {
           const res = await apiFetch(`/public/widget/messages`, {
@@ -1760,7 +1763,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           // backend; a failed hand-over gets the same retry as the buttons.
           this.agentRequest = afterAgentOutcome(this.agentRequest, readAgentRequestOutcome(res), "typed");
           this.agentRequestedAt = readAgentRequestedAt(res) ?? this.agentRequestedAt;
-          this.rememberAgentRequestMark();
+          this.rememberAgentRequestTime();
         }
         msg.status = "sent";
         // Shown under the bubble until a resync brings the stored time.
@@ -1989,6 +1992,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         !showsAgentCards(this.agentRequest) || this.chatEnded,
         this.dismissedOffers,
       );
+      const suggestions = latestSuggestions(
+        this.messages,
+        !showsAgentCards(this.agentRequest) || this.chatEnded,
+      );
+      const newest = this.messages[this.messages.length - 1];
       // A day separator above the first message of each day ("Hari ini",
       // "Kemarin", "2 Nov 2026"); a message still being sent has no time yet
       // and never opens a new day.
@@ -2052,6 +2060,10 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         // 👍/👎 right under the bot answer the backend marked as rateable.
         if (m.direction === "inbound" && m.answer_feedback) {
           this.bodyEl.appendChild(this.buildAnswerVote(m.answer_feedback));
+        }
+        // Articles and quick actions, above the offer of an agent.
+        if (suggestions && m === newest) {
+          this.bodyEl.appendChild(this.buildSuggestions(suggestions));
         }
         // "Talk to an agent?" card right under the newest no-answer reply.
         if (m.id && m.id === agentOfferId) {
@@ -2252,8 +2264,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // the busy text after 5 minutes, the offline text outside business hours;
     // after a failure, a retry link that asks again for the same source.
     private buildAgentRequestLine(): HTMLElement | null {
-      const answered = agentAnsweredSince(this.messages, this.session?.agent_request_mark);
-      const line = agentRequestLine(this.agentRequest, answered, this.agentRequestedAt);
+      const line = agentRequestLine(this.agentRequest, this.agentRequestedAt);
       if (!line) return null;
       if (line !== "failed") {
         if (line === "connecting") this.armAgentBusyTimer();
@@ -2367,6 +2378,37 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     // Same look as the "Was this helpful?" card. "Yes" goes through
     // requestAgent like every other agent control. "No" only closes this
     // card, with no request: the bot keeps answering.
+    // An article sends its title as the visitor's question; a quick action does
+    // what its card on the Home screen does.
+    private buildSuggestions(suggestions: NoAnswerSuggestions): HTMLElement {
+      const box = document.createElement("div");
+      box.className = "suggest";
+      const title = document.createElement("div");
+      title.className = "suggest-q";
+      title.textContent = this.strings.suggestionsTitle;
+      box.appendChild(title);
+
+      const chips = document.createElement("div");
+      chips.className = "suggest-chips";
+      const addChip = (text: string, onClick: () => void) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "suggest-chip";
+        chip.textContent = text;
+        chip.onclick = onClick;
+        chips.appendChild(chip);
+      };
+      for (const article of suggestions.articles) {
+        addChip(article.title, () => void this.sendVisitorMessage(article.title, null, null));
+      }
+      for (const action of suggestions.quickActions) {
+        const configured = this.config!.quick_actions?.find((a) => a.id === action.id);
+        addChip(action.label, () => this.onQuickAction(configured ?? action));
+      }
+      box.appendChild(chips);
+      return box;
+    }
+
     private buildAgentOffer(messageId: string): HTMLElement {
       const box = document.createElement("div");
       box.className = "deflect";
@@ -2471,7 +2513,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
         this.agentRequestedAt = readAgentRequestedAt(conv) ?? this.agentRequestedAt;
         if (conv.agent_requested === true && this.agentRequest.state !== "offline") {
           this.agentRequest = { state: "requested" };
-          this.rememberAgentRequestMark();
+          this.rememberAgentRequestTime();
         }
         if (conv.agent) this.markAgentConnected(conv.agent);
         this.visitor = readVisitorIdentity(conv.visitor) ?? this.visitor;
@@ -2613,7 +2655,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
           if (data.type === "agent_requested") {
             this.agentRequestedAt = readAgentRequestedAt(data) ?? this.agentRequestedAt;
             if (this.agentRequest.state !== "offline") this.agentRequest = { state: "requested" };
-            this.rememberAgentRequestMark();
+            this.rememberAgentRequestTime();
             this.renderMessages();
             return;
           }
@@ -2647,6 +2689,15 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
             if (msg.direction === "inbound") this.clearAgentTyping();
             this.messages.push(msg);
             this.renderMessages();
+            // Waiting for an agent: only the API knows whether this one came
+            // from an agent (assigned without Accept) or is the idle warning.
+            if (
+              msg.direction === "inbound" &&
+              !this.agentConnected &&
+              (this.agentRequest.state === "requested" || this.agentRequest.state === "offline")
+            ) {
+              void this.resyncHistory();
+            }
             // Unread badge (item 6): only agent (inbound) frames, only while closed.
             if (!this.isOpen && msg.direction === "inbound") this.incrementUnread();
           }
@@ -2747,11 +2798,11 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
     private placeComposer() {
       this.formEl.remove();
       this.endedBarEl.remove();
-      this.poweredByEl?.remove();
+      this.poweredByEl.remove();
       if (this.view === "prechat") return;
       const slot = this.view === "home" ? this.homeComposerSlot : this.chatComposerSlot;
       slot.appendChild(this.chatEnded ? this.endedBarEl : this.formEl);
-      if (this.poweredByEl) slot.appendChild(this.poweredByEl);
+      slot.appendChild(this.poweredByEl);
     }
 
     private buildEndedBar(): HTMLDivElement {
@@ -2766,8 +2817,7 @@ function svgEl(svg: string, cls?: string): HTMLSpanElement {
       return bar;
     }
 
-    private buildPoweredBy(): HTMLAnchorElement | null {
-      if (this.config!.show_powered_by === false) return null;
+    private buildPoweredBy(): HTMLAnchorElement {
       const link = document.createElement("a");
       link.className = "powered-by";
       link.href = "https://smartsales.id";

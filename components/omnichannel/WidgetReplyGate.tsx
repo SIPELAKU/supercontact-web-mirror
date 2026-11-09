@@ -21,6 +21,14 @@ export function WidgetReplyGate({ conversationId, state, ownerName }: WidgetRepl
     return <div aria-busy="true" className="h-14 animate-pulse rounded-xl bg-gray-100" />;
   }
 
+  if (state === "ended") {
+    return (
+      <p className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+        This chat has ended.
+      </p>
+    );
+  }
+
   if (state === "taken") {
     return (
       <p className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
@@ -32,7 +40,10 @@ export function WidgetReplyGate({ conversationId, state, ownerName }: WidgetRepl
   const handleAccept = () =>
     accept.mutate(conversationId, {
       onError: (error) => {
-        if ((error as { status?: number }).status === 409) {
+        const { status, code } = error as { status?: number; code?: string };
+        if (code === "CONVERSATION_ENDED") {
+          notify.info("Chat ended", { description: "This chat has already ended." });
+        } else if (status === 409) {
           notify.info("Already taken", { description: "Another agent accepted this chat first." });
         } else {
           notify.error("Failed to accept the chat", { description: error.message });

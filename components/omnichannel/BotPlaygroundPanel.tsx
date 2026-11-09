@@ -52,7 +52,7 @@ import type {
 } from "@/lib/types/botPlayground";
 import type { UpdateWebWidgetConfigRequest } from "@/lib/types/omnichannel";
 import { widgetConfigPayload } from "@/lib/utils/webWidgetConfig";
-import { fallbackReasonHint, isAiOffArticleList } from "./answerBotHints";
+import { fallbackReasonHint, followUpRows, isAiOffArticleList } from "./answerBotHints";
 import KbPlaceholderFillForm from "@/components/knowledge/KbPlaceholderFillForm";
 
 interface BotPlaygroundPanelProps {
@@ -77,6 +77,8 @@ const SOURCE_LABEL: Record<string, { label: string; className: string }> = {
   greeting: { label: "Greeting", className: "bg-violet-100 text-violet-700" },
   contact_ack: { label: "Contact noted", className: "bg-teal-100 text-teal-700" },
   closing: { label: "Closing", className: "bg-slate-200 text-slate-700" },
+  clarify: { label: "Asked back", className: "bg-sky-100 text-sky-700" },
+  llm_no_article: { label: "AI reply, no article", className: "bg-orange-100 text-orange-700" },
 };
 
 function triToBool(v: TriState): boolean | undefined {
@@ -131,6 +133,7 @@ function TabError({ onRetry }: { onRetry: () => void }) {
 
 function ResultDetails({ result }: { result: BotPlaygroundAskResponse }) {
   const sales = result.sales;
+  const followUp = followUpRows(result);
   return (
     <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700 flex flex-col gap-3">
       <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -149,6 +152,19 @@ function ResultDetails({ result }: { result: BotPlaygroundAskResponse }) {
           <span className="text-emerald-700 font-medium">would deflect (no ticket until feedback)</span>
         )}
       </div>
+
+      {followUp.length > 0 && (
+        <div>
+          <p className="font-medium text-gray-800 mb-1">Follow-up question</p>
+          <ul className="flex flex-col gap-0.5">
+            {followUp.map((row) => (
+              <li key={row.label}>
+                {row.label}: <strong>{row.value}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {result.articles.length > 0 && (
         <div>

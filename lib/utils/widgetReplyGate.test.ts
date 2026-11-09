@@ -9,6 +9,18 @@ describe("widgetReplyState", () => {
     expect(widgetReplyState({ ...widget })).toBe("needs_accept");
   });
 
+  it("an ended chat with no owner has nothing to accept", () => {
+    for (const status of ["solved", "closed", "archived"]) {
+      expect(widgetReplyState({ ...widget, status })).toBe("ended");
+    }
+    expect(widgetReplyState({ ...widget, status: "open" })).toBe("needs_accept");
+  });
+
+  it("an ended chat keeps its owner's state", () => {
+    expect(widgetReplyState({ ...widget, status: "solved", assignedUserId: "rina" })).toBe("open");
+    expect(widgetReplyState({ ...widget, status: "solved", assignedUserId: "andi" })).toBe("taken");
+  });
+
   it("the agent's own chat: the reply box", () => {
     expect(widgetReplyState({ ...widget, assignedUserId: "rina" })).toBe("open");
   });

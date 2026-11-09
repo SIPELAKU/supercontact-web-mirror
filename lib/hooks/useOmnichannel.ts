@@ -490,6 +490,7 @@ export function useWidgetReply(conversationId: string | null | undefined, channe
     : widgetReplyState({
         channelType,
         loaded: Boolean(data && userProfile),
+        status: data?.status,
         assignedUserId: data?.assigned_user_id,
         currentUserId: userProfile?.id,
       });
